@@ -1,7 +1,9 @@
 <!-- portfolio-content/omsta/case-study-draft.md -->
 <!-- Borrador profesional del caso de estudio OMSTA para Jonás Orbit v3 (Endurance). -->
 <!-- Voz: primera persona (Jonás). Basado en evidencia (ver evidence-map.md). -->
-<!-- Antes de publicar, Jonás debe confirmar los puntos marcados [CONFIRMAR]. -->
+<!-- Las 5 confirmaciones de Jonás quedaron registradas el 2026-07-22 (ver
+     case-study-notes.md §18) e incorporadas aquí. Único paso pendiente antes de
+     publicar: revisión visual de privacidad de cada captura. -->
 
 # OMSTA — ERP para una agencia de viajes en producción
 
@@ -12,19 +14,17 @@
 
 ## 1. Contexto
 
-OMSTA es el sistema de gestión de una agencia de viajes que opera en República
-Dominicana con **dos sucursales: Santo Domingo y Santiago**. No es un proyecto de
-práctica: está en producción, desplegado en la nube, y se usa para el trabajo
-diario de vender viajes, cobrar, pagar a proveedores, pagar la nómina y llevar la
-contabilidad formal del negocio.
+OMSTA es el sistema de gestión que construí para **CrisgnoViajes**, una agencia de
+viajes que opera en República Dominicana con **dos sucursales: Santo Domingo y
+Santiago**. No es un proyecto de práctica: está en producción, desplegado en la
+nube, y se usa para el trabajo diario de vender viajes, cobrar, pagar a
+proveedores, pagar la nómina y llevar la contabilidad formal del negocio.
 
 Una agencia de viajes vive en la intersección de tres mundos que casi siempre
 están separados: **la venta** (reservas de hotel, vuelo, crucero, paquetes y
 seguros), **el dinero** (cobros a clientes, pagos a mayoristas, comisiones,
 saldos) y **la contabilidad formal** (asientos, cuentas por cobrar y pagar,
 impuestos). OMSTA existe para unir esos tres mundos en una sola plataforma.
-
-<!-- [CONFIRMAR] nombre público del cliente, antigüedad en producción, tamaño del equipo. -->
 
 ## 2. Problema
 
@@ -52,16 +52,13 @@ Construir y mantener un sistema donde:
 
 ## 4. Mi función y responsabilidades
 
-Trabajé como **desarrollador full-stack y responsable de la arquitectura** del
-sistema: modelé el dominio, construí el backend en Django/DRF, diseñé la capa de
-servicios para los flujos de dinero, implementé la contabilidad de doble partida y
-el cumplimiento fiscal, monté el despliegue en Railway y me hice cargo del
-mantenimiento en producción, incluida la corrección de incidentes reales.
-
-<!-- [CONFIRMAR] alcance exacto de la autoría: ¿desarrollador único? ¿principal con
-apoyo de herramientas de IA? El historial git muestra a Jonás como autor de los
-merges; parte del trabajo se hizo en ramas asistidas por agentes de código. Ajustar
-esta sección a como Jonás quiera describirlo con honestidad. -->
+Fui el **único desarrollador de OMSTA** y el responsable de su arquitectura,
+implementación, despliegue y mantenimiento. Modelé el dominio, construí el backend
+en Django/DRF, diseñé la capa de servicios para los flujos de dinero, implementé la
+contabilidad de doble partida y el cumplimiento fiscal, monté el despliegue en
+Railway y me hice cargo del mantenimiento en producción, incluida la corrección de
+incidentes reales. Las decisiones técnicas y de producto, la revisión del código y
+la responsabilidad final del sistema estuvieron bajo mi dirección.
 
 ## 5. Usuarios
 
@@ -230,9 +227,9 @@ Selección principal (16 capturas en `screenshots/sanitized/`, datos sintéticos
 formal desde una sola plataforma, con cumplimiento fiscal dominicano y trazabilidad
 completa del dinero.
 
-<!-- [CONFIRMAR] No se publican métricas de negocio (ventas, ahorro de tiempo,
-reducción de errores, nº de usuarios/clientes reales) porque no hay evidencia en el
-repositorio. Si Jonás dispone de datos reales y verificables, se pueden añadir aquí. -->
+*Existen métricas reales de uso, operación y volumen, pero forman parte de la
+información privada del cliente y no se divulgan (usuarios, clientes, reservas,
+ventas, volumen de pagos, ahorro de tiempo o impacto económico).*
 
 ## 15. Aprendizajes
 
@@ -256,15 +253,18 @@ funciona".
 
 ## 17. Enlaces / CTA
 
-- **Demo:** <!-- [CONFIRMAR] ¿demo pública, video, o recorrido guiado local? -->
+- **Demo:** Demo interactiva próximamente. Actualmente disponible mediante recorrido
+  privado. *(Se preparará un entorno con datos ficticios, URL pública y credenciales
+  de visitante, aislado de producción; no se publica URL ni credenciales inexistentes.)*
 - **Repositorio:** privado (sistema en producción de un cliente).
 - **¿Trabajemos juntos?** Si necesitas un sistema que conecte tu operación con tu
   contabilidad de verdad, hablemos. → *(CTA a la sección de contacto del portafolio.)*
 
 ---
 <!-- Checklist de publicación:
-- [ ] Jonás confirma autoría (sección 4).
-- [ ] Jonás confirma nombre público del cliente (secciones 1/17).
-- [ ] Jonás confirma si hay métricas reales publicables (sección 14).
-- [ ] Jonás confirma enlace/formato de demo (sección 17).
-- [ ] Revisión final de privacidad de cada captura antes de publicar. -->
+- [x] Autoría confirmada: único desarrollador (sección 4). — 2026-07-22
+- [x] Nombre público del cliente confirmado: CrisgnoViajes (secciones 1/17). — 2026-07-22
+- [x] Métricas: reales pero privadas del cliente; no se publican cifras (sección 14). — 2026-07-22
+- [x] Demo: futura, con texto provisional; sin URL/credenciales inexistentes (sección 17). — 2026-07-22
+- [x] Backups/uptime: omitidos hasta contar con datos verificables. — 2026-07-22
+- [ ] PENDIENTE: revisión final de privacidad de cada captura antes de publicar. -->

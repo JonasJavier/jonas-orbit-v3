@@ -28,7 +28,7 @@
 | Métricas verificables | ✅ Completo |
 | Mapa de evidencia | ✅ Completo |
 | Notas factuales | ✅ Completo |
-| Borrador del caso de estudio | ✅ Completo (pendiente confirmación de Jonás) |
+| Borrador del caso de estudio | ✅ Completo · 5 confirmaciones incorporadas (2026-07-22) |
 | Resumen para la tarjeta | ✅ Completo |
 | Guion de demo (60 s / 3 min / 7-10 min) | ✅ Completo |
 | Branding | ✅ Assets + guía |
@@ -38,13 +38,19 @@ Investigación completa, capturas curadas y sanitizadas, arquitectura con diagra
 métricas verificables, evidencia trazable y todo el contenido escrito (notas,
 borrador, resumen, demo).
 
-### Qué falta confirmar (Jonás) — ver `case-study-notes.md` §18
-1. Cómo nombrar públicamente al cliente/negocio.
-2. Cómo describir la autoría (único / principal / con agentes de IA).
-3. Si hay **métricas de negocio reales** publicables (no se inventó ninguna).
-   *Parcial: ✅ 2 sucursales reales (Santo Domingo y Santiago) — confirmado 2026-07-22.*
-4. Formato del enlace/demo (pública, video, o recorrido local).
-5. Política de backups / uptime en producción.
+### Confirmado por Jonás (2026-07-22) — ver `case-study-notes.md` §18, incorporado a `case-study-draft.md`
+1. ✅ Cliente público: **CrisgnoViajes**; se autoriza nombrar producto y cliente.
+2. ✅ Autoría: **único desarrollador**, responsable de arquitectura/implementación/
+   despliegue/mantenimiento. No se menciona uso de IA en el caso público.
+3. ✅ Métricas: reales pero **privadas del cliente**; publicable solo que está en
+   producción, 2 sucursales (Santo Domingo y Santiago), y que centraliza reservas,
+   cobros, pagos y contabilidad. Sin cifras de negocio.
+4. ✅ Demo: no hay demo pública aún; se presenta como funcionalidad futura con texto
+   provisional, sin URL ni credenciales inexistentes.
+5. ✅ Backups/uptime: **omitidos** hasta contar con datos verificables.
+
+**Único paso pendiente antes de publicar:** revisión visual de privacidad de cada
+captura principal.
 
 ---
 
@@ -105,11 +111,10 @@ borrador, resumen, demo).
 ---
 
 ## Próximos pasos (para integrar en Endurance)
-1. Jonás revisa el borrador y confirma los 5 puntos pendientes (§ arriba).
-2. Cerrar la privacidad final de cada captura principal (revisión de Jonás).
-3. Definir el enlace/demo (o marcarlo como privado con recorrido guiado).
-4. Con el borrador aprobado, construir la ficha/caso en la sección Endurance del
-   nuevo portafolio (no se implementa aquí — es material de contenido).
+1. ✅ Jonás confirmó los 5 puntos; incorporados a `case-study-draft.md` (2026-07-22).
+2. Cerrar la privacidad final de cada captura principal (revisión de Jonás) — pendiente.
+3. Con el borrador aprobado, construir el caso en la sección Endurance del nuevo
+   portafolio (no se implementa aquí — es material de contenido).
 
 ---
 
