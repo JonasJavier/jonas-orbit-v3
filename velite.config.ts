@@ -1,6 +1,7 @@
 import { defineCollection, defineConfig, s } from "velite";
-import { WORLD_IDS } from "./content/worlds.data";
+import { WORLD_IDS, worldsData } from "./content/worlds.data";
 import { PUBLISHED_LOCALES } from "./content/site.data";
+import { validateWorldProse } from "./content/validate-worlds";
 
 /**
  * Pipeline ÚNICO de contenido (decisión del plan: Velite, prohibido añadir
@@ -79,24 +80,8 @@ export default defineConfig({
   root: "content",
   collections: { worldProse, projectProse, designProse },
   prepare: ({ worldProse }) => {
-    const seen = new Set<string>();
-    for (const world of worldProse) {
-      const key = `${world.locale}/${world.id}`;
-      if (seen.has(key)) {
-        throw new Error(
-          `[content] Mundo duplicado: dos archivos para "${key}". Elimina uno.`,
-        );
-      }
-      seen.add(key);
-    }
-    for (const locale of PUBLISHED_LOCALES) {
-      const missing = WORLD_IDS.filter((id) => !seen.has(`${locale}/${id}`));
-      if (missing.length > 0) {
-        throw new Error(
-          `[content] El idioma publicado "${locale}" no tiene prosa para: ${missing.join(", ")}. ` +
-            `Un idioma publicado exige los 7 mundos completos.`,
-        );
-      }
-    }
+    // Todas las validaciones que rompen el build viven en una función pura
+    // (content/validate-worlds.ts) para poder cubrirlas con fixtures.
+    validateWorldProse(worldProse, PUBLISHED_LOCALES, WORLD_IDS, worldsData);
   },
 });
