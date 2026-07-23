@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "velite.config.ts",
+    "open-next.config.ts"
+  ],
+  "project": [
+    "**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "docs/**"
+  ],
+  "ignoreDependencies": [
+    "tailwindcss"
+  ]
+}

@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Tokens iniciales del sistema — estructura, no diseño final.
+ * La paleta cósmica sale del plan (negro profundo, dorado-ámbar, cian).
+ * Las fuentes definitivas (Space Grotesk + JetBrains Mono locales) llegan
+ * con el trabajo visual de F1A; mientras tanto, pila del sistema.
+ */
+@theme {
+  --color-space-black: #05070f;
+  --color-space-deep: #0a0f1e;
+  --color-space-haze: #131b30;
+  --color-star-amber: #f2c879;
+  --color-star-gold: #f0bc72;
+  --color-nebula-cyan: #7fe5ff;
+  --color-nebula-blue: #73d7ff;
+  --color-signal-coral: #ff6f91;
+  --color-ink: #e8edf7;
+  --color-ink-muted: #9aa7c2;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-space-black);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

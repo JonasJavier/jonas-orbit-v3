@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jonás Orbit v3 — Misión Endurance
 
-## Getting Started
+Portafolio espacial de **Jonás Javier Encarnación** — desarrollador full-stack,
+diseñador UX/UI y fotógrafo. Una experiencia narrativa inspirada en el cine
+espacial científico: scroll cinematográfico como navegación principal y un
+universo 3D como capa progresiva.
 
-First, run the development server:
+**Plan aprobado (fuente de verdad):**
+[`docs/plans/jonas-orbit-v3-mission-endurance.md`](docs/plans/jonas-orbit-v3-mission-endurance.md)
+— arquitectura, fases (F1A → F3), contenido como entregable, matriz de tests
+(Appendix A) y condición de parada. Ninguna decisión arquitectónica se abre sin
+pasar por ese documento.
+
+## Estado
+
+**Fase actual: F1A — setup técnico.** Estructura, pipeline de contenido,
+calidad y deploy verificados; la coreografía de scroll, el starfield y el
+diseño visual definitivo son el siguiente trabajo de F1A.
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev        # desarrollo (corre velite antes)
+npm run build      # build de producción (corre velite antes)
+npm run start      # servir el build
+npm run content    # compilar solo el contenido (velite)
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint
+npm run knip       # código muerto: archivos/exports/deps huérfanos
+npm run test       # vitest (unit + componentes)
+npm run test:e2e   # playwright (requiere `npm run build` previo)
+npm run check      # lint + typecheck + knip + test + build
+npm run preview    # build OpenNext + preview local en workerd
+npm run deploy     # build OpenNext + deploy a Cloudflare
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Arquitectura (resumen)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Next.js (App Router) + OpenNext → Cloudflare Workers.** Versiones fijadas;
+  se actualizan solo en tarea dedicada tras pasar la suite completa.
+- **Contenido: Velite (pipeline único).** Estructura neutral al idioma en
+  `content/worlds.data.ts` (identidad canónica `WorldId`); prosa localizada en
+  `content/{locale}/worlds/*.mdx`. `getWorld(id, locale)` compone ambos lados.
+  La paridad de contenido rompe el build solo para idiomas publicados
+  (`content/site.data.ts`).
+- **Rutas:** una página narrativa por idioma (`/es`) con los 7 mundos como
+  secciones ancladas; casos de estudio en rutas propias. `/` → `/es` por
+  redirect estático (sin proxy hasta F2A).
+- **Los 7 mundos:** Tesseracto (historia) · Cooper Station (formación) ·
+  Miller (desarrollo) · Endurance (proyectos) · Edmunds (creatividad) ·
+  Gargantúa (laboratorio) · Ranger (contacto).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Estructura
 
-## Learn More
+```
+app/[locale]/        página narrativa (ES publicado; EN llega en F2A)
+components/          componentes de presentación
+content/             worlds.data.ts (estructura) + {es,en}/worlds/*.mdx (prosa)
+lib/                 getWorld / getWorlds
+e2e/                 smoke tests de Playwright
+docs/plans/          el plan aprobado
+docs/reviews/        test plan de la revisión de ingeniería
+docs/experiments/    experimentos aparcados (con condiciones de entrada)
+docs/deferred/       trabajo diferido (con condiciones de entrada)
+docs/reference/v2/   código de v2 conservado como referencia (no se importa)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Reglas del repo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ver [`AGENTS.md`](AGENTS.md). Las tres más importantes: un solo pipeline MDX
+(Velite), cero código/deps huérfanos (Knip en CI), y nada de código cuya única
+función sea alterar una auditoría.
