@@ -110,9 +110,15 @@ OMSTA está autorizado para publicación: nombre, logo, pantallas, funcionalidad
 5. **Proyecto estilo red social** — funcionalidades sociales. Demuestra: modelado de usuarios, publicaciones, perfiles, interacciones, arquitectura frontend/backend, estados y contenido generado por usuarios.
 
 ### Asignación de casos por fase
-- **F1A — casos completos:** OMSTA (ingeniería/backend/producción) + E-commerce (negocio/cliente/UX). Combinación deliberada: cubre las dos audiencias.
-- **F1A — fichas breves (formato completo, NO placeholders):** portafolio fotográfico, Wiki Universe, red social. Cada ficha incluye como mínimo: nombre, problema/necesidad, mi función, tecnologías reales, una captura/visual, estado actual, enlace cuando sea publicable, y una decisión/desafío/aprendizaje relevante.
-- **F1B:** el portafolio fotográfico se convierte en el tercer caso completo.
+> **Decisión 2026-07-23 (autoplan):** F1A lanza con **OMSTA como único caso
+> completo** + las 3 fichas breves. El e-commerce deja de ser requisito de F1A
+> (su material depende del cliente y no tiene fecha) y pasa a caso completo de
+> F1B junto al portafolio fotográfico. Esto desbloquea el gate de Endurance.
+- **F1A — caso completo:** OMSTA (ingeniería/backend/producción). Cubre la
+  audiencia de empleo; la audiencia de cliente se atiende con la oferta freelance
+  directa en Ranger (ver "Distribución y conversión") mientras el e-commerce madura.
+- **F1A — fichas breves (formato completo, NO placeholders):** portafolio fotográfico, Wiki Universe, red social. Cada ficha incluye como mínimo: nombre, problema/necesidad, mi función, tecnologías reales, una captura/visual, estado actual, enlace cuando sea publicable, y una decisión/desafío/aprendizaje relevante. El e-commerce NO entra en F1A (sin material aún); se documenta directo como caso completo en F1B cuando Jonás entregue los materiales.
+- **F1B:** el e-commerce y el portafolio fotográfico se convierten en casos completos (3.º y 4.º).
 - **F2A:** Wiki Universe y red social se convierten en casos completos. Al cerrar F2A: 5 casos reales completos en ES.
 
 ### Estructura de casos completos ("caja negra de misión", 17 secciones)
@@ -127,7 +133,7 @@ Contexto · Problema · Objetivo · Mi función · Usuarios · Restricciones · 
 - **General:** revisión final del ES de F1A ½ día · congelación del ES antes de traducir (obligatoria) · borrador asistido de traducción EN 2 jornadas · revisión humana EN 1 jornada.
 
 ### Readiness gates
-- **Endurance:** no se cierra su implementación visual final sin: borradores completos de OMSTA y e-commerce + las 3 fichas breves. Componentes y arquitectura pueden construirse antes; nunca se publican tarjetas vacías.
+- **Endurance:** no se cierra su implementación visual final sin: borrador completo de OMSTA + las 3 fichas breves (fotografía, Wiki Universe, red social). Componentes y arquitectura pueden construirse antes; nunca se publican tarjetas vacías. *(Decisión 2026-07-23: el e-commerce ya no es requisito de F1A; pasa a F1B.)*
 - **Edmunds:** no se cierra sin: 8-12 fotos + 3-4 diseños seleccionados, con títulos, descripciones, alt y orden.
 - **CV:** F1A no está completa sin CV descargable y actualizado.
 - **F2A:** no comienza sin: contenido ES congelado + los 5 proyectos con versión ES definida + cero secciones ES pendientes de reescritura estructural.
@@ -136,9 +142,39 @@ Contexto · Problema · Objetivo · Mi función · Usuarios · Restricciones · 
 ### Gargantúa redefinida (F1B)
 Gargantúa es el laboratorio del propio desarrollo de Jonás Orbit — no exige experimentos externos inexistentes. Publica 2-3 experimentos reales del build (p.ej.: visualizador del contrato scroll→escena, comparación de los tres backdrops, gate de capacidad, calidad adaptativa, optimización del starfield, reduced-motion, control de DPR). Solo se publica lo realmente construido, con objetivo, explicación y demostración. Gargantúa no bloquea F1A.
 
+## Distribución y conversión (añadido 2026-07-23 por autoplan)
+
+El sitio es el activo; sin distribución no hay conversión. Ambos modelos de la
+revisión coincidieron en que el plan optimizaba el activo pero no el embudo. Este
+workstream se gestiona como entregable, con responsable (Jonás) y timebox, y su
+readiness gate se une al de F1A: **F1A no se considera "en uso" hasta que existan
+los assets y el canal de distribución.**
+
+- **Canal directo en Ranger (F1A):** además del formulario seguro, CTA directo de
+  WhatsApp y email (click-to-copy) y enlaces a GitHub/LinkedIn — en el mercado
+  local (RD) el chat directo convierte más que un formulario. *(Resuelve también
+  la colisión de color: el acento de Ranger no debe chocar con el color de error;
+  ver TODOS T5.)*
+- **Oferta freelance concreta (F1A):** bloque en Ranger que diga para quién es el
+  servicio, qué problema caro resuelve, el entregable típico y el siguiente paso.
+  No "construyo productos" genérico. Timebox: 60 min de copy.
+- **CV descargable (F1A):** ES accesible desde hero y Ranger; **versión EN como
+  asset de distribución** (PDF descargable, no una página `/en` — no viola el
+  ES-only de F1A). Prioridad alta.
+- **Alineación de perfiles (F1A, fuera del repo):** LinkedIn y READMEs de GitHub
+  enlazando al caso de OMSTA. Timebox: una tarde.
+- **Lista de aplicaciones objetivo (F1A):** lista nombrada de puestos/clientes a
+  contactar al desplegar; **N aplicaciones enviadas en los primeros 7 días** es
+  criterio de éxito de F1A, no una intención vaga. F1B no arranca hasta el primer
+  lote enviado.
+- **Medición honesta:** el log de outreach (aplicaciones enviadas, respuestas,
+  screens, discovery calls, leads) se lleva manualmente; complementa a Cloudflare
+  Web Analytics (page views + página de gracias como proxy de envío). Sin prometer
+  lo que la herramienta no mide.
+
 ## Fases
 
-- **F1A — Lanzamiento esencial (publicable, solo ES):** setup limpio, tokens, modelo de contenido con `WorldId`, contrato scroll→escena, hero (2 CTAs + CV) + narrativa de 7 mundos (Motion; CSS scroll-driven como mejora progresiva), starfield 2D diferido, redirect `/` → `/es`, casos completos de OMSTA y e-commerce + 3 fichas breves, 8-12 fotos + 3-4 diseños (Edmunds), **CV descargable en PDF**, contacto con la seguridad especificada + página de gracias, SEO/OG/sitemap, accesibilidad (teclado + reduced-motion), tests según Appendix A (niveles Vitest/TL/Playwright-Chromium), deploy Cloudflare vía OpenNext. **Al desplegarse, F1A se usa inmediatamente para solicitudes de empleo y contacto con clientes.**
+- **F1A — Lanzamiento esencial (publicable, solo ES):** setup limpio, tokens, modelo de contenido con `WorldId`, contrato scroll→escena, hero (2 CTAs + CV) + narrativa de 7 mundos (Motion; CSS scroll-driven como mejora progresiva), starfield 2D diferido, redirect `/` → `/es`, **caso completo de OMSTA** + 3 fichas breves, 8-12 fotos + 3-4 diseños (Edmunds), **CV descargable en PDF (ES; EN como asset de distribución)**, contacto con la seguridad especificada + página de gracias + **canal directo (WhatsApp/email) y bloque de oferta freelance en Ranger**, SEO/OG/sitemap, accesibilidad (teclado + reduced-motion), tests según Appendix A (niveles Vitest/TL/Playwright-Chromium), deploy Cloudflare vía OpenNext. **Al desplegarse, F1A se usa inmediatamente para solicitudes de empleo y contacto con clientes.**
 - **F1B — Profundidad y pulido:** Cmd+K, certificados completos, Gargantúa con 2-3 experimentos reales del build, tercer caso completo (portafolio fotográfico), galería ampliada (12-20 fotos, 4-6 diseños), analytics (Cloudflare Web Analytics), suite de pruebas y microinteracciones ampliadas.
 - **F2A — Localización inglesa + expansión de contenido:** congelar ES; traducir (borrador asistido + revisión humana); publicar `/en` + `hreflang` + middleware `Accept-Language`; casos completos de Wiki Universe y red social; verificación de los 5 casos en ES y EN; revisión de títulos/descripciones/alt/metadata en ambos idiomas.
 - **F2B — Primera experiencia 3D:** hero R3F con sistema orbital sencillo, gate de capacidad activo, HUD de telemetría, primeras transiciones entre mundos, botones "Activar 3D"/"Reducir efectos", **navegación orbital interactiva de los 7 mundos**, **spike de dirección artística foto→universo**, pipeline de texturas (KTX2/Basis, presupuesto de peso propio) SOLO tras validar el spike, calidad gráfica adaptativa. Cada planeta visible debe poder seleccionarse mediante clic, teclado o control equivalente; la selección desplaza el DOM al mundo correspondiente y nunca controla directamente la cámara. La cámara reacciona al store de scroll como única fuente de verdad; el mundo activo tiene estados claros de hover, focus y selección.
@@ -183,12 +219,12 @@ Web pública en Cloudflare vía OpenNext. CI/CD: GitHub Actions — por PR: `npm
 1. Crear carpeta de materiales de OMSTA: capturas autorizadas, arquitectura, problemas, decisiones, resultados, enlaces, stack, material para demo.
 2. Redactar el primer borrador completo de OMSTA (timebox: 1 día).
 3. Revisar y anonimizar las capturas de OMSTA (timebox: ½ día).
-4. Crear carpeta de materiales del e-commerce: objetivo del cliente, productos, capturas, flujo del usuario, funcionalidades reales, tecnologías, decisiones, resultados, enlace público si existe.
-5. Redactar el primer borrador completo del e-commerce (timebox: 1 día).
+4. *(→ F1B, decisión 2026-07-23)* Cuando Jonás entregue los materiales del e-commerce, crear la carpeta y redactar el caso completo. NO bloquea F1A.
+5. *(→ F1B)* Igual para el portafolio fotográfico como caso completo.
 6. Crear las fichas breves de portafolio fotográfico, Wiki Universe y red social (timebox: 60 min c/u).
 7. Seleccionar 8-12 fotografías y 3-4 piezas de diseño (una tarde).
-8. Preparar el CV descargable en PDF.
-9. Validar que los dos casos completos y las tres fichas tengan suficiente contenido (gates de Endurance/Edmunds/CV).
+8. Preparar el CV descargable en PDF (ES) + versión EN como asset de distribución.
+9. Validar que el caso de OMSTA y las tres fichas tengan suficiente contenido (gates de Endurance/Edmunds/CV). Preparar los assets de distribución (canal directo, oferta freelance, alineación de perfiles, lista de aplicaciones — ver "Distribución y conversión").
 10. Setup técnico: decidir dominio; crear repo nuevo (`portfolio` o `jonas-orbit-v3` — nombre distinto del directorio v2); remoto GitHub + secrets Cloudflare + workflow CI; `create-next-app` estable + Tailwind 4 + tokens + Velite + estructura `content/` + OpenNext; inventariar URLs públicas de v2 y decidir 301/reemplazo; migrar copy de `universe.ts` (corrigiendo Marketing Digital a terminada); sembrar TODOS.md.
 11. Con los borradores de OMSTA y e-commerce, la primera curaduría fotográfica y los wireframes iniciales disponibles, ejecutar `/plan-design-review` antes de congelar la dirección visual del hero, los 7 mundos y Edmunds. Esta revisión NO bloquea los pasos 1-10 ni el setup. Después, construir F1A mundo por mundo en orden narrativo, cada feature con sus tests (Appendix A); cerrar la implementación visual de Endurance y Edmunds solo tras cumplir sus readiness gates.
 12. Desplegar F1A con dominio real → **usarla inmediatamente para solicitudes de empleo y contacto con clientes** → feedback → F1B.
@@ -290,9 +326,9 @@ Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en 
 
 **VERDICT:** ENG CLEARED — el setup F1A es sólido y las mejoras ejecutables están aplicadas. La construcción de F1A debe arrancar recruiter-first (hero con prueba → Endurance/caso OMSTA → Ranger/gracias + CV), no por orden narrativo.
 
+**RESUELTO 2026-07-23 (dueño):** e-commerce fuera de F1A → caso completo en F1B; F1A lanza con OMSTA como único caso completo + 3 fichas (T3). Añadido workstream de "Distribución y conversión" al plan (T2).
+
 **UNRESOLVED DECISIONS:**
 - Dominio propio y estrategia 301 de las URLs públicas de v2 (setup, paso 10).
-- T1 Esquema de anclas: slug localizado (`#proyectos`, ya construido) vs WorldId (`#endurance`).
-- T2 Añadir workstream de distribución/conversión (aplicaciones, LinkedIn/GitHub, WhatsApp/email, oferta freelance, CV EN).
-- T3 Fecha límite del e-commerce + fallback (promover fotografía a 2.º caso completo de F1A).
+- T1 Esquema de anclas: slug localizado (`#proyectos`, ya construido, auto-decidido) vs WorldId (`#endurance`); reabrir solo si se prioriza compartibilidad cross-locale.
 - T4-T7: deliverables del `/plan-design-review`, colisión de color de Ranger, `cosmicName` localizable (F2A), runtime del Worker de contacto + Rate Limiting como IaC.

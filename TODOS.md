@@ -22,13 +22,14 @@ No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicad
   (ya construido, mejor UX en ES) y se corrigió el plan. Alternativa válida:
   WorldId canónico (anclas estables entre idiomas). Reabrir solo si se prioriza
   compartibilidad cross-locale. *Antes del freeze visual.*
-- **T2 · Distribución/conversión** — añadir workstream: lista de aplicaciones,
-  alineación LinkedIn/GitHub, canal directo (WhatsApp/email) junto al formulario,
-  bloque de oferta freelance/servicios, CV en EN. Ambos modelos: hallazgo #1.
-  *Antes o junto al deploy de F1A.* **Cambia alcance → confirmar.**
-- **T3 · Fecha límite del e-commerce + fallback** — si los materiales no llegan
-  en el timebox, promover el sitio de fotografía del cliente a 2.º caso completo
-  de F1A y bajar el e-commerce a F1B. **Cambia alcance de F1A → confirmar.**
+- **T2 · Distribución/conversión** — ✅ RESUELTO 2026-07-23: añadido el workstream
+  "Distribución y conversión" al plan (canal directo, oferta freelance, CV EN,
+  alineación de perfiles, lista de aplicaciones como criterio de éxito). Ejecutar
+  en F1A junto al contenido.
+- **T3 · E-commerce** — ✅ RESUELTO 2026-07-23: el e-commerce sale de F1A; F1A
+  lanza con OMSTA como único caso completo + 3 fichas. E-commerce y fotografía
+  pasan a casos completos de F1B cuando Jonás entregue los materiales. Gate de
+  Endurance desbloqueado.
 - **T4 · Deliverables del `/plan-design-review`** — el plan lo agenda pero sin
   definición de hecho. Requeridos: escala tipográfica (tokens), sistema de
   espaciado, archetipos por mundo, anatomía de cards (caso vs ficha), máquina de
