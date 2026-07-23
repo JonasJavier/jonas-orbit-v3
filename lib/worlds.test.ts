@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { WORLD_IDS } from "@/content/worlds.data";
+import { PUBLISHED_LOCALES } from "@/content/site.data";
 import { getWorld, getWorlds } from "./worlds";
 
 describe("getWorld / getWorlds (composición id + locale)", () => {
-  it("compone estructura y prosa para cada mundo publicado en es", () => {
-    for (const id of WORLD_IDS) {
-      const world = getWorld(id, "es");
-      expect(world.id).toBe(id);
-      expect(world.prose.locale).toBe("es");
-      expect(world.prose.title.length).toBeGreaterThan(0);
-      expect(world.prose.facts.length).toBeGreaterThan(0);
-      expect(world.prose.panels.length).toBeGreaterThan(0);
-      expect(world.accent).toMatch(/^#/);
+  it("compone estructura y prosa para cada mundo de cada idioma publicado", () => {
+    // Itera PUBLISHED_LOCALES: en F1A cubre solo es; al publicar en (F2A) la
+    // cobertura de A1 se extiende automáticamente sin tocar el test.
+    for (const locale of PUBLISHED_LOCALES) {
+      for (const id of WORLD_IDS) {
+        const world = getWorld(id, locale);
+        expect(world.id).toBe(id);
+        expect(world.prose.locale).toBe(locale);
+        expect(world.prose.title.length).toBeGreaterThan(0);
+        expect(world.prose.facts.length).toBeGreaterThan(0);
+        expect(world.prose.panels.length).toBeGreaterThan(0);
+        expect(world.accent).toMatch(/^#/);
+      }
     }
   });
 
@@ -33,9 +38,14 @@ describe("getWorld / getWorlds (composición id + locale)", () => {
 
   it("Marketing Digital aparece como carrera completada (corrección de v2)", () => {
     const cooper = getWorld("cooper-station", "es");
+    // Objetivo específico: el fact de Marketing Digital, no un regex sobre todo
+    // el JSON (que rompería ante cualquier sinónimo editorial).
+    const marketing = cooper.prose.facts.find(
+      (fact) => fact.label === "Marketing Digital",
+    );
+    expect(marketing?.value).toMatch(/completada/i);
+    // Y en ningún punto se describe como carrera en curso.
     const text = JSON.stringify(cooper.prose);
-    expect(text).not.toMatch(/actualmente estudio/i);
-    expect(text).not.toMatch(/carrera en curso/i);
-    expect(text).toMatch(/completada/i);
+    expect(text).not.toMatch(/actualmente estudio|carrera en curso/i);
   });
 });

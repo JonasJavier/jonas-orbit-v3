@@ -34,8 +34,8 @@ describe("WorldSection", () => {
 
   it("tolera panels sin tags (ranger)", () => {
     const world = getWorld("ranger", "es");
-    const { container } = render(<WorldSection world={world} />);
-    expect(container.querySelectorAll("h3").length).toBe(
+    render(<WorldSection world={world} />);
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(
       world.prose.panels.length,
     );
   });
