@@ -1,0 +1,182 @@
+[
+  {
+    "name": "01-dashboard-panel-ejecutivo",
+    "path": "/",
+    "title": "Panel Principal | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "03-reservas-listado",
+    "path": "/reservas/",
+    "title": "Reservas",
+    "ok": true
+  },
+  {
+    "name": "04-reserva-detalle",
+    "path": "/reservas/reserva/63/",
+    "title": "Reserva #63 · OMSTA",
+    "ok": true
+  },
+  {
+    "name": "05-reserva-nueva-hotel-form",
+    "path": "/reservas/nueva/hotel/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "06-reservas-servicios-productos",
+    "path": "/reservas/productos/",
+    "title": "Productos",
+    "ok": true
+  },
+  {
+    "name": "07-crm-clientes-listado",
+    "path": "/crm/",
+    "title": "CRM - Entidades",
+    "ok": true
+  },
+  {
+    "name": "08-crm-cliente-detalle",
+    "path": "/crm/entities/client/27/",
+    "title": "Client · Ana Reembolso QA cab7cd2d",
+    "ok": true
+  },
+  {
+    "name": "09-contabilidad-caja-pagos",
+    "path": "/contabilidad/pagos/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "10-cuentas-por-cobrar",
+    "path": "/contabilidad/cuentas-por-cobrar/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "11-cuentas-por-pagar",
+    "path": "/contabilidad/cuentas-por-pagar/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "12-contabilidad-pago-reserva",
+    "path": "/contabilidad/pagos/reserva/56/",
+    "title": "Reserva #56 · OMSTA",
+    "ok": true
+  },
+  {
+    "name": "13-notas-cliente-ar",
+    "path": "/contabilidad/ar/notas/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "14-notas-proveedor-ap",
+    "path": "/contabilidad/ap/notas/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "15-ledger-libro-diario",
+    "path": "/ledger/entries/",
+    "title": "Libro diario · Ledger",
+    "ok": true
+  },
+  {
+    "name": "16-entrada-diario-form",
+    "path": "/contabilidad/entrada-diario/",
+    "title": "Entradas de diario | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "17-plan-de-cuentas-coa",
+    "path": "/catalogo-cuentas/",
+    "title": "Catálogo de cuentas",
+    "ok": true
+  },
+  {
+    "name": "18-banco-cuentas",
+    "path": "/banco/",
+    "title": "Banco · Transacciones",
+    "ok": true
+  },
+  {
+    "name": "19-nomina",
+    "path": "/nomina/",
+    "title": "Dashboard de Nómina | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "20-divisas-tasas",
+    "path": "/divisas/",
+    "title": "Configuración | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "21-sucursales",
+    "path": "/sucursales/",
+    "title": "Sucursales | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "22-documentos-politicas",
+    "path": "/documentos/",
+    "title": "Configuración de documentos | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "23-reportes",
+    "path": "/reportes/",
+    "title": "OMSTA",
+    "ok": true
+  },
+  {
+    "name": "24-usuarios-roles",
+    "path": "/usuarios/users/",
+    "title": "Configuración | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "25-auditoria-actividad",
+    "path": "/usuarios/activity-log/",
+    "title": "Configuración | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "27-tutoriales-centro",
+    "path": "/tutoriales/",
+    "title": "Tutoriales",
+    "ok": true
+  },
+  {
+    "name": "28-configuracion-empresa",
+    "path": "/usuarios/config/",
+    "title": "Configuración | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "50-mobile-dashboard",
+    "path": "/",
+    "title": "Panel Principal | OMSTA",
+    "ok": true
+  },
+  {
+    "name": "51-mobile-reservas-listado",
+    "path": "/reservas/",
+    "title": "Reservas",
+    "ok": true
+  },
+  {
+    "name": "52-mobile-reserva-detalle",
+    "path": "/reservas/reserva/63/",
+    "title": "Reserva #63 · OMSTA",
+    "ok": true
+  },
+  {
+    "name": "53-mobile-cuentas-por-cobrar",
+    "path": "/contabilidad/cuentas-por-cobrar/",
+    "title": "OMSTA",
+    "ok": true
+  }
+]

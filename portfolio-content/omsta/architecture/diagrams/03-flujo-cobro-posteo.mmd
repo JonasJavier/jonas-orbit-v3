@@ -1,0 +1,20 @@
+%% OMSTA — Flujo: cobro de reserva -> asiento -> CxC
+%% Render: npx -y @mermaid-js/mermaid-cli -i 03-flujo-cobro-posteo.mmd -o 03-flujo-cobro-posteo.svg
+sequenceDiagram
+    actor Asesor
+    participant UI as UI Reservas
+    participant Svc as reservas.services (pago)
+    participant Pago as Pago (idempotente)
+    participant Post as ledger posting
+    participant GL as JournalEntry/Line
+    participant PG as PostgreSQL
+    participant Dash as Dashboard / CxC
+
+    Asesor->>UI: Registra pago (medio, monto, moneda)
+    UI->>Svc: create_reservation_payment (transaction.atomic)
+    Svc->>Pago: crea Pago + PaymentAllocation (valid())
+    Svc->>Post: post_customer_payment (snapshot de tasa)
+    Post->>GL: Debito Banco / Credito Anticipos (2201)
+    GL->>PG: asiento balanceado (D=C, diferencia 0.00)
+    Svc-->>UI: recibo (PDF) + estado de cobro
+    Dash->>PG: recalcula cobros, saldo por cobrar, alertas

@@ -1,0 +1,25 @@
+%% OMSTA — Diagrama de despliegue (Railway)
+%% Render: npx -y @mermaid-js/mermaid-cli -i 04-deployment.mmd -o 04-deployment.svg
+flowchart TB
+    Cliente["Navegador (HTTPS)"]
+
+    subgraph Railway["Railway"]
+      direction TB
+      Web["Proceso WEB<br/>Gunicorn gthread<br/>Django + DRF + WhiteNoise"]
+      Worker["Proceso WORKER<br/>manage.py qcluster (Django Q2)<br/>sin red publica"]
+      PG[("PostgreSQL<br/>gestionado")]
+      RD[("Redis<br/>DB0 colas / DB1 cache-sesion")]
+    end
+
+    S3[("S3-compatible<br/>media/documentos/exports")]
+    SMTP["SMTP (correo)"]
+
+    Cliente -- HTTPS --> Web
+    Web <--> PG
+    Web <--> RD
+    Worker <--> PG
+    Worker <--> RD
+    Web --> S3
+    Worker --> S3
+    Web --> SMTP
+    Worker --> SMTP
