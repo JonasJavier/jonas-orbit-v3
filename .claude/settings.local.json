@@ -12,7 +12,21 @@
       "mcp__codebase-memory-mcp__manage_adr",
       "Skill(autoplan)",
       "Skill(autoplan:*)",
-      "Bash(node -e \"const l=require\\('./package-lock.json'\\); console.log\\('postcss:', l.packages['node_modules/postcss'].version\\); console.log\\('sharp:', \\(l.packages['node_modules/sharp']||{}\\).version\\)\")"
+      "Bash(node -e \"const l=require\\('./package-lock.json'\\); console.log\\('postcss:', l.packages['node_modules/postcss'].version\\); console.log\\('sharp:', \\(l.packages['node_modules/sharp']||{}\\).version\\)\")",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npx playwright *)",
+      "Bash(cp ../jonas-orbit/content/universe.ts docs/reference/v2/universe.ts)",
+      "Bash(cp ../jonas-orbit/hooks/use-reduced-motion.ts docs/reference/v2/use-reduced-motion.ts)",
+      "Bash(cp ../jonas-orbit/hooks/use-device-capability.ts docs/reference/v2/use-device-capability.ts)",
+      "Bash(cp ../jonas-orbit/lib/performance.ts docs/reference/v2/performance.ts)",
+      "Bash(echo \"=== EXIT: $? ===\")",
+      "Bash(git push *)",
+      "Bash(npx opennextjs-cloudflare *)",
+      "Bash(git merge *)"
     ]
   }
 }
