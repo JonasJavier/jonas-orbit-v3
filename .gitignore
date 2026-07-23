@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# cloudflare local secrets (wrangler / opennext dev) — nunca versionar
+.dev.vars
+.dev.vars.*
+
 # vercel
 .vercel
 
