@@ -10,7 +10,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? "github" : "list",
+  // En CI generamos también el reporte HTML: el job de e2e sube
+  // playwright-report/ como artifact ante fallos (antes no existía).
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }]]
+    : "list",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -21,8 +25,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
+      // Mobile-first: viewport de 375px exacto (A32, "viaje usable en 375px").
       name: "mobile-chromium",
-      use: { ...devices["Pixel 7"] },
+      use: { ...devices["Desktop Chrome"], viewport: { width: 375, height: 812 } },
+    },
+    // Firefox y WebKit se ejecutan solo en el job de main (plan de CI); no
+    // entran en `npm run test:e2e`, que se acota a los proyectos Chromium.
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
     },
   ],
   webServer: {
