@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "mcp__codebase-memory-mcp__get_architecture",
-      "WebSearch"
+      "WebSearch",
+      "mcp__codebase-memory-mcp__index_repository",
+      "Read(//c/Users/savage/Documents/kimi/Workspaces/portafolio espacial/portfolio-content/**)",
+      "Read(//c/Users/savage/Documents/kimi/Workspaces/portafolio espacial/**)",
+      "Bash(gh run *)",
+      "PowerShell(gh run list --repo JonasJavier/jonas-orbit-v3 --limit 5)",
+      "Bash(curl -s \"https://api.github.com/repos/JonasJavier/jonas-orbit-v3/actions/runs?per_page=3\")",
+      "mcp__codebase-memory-mcp__manage_adr",
+      "Skill(autoplan)",
+      "Skill(autoplan:*)",
+      "Bash(node -e \"const l=require\\('./package-lock.json'\\); console.log\\('postcss:', l.packages['node_modules/postcss'].version\\); console.log\\('sharp:', \\(l.packages['node_modules/sharp']||{}\\).version\\)\")"
     ]
   }
 }
