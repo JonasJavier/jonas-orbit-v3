@@ -12,6 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generados por herramientas (no son código fuente):
+    ".open-next/**",
+    ".velite/**",
+    ".wrangler/**",
+    "playwright-report/**",
+    "test-results/**",
+    // Referencia v2 conservada, no se lintea:
+    "docs/**",
   ]),
 ]);
 

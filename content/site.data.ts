@@ -5,7 +5,6 @@
  * build (ver velite.config.ts). En F1A solo ES está publicado; EN se añade
  * aquí en F2A cuando su contenido esté completo — nunca antes.
  */
-const LOCALES = ["es", "en"] as const;
-export type Locale = (typeof LOCALES)[number];
+export type Locale = "es" | "en";
 
 export const PUBLISHED_LOCALES: readonly Locale[] = ["es"];
