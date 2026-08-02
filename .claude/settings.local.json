@@ -26,7 +26,8 @@
       "Bash(echo \"=== EXIT: $? ===\")",
       "Bash(git push *)",
       "Bash(npx opennextjs-cloudflare *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(git fetch *)"
     ]
   }
 }

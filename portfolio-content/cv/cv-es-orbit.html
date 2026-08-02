@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>CV — Jonás Javier Encarnación</title>
+<style>
+  :root{
+    --ink:#0B0E17; --ink2:#141A28; --ink3:#1E2636;
+    --paper:#FFFFFF; --paper2:#F6F7F9; --card:#F3F5F8;
+    --amber:#E9A23B; --amber-dk:#C9821C; --cyan:#22A7C4; --cyan-dk:#1B87A0;
+    --text:#1B2130; --muted:#5C6675; --faint:#8A93A2; --line:#E3E7EC;
+    --sidebar-text:#C7CEDA; --sidebar-muted:#8B94A6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  @page{ size:Letter; margin:0 }
+  body{
+    font-family:"Segoe UI","Helvetica Neue",Arial,system-ui,sans-serif;
+    color:var(--text); font-size:10.3px; line-height:1.5;
+    background:var(--paper);
+  }
+  .page{ width:8.5in; min-height:11in; margin:0 auto; background:var(--paper); position:relative }
+
+  /* ---------- HEADER ---------- */
+  header{
+    background:
+      radial-gradient(120% 160% at 88% -20%, rgba(34,167,196,.20), transparent 55%),
+      radial-gradient(120% 160% at 8% -40%, rgba(233,162,59,.18), transparent 50%),
+      linear-gradient(180deg,#0B0E17 0%,#10162340 100%),
+      var(--ink);
+    color:#fff; padding:22px 40px 16px; position:relative; overflow:hidden;
+  }
+  /* starfield dots */
+  header .stars{position:absolute; inset:0; opacity:.55}
+  header .stars i{position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.5}
+  .h-top{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; position:relative}
+  .name{font-size:31px; font-weight:700; letter-spacing:-.4px; line-height:1.05}
+  .name b{color:var(--amber); font-weight:700}
+  .title{margin-top:7px; font-size:11.5px; letter-spacing:2.4px; text-transform:uppercase; color:#E7ECF3; font-weight:600}
+  .title .dot{color:var(--cyan); margin:0 7px}
+  .tenure{margin-top:11px; font-size:9.5px; color:var(--sidebar-text); max-width:430px; line-height:1.55}
+  .avatar-mono{
+    flex:0 0 auto; width:62px; height:62px; border-radius:14px;
+    background:linear-gradient(140deg,var(--amber),var(--amber-dk));
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; font-weight:700; color:#0B0E17; letter-spacing:-1px;
+    box-shadow:0 6px 18px rgba(233,162,59,.35);
+  }
+  .contact{
+    margin-top:18px; display:flex; flex-wrap:wrap; gap:8px 20px; position:relative;
+    font-size:9.7px; color:#E4E9F0;
+  }
+  .contact a{color:#E4E9F0; text-decoration:none}
+  .contact .ci{display:flex; align-items:center; gap:6px}
+  .contact svg{width:13px; height:13px; flex:0 0 auto}
+  .contact .ci .lab{color:var(--cyan)}
+
+  /* ---------- BODY GRID ---------- */
+  .body{display:grid; grid-template-columns:1fr 1.62fr; }
+  .rail{background:var(--paper2); padding:17px 22px 8px; border-right:1px solid var(--line)}
+  .main{padding:17px 26px 8px}
+
+  /* section titles */
+  .sec{margin-bottom:12px; break-inside:avoid}
+  .sec-h{display:flex; align-items:center; gap:8px; margin-bottom:9px}
+  .sec-h .ic{width:22px; height:22px; border-radius:6px; background:var(--ink); display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+  .sec-h .ic svg{width:13px; height:13px; stroke:var(--amber)}
+  .sec-h h2{font-size:11px; letter-spacing:1.6px; text-transform:uppercase; font-weight:700; color:var(--ink)}
+  .rail .sec-h .ic{background:#fff; border:1px solid var(--line)}
+  .rail .sec-h .ic svg{stroke:var(--cyan-dk)}
+
+  /* profile */
+  .profile{font-size:10.2px; line-height:1.55; color:var(--text)}
+  .profile b{color:var(--ink)}
+
+  /* experience */
+  .job{margin-bottom:14px; break-inside:avoid}
+  .job-h{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .job-role{font-size:12px; font-weight:700; color:var(--ink)}
+  .job-when{font-size:8.8px; font-family:Consolas,"Cascadia Code",monospace; color:#fff; background:var(--cyan-dk); padding:2px 7px; border-radius:20px; white-space:nowrap}
+  .job-org{font-size:10px; color:var(--amber-dk); font-weight:600; margin-top:1px}
+  .job-org .place{color:var(--muted); font-weight:400}
+  .job-sum{font-size:9.8px; color:var(--text); margin-top:6px; line-height:1.5}
+
+  ul.feats{list-style:none; margin-top:8px; display:grid; gap:5px}
+  ul.feats li{position:relative; padding-left:16px; font-size:9.7px; line-height:1.45; color:var(--text)}
+  ul.feats li::before{content:""; position:absolute; left:2px; top:5px; width:6px; height:6px; border-radius:2px; background:var(--amber); transform:rotate(45deg)}
+  ul.feats li b{color:var(--ink)}
+
+  .stat-row{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap}
+  .stat{flex:1; min-width:88px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 9px}
+  .stat .n{font-size:14px; font-weight:700; color:var(--cyan-dk); font-family:Consolas,monospace}
+  .stat .l{font-size:8px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:1px}
+
+  /* projects */
+  .proj{margin-bottom:6px; padding-bottom:6px; border-bottom:1px dashed var(--line); break-inside:avoid}
+  .proj:last-child{border-bottom:0}
+  .proj-t{font-size:10.4px; font-weight:700; color:var(--ink)}
+  .proj-d{font-size:9.4px; color:var(--muted); margin-top:2px; line-height:1.45}
+  .proj-tags{margin-top:4px; display:flex; flex-wrap:wrap; gap:4px}
+  .ptag{font-size:7.8px; font-family:Consolas,monospace; color:var(--cyan-dk); background:#EAF6F9; border:1px solid #CDE9EF; padding:1px 6px; border-radius:20px}
+
+  /* skill chips */
+  .grp{margin-bottom:11px}
+  .grp-l{font-size:8.6px; text-transform:uppercase; letter-spacing:1px; color:var(--faint); font-weight:700; margin-bottom:5px}
+  .chips{display:flex; flex-wrap:wrap; gap:4px}
+  .chip{font-size:8.8px; padding:2.5px 8px; border-radius:20px; background:#fff; border:1px solid var(--line); color:var(--text); font-weight:500}
+  .chip.hot{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .chip.hot::before{content:"●"; color:var(--amber); font-size:6px; margin-right:4px; vertical-align:middle}
+
+  /* education badges */
+  .edu{display:flex; gap:9px; margin-bottom:10px; align-items:flex-start; break-inside:avoid}
+  .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; letter-spacing:-.5px}
+  .badge.harvard{background:#A51C30}
+  .badge.eit{background:#0B2E63; font-size:9px}
+  .badge.multi{background:linear-gradient(135deg,var(--amber),var(--cyan-dk))}
+  .badge.school{background:var(--ink3)}
+  .badge svg{width:15px;height:15px;stroke:#fff}
+  .edu-b .t{font-size:9.9px; font-weight:700; color:var(--ink); line-height:1.25}
+  .edu-b .o{font-size:8.7px; color:var(--muted); margin-top:1px}
+  .edu-b .o b{color:var(--amber-dk); font-weight:600}
+
+  /* certs */
+  .certs{display:flex; flex-wrap:wrap; gap:4px}
+  .cert{font-size:8.6px; padding:2.5px 8px; border-radius:6px; background:#EEF1F6; border:1px solid var(--line); color:var(--ink); font-weight:600}
+
+  /* languages */
+  .lang{margin-bottom:8px}
+  .lang-h{display:flex; justify-content:space-between; font-size:9.6px; margin-bottom:3px}
+  .lang-h b{color:var(--ink)}
+  .lang-h span{color:var(--muted); font-size:8.8px}
+  .bar{height:5px; border-radius:5px; background:#E7EBF0; overflow:hidden}
+  .bar i{display:block; height:100%; border-radius:5px; background:linear-gradient(90deg,var(--amber),var(--cyan-dk))}
+
+  .foot{grid-column:1/3; padding:9px 40px; background:var(--ink); color:var(--sidebar-muted); font-size:8px; display:flex; justify-content:space-between; letter-spacing:.4px}
+  .foot b{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="stars">
+      <i style="top:14px;left:22%"></i><i style="top:40px;left:47%;opacity:.7"></i>
+      <i style="top:22px;left:63%"></i><i style="top:58px;left:33%;opacity:.4"></i>
+      <i style="top:12px;left:80%;opacity:.6"></i><i style="top:70px;left:72%;opacity:.5"></i>
+      <i style="top:88px;left:15%;opacity:.4"></i><i style="top:50px;left:90%;opacity:.7"></i>
+    </div>
+    <div class="h-top">
+      <div>
+        <div class="name">Jonás Javier <b>Encarnación</b></div>
+        <div class="title">Full-Stack Web Developer <span class="dot">◆</span> Digital Product Designer</div>
+        <div class="tenure">Desarrollador full-stack con perfil híbrido: construyo el sistema, diseño la interfaz y entiendo cómo comunica y convierte. Ingeniería, diseño y estrategia digital en la misma órbita.</div>
+      </div>
+      <div class="avatar-mono">JE</div>
+    </div>
+    <div class="contact">
+      <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="#22A7C4" stroke-width="2"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg><a href="mailto:jonas@jonasjavier.dev">jonas@jonasjavier.dev</a></span>
+      <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="#22A7C4" stroke-width="2"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg>+1 849 862 5049</span>
+      <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="#22A7C4" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><a href="https://jonasjavier.dev">jonasjavier.dev</a></span>
+      <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="#22A7C4" stroke-width="2"><path d="M9 19c-4 1.4-4-2.2-6-2.6M15 21v-3.5a3 3 0 0 0-.9-2.4c3-.3 6-1.5 6-6.6a5 5 0 0 0-1.4-3.6 4.6 4.6 0 0 0-.1-3.5s-1.1-.3-3.6 1.4a12.6 12.6 0 0 0-6.6 0C4.3 1 3.2 1.3 3.2 1.3a4.6 4.6 0 0 0-.1 3.5A5 5 0 0 0 1.7 8.4c0 5 3 6.3 5.9 6.6a3 3 0 0 0-.8 2.3V21"/></svg>github.com/JonasJavier</span>
+      <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="#22A7C4" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2"/></svg><span class="lab">República Dominicana</span></span>
+    </div>
+  </header>
+
+  <div class="body">
+
+    <!-- ========== RAIL ========== -->
+    <aside class="rail">
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M8 8 4 12l4 4M16 8l4 4-4 4M13 5l-2 14"/></svg></span>
+          <h2>Habilidades técnicas</h2>
+        </div>
+        <div class="grp">
+          <div class="grp-l">Backend</div>
+          <div class="chips">
+            <span class="chip hot">Python</span><span class="chip hot">Django</span>
+            <span class="chip">Django REST</span><span class="chip">PostgreSQL</span>
+            <span class="chip">Redis</span><span class="chip">Django Q2</span>
+            <span class="chip">APIs REST</span>
+          </div>
+        </div>
+        <div class="grp">
+          <div class="grp-l">Frontend</div>
+          <div class="chips">
+            <span class="chip hot">TypeScript</span><span class="chip hot">React</span>
+            <span class="chip">JavaScript</span><span class="chip">HTML</span><span class="chip">CSS</span>
+          </div>
+        </div>
+        <div class="grp">
+          <div class="grp-l">Herramientas &amp; ops</div>
+          <div class="chips">
+            <span class="chip">Git</span><span class="chip">GitHub</span>
+            <span class="chip">Docker</span><span class="chip">Railway</span>
+            <span class="chip">pytest</span><span class="chip">Jest</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 16l-5 2.6 1-5.5-4-3.9 5.5-.8Z"/></svg></span>
+          <h2>Diseño &amp; Marketing</h2>
+        </div>
+        <div class="grp">
+          <div class="grp-l">Diseño</div>
+          <div class="chips">
+            <span class="chip">Diseño multimedia</span><span class="chip">Dirección visual</span>
+            <span class="chip">UX / UI</span><span class="chip">User Research</span>
+            <span class="chip">Fotografía</span>
+          </div>
+        </div>
+        <div class="grp">
+          <div class="grp-l">Marketing digital</div>
+          <div class="chips">
+            <span class="chip">SEO</span><span class="chip">Google Ads</span>
+            <span class="chip">Google Analytics</span><span class="chip">Email Marketing</span>
+            <span class="chip">eCommerce</span><span class="chip">Contenidos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M7 10v5c0 1 2 3 5 3s5-2 5-3v-5"/></svg></span>
+          <h2>Formación</h2>
+        </div>
+
+        <div class="edu">
+          <div class="badge harvard">H</div>
+          <div class="edu-b">
+            <div class="t">CS50x &amp; CS50W — Ciencias de la Computación y Programación Web</div>
+            <div class="o"><b>Harvard University</b> · 2023 · 2024</div>
+          </div>
+        </div>
+
+        <div class="edu">
+          <div class="badge eit">eIT</div>
+          <div class="edu-b">
+            <div class="t">Carrera de Marketing Digital <span style="color:#1B87A0">(completada)</span></div>
+            <div class="o"><b>EducaciónIT</b> × Manhattan University · 207 h · 2024</div>
+          </div>
+        </div>
+
+        <div class="edu">
+          <div class="badge multi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <div class="edu-b">
+            <div class="t">Diseño Multimedia</div>
+            <div class="o">Formación creativa · ~1 año</div>
+          </div>
+        </div>
+
+        <div class="edu">
+          <div class="badge school"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 7h16M6 7v12h12V7M9 11h6"/></svg></div>
+          <div class="edu-b">
+            <div class="t">Bachiller en Humanidades y Lenguas Modernas</div>
+            <div class="o">MINERD, Rep. Dominicana · 2024</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span>
+          <h2>Certificaciones de rol</h2>
+        </div>
+        <div class="certs">
+          <span class="cert">UX Designer</span>
+          <span class="cert">UX Researcher</span>
+          <span class="cert">Analista de Marketing Online</span>
+          <span class="cert">Content Manager</span>
+          <span class="cert">Community Manager</span>
+        </div>
+        <div style="font-size:8.2px;color:var(--faint);margin-top:6px;line-height:1.4">Respaldadas por 16 cursos EducaciónIT: SEO, Google Ads/Analytics, User Research, Accesibilidad, Design Thinking, eCommerce, Email Marketing, HTML, entre otros.</div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span>
+          <h2>Idiomas</h2>
+        </div>
+        <div class="lang">
+          <div class="lang-h"><b>Español</b><span>Nativo</span></div>
+          <div class="bar"><i style="width:100%"></i></div>
+        </div>
+        <div class="lang">
+          <div class="lang-h"><b>Inglés</b><span>B2 · Intermedio-alto</span></div>
+          <div class="bar"><i style="width:70%"></i></div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ========== MAIN ========== -->
+    <main class="main">
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></span>
+          <h2>Perfil</h2>
+        </div>
+        <p class="profile">Desarrollador <b>full-stack</b> con un cruce poco común de disciplinas: ingeniería de producto (Django · React/TypeScript), diseño de producto digital y estrategia de marketing. Mi trabajo más representativo es <b>OMSTA</b>, un ERP en producción con contabilidad de doble partida y cumplimiento fiscal dominicano. Antes de elegir la herramienta entiendo el problema, y conecto arquitectura, experiencia de usuario y comunicación visual desde el inicio.</p>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+          <h2>Experiencia profesional</h2>
+        </div>
+
+        <div class="job">
+          <div class="job-h">
+            <div>
+              <div class="job-role">Desarrollador Full-Stack</div>
+              <div class="job-org">Cristegno Viajes SRL <span class="place">· Rep. Dominicana</span></div>
+            </div>
+            <div class="job-when">Feb 2025 — Presente</div>
+          </div>
+          <p class="job-sum"><b>OMSTA — ERP para agencia de viajes (en producción).</b> Sistema empresarial real que unifica en una sola plataforma la venta (reservas de hotel, vuelo, crucero, paquete y seguro), el dinero (cobros, pagos a mayoristas, comisiones, saldos) y la contabilidad formal del negocio.</p>
+          <ul class="feats">
+            <li><b>Contabilidad de doble partida real:</b> asientos balanceados, posteo por documento y libro mayor neutral, no un simple CRUD.</li>
+            <li><b>Cumplimiento fiscal dominicano (DGII 606/607/608/623)</b>, multimoneda con snapshots de tasa en el pago y operación multisucursal.</li>
+            <li><b>Flujos de dinero atómicos e idempotentes:</b> pagos, excedentes, reembolsos y notas AP/AR, con auditoría y permisos por rol, módulo y sucursal.</li>
+            <li>Desarrollo de punta a punta (arquitectura, backend, contabilidad, despliegue y mantenimiento), con apoyo de agentes de IA para acelerar la implementación conservando las decisiones de arquitectura y negocio.</li>
+          </ul>
+          <div class="stat-row">
+            <div class="stat"><div class="n">~891</div><div class="l">commits · ~16 meses</div></div>
+            <div class="stat"><div class="n">pytest + Jest</div><div class="l">suite de pruebas amplia</div></div>
+            <div class="stat"><div class="n">18</div><div class="l">módulos / apps Django</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></span>
+          <h2>Proyectos destacados</h2>
+        </div>
+
+        <div class="proj">
+          <div class="proj-t">Tienda en línea de jabones artesanales</div>
+          <div class="proj-d">Tienda digital para un cliente real: levantamiento de necesidades, UX/UI orientado a conversión, catálogo, diseño responsive e identidad visual.</div>
+          <div class="proj-tags"><span class="ptag">Cliente real</span><span class="ptag">UX/UI</span><span class="ptag">E-commerce</span></div>
+        </div>
+
+        <div class="proj">
+          <div class="proj-t">Sitio web y portafolio de fotografía</div>
+          <div class="proj-d">Proyecto freelance: dirección visual, optimización de imágenes y presentación profesional de servicios para un cliente.</div>
+          <div class="proj-tags"><span class="ptag">Freelance</span><span class="ptag">Dirección visual</span><span class="ptag">Frontend</span></div>
+        </div>
+
+        <div class="proj">
+          <div class="proj-t">Wiki Universe</div>
+          <div class="proj-d">Experiencia de exploración tipo wiki: arquitectura de contenido, navegación temática e interfaz full-stack.</div>
+          <div class="proj-tags"><span class="ptag">Full-stack</span><span class="ptag">Arquitectura de contenido</span></div>
+        </div>
+
+        <div class="proj">
+          <div class="proj-t">Proyecto estilo red social</div>
+          <div class="proj-d">Perfiles, publicaciones e interacciones: modelado de usuarios y contenido generado por usuarios, frontend y backend.</div>
+          <div class="proj-tags"><span class="ptag">Backend</span><span class="ptag">Modelado de usuarios</span></div>
+        </div>
+      </div>
+
+    </main>
+
+    <div class="foot">
+      <span>Jonás Javier Encarnación · <b>Full-Stack Web Developer &amp; Digital Product Designer</b></span>
+      <span>jonasjavier.dev</span>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
