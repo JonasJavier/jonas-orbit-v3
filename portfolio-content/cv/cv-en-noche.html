@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>CV — Jonás Javier Encarnación</title>
+<title>Résumé — Jonás Javier Encarnación</title>
 <style>
   @font-face{font-family:'Space Grotesk';src:url('fonts/SpaceGrotesk.ttf') format('truetype');font-weight:300 700;font-style:normal;font-display:swap}
   @font-face{font-family:'JetBrains Mono';src:url('fonts/JetBrainsMono.ttf') format('truetype');font-weight:100 800;font-style:normal;font-display:swap}
@@ -23,8 +23,6 @@
       radial-gradient(85% 55% at 84% -6%, rgba(95,210,230,.13), transparent 60%),
       radial-gradient(65% 50% at 5% 3%, rgba(242,180,87,.12), transparent 55%),
       radial-gradient(120% 80% at 55% 118%, rgba(154,140,247,.10), transparent 60%),
-      radial-gradient(48% 34% at 10% 88%, rgba(95,210,230,.10), transparent 62%),
-      radial-gradient(38% 26% at 2% 76%, rgba(154,140,247,.09), transparent 66%),
       linear-gradient(180deg,#04060C 0%,#070B16 55%,#04060C 100%);}
   .stars{position:absolute; inset:0; pointer-events:none; opacity:.95;
     background-image:
@@ -52,8 +50,7 @@
     background:radial-gradient(circle at 34% 30%, #2a3a58, #0a1120 70%);
     box-shadow:0 0 78px rgba(95,210,230,.22), inset -18px -12px 36px rgba(0,0,0,.6), inset 12px 10px 26px rgba(95,210,230,.14); z-index:1}
   .planet .ring{position:absolute; left:50%; top:50%; width:270px; height:74px; transform:translate(-50%,-50%) rotate(-24deg); border-radius:50%; border:2px solid rgba(242,180,87,.32); box-shadow:0 0 16px rgba(242,180,87,.18)}
-  /* luna alta: el cuadrante inferior derecho ya lo ocupa Formación */
-  .moon{position:absolute; width:9px; height:9px; border-radius:50%; right:120px; top:26px; background:#cfd8e6; box-shadow:0 0 10px rgba(207,216,230,.6), 0 0 26px 8px rgba(150,190,235,.16); z-index:1}
+  .moon{position:absolute; width:9px; height:9px; border-radius:50%; right:150px; bottom:120px; background:#cfd8e6; box-shadow:0 0 10px rgba(207,216,230,.6); z-index:1}
   /* estrella fugaz: halo + estela lejana + estela cercana + núcleo con destello */
   .shoot{position:absolute; z-index:1; height:22px; transform-origin:0 50%}
   .shoot .halo{position:absolute; right:-14px; top:50%; width:118px; height:22px; transform:translateY(-50%);
@@ -89,35 +86,32 @@
   .avatar img{width:100%; height:100%; object-fit:cover; object-position:center 20%; display:block}
   .id-name{text-align:center; margin-top:16px; font-size:23px; color:var(--txt); letter-spacing:.3px; line-height:1.12; text-shadow:0 0 22px rgba(95,210,230,.20)}
   .id-role{text-align:center; margin-top:9px; font-size:8px; letter-spacing:2.3px; text-transform:uppercase; color:var(--cyan); line-height:1.7}
-  .id-quote{text-align:center; margin:13px 2px 0; font-size:10px; color:var(--txt2); font-style:italic; line-height:1.55}
+  .id-quote{text-align:center; margin:13px 2px 0; font-size:9.4px; color:var(--txt2); font-style:italic; line-height:1.55}
   .id-quote b{color:var(--amber); font-style:normal}
   .divider{height:1px; margin:18px 0 14px; background:linear-gradient(90deg,transparent, var(--line2) 20%, var(--line2) 80%, transparent)}
-  .s-label{font-size:8.5px; letter-spacing:2.5px; text-transform:uppercase; color:var(--txt3); margin-bottom:13px; display:flex; align-items:center; gap:7px}
+  .s-label{font-size:7.6px; letter-spacing:2.5px; text-transform:uppercase; color:var(--txt3); margin-bottom:11px; display:flex; align-items:center; gap:7px}
   .s-label::before{content:""; width:9px; height:1px; background:var(--cyan2)}
-  .row{display:flex; gap:11px; align-items:flex-start; margin-bottom:14px}
-  .row .ic{flex:0 0 auto; width:29px; height:29px; border-radius:9px; border:1px solid var(--line2); background:rgba(255,255,255,.03); display:flex; align-items:center; justify-content:center}
-  .row .ic svg{width:14.5px; height:14.5px; stroke:var(--cyan); fill:none; stroke-width:1.7}
+  .row{display:flex; gap:10px; align-items:flex-start; margin-bottom:11px}
+  .row .ic{flex:0 0 auto; width:26px; height:26px; border-radius:8px; border:1px solid var(--line2); background:rgba(255,255,255,.03); display:flex; align-items:center; justify-content:center}
+  .row .ic svg{width:13px; height:13px; stroke:var(--cyan); fill:none; stroke-width:1.7}
   .row .rt{min-width:0}
-  .row .rt .k{font-size:8px; letter-spacing:1.3px; text-transform:uppercase; color:var(--txt3)}
-  .row .rt .v{font-size:11px; color:var(--txt); margin-top:2px; word-break:break-word}
-  .row .rt .v.sm{font-size:10px}
-  .row .rt .v a,.foot a{color:inherit; text-decoration:none}
-  .lang{margin-bottom:12px}
-  .lang .lh{display:flex; justify-content:space-between; align-items:center; margin-bottom:7px}
-  .lang .lh b{color:var(--txt); font-weight:600; font-size:11px}
-  .lang .lh .level{font-family:'JetBrains Mono','Consolas',monospace; font-size:9.2px; font-weight:700; letter-spacing:.7px; line-height:1; text-transform:uppercase; padding:3px 8px; border-radius:999px}
-  .lang .lh .native{color:var(--amber); border:1px solid rgba(242,180,87,.52); background:rgba(242,180,87,.08); box-shadow:0 0 12px rgba(242,180,87,.12)}
-  .lang .lh .b2{color:var(--cyan); border:1px solid rgba(95,210,230,.52); background:rgba(95,210,230,.08); box-shadow:0 0 12px rgba(95,210,230,.14)}
+  .row .rt .k{font-size:7.2px; letter-spacing:1.3px; text-transform:uppercase; color:var(--txt3)}
+  .row .rt .v{font-size:9.6px; color:var(--txt); margin-top:1px; word-break:break-word}
+  .row .rt .v.sm{font-size:8.4px}
+  .lang{margin-bottom:11px}
+  .lang .lh{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px}
+  .lang .lh b{color:var(--txt); font-weight:600; font-size:9.8px}
+  .lang .lh span{color:var(--txt3); font-size:7.7px; letter-spacing:.6px; text-transform:uppercase}
   .dots{display:flex; gap:5px}
   .dots i{width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.14)}
   .dots i.on{background:linear-gradient(120deg,var(--amber),var(--cyan)); box-shadow:0 0 6px rgba(95,210,230,.5)}
   .pills{display:flex; flex-wrap:wrap; gap:5px}
-  .pill{font-size:9.7px; padding:4px 11px; border-radius:20px; border:1px solid var(--line2); color:var(--txt2); background:rgba(255,255,255,.025)}
+  .pill{font-size:8.5px; padding:3px 9px; border-radius:20px; border:1px solid var(--line2); color:var(--txt2); background:rgba(255,255,255,.025)}
   .pill.key{border-color:rgba(242,180,87,.5); color:var(--amber); background:rgba(242,180,87,.06)}
 
   /* MAIN */
   .main{padding:28px 34px 16px}
-  .sec{margin-bottom:19px}
+  .sec{margin-bottom:17px}
   .sec:last-child{margin-bottom:0}
   .sec-h{display:flex; align-items:center; gap:12px; margin-bottom:12px}
   .sec-h .idx{font-size:8.6px; color:var(--cyan2); text-shadow:0 0 9px rgba(95,210,230,.5)}
@@ -132,28 +126,27 @@
   .item .node{position:absolute; left:-23px; top:3px; width:11px; height:11px; border-radius:50%; background:var(--bg0); border:2px solid var(--cyan2)}
   .item.now .node{border-color:var(--amber); box-shadow:0 0 0 3px rgba(242,180,87,.15), 0 0 9px rgba(242,180,87,.5)}
   .it-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
-  .it-role{font-size:13.2px; color:var(--txt); font-weight:600}
-  .it-org{font-size:10.1px; color:var(--amber2); font-weight:600; margin-top:1.5px}
+  .it-role{font-size:12.5px; color:var(--txt); font-weight:600}
+  .it-org{font-size:9.4px; color:var(--amber2); font-weight:600; margin-top:1px}
   .it-org .at{color:var(--cyan)}
-  .it-when{font-size:9.3px; color:var(--txt2); white-space:nowrap; text-align:right}
-  .item ul{list-style:none; margin-top:8px; display:grid; gap:5.5px}
-  .item li{position:relative; padding-left:15px; font-size:10.6px; color:var(--txt2); line-height:1.5}
+  .it-when{font-size:8.6px; color:var(--txt2); white-space:nowrap; text-align:right}
+  .item ul{list-style:none; margin-top:7px; display:grid; gap:5px}
+  .item li{position:relative; padding-left:15px; font-size:9.7px; color:var(--txt2); line-height:1.48}
   .item li::before{content:""; position:absolute; left:1px; top:5px; width:5px; height:5px; border-radius:50%; background:var(--cyan2); box-shadow:0 0 6px rgba(56,180,205,.6)}
   .item li b{color:var(--txt); font-weight:600}
 
   .proj-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 13px}
   .card{border:1px solid rgba(255,255,255,.24); border-radius:12px; padding:12px 14px; background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.022)); box-shadow:0 5px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06)}
-  .card .ct{font-size:11.1px; color:var(--txt); font-weight:600}
-  .card .cd{font-size:9.9px; color:var(--txt2); margin-top:4.5px; line-height:1.5}
+  .card .ct{font-size:10.3px; color:var(--txt); font-weight:600}
+  .card .cd{font-size:9px; color:var(--txt2); margin-top:4px; line-height:1.5}
   .card .tags{margin-top:8px; display:flex; flex-wrap:wrap; gap:4px}
-  .tag{font-size:8.1px; letter-spacing:.4px; color:var(--cyan); border:1px solid rgba(95,210,230,.35); padding:1.5px 7px; border-radius:5px; background:rgba(95,210,230,.05)}
-  .tag.live{color:#7FE3A8; border-color:rgba(127,227,168,.38); background:rgba(127,227,168,.06)}
+  .tag{font-size:7.4px; letter-spacing:.4px; color:var(--cyan); border:1px solid rgba(95,210,230,.35); padding:1px 7px; border-radius:5px; background:rgba(95,210,230,.05)}
 
   .skills{display:grid; gap:9px}
-  .srow{display:grid; grid-template-columns:138px 1fr; gap:12px; align-items:baseline}
-  .srow .sl{font-size:8px; letter-spacing:.45px; text-transform:uppercase; font-weight:700; color:var(--cyan2); line-height:1.35}
+  .srow{display:grid; grid-template-columns:112px 1fr; gap:12px; align-items:baseline}
+  .srow .sl{font-size:7.8px; letter-spacing:1.2px; text-transform:uppercase; font-weight:700; color:var(--cyan2)}
   .srow.core .sl{color:var(--amber)}
-  .srow .sv{font-size:10.5px; color:var(--txt); line-height:1.5}
+  .srow .sv{font-size:9.8px; color:var(--txt); line-height:1.5}
   .srow.core .sv{font-weight:600}
 
   .edu-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px}
@@ -164,13 +157,13 @@
   .tile.multi{background:linear-gradient(150deg,var(--amber),var(--cyan2))}
   .tile.school{background:linear-gradient(150deg,#2a3346,#141b2b)}
   .tile svg{width:17px; height:17px; stroke:#fff; fill:none; stroke-width:1.8}
-  .edu .eb .t{font-size:10.9px; color:var(--txt); font-weight:600; line-height:1.25}
-  .edu .eb .o{font-size:9.7px; color:var(--txt3); margin-top:2.5px; line-height:1.4}
+  .edu .eb .t{font-size:9.8px; color:var(--txt); font-weight:600; line-height:1.25}
+  .edu .eb .o{font-size:8.4px; color:var(--txt3); margin-top:2px}
   .edu .eb .o b{color:var(--amber2); font-weight:600}
 
-  .foot{position:absolute; left:0; right:0; bottom:0; padding:8px 34px; display:flex; justify-content:space-between; align-items:center; font-size:8.2px; color:var(--txt3); letter-spacing:.6px; border-top:1px solid var(--line); z-index:3}
+  .foot{position:absolute; left:0; right:0; bottom:0; padding:8px 34px; display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--txt3); letter-spacing:.6px; border-top:1px solid var(--line); z-index:3}
   .foot b{color:var(--amber)}
-  .foot .site{display:inline-flex; align-items:center; gap:5px; color:var(--cyan); font-size:9.4px; letter-spacing:.8px; text-shadow:0 0 10px rgba(95,210,230,.65)}
+  .foot .site{display:inline-flex; align-items:center; gap:5px; color:var(--cyan); font-size:8.9px; letter-spacing:.8px; text-shadow:0 0 10px rgba(95,210,230,.65)}
   .foot .site svg{width:11px; height:11px; stroke:var(--cyan); fill:none; stroke-width:1.6; filter:drop-shadow(0 0 4px rgba(95,210,230,.75))}
 </style>
 </head>
@@ -190,89 +183,89 @@
       <div class="avatar-wrap"><div class="avatar-ring"></div><div class="avatar"><img src="profile.jpg" alt="Jonás Javier Encarnación"></div></div>
       <div class="id-name display">Jonás Javier<br>Encarnación</div>
       <div class="id-role">Full-Stack Web Developer<br>&amp; Digital Product Designer</div>
-      <div class="id-quote">“No separo creatividad y tecnología: las mantengo en la <b>misma órbita</b>.”</div>
+      <div class="id-quote">“I don't separate creativity from technology: I keep them in the <b>same orbit</b>.”</div>
 
       <div class="divider"></div>
-      <div class="s-label">Contacto</div>
-      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><div class="rt"><div class="k">Email</div><div class="v sm"><a href="mailto:jonasjavier.dev@gmail.com">jonasjavier.dev@gmail.com</a></div></div></div>
-      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span><div class="rt"><div class="k">Sitio web</div><div class="v"><a href="https://jonasjavier.dev">jonasjavier.dev</a></div></div></div>
-      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg></span><div class="rt"><div class="k">Teléfono</div><div class="v"><a href="tel:+18498625049">+1 849 862 5049</a></div></div></div>
-      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div class="rt"><div class="k">Ubicación</div><div class="v">Bonao, República Dominicana</div></div></div>
+      <div class="s-label">Contact</div>
+      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><div class="rt"><div class="k">Email</div><div class="v sm">jonasjavier.dev@gmail.com</div></div></div>
+      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span><div class="rt"><div class="k">Website</div><div class="v">jonasjavier.dev</div></div></div>
+      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg></span><div class="rt"><div class="k">Phone</div><div class="v">+1 849 862 5049</div></div></div>
+      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div class="rt"><div class="k">Location</div><div class="v">Bonao, Dominican Republic</div></div></div>
 
       <div class="divider"></div>
-      <div class="s-label">Redes</div>
-      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.4-4-2.2-6-2.6M15 21v-3.5a3 3 0 0 0-.9-2.4c3-.3 6-1.5 6-6.6a5 5 0 0 0-1.4-3.6 4.6 4.6 0 0 0-.1-3.5s-1.1-.3-3.6 1.4a12.6 12.6 0 0 0-6.6 0C4.3 1 3.2 1.3 3.2 1.3a4.6 4.6 0 0 0-.1 3.5A5 5 0 0 0 1.7 8.4c0 5 3 6.3 5.9 6.6a3 3 0 0 0-.8 2.3V21"/></svg></span><div class="rt"><div class="k">GitHub</div><div class="v"><a href="https://github.com/JonasJavier">github.com/JonasJavier</a></div></div></div>
-      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 10v7M7 7v0M11 17v-4a2 2 0 0 1 4 0v4"/></svg></span><div class="rt"><div class="k">LinkedIn</div><div class="v sm"><a href="https://www.linkedin.com/in/jonas-javier-247b50425">in/jonas-javier-247b50425</a></div></div></div>
+      <div class="s-label">Links</div>
+      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><path d="M9 19c-4 1.4-4-2.2-6-2.6M15 21v-3.5a3 3 0 0 0-.9-2.4c3-.3 6-1.5 6-6.6a5 5 0 0 0-1.4-3.6 4.6 4.6 0 0 0-.1-3.5s-1.1-.3-3.6 1.4a12.6 12.6 0 0 0-6.6 0C4.3 1 3.2 1.3 3.2 1.3a4.6 4.6 0 0 0-.1 3.5A5 5 0 0 0 1.7 8.4c0 5 3 6.3 5.9 6.6a3 3 0 0 0-.8 2.3V21"/></svg></span><div class="rt"><div class="k">GitHub</div><div class="v">github.com/JonasJavier</div></div></div>
+      <div class="row"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 10v7M7 7v0M11 17v-4a2 2 0 0 1 4 0v4"/></svg></span><div class="rt"><div class="k">LinkedIn</div><div class="v sm">in/jonas-javier-247b50425</div></div></div>
 
       <div class="divider"></div>
-      <div class="s-label">Idiomas</div>
-      <div class="lang"><div class="lh"><b>Español</b><span class="level native">Nativo</span></div><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
-      <div class="lang"><div class="lh"><b>Inglés</b><span class="level b2">B2</span></div><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+      <div class="s-label">Languages</div>
+      <div class="lang"><div class="lh"><b>Spanish</b><span>Native</span></div><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+      <div class="lang"><div class="lh"><b>English</b><span>B2 · Professional</span></div><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
 
       <div class="divider"></div>
-      <div class="s-label">Disponibilidad</div>
-      <div class="pills"><span class="pill key">Full-time remoto</span><span class="pill key">Freelance</span><span class="pill">Disponible ahora</span></div>
+      <div class="s-label">Availability</div>
+      <div class="pills"><span class="pill key">Full-time remote</span><span class="pill key">Freelance</span><span class="pill">Available now</span></div>
     </aside>
 
     <main class="main">
 
       <div class="sec">
-        <div class="sec-h"><span class="idx mono">01</span><h2>Experiencia</h2><span class="rule"></span></div>
+        <div class="sec-h"><span class="idx mono">01</span><h2>Experience</h2><span class="rule"></span></div>
         <div class="tl">
           <div class="item now">
             <span class="node"></span>
-            <div class="it-top"><div><div class="it-role">Desarrollador Full-Stack</div><div class="it-org">CristegnoViajes SRL <span class="at">· OMSTA</span></div></div><div class="it-when mono">Feb 2025 — Actualidad</div></div>
+            <div class="it-top"><div><div class="it-role">Full-Stack Developer</div><div class="it-org">CristegnoViajes SRL <span class="at">· OMSTA</span></div></div><div class="it-when mono">Feb 2025 — Present</div></div>
             <ul>
-              <li>Diseñé y desarrollé de extremo a extremo <b>OMSTA</b>, un ERP <b>en producción usado a diario por 9 usuarios</b> para gestionar las operaciones de la agencia.</li>
-              <li>Integré <b>reservas, CRM, cobros, contabilidad de doble partida, nómina, sucursales, usuarios y permisos</b> y reportes fiscales (DGII).</li>
-              <li>Construí frontend y backend con <b>Django, DRF, PostgreSQL y Redis</b>, y gestioné el despliegue y la evolución en producción.</li>
+              <li>Designed and built <b>OMSTA</b> end to end, an ERP <b>in production used daily by 9 users</b> to run the agency's operations.</li>
+              <li>Integrated <b>bookings, CRM, payments, double-entry accounting, payroll, branches, users &amp; permissions</b> and tax reports (DGII).</li>
+              <li>Built the frontend and backend with <b>Django, DRF, PostgreSQL and Redis</b>, and managed deployment and evolution in production.</li>
             </ul>
           </div>
           <div class="item">
             <span class="node"></span>
-            <div class="it-top"><div><div class="it-role">Desarrollo y Diseño Web · Freelance</div><div class="it-org">Proyectos para clientes reales</div></div><div class="it-when mono">2024 — Actualidad</div></div>
+            <div class="it-top"><div><div class="it-role">Web Development &amp; Design · Freelance</div><div class="it-org">Projects for real clients</div></div></div>
             <ul>
-              <li>Diseñé y desarrollé <b>dos productos web completos para clientes reales</b>: un e-commerce de jabones artesanales y un portafolio profesional de fotografía.</li>
-              <li>Me encargué del <b>levantamiento de necesidades, UX/UI, desarrollo responsive</b> y la entrega final del producto.</li>
+              <li>Designed and built <b>web products for real clients</b>, including an artisan-soap e-commerce and a professional photography portfolio.</li>
+              <li>Owned <b>requirements gathering, UX/UI, development and responsive optimization</b> through final delivery.</li>
             </ul>
           </div>
         </div>
       </div>
 
       <div class="sec">
-        <div class="sec-h"><span class="idx mono">02</span><h2>Proyectos</h2><span class="rule"></span></div>
+        <div class="sec-h"><span class="idx mono">02</span><h2>Projects</h2><span class="rule"></span></div>
         <div class="proj-grid">
-          <div class="card"><div class="ct">Delicaté 4.0 — Jabones artesanales</div><div class="cd">E-commerce y sitio de marca para un negocio de jabones artesanales: catálogo administrable con Django REST, experiencia en React, filtros, carrito persistente y pedidos por WhatsApp.</div><div class="tags"><span class="tag">React · Django REST</span><span class="tag live">Próximo a producción</span></div></div>
-          <div class="card"><div class="ct">Network 3.0 — Red social</div><div class="cd">Red social full-stack: feed infinito, publicaciones con imágenes, likes, comentarios anidados, perfiles y notificaciones (JWT).</div><div class="tags"><span class="tag">React · TS</span><span class="tag">Django REST</span><span class="tag live">Proyecto personal · En producción</span></div></div>
-          <div class="card"><div class="ct">Wiki Universe</div><div class="cd">Plataforma full-stack para explorar universos, personajes y contenidos relacionados mediante categorías, búsqueda y navegación temática.</div><div class="tags"><span class="tag">Full-stack</span><span class="tag live">Próximo a producción</span></div></div>
-          <div class="card"><div class="ct">Sitio &amp; portafolio de fotografía</div><div class="cd">Sitio profesional para un fotógrafo: portafolio visual optimizado, presentación de servicios, identidad de marca y canal de contacto.</div><div class="tags"><span class="tag">React</span><span class="tag live">Próximo a producción</span></div></div>
+          <div class="card"><div class="ct">Delicaté 4.0 — Artisan soaps</div><div class="cd">E-commerce and brand site: catalog in Django REST, experience in React + Vite, persistent cart and WhatsApp checkout.</div><div class="tags"><span class="tag">React · Django REST</span><span class="tag">E-commerce</span></div></div>
+          <div class="card"><div class="ct">Network 3.0 — Social network</div><div class="cd">Full-stack social network: infinite feed, image posts, likes, nested comments, profiles and notifications (JWT).</div><div class="tags"><span class="tag">React · TS</span><span class="tag">Django REST</span></div></div>
+          <div class="card"><div class="ct">Wiki Universe</div><div class="cd">Wiki-style exploration experience: content architecture and clear themed navigation, full-stack.</div><div class="tags"><span class="tag">Full-stack</span><span class="tag">Content</span></div></div>
+          <div class="card"><div class="ct">Photography site &amp; portfolio</div><div class="cd">Full website for a photographer, in React: visual portfolio, services, about and contact.</div><div class="tags"><span class="tag">React</span><span class="tag">Client</span></div></div>
         </div>
       </div>
 
       <div class="sec">
-        <div class="sec-h"><span class="idx mono">03</span><h2>Habilidades</h2><span class="rule"></span></div>
+        <div class="sec-h"><span class="idx mono">03</span><h2>Skills</h2><span class="rule"></span></div>
         <div class="skills">
-          <div class="srow core"><div class="sl">Stack principal</div><div class="sv">Python · Django · DRF · React · TypeScript · PostgreSQL · Redis</div></div>
-          <div class="srow"><div class="sl">Frontend y producto</div><div class="sv">Next.js · Tailwind CSS · UX/UI · Accesibilidad · SEO</div></div>
-          <div class="srow"><div class="sl">Infraestructura y calidad</div><div class="sv">Docker · Railway · Vercel · Git · GitHub · Playwright</div></div>
-          <div class="srow"><div class="sl">Diseño y creatividad</div><div class="sv">Figma · Photoshop · Lightroom · Fotografía · Dirección visual · Marketing digital</div></div>
+          <div class="srow core"><div class="sl">Core</div><div class="sv">Python · Django · Django REST · React · TypeScript · PostgreSQL · Redis</div></div>
+          <div class="srow"><div class="sl">Frontend &amp; product</div><div class="sv">Next.js · Tailwind CSS · UX/UI · Accessibility · SEO</div></div>
+          <div class="srow"><div class="sl">Infra &amp; quality</div><div class="sv">Docker · Railway · Vercel · GitHub · Playwright · REST APIs</div></div>
+          <div class="srow"><div class="sl">Design &amp; creative</div><div class="sv">Figma · Photoshop · Lightroom · Photography · Art direction · Digital marketing</div></div>
         </div>
       </div>
 
       <div class="sec">
-        <div class="sec-h"><span class="idx mono">04</span><h2>Formación</h2><span class="rule"></span></div>
+        <div class="sec-h"><span class="idx mono">04</span><h2>Education</h2><span class="rule"></span></div>
         <div class="edu-grid">
           <div class="edu"><div class="tile logo"><img src="harvard.png" alt="Harvard University"></div><div class="eb"><div class="t">CS50x &amp; CS50W</div><div class="o"><b>Harvard University</b> · CS50 · 2023 · 2024</div></div></div>
-          <div class="edu"><div class="tile logo"><img src="educacion-it.png" alt="EducaciónIT"></div><div class="eb"><div class="t">Carrera de Marketing Digital</div><div class="o"><b>EducaciónIT</b> · Manhattan University · 207 h</div></div></div>
-          <div class="edu"><div class="tile multi"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 18 5-5 3.5 3.5L16 13l4 4"/></svg></div><div class="eb"><div class="t">Diseño Multimedia</div><div class="o"><b>ITLA</b> · Formación complementaria · 8 meses</div></div></div>
-          <div class="edu"><div class="tile school"><svg viewBox="0 0 24 24"><path d="M12 4 3 8l9 4 9-4-9-4Z"/><path d="M7 10v4c0 1 2 2.5 5 2.5s5-1.5 5-2.5v-4"/></svg></div><div class="eb"><div class="t">Bachiller en Humanidades</div><div class="o">MINERD, Rep. Dom. · 2024</div></div></div>
+          <div class="edu"><div class="tile logo"><img src="educacion-it.png" alt="EducaciónIT"></div><div class="eb"><div class="t">Digital Marketing Program</div><div class="o"><b>EducaciónIT</b> · Manhattan University · 207 hrs</div></div></div>
+          <div class="edu"><div class="tile multi"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 18 5-5 3.5 3.5L16 13l4 4"/></svg></div><div class="eb"><div class="t">Multimedia Design</div><div class="o">Complementary training · ~1 year</div></div></div>
+          <div class="edu"><div class="tile school"><svg viewBox="0 0 24 24"><path d="M12 4 3 8l9 4 9-4-9-4Z"/><path d="M7 10v4c0 1 2 2.5 5 2.5s5-1.5 5-2.5v-4"/></svg></div><div class="eb"><div class="t">High School Diploma · Humanities</div><div class="o">MINERD, Dominican Rep. · 2024</div></div></div>
         </div>
       </div>
 
     </main>
   </div>
 
-  <div class="foot"><span>Jonás Javier Encarnación · <b>Full-Stack Web Developer &amp; Digital Product Designer</b></span><a class="site mono" href="https://jonasjavier.dev"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>jonasjavier.dev</a></div>
+  <div class="foot"><span>Jonás Javier Encarnación · <b>Full-Stack Web Developer &amp; Digital Product Designer</b></span><span class="site mono"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>jonasjavier.dev</span></div>
 </div>
 </body>
 </html>

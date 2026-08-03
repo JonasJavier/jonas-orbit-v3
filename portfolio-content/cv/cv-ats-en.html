@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Résumé — Jonás Javier Encarnación</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  @page{ size:Letter; margin:0.6in 0.7in }
+  body{font-family:Arial,"Helvetica Neue",Helvetica,"Segoe UI",sans-serif; color:#1a1a1a; font-size:10.8px; line-height:1.42; background:#fff}
+  a{color:#1a1a1a; text-decoration:none}
+
+  .name{font-size:24px; font-weight:700; color:#0f2a4a; letter-spacing:.2px}
+  .title{font-size:11.5px; font-weight:700; color:#2b6ca3; margin-top:2px; letter-spacing:.3px}
+  .contact{margin-top:7px; font-size:10.2px; color:#333; line-height:1.55}
+  .contact a{color:#1a4f80}
+  .rule{height:2px; background:#0f2a4a; margin:9px 0 0}
+
+  h2{font-size:11.5px; text-transform:uppercase; letter-spacing:1.1px; color:#0f2a4a; font-weight:700;
+     margin:15px 0 7px; padding-bottom:3px; border-bottom:1px solid #c9d3de}
+
+  .summary{font-size:10.8px; color:#2a2a2a}
+
+  .entry{margin-bottom:10px}
+  .entry-h{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+  .entry-h .role{font-size:11.6px; font-weight:700; color:#111}
+  .entry-h .role .co{font-weight:700; color:#2b6ca3}
+  .entry-h .when{font-size:10px; color:#555; white-space:nowrap; font-weight:700}
+  .entry .place{font-size:9.8px; color:#666; margin-top:1px}
+  ul{margin:5px 0 0 17px}
+  li{font-size:10.6px; color:#2a2a2a; margin-bottom:2.5px; line-height:1.4}
+  li b, .summary b{color:#111}
+
+  .proj{font-size:10.6px; color:#2a2a2a; margin-bottom:4px; padding-left:15px; position:relative; line-height:1.42}
+  .proj::before{content:"▪"; position:absolute; left:0; color:#2b6ca3}
+  .proj b{color:#111}
+
+  .skill{font-size:10.6px; margin-bottom:3px}
+  .skill .lab{font-weight:700; color:#0f2a4a}
+
+  .edu{font-size:10.6px; color:#2a2a2a; margin-bottom:3px; padding-left:15px; position:relative; line-height:1.42}
+  .edu::before{content:"▪"; position:absolute; left:0; color:#2b6ca3}
+  .edu b{color:#111}
+
+  .two{display:flex; gap:26px; flex-wrap:wrap}
+  .two > div{font-size:10.6px}
+</style>
+</head>
+<body>
+
+  <div class="name">Jonás Javier Encarnación</div>
+  <div class="title">Full-Stack Web Developer &amp; Digital Product Designer</div>
+  <div class="contact">
+    Bonao, Dominican Republic &nbsp;·&nbsp; +1 849 862 5049 &nbsp;·&nbsp; <a href="mailto:jonasjavier.dev@gmail.com">jonasjavier.dev@gmail.com</a><br>
+    <a href="https://jonasjavier.dev">https://jonasjavier.dev</a> &nbsp;·&nbsp; <a href="https://linkedin.com/in/jonas-javier-247b50425">linkedin.com/in/jonas-javier-247b50425</a> &nbsp;·&nbsp; <a href="https://github.com/JonasJavier">github.com/JonasJavier</a><br>
+    Languages: Spanish (native), English (B2 · professional) &nbsp;·&nbsp; Availability: full-time remote or freelance
+  </div>
+  <div class="rule"></div>
+
+  <h2>Summary</h2>
+  <div class="summary">Full-stack developer who has designed, built and shipped real products to production. I combine engineering (Python/Django and React/TypeScript) with UX/UI, product design and digital marketing. My flagship work is <b>OMSTA</b>, an ERP in production used every day by a travel agency, which I built end to end.</div>
+
+  <h2>Experience</h2>
+  <div class="entry">
+    <div class="entry-h"><div class="role">Full-Stack Developer — <span class="co">CristegnoViajes SRL (OMSTA)</span></div><div class="when">Feb 2025 – Present</div></div>
+    <div class="place">Dominican Republic</div>
+    <ul>
+      <li>Designed and built <b>OMSTA</b> end to end, an ERP <b>in production used daily by 9 users</b> to run the agency's operations.</li>
+      <li>Integrated <b>bookings, CRM, payments, double-entry accounting, payroll, branches, users and permissions</b>, and DGII tax reports.</li>
+      <li>Built the frontend and backend with <b>Django, Django REST Framework, PostgreSQL and Redis</b>, and managed deployment and evolution in production.</li>
+    </ul>
+  </div>
+  <div class="entry">
+    <div class="entry-h"><div class="role">Web Developer &amp; Designer — <span class="co">Freelance</span></div><div class="when">Ongoing</div></div>
+    <div class="place">Dominican Republic</div>
+    <ul>
+      <li>Designed and built <b>web products for real clients</b>, including an artisan-soap e-commerce and a professional photography portfolio.</li>
+      <li>Owned <b>requirements gathering, UX/UI, development and responsive optimization</b> through final delivery.</li>
+    </ul>
+  </div>
+
+  <h2>Selected Projects</h2>
+  <div class="proj"><b>Delicaté 4.0 — Artisan-soap e-commerce &amp; brand site.</b> Catalog managed in Django REST, public experience in React + Vite, category/benefit filters, persistent cart and WhatsApp checkout.</div>
+  <div class="proj"><b>Network 3.0 — Full-stack social network.</b> React + TypeScript and Django REST; JWT auth, infinite-scroll feed, image posts, likes, nested comments, profiles, follows and notifications.</div>
+  <div class="proj"><b>Wiki Universe — Content-exploration experience.</b> Content architecture and clear themed navigation; full-stack.</div>
+  <div class="proj"><b>Photography site &amp; portfolio.</b> Full website for a photographer built in React: visual portfolio plus services, about and contact.</div>
+
+  <h2>Skills</h2>
+  <div class="skill"><span class="lab">Core:</span> Python, Django, Django REST Framework, React, TypeScript, PostgreSQL, Redis</div>
+  <div class="skill"><span class="lab">Frontend &amp; product:</span> Next.js, Tailwind CSS, UX/UI, Accessibility, SEO</div>
+  <div class="skill"><span class="lab">Infrastructure &amp; quality:</span> Docker, Railway, Vercel, Git/GitHub, Playwright, REST APIs</div>
+  <div class="skill"><span class="lab">Design &amp; creative:</span> Figma, Photoshop, Lightroom, Photography, Art direction, Digital marketing</div>
+
+  <h2>Education</h2>
+  <div class="edu"><b>CS50x &amp; CS50W</b> — Harvard University (CS50). Certificates completed, 2023–2024.</div>
+  <div class="edu"><b>Digital Marketing Program</b> — EducaciónIT and Manhattan University. 207 hours, 2024.</div>
+  <div class="edu"><b>Multimedia Design</b> — Complementary creative training, approx. 1 year.</div>
+  <div class="edu"><b>High School Diploma, Humanities &amp; Modern Languages</b> — Ministry of Education (MINERD), Dominican Republic, 2024.</div>
+
+</body>
+</html>
