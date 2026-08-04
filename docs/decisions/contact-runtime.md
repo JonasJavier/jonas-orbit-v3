@@ -30,6 +30,46 @@ caracteres, enviará `CF-Connecting-IP` cuando exista, establecerá timeout y
 comprobará `action` y hostname en producción. Los errores internos no se devuelven
 al visitante.
 
+El widget usa renderizado explícito con `action: contact`. El navegador obtiene
+el sitekey en tiempo de ejecución desde `GET /api/contact`; ninguna clave queda
+horneada en el bundle. E2E activa `CONTACT_RUNTIME_ENV=test` y usa un token
+determinista que solo es aceptado bajo ese modo. Producción rechaza tanto el modo
+de prueba como las claves oficiales de prueba.
+
+## Entrega del mensaje
+
+La entrega usa la API HTTP de Resend directamente, sin SDK adicional. El handler
+envía una versión de texto y otra HTML escapada, usa el correo del visitante como
+`reply_to`, añade una clave de idempotencia por intento y aplica timeout. El
+portafolio no persiste el mensaje en una base de datos.
+
+Bindings y secretos necesarios en producción:
+
+| Nombre | Tipo | Propósito |
+| --- | --- | --- |
+| `CONTACT_RUNTIME_ENV=production` | var en `wrangler.jsonc` | Cierra las rutas de prueba |
+| `TURNSTILE_SITE_KEY` | secret | Sitekey que el endpoint entrega al navegador |
+| `TURNSTILE_SECRET_KEY` | secret | Validación server-side con Siteverify |
+| `TURNSTILE_EXPECTED_HOSTNAME` | secret | Host exacto aceptado por la validación |
+| `RESEND_API_KEY` | secret | Autoriza la entrega por Resend |
+| `CONTACT_FROM_EMAIL` | secret | Remitente verificado, por ejemplo `Orbit <contacto@dominio>` |
+| `CONTACT_TO_EMAIL` | secret | Buzón privado que recibe la transmisión |
+
+Configuración, sin registrar valores en Git:
+
+```powershell
+npx wrangler secret put TURNSTILE_SITE_KEY
+npx wrangler secret put TURNSTILE_SECRET_KEY
+npx wrangler secret put TURNSTILE_EXPECTED_HOSTNAME
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put CONTACT_FROM_EMAIL
+npx wrangler secret put CONTACT_TO_EMAIL
+```
+
+Antes del primer deploy hay que verificar el dominio remitente en Resend. En una
+preview local que deba entregar correo se pasan las mismas variables al proceso;
+para QA automatizado se mantiene `CONTACT_DELIVERY_MODE=test`.
+
 ## Rate limiting como IaC
 
 `infra/cloudflare/contact-rate-limit.tf` declara un ruleset de zona en la fase
@@ -41,4 +81,6 @@ como estado recuperable en el formulario.
 
 - https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 - https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
+- https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/
 - https://developers.cloudflare.com/terraform/additional-configurations/rate-limiting-rules/
+- https://resend.com/docs/api-reference/emails/send-email

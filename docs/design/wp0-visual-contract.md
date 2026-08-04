@@ -19,9 +19,12 @@ Principios:
 
 ## Tipografía
 
-- **Display:** Bahnschrift → Aptos Display → Segoe UI Variable Display.
-- **Texto:** Segoe UI Variable Text → Aptos → Segoe UI.
-- **Telemetría:** Cascadia Code → Cascadia Mono → Consolas.
+- **Display:** Bahnschrift → Aptos Display → Segoe UI Variable Display →
+  Avenir Next Condensed → `-apple-system` → Helvetica Neue → Roboto → Noto Sans.
+- **Texto:** Segoe UI Variable Text → Aptos → Segoe UI → `-apple-system` →
+  Helvetica Neue → Roboto → Noto Sans.
+- **Telemetría:** Cascadia Code → Cascadia Mono → `ui-monospace` → SF Mono →
+  Menlo → Consolas → Liberation Mono.
 - H1: `clamp(3.5rem, 7.3vw, 7.5rem)`, línea 0.87, máximo 12 caracteres.
 - H2 de mundo: `clamp(2.8rem, 6vw, 6.5rem)`.
 - Texto largo: 16–18 px, línea 1.65–1.8, ancho máximo aproximado de 70 caracteres.
@@ -29,6 +32,12 @@ Principios:
 Se usan fuentes del sistema para evitar transferencia, bloqueo de render y una
 dependencia tipográfica externa en F1A. La personalidad proviene de jerarquía,
 condensación y contraste, no de descargar una fuente por defecto.
+
+Cada pila empieza por Windows y **debe** terminar en equivalentes de Apple,
+Android y Linux antes del genérico. Corregido el 2026-08-03 en la auditoría de
+WP6: las pilas originales solo nombraban fuentes de Microsoft, así que en macOS,
+iOS y Android el display y el texto caían a `sans-serif` genérico y la identidad
+tipográfica desaparecía. Al revisarse desde Windows el fallo era invisible.
 
 ## Color y luz
 
@@ -71,7 +80,9 @@ cinematográficos.
 
 - Cabecera sticky de dos niveles: identidad/estado y mapa de siete mundos.
 - El segundo nivel tiene scroll horizontal en móvil y no oculta destinos.
-- El estado activo se añadirá con el store de WP4; WP1 preserva los anchors.
+- El estado activo consume el store canónico de WP4, centra el destino visible
+  en móvil y expone `aria-current="location"` sin convertir el menú en otro
+  controlador del scroll.
 
 ### Hero
 
@@ -129,3 +140,22 @@ Los mensajes no dependen únicamente del color y se anuncian con `aria-live`.
 - Línea de señal en el indicador de scroll.
 - Sin parallax, scroll listeners, canvas ni controlador de cámara: pertenecen a
   WP4/F2B y no deben aparecer antes.
+
+## Contrato de narrativa espacial — WP4
+
+- El scroll del documento es la única fuente de verdad. Un único `requestAnimationFrame`
+  bajo demanda calcula `worldIndex`, `worldProgress` y `globalProgress` y los
+  publica en Zustand; el canvas solo dibuja la fotografía de ese mismo estado.
+- La selección explícita usa `pushState`; el scroll usa `replaceState`. Cada
+  entrada conserva fase e índice para restaurar Atrás/Adelante sin contaminar el
+  historial ni depender de un slug como identidad estructural.
+- Los saltos re-miden y re-anclan tras materializar contenido diferido. Esto
+  evita drift en 375 px con `content-visibility: auto` y alturas intrínsecas.
+- Motion aporta entradas editoriales y el HUD; las scroll-driven animations CSS
+  son una mejora progresiva, nunca un requisito para comprender el contenido.
+- El starfield 2D es determinista, responde solo al progreso, limita DPR a 1.75
+  y se monta después de hidratación/idle. No mantiene un loop permanente.
+- `prefers-reduced-motion` veta el canvas, los desplazamientos y el scroll suave;
+  conserva los siete destinos, el fondo estático, anclas, historial y telemetría.
+- En móvil el HUD ocupa el corredor bajo la navegación sticky para no tapar CTAs,
+  canales ni campos del formulario.

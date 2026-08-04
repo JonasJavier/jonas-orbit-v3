@@ -235,16 +235,23 @@ Appendix A:
 4. **Cerrado 2026-08-03 — WP2 · Endurance:** índice de proyectos, cuatro rutas
    F1A, caso OMSTA, composición Velite, metadata/OG, galería, captions, estados
    opcionales y 404.
-5. **WP3 — Ranger y conversión:** publicar oferta freelance y canal directo;
-   implementar formulario, Turnstile, Worker, rate limit, privacidad y página de
-   gracias con todos sus estados de error y reintento.
-6. **WP4 — narrativa:** implementar contrato scroll→store, anclas/historial,
-   Motion y starfield 2D diferido sin crear un segundo controlador de cámara.
-7. **WP5 — Edmunds:** curar 8-12 fotografías y 3-4 diseños con título, alt y
-   orden; construir galería/visor accesible y completar el viaje móvil.
-8. **WP6 — release:** SEO técnico, sitemap, robots, OG, enlaces, presupuestos de
-   bundle y perfiles Lighthouse; alinear LinkedIn/GitHub, preparar la lista de
-   aplicaciones, elegir dominio/301, configurar secrets y verificar el deploy.
+5. **Cerrado 2026-08-03 — WP3 · Ranger y conversión:** oferta freelance, canales
+   directos, CV ES/EN, formulario accesible, Turnstile server-side, honeypot,
+   Route Handler OpenNext, entrega Resend, rate limit IaC, privacidad y página de
+   gracias con estados de error y reintento.
+6. **Cerrado 2026-08-03 — WP4 · narrativa espacial:** contrato scroll→store,
+   anclas e historial coherentes, navegación/HUD activos, Motion universal y
+   starfield 2D diferido sin crear un segundo controlador de cámara.
+7. **WP5 — Edmunds: BLOQUEADO POR MATERIAL (2026-08-03).** No existe ninguna
+   fotografía ni diseño en el repositorio. Curar 8-12 fotografías y 3-4 diseños
+   con título, alt y orden; construir galería/visor accesible y completar el
+   viaje móvil. Es el único bloqueo de contenido que le queda a F1A.
+8. **WP6 — release: código cerrado 2026-08-03.** Hechos: SEO técnico, sitemap,
+   robots, OG e imagen OG, JSON-LD, override `?no3d=1`, y los jobs de CI de
+   Lighthouse, enlaces y deploy. Abiertos por decisión externa: dominio/301,
+   secrets, alineación de LinkedIn/GitHub, lista de aplicaciones y verificación
+   del deploy real. Ver la auditoría en `docs/status/f1a-readiness-2026-08-03.md`,
+   que incluye una tensión nueva sobre el presupuesto de JS.
 9. **Uso real:** desplegar F1A y usarla inmediatamente para solicitudes de
    empleo y contacto con clientes; registrar feedback antes de iniciar F1B.
 
@@ -312,33 +319,33 @@ Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en 
 | A3 | Prosa faltante en idioma publicado | Sección vacía en producción | F1A | Unit | Vitest | Build falla; EN no publicado NO falla | ✅ Cubierto (`validate-worlds.test.ts` + prepare) |
 | A4 | Orden repetido / prop estructural faltante | Universo inconsistente | F1A | Unit | Vitest | Build falla | ✅ Cubierto (ahora rompe el build vía prepare) |
 | A5 | Paridad no exigida a idioma no publicado | F1A bloqueada por EN incompleto | F1A | Unit | Vitest | Solo idiomas publicados exigen paridad | ✅ Cubierto (`validate-worlds.test.ts`) |
-| A6 | Progreso: tope/fondo/medio de página | Cámara/HUD desincronizados | F1A | Unit | Vitest | worldIndex/progress correctos en los 3 puntos | Pendiente |
-| A7 | Recálculo en resize/orientación | Progreso roto al girar el móvil | F1A | Unit | Vitest | Store recalcula sin drift | Pendiente |
-| A8 | Sincronía tras salto por ancla | Animación fantasma post-salto | F1A | Unit | Vitest | Estado coherente sin transición espuria | Pendiente |
+| A6 | Progreso: tope/fondo/medio de página | Cámara/HUD desincronizados | F1A | Unit | Vitest | worldIndex/progress correctos en los 3 puntos | ✅ Cubierto (`narrative-progress.test.ts`) |
+| A7 | Recálculo en resize/orientación | Progreso roto al girar el móvil | F1A | Unit | Vitest | Store recalcula sin drift | ✅ Cubierto (`narrative-progress.test.ts`) |
+| A8 | Sincronía tras salto por ancla | Animación fantasma post-salto | F1A | Unit | Vitest | Estado coherente sin transición espuria | ✅ Cubierto (`narrative-progress.test.ts`) |
 | A9 | Gate: WebGL2/reduced-motion vetos duros | 3D servido a quien no puede | F2B | Unit | Vitest | Cualquier veto → variante ligera | Pendiente |
 | A10 | Gate: señales ausentes = neutral | Falsos negativos en Firefox/Safari | F2B | Unit | Vitest | Ausencia no descalifica | Pendiente |
 | A11 | Override de usuario persistido | Elección ignorada entre visitas | F2B | Unit | Vitest | localStorage manda sobre heurística | Pendiente |
-| A12 | Formulario: validación + estados | Envíos rotos sin feedback | F1A | Comp | Testing Library | Mensajes por campo; éxito/error/reintento renderizados | Pendiente |
-| A13 | Honeypot | Spam trivial | F1A | Comp | Testing Library | Campo invisible; su llenado bloquea envío | Pendiente |
+| A12 | Formulario: validación + estados | Envíos rotos sin feedback | F1A | Comp | Testing Library | Mensajes por campo; éxito/error/reintento renderizados | ✅ Cubierto (`contact-form.test.tsx`) |
+| A13 | Honeypot | Spam trivial | F1A | Unit/Comp | Vitest + Testing Library | Campo invisible; su llenado no verifica ni entrega | ✅ Cubierto (`contact-server.test.ts` + render del formulario) |
 | A14 | Galería: vacío / 1 foto / imagen 404 | Vitrina rota | F1A | Comp | Testing Library | Estados dignos; fallback en 404 | Pendiente |
 | A15 | Visor: teclado + focus trap | Inaccesible / foco fugado | F1A | Comp | Testing Library | Flechas/Escape; foco atrapado y devuelto | Pendiente |
-| A16 | Reduced-motion en componentes | Coreografía forzada | F1A | Comp | Testing Library | Sin animación; contenido íntegro | Pendiente |
+| A16 | Reduced-motion en componentes | Coreografía forzada | F1A | Comp | Testing Library | Sin animación; contenido íntegro | ✅ Cubierto (`narrative-experience.test.tsx`) |
 | A17 | Hero estable después de la hidratación | Hydration mismatch o layout shift en el fold | F1A | Comp | Testing Library | Markup servidor/cliente coherente; CTAs no cambian client-side; cero layout shift atribuible | ✅ Cubierto (hero estático + CTAs contractuales) |
 | A18 | Contenido opcional faltante | Componente roto por dato ausente | F1A | Comp | Testing Library | Render digno sin el dato | ✅ Cubierto (caso sin galería opcional) |
 | A19 | `/` → `/es` | Bucle o 404 en la raíz | F1A | E2E | Playwright | Redirect único y correcto | ✅ Cubierto (salto único + status 3xx) |
 | A20 | Hero → caso de estudio ≤ 2 interacciones | Regla de 30 segundos | F1A | E2E | Playwright | Contadas desde carga | ✅ Cubierto (hero → Endurance → OMSTA) |
 | A21 | Hero → contacto ≤ 3 interacciones | Cliente perdido | F1A | E2E | Playwright | Contadas desde carga | ✅ Cubierto (CTA → #contacto) |
-| A22 | Menú/ancla explícita → scroll → estado | Navegación DOM y store desincronizados | F1A | E2E | Playwright | Selección explícita desplaza a la sección; hash e índice activo quedan coherentes | Pendiente |
+| A22 | Menú/ancla explícita → scroll → estado | Navegación DOM y store desincronizados | F1A | E2E | Playwright | Selección explícita desplaza a la sección; hash e índice activo quedan coherentes | ✅ Cubierto (desktop + 375 px) |
 | A23 | Deep link `/es#proyectos` (slug localizado de Endurance; ver T1 en TODOS) | Ancla rota con content-visibility | F1A | E2E | Playwright | Aterriza en la sección correcta | ✅ Cubierto (base; re-verificar al llegar content-visibility) |
-| A24 | replaceState/pushState + Atrás/Adelante | Historial contaminado | F1A | E2E | Playwright | Scroll no apila; selección sí; back/forward coherentes | Pendiente |
-| A25 | Envío completo → página de gracias | Conversión invisible | F1A | E2E | Playwright | Turnstile de pruebas; aterriza en /es/contacto/gracias | Pendiente |
-| A26 | Doble-submit / navegar-fuera / API lenta / 500 | Estados de error reales | F1A | E2E | Playwright | Sin duplicados; estados visibles; retry funciona | Pendiente |
-| A27 | `?no3d=1` fuerza variante ligera frente a UniverseScene | Perfil de auditoría roto | F2B | E2E | Playwright | No carga canvas R3F; mantiene contenido y backdrop ligero completo | Pendiente |
-| A28 | `prefers-reduced-motion` E2E | Paridad rota | F1A | E2E | Playwright | Contenido íntegro; saltos inmediatos | ✅ Cubierto (base; ampliar al llegar animaciones) |
-| A29 | Viaje completo solo-teclado | Inaccesible | F1A | E2E | Playwright | Hero→Ranger sin ratón | ✅ Cubierto (base; ampliar con nav/formulario) |
+| A24 | replaceState/pushState + Atrás/Adelante | Historial contaminado | F1A | E2E | Playwright | Scroll no apila; selección sí; back/forward coherentes | ✅ Cubierto (scroll real + back/forward, desktop y 375 px) |
+| A25 | Envío completo → página de gracias | Conversión invisible | F1A | E2E | Playwright | Turnstile de pruebas; aterriza en /es/contacto/gracias | ✅ Cubierto (desktop + 375 px; gracias `noindex`) |
+| A26 | Doble-submit / navegar-fuera / API lenta / 500 | Estados de error reales | F1A | Comp/E2E | Testing Library + Playwright | Sin duplicados; abort al desmontar; estados visibles; retry funciona | ✅ Cubierto (`contact-form.test.tsx` + A26 E2E) |
+| A27 | `?no3d=1` fuerza variante ligera frente a UniverseScene | Perfil de auditoría roto | F2B | E2E | Playwright | No carga canvas R3F; mantiene contenido y backdrop ligero completo | Variante F1A ✅ cubierta (`lib/effects-mode.test.ts` + 3 e2e: sin canvas, contraprueba con canvas y persistencia del parámetro al navegar). El veto sobre `UniverseScene` sigue Pendiente para F2B |
+| A28 | `prefers-reduced-motion` E2E | Paridad rota | F1A | E2E | Playwright | Contenido íntegro; saltos inmediatos | ✅ Cubierto (sin canvas, ancla inmediata y contenido íntegro) |
+| A29 | Viaje completo solo-teclado | Inaccesible | F1A | E2E | Playwright | Hero→Ranger sin ratón | ✅ Cubierto (nav → Ranger → formulario solo con teclado) |
 | A30 | Caso de estudio: metadata/OG + slug 404 | Compartir roto | F1A | E2E | Playwright | OG correcto; slug desconocido → 404 | ✅ Cubierto |
-| A31 | CV descargable desde hero y Ranger | Objetivo empleo sin su pieza | F1A | E2E | Playwright | PDF accesible desde ambos puntos | Parcial (hero cubierto; falta Ranger) |
-| A32 | Viewport móvil básico | Mobile-first incumplido | F1A | E2E | Playwright | Viaje completo usable en 375px | Parcial (home + OMSTA sin overflow; ampliar con formulario WP3) |
+| A31 | CV descargable desde hero y Ranger | Objetivo empleo sin su pieza | F1A | E2E | Playwright | PDF accesible desde ambos puntos | ✅ Cubierto (ES y EN desde Ranger; ES desde hero) |
+| A32 | Viewport móvil básico | Mobile-first incumplido | F1A | E2E | Playwright | Viaje completo usable en 375px | ✅ Cubierto (home, OMSTA, Ranger, gracias y privacidad sin overflow) |
 | A33 | Planeta 3D seleccionable → scroll DOM → cámara | Planetas decorativos, inaccesibles o doble controlador | F2B | E2E | Playwright | Los 7 planetas admiten clic y teclado; el DOM llega al mundo, el store se actualiza, la cámara solo reacciona al scroll y hay estados hover/focus/selección | Pendiente |
 
 ## What I noticed about how you think

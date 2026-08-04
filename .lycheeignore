@@ -1,0 +1,12 @@
+# Hosts que bloquean o limitan a los bots y devuelven falsos rotos en CI.
+# Se excluyen del chequeo AUTOMÁTICO, no de la revisión: los perfiles públicos
+# se verifican a mano al alinear LinkedIn/GitHub (workstream de distribución).
+
+# LinkedIn responde 999 a cualquier cliente que no sea un navegador con sesión.
+^https://www\.linkedin\.com/
+
+# wa.me redirige según user agent y región; no es comprobable desde un runner.
+^https://wa\.me/
+
+# El correo se valida por entrega real, no por sondeo SMTP desde CI.
+^mailto:

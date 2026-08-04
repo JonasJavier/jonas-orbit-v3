@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
+import { getNarrativeWorldSummaries } from "@/lib/narrative-types";
 import type { World } from "@/lib/worlds";
+import { MissionNavigation } from "./mission-navigation";
 
 export function SiteHeader({
   locale,
@@ -9,6 +11,8 @@ export function SiteHeader({
   locale: Locale;
   worlds: World[];
 }) {
+  const narrativeWorlds = getNarrativeWorldSummaries(worlds);
+
   return (
     <header className="site-header">
       <div className="site-header__bar">
@@ -28,18 +32,7 @@ export function SiteHeader({
         </div>
       </div>
 
-      <nav className="mission-nav" aria-label="Navegación de mundos">
-        <ol>
-          {worlds.map((world) => (
-            <li key={world.id}>
-              <Link href={`/${locale}#${world.prose.slug}`}>
-                <span aria-hidden="true">{String(world.order).padStart(2, "0")}</span>
-                {world.prose.shortLabel}
-              </Link>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <MissionNavigation locale={locale} worlds={narrativeWorlds} />
     </header>
   );
 }

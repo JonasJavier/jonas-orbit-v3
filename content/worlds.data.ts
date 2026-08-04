@@ -116,7 +116,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
   ranger: {
     order: 7,
     cosmicName: "Ranger",
-    accent: "#ff6f91",
+    accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
     orbit: { size: 76, duration: 82, delay: -16, planetSize: 26 },
