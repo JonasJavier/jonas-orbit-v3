@@ -114,11 +114,14 @@ OMSTA está autorizado para publicación: nombre, logo, pantallas, funcionalidad
 > completo** + las 3 fichas breves. El e-commerce deja de ser requisito de F1A
 > (su material depende del cliente y no tiene fecha) y pasa a caso completo de
 > F1B junto al portafolio fotográfico. Esto desbloquea el gate de Endurance.
+> **Actualización 2026-08-03:** el material de Delicaté ya fue recibido y su caso
+> completo quedó redactado. Se mantiene en F1B para proteger el alcance de F1A;
+> deja de ser una dependencia externa y pasa a ser trabajo adelantado.
 - **F1A — caso completo:** OMSTA (ingeniería/backend/producción). Cubre la
   audiencia de empleo; la audiencia de cliente se atiende con la oferta freelance
   directa en Ranger (ver "Distribución y conversión") mientras el e-commerce madura.
-- **F1A — fichas breves (formato completo, NO placeholders):** portafolio fotográfico, Wiki Universe, red social. Cada ficha incluye como mínimo: nombre, problema/necesidad, mi función, tecnologías reales, una captura/visual, estado actual, enlace cuando sea publicable, y una decisión/desafío/aprendizaje relevante. El e-commerce NO entra en F1A (sin material aún); se documenta directo como caso completo en F1B cuando Jonás entregue los materiales.
-- **F1B:** el e-commerce y el portafolio fotográfico se convierten en casos completos (3.º y 4.º).
+- **F1A — fichas breves (formato completo, NO placeholders):** portafolio fotográfico, Wiki Universe, red social. Cada ficha incluye como mínimo: nombre, problema/necesidad, mi función, tecnologías reales, una captura/visual, estado actual, enlace cuando sea publicable, y una decisión/desafío/aprendizaje relevante. Delicaté NO entra en F1A aunque su material y caso ya estén listos; se publica como caso completo en F1B.
+- **F1B:** Delicaté y el portafolio fotográfico se publican como segundo y tercer caso completo.
 - **F2A:** Wiki Universe y red social se convierten en casos completos. Al cerrar F2A: 5 casos reales completos en ES.
 
 ### Estructura de casos completos ("caja negra de misión", 17 secciones)
@@ -175,7 +178,7 @@ los assets y el canal de distribución.**
 ## Fases
 
 - **F1A — Lanzamiento esencial (publicable, solo ES):** setup limpio, tokens, modelo de contenido con `WorldId`, contrato scroll→escena, hero (2 CTAs + CV) + narrativa de 7 mundos (Motion; CSS scroll-driven como mejora progresiva), starfield 2D diferido, redirect `/` → `/es`, **caso completo de OMSTA** + 3 fichas breves, 8-12 fotos + 3-4 diseños (Edmunds), **CV descargable en PDF (ES; EN como asset de distribución)**, contacto con la seguridad especificada + página de gracias + **canal directo (WhatsApp/email) y bloque de oferta freelance en Ranger**, SEO/OG/sitemap, accesibilidad (teclado + reduced-motion), tests según Appendix A (niveles Vitest/TL/Playwright-Chromium), deploy Cloudflare vía OpenNext. **Al desplegarse, F1A se usa inmediatamente para solicitudes de empleo y contacto con clientes.**
-- **F1B — Profundidad y pulido:** Cmd+K, certificados completos, Gargantúa con 2-3 experimentos reales del build, tercer caso completo (portafolio fotográfico), galería ampliada (12-20 fotos, 4-6 diseños), analytics (Cloudflare Web Analytics), suite de pruebas y microinteracciones ampliadas.
+- **F1B — Profundidad y pulido:** Cmd+K, certificados completos, Gargantúa con 2-3 experimentos reales del build, segundo y tercer caso completo (Delicaté + portafolio fotográfico), galería ampliada (12-20 fotos, 4-6 diseños), analytics (Cloudflare Web Analytics), suite de pruebas y microinteracciones ampliadas.
 - **F2A — Localización inglesa + expansión de contenido:** congelar ES; traducir (borrador asistido + revisión humana); publicar `/en` + `hreflang` + middleware `Accept-Language`; casos completos de Wiki Universe y red social; verificación de los 5 casos en ES y EN; revisión de títulos/descripciones/alt/metadata en ambos idiomas.
 - **F2B — Primera experiencia 3D:** hero R3F con sistema orbital sencillo, gate de capacidad activo, HUD de telemetría, primeras transiciones entre mundos, botones "Activar 3D"/"Reducir efectos", **navegación orbital interactiva de los 7 mundos**, **spike de dirección artística foto→universo**, pipeline de texturas (KTX2/Basis, presupuesto de peso propio) SOLO tras validar el spike, calidad gráfica adaptativa. Cada planeta visible debe poder seleccionarse mediante clic, teclado o control equivalente; la selección desplaza el DOM al mundo correspondiente y nunca controla directamente la cámara. La cámara reacciona al store de scroll como única fuente de verdad; el mundo activo tiene estados claros de hover, focus y selección.
 - **F3 — Universo pleno — OPTIONAL, requiere nueva aprobación:** escena continua sincronizada con todo el scroll (una sola trayectoria de cámara), Gargantúa con shader de lente gravitacional, galería inmersiva WebGL, easter eggs TARS (terminal: stretch). Metas medibles: CLS = 0; checklist de microinteracciones completa; fluidez reproducible: promedio ≈ 60 FPS con p5 ≥ 45 durante el recorrido hero→Ranger (~90s), Pixel 7a-class, Chrome estable, DPR ≤ 2, calidad "media", midiendo Gargantúa (la escena más pesada), sin bloqueos > 250ms; degradación automática de calidad antes que romper la meta.
@@ -195,7 +198,7 @@ Los detalles completos viven en `docs/experiments/` y `docs/deferred/`, enlazado
 
 ## Open Questions
 
-- ¿Dominio propio? — se resuelve en el paso 10 de Next Steps (setup); el deploy de F1A lo requiere.
+- ¿Dominio propio? — se resuelve en WP6; el deploy de F1A lo requiere.
 - Destino del deploy v2: inventariar URLs públicas activas en el setup; si las hay, 301 hacia v3 o reemplazo en el mismo proyecto Cloudflare.
 
 (Resueltas en revisión: publicabilidad de OMSTA → Gate 0 cerrado; flujo de traducción → asistido + revisión humana con timeboxes; curaduría → Jonás, timeboxed.)
@@ -207,27 +210,59 @@ Los detalles completos viven en `docs/experiments/` y `docs/deferred/`, enlazado
 - Hero → caso de estudio en ≤ 2 interacciones; hero → contacto en ≤ 3 — verificado con Playwright. Cloudflare Web Analytics observa page views por ruta y la página de gracias como proxy de conversión (sin prometer lo que no puede medir).
 - **F2B — navegación orbital:** el visitante puede recorrer los siete mundos mediante scroll natural o seleccionar directamente cualquier planeta con ratón, teclado o control equivalente; la selección mueve el DOM, el store refleja el destino y la cámara responde únicamente al progreso del scroll.
 - Cero enlaces rotos; un solo modelo de contenido; código muerto con detección real: cero módulos/exports/dependencias huérfanos (Knip) + cero imports no usados (ESLint), ambos en CI; revisión de bundle por fase; sin dependencias nuevas sin uso; componentes experimentales eliminados antes de cada cierre de fase; excepciones documentadas.
-- **Contenido:** OMSTA y e-commerce con caso completo y publicable al cerrar F1A; portafolio fotográfico ficha en F1A y caso en F1B; Wiki Universe y red social ficha en F1A y caso en F2A; sin lorem ipsum; sin proyectos inventados; sin métricas inventadas; sin placeholders disfrazados; cada proyecto explica claramente la contribución de Jonás; todo material sensible anonimizado; CV descargable disponible en F1A; ES congelado antes de traducir; experimentos de Gargantúa corresponden a trabajo real; calidad antes que cantidad; cada proyecto con captura/visual/demo cuando sea posible; ninguna fase se cierra sin su contenido requerido.
+- **Contenido:** OMSTA con caso completo y publicable al cerrar F1A; portafolio fotográfico, Wiki Universe y red social con ficha completa en F1A; Delicaté y portafolio fotográfico como casos completos en F1B; Wiki Universe y red social como casos completos en F2A; sin lorem ipsum; sin proyectos inventados; sin métricas inventadas; sin placeholders disfrazados; cada proyecto explica claramente la contribución de Jonás; todo material sensible anonimizado; CV descargable disponible en F1A; ES congelado antes de traducir; experimentos de Gargantúa corresponden a trabajo real; calidad antes que cantidad; cada proyecto con captura/visual/demo cuando sea posible; ninguna fase se cierra sin su contenido requerido.
 - Marketing Digital como carrera terminada en todo el contenido.
 
 ## Distribution Plan
 
-Web pública en Cloudflare vía OpenNext. CI/CD: GitHub Actions — por PR: `npm run check` + Knip + Playwright Chromium + Lighthouse (perfil ligero); en main: multi-navegador + perfil predeterminado + enlaces. Deploy automático a Cloudflare en merge a main; previews por rama. Repo remoto, secrets (API token, account ID) y workflow se crean en el paso 10 de Next Steps. Páginas de gracias con `noindex` y fuera del sitemap.
+Web pública en Cloudflare vía OpenNext. CI/CD: GitHub Actions — por PR: `npm run check` + Knip + Playwright Chromium + Lighthouse (perfil ligero); en main: multi-navegador + perfil predeterminado + enlaces. Deploy automático a Cloudflare en merge a main; previews por rama. Repo remoto, secrets (API token, account ID) y workflow de deploy se completan en WP6. Páginas de gracias con `noindex` y fuera del sitemap.
 
-## Next Steps
+## Next Steps — ejecución actualizada 2026-08-03
 
-1. Crear carpeta de materiales de OMSTA: capturas autorizadas, arquitectura, problemas, decisiones, resultados, enlaces, stack, material para demo.
-2. Redactar el primer borrador completo de OMSTA (timebox: 1 día).
-3. Revisar y anonimizar las capturas de OMSTA (timebox: ½ día).
-4. *(→ F1B, decisión 2026-07-23)* Cuando Jonás entregue los materiales del e-commerce, crear la carpeta y redactar el caso completo. NO bloquea F1A.
-5. *(→ F1B)* Igual para el portafolio fotográfico como caso completo.
-6. Crear las fichas breves de portafolio fotográfico, Wiki Universe y red social (timebox: 60 min c/u).
-7. Seleccionar 8-12 fotografías y 3-4 piezas de diseño (una tarde).
-8. Preparar el CV descargable en PDF (ES) + versión EN como asset de distribución.
-9. Validar que el caso de OMSTA y las tres fichas tengan suficiente contenido (gates de Endurance/Edmunds/CV). Preparar los assets de distribución (canal directo, oferta freelance, alineación de perfiles, lista de aplicaciones — ver "Distribución y conversión").
-10. Setup técnico: decidir dominio; crear repo nuevo (`portfolio` o `jonas-orbit-v3` — nombre distinto del directorio v2); remoto GitHub + secrets Cloudflare + workflow CI; `create-next-app` estable + Tailwind 4 + tokens + Velite + estructura `content/` + OpenNext; inventariar URLs públicas de v2 y decidir 301/reemplazo; migrar copy de `universe.ts` (corrigiendo Marketing Digital a terminada); sembrar TODOS.md.
-11. Con los borradores de OMSTA y e-commerce, la primera curaduría fotográfica y los wireframes iniciales disponibles, ejecutar `/plan-design-review` antes de congelar la dirección visual del hero, los 7 mundos y Edmunds. Esta revisión NO bloquea los pasos 1-10 ni el setup. Después, construir F1A mundo por mundo en orden narrativo, cada feature con sus tests (Appendix A); cerrar la implementación visual de Endurance y Edmunds solo tras cumplir sus readiness gates.
-12. Desplegar F1A con dominio real → **usarla inmediatamente para solicitudes de empleo y contacto con clientes** → feedback → F1B.
+Los materiales ya no marcan el orden de construcción. F1A se ejecuta en paquetes
+verticales recruiter-first, y cada paquete termina con sus pruebas aplicables del
+Appendix A:
+
+1. **Cerrado — base y readiness:** setup, siete mundos ES, caso OMSTA, tres
+   fichas F1A, CV ES/EN y decisiones T5/T7. Delicaté queda adelantado para F1B.
+2. **Cerrado 2026-08-03 — WP0 · contrato visual / T4:** tipografía, espaciado, jerarquía,
+   anatomía de tarjetas, navegación móvil, estados del formulario, tratamiento
+   del starfield y páginas 404/gracias definidos en
+   `docs/design/wp0-visual-contract.md`.
+3. **Cerrado 2026-08-03 — WP1 · shell recruiter-first:** hero, navegación,
+   prueba inmediata, CTAs y CV con comportamiento móvil, teclado y
+   reduced-motion estable.
+4. **Cerrado 2026-08-03 — WP2 · Endurance:** índice de proyectos, cuatro rutas
+   F1A, caso OMSTA, composición Velite, metadata/OG, galería, captions, estados
+   opcionales y 404.
+5. **WP3 — Ranger y conversión:** publicar oferta freelance y canal directo;
+   implementar formulario, Turnstile, Worker, rate limit, privacidad y página de
+   gracias con todos sus estados de error y reintento.
+6. **WP4 — narrativa:** implementar contrato scroll→store, anclas/historial,
+   Motion y starfield 2D diferido sin crear un segundo controlador de cámara.
+7. **WP5 — Edmunds:** curar 8-12 fotografías y 3-4 diseños con título, alt y
+   orden; construir galería/visor accesible y completar el viaje móvil.
+8. **WP6 — release:** SEO técnico, sitemap, robots, OG, enlaces, presupuestos de
+   bundle y perfiles Lighthouse; alinear LinkedIn/GitHub, preparar la lista de
+   aplicaciones, elegir dominio/301, configurar secrets y verificar el deploy.
+9. **Uso real:** desplegar F1A y usarla inmediatamente para solicitudes de
+   empleo y contacto con clientes; registrar feedback antes de iniciar F1B.
+
+La curaduría fotográfica, el dominio/301 y la lista objetivo de distribución son
+las entradas que requieren una decisión o selección de Jonás. Ninguna impide
+empezar WP0-WP4.
+
+### Checkpoints internos de F1A
+
+No son fases nuevas ni reducen los criterios de cierre; permiten validar valor
+antes de terminar toda la experiencia:
+
+- **F1A.1 · Preview recruiter-first (WP0-WP3):** hero, CV, OMSTA y Ranger/contacto
+  utilizables en una URL de preview. Debe poder revisarse con teclado y móvil.
+- **F1A.2 · Experiencia completa (WP4-WP5):** siete mundos, scroll/history,
+  movimiento con reduced-motion y Edmunds curado con galería accesible.
+- **F1A.3 · Release (WP6):** SEO, auditorías, distribución, dominio/301, secrets,
+  CI/CD y despliegue público. Solo este checkpoint permite declarar F1A cerrada.
 
 ## Organización de la documentación del repositorio
 
@@ -288,10 +323,10 @@ Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en 
 | A14 | Galería: vacío / 1 foto / imagen 404 | Vitrina rota | F1A | Comp | Testing Library | Estados dignos; fallback en 404 | Pendiente |
 | A15 | Visor: teclado + focus trap | Inaccesible / foco fugado | F1A | Comp | Testing Library | Flechas/Escape; foco atrapado y devuelto | Pendiente |
 | A16 | Reduced-motion en componentes | Coreografía forzada | F1A | Comp | Testing Library | Sin animación; contenido íntegro | Pendiente |
-| A17 | Hero estable después de la hidratación | Hydration mismatch o layout shift en el fold | F1A | Comp | Testing Library | Markup servidor/cliente coherente; CTAs no cambian client-side; cero layout shift atribuible | Pendiente |
-| A18 | Contenido opcional faltante | Componente roto por dato ausente | F1A | Comp | Testing Library | Render digno sin el dato | Pendiente |
+| A17 | Hero estable después de la hidratación | Hydration mismatch o layout shift en el fold | F1A | Comp | Testing Library | Markup servidor/cliente coherente; CTAs no cambian client-side; cero layout shift atribuible | ✅ Cubierto (hero estático + CTAs contractuales) |
+| A18 | Contenido opcional faltante | Componente roto por dato ausente | F1A | Comp | Testing Library | Render digno sin el dato | ✅ Cubierto (caso sin galería opcional) |
 | A19 | `/` → `/es` | Bucle o 404 en la raíz | F1A | E2E | Playwright | Redirect único y correcto | ✅ Cubierto (salto único + status 3xx) |
-| A20 | Hero → caso de estudio ≤ 2 interacciones | Regla de 30 segundos | F1A | E2E | Playwright | Contadas desde carga | Parcial (CTA → sección; falta ruta de caso) |
+| A20 | Hero → caso de estudio ≤ 2 interacciones | Regla de 30 segundos | F1A | E2E | Playwright | Contadas desde carga | ✅ Cubierto (hero → Endurance → OMSTA) |
 | A21 | Hero → contacto ≤ 3 interacciones | Cliente perdido | F1A | E2E | Playwright | Contadas desde carga | ✅ Cubierto (CTA → #contacto) |
 | A22 | Menú/ancla explícita → scroll → estado | Navegación DOM y store desincronizados | F1A | E2E | Playwright | Selección explícita desplaza a la sección; hash e índice activo quedan coherentes | Pendiente |
 | A23 | Deep link `/es#proyectos` (slug localizado de Endurance; ver T1 en TODOS) | Ancla rota con content-visibility | F1A | E2E | Playwright | Aterriza en la sección correcta | ✅ Cubierto (base; re-verificar al llegar content-visibility) |
@@ -301,9 +336,9 @@ Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en 
 | A27 | `?no3d=1` fuerza variante ligera frente a UniverseScene | Perfil de auditoría roto | F2B | E2E | Playwright | No carga canvas R3F; mantiene contenido y backdrop ligero completo | Pendiente |
 | A28 | `prefers-reduced-motion` E2E | Paridad rota | F1A | E2E | Playwright | Contenido íntegro; saltos inmediatos | ✅ Cubierto (base; ampliar al llegar animaciones) |
 | A29 | Viaje completo solo-teclado | Inaccesible | F1A | E2E | Playwright | Hero→Ranger sin ratón | ✅ Cubierto (base; ampliar con nav/formulario) |
-| A30 | Caso de estudio: metadata/OG + slug 404 | Compartir roto | F1A | E2E | Playwright | OG correcto; slug desconocido → 404 | Pendiente |
-| A31 | CV descargable desde hero y Ranger | Objetivo empleo sin su pieza | F1A | E2E | Playwright | PDF accesible desde ambos puntos | Pendiente |
-| A32 | Viewport móvil básico | Mobile-first incumplido | F1A | E2E | Playwright | Viaje completo usable en 375px | Pendiente |
+| A30 | Caso de estudio: metadata/OG + slug 404 | Compartir roto | F1A | E2E | Playwright | OG correcto; slug desconocido → 404 | ✅ Cubierto |
+| A31 | CV descargable desde hero y Ranger | Objetivo empleo sin su pieza | F1A | E2E | Playwright | PDF accesible desde ambos puntos | Parcial (hero cubierto; falta Ranger) |
+| A32 | Viewport móvil básico | Mobile-first incumplido | F1A | E2E | Playwright | Viaje completo usable en 375px | Parcial (home + OMSTA sin overflow; ampliar con formulario WP3) |
 | A33 | Planeta 3D seleccionable → scroll DOM → cámara | Planetas decorativos, inaccesibles o doble controlador | F2B | E2E | Playwright | Los 7 planetas admiten clic y teclado; el DOM llega al mundo, el store se actualiza, la cámara solo reacciona al scroll y hay estados hover/focus/selección | Pendiente |
 
 ## What I noticed about how you think
@@ -319,10 +354,10 @@ Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en 
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | ISSUES (via /autoplan) | Falta capa de distribución/conversión; e-commerce sin fecha límite/fallback; CV EN antes de F2A |
 | Codex Review | `/codex review` | Independent 2nd opinion | 3 | absorbed | Doble voz CEO+Diseño+Eng ejecutada contra el repo real |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | CLEAR (PLAN via /autoplan) | Contratos fieles; A2-A5 ahora build-breaking; defectos de CI/versiones corregidos |
-| Design Review | `/plan-design-review` | UI/UX gaps | 1 | ISSUES (via /autoplan) | Jerarquía recruiter-first, estados, archetipos, WCAG, anclas y colisión de color sin resolver |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | PARCIAL (via /autoplan) | T1 y T5 resueltos; WP0/T4 debe cerrar jerarquía, estados, arquetipos y contrato WCAG antes del freeze visual |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | N/A (no es herramienta de dev) | — |
 
-**CROSS-MODEL:** La eng review original (2026-07-21) absorbió 10 hallazgos de una voz externa. El `/autoplan` de 2026-07-23 (ver `docs/reviews/autoplan-2026-07-23.md`) corrió doble voz (subagente Claude + Codex) en CEO/Diseño/Eng contra el repo real: consenso alto en los tres. Mejoras P1/P2 de código, tests, CI y contenido aplicadas y verificadas (19 unit + 18 e2e verdes).
+**CROSS-MODEL:** La eng review original (2026-07-21) absorbió 10 hallazgos de una voz externa. El `/autoplan` de 2026-07-23 (ver `docs/reviews/autoplan-2026-07-23.md`) corrió doble voz (subagente Claude + Codex) en CEO/Diseño/Eng contra el repo real: consenso alto en los tres. Mejoras P1/P2 de código, tests, CI y contenido aplicadas y verificadas (34 pruebas Vitest + 22 e2e verdes al 2026-08-03).
 
 **VERDICT:** ENG CLEARED — el setup F1A es sólido y las mejoras ejecutables están aplicadas. La construcción de F1A debe arrancar recruiter-first (hero con prueba → Endurance/caso OMSTA → Ranger/gracias + CV), no por orden narrativo.
 

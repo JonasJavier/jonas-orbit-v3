@@ -2,7 +2,9 @@
 
 Documento principal aprobado: [`docs/plans/jonas-orbit-v3-mission-endurance.md`](docs/plans/jonas-orbit-v3-mission-endurance.md)
 
-Las tareas activas de implementación viven en **Next Steps** del plan principal. Este archivo captura únicamente trabajo diferido, aparcado o condicionado; nada de aquí bloquea el cierre del portafolio.
+Las tareas activas de implementación viven en **Next Steps** del plan principal.
+Este archivo conserva decisiones, tensiones y trabajo diferido; cuando un punto se
+promueve a ejecución, su paquete activo se enlaza explícitamente aquí.
 
 ## Experimentos aparcados
 
@@ -25,36 +27,44 @@ No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicad
 - **T2 · Distribución/conversión** — ✅ RESUELTO 2026-07-23: añadido el workstream
   "Distribución y conversión" al plan (canal directo, oferta freelance, CV EN,
   alineación de perfiles, lista de aplicaciones como criterio de éxito). Ejecutar
-  en F1A junto al contenido.
+  en F1A dentro de WP3 y WP6.
 - **T3 · E-commerce** — ✅ RESUELTO 2026-07-23: el e-commerce sale de F1A; F1A
   lanza con OMSTA como único caso completo + 3 fichas. E-commerce y fotografía
-  pasan a casos completos de F1B cuando Jonás entregue los materiales. Gate de
-  Endurance desbloqueado.
-- **T4 · Deliverables del `/plan-design-review`** — el plan lo agenda pero sin
-  definición de hecho. Requeridos: escala tipográfica (tokens), sistema de
-  espaciado, archetipos por mundo, anatomía de cards (caso vs ficha), máquina de
-  estados del formulario, nav persistente móvil, contrato WCAG 2.2 AA, arte del
-  starfield, páginas 404/gracias. *Antes del freeze visual de F1A.*
-- **T5 · Colisión de color** — acento de Ranger `#ff6f91` == `--color-signal-coral`
-  (error). Repintar uno antes de construir el formulario de contacto.
+  pasan a casos completos de F1B. Gate de Endurance desbloqueado. **Material
+  recibido 2026-08-03:** las tres fichas F1A ya existen en
+  `content/es/projects/`; Delicaté quedó redactado directamente como caso
+  completo F1B con galería y evidencia técnica.
+- **T4 · Deliverables del `/plan-design-review`** — ✅ **RESUELTO 2026-08-03.**
+  La dirección “instrumentación orbital editorial”, escala tipográfica, sistema
+  de espaciado, arquetipos por mundo, cards, máquina de estados del formulario,
+  navegación móvil, contrato WCAG, starfield y páginas auxiliares quedaron
+  definidos en `docs/design/wp0-visual-contract.md`; WP0-WP2 están implementados.
+- **T5 · Colisión de color** — ✅ RESUELTO 2026-08-03: Ranger conserva su acento
+  rosa `#ff6f91`; `--color-signal-coral` pasa a `#ff7a66`, un coral más cálido
+  reservado para señales semánticas del formulario.
 - **T6 · `cosmicName` localizable** — "Tesseracto"/"Gargantúa" viven en
   `content/worlds.data.ts` (estructural, neutral al idioma) pero divergen del EN.
   Mover el nombre visible a la prosa o declararlo invariante. *Antes de F2A.*
-- **T7 · Runtime del Worker de contacto** — resolver antes de escribir el handler:
-  bindings de Cloudflare en dev/test (`initOpenNextCloudflareForDev`), claves de
-  prueba de Turnstile, y la Rate Limiting Rule como IaC (no cabe en `wrangler.jsonc`).
+- **T7 · Runtime del Worker de contacto** — ✅ RESUELTO 2026-08-03: contexto de
+  Cloudflare inicializado en `next.config.ts`, claves oficiales de prueba y
+  contrato Siteverify documentados, y rate limit de zona declarado con Terraform
+  en `infra/cloudflare/`. Ver `docs/decisions/contact-runtime.md`.
 - **`<html lang>` por locale** — hoy fijo en `es` en el layout raíz; mover bajo
   `[locale]` al empezar F2A (barato ahora, caro después). *Antes de F2A.*
 - **Docs/CI pendientes** — Lighthouse perfil ligero (`?no3d=1`) por PR y
   comprobación de enlaces en main; job de deploy a Cloudflare cuando existan los
-  secrets. El `docs/reviews/eng-review-test-plan-2026-07-21.md` que cita el plan
-  no existe: la fuente canónica de tests es el Appendix A.
+  secrets. **Promovido a WP6 de F1A.** El
+  `docs/reviews/eng-review-test-plan-2026-07-21.md` que cita el plan no existe:
+  la fuente canónica de tests es el Appendix A.
 
 ## Regla de cierre
 
-Los elementos de este archivo:
+Los elementos aparcados o diferidos de este archivo:
 
 - No son deuda técnica obligatoria.
 - No impiden considerar terminado el proyecto en F2.
 - No deben entrar al roadmap activo sin cumplir sus condiciones de entrada.
 - Requieren aprobación explícita antes de convertirse en tareas comprometidas.
+
+Esta regla no aplica a T4, T2 ni Docs/CI: ya forman parte de los paquetes activos
+de F1A indicados arriba.

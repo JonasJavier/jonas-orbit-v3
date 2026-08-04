@@ -1,6 +1,14 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { defineCollection, defineConfig, s } from "velite";
+import {
+  F1A_PROJECT_IDS,
+  PROJECT_IDS,
+  projectsData,
+} from "./content/projects.data";
 import { WORLD_IDS, worldsData } from "./content/worlds.data";
 import { PUBLISHED_LOCALES } from "./content/site.data";
+import { validateProjectProse } from "./content/validate-projects";
 import { validateWorldProse } from "./content/validate-worlds";
 
 /**
@@ -46,16 +54,49 @@ const worldProse = defineCollection({
     .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
 });
 
-/** Esquemas provisionales — se completan cuando el contenido real llegue (F1A pasos 4-6). */
+/** Proyectos reales localizados; la estructura neutral vive en projects.data.ts. */
 const projectProse = defineCollection({
   name: "ProjectProse",
   pattern: "{es,en}/projects/*.mdx",
   schema: s
     .object({
+      id: s.enum(PROJECT_IDS),
       slug: s.string().regex(/^[a-z0-9-]+$/),
       title: s.string(),
+      eyebrow: s.string(),
       summary: s.string(),
-      kind: s.enum(["case-study", "brief"]),
+      statusLabel: s.string(),
+      role: s.string(),
+      problem: s.string(),
+      contribution: s.string(),
+      decision: s.string(),
+      technologies: s.array(s.string()).min(1),
+      highlights: s.array(s.string()).min(1),
+      featuredImage: s.object({
+        src: s.string(),
+        alt: s.string(),
+        caption: s.string(),
+      }),
+      gallery: s
+        .array(
+          s.object({
+            src: s.string(),
+            alt: s.string(),
+            caption: s.string(),
+          }),
+        )
+        .optional(),
+      links: s
+        .array(
+          s.object({
+            label: s.string(),
+            href: s.string(),
+            kind: s.enum(["repository", "demo", "contact"]),
+          }),
+        )
+        .optional(),
+      seoTitle: s.string(),
+      seoDescription: s.string(),
       body: s.mdx(),
       path: s.path(),
     })
@@ -79,9 +120,17 @@ const designProse = defineCollection({
 export default defineConfig({
   root: "content",
   collections: { worldProse, projectProse, designProse },
-  prepare: ({ worldProse }) => {
+  prepare: ({ worldProse, projectProse }) => {
     // Todas las validaciones que rompen el build viven en una función pura
     // (content/validate-worlds.ts) para poder cubrirlas con fixtures.
     validateWorldProse(worldProse, PUBLISHED_LOCALES, WORLD_IDS, worldsData);
+    validateProjectProse(
+      projectProse,
+      PUBLISHED_LOCALES,
+      PROJECT_IDS,
+      F1A_PROJECT_IDS,
+      projectsData,
+      (src) => existsSync(join(process.cwd(), "public", src)),
+    );
   },
 });

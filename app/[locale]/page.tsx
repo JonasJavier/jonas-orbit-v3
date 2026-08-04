@@ -1,19 +1,16 @@
 import { notFound } from "next/navigation";
+import { Hero } from "@/components/hero";
+import { ProjectGrid } from "@/components/project-grid";
+import { SiteHeader } from "@/components/site-header";
 import { WorldSection } from "@/components/world-section";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
+import { getF1AProjects } from "@/lib/projects";
 import { getWorlds } from "@/lib/worlds";
-
-export const dynamicParams = false;
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.map((locale) => ({ locale }));
 }
 
-/**
- * Página narrativa única: los 7 mundos como secciones ancladas.
- * Versión mínima de setup — la coreografía de scroll, el starfield y el
- * contrato scroll→escena llegan con el trabajo de F1A.
- */
 export default async function NarrativePage({
   params,
 }: {
@@ -24,34 +21,33 @@ export default async function NarrativePage({
     notFound();
   }
   const worlds = getWorlds(locale as Locale);
+  const projects = getF1AProjects(locale as Locale);
 
   return (
-    <main id="main-content" className="flex-1">
-      <header className="mx-auto w-full max-w-3xl px-6 pb-8 pt-24 text-center">
-        <h1 className="text-4xl font-semibold text-star-amber">
-          Jonás Javier Encarnación
-        </h1>
-        <p className="mt-3 text-lg text-ink-muted">
-          Desarrollador full-stack · Diseñador UX/UI · Fotógrafo
-        </p>
-        <nav aria-label="CTAs principales" className="mt-8 flex justify-center gap-4">
-          <a
-            className="rounded border border-star-amber px-5 py-2 font-medium text-star-amber"
-            href="#proyectos"
-          >
-            Ver proyectos
-          </a>
-          <a
-            className="rounded border border-nebula-cyan px-5 py-2 font-medium text-nebula-cyan"
-            href="#contacto"
-          >
-            Trabajemos juntos
-          </a>
-        </nav>
-      </header>
-      {worlds.map((world) => (
-        <WorldSection key={world.id} world={world} />
-      ))}
-    </main>
+    <>
+      <a className="skip-link" href="#main-content">
+        Saltar al contenido
+      </a>
+      <div className="space-backdrop" aria-hidden="true">
+        <span className="space-backdrop__stars" />
+        <span className="space-backdrop__haze" />
+        <span className="space-backdrop__grid" />
+      </div>
+      <SiteHeader locale={locale as Locale} worlds={worlds} />
+      <main id="main-content">
+        <Hero />
+        {worlds.map((world) => (
+          <WorldSection key={world.id} world={world}>
+            {world.id === "endurance" ? (
+              <ProjectGrid projects={projects} locale={locale as Locale} />
+            ) : null}
+          </WorldSection>
+        ))}
+      </main>
+      <footer className="site-footer">
+        <p>JONÁS ORBIT · SEÑAL ABIERTA DESDE SANTO DOMINGO</p>
+        <a href="#main-content">Volver al inicio ↑</a>
+      </footer>
+    </>
   );
 }

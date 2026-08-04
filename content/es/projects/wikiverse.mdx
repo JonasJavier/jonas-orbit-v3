@@ -1,0 +1,72 @@
+---
+id: wikiverse
+slug: wikiverse
+title: Wiki Universe
+eyebrow: Plataforma de exploración de contenido
+summary: >-
+  Plataforma full-stack para explorar universos, personajes y contenidos
+  relacionados mediante categorías, búsqueda y navegación temática.
+statusLabel: Listo para producción
+role: Diseño de producto, arquitectura de contenido y desarrollo full-stack
+problem: >-
+  Una experiencia tipo wiki necesita organizar mucho contenido sin perder
+  orientación, búsqueda ni trazabilidad de los cambios.
+contribution: >-
+  Diseñé la navegación temática y construí artículos en Markdown, búsqueda en
+  PostgreSQL, categorías, autenticación y un historial visible de revisiones.
+decision: >-
+  Separé el contenido editable en Markdown de sus metadatos y revisiones, y usé
+  búsqueda nativa de PostgreSQL para evitar una infraestructura adicional.
+technologies: [React, TypeScript, Django, Django REST Framework, PostgreSQL, Redis]
+highlights:
+  - Artículos en Markdown con historial de revisiones
+  - Búsqueda de texto completo con ranking en PostgreSQL
+  - Categorías, temas, autenticación JWT y selector de apariencia
+  - API documentada con un esquema OpenAPI
+featuredImage:
+  src: /media/projects/wikiverse/01-home-desktop.png
+  alt: Página inicial de Wiki Universe con búsqueda, categorías y artículos destacados
+  caption: El inicio prioriza la búsqueda y ofrece varias rutas de exploración sin abrumar.
+gallery:
+  - src: /media/projects/wikiverse/02-article-desktop.png
+    alt: Artículo de Wiki Universe con contenido estructurado y navegación contextual
+    caption: La lectura conserva jerarquía editorial y acceso al contexto del contenido.
+  - src: /media/projects/wikiverse/03-history-desktop.png
+    alt: Historial de revisiones de un artículo en Wiki Universe
+    caption: Cada edición permanece visible para dar trazabilidad al contenido.
+  - src: /media/projects/wikiverse/04-home-mobile.png
+    alt: Inicio de Wiki Universe adaptado a una pantalla móvil
+    caption: La exploración temática y la búsqueda mantienen su prioridad en móvil.
+links:
+  - label: Ver repositorio
+    href: https://github.com/JonasJavier/Wikipedia-
+    kind: repository
+seoTitle: Wiki Universe — Plataforma full-stack de contenido
+seoDescription: Wiki temática con React, Django, Markdown, revisiones y búsqueda de texto completo en PostgreSQL.
+---
+
+## Necesidad
+
+El reto no era mostrar una lista de artículos, sino diseñar una forma clara de
+recorrer universos, personajes y conceptos relacionados. El lector debía poder
+llegar por búsqueda, por categoría o desde otro contenido y seguir entendiendo
+dónde estaba.
+
+## Mi función
+
+Definí la arquitectura de contenido y desarrollé la experiencia completa: interfaz
+en React y TypeScript, API en Django REST Framework, autenticación, categorías,
+búsqueda y persistencia en PostgreSQL.
+
+## Decisión relevante
+
+Los artículos se escriben en Markdown y las revisiones se guardan como entidades
+propias. Esa separación permite conservar historial sin complicar la escritura.
+Para buscar, aproveché `SearchVector` y `SearchRank` de PostgreSQL: una solución
+suficiente para el alcance real y más simple de operar que un motor externo.
+
+## Estado actual
+
+El backend pasa 23 pruebas y el frontend compila sin errores. El proyecto está
+listo para desplegar; el enlace de demo se publicará únicamente cuando la URL final
+esté disponible.

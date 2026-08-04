@@ -1,0 +1,71 @@
+---
+id: network
+slug: network-3-0
+title: Network 3.0
+eyebrow: Red social full-stack
+summary: >-
+  Red social responsive con perfiles, publicaciones con imagen, feed continuo,
+  seguimiento, comentarios anidados, reacciones y notificaciones.
+statusLabel: Listo para producción
+role: Diseño de producto y desarrollo full-stack
+problem: >-
+  Construir una experiencia social coherente exige mantener sincronizados feed,
+  relaciones entre usuarios, conversación y señales de actividad.
+contribution: >-
+  Implementé la API, la autenticación, el feed por cursor, los perfiles, follows,
+  likes, comentarios anidados, búsqueda y notificaciones, además de la UI responsive.
+decision: >-
+  Elegí paginación por cursor para el feed y separé las notificaciones como dominio
+  propio para que el crecimiento de la actividad no degradara la navegación.
+technologies: [React, TypeScript, Django, Django REST Framework, PostgreSQL, Redis]
+highlights:
+  - Feed continuo paginado por cursor
+  - Publicaciones con imagen, likes y comentarios anidados
+  - Perfiles, seguimiento entre usuarios y búsqueda
+  - Notificaciones y temas visuales responsive
+featuredImage:
+  src: /media/projects/network/01-feed-desktop.png
+  alt: Feed principal de Network 3.0 con publicaciones, navegación y sugerencias de perfiles
+  caption: El feed reúne publicación, conversación y descubrimiento de personas en una sola vista.
+gallery:
+  - src: /media/projects/network/02-profile-desktop.png
+    alt: Perfil de usuario en Network 3.0 con biografía, estadísticas y publicaciones
+    caption: Cada perfil conecta identidad, relaciones y contenido publicado.
+  - src: /media/projects/network/03-notifications-desktop.png
+    alt: Centro de notificaciones de Network 3.0 con actividad reciente
+    caption: Las señales de actividad se agrupan en un espacio propio y accionable.
+  - src: /media/projects/network/04-feed-mobile.png
+    alt: Feed de Network 3.0 adaptado a una pantalla móvil
+    caption: La navegación y las acciones sociales siguen accesibles en móvil.
+links:
+  - label: Ver repositorio
+    href: https://github.com/JonasJavier/Network-3.0
+    kind: repository
+seoTitle: Network 3.0 — Red social con Django y React
+seoDescription: Red social full-stack con feed por cursor, perfiles, follows, comentarios, likes y notificaciones.
+---
+
+## Necesidad
+
+Una red social pequeña sigue siendo un sistema de relaciones: el contenido depende
+de a quién sigues, cada interacción cambia varias vistas y las notificaciones deben
+mantener contexto. El objetivo fue construir ese núcleo completo, no una maqueta de
+un feed.
+
+## Mi función
+
+Diseñé la experiencia e implementé frontend y backend. El alcance incluye
+autenticación JWT, perfiles, relaciones de seguimiento, publicaciones con imagen,
+likes, comentarios anidados, búsqueda, temas y notificaciones.
+
+## Decisión relevante
+
+El feed usa paginación por cursor para sostener un orden estable mientras aparecen
+nuevas publicaciones. Las notificaciones viven en un módulo separado, con sus
+propias reglas y endpoints, en vez de quedar acopladas a las vistas de posts.
+
+## Estado actual
+
+Las 32 pruebas de backend pasan y el frontend supera lint y build. Las cuentas y
+publicaciones de las capturas son datos sintéticos de demostración; no se usan como
+métricas ni testimonios. La demo pública se enlazará después del despliegue.

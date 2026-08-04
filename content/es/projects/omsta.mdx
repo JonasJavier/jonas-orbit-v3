@@ -1,0 +1,184 @@
+---
+id: omsta
+slug: omsta
+title: OMSTA — ERP para una agencia de viajes
+eyebrow: Caso de estudio destacado
+summary: >-
+  ERP real en producción que conecta reservas, cobros, contabilidad de doble
+  partida, nómina y cumplimiento fiscal dominicano.
+statusLabel: En producción y mantenimiento activo
+role: Único desarrollador; arquitectura, full-stack, despliegue y mantenimiento
+problem: >-
+  La operación comercial, el dinero y la contabilidad formal necesitaban una
+  única fuente de verdad con trazabilidad, permisos y soporte multimoneda.
+contribution: >-
+  Modelé el dominio y construí un monolito Django modular donde reservas, pagos,
+  asientos, reportes fiscales, sucursales y auditoría forman un flujo conectado.
+decision: >-
+  Aislé los movimientos de dinero en servicios atómicos e idempotentes y mantuve
+  PostgreSQL como fuente de verdad, incluso para el estado durable de las tareas.
+technologies: [Python, Django, Django REST Framework, PostgreSQL, Redis, Django Q2, Railway]
+highlights:
+  - Operación real de dos sucursales sobre una misma plataforma
+  - Contabilidad de doble partida con trazabilidad al documento de origen
+  - Reportes fiscales DGII 606, 607, 608 y 623
+  - Multimoneda, permisos por rol, auditoría y mantenimiento de incidentes reales
+featuredImage:
+  src: /media/projects/omsta/01-dashboard-panel-ejecutivo.png
+  alt: Panel ejecutivo de OMSTA con indicadores de reservas, cobros, cuentas por cobrar y alertas operativas sobre datos sintéticos
+  caption: El panel reúne la operación diaria en una vista; todos los datos visibles son sintéticos y anonimizados.
+gallery:
+  - src: /media/projects/omsta/04-reserva-detalle.png
+    alt: Detalle de una reserva ficticia en OMSTA con estado, cobros, comisión, facturación e historial
+    caption: La reserva funciona como cockpit operativo y financiero, no como un registro aislado.
+  - src: /media/projects/omsta/08-crm-cliente-detalle.png
+    alt: Ficha de cliente ficticio en el CRM de OMSTA con documentos, notas y actividad
+    caption: El CRM conecta el expediente del cliente con reservas y pagos.
+  - src: /media/projects/omsta/10-cuentas-por-cobrar.png
+    alt: Panel de cuentas por cobrar de OMSTA con cartera, comisión y saldos de demostración
+    caption: La cartera puede analizarse por período, estado y contexto comercial.
+  - src: /media/projects/omsta/15-ledger-libro-diario.png
+    alt: Libro diario de OMSTA con asientos de doble partida balanceados y estados de publicación
+    caption: Cada asiento conserva balance y trazabilidad hacia el documento que lo originó.
+  - src: /media/projects/omsta/31-nomina-periodo-detalle.png
+    alt: Período de nómina ficticio en OMSTA con devengado, deducciones y neto
+    caption: El flujo guía generación, revisión, pago y cierre con conexión al ledger.
+  - src: /media/projects/omsta/33-sucursal-detalle.png
+    alt: Panel de una sucursal ficticia en OMSTA con equipo, horarios, documentos y métricas
+    caption: Cada sucursal se modela como una unidad operativa completa.
+  - src: /media/projects/omsta/50-mobile-dashboard.png
+    alt: Panel ejecutivo de OMSTA adaptado a una pantalla móvil
+    caption: Los indicadores y alertas clave conservan prioridad en móvil.
+links:
+  - label: Hablemos de tu sistema
+    href: /es#contacto
+    kind: contact
+seoTitle: OMSTA — ERP en Django | Caso de estudio
+seoDescription: Caso de OMSTA, un ERP en producción con Django que integra reservas, cobros, doble partida, DGII, nómina y multisucursal.
+---
+
+## 1. Contexto
+
+OMSTA es el sistema de gestión que construí para una agencia de viajes que opera en
+República Dominicana con dos sucursales, Santo Domingo y Santiago. Está desplegado
+en Railway y se usa para vender viajes, cobrar, pagar a proveedores, procesar
+nómina y llevar la contabilidad formal del negocio.
+
+## 2. Problema
+
+Una agencia conecta tres dominios que suelen vivir separados: venta de reservas,
+movimientos de dinero y contabilidad. Cuando cada uno se gestiona en una herramienta
+distinta aparecen redigitación, saldos difíciles de conciliar y poca capacidad de
+reconstruir lo ocurrido. El reto era hacer que cada hecho comercial produjera su
+consecuencia financiera y contable correcta.
+
+## 3. Objetivo
+
+Construir una fuente de verdad donde una reserva pueda convertirse en cobro, el
+cobro en asiento y el asiento en reporte fiscal; donde cada pago sea reproducible
+en su moneda y cada usuario actúe según su rol y sucursal.
+
+## 4. Mi función
+
+Fui el único desarrollador y responsable de la arquitectura, implementación,
+despliegue y mantenimiento. Modelé el dominio, construí backend e interfaz,
+implementé la capa financiera-contable y atendí incidentes reales de producción.
+
+## 5. Usuarios
+
+Asesores crean reservas y registran cobros; administración y contabilidad gestionan
+facturación, pagos y obligaciones; gerentes consultan su sucursal; y el rol de
+superadministración controla usuarios, permisos y configuración fiscal.
+
+## 6. Restricciones
+
+PostgreSQL debía permanecer como única fuente de verdad; los permisos críticos
+tenían que imponerse en el servidor; cada pago multimoneda necesitaba conservar la
+tasa usada; y web y worker no podían depender de un disco compartido en la nube.
+Además, los formatos DGII 606, 607, 608 y 623 introducen reglas propias.
+
+## 7. Proceso
+
+Construí el sistema por dominios y capas: núcleo de reservas y clientes, servicios
+atómicos para transiciones de dinero, libro mayor y finalmente reportería fiscal.
+Con el crecimiento incorporé documentación de arquitectura versionada y análisis
+del grafo del código para decidir dónde pagar deuda con evidencia.
+
+## 8. Decisiones importantes
+
+- Servicios explícitos, atómicos e idempotentes para pagos, notas y posteo.
+- Django Q2 para trabajo asíncrono con estado durable en PostgreSQL.
+- `ledger` como libro mayor neutral y el motor de posteo dentro de contabilidad.
+- Snapshot de tasa en cada pago y seguridad por defecto en el servidor.
+
+## 9. Arquitectura y stack
+
+Es un monolito Django modular de 18 aplicaciones. El flujo interno principal es
+`views → services/selectors → models`; PostgreSQL persiste el negocio, Redis apoya
+colas y caché, Django Q2 ejecuta trabajos, y Railway opera procesos web y worker.
+
+La columna contable conecta el hecho económico de reservas con facturación y
+pagos, postea mediante perfiles de documento, guarda el asiento neutral en
+`ledger` y alimenta los reportes fiscales.
+
+## 10. Desafíos
+
+Los mayores desafíos fueron preservar integridad e idempotencia cuando un pago se
+aplica, corrige, revierte o genera excedente; implementar las reglas fiscales
+dominicanas; y reducir el acoplamiento natural de un monolito grande sin frenar su
+operación diaria.
+
+## 11. Soluciones implementadas
+
+Cada operación genera asientos balanceados y trazables. Los cobros de reservas aún
+no facturadas se registran como anticipos y se reclasifican al facturar. Un refactor
+reciente trasladó 27 rutinas de posteo desde `ledger` hacia contabilidad y rompió
+el ciclo entre ambos módulos sin alterar reglas de negocio.
+
+Un incidente mostró otra dimensión del problema: tras aplicar un descuento a una
+reserva ya pagada, el sistema calculó correctamente el crédito a favor pero no lo
+comunicó. Corregí el aviso al guardar, el recibo y añadí un diagnóstico de solo
+lectura para auditar excedentes.
+
+## 12. Diseño y UX
+
+El panel prioriza reservas, cobros, comisión, saldos y alertas accionables. El
+detalle de reserva concentra estado, pagos, facturación, expediente e historial.
+Los formularios distribuyen tareas complejas por pasos y las vistas tipo cockpit se
+repiten en sucursales, nómina y CRM para reducir cambios de contexto.
+
+## 13. Capturas y demo
+
+La galería publicada usa datos ficticios y anonimizados. Muestra panel ejecutivo,
+reserva, CRM, cuentas por cobrar, libro diario, nómina, sucursal y vista móvil. La
+demo pública se añadirá solo cuando exista un entorno aislado de producción con
+credenciales de visitante; hoy el recorrido está disponible de forma privada.
+
+## 14. Resultados verificables
+
+- Sistema real en producción con web, worker, PostgreSQL y Redis.
+- Doble partida, trazabilidad, multimoneda, multisucursal y auditoría.
+- Cumplimiento de los reportes DGII implementados.
+- Historial de mantenimiento sostenido, incidentes documentados y pruebas dirigidas.
+
+Las métricas operativas del cliente son privadas. No publico usuarios, ventas,
+reservas, ahorros de tiempo ni impacto económico sin autorización específica.
+
+## 15. Aprendizajes
+
+En software de dinero, comunicar el resultado importa tanto como calcularlo. Una
+capa de servicios bien delimitada permite refactorizar reglas sensibles sin miedo,
+y la documentación de arquitectura viva convierte la deuda técnica en decisiones
+priorizables.
+
+## 16. Estado actual
+
+OMSTA está en producción y mantenimiento activo. La evolución actual se concentra
+en descomponer vistas y modelos grandes, ampliar pruebas dirigidas y seguir pagando
+deuda sin interrumpir la operación.
+
+## 17. Enlaces y siguiente paso
+
+El repositorio es privado porque contiene un sistema de cliente. Si necesitas una
+plataforma que conecte operación y contabilidad con trazabilidad real, puedes
+[contactarme](/es#contacto).
