@@ -27,7 +27,7 @@ test.describe("smoke — página narrativa mínima", () => {
     expect([307, 308]).toContain(fromStatus);
   });
 
-  test("/es muestra el hero con los dos CTAs", async ({ page }) => {
+  test("/es muestra los CTAs del hero y el CV descargable", async ({ page }) => {
     await page.goto("/es");
     await expect(
       page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
@@ -36,6 +36,10 @@ test.describe("smoke — página narrativa mínima", () => {
     await expect(
       page.getByRole("link", { name: "Trabajemos juntos" }),
     ).toBeVisible();
+    const cv = page.getByRole("link", { name: "Descargar CV" });
+    await expect(cv).toBeVisible();
+    await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
+    await expect(cv).toHaveAttribute("download", "");
   });
 
   test("/es contiene las 7 secciones de mundo ancladas", async ({ page }) => {
@@ -45,7 +49,7 @@ test.describe("smoke — página narrativa mínima", () => {
     }
   });
 
-  test("A20 · el CTA 'Ver proyectos' lleva a la sección Endurance", async ({
+  test("A20 · hero → caso OMSTA requiere como máximo dos interacciones", async ({
     page,
   }) => {
     await page.goto("/es");
@@ -54,6 +58,14 @@ test.describe("smoke — página narrativa mínima", () => {
     await expect(
       page.locator("section#proyectos").getByRole("heading", { level: 2 }),
     ).toBeInViewport();
+    await page.getByRole("link", { name: "Abrir caso completo" }).click();
+    await expect(page).toHaveURL(/\/es\/proyectos\/omsta$/);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: /OMSTA — ERP para una agencia de viajes/,
+      }),
+    ).toBeVisible();
   });
 
   test("A21 · el CTA 'Trabajemos juntos' lleva a Ranger (#contacto)", async ({
@@ -92,6 +104,50 @@ test.describe("smoke — página narrativa mínima", () => {
   test("una ruta desconocida devuelve 404", async ({ page }) => {
     const response = await page.goto("/fr");
     expect(response?.status()).toBe(404);
+  });
+
+  test("A30 · OMSTA publica metadata/OG y un slug inválido responde 404", async ({
+    page,
+  }) => {
+    await page.goto("/es/proyectos/omsta");
+    await expect(page).toHaveTitle(/OMSTA — ERP en Django/);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      "content",
+      "OMSTA — ERP en Django | Caso de estudio",
+    );
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      /\/media\/projects\/omsta\/01-dashboard-panel-ejecutivo\.png$/,
+    );
+
+    const response = await page.goto("/es/proyectos/no-existe");
+    expect(response?.status()).toBe(404);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Esta misión salió de la órbita.",
+      }),
+    ).toBeVisible();
+  });
+
+  test("A32 · home y caso OMSTA no desbordan en 375px", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+
+    for (const path of ["/es", "/es/proyectos/omsta"]) {
+      await page.goto(path);
+      const dimensions = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }));
+      expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+    }
+
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: /OMSTA — ERP para una agencia de viajes/,
+      }),
+    ).toBeVisible();
   });
 });
 

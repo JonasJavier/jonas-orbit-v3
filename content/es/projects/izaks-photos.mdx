@@ -1,0 +1,73 @@
+---
+id: izaks-photos
+slug: izaks-photos
+title: Izak's Photos
+eyebrow: Portafolio fotográfico para cliente
+summary: >-
+  Sitio profesional para un fotógrafo: portafolio visual optimizado,
+  presentación de servicios, identidad de marca y canal de reserva.
+statusLabel: Listo para producción
+role: Diseño de producto, dirección visual y desarrollo full-stack
+problem: >-
+  El fotógrafo necesitaba presentar su trabajo con una identidad profesional y
+  convertir la visita a la galería en una solicitud de reserva clara.
+contribution: >-
+  Diseñé y desarrollé la experiencia responsive, la galería filtrable, el
+  lightbox, el recorrido bilingüe y el formulario conectado a una API Django.
+decision: >-
+  Hice que las fotografías dirigieran la interfaz y mantuve el despliegue en un
+  solo servicio: Django sirve la API y la compilación de Vite en producción.
+technologies: [React, Vite, Django, Django REST Framework, Railway]
+highlights:
+  - Galería por retratos, editorial, bodas y viajes con visor a pantalla completa
+  - Interfaz responsive y bilingüe en español e inglés
+  - Formulario de reserva conectado a un endpoint persistente de Django
+  - Imágenes optimizadas y espacio reservado para evitar saltos de diseño
+featuredImage:
+  src: /media/projects/izaks-photos/01-home-desktop.png
+  alt: Página principal de Izak's Photos con un retrato en primer plano y llamadas a ver la galería y reservar una sesión
+  caption: La fotografía ocupa el centro de la experiencia y las dos acciones principales permanecen visibles desde el primer pantallazo.
+gallery:
+  - src: /media/projects/izaks-photos/02-gallery-desktop.png
+    alt: Galería de Izak's Photos con filtros por categoría y una cuadrícula de fotografías
+    caption: La galería organiza el archivo por retratos, editorial, bodas y viajes.
+  - src: /media/projects/izaks-photos/03-home-mobile.png
+    alt: Página principal de Izak's Photos adaptada a una pantalla móvil
+    caption: El hero conserva jerarquía, marca y acciones principales en móvil.
+  - src: /media/projects/izaks-photos/04-gallery-mobile.png
+    alt: Galería fotográfica de Izak's Photos en vista móvil con filtros accesibles
+    caption: Los filtros y la cuadrícula se reorganizan sin perder la navegación del archivo.
+links:
+  - label: Ver repositorio
+    href: https://github.com/JonasJavier/IZAK-S-PHOTOS
+    kind: repository
+seoTitle: Izak's Photos — Portafolio fotográfico full-stack
+seoDescription: Portafolio para un fotógrafo con React, Django, galería filtrable, lightbox, experiencia bilingüe y reserva de sesiones.
+---
+
+## Necesidad
+
+El proyecto debía hacer dos trabajos a la vez: presentar una selección amplia de
+fotografías sin convertirla en una cuadrícula genérica y ofrecer un camino directo
+para solicitar una sesión. La identidad visual tenía que sentirse editorial,
+sobria y suficientemente flexible para retratos, bodas, viajes y trabajo de marca.
+
+## Mi función
+
+Me encargué de traducir esas necesidades en arquitectura de información, UX/UI y
+desarrollo full-stack. Construí las rutas de inicio, galería, perfil y reserva; el
+frontend responsive; y la integración del formulario con Django REST Framework.
+
+## Decisión relevante
+
+La fotografía no funciona como decoración, sino como la estructura visual del
+producto. Reservé dimensiones para las imágenes, preparé recursos optimizados y
+usé una galería con filtros y lightbox para que cada serie pueda explorarse sin
+perder contexto. Para simplificar la operación, el despliegue previsto usa un solo
+servicio de Railway: Django sirve tanto la API como el build de Vite.
+
+## Estado actual
+
+La versión limpia del repositorio pasa las cuatro pruebas del backend y compila el
+frontend de producción. La URL pública se añadirá cuando termine el despliegue;
+hasta entonces no se presenta una demo inexistente.

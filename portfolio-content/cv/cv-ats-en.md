@@ -5,7 +5,7 @@
 Bonao, Dominican Republic · +1 849 862 5049 · jonasjavier.dev@gmail.com
 Website: https://jonasjavier.dev · LinkedIn: https://linkedin.com/in/jonas-javier-247b50425 · GitHub: https://github.com/JonasJavier
 
-Languages: Spanish (native) · English (B2, professional) — Availability: full-time remote or freelance
+Languages: Spanish (native) · English (B2) — Availability: full-time remote or freelance
 
 ---
 

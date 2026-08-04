@@ -52,8 +52,16 @@ next-env.d.ts
 .wrangler/
 cloudflare-env.d.ts
 
+# terraform local state (la configuración IaC sí se versiona)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
 # playwright
 /test-results/
 /playwright-report/
 /blob-report/
+/.playwright-cli/
+/output/playwright/
 .gstack/
