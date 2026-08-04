@@ -4,9 +4,11 @@ import { WorldGlyph } from "./world-glyph";
 export function WorldSection({
   world,
   children,
+  showPanels = true,
 }: {
   world: World;
   children?: React.ReactNode;
+  showPanels?: boolean;
 }) {
   const { prose } = world;
   return (
@@ -56,25 +58,27 @@ export function WorldSection({
 
           {children}
 
-          <ul className="panel-grid">
-            {prose.panels.map((panel, index) => (
-              <li key={panel.title}>
-                <span className="panel-grid__index" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <p className="panel-grid__eyebrow">{panel.eyebrow}</p>
-                <h3>{panel.title}</h3>
-                <p>{panel.description}</p>
-                {panel.tags && panel.tags.length > 0 ? (
-                  <ul className="tag-list">
-                    {panel.tags.map((tag) => (
-                      <li key={tag}>{tag}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          {showPanels ? (
+            <ul className="panel-grid">
+              {prose.panels.map((panel, index) => (
+                <li key={panel.title}>
+                  <span className="panel-grid__index" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <p className="panel-grid__eyebrow">{panel.eyebrow}</p>
+                  <h3>{panel.title}</h3>
+                  <p>{panel.description}</p>
+                  {panel.tags && panel.tags.length > 0 ? (
+                    <ul className="tag-list">
+                      {panel.tags.map((tag) => (
+                        <li key={tag}>{tag}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           <p className="world-section__closing">
             <span aria-hidden="true">{"//"}</span> {prose.closing}

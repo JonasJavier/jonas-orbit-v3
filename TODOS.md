@@ -39,23 +39,44 @@ No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicad
   de espaciado, arquetipos por mundo, cards, máquina de estados del formulario,
   navegación móvil, contrato WCAG, starfield y páginas auxiliares quedaron
   definidos en `docs/design/wp0-visual-contract.md`; WP0-WP2 están implementados.
-- **T5 · Colisión de color** — ✅ RESUELTO 2026-08-03: Ranger conserva su acento
-  rosa `#ff6f91`; `--color-signal-coral` pasa a `#ff7a66`, un coral más cálido
-  reservado para señales semánticas del formulario.
+- **T5 · Colisión de color** — ✅ RESUELTO 2026-08-03: Ranger usa violeta orbital
+  `#c58cff`; `--color-signal-coral` conserva `#ff7a66`, reservado para errores y
+  señales semánticas del formulario. La identidad del mundo y el error ya no
+  compiten.
 - **T6 · `cosmicName` localizable** — "Tesseracto"/"Gargantúa" viven en
   `content/worlds.data.ts` (estructural, neutral al idioma) pero divergen del EN.
   Mover el nombre visible a la prosa o declararlo invariante. *Antes de F2A.*
 - **T7 · Runtime del Worker de contacto** — ✅ RESUELTO 2026-08-03: contexto de
   Cloudflare inicializado en `next.config.ts`, claves oficiales de prueba y
   contrato Siteverify documentados, y rate limit de zona declarado con Terraform
-  en `infra/cloudflare/`. Ver `docs/decisions/contact-runtime.md`.
+  en `infra/cloudflare/`. WP3 implementa el Route Handler, Turnstile server-side,
+  honeypot y entrega por Resend. Ver `docs/decisions/contact-runtime.md`.
 - **`<html lang>` por locale** — hoy fijo en `es` en el layout raíz; mover bajo
   `[locale]` al empezar F2A (barato ahora, caro después). *Antes de F2A.*
-- **Docs/CI pendientes** — Lighthouse perfil ligero (`?no3d=1`) por PR y
-  comprobación de enlaces en main; job de deploy a Cloudflare cuando existan los
-  secrets. **Promovido a WP6 de F1A.** El
+- **Docs/CI pendientes** — ✅ RESUELTO 2026-08-03: los tres jobs existen en
+  `.github/workflows/ci.yml` (Lighthouse del perfil ligero por PR, enlaces en
+  main, deploy a Cloudflare que se omite mientras falten los secrets). El
   `docs/reviews/eng-review-test-plan-2026-07-21.md` que cita el plan no existe:
   la fuente canónica de tests es el Appendix A.
+
+## Tensiones abiertas de la auditoría WP6 (2026-08-03)
+
+- **T8 · El presupuesto de JS es inalcanzable en este stack.** El plan fija
+  "JS inicial < 150KB gz"; el home carga 231 KiB gz. La causa no es el código de
+  Jonás: `/es/privacidad`, casi sin interactividad, ya carga 147.7 KiB gz — el
+  baseline de Next 16 + React 19 con App Router consume el 98 % del presupuesto
+  por sí solo. Arrastra consigo el LCP (2.6 s contra 2.5 s), porque no lo causa
+  la latencia (TTFB 4 ms) ni el hilo principal (TBT 10 ms). Lighthouse igualmente
+  da 97/100/100/100. Opciones y análisis completo en
+  `docs/status/f1a-readiness-2026-08-03.md`. **Requiere decisión del dueño antes
+  de declarar F1A cerrada.** Mientras tanto el gate de LCP está en `warn`.
+
+- **T9 · `designProse` es una colección huérfana.** `velite.config.ts` define la
+  colección de diseños, pero no existe ningún `content/{es,en}/designs/` ni
+  consumidor, y su esquema no basta para el gate de Edmunds (le faltan `src`,
+  `alt` y orden). Knip no lo detecta porque no sigue colecciones de Velite.
+  Rediseñarla al construir WP5, no conservarla como está. *Viola la regla 3
+  ("cero huérfanos") del repositorio.*
 
 ## Regla de cierre
 

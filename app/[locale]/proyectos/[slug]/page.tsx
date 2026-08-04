@@ -31,14 +31,17 @@ export async function generateMetadata({
     return { title: "Misión no encontrada" };
   }
 
+  const path = `/${locale}/proyectos/${project.prose.slug}`;
   return {
     title: project.prose.seoTitle,
     description: project.prose.seoDescription,
+    alternates: { canonical: path },
     openGraph: {
       title: project.prose.seoTitle,
       description: project.prose.seoDescription,
       type: "article",
       locale: "es_DO",
+      url: path,
       images: [
         {
           url: project.prose.featuredImage.src,
