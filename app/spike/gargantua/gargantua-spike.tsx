@@ -260,7 +260,9 @@ export function GargantuaSpike() {
                 onChange={() => setTier(value)}
                 type="radio"
               />
-              {value === "orbit" ? "orbit (móvil, DPR 1.25)" : "deep (DPR 1.75)"}
+              {value === "orbit"
+                ? "orbit (móvil · DPR 1.0 · 190 pasos)"
+                : "deep (DPR 1.5 · 340 pasos)"}
             </label>
           ))}
         </fieldset>
@@ -281,16 +283,15 @@ export function GargantuaSpike() {
               onChange={(event) => setHalo(event.target.checked)}
               type="checkbox"
             />
-            Arcos lensados
+            Imágenes de orden superior
           </label>
           <label>
             <input
               checked={lens}
-              disabled={tier !== "deep"}
               onChange={(event) => setLens(event.target.checked)}
               type="checkbox"
             />
-            Distorsión del fondo{tier !== "deep" ? " (solo deep)" : ""}
+            Lente sobre el fondo
           </label>
           <label>
             <input
