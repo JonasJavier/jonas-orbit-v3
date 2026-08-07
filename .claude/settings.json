@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm ci)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(npx velite:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx knip:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx opennextjs-cloudflare build)",
+      "Bash(node --version)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git stash:*)",
+      "Bash(git fetch:*)",
+      "Bash(gh run:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "PowerShell(npm run:*)",
+      "PowerShell(git status:*)",
+      "PowerShell(git diff:*)",
+      "PowerShell(gh run:*)",
+      "Read(//C/Users/hachi/OneDrive/Documentos/GitHub/jonas-orbit-v3/**)",
+      "mcp__codebase-memory-mcp__search_graph",
+      "mcp__codebase-memory-mcp__search_code",
+      "mcp__codebase-memory-mcp__get_code_snippet",
+      "mcp__codebase-memory-mcp__get_architecture",
+      "mcp__codebase-memory-mcp__trace_path",
+      "mcp__codebase-memory-mcp__query_graph",
+      "mcp__codebase-memory-mcp__index_status",
+      "mcp__codebase-memory-mcp__detect_changes",
+      "WebSearch",
+      "WebFetch(domain:threejs.org)",
+      "WebFetch(domain:r3f.docs.pmnd.rs)",
+      "WebFetch(domain:nextjs.org)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebFetch(domain:developer.mozilla.org)"
+    ],
+    "ask": [
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm update:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.dev.vars)",
+      "Read(./.dev.vars.*)",
+      "Read(./**/*.tfstate)",
+      "Read(./**/*.tfstate.*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fdx:*)",
+      "Bash(npm publish:*)",
+      "Bash(npx wrangler deploy:*)",
+      "Bash(npx opennextjs-cloudflare deploy:*)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/lint-changed.mjs",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "enabledPlugins": {
+    "atlan@inline": false,
+    "box@inline": false,
+    "cockroachdb@inline": false,
+    "cowork-plugin-management@inline": false,
+    "data@inline": false,
+    "desktop-commander@inline": false,
+    "engineering@inline": false,
+    "fastly-agent-toolkit@inline": false,
+    "figma@inline": false,
+    "marketing@inline": false,
+    "miro@inline": false,
+    "prisma@inline": false,
+    "product-management@inline": false,
+    "qodo-skills@inline": false,
+    "sanity@inline": false,
+    "servicenow-sdk@inline": false,
+    "twilio-developer-kit@inline": false,
+    "vpai@inline": false
+  }
+}

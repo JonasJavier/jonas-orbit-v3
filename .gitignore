@@ -58,6 +58,10 @@ cloudflare-env.d.ts
 *.tfstate.*
 crash.log
 
+# claude code: settings.json y hooks SÍ se versionan (config del proyecto);
+# settings.local.json es por máquina y no debe viajar entre equipos.
+.claude/settings.local.json
+
 # playwright
 /test-results/
 /playwright-report/

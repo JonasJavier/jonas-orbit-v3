@@ -1,0 +1,168 @@
+/* G0 · Estilos del spike — CÓDIGO DESECHABLE. Se borra con la carpeta. */
+
+.spike {
+  position: fixed;
+  inset: 0;
+  background: #02030a;
+  color: #e8ecf8;
+  font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, monospace;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  position: absolute;
+  top: clamp(0.5rem, 2vw, 1.5rem);
+  left: clamp(0.5rem, 2vw, 1.5rem);
+  /* Plegado ocupa lo mínimo; abierto no pasa de 20rem ni de media pantalla, que
+     es lo que impedía ver la escena en un móvil de 412 px. */
+  width: min(20rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid rgba(140, 170, 255, 0.28);
+  border-radius: 0.6rem;
+  background: rgba(4, 7, 18, 0.82);
+  backdrop-filter: blur(6px);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.panel[open] {
+  padding-bottom: 1.1rem;
+}
+
+.summary {
+  cursor: pointer;
+  list-style: none;
+  /* Objetivo táctil cómodo incluso plegado. */
+  min-height: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summaryHint {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(232, 236, 248, 0.5);
+}
+
+.panel[open] .summary {
+  margin-bottom: 0.7rem;
+  border-bottom: 1px solid rgba(140, 170, 255, 0.18);
+  padding-bottom: 0.5rem;
+}
+
+.note {
+  margin: 0 0 0.9rem;
+  color: rgba(232, 236, 248, 0.6);
+  font-size: 0.72rem;
+}
+
+.live {
+  display: block;
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+  color: #7fe5ff;
+}
+
+.panel fieldset {
+  margin: 0 0 0.85rem;
+  padding: 0.5rem 0.7rem 0.6rem;
+  border: 1px solid rgba(140, 170, 255, 0.2);
+  border-radius: 0.4rem;
+}
+
+.panel legend {
+  padding: 0 0.35rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(232, 236, 248, 0.55);
+}
+
+.panel label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.15rem 0;
+  cursor: pointer;
+}
+
+.panel label:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.panel button {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 180, 92, 0.55);
+  border-radius: 0.4rem;
+  background: rgba(255, 180, 92, 0.12);
+  color: #ffb45c;
+  font: inherit;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.panel button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.result {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.4rem;
+  border-left: 3px solid currentColor;
+  background: rgba(255, 255, 255, 0.04);
+  font-variant-numeric: tabular-nums;
+}
+
+.result > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.result dt,
+.result dd {
+  margin: 0;
+}
+
+.result dt {
+  color: rgba(232, 236, 248, 0.6);
+}
+
+.result[data-verdict="pasa"] {
+  color: #7ce6a8;
+}
+
+.result[data-verdict="justo"] {
+  color: #ffcf6b;
+}
+
+.result[data-verdict="no pasa"] {
+  color: #ff7a66;
+}
+
+.gpu {
+  margin: 0.9rem 0 0;
+  color: rgba(232, 236, 248, 0.45);
+  font-size: 0.66rem;
+  overflow-wrap: anywhere;
+}

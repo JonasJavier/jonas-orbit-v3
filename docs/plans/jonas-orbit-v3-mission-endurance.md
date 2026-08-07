@@ -9,6 +9,22 @@ Status: APPROVED · setup técnico F1A construido y verificado (2026-07-22)
 Última revisión: `/autoplan` 2026-07-23 (ver `docs/reviews/autoplan-2026-07-23.md`)
 Mode: Builder
 
+> ## ⚠️ PIVOTE APROBADO 2026-08-06 — leer antes que nada
+>
+> La arquitectura de navegación de este documento (**una sola página narrativa
+> con siete secciones y el scroll como fuente de verdad de la cámara**) queda
+> **sustituida** por [`sistema-gargantua.md`](sistema-gargantua.md): la home pasa
+> a ser la escena del Sistema Gargantúa, cada mundo pasa a ser una ruta propia y
+> **la cámara es fija, función pura de la ruta, sin controlador**.
+>
+> Este documento **sigue siendo la fuente de verdad** de: contenido como
+> entregable, inventario de proyectos, distribución y conversión, seguridad del
+> formulario, SEO/i18n, criterios de honestidad y condición de parada.
+>
+> Las secciones sustituidas están marcadas con `⟂ SUSTITUIDO`. La matriz del
+> Appendix A recibe un delta (altas, bajas y reescrituras) en la §12 del pivote.
+> Ante cualquier contradicción entre ambos documentos, **manda el pivote**.
+
 ## Problem Statement
 
 Jonás Javier Encarnación — desarrollador full-stack (Python/Django, React/TypeScript), diseñador UX/UI, diseñador multimedia y fotógrafo, con carrera de Marketing Digital terminada y CS50x/CS50W — necesita un portafolio personal estilo espacio/universo inspirado en Interstellar que funcione como herramienta doble: conseguir empleo y atraer clientes freelance. El concepto actual (jonas-orbit v2) tiene buena metáfora y buen copy, pero bases defectuosas: ~2,100 líneas de código muerto, efectos duplicados, `globals.css` monolítico de 3,512 líneas, contenido fragmentado y un cimiento experimental (vinext 0.0.50).
@@ -31,7 +47,7 @@ Jonás Javier Encarnación — desarrollador full-stack (Python/Django, React/Ty
 - Bilingüe ES/EN desde la arquitectura. `/en` NO se publica hasta que su contenido esté completo (F2A). Nada público con huecos.
 - Construcción por fases: cada fase termina en un sitio completo deployable en Cloudflare. Nunca hay estado "a medias" publicado.
 - **Contenido como entregable planificado:** cada pieza tiene responsable (Jonás), timebox y readiness gate (ver "Contenido como entregable"). Ninguna fase se cierra si su contenido requerido no está listo; ningún código se publica con tarjetas vacías o contenido falso.
-- **Presupuesto de rendimiento (rige en TODAS las fases), con tres perfiles de auditoría honestos — sin detección del auditor:**
+- **Presupuesto de rendimiento (rige en TODAS las fases), con tres perfiles de auditoría honestos — sin detección del auditor.** ⟂ La cifra «JS inicial < 150KB gz» está **SUSTITUIDA** por la re-línea-base de [`sistema-gargantua.md`](sistema-gargantua.md) §8 (era inalcanzable: el baseline de Next 16 + React 19 consume 147,7 KiB gz él solo — ver T8). Los umbrales de Lighthouse y el modelo de tres perfiles siguen vigentes sin cambios.
   - **Ligero:** URL con `?no3d=1` (override explícito, parte real del producto: es el mismo mecanismo del botón "Reducir efectos") → Lighthouse móvil ≥ 90 en las 4 categorías; LCP < 2.5s; JS inicial < 150KB gz.
   - **Predeterminado:** URL canónica sin parámetros → sin ninguna modificación de comportamiento por detección del auditor; muestra exactamente lo que recibiría un visitante normal bajo las mismas condiciones; mismos umbrales.
   - **3D:** activada explícitamente en entorno/dispositivo capaz; se mide aparte (FPS, memoria, texturas, estabilidad) sobre el dispositivo de referencia (Android gama media clase Pixel 7a / 4-6GB RAM) con las condiciones reproducibles definidas en F3.
@@ -71,9 +87,9 @@ Astro 5 + islas React. Esfuerzo: M · Riesgo: Medio · Completitud vs visión: 7
 - **Framework y hosting (decidido):** Next.js (App Router, `create-next-app` estándar) + **adaptador oficial OpenNext para Cloudflare** (`@opennextjs/cloudflare`). **Política de versiones:** todas fijadas en `package.json` y lockfile en el setup; se actualizan solo mediante tarea separada tras ejecutar la suite completa. Plan B documentado si el adaptador bloquea: static export + Worker aparte para contacto + redirect de idioma en el edge.
 - **Estilos:** Tailwind 4 con tokens propios (`@theme`: negro profundo, dorado-ámbar, cian; Space Grotesk + JetBrains Mono locales). Prohibido el CSS monolítico: estilos co-locados por componente.
 - **Contenido (pipeline único: Velite):** colecciones tipadas con esquemas Zod integrados y MDX; prohibido un segundo pipeline MDX sin retirar el anterior (plan B: gray-matter + Zod + next-mdx-remote — uno u otro, nunca ambos). **Separación estructura/prosa con identidad canónica:** `content/worlds.data.ts` contiene EXCLUSIVAMENTE datos neutrales al idioma, indexados por **`WorldId` canónico, tipado e inmutable** (`const WORLD_IDS = ["tesseract","cooper-station","miller","endurance","edmunds","gargantua","ranger"] as const`): orden narrativo, colores, órbitas, modelo visual, parámetros de cámara/efectos, nivel de calidad 3D, nombre de escena, relaciones. Prosa localizada en `content/{es,en}/worlds/*.mdx` (título, subtítulo, narrativa, CTAs, etiquetas, alt — el alt es idioma y accesibilidad, no estructura — y metadatos SEO). La unión NO usa el slug (las URLs pueden cambiar sin romper la escena); `getWorld(id, locale)` compone ambos lados. `content/{es,en}/projects/` y `content/{es,en}/designs/` siguen el patrón. Binarios neutrales en `assets/photos/` y `assets/certs/`; metadatos localizados en colecciones bilingües. **Validaciones que ROMPEN el build:** mundo sin prosa en idioma publicado; id desconocido; archivos duplicados por mundo+idioma; orden repetido; propiedad estructural faltante. La paridad se exige SOLO a idiomas publicados (F1A: solo ES).
-- **Arquitectura de rutas (decidida):** una sola página narrativa por idioma; los 7 mundos son secciones semánticas con anclas compartibles (`/es#miller`). Historial: `replaceState` al cruzar mundos por scroll; `pushState` solo en selección explícita (planeta, Cmd+K, menú). Casos de estudio, visor de galería, página de gracias y privacidad en rutas independientes con metadata/OG propio (`/es/proyectos/omsta`).
+- **Arquitectura de rutas ⟂ SUSTITUIDO por [`sistema-gargantua.md`](sistema-gargantua.md) §2:** los 7 mundos pasan a ser **rutas propias** (`/es/desarrollo`, `/es/proyectos`, `/es/contacto`…), no secciones con ancla. Lo que sigue describe el modelo anterior y se conserva solo como registro de la decisión previa. ~~una sola página narrativa por idioma; los 7 mundos son secciones semánticas con anclas compartibles (`/es#miller`).~~ Historial: `replaceState` al cruzar mundos por scroll; `pushState` solo en selección explícita (planeta, Cmd+K, menú). Casos de estudio, visor de galería, página de gracias y privacidad en rutas independientes con metadata/OG propio (`/es/proyectos/omsta`).
 - **i18n:** rutas `/es/...` y `/en/...` con `hreflang`; ES es la fuente. F1A/F1B: SIN middleware — redirect estático `/` → `/es`; el middleware con detección `Accept-Language` entra en F2A junto con la publicación de `/en`.
-- **Contrato scroll→escena (el corazón de B):** un store (Zustand) publica `{ worldIndex, worldProgress, globalProgress }`. La capa de fondo es un slot con tres implementaciones que leen el mismo store: `StaticBackdrop` (reduced-motion/low-end), `Starfield2D` (canvas, F1A), `UniverseScene` (R3F, F2B+, `next/dynamic` + gate). **Un solo controlador de cámara:** el scroll es la única fuente de verdad; seleccionar un planeta mediante clic, teclado o control equivalente desplaza el documento hasta su sección y la cámara reacciona al progreso resultante; con reduced-motion el salto es inmediato. El planeta activo expone estados visibles de hover, focus y selección. Nunca hay dos controladores peleando por la cámara.
+- **Contrato scroll→escena ⟂ SUSTITUIDO por [`sistema-gargantua.md`](sistema-gargantua.md) §3-§4.** El scroll **ya no toca la cámara**: la pose es función pura de la ruta activa y no existe controlador. El slot de fondo sobrevive como los tres niveles de fidelidad (`flat`/`orbit`/`deep`), con `Starfield2D` conservado como nivel `flat`. Texto original, conservado como registro: un store (Zustand) publica `{ worldIndex, worldProgress, globalProgress }`. La capa de fondo es un slot con tres implementaciones que leen el mismo store: `StaticBackdrop` (reduced-motion/low-end), `Starfield2D` (canvas, F1A), `UniverseScene` (R3F, F2B+, `next/dynamic` + gate). **Un solo controlador de cámara:** el scroll es la única fuente de verdad; seleccionar un planeta mediante clic, teclado o control equivalente desplaza el documento hasta su sección y la cámara reacciona al progreso resultante; con reduced-motion el salto es inmediato. El planeta activo expone estados visibles de hover, focus y selección. Nunca hay dos controladores peleando por la cámara.
 
 ```
   DOM scroll ──IntersectionObserver──> eventos discretos (mundo activo, hash, lazy)
@@ -180,7 +196,7 @@ los assets y el canal de distribución.**
 - **F1A — Lanzamiento esencial (publicable, solo ES):** setup limpio, tokens, modelo de contenido con `WorldId`, contrato scroll→escena, hero (2 CTAs + CV) + narrativa de 7 mundos (Motion; CSS scroll-driven como mejora progresiva), starfield 2D diferido, redirect `/` → `/es`, **caso completo de OMSTA** + 3 fichas breves, 8-12 fotos + 3-4 diseños (Edmunds), **CV descargable en PDF (ES; EN como asset de distribución)**, contacto con la seguridad especificada + página de gracias + **canal directo (WhatsApp/email) y bloque de oferta freelance en Ranger**, SEO/OG/sitemap, accesibilidad (teclado + reduced-motion), tests según Appendix A (niveles Vitest/TL/Playwright-Chromium), deploy Cloudflare vía OpenNext. **Al desplegarse, F1A se usa inmediatamente para solicitudes de empleo y contacto con clientes.**
 - **F1B — Profundidad y pulido:** Cmd+K, certificados completos, Gargantúa con 2-3 experimentos reales del build, segundo y tercer caso completo (Delicaté + portafolio fotográfico), galería ampliada (12-20 fotos, 4-6 diseños), analytics (Cloudflare Web Analytics), suite de pruebas y microinteracciones ampliadas.
 - **F2A — Localización inglesa + expansión de contenido:** congelar ES; traducir (borrador asistido + revisión humana); publicar `/en` + `hreflang` + middleware `Accept-Language`; casos completos de Wiki Universe y red social; verificación de los 5 casos en ES y EN; revisión de títulos/descripciones/alt/metadata en ambos idiomas.
-- **F2B — Primera experiencia 3D:** hero R3F con sistema orbital sencillo, gate de capacidad activo, HUD de telemetría, primeras transiciones entre mundos, botones "Activar 3D"/"Reducir efectos", **navegación orbital interactiva de los 7 mundos**, **spike de dirección artística foto→universo**, pipeline de texturas (KTX2/Basis, presupuesto de peso propio) SOLO tras validar el spike, calidad gráfica adaptativa. Cada planeta visible debe poder seleccionarse mediante clic, teclado o control equivalente; la selección desplaza el DOM al mundo correspondiente y nunca controla directamente la cámara. La cámara reacciona al store de scroll como única fuente de verdad; el mundo activo tiene estados claros de hover, focus y selección.
+- **F2B ⟂ SUSTITUIDA por las fases G0-G4 de [`sistema-gargantua.md`](sistema-gargantua.md) §9**, que además se adelantan: la escena deja de ser una capa posterior y pasa a ser la home. Descripción original conservada como registro: hero R3F con sistema orbital sencillo, gate de capacidad activo, HUD de telemetría, primeras transiciones entre mundos, botones "Activar 3D"/"Reducir efectos", **navegación orbital interactiva de los 7 mundos**, **spike de dirección artística foto→universo**, pipeline de texturas (KTX2/Basis, presupuesto de peso propio) SOLO tras validar el spike, calidad gráfica adaptativa. Cada planeta visible debe poder seleccionarse mediante clic, teclado o control equivalente; la selección desplaza el DOM al mundo correspondiente y nunca controla directamente la cámara. La cámara reacciona al store de scroll como única fuente de verdad; el mundo activo tiene estados claros de hover, focus y selección.
 - **F3 — Universo pleno — OPTIONAL, requiere nueva aprobación:** escena continua sincronizada con todo el scroll (una sola trayectoria de cámara), Gargantúa con shader de lente gravitacional, galería inmersiva WebGL, easter eggs TARS (terminal: stretch). Metas medibles: CLS = 0; checklist de microinteracciones completa; fluidez reproducible: promedio ≈ 60 FPS con p5 ≥ 45 durante el recorrido hero→Ranger (~90s), Pixel 7a-class, Chrome estable, DPR ≤ 2, calidad "media", midiendo Gargantúa (la escena más pesada), sin bloqueos > 250ms; degradación automática de calidad antes que romper la meta.
 
 ### Condición de parada
@@ -311,6 +327,20 @@ Reglas:
 ## Appendix A — Test Matrix
 
 Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en el nivel más bajo y estable que pueda verificarlos. (La cifra citada durante la revisión era aproximada; esta tabla es la fuente de verdad — 33 escenarios tras retirar los de intención, añadir CV/página de gracias y separar la navegación orbital 3D de la navegación DOM de F1A.)
+
+> **⟂ Delta del pivote 2026-08-06.** Esta tabla se lee junto a la §12 de
+> [`sistema-gargantua.md`](sistema-gargantua.md), que la modifica:
+>
+> - **Se retiran** `A6`, `A7`, `A8` (progreso de scroll) y `A22`, `A23`, `A24`
+>   (anclas e historial por scroll): el comportamiento que cubrían deja de
+>   existir cuando cada mundo es una ruta.
+> - **Se reescriben** `A20`, `A21`, `A28`, `A29`, `A32` para navegación por rutas.
+> - **`A33` queda absorbido** por `G5`+`G6`+`G7`, sin la cláusula «la cámara
+>   reacciona al scroll»: ya no hay acoplamiento scroll↔cámara.
+> - **Se añaden** `G1`-`G12`.
+>
+> Los estados ✅ de las filas retiradas eran ciertos al 2026-08-03; se conservan
+> como registro histórico, no como cobertura vigente.
 
 | ID | Escenario | Riesgo cubierto | Fase | Nivel | Herramienta | Criterio | Estado |
 |----|-----------|-----------------|------|-------|-------------|----------|--------|

@@ -1,6 +1,7 @@
 # TODOS — Jonás Orbit v3
 
 Documento principal aprobado: [`docs/plans/jonas-orbit-v3-mission-endurance.md`](docs/plans/jonas-orbit-v3-mission-endurance.md)
+Pivote de navegación aprobado 2026-08-06: [`docs/plans/sistema-gargantua.md`](docs/plans/sistema-gargantua.md)
 
 Las tareas activas de implementación viven en **Next Steps** del plan principal.
 Este archivo conserva decisiones, tensiones y trabajo diferido; cuando un punto se
@@ -19,7 +20,11 @@ promueve a ejecución, su paquete activo se enlaza explícitamente aquí.
 Detalle en [`docs/reviews/autoplan-2026-07-23.md`](docs/reviews/autoplan-2026-07-23.md).
 No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicadas.
 
-- **T1 · Esquema de anclas** — el código usa slug localizado (`/es#proyectos`);
+- **T1 · CERRADA 2026-08-06 por el pivote.** Ya no hay anclas que decidir: cada
+  mundo es una ruta (`/es/proyectos`), no una sección. Se conserva la decisión
+  de fondo — **slug localizado con significado**, no `WorldId` en la URL — que
+  es exactamente lo que aplica la §2 del pivote. Contexto original:
+  el código usa slug localizado (`/es#proyectos`);
   el plan (A23) citaba `/es#endurance`. Auto-decidido: mantener slug localizado
   (ya construido, mejor UX en ES) y se corrigió el plan. Alternativa válida:
   WorldId canónico (anclas estables entre idiomas). Reabrir solo si se prioriza
@@ -61,7 +66,13 @@ No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicad
 
 ## Tensiones abiertas de la auditoría WP6 (2026-08-03)
 
-- **T8 · El presupuesto de JS es inalcanzable en este stack.** El plan fija
+- **T8 · SUSTITUIDA 2026-08-06** por la re-línea-base de
+  [`sistema-gargantua.md`](docs/plans/sistema-gargantua.md) §8: se retira la
+  cifra global única y se sustituye por presupuesto de ruta (JS propio sin
+  baseline), presupuesto aparte del chunk 3D y de texturas, y Lighthouse ≥ 90 en
+  el perfil ligero como único gate verificado en CI. **Sigue requiriendo que
+  Jonás confirme las cifras tras medirlas en G1.** Diagnóstico original:
+  El plan fija
   "JS inicial < 150KB gz"; el home carga 231 KiB gz. La causa no es el código de
   Jonás: `/es/privacidad`, casi sin interactividad, ya carga 147.7 KiB gz — el
   baseline de Next 16 + React 19 con App Router consume el 98 % del presupuesto
@@ -77,6 +88,18 @@ No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicad
   `alt` y orden). Knip no lo detecta porque no sigue colecciones de Velite.
   Rediseñarla al construir WP5, no conservarla como está. *Viola la regla 3
   ("cero huérfanos") del repositorio.*
+
+## Decisiones abiertas del pivote (2026-08-06)
+
+Detalle en [`docs/plans/sistema-gargantua.md`](docs/plans/sistema-gargantua.md) §14.
+
+- **Cifras del presupuesto de JS** — confirmar tras medirlas en G1 (hereda T8).
+- **Slugs ES definitivos** — `/es/sobre-mi`, `/es/formacion`, `/es/desarrollo`,
+  `/es/creatividad`, `/es/laboratorio` son propuestas. Cambiarlos es barato
+  ahora y caro tras el deploy. *Antes de G1.*
+- **Riesgo aceptado explícitamente:** no hay despliegue hasta que la escena esté
+  lista, teniendo F1A prácticamente terminada. Mitigación disponible y **no
+  activada**: G1 (migración de rutas, sin 3D) es desplegable por sí sola.
 
 ## Regla de cierre
 
