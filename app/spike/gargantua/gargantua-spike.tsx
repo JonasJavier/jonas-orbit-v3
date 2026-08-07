@@ -26,12 +26,16 @@ const MEASURE_MS = 20_000;
 const WARMUP_FRAMES = 45;
 
 interface Measurement {
-  average: number;
-  p5: number;
-  p1: number;
-  worst: number;
+  averageFps: number;
+  p5Fps: number;
+  medianMs: number;
+  p95Ms: number;
+  worstMs: number;
   frames: number;
   verdict: "pasa" | "justo" | "no pasa";
+  /** En qué resolución y con cuántos pasos se tomó. Sin esto la cifra de fps no
+   *  es comparable entre dos ejecuciones. */
+  context: string;
 }
 
 function percentile(sorted: readonly number[], fraction: number): number {
@@ -43,31 +47,35 @@ function percentile(sorted: readonly number[], fraction: number): number {
   return sorted[index];
 }
 
-function summarise(deltas: readonly number[]): Measurement {
-  const fps = deltas
-    .filter((delta) => delta > 0)
-    .map((delta) => 1000 / delta)
-    .sort((a, b) => a - b);
-  const average =
+function summarise(
+  deltas: readonly number[],
+  context: string,
+): Measurement {
+  const times = deltas.filter((delta) => delta > 0).sort((a, b) => a - b);
+  const fps = times.map((delta) => 1000 / delta).sort((a, b) => a - b);
+  const averageFps =
     fps.length > 0 ? fps.reduce((sum, value) => sum + value, 0) / fps.length : 0;
-  const p5 = percentile(fps, 0.05);
-  const p1 = percentile(fps, 0.01);
+  const p5Fps = percentile(fps, 0.05);
 
   // El gate literal del plan: promedio ≈ 60 con p5 ≥ 45.
   const verdict: Measurement["verdict"] =
-    average >= 55 && p5 >= 45
+    averageFps >= 55 && p5Fps >= 45
       ? "pasa"
-      : average >= 45 && p5 >= 30
+      : averageFps >= 45 && p5Fps >= 30
         ? "justo"
         : "no pasa";
 
   return {
-    average,
-    p5,
-    p1,
-    worst: fps.length > 0 ? fps[0] : 0,
-    frames: fps.length,
+    averageFps,
+    p5Fps,
+    // Tiempos de frame en el orden en que importan: la mediana es el estado
+    // estable y el p95 es el frame lento que se PERCIBE como tirón.
+    medianMs: percentile(times, 0.5),
+    p95Ms: percentile(times, 0.95),
+    worstMs: times.length > 0 ? times[times.length - 1] : 0,
+    frames: times.length,
     verdict,
+    context,
   };
 }
 
@@ -102,9 +110,15 @@ export function GargantuaSpike() {
     bloom,
   });
 
+  // Una vez que la escena reporta un fallo, el pie deja de refrescarse con el
+  // diagnóstico: si no, el mensaje de error se sobreescribiría a los 250 ms y
+  // sería invisible.
+  const statusLockedRef = useRef(false);
+
   // El estado del bucle se escribe en el DOM, no en estado de React: un setState
   // por frame falsearía la propia medición.
   const reportStatus = useCallback((message: string) => {
+    statusLockedRef.current = true;
     if (gpuRef.current) gpuRef.current.textContent = message;
     if (liveRef.current) liveRef.current.textContent = "detenido";
   }, []);
@@ -172,10 +186,18 @@ export function GargantuaSpike() {
     const timer = window.setInterval(() => {
       const recent = recentRef.current;
       const node = liveRef.current;
-      if (!node || recent.length === 0) return;
-      const mean =
-        recent.reduce((sum, value) => sum + value, 0) / recent.length;
-      node.textContent = `${(1000 / mean).toFixed(0)} fps · ${mean.toFixed(1)} ms`;
+      if (node && recent.length > 0) {
+        const mean =
+          recent.reduce((sum, value) => sum + value, 0) / recent.length;
+        node.textContent = `${(1000 / mean).toFixed(0)} fps · ${mean.toFixed(1)} ms`;
+      }
+      // El diagnóstico se relee: la resolución de render y el DPR efectivo
+      // cambian al redimensionar y al cambiar de nivel, y el pie tiene que
+      // decir lo que se está renderizando AHORA, no lo que se montó.
+      const handle = handleRef.current;
+      if (handle && gpuRef.current && !statusLockedRef.current) {
+        gpuRef.current.textContent = handle.diagnostics;
+      }
     }, 250);
     return () => window.clearInterval(timer);
   }, []);
@@ -214,7 +236,9 @@ export function GargantuaSpike() {
       const captured = captureRef.current ?? [];
       captureRef.current = null;
       setMeasuring(false);
-      setResult(summarise(captured));
+      setResult(
+        summarise(captured, handleRef.current?.renderContext ?? "sin escena"),
+      );
     }, MEASURE_MS);
   }, []);
 
@@ -260,9 +284,12 @@ export function GargantuaSpike() {
                 onChange={() => setTier(value)}
                 type="radio"
               />
+              {/* «tope», no «DPR»: el DPR real es el mínimo entre este tope y
+                  el de la pantalla, y el pie lo publica. Antes ponía «DPR 1.5»
+                  mientras el pie decía 1.25 y parecían contradecirse. */}
               {value === "orbit"
-                ? "orbit (móvil · DPR 1.0 · 190 pasos)"
-                : "deep (DPR 1.5 · 340 pasos)"}
+                ? "orbit (móvil · tope DPR 1.0 · 190 pasos)"
+                : "deep (tope DPR 1.5 · 340 pasos)"}
             </label>
           ))}
         </fieldset>
@@ -311,25 +338,33 @@ export function GargantuaSpike() {
           <dl className={styles.result} data-verdict={result.verdict}>
             <div>
               <dt>Promedio</dt>
-              <dd>{result.average.toFixed(1)} fps</dd>
+              <dd>{result.averageFps.toFixed(1)} fps</dd>
             </div>
             <div>
               <dt>p5</dt>
-              <dd>{result.p5.toFixed(1)} fps</dd>
+              <dd>{result.p5Fps.toFixed(1)} fps</dd>
             </div>
             <div>
-              <dt>p1</dt>
-              <dd>{result.p1.toFixed(1)} fps</dd>
+              <dt>Mediana</dt>
+              <dd>{result.medianMs.toFixed(2)} ms</dd>
+            </div>
+            <div>
+              <dt>p95</dt>
+              <dd>{result.p95Ms.toFixed(2)} ms</dd>
             </div>
             <div>
               <dt>Peor frame</dt>
-              <dd>{result.worst.toFixed(1)} fps</dd>
+              <dd>{result.worstMs.toFixed(2)} ms</dd>
             </div>
             <div>
               <dt>Veredicto</dt>
               <dd>
                 <strong>{result.verdict}</strong> ({result.frames} frames)
               </dd>
+            </div>
+            <div>
+              <dt>Condiciones</dt>
+              <dd>{result.context}</dd>
             </div>
           </dl>
         ) : null}

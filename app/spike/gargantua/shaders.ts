@@ -80,6 +80,20 @@ float fbm(vec2 p) {
   }
   return value;
 }
+
+/** Tres octavas, para los campos que solo aportan forma general: la deformación
+ *  de dominio y los carriles de polvo. La cuarta octava ahí no se distingue y el
+ *  disco se evalúa dos o tres veces por rayo, así que cada octava se paga. */
+float fbm3(vec2 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  for (int i = 0; i < 3; i++) {
+    value += amplitude * valueNoise(p);
+    p *= 2.03;
+    amplitude *= 0.5;
+  }
+  return value;
+}
 `;
 
 /** Cuad de pantalla completa. No hay matriz de proyección: cada píxel fabrica su
@@ -109,6 +123,7 @@ uniform float uTime;
 uniform float uDiskInner;
 uniform float uDiskOuter;
 uniform float uSkyRadius;
+/** Ángulo objetivo por paso de integración, en radianes. */
 uniform float uStepScale;
 
 // Interruptores del HUD. Son floats en [0,1] para poder mezclar en vez de
@@ -131,6 +146,12 @@ ${NOISE_CHUNK}
 const float HORIZON = 1.0;
 const float PHOTON_SPHERE = 1.5;
 
+/** Escala global del HDR del disco. */
+const float DISK_GAIN = 4.2;
+
+/** Punto de rodilla del rodillo de altas luces (ver diskSample). */
+const float HIGHLIGHT_KNEE = 7.0;
+
 // ---------------------------------------------------------------------------
 // Fondo: estrellas + velo de nebulosa. Se evalúa UNA vez por rayo, al escapar.
 // ---------------------------------------------------------------------------
@@ -152,8 +173,10 @@ float starLayer(vec3 dir, float scale, float density) {
   float d = length(dir - starDir) * scale;
 
   // Pocas muy brillantes, muchas apenas visibles: un campo uniforme se lee como
-  // ruido de sensor, no como cielo.
-  float magnitude = 0.35 + 4.2 * pow(h.y, 7.0);
+  // ruido de sensor, no como cielo. El exponente sube a 9 para recortar las
+  // gigantes blancas: estiradas por el lente eran lo que más competía con el
+  // disco.
+  float magnitude = 0.22 + 2.1 * pow(h.y, 9.0);
   return present * magnitude * exp(-d * d * 110.0);
 }
 
@@ -164,17 +187,17 @@ vec3 skySample(vec3 dir) {
   // la pantalla se llena de arañazos y compite con el disco. Pocas y tenues, el
   // mismo cielo casi negro de las referencias.
   vec3 color = vec3(0.0);
-  color += starLayer(dir, 38.0, 0.085) * vec3(1.00, 0.97, 0.92) * 0.62;
-  color += starLayer(dir, 91.0, 0.065) * vec3(0.88, 0.93, 1.00) * 0.30;
-  color += starLayer(dir, 197.0, 0.050) * vec3(1.00, 0.93, 0.84) * 0.16;
+  color += starLayer(dir, 38.0, 0.042) * vec3(1.00, 0.97, 0.92) * 0.40;
+  color += starLayer(dir, 91.0, 0.032) * vec3(0.88, 0.93, 1.00) * 0.17;
+  color += starLayer(dir, 197.0, 0.024) * vec3(1.00, 0.93, 0.84) * 0.09;
 
   // Velo muy tenue. Existe para que el lente tenga algo continuo que curvar
   // además de puntos: sin él la distorsión del fondo es casi invisible.
   vec2 sph = vec2(atan(dir.z, dir.x), asin(clamp(dir.y, -1.0, 1.0)));
   float cloud = fbm(vec2(sph.x * 1.15, sph.y * 2.3) * 1.7);
-  float veil = smoothstep(0.50, 0.99, cloud);
-  color += mix(vec3(0.014, 0.024, 0.040), vec3(0.042, 0.021, 0.012), cloud)
-         * veil * 0.34;
+  float veil = smoothstep(0.54, 1.00, cloud);
+  color += mix(vec3(0.012, 0.020, 0.034), vec3(0.036, 0.018, 0.010), cloud)
+         * veil * 0.22;
 
   return color;
 }
@@ -197,8 +220,14 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
 
   // Rotación diferencial kepleriana. El término en log(r) es una preespiral:
   // sin él el patrón nace isótropo y tarda medio minuto en enrollarse solo.
+  //
+  // El paso de esa espiral ONDULA con el radio. Sin esta ondulación el ángulo de
+  // contrarrotación es una función suave y monótona de r, el ruido isótropo
+  // muestreado en ese marco sale en arcos paralelos y el disco se lee como vetas
+  // de madera. Una sola octava lo rompe.
   float omega = pow(uDiskInner / r, 1.5);
-  float twist = 2.35 * log(r / uDiskInner) + uTime * omega * 0.30;
+  float pitch = 2.35 + 1.7 * (valueNoise(vec2(r * 0.80, 3.7)) - 0.5);
+  float twist = pitch * log(r / uDiskInner) + uTime * omega * 0.30;
 
   // Se muestrea el ruido en el plano CARTESIANO contrarrotado, no en (φ, r):
   // así no hay costura en φ = ±π, que es el artefacto clásico de los discos
@@ -214,18 +243,33 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   float sf = sin(twist * 0.45);
   vec2 shearedFine = vec2(cf * hit.x + sf * hit.z, -sf * hit.x + cf * hit.z);
 
-  float streams = fbm(sheared * 0.62);
-  float grain = fbm(shearedFine * 2.10 + streams);
-  float lanes = fbm(sheared * 0.24 + 11.3);
+  // Deformación de dominio: el ruido se muestrea en un espacio ya retorcido por
+  // OTRO ruido. Cuesta dos fbm de tres octavas y es la diferencia entre bandas
+  // concéntricas limpias y turbulencia con discontinuidades.
+  float wa = fbm3(sheared * 0.26);
+  float wb = fbm3(sheared * 0.26 + 31.7);
+  vec2 warped = sheared + (vec2(wa, wb) - 0.5) * 2.8;
+
+  float streams = fbm(warped * 0.70);
+  float grain = fbm(shearedFine * 2.55 + (wa - 0.5) * 1.6);
+  float fabric = clamp(streams * 0.58 + grain * 0.42, 0.0, 1.0);
 
   // Los carriles de polvo son la diferencia entre "humo naranja" y "material con
   // estructura": van a escala mayor que los filamentos y ABSORBEN, no solo
-  // oscurecen. Es lo que más se parece a las referencias de cerca.
-  float laneMask = smoothstep(0.28, 0.70, lanes);
-  float density = mix(0.14, 1.55, smoothstep(0.18, 0.88, streams * 0.64 + grain * 0.36));
-  density *= mix(0.07, 1.0, laneMask);
-  // Borde interior casi cortado (el material se precipita) y exterior difuso.
-  density *= smoothstep(0.0, 0.035, t) * (1.0 - smoothstep(0.70, 1.0, t));
+  // oscurecen. Mezclar el campo de deformación dentro de ellos los desalinea de
+  // los filamentos, que es lo que los hace irregulares.
+  float lanes = fbm3(warped * 0.20 + 11.3) * 0.62 + wb * 0.38;
+  float laneMask = smoothstep(0.26, 0.68, lanes);
+
+  float density = mix(0.10, 1.70, smoothstep(0.16, 0.90, fabric));
+  density *= mix(0.05, 1.0, laneMask);
+  // Borde interior corto (el material se precipita) y exterior difuso. La
+  // anchura del interior importa más de lo que parece: el anillo de fotones ES
+  // la imagen lensada de ese borde, así que un corte a navaja se proyecta como
+  // un círculo perfecto de anchura constante y se lee como un contorno dibujado
+  // encima. Con 0.08 el borde sigue siendo nítido pero el anillo hereda la
+  // irregularidad del material.
+  density *= smoothstep(0.0, 0.08, t) * (1.0 - smoothstep(0.70, 1.0, t));
 
   // Camino óptico: un rayo rasante atraviesa mucho más material que uno
   // perpendicular. Es un cociente, no una textura, y es lo que hace que el
@@ -233,13 +277,26 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   float grazing = 1.0 / max(abs(dir.y), 0.05);
   alpha = 1.0 - exp(-density * grazing * 0.40);
 
-  // Perfil radial de temperatura de un disco delgado.
-  vec3 hot = vec3(1.00, 0.97, 0.92);
-  vec3 mid = vec3(1.00, 0.80, 0.50);
-  vec3 cool = vec3(0.94, 0.48, 0.18);
-  vec3 tint = mix(hot, mid, smoothstep(0.0, 0.24, t));
-  tint = mix(tint, cool, smoothstep(0.20, 0.92, t));
-  tint *= mix(0.34, 1.0, laneMask);
+  // Rampa: white-hot → warm white → pale gold → amber → dark rust. Cuatro
+  // tramos en vez de dos; con dos, todo el medio caía en un beige plano. Los
+  // cortes están corridos hacia fuera respecto al primer intento: con la rampa
+  // apretada contra el borde interior, el pálido dorado ocupaba un anillo
+  // estrecho y el resto del disco se veía marrón.
+  vec3 tint = mix(
+    vec3(1.00, 0.98, 0.95),
+    vec3(1.00, 0.93, 0.80),
+    smoothstep(0.00, 0.10, t)
+  );
+  // Los dos tramos centrales van más saturados de lo que pide el ojo en el
+  // código: ACES dessatura con fuerza todo lo que se acerca al blanco, y sin
+  // este margen el dorado llega a pantalla como beige.
+  tint = mix(tint, vec3(1.00, 0.80, 0.46), smoothstep(0.08, 0.30, t));
+  tint = mix(tint, vec3(0.99, 0.56, 0.19), smoothstep(0.28, 0.62, t));
+  tint = mix(tint, vec3(0.60, 0.27, 0.11), smoothstep(0.58, 1.00, t));
+  // El polvo enfría el color, pero el grueso del oscurecimiento lo hacen la
+  // opacidad y la función fuente. Multiplicarlo tres veces (aquí, en la densidad
+  // y en la fuente) fue lo que dejó el disco apagado.
+  tint *= mix(0.68, 1.0, laneMask);
 
   // Corrimiento al rojo gravitacional (siempre) y beaming relativista (según el
   // interruptor). El material orbita a v = √(rs / 2(r − rs)) medido por un
@@ -255,12 +312,34 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   // El exponente físico del beaming bolométrico es 4. Se usa 2.4 a propósito:
   // con 4 la asimetría es tan violenta que medio disco desaparece, que es
   // exactamente por lo que la película lo atenuó.
-  float boost = clamp(pow(g, 2.4), 0.09, 4.0);
+  float boost = clamp(pow(g, 2.4), 0.14, 3.6);
   tint = mix(tint, tint * vec3(0.84, 0.93, 1.16), clamp((g - 1.0) * 0.85, 0.0, 1.0));
 
-  float heat = pow(uDiskInner / r, 1.85);
+  // Perfil radial. Exponente 1.35, no 1.85: con el perfil físico bolométrico el
+  // borde interior está 40 veces por encima del exterior y el tone mapping no
+  // tiene sitio para los dos. Sigue cayendo hacia fuera, pero cabe.
+  float heat = pow(uDiskInner / r, 1.35);
 
-  return tint * heat * boost * 7.0;
+  // La función fuente lleva la MISMA textura que la opacidad, y aquí está la
+  // clave del punto quemado. Cuando el camino óptico satura (alpha → 1) la
+  // densidad deja de importar: con una fuente uniforme, toda la banda brillante
+  // colapsa a un blanco plano y desaparecen filamentos y polvo justo donde más
+  // se miran. Modulando también la emisión, la estructura sobrevive DENTRO del
+  // blanco. Físicamente es lo correcto además: los grumos densos están más
+  // calientes, no solo más opacos.
+  float source = mix(0.55, 1.40, fabric) * mix(0.45, 1.0, laneMask);
+
+  vec3 emission = tint * heat * boost * source * DISK_GAIN;
+
+  // Rodillo de altas luces, ANTES del bloom y del tone mapping. ACES aplana
+  // todo lo que pase de ~3, así que un disco que llega a 28 entrega su mitad
+  // brillante como una mancha sin gradiente. Esto comprime la meseta dejando
+  // que el núcleo siga clipando: el pico se mantiene incandescente y el resto
+  // recupera pendiente donde dibujar la textura. Se usa el canal máximo y no la
+  // luminancia para no desplazar el tono al comprimir.
+  float peak = max(max(emission.r, emission.g), emission.b);
+  float rolled = peak / (1.0 + peak / HIGHLIGHT_KNEE);
+  return emission * (rolled / max(peak, 1e-4));
 }
 
 // ---------------------------------------------------------------------------
@@ -287,22 +366,45 @@ void main() {
   float transmit = 1.0;
   float hits = 0.0;
   bool escaped = false;
+  bool captured = false;
 
   for (int i = 0; i < MAX_STEPS; i++) {
     float r2 = dot(pos, pos);
     float r = sqrt(r2);
 
-    if (r < HORIZON) break;
+    if (r < HORIZON) { captured = true; break; }
     // Dentro de la esfera de fotones y entrando: no hay retorno posible. Es
     // exacto, no una heurística, y ahorra las ~40 iteraciones agónicas que un
     // rayo capturado pasa asintotándose al horizonte.
-    if (r < PHOTON_SPHERE && dot(pos, dir) < 0.0) break;
+    if (r < PHOTON_SPHERE && dot(pos, dir) < 0.0) { captured = true; break; }
     if (r > uSkyRadius) { escaped = true; break; }
 
-    // Paso proporcional a la distancia al horizonte: fino donde la trayectoria
-    // se curva, grueso donde ya es una recta. Un paso fijo obligaría a elegir
-    // entre precisión en el anillo y coste en el vacío.
-    float dt = clamp(uStepScale * (r - HORIZON), 0.02, 8.0);
+    // El paso se elige por el ÁNGULO recorrido, no por la distancia.
+    //
+    // La regla anterior (dt ∝ r − rs) gastaba decenas de iteraciones cruzando el
+    // vacío y aun así solo alcanzaba para ~4 vueltas junto a la esfera de
+    // fotones. Los rayos con parámetro de impacto apenas por encima del crítico
+    // necesitan muchas más: orbitan varias veces antes de escapar, y todos esos
+    // cruces del plano ocurren por dentro del borde del disco, así que no
+    // recogen luz hasta salir. Los que se quedaban sin presupuesto morían en
+    // negro y dibujaban un ANILLO OSCURO pegado a la sombra — y el borde
+    // exterior de ese anillo era la "línea dibujada" que parecía un contorno
+    // falso alrededor del agujero.
+    //
+    // dφ = (h/r²)·dt, así que fijar dφ es fijar dt = dφ·r²/h. La segunda rama
+    // cubre el rayo casi radial, donde h → 0 y no hay ángulo que recorrer.
+    float invH = inversesqrt(max(h2, 1e-6));
+    // Y el paso se RELAJA con las iteraciones ya gastadas: la primera pasada
+    // decide dónde se ve el disco y necesita precisión; a la quinta vuelta el
+    // rayo está en la región caótica, donde su salida exacta es irresoluble a
+    // cualquier resolución de pantalla. Duplica las vueltas disponibles a coste
+    // cero.
+    float relax = 1.0 + 1.4 * float(i) / float(MAX_STEPS);
+    float dt = clamp(
+      min(uStepScale * r2 * invH, 0.55 * (r - HORIZON) + 0.02) * relax,
+      0.02,
+      9.0
+    );
 
     vec3 acc = -1.5 * h2 * pos / (r2 * r2 * r);
     vec3 nextPos = pos + dir * dt + 0.5 * acc * (dt * dt);
@@ -340,6 +442,26 @@ void main() {
     vec3 skyDir = normalize(mix(straight, dir, uSkyLens));
     color += transmit * skySample(skyDir);
   }
+
+#ifdef DEBUG_RAYS
+  // Clasificación del rayo, no imagen: rojo = agotó pasos · verde = cruces del
+  // disco · azul = capturado · negro = escapó sin tocar nada.
+  //
+  // Se enciende añadiendo DEBUG_RAYS a los defines del material en scene.ts.
+  // No es adorno: fue lo que identificó el falso "contorno" del anillo de
+  // fotones. A ojo parecía presupuesto de pasos agotado; el pase mostró CERO
+  // píxeles rojos y un anillo negro — rayos que escapaban sin cruzar el disco —
+  // y eso apuntaba al borde interior, que era el parámetro culpable. Cualquier
+  // duda futura sobre "por qué hay algo raro alrededor de la sombra" se
+  // responde aquí en un render.
+  gl_FragColor = vec4(
+    (!escaped && !captured) ? 1.0 : 0.0,
+    hits / 3.0,
+    captured ? 1.0 : 0.0,
+    1.0
+  );
+  return;
+#endif
 
   vec3 history = texture2D(tHistory, vUv).rgb;
   gl_FragColor = vec4(mix(history, color, uBlend), 1.0);

@@ -216,6 +216,42 @@ que usamos es visualmente muy difícil de distinguir:
 Si el spike (§9, G0) demuestra que no llega a 60 fps en el dispositivo de
 referencia, el orden de sacrificio es: 4 → 2 → 5. Nunca 1 ni 3.
 
+### 6-bis. Enmienda 2026-08-06 — geodésicas de Schwarzschild, una sola capa
+
+**Lo de arriba queda superado por el hallazgo de G0.** Se construyeron las cinco
+capas y **la capa 2 no funciona**: un billboard no puede coserse con continuidad
+al disco real, y esa costura era justo lo que delataba el render. Los intentos de
+disimularla acabaron con un disco lavado, la sombra gris y un borde rectangular
+del plano visible en cuadro.
+
+Lo que sustituye a las cinco capas es **un raymarch de geodésicas nulas de
+Schwarzschild** en un único cuad de pantalla completa.
+
+**Esto no contradice el veto de §6, lo respeta.** Lo vetado era el raymarching de
+la métrica de **Kerr** — arrastre de marcos, integración de la métrica completa,
+horas por frame. Las geodésicas de Schwarzschild son otra cosa: se reducen a una
+fuerza central, `a⃗ = −(3/2)·h²·r⃗/r⁵` con `h² = |r⃗ × v⃗|²` constante, que es un
+Verlet de dos líneas y ~60-120 pasos por píxel. El coste está en el mismo orden
+que la cadena de cuatro pases que sustituye.
+
+Lo que se gana no es fidelidad marginal: sale **exacto y gratis** todo lo que las
+capas falsificaban — anillo de fotones, arco de la cara lejana por encima, imagen
+secundaria por debajo, sombra al radio aparente correcto, anillo de Einstein del
+fondo, y la oclusión mutua entre todo ello. Y desaparecen las capas 2, 3 y 4
+enteras, con su código y sus costuras.
+
+**Lo que sigue mandando de §6:** el disco (1) y el Doppler (5) siguen siendo el
+alma del efecto, ahora dentro del mismo shader. El orden de sacrificio se
+reescribe en términos del nuevo motor: **DPR → nº de pasos → calidad del fondo**.
+La física no se sacrifica.
+
+**Corolario del contrato de cámara.** §3 hacía barato el *falseo*; resulta que
+hace barato lo *real*. Con la pose fija, la acumulación temporal (jitter de
+Halton dentro del píxel + mezcla con el fotograma anterior) es una línea de
+código, sin reproyección ni detección de desoclusiones, y da ~8 muestras por
+píxel. Es lo que permite bajar el DPR y lo que convierte el anillo de fotones de
+un punteado a un hilo continuo.
+
 ---
 
 ## 7. Transición de viaje
@@ -306,18 +342,31 @@ Una escena aislada, fuera del sitio, que responda una sola pregunta:
   y se registra la decisión. El pivote de rutas sigue adelante igual.
 - Nada de este código entra al sitio sin reescribirse.
 
-**Estado 2026-08-06 — construido, pendiente de medir.** Vive en
-`app/spike/gargantua/` (`/spike/gargantua`): `noindex`, bloqueado en
-`robots.txt`, fuera del sitemap. Implementa las capas 1-4 de §6 con interruptor
-por capa y medición de percentiles (promedio, p5, p1) en ventanas de 20 s.
+**Estado 2026-08-06 — reconstruido sobre geodésicas (§6-bis), pendiente de
+medición formal.** Vive en `app/spike/gargantua/` (`/spike/gargantua`):
+`noindex`, bloqueado en `robots.txt`, fuera del sitemap. Medición de
+percentiles en ventanas de 20 s, con las condiciones de render (resolución,
+DPR pedido / de pantalla / efectivo, nº de pasos) publicadas junto a la cifra.
 
-Hallazgo que ya justificó el spike: la sombra **aparente** de un agujero negro
-es √27/2 ≈ 2.6 Rs, no 1 Rs. Dibujar la esfera al radio del horizonte dejaba un
-hueco negro sin explicación entre ella y el anillo de fotones, y era lo que
-impedía que la escena leyera como Gargantúa. La escena de G2 debe heredar esta
-proporción: sombra 2.6 Rs, anillo de fotones en su borde, disco desde la ISCO
-(3 Rs). *Este es exactamente el tipo de error que G0 existe para encontrar
-barato.*
+Hallazgos de G0 que la escena de G2 debe heredar:
+
+1. **La sombra aparente es √27/2 ≈ 2.6 rs, no 1 rs.** Con el raymarch esto sale
+   solo, pero el número sigue mandando en el encuadre de cada pose.
+2. **La capa 2 de §6 no era viable** (§6-bis). Es el hallazgo que justifica el
+   spike entero.
+3. **El borde interior del disco es el parámetro que decide si el anillo de
+   fotones parece dibujado.** Un pase de depuración clasificando cada rayo
+   mostró que el aro sospechoso era un anillo de rayos que escapaban *sin tocar
+   el disco*, no falta de presupuesto de pasos. Un borde en `r = R` se ve en
+   `b = R/√(1−1/R)`; hay que elegir R para que eso caiga sobre 2.598. En el
+   spike, R = 1.58 (Gargantúa es un Kerr casi extremo: su disco llega casi al
+   horizonte).
+4. **El bloom es quien pone gris la sombra, no la física.** Comprobado apagándolo:
+   el horizonte sale negro puro. Nunca se toca la geodésica para arreglar el glow.
+5. **El rango dinámico del disco hay que comprimirlo ANTES de ACES.** Con un pico
+   de ~28 en HDR, media imagen llega al tone mapping ya saturada y la banda
+   brillante pierde toda la estructura. Un rodillo de altas luces en el shader
+   deja clipar el núcleo y conserva el detalle alrededor.
 
 Falta: medir en hardware real (portátil e Iris Xe + Android de referencia) y
 registrar el veredicto aquí. `app/spike/` se borra al cerrar G0.
@@ -343,8 +392,13 @@ Gate de capacidad y botones «Activar experiencia 3D» / «Reducir efectos».
 
 ### G3 — Viaje y profundidad
 
-Transición de aproximación, nivel `deep` (lente por capas §6), calidad
-adaptativa y teardown.
+Transición de aproximación, nivel `deep` (§6-bis: más pasos y más DPR sobre el
+mismo shader, no capas añadidas), calidad adaptativa y teardown.
+
+Riesgo propio de G3 detectado en G0: durante una transición la cámara SÍ se
+mueve, así que la acumulación temporal deja de ser válida fotograma a fotograma.
+Se resuelve degradando durante la transición (menos pasos, mezcla más agresiva),
+no reproyectando: el movimiento tapa la pérdida de detalle.
 
 ### G4 — El otro lado del agujero de gusano · *futuro, requiere aprobación*
 
