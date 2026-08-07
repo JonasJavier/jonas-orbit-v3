@@ -69,21 +69,38 @@ export interface SceneHandle {
   setToggles(next: SceneToggles): void;
   resize(): void;
   dispose(): void;
+  /** Línea completa de estado. Se relee, no se cachea: cambia con el tamaño y
+   *  con el nivel. */
   readonly diagnostics: string;
+  /** Resumen compacto de en qué condiciones se está renderizando AHORA. Se
+   *  guarda junto a cada medición: unos fps sin resolución no significan nada. */
+  readonly renderContext: string;
 }
 
 /**
  * Radios en unidades de radio de Schwarzschild (rs = 1).
  *
  * El borde interior del disco NO está en la ISCO de Schwarzschild (3 rs) sino
- * dentro, a 2.35. Es deliberado: Gargantúa es un Kerr casi extremo, cuya ISCO
- * cae por debajo de 1 rs, y por eso en la película el disco abraza la sombra.
- * Con la ISCO de Schwarzschild queda un anillo de vacío que no está en ninguna
- * referencia. Se conserva la lente de Schwarzschild (barata y simétrica) y se
- * mueve el borde del disco: 2.35 sigue estando fuera de la esfera de fotones
- * (1.5), así que la órbita es representable y el beaming sale subluminal.
+ * pegado a la esfera de fotones, a 1.58. Es deliberado: Gargantúa es un Kerr
+ * casi extremo, cuya ISCO cae por debajo de 1 rs, y por eso en la película el
+ * disco abraza la sombra. Se conserva la lente de Schwarzschild (barata y
+ * simétrica) y se mueve el borde del disco; 1.58 sigue estando fuera de la
+ * esfera de fotones (1.5), que es donde dejan de existir órbitas circulares.
+ *
+ * **Este número es el que decide si el anillo de fotones parece dibujado.** Un
+ * pase de depuración (clasificando cada rayo en capturado / con impactos /
+ * agotado) mostró que el aro que parecía un contorno era en realidad un anillo
+ * de rayos que ESCAPAN SIN TOCAR EL DISCO: enrollan varias vueltas entre la
+ * esfera de fotones y el borde interior, y todos esos cruces del plano caían
+ * por dentro del disco, así que salían negros. No era falta de presupuesto de
+ * pasos — no había ni un rayo agotado ahí.
+ *
+ * La aritmética lo confirma: la sombra aparente está en b = 2.598 y un borde en
+ * r = R se ve en b = R/√(1 − 1/R). R = 2.35 → 2.98 (hueco de medio radio);
+ * R = 1.95 → 2.76; R = 1.58 → 2.61, es decir, el borde del disco cae justo
+ * sobre el borde de la sombra y el hueco desaparece.
  */
-const DISK_INNER = 2.35;
+const DISK_INNER = 1.58;
 const DISK_OUTER = 17;
 
 /** Inclinación baja, como en las referencias: el disco casi de canto, su cara
@@ -94,14 +111,42 @@ const CAMERA_ROLL = -0.12;
  * Poses de cámara. Cada una es un encuadre completo (posición + campo de
  * visión), no un punto de una órbita: en G2 cada mundo tendrá la suya y se
  * llega por navegación, nunca arrastrando el ratón.
+ *
+ * Las tres NO buscan lo mismo, y por eso cada una lleva dos multiplicadores
+ * propios. Son los ÚNICOS overrides por pose que existen: exposición y fuerza
+ * de bloom. El material, la física y la geometría son idénticos en las tres —
+ * `media` es la referencia maestra y las otras dos heredan su look.
+ *
+ * - `lejos`: plano de contexto. Ligeramente menos glow para que la silueta y el
+ *   arco superior se lean limpios y el fondo no compita.
+ * - `media`: plano maestro. Sin corrección: es el patrón contra el que se afinó
+ *   todo lo demás.
+ * - `cerca`: plano dramático. El disco ocupa el doble de cuadro, así que entra
+ *   mucha más luz total; sin bajar exposición y glow, el lado que se acerca se
+ *   convierte en una mancha blanca. Es corrección de encuadre, no de material.
  */
-const POSES: Record<CameraPose, { position: THREE.Vector3; fov: number }> = {
-  // Panorámica: el sistema entero, el disco casi de canto.
-  lejos: { position: new THREE.Vector3(0, 3.1, 42), fov: 30 },
-  // El encuadre de la película.
-  media: { position: new THREE.Vector3(0, 2.6, 27), fov: 40 },
-  // Aproximación: la sombra domina el cuadro y la curvatura se aprecia de verdad.
-  cerca: { position: new THREE.Vector3(0, 1.5, 14), fov: 54 },
+const POSES: Record<
+  CameraPose,
+  { position: THREE.Vector3; fov: number; exposure: number; bloom: number }
+> = {
+  lejos: {
+    position: new THREE.Vector3(0, 3.1, 42),
+    fov: 30,
+    exposure: 1.02,
+    bloom: 0.9,
+  },
+  media: {
+    position: new THREE.Vector3(0, 2.6, 27),
+    fov: 40,
+    exposure: 1,
+    bloom: 1,
+  },
+  cerca: {
+    position: new THREE.Vector3(0, 1.5, 14),
+    fov: 54,
+    exposure: 0.9,
+    bloom: 0.82,
+  },
 };
 
 /**
@@ -124,7 +169,8 @@ const TIER: Record<
   QualityTier,
   { dpr: number; steps: number; stepScale: number }
 > = {
-  orbit: { dpr: 1.0, steps: 190, stepScale: 0.15 },
+  // `stepScale` es el ángulo objetivo por paso, en radianes (ver shaders.ts).
+  orbit: { dpr: 1.0, steps: 190, stepScale: 0.14 },
   deep: { dpr: 1.35, steps: 340, stepScale: 0.085 },
 };
 
@@ -152,24 +198,27 @@ const BLOOM: Record<
   QualityTier,
   { strength: number; radius: number; scale: number }
 > = {
-  orbit: { strength: 0.26, radius: 0.2, scale: 0.5 },
-  deep: { strength: 0.3, radius: 0.22, scale: 0.62 },
+  orbit: { strength: 0.5, radius: 0.34, scale: 0.5 },
+  deep: { strength: 0.56, radius: 0.36, scale: 0.62 },
 };
+
+/** Exposición base de ACES, sobre la que actúa el multiplicador de cada pose. */
+const BASE_EXPOSURE = 0.78;
 
 /**
  * Umbral del bloom.
  *
  * Apagando el bloom se comprueba que la sombra es NEGRA PURA: el gris que se
  * veía dentro del horizonte no venía de la geodésica, venía enteramente de
- * aquí. Y no lo arregla el umbral — el borde interior del disco llega a ~28 en
- * HDR, así que subir el corte de 1 a 2.8 apenas le quita nada a una fuente tan
- * intensa. Lo que lo arregla es la FUERZA: la mitad del glow anterior, ceñido.
+ * aquí. Y no lo arreglaba el umbral — con un disco que llegaba a 28 en HDR,
+ * subir el corte de 1 a 2.8 apenas le quitaba nada a una fuente tan intensa.
  *
- * El bloom sigue siendo el que fabrica el envolvente incandescente de las
- * referencias, pero un agujero negro con el agujero gris no es un agujero
- * negro.
+ * Quien lo arregla de raíz es el rodillo de altas luces del shader: el pico
+ * bajó de ~28 a ~3.7, así que lo que el bloom recoge por encima del umbral es
+ * ahora un margen pequeño. Con el rango comprimido se puede subir la FUERZA y
+ * tener por fin el halo cinematográfico sin volver a inundar el horizonte.
  */
-const BLOOM_THRESHOLD = 2.0;
+const BLOOM_THRESHOLD = 1.7;
 
 export function createGargantuaScene(
   canvas: HTMLCanvasElement,
@@ -190,7 +239,7 @@ export function createGargantuaScene(
   // ACES comprime el HDR del disco. Con el composer three NO aplica tone mapping
   // al renderizar a render targets: lo hace OutputPass al final.
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.68;
+  renderer.toneMappingExposure = BASE_EXPOSURE;
 
   const capabilities = renderer.capabilities;
   const gl = renderer.getContext();
@@ -341,6 +390,8 @@ export function createGargantuaScene(
     // curvatura sea imperceptible. Atado a la distancia de la cámara: si el
     // radio fuese menor que ella, todo rayo escaparía en el primer paso.
     material.uniforms.uSkyRadius.value = Math.max(60, position.length() * 1.5);
+
+    renderer.toneMappingExposure = BASE_EXPOSURE * preset.exposure;
   }
 
   /** Frames acumulados desde el último reinicio. El primero tras un cambio de
@@ -349,6 +400,29 @@ export function createGargantuaScene(
   let accumulated = 0;
   let pixelWidth = 1;
   let pixelHeight = 1;
+  let diagnostics = "";
+
+  /**
+   * El HUD tenía dos cifras de DPR que parecían contradecirse: el selector
+   * anunciaba el tope del nivel y el pie mostraba `window.devicePixelRatio`.
+   * Ninguna era el DPR con el que se renderiza — ese es el mínimo de los dos —
+   * y con dos números distintos en pantalla no se puede confiar en una medición.
+   * Aquí se publican los tres, más la resolución real del búfer.
+   */
+  function updateDiagnostics(width: number, height: number, dpr: number) {
+    diagnostics = [
+      gpuName,
+      capabilities.isWebGL2 ? "WebGL2" : "WebGL1",
+      `DPR pedido ${TIER[toggles.tier].dpr.toFixed(2)} · pantalla ${(
+        window.devicePixelRatio || 1
+      ).toFixed(2)} · efectivo ${dpr.toFixed(2)}`,
+      `render ${pixelWidth}×${pixelHeight}`,
+      `css ${width}×${height}`,
+      `${TIER[toggles.tier].steps} pasos`,
+      canAccumulate ? "acumulación temporal ON" : "acumulación OFF",
+      ...notes,
+    ].join(" · ");
+  }
 
   function resetAccumulation() {
     accumulated = 0;
@@ -379,8 +453,11 @@ export function createGargantuaScene(
     const bloomHeight = Math.max(1, Math.round(height * dpr * bloomScale));
     bloomPass.resolution.set(bloomWidth, bloomHeight);
     bloomPass.setSize(bloomWidth, bloomHeight);
-    bloomPass.strength = BLOOM[toggles.tier].strength;
+    bloomPass.strength =
+      BLOOM[toggles.tier].strength * POSES[toggles.pose].bloom;
     bloomPass.radius = BLOOM[toggles.tier].radius;
+
+    updateDiagnostics(width, height, dpr);
   }
 
   const clock = new THREE.Clock();
@@ -472,18 +549,18 @@ export function createGargantuaScene(
   lastHeight = canvas.clientHeight;
   frameHandle = requestAnimationFrame(renderFrame);
 
-  const diagnostics = [
-    gpuName,
-    capabilities.isWebGL2 ? "WebGL2" : "WebGL1",
-    `DPR ${(window.devicePixelRatio || 1).toFixed(2)}`,
-    `${canvas.clientWidth}×${canvas.clientHeight} css`,
-    `${TIER[toggles.tier].steps} pasos`,
-    canAccumulate ? "acumulación temporal" : "sin acumulación",
-    ...notes,
-  ].join(" · ");
-
   return {
-    diagnostics,
+    get diagnostics() {
+      return diagnostics;
+    },
+    get renderContext() {
+      return `${pixelWidth}×${pixelHeight} px · DPR efectivo ${Math.min(
+        window.devicePixelRatio || 1,
+        TIER[toggles.tier].dpr,
+      ).toFixed(2)} · ${TIER[toggles.tier].steps} pasos · ${toggles.tier} · ${
+        toggles.pose
+      }`;
+    },
     resize,
     setToggles(next) {
       const tierChanged = next.tier !== toggles.tier;
