@@ -10,12 +10,30 @@ This version has breaking changes — APIs, conventions, and file structure may 
 aprobado con eng review CLEAR). No abras decisiones arquitectónicas nuevas sin
 pasar por ese documento. La matriz de tests vive en su Appendix A.
 
+**Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
+plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
+transiciones y presupuestos**. En todo lo demás el plan principal sigue intacto.
+Ante contradicción entre ambos, manda el pivote.
+
 ## Comandos
 
 - `npm run check` — lint + typecheck + knip + test + build (lo que corre CI).
 - `npm run test:e2e` — Playwright; requiere `npm run build` previo.
 - `npm run content` — compila el contenido (Velite). Los scripts `pre*` ya lo
   corren antes de dev/build/typecheck/test.
+
+**Nunca canalices `npm run check` por una tubería** (`| tail`, `| head`): el
+código de salida pasa a ser el del último comando de la tubería y un build roto
+se lee como verde. Redirige a un archivo y consulta `$?`.
+
+## Entorno de desarrollo
+
+- Node fijado en `.nvmrc` (24); CI usa 24. Node 26 también funciona.
+- `.env.local` (ignorado por git) lleva los ajustes de máquina. Si `workerd`
+  no arranca en tu equipo — Windows con VBS/HVCI aborta con *access violation* —
+  usa `CF_DEV_CONTEXT=off`: `next.config.ts` se salta Miniflare y
+  `readContactBindings()` cae a `process.env`. El runtime real de Cloudflare se
+  sigue verificando en CI y en el deploy.
 
 ## Reglas no negociables (vienen del plan)
 
@@ -35,11 +53,21 @@ pasar por ese documento. La matriz de tests vive en su Appendix A.
 5. **Sin sniffing del auditor.** Prohibido código cuya única función sea
    alterar una auditoría (Lighthouse se audita vía `?no3d=1` explícito, que es
    el mismo mecanismo del botón "Reducir efectos").
-6. **Scroll = única fuente de verdad de la cámara.** Clic en planeta desplaza
-   el documento; la cámara reacciona al progreso. Nunca dos controladores.
-7. **Contenido honesto.** Sin lorem ipsum, sin métricas inventadas, sin
+6. **La cámara no tiene controlador.** *(Sustituye a la regla anterior «scroll =
+   fuente de verdad de la cámara», retirada por el pivote.)* La pose es una
+   función pura de la ruta activa: `cameraPose = f(routeWorldId)`. Prohibidos
+   `OrbitControls`, drag, rueda y cualquier acoplamiento al scroll. Único input
+   continuo permitido: paralaje aditivo ≤ 2° desde puntero/giroscopio, apagado
+   con reduced-motion. Las transiciones son guionadas, interrumpibles y con
+   timeout duro: **la animación nunca es dueña del router**.
+7. **La escena nunca es el contenido.** El HTML servido de cada ruta contiene el
+   texto real sin JavaScript — en `/es`: nombre, rol, dos CTAs, CV y siete
+   enlaces `<a href>` a los mundos. El canvas es `aria-hidden`, va detrás y
+   nunca es candidato a LCP. Un reclutador con red lenta, un lector de pantalla
+   y Googlebot ven lo mismo.
+8. **Contenido honesto.** Sin lorem ipsum, sin métricas inventadas, sin
    placeholders disfrazados. Las fichas breves son un formato completo.
-8. **Middleware:** no existe en F1 (redirect estático `/` → `/es` en
+9. **Middleware:** no existe en F1 (redirect estático `/` → `/es` en
    `next.config.ts`). En F2A llega como `proxy.ts` (así se llama en Next 16).
 
 ## Referencias de v2

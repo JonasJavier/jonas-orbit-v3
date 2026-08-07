@@ -7,7 +7,8 @@ arquitectura, fases, criterios y matriz de tests es el plan aprobado.
 
 | Ruta | Qué contiene |
 |---|---|
-| [`plans/jonas-orbit-v3-mission-endurance.md`](plans/jonas-orbit-v3-mission-endurance.md) | **Plan aprobado** (fuente de verdad): fases F1A→F3, contenido como entregable, Appendix A (matriz de tests), condición de parada. |
+| [`plans/jonas-orbit-v3-mission-endurance.md`](plans/jonas-orbit-v3-mission-endurance.md) | **Plan aprobado** (fuente de verdad): fases, contenido como entregable, Appendix A (matriz de tests), condición de parada. |
+| [`plans/sistema-gargantua.md`](plans/sistema-gargantua.md) | **Pivote aprobado 2026-08-06.** Manda sobre el plan principal en arquitectura de rutas, contrato de cámara, capa visual, transiciones y presupuestos. En todo lo demás, el plan principal sigue vigente. |
 | [`reviews/`](reviews/) | Salidas de revisiones (CEO/diseño/eng/DX, autoplan). |
 | [`experiments/`](experiments/) | Hipótesis opcionales que pueden no implementarse nunca. |
 | [`deferred/`](deferred/) | Trabajo válido pospuesto hasta cumplir sus condiciones de entrada. |
