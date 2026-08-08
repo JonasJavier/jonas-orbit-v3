@@ -174,9 +174,22 @@ const TIER: Record<
   deep: { dpr: 1.35, steps: 340, stepScale: 0.085 },
 };
 
-/** Peso del fotograma nuevo en la acumulación. 0.18 ≈ 8 muestras efectivas y
- *  una ventana de ~90 ms: el disco gira tan despacio que ese promedio no se lee
- *  como arrastre, se lee como grano fino de película. */
+/**
+ * Peso en régimen del fotograma nuevo. 0.18 ≈ 8 muestras efectivas y una
+ * ventana de ~90 ms: el disco gira tan despacio que ese promedio no se lee como
+ * arrastre, se lee como grano fino de película.
+ *
+ * En régimen. Los primeros fotogramas tras un reinicio usan `1/(n+1)`, que es la
+ * media aritmética exacta de lo visto hasta ahora: fotograma 1 al 100 %, el 2 al
+ * 50 %, el 3 al 33 %… hasta cruzarse con 0.18 hacia el quinto. Con el peso fijo,
+ * un cambio de pose entraba con una imagen de una sola muestra — con el anillo
+ * de fotones punteado — y tardaba medio segundo en asentarse a la vista.
+ *
+ * **Y esta rampa es exactamente la primitiva que G3 necesita.** Durante una
+ * transición la cámara se mueve y el historial deja de ser válido; degradar es
+ * mantener el peso alto (poca memoria, poco arrastre) mientras dura el
+ * movimiento y dejarlo caer a 0.18 al llegar. No hace falta reproyectar.
+ */
 const TEMPORAL_BLEND = 0.18;
 
 /** Halton(2,3) recentrado en el píxel. Ocho términos bastan: más allá el
@@ -218,7 +231,7 @@ const BASE_EXPOSURE = 0.78;
  * ahora un margen pequeño. Con el rango comprimido se puede subir la FUERZA y
  * tener por fin el halo cinematográfico sin volver a inundar el horizonte.
  */
-const BLOOM_THRESHOLD = 1.7;
+const BLOOM_THRESHOLD = 2.0;
 
 export function createGargantuaScene(
   canvas: HTMLCanvasElement,
@@ -487,8 +500,10 @@ export function createGargantuaScene(
       if (canAccumulate) {
         const [jx, jy] = JITTER[accumulated % JITTER.length];
         material.uniforms.uJitter.value.set(jx / pixelWidth, jy / pixelHeight);
-        material.uniforms.uBlend.value =
-          accumulated === 0 ? 1 : TEMPORAL_BLEND;
+        material.uniforms.uBlend.value = Math.max(
+          TEMPORAL_BLEND,
+          1 / (accumulated + 1),
+        );
         material.uniforms.tHistory.value = historyRead.texture;
 
         renderer.setRenderTarget(historyWrite);
