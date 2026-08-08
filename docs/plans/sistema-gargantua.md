@@ -400,6 +400,14 @@ mueve, así que la acumulación temporal deja de ser válida fotograma a fotogra
 Se resuelve degradando durante la transición (menos pasos, mezcla más agresiva),
 no reproyectando: el movimiento tapa la pérdida de detalle.
 
+**La primitiva ya existe en el spike.** El peso de la mezcla no es constante:
+arranca en `1/(n+1)` — la media exacta de lo visto — y decae hasta el 0.18 de
+régimen hacia el quinto fotograma. Degradar durante una transición es sostener
+ese peso alto mientras dura el movimiento y soltarlo al llegar. G3 hereda el
+mecanismo; solo tiene que decidir cuándo. Lo que **no** puede hacer G3 es
+reproyectar el historial: eso es TAA de motor de juego y saca el coste del
+presupuesto.
+
 ### G4 — El otro lado del agujero de gusano · *futuro, requiere aprobación*
 
 Cruce al Sistema Solar. Es donde Cooper Station (Saturno) y el Tesseracto

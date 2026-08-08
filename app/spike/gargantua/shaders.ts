@@ -146,11 +146,18 @@ ${NOISE_CHUNK}
 const float HORIZON = 1.0;
 const float PHOTON_SPHERE = 1.5;
 
-/** Escala global del HDR del disco. */
-const float DISK_GAIN = 4.2;
-
-/** Punto de rodilla del rodillo de altas luces (ver diskSample). */
-const float HIGHLIGHT_KNEE = 7.0;
+/**
+ * Escala global del HDR del disco, y punto de rodilla del rodillo de altas
+ * luces (ver diskSample). Suben JUNTOS a propósito.
+ *
+ * Para dar vida sin quemar, la exposición de ACES no se toca: se sube la
+ * ganancia y se abre la rodilla en la misma proporción. Así los medios ganan
+ * brillo de verdad (~+35 %) mientras el pico apenas se mueve, porque el rodillo
+ * se lo come. Subir la exposición habría hecho lo contrario: aplanar el pico y
+ * apenas mover los medios.
+ */
+const float DISK_GAIN = 5.2;
+const float HIGHLIGHT_KNEE = 8.5;
 
 // ---------------------------------------------------------------------------
 // Fondo: estrellas + velo de nebulosa. Se evalúa UNA vez por rayo, al escapar.
@@ -212,8 +219,11 @@ vec3 skySample(vec3 dir) {
  * El primer argumento es el punto de cruce y el segundo la dirección del rayo
  * AHÍ, normalizada y apuntando de la cámara hacia el disco (el fotón real viaja
  * al revés: eso importa para el beaming).
+ *
+ * El tercer argumento (order) es el índice del cruce: 0 es la imagen directa,
+ * 1 en adelante son las imágenes lensadas de orden superior.
  */
-vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
+vec3 diskSample(vec3 hit, vec3 dir, float order, out float alpha) {
   float r = length(hit);
   float span = max(uDiskOuter - uDiskInner, 1e-3);
   float t = clamp((r - uDiskInner) / span, 0.0, 1.0);
@@ -261,6 +271,20 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   float lanes = fbm3(warped * 0.20 + 11.3) * 0.62 + wb * 0.38;
   float laneMask = smoothstep(0.26, 0.68, lanes);
 
+  // Las imágenes de orden superior pierden CONTRASTE, no geometría ni brillo.
+  //
+  // El arco inferior es la imagen lensada de la cara lejana, y ahí el lente
+  // comprime decenas de radios del disco en unos pocos píxeles: los carriles de
+  // polvo, que arriba se leen como material, abajo se apilan en líneas
+  // concéntricas muy definidas y parece que hay un segundo disco entero debajo.
+  // Aplanar la textura hacia su media conserva el arco y el anillo de fotones
+  // exactamente donde están, y les quita la estratificación. Es además lo
+  // honesto: a esa compresión, un píxel promedia mucho más disco del que puede
+  // resolver.
+  float soften = clamp(order * 0.5, 0.0, 0.7);
+  fabric = mix(fabric, 0.52, soften);
+  laneMask = mix(laneMask, 0.60, soften);
+
   float density = mix(0.10, 1.70, smoothstep(0.16, 0.90, fabric));
   density *= mix(0.05, 1.0, laneMask);
   // Borde interior corto (el material se precipita) y exterior difuso. La
@@ -290,9 +314,9 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   // Los dos tramos centrales van más saturados de lo que pide el ojo en el
   // código: ACES dessatura con fuerza todo lo que se acerca al blanco, y sin
   // este margen el dorado llega a pantalla como beige.
-  tint = mix(tint, vec3(1.00, 0.80, 0.46), smoothstep(0.08, 0.30, t));
-  tint = mix(tint, vec3(0.99, 0.56, 0.19), smoothstep(0.28, 0.62, t));
-  tint = mix(tint, vec3(0.60, 0.27, 0.11), smoothstep(0.58, 1.00, t));
+  tint = mix(tint, vec3(1.00, 0.79, 0.42), smoothstep(0.08, 0.30, t));
+  tint = mix(tint, vec3(1.00, 0.54, 0.16), smoothstep(0.28, 0.62, t));
+  tint = mix(tint, vec3(0.64, 0.28, 0.10), smoothstep(0.58, 1.00, t));
   // El polvo enfría el color, pero el grueso del oscurecimiento lo hacen la
   // opacidad y la función fuente. Multiplicarlo tres veces (aquí, en la densidad
   // y en la fuente) fue lo que dejó el disco apagado.
@@ -312,13 +336,19 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   // El exponente físico del beaming bolométrico es 4. Se usa 2.4 a propósito:
   // con 4 la asimetría es tan violenta que medio disco desaparece, que es
   // exactamente por lo que la película lo atenuó.
-  float boost = clamp(pow(g, 2.4), 0.14, 3.6);
+  // El suelo del clamp sube a 0.20: el lado que se aleja seguía siendo el 22 %
+  // de la asimetría, pero en pantalla caía tan abajo que se leía como zona
+  // muerta y era la mitad de lo que hacía sentir el conjunto apagado.
+  float boost = clamp(pow(g, 2.4), 0.20, 3.6);
   tint = mix(tint, tint * vec3(0.84, 0.93, 1.16), clamp((g - 1.0) * 0.85, 0.0, 1.0));
 
-  // Perfil radial. Exponente 1.35, no 1.85: con el perfil físico bolométrico el
+  // Perfil radial. Exponente 1.15, no el bolométrico: con el perfil físico el
   // borde interior está 40 veces por encima del exterior y el tone mapping no
-  // tiene sitio para los dos. Sigue cayendo hacia fuera, pero cabe.
-  float heat = pow(uDiskInner / r, 1.35);
+  // tiene sitio para los dos — el disco exterior se apaga a marrón y el ojo lee
+  // el conjunto como un núcleo brillante con una cola muerta. Sigue cayendo
+  // hacia fuera; cae menos. Es la palanca que más "enciende" el disco entero
+  // sin tocar ni la exposición ni el pico.
+  float heat = pow(uDiskInner / r, 1.15);
 
   // La función fuente lleva la MISMA textura que la opacidad, y aquí está la
   // clave del punto quemado. Cuando el camino óptico satura (alpha → 1) la
@@ -327,7 +357,10 @@ vec3 diskSample(vec3 hit, vec3 dir, out float alpha) {
   // se miran. Modulando también la emisión, la estructura sobrevive DENTRO del
   // blanco. Físicamente es lo correcto además: los grumos densos están más
   // calientes, no solo más opacos.
-  float source = mix(0.55, 1.40, fabric) * mix(0.45, 1.0, laneMask);
+  // Rango más ancho que antes: la vida se nota más en la SEPARACIÓN entre grumo
+  // y hueco que en el nivel medio. Los grumos llegan más arriba y los carriles
+  // caen más abajo, y el rodillo se encarga de que lo de arriba no se queme.
+  float source = mix(0.42, 1.62, fabric) * mix(0.40, 1.0, laneMask);
 
   vec3 emission = tint * heat * boost * source * DISK_GAIN;
 
@@ -421,7 +454,12 @@ void main() {
       float hr = length(hit);
       if (hr > uDiskInner && hr < uDiskOuter) {
         float alpha;
-        vec3 emission = diskSample(hit, normalize(mix(dir, nextDir, f)), alpha);
+        vec3 emission = diskSample(
+          hit,
+          normalize(mix(dir, nextDir, f)),
+          hits,
+          alpha
+        );
         color += transmit * emission * alpha;
         transmit *= 1.0 - alpha;
         hits += 1.0;
