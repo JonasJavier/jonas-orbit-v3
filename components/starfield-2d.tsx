@@ -5,7 +5,7 @@ export const Starfield2D = forwardRef<HTMLCanvasElement>(
     return (
       <canvas
         aria-hidden="true"
-        className="narrative-starfield"
+        className="site-starfield"
         data-testid="starfield-2d"
         ref={ref}
       />

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/site-header";
+import { SiteShell } from "@/components/site-shell";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
-import { getWorlds } from "@/lib/worlds";
+import { getWorld, getWorldPath } from "@/lib/worlds";
 
 export const metadata: Metadata = {
   title: "Privacidad del canal de contacto",
@@ -27,18 +27,14 @@ export default async function PrivacyPage({
   if (!PUBLISHED_LOCALES.includes(locale as Locale) || locale !== "es") {
     notFound();
   }
-  const worlds = getWorlds(locale as Locale);
+  const typedLocale = locale as Locale;
 
   return (
-    <>
-      <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <div className="space-backdrop" aria-hidden="true">
-        <span className="space-backdrop__stars" />
-        <span className="space-backdrop__haze" />
-        <span className="space-backdrop__grid" />
-      </div>
-      <SiteHeader locale={locale as Locale} worlds={worlds} />
-      <main className="privacy-page" id="main-content">
+    <SiteShell
+      locale={typedLocale}
+      mainClassName="privacy-page"
+      footerLabel="JONÁS ORBIT · PROTOCOLO RANGER / PRIVACIDAD"
+    >
         <p className="section-kicker">PROTOCOLO RANGER / PRIVACIDAD</p>
         <h1>Una transmisión breve y transparente.</h1>
         <p className="privacy-page__lead">
@@ -90,9 +86,10 @@ export default async function PrivacyPage({
           <a href="https://resend.com/legal/privacy-policy" rel="noreferrer" target="_blank">
             Privacidad de Resend ↗
           </a>
-          <Link href={`/${locale}#contacto`}>Volver al contacto ←</Link>
+          <Link href={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}>
+            Volver al contacto ←
+          </Link>
         </div>
-      </main>
-    </>
+    </SiteShell>
   );
 }

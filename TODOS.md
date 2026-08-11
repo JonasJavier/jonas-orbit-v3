@@ -93,13 +93,35 @@ No bloquean el arranque de F1A, pero deben resolverse antes de sus fases indicad
 
 Detalle en [`docs/plans/sistema-gargantua.md`](docs/plans/sistema-gargantua.md) §14.
 
-- **Cifras del presupuesto de JS** — confirmar tras medirlas en G1 (hereda T8).
-- **Slugs ES definitivos** — `/es/sobre-mi`, `/es/formacion`, `/es/desarrollo`,
-  `/es/creatividad`, `/es/laboratorio` son propuestas. Cambiarlos es barato
-  ahora y caro tras el deploy. *Antes de G1.*
+- **Cifras del presupuesto de JS** — ✅ **MEDIDAS 2026-08-07** al cerrar G1.
+  Baseline compartido congelado en **145,6 KiB gz**; la home baja de 231 a
+  **149,1 KiB gz** al desaparecer el aparato de scroll narrativo. Queda una
+  decisión: `/es/contacto` gasta 71,9 KiB propios contra los 40 propuestos.
+- **Slugs ES definitivos** — ✅ **CERRADA 2026-08-07**: fijados los funcionales.
+  `tesseract` cambió de `historia` a `sobre-mi`; los otros seis ya coincidían.
 - **Riesgo aceptado explícitamente:** no hay despliegue hasta que la escena esté
   lista, teniendo F1A prácticamente terminada. Mitigación disponible y **no
-  activada**: G1 (migración de rutas, sin 3D) es desplegable por sí sola.
+  activada**: G1 (migración de rutas, sin 3D) es desplegable por sí sola —
+  y desde 2026-08-07 está construida, así que activarla es solo desplegar.
+
+## Estado del pivote
+
+- **G0** — cerrado como spike: el código vive ya en `components/scene/` y
+  `app/spike/` se borró. **Sigue faltando la medición formal** en hardware real
+  (portátil con Iris Xe y Android de referencia) para registrar el veredicto en
+  `sistema-gargantua.md` §9. Ahora manda de verdad: de ahí salen el número de
+  pasos y los topes de DPR de cada nivel.
+- **G1** — ✅ completada 2026-08-07. 8 rutas, shell sin JS, sitemap de 12 URLs,
+  OG por mundo.
+- **G2** — construida 2026-08-07, **pendiente de validación visual en GPU**.
+  Escena de geodésicas + 6 cuerpos en órbita real, canvas persistente en el
+  layout, `cameraPose = f(ruta)`, gate de capacidad con veto al rasterizador por
+  software, etiquetas ancladas con separación de colisiones. 110 unitarios y 54
+  E2E en verde. Falta: mirarlo en un equipo con GPU, el botón visible de
+  «Reducir efectos» y los tests G5/G6/G8/G11/G12.
+- **G3** — siguiente. La primitiva de la transición ya existe: el peso de la
+  mezcla temporal arranca en `1/(n+1)` y decae, que es exactamente lo que hay
+  que sostener mientras la cámara se mueve.
 
 ## Regla de cierre
 

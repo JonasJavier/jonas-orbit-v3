@@ -28,12 +28,61 @@ describe("worlds.data (estructura canónica)", () => {
     }
   });
 
-  it("las órbitas tienen dimensiones positivas", () => {
+  it("cada cuerpo tiene una órbita válida dentro del sistema", () => {
     for (const id of WORLD_IDS) {
-      const { orbit } = worldsData[id];
-      expect(orbit.size).toBeGreaterThan(0);
-      expect(orbit.duration).toBeGreaterThan(0);
-      expect(orbit.planetSize).toBeGreaterThan(0);
+      const { placement } = worldsData[id];
+      expect(placement.phase).toBeGreaterThanOrEqual(0);
+      expect(placement.phase).toBeLessThan(360);
+      expect(placement.orbitRadius).toBeGreaterThanOrEqual(0);
+      expect(Math.abs(placement.inclination)).toBeLessThan(90);
+      expect(placement.size).toBeGreaterThan(0);
+    }
+  });
+
+  it("Gargantúa es el único cuerpo en el centro", () => {
+    // Si otro mundo cayera en radio 0 se solaparía con el agujero negro y su
+    // enlace sería inalcanzable con el ratón.
+    const centred = WORLD_IDS.filter(
+      (id) => worldsData[id].placement.orbitRadius === 0,
+    );
+    expect(centred).toEqual(["gargantua"]);
+  });
+
+  it("los cuerpos orbitan FUERA del disco de acreción", () => {
+    // El disco llega a 17 rs. Un cuerpo por dentro atravesaría la zona que el
+    // raymarch dibuja con física real y la composición delante se notaría.
+    for (const id of WORLD_IDS) {
+      const { orbitRadius } = worldsData[id].placement;
+      if (orbitRadius === 0) continue;
+      expect(orbitRadius, `${id} orbita dentro del disco`).toBeGreaterThan(18);
+    }
+  });
+
+  it("ninguna órbita se ve de canto", () => {
+    // Una órbita casi coplanar con el disco se proyecta como una línea que pasa
+    // por el centro: el cuerpo cruzaría por delante de la sombra y su etiqueta
+    // caería sobre el agujero negro, ilegible. Ver el comentario de
+    // WorldPlacement — es el motivo por el que existe `inclination`.
+    for (const id of WORLD_IDS) {
+      const { orbitRadius, inclination } = worldsData[id].placement;
+      if (orbitRadius === 0) continue;
+      expect(
+        Math.abs(inclination),
+        `${id} tiene una órbita casi de canto`,
+      ).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  it("ningún par de cuerpos comparte órbita y fase", () => {
+    // Dos cuerpos en la misma posición parecerían uno solo: un destino
+    // desaparecería de la home sin que ningún otro test lo notara.
+    const seen = new Set<string>();
+    for (const id of WORLD_IDS) {
+      const { phase, orbitRadius } = worldsData[id].placement;
+      if (orbitRadius === 0) continue;
+      const key = `${phase}:${orbitRadius}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
     }
   });
 });

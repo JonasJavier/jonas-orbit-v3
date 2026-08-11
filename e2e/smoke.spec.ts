@@ -1,25 +1,65 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-/** Anclas localizadas de las 7 secciones en ES (orden narrativo). */
-const ANCHORS = [
-  "historia",
-  "formacion",
-  "desarrollo",
-  "proyectos",
-  "creatividad",
-  "laboratorio",
-  "contacto",
+/**
+ * Suite E2E del Sistema Gargantúa.
+ *
+ * Reescrita con el pivote (docs/plans/sistema-gargantua.md §12): desaparecen
+ * A6/A7/A8 (progreso de scroll) y A22/A23/A24 (anclas e historial por scroll),
+ * porque el comportamiento que cubrían dejó de existir. A20, A21, A28, A29 y
+ * A32 se conservan como escenarios pero ahora se recorren por rutas.
+ */
+
+/** Los 7 mundos en orden narrativo, con su ruta ES y su etiqueta de navegación. */
+const WORLDS = [
+  { slug: "sobre-mi", label: "Historia", title: "Mi historia" },
+  { slug: "formacion", label: "Formación", title: "Formación y trayectoria" },
+  { slug: "desarrollo", label: "Desarrollo", title: "Desarrollo full-stack" },
+  { slug: "proyectos", label: "Proyectos", title: "Proyectos y sistemas" },
+  { slug: "creatividad", label: "Creatividad", title: "Creatividad visual" },
+  { slug: "laboratorio", label: "Laboratorio", title: "Laboratorio" },
+  { slug: "contacto", label: "Contacto", title: "Contacto" },
 ] as const;
 
-test.describe("smoke — página narrativa mínima", () => {
+/** Las 8 rutas indexables de ES: la home más los 7 destinos. */
+const ROUTES = ["/es", ...WORLDS.map((world) => `/es/${world.slug}`)];
+
+function heroLink(page: Page, name: string) {
+  // El mapa usa los mismos rótulos que el hero: hay que acotar la búsqueda o
+  // el selector encuentra dos y falla por ambigüedad.
+  return page
+    .getByRole("navigation", { name: "Acciones principales" })
+    .getByRole("link", { name, exact: true });
+}
+
+/**
+ * Navega esperando solo al DOM.
+ *
+ * Las rutas con galería (/es/proyectos y los casos) descargan muchas imágenes;
+ * esperar a `load` en un test que comprueba marcado o metadata lo convierte en
+ * un test de ancho de banda y falla de forma aleatoria bajo carga. Lo que estos
+ * tests verifican existe en cuanto el documento está parseado.
+ */
+async function visit(page: Page, url: string) {
+  return page.goto(url, { waitUntil: "domcontentloaded" });
+}
+
+function systemMap(page: Page) {
+  return page.getByRole("navigation", {
+    name: "Destinos del Sistema Gargantúa",
+  });
+}
+
+function missionNav(page: Page) {
+  return page.getByRole("navigation", { name: "Navegación de mundos" });
+}
+
+test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
   test("A19 · / redirige a /es con un único salto correcto", async ({
     page,
   }) => {
     const response = await page.goto("/");
     await expect(page).toHaveURL(/\/es$/);
-    // La respuesta final es 200 en /es.
     expect(response?.status()).toBe(200);
-    // Exactamente un salto de redirección, y es un 3xx (307 hoy; tolera 308).
     const from = response?.request().redirectedFrom();
     expect(from, "debe existir un redirect desde /").not.toBeNull();
     expect(from?.redirectedFrom() ?? null).toBeNull();
@@ -32,20 +72,67 @@ test.describe("smoke — página narrativa mínima", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Ver proyectos" })).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Trabajemos juntos" }),
-    ).toBeVisible();
-    const cv = page.getByRole("link", { name: "Descargar CV" });
+      heroLink(page, "Proyectos"),
+    ).toHaveAttribute("href", "/es/proyectos");
+    await expect(
+      heroLink(page, "Contacto"),
+    ).toHaveAttribute("href", "/es/contacto");
+    const cv = heroLink(page, "CV");
     await expect(cv).toBeVisible();
     await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
     await expect(cv).toHaveAttribute("download", "");
   });
 
-  test("/es contiene las 7 secciones de mundo ancladas", async ({ page }) => {
-    await page.goto("/es");
-    for (const anchor of ANCHORS) {
-      await expect(page.locator(`section#${anchor}`)).toHaveCount(1);
+  test("G1 · cada mundo responde 200 en su ruta y una desconocida da 404", async ({
+    page,
+  }) => {
+    for (const world of WORLDS) {
+      const response = await page.goto(`/es/${world.slug}`);
+      expect(response?.status(), `/es/${world.slug}`).toBe(200);
+      await expect(
+        page.getByRole("heading", { level: 1, name: world.title }),
+      ).toBeVisible();
+    }
+
+    // El segmento dinámico no puede tragarse cualquier cosa.
+    const unknown = await page.goto("/es/agujero-de-gusano");
+    expect(unknown?.status()).toBe(404);
+  });
+
+  test("G2 · las 8 rutas publican title, description, canonical y OG propios", async ({
+    page,
+  }) => {
+    const seen = { title: new Set<string>(), canonical: new Set<string>() };
+
+    for (const route of ROUTES) {
+      await page.goto(route);
+
+      const title = await page.title();
+      const description = await page
+        .locator('meta[name="description"]')
+        .getAttribute("content");
+      const canonical = await page
+        .locator('link[rel="canonical"]')
+        .getAttribute("href");
+      const ogUrl = await page
+        .locator('meta[property="og:url"]')
+        .getAttribute("content");
+
+      expect(title, `${route}: sin title`).toBeTruthy();
+      expect(description, `${route}: sin description`).toBeTruthy();
+      expect(canonical, `${route}: canonical incorrecto`).toContain(route);
+      expect(ogUrl, `${route}: og:url incorrecto`).toContain(route);
+
+      // Lo que realmente cubre este test: que NO se repitan entre rutas. Ocho
+      // páginas con el mismo título se canibalizan en el buscador.
+      expect(seen.title.has(title), `${route}: title duplicado`).toBe(false);
+      expect(
+        seen.canonical.has(canonical ?? ""),
+        `${route}: canonical duplicado`,
+      ).toBe(false);
+      seen.title.add(title);
+      seen.canonical.add(canonical ?? "");
     }
   });
 
@@ -53,11 +140,9 @@ test.describe("smoke — página narrativa mínima", () => {
     page,
   }) => {
     await page.goto("/es");
-    await page.getByRole("link", { name: "Ver proyectos" }).click();
-    await expect(page).toHaveURL(/#proyectos$/);
-    await expect(
-      page.locator("section#proyectos").getByRole("heading", { level: 2 }),
-    ).toBeInViewport();
+    await heroLink(page, "Proyectos").click();
+    await expect(page).toHaveURL(/\/es\/proyectos$/);
+
     await page.getByRole("link", { name: "Abrir caso completo" }).click();
     await expect(page).toHaveURL(/\/es\/proyectos\/omsta$/);
     await expect(
@@ -68,29 +153,66 @@ test.describe("smoke — página narrativa mínima", () => {
     ).toBeVisible();
   });
 
-  test("A21 · el CTA 'Trabajemos juntos' lleva a Ranger (#contacto)", async ({
+  test("A21 · el CTA 'Trabajemos juntos' lleva a Ranger en una interacción", async ({
     page,
   }) => {
     await page.goto("/es");
-    await page.getByRole("link", { name: "Trabajemos juntos" }).click();
-    await expect(page).toHaveURL(/#contacto$/);
-    await expect(page.locator("section#contacto")).toBeInViewport();
+    await heroLink(page, "Contacto").click();
+    await expect(page).toHaveURL(/\/es\/contacto$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Contacto" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Nombre")).toBeVisible();
+  });
+
+  test("la cabecera marca el mundo activo en cada ruta, sin JavaScript de estado", async ({
+    page,
+  }) => {
+    for (const world of WORLDS) {
+      await page.goto(`/es/${world.slug}`);
+      const link = missionNav(page).getByRole("link", { name: world.label });
+      await expect(link).toHaveAttribute("aria-current", "page");
+    }
+
+    // La home no tiene cabecera: repetir ahí los siete destinos que YA son el
+    // mapa era decir dos veces lo mismo y enmarcar el espacio con muebles de
+    // página web. El shell completo vive en las páginas de mundo.
+    await page.goto("/es");
+    await expect(missionNav(page)).toHaveCount(0);
+  });
+
+  test("cada mundo ofrece sus destinos contiguos y los extremos no inventan vecinos", async ({
+    page,
+  }) => {
+    await page.goto("/es/desarrollo");
+    const neighbours = page.getByRole("navigation", {
+      name: "Destinos contiguos",
+    });
+    await expect(neighbours.getByRole("link")).toHaveCount(2);
+    await expect(neighbours.getByRole("link").first()).toHaveAttribute(
+      "href",
+      "/es/formacion",
+    );
+
+    await page.goto("/es/sobre-mi");
+    await expect(neighbours.getByRole("link")).toHaveCount(1);
+    await page.goto("/es/contacto");
+    await expect(neighbours.getByRole("link")).toHaveCount(1);
   });
 
   test("A25 · Ranger envía una transmisión completa y confirma recepción", async ({
     page,
   }) => {
-    await page.goto("/es#contacto");
-    const ranger = page.locator("section#contacto");
-    await ranger.getByLabel("Nombre").fill("Ada Lovelace");
-    await ranger.getByLabel("Correo").fill("ada@example.com");
-    await ranger.getByLabel("Tipo de misión").selectOption("product");
-    await ranger
+    await page.goto("/es/contacto");
+    await page.getByLabel("Nombre").fill("Ada Lovelace");
+    await page.getByLabel("Correo").fill("ada@example.com");
+    await page.getByLabel("Tipo de misión").selectOption("product");
+    await page
       .getByLabel("Mensaje")
       .fill("Quiero construir una herramienta clara para nuestro equipo.");
-    await ranger.getByLabel(/He leído la nota de privacidad/).check();
+    await page.getByLabel(/He leído la nota de privacidad/).check();
 
-    const submit = ranger.getByRole("button", { name: "Enviar transmisión" });
+    const submit = page.getByRole("button", { name: "Enviar transmisión" });
     await expect(submit).toBeEnabled();
     await submit.click();
 
@@ -129,21 +251,20 @@ test.describe("smoke — página narrativa mínima", () => {
       });
     });
 
-    await page.goto("/es#contacto");
-    const ranger = page.locator("section#contacto");
-    await ranger.getByLabel("Nombre").fill("Grace Hopper");
-    await ranger.getByLabel("Correo").fill("grace@example.com");
-    await ranger.getByLabel("Tipo de misión").selectOption("system");
-    await ranger
+    await page.goto("/es/contacto");
+    await page.getByLabel("Nombre").fill("Grace Hopper");
+    await page.getByLabel("Correo").fill("grace@example.com");
+    await page.getByLabel("Tipo de misión").selectOption("system");
+    await page
       .getByLabel("Mensaje")
       .fill("Necesitamos mejorar un sistema interno y reducir pasos manuales.");
-    await ranger.getByLabel(/He leído la nota de privacidad/).check();
-    const submit = ranger.getByRole("button", { name: "Enviar transmisión" });
+    await page.getByLabel(/He leído la nota de privacidad/).check();
+    const submit = page.getByRole("button", { name: "Enviar transmisión" });
     await expect(submit).toBeEnabled();
 
     await submit.click();
-    await expect(ranger.getByText(/Tus datos siguen aquí/)).toBeVisible();
-    await expect(ranger.getByLabel("Nombre")).toHaveValue("Grace Hopper");
+    await expect(page.getByText(/Tus datos siguen aquí/)).toBeVisible();
+    await expect(page.getByLabel("Nombre")).toHaveValue("Grace Hopper");
     await expect(submit).toBeEnabled();
 
     await submit.click();
@@ -154,90 +275,15 @@ test.describe("smoke — página narrativa mínima", () => {
   test("A31 · Ranger ofrece ambos CV y mantiene ES como descarga principal", async ({
     page,
   }) => {
-    await page.goto("/es#contacto");
-    const ranger = page.locator("section#contacto");
-    await expect(ranger.getByRole("link", { name: /CV español/ })).toHaveAttribute(
+    await page.goto("/es/contacto");
+    await expect(page.getByRole("link", { name: /CV español/ })).toHaveAttribute(
       "href",
       "/cv/jonas-javier-cv-es.pdf",
     );
-    await expect(ranger.getByRole("link", { name: /CV English/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /CV English/ })).toHaveAttribute(
       "href",
       "/cv/jonas-javier-cv-en-ats.pdf",
     );
-  });
-
-  test("A23 · deep link /es#proyectos aterriza en la sección", async ({
-    page,
-  }) => {
-    await page.goto("/es#proyectos");
-    await expect(page.locator("section#proyectos")).toBeInViewport();
-    await expect(
-      page
-        .getByRole("navigation", { name: "Navegación de mundos" })
-        .getByRole("link", { name: "Proyectos" }),
-    ).toHaveAttribute("aria-current", "location");
-  });
-
-  test("A22 · una selección explícita sincroniza scroll, hash y mundo activo", async ({
-    page,
-  }) => {
-    await page.goto("/es");
-    const navigation = page.getByRole("navigation", {
-      name: "Navegación de mundos",
-    });
-    const projectsLink = navigation.getByRole("link", { name: "Proyectos" });
-
-    await projectsLink.click();
-
-    await expect(page).toHaveURL(/#proyectos$/);
-    await expect(page.locator("section#proyectos")).toBeInViewport();
-    await expect(projectsLink).toHaveAttribute("aria-current", "location");
-    await expect(navigation).toHaveAttribute("data-active-world", "endurance");
-  });
-
-  test("A24 · solo la navegación explícita apila historial", async ({ page }) => {
-    await page.goto("/es");
-    const navigation = page.getByRole("navigation", {
-      name: "Navegación de mundos",
-    });
-
-    await navigation.getByRole("link", { name: "Historia" }).click();
-    await expect(page).toHaveURL(/#historia$/);
-    await navigation.getByRole("link", { name: "Contacto" }).click();
-    await expect(page).toHaveURL(/#contacto$/);
-
-    await page.goBack();
-    await expect(page).toHaveURL(/#historia$/);
-    await expect(navigation).toHaveAttribute("data-active-world", "tesseract");
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-narrative-navigation",
-      "free",
-    );
-
-    // Scroll de usuario real: materializa progresivamente las secciones bajo
-    // content-visibility y debe reemplazar, no apilar, la entrada actual.
-    for (
-      let step = 0;
-      step < 20 &&
-      (await navigation.getAttribute("data-active-world")) !== "miller";
-      step += 1
-    ) {
-      await page.mouse.wheel(0, 560);
-      await page.evaluate(
-        () =>
-          new Promise<void>((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-          ),
-      );
-    }
-    await expect(page).toHaveURL(/#desarrollo$/);
-    await expect(navigation).toHaveAttribute("data-active-world", "miller");
-
-    await page.goBack();
-    await expect(page).toHaveURL(/\/es$/);
-    await page.goForward();
-    await expect(page).toHaveURL(/#desarrollo$/);
-    await expect(page.locator("section#desarrollo")).toBeInViewport();
   });
 
   test("el campo estelar 2D se difiere hasta después de la hidratación", async ({
@@ -254,31 +300,54 @@ test.describe("smoke — página narrativa mínima", () => {
     );
   });
 
-  test("A29 · se puede llegar a Ranger y a su formulario solo con teclado", async ({
+  test("el fondo sobrevive a la navegación sin remontarse", async ({ page }) => {
+    // Precursor de G6: el canvas de G2 vivirá en el mismo layout. Si una
+    // navegación lo remontara, la escena parpadearía en negro en cada viaje.
+    await page.goto("/es");
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
+      timeout: 3_000,
+    });
+    await page.evaluate(() => {
+      const canvas = document.querySelector('[data-testid="starfield-2d"]');
+      if (canvas) (canvas as HTMLElement).dataset.survivor = "sí";
+    });
+
+    await systemMap(page).getByRole("link", { name: "Laboratorio" }).click();
+    await expect(page).toHaveURL(/\/es\/laboratorio$/);
+    await expect(page.getByTestId("starfield-2d")).toHaveAttribute(
+      "data-survivor",
+      "sí",
+    );
+  });
+
+  test("A29 · se recorren las 8 rutas y se escribe en el formulario solo con teclado", async ({
     page,
   }) => {
     await page.goto("/es");
-    const contactLink = page
-      .getByRole("navigation", { name: "Navegación de mundos" })
-      .getByRole("link", { name: "Contacto" });
-    for (
-      let i = 0;
-      i < 12 &&
-      !(await contactLink.evaluate((el) => el === document.activeElement));
-      i++
-    ) {
-      await page.keyboard.press("Tab");
-    }
-    await expect(contactLink).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/#contacto$/);
-    const ranger = page.locator("section#contacto");
-    await expect(ranger).toBeInViewport();
 
-    const name = ranger.getByLabel("Nombre");
+    for (const world of WORLDS) {
+      // Primer salto desde el mapa de la home; a partir de ahí, la cabecera de
+      // cada mundo. Es el recorrido real de quien navega con teclado.
+      const nav = page.url().endsWith("/es") ? systemMap(page) : missionNav(page);
+      const link = nav.getByRole("link", { name: world.label, exact: true });
+      for (
+        let i = 0;
+        i < 30 &&
+        !(await link.evaluate((el) => el === document.activeElement));
+        i++
+      ) {
+        await page.keyboard.press("Tab");
+      }
+      await expect(link, `no se alcanzó ${world.label} con Tab`).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(new RegExp(`/es/${world.slug}$`));
+    }
+
+    // El último mundo es Ranger: se llega al formulario sin tocar el ratón.
+    const name = page.getByLabel("Nombre");
     for (
       let i = 0;
-      i < 60 && !(await name.evaluate((el) => el === document.activeElement));
+      i < 80 && !(await name.evaluate((el) => el === document.activeElement));
       i++
     ) {
       await page.keyboard.press("Tab");
@@ -296,7 +365,7 @@ test.describe("smoke — página narrativa mínima", () => {
   test("A30 · OMSTA publica metadata/OG y un slug inválido responde 404", async ({
     page,
   }) => {
-    await page.goto("/es/proyectos/omsta");
+    await visit(page, "/es/proyectos/omsta");
     await expect(page).toHaveTitle(/OMSTA — ERP en Django/);
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       "content",
@@ -307,7 +376,7 @@ test.describe("smoke — página narrativa mínima", () => {
       /\/media\/projects\/omsta\/01-dashboard-panel-ejecutivo\.png$/,
     );
 
-    const response = await page.goto("/es/proyectos/no-existe");
+    const response = await visit(page, "/es/proyectos/no-existe");
     expect(response?.status()).toBe(404);
     await expect(
       page.getByRole("heading", {
@@ -317,38 +386,97 @@ test.describe("smoke — página narrativa mínima", () => {
     ).toBeVisible();
   });
 
-  test("A32 · home y caso OMSTA no desbordan en 375px", async ({ page }) => {
+  test("A32 · ninguna de las 8 rutas desborda en 375px", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
 
     for (const path of [
-      "/es",
+      ...ROUTES,
       "/es/proyectos/omsta",
       "/es/contacto/gracias",
       "/es/privacidad",
     ]) {
-      await page.goto(path);
+      await visit(page, path);
       const dimensions = await page.evaluate(() => ({
         clientWidth: document.documentElement.clientWidth,
         scrollWidth: document.documentElement.scrollWidth,
       }));
-      expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
-      if (path === "/es/proyectos/omsta") {
-        await expect(
-          page.getByRole("heading", {
-            level: 1,
-            name: /OMSTA — ERP para una agencia de viajes/,
-          }),
-        ).toBeVisible();
-      }
+      expect(dimensions.scrollWidth, `${path} desborda`).toBe(
+        dimensions.clientWidth,
+      );
     }
   });
 });
 
-test.describe("A27 (variante F1A) · ?no3d=1 fuerza el perfil ligero", () => {
+/**
+ * G3 de la matriz del pivote: la escena nunca es el contenido.
+ *
+ * Es el test que protege la regla 7 del repositorio. Se ejecuta con JavaScript
+ * DESACTIVADO a propósito — si algún día el mapa del sistema pasara a montarse
+ * en el cliente, este test caería y con él la promesa de que un reclutador con
+ * mala red, un lector de pantalla y Googlebot ven lo mismo.
+ */
+test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("nombre, rol, dos CTAs, CV y siete enlaces reales a los mundos", async ({
+    page,
+  }) => {
+    await page.goto("/es");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
+    ).toBeVisible();
+    // Rol y propuesta están OCULTOS a la vista pero presentes en el documento:
+    // la regla 7 pide que el HTML los sirva, no que ocupen media pantalla. Por
+    // eso se comprueba el contenido del <h1>, no su visibilidad.
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      /desarrollador full-stack y creador visual/,
+    );
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      /No separo creatividad y tecnología/,
+    );
+
+    await expect(
+      heroLink(page, "Proyectos"),
+    ).toHaveAttribute("href", "/es/proyectos");
+    await expect(
+      heroLink(page, "Contacto"),
+    ).toHaveAttribute("href", "/es/contacto");
+    await expect(
+      heroLink(page, "CV"),
+    ).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
+
+    const map = page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" });
+    await expect(map.getByRole("link")).toHaveCount(7);
+    for (const world of WORLDS) {
+      await expect(
+        map.locator(`a[href="/es/${world.slug}"]`),
+        `falta el enlace a ${world.slug}`,
+      ).toHaveCount(1);
+    }
+
+    // El canvas decorativo no existe sin JavaScript, y no hace falta que exista.
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+  });
+
+  test("los siete mundos se leen enteros sin JavaScript", async ({ page }) => {
+    for (const world of WORLDS) {
+      // `domcontentloaded`, no `load`: lo que se comprueba es el HTML que sirve
+      // el servidor. Esperar a `load` es esperar a las imágenes de /es/proyectos,
+      // que sin JavaScript se descargan todas de golpe — y eso convertía un test
+      // de marcado en un test de ancho de banda que fallaba de forma aleatoria.
+      await page.goto(`/es/${world.slug}`, { waitUntil: "domcontentloaded" });
+      await expect(
+        page.getByRole("heading", { level: 1, name: world.title }),
+      ).toBeVisible();
+    }
+  });
+});
+
+test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
   test("no monta el canvas y conserva el contenido íntegro", async ({ page }) => {
     await page.goto("/es?no3d=1");
 
-    // El backdrop pesado no se monta...
     await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute(
       "data-starfield",
@@ -360,21 +488,18 @@ test.describe("A27 (variante F1A) · ?no3d=1 fuerza el perfil ligero", () => {
       "false",
     );
 
-    // Paridad de contenido: el perfil ligero es el mismo sitio, sin el canvas.
     await expect(
       page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
     ).toBeVisible();
-    for (const anchor of ANCHORS) {
-      await expect(page.locator(`section#${anchor}`)).toHaveCount(1);
-    }
-    await expect(page.getByRole("link", { name: "Descargar CV" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
+    ).toHaveCount(7);
+    await expect(heroLink(page, "CV")).toBeVisible();
   });
 
   test("la URL canónica sin el parámetro sí monta el starfield", async ({
     page,
   }) => {
-    // Contraprueba: sin esto, el test anterior pasaría aunque el starfield
-    // estuviera roto para todo el mundo.
     await page.goto("/es");
     await expect(page.getByTestId("starfield-2d")).toHaveCount(1);
     await expect(page.locator("html")).toHaveAttribute(
@@ -383,14 +508,36 @@ test.describe("A27 (variante F1A) · ?no3d=1 fuerza el perfil ligero", () => {
     );
   });
 
-  test("el parámetro sobrevive a la navegación por anclas", async ({ page }) => {
+  test("la elección sobrevive a una navegación de ruta real", async ({
+    page,
+  }) => {
+    // Con 8 rutas el parámetro ya no viaja solo: el primer enlace lo borra.
+    // Lo que persiste es la ELECCIÓN, no la URL (§5 del pivote).
     await page.goto("/es?no3d=1");
-    await page
-      .getByRole("navigation", { name: "Navegación de mundos" })
-      .getByRole("link", { name: "Contacto" })
-      .click();
-    await expect(page).toHaveURL(/\?no3d=1#contacto$/);
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield",
+      "static",
+    );
+
+    await systemMap(page).getByRole("link", { name: "Contacto" }).click();
+    await expect(page).toHaveURL(/\/es\/contacto$/);
     await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield",
+      "static",
+    );
+  });
+
+  test("?no3d=0 devuelve los efectos a quien los había apagado", async ({
+    page,
+  }) => {
+    await page.goto("/es?no3d=1");
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+
+    await page.goto("/es?no3d=0");
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
+      timeout: 3_000,
+    });
   });
 });
 
@@ -398,35 +545,87 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
   test("el contenido íntegro está presente sin movimiento", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es");
+
     await expect(
       page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
     ).toBeVisible();
-    for (const anchor of ANCHORS) {
-      await expect(page.locator(`section#${anchor}`)).toHaveCount(1);
-    }
+    await expect(
+      page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
+    ).toHaveCount(7);
     await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute(
       "data-reduced-motion",
       "true",
     );
 
-    // Las anclas siguen funcionando con salto inmediato y estado coherente.
-    await page
-      .getByRole("navigation", { name: "Navegación de mundos" })
-      .getByRole("link", { name: "Contacto" })
-      .click();
-    const ranger = page.locator("section#contacto");
-    await expect(ranger).toBeInViewport();
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-narrative-navigation",
-      "free",
+    // La navegación entre mundos sigue siendo una navegación normal.
+    await systemMap(page).getByRole("link", { name: "Contacto" }).click();
+    await expect(page).toHaveURL(/\/es\/contacto$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Contacto" }),
+    ).toBeVisible();
+  });
+});
+
+/**
+ * La escena (G2).
+ *
+ * En este entorno Chromium sirve WebGL por SwiftShader, un rasterizador por
+ * SOFTWARE, y el gate lo veta: la escena no se monta y se sirve el nivel `flat`.
+ * Eso no es una limitación del test, es el comportamiento correcto — un equipo
+ * sin GPU no puede pintar 190 pasos de raymarch por píxel y merece el mismo
+ * sitio, no un rectángulo negro.
+ *
+ * Por eso lo que se verifica aquí es la MITAD que importa para quien no ve la
+ * escena: que el sistema siga siendo navegable y que no se descargue ni un byte
+ * de three.js para nada.
+ */
+test.describe("G4 · sin escena no se descarga three.js", () => {
+  test("el nivel flat no pide ningún chunk de la escena", async ({ page }) => {
+    const scripts: string[] = [];
+    page.on("request", (request) => {
+      if (request.resourceType() === "script") scripts.push(request.url());
+    });
+
+    await page.goto("/es?no3d=1");
+    await page.waitForTimeout(1500);
+
+    // El chunk de la escena se carga con `import()` dinámico y solo cuando el
+    // gate lo aprueba. Si apareciera aquí, el presupuesto de §8 estaría roto
+    // para justo quien no puede pagarlo.
+    await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute("data-scene", "flat");
+
+    const sceneChunks = scripts.filter((url) => /three|system-scene/i.test(url));
+    expect(sceneChunks, `chunks de escena cargados: ${sceneChunks}`).toEqual([]);
+  });
+
+  test("sin escena, los siete destinos siguen siendo navegables", async ({
+    page,
+  }) => {
+    await page.goto("/es?no3d=1");
+
+    const map = page.getByRole("navigation", {
+      name: "Destinos del Sistema Gargantúa",
+    });
+    await expect(map.getByRole("link")).toHaveCount(7);
+
+    // Y llevan a alguna parte: es la diferencia entre degradar y romperse.
+    await map.getByRole("link", { name: /Laboratorio/ }).click();
+    await expect(page).toHaveURL(/\/es\/laboratorio$/);
+  });
+
+  test("la home es una sola pantalla: no hay scroll vertical", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/es");
+
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollHeight -
+        document.documentElement.clientHeight,
     );
-    const alignment = await ranger.evaluate((section) => ({
-      top: section.getBoundingClientRect().top,
-      padding: Number.parseFloat(
-        getComputedStyle(document.documentElement).scrollPaddingTop,
-      ),
-    }));
-    expect(Math.abs(alignment.top - alignment.padding)).toBeLessThan(3);
+    expect(overflow).toBe(0);
   });
 });

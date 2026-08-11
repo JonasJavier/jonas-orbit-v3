@@ -30,15 +30,41 @@ type WorldVisual =
   | "black-hole"
   | "beacon";
 
-interface WorldOrbit {
-  /** Radio relativo de la órbita (unidades de layout, heredado de v2). */
+/**
+ * Órbita del cuerpo dentro del Sistema Gargantúa.
+ *
+ * Todas las distancias van en **radios de Schwarzschild** (rs = 1), la misma
+ * unidad que usa el shader del agujero negro: la sombra aparente está en
+ * √27/2 ≈ 2.6 rs y el disco de acreción llega hasta 17 rs. Los cuerpos orbitan
+ * fuera del disco.
+ *
+ * Sustituye a los parámetros `orbit` heredados de v2, que describían una órbita
+ * animada en unidades de layout y no tenían ya ningún consumidor (regla 3:
+ * cero huérfanos).
+ *
+ * ── Por qué cada órbita lleva inclinación ───────────────────────────────────
+ *
+ * El disco se ve casi de canto, así que siete cuerpos coplanares con él se
+ * proyectarían sobre una misma línea horizontal: ilegibles como menú. Con
+ * inclinaciones distintas, cada órbita se proyecta como una elipse propia
+ * alrededor de Gargantúa y los siete destinos se separan en pantalla.
+ *
+ * Y hay una razón dura, no estética: **ninguna inclinación puede ser casi nula.**
+ * Una órbita vista de canto proyecta una elipse degenerada que pasa por el
+ * centro, y ahí el cuerpo cruzaría justo por delante de la sombra — su etiqueta
+ * caería sobre el agujero negro y el destino sería ilegible. Con una elipse de
+ * eje menor sano, el cuerpo nunca se proyecta sobre el centro. El test de
+ * `worlds.data.test.ts` lo vigila.
+ */
+interface WorldPlacement {
+  /** Radio orbital en rs. 0 = el centro del sistema (solo Gargantúa). */
+  orbitRadius: number;
+  /** Fase inicial sobre la órbita, en grados. */
+  phase: number;
+  /** Inclinación del plano orbital respecto al del disco, en grados. */
+  inclination: number;
+  /** Radio del cuerpo en rs. */
   size: number;
-  /** Duración de una vuelta completa, en segundos. */
-  duration: number;
-  /** Desfase inicial de la animación, en segundos (negativo = ya en curso). */
-  delay: number;
-  /** Diámetro relativo del planeta. */
-  planetSize: number;
 }
 
 export interface WorldStructuralData {
@@ -52,12 +78,26 @@ export interface WorldStructuralData {
   secondary: string;
   /** Modelo visual del planeta. */
   visual: WorldVisual;
-  /** Parámetros de órbita para la capa visual. */
-  orbit: WorldOrbit;
-  /** Nombre interno de la escena para la capa 3D (F2B+). */
+  /** Sitio del cuerpo en el sistema. */
+  placement: WorldPlacement;
+  /** Nombre interno de la escena para la capa 3D (G2+). */
   sceneName: string;
 }
 
+/**
+ * Escala del sistema — deliberadamente dramática, no física.
+ *
+ * Los cuerpos están agrandados varios órdenes de magnitud respecto de lo que
+ * sería un planeta real junto a un agujero negro supermasivo. Es una decisión
+ * consciente y no una mentira disfrazada: esto es un MAPA navegable, y un
+ * destino que ocupa doce píxeles no se puede leer ni pulsar. Lo que sí es
+ * riguroso es la física de Gargantúa, que es lo que el visitante mira.
+ *
+ * Las órbitas van de 25 a 51 rs — todas fuera del disco de acreción, que
+ * termina en 17 rs — y ese rango está elegido para que los siete cuerpos quepan
+ * en el encuadre fijo durante TODA su órbita. Un destino que se saliera de
+ * cuadro sería un destino inalcanzable.
+ */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
     order: 1,
@@ -65,7 +105,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    orbit: { size: 34, duration: 38, delay: -7, planetSize: 32 },
+    placement: { orbitRadius: 25, phase: 205, inclination: 27, size: 2.4 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -74,7 +114,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    orbit: { size: 48, duration: 50, delay: -21, planetSize: 28 },
+    placement: { orbitRadius: 31, phase: 260, inclination: -19, size: 2.1 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -83,7 +123,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    orbit: { size: 48, duration: 50, delay: -4, planetSize: 36 },
+    placement: { orbitRadius: 36, phase: 318, inclination: 15, size: 3.1 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -92,7 +132,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    orbit: { size: 62, duration: 64, delay: -35, planetSize: 30 },
+    placement: { orbitRadius: 41, phase: 20, inclination: -31, size: 2.3 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -101,7 +141,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    orbit: { size: 62, duration: 64, delay: -9, planetSize: 38 },
+    placement: { orbitRadius: 46, phase: 78, inclination: 23, size: 2.8 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -110,7 +150,12 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ffb45c",
     secondary: "#d8e6ff",
     visual: "black-hole",
-    orbit: { size: 76, duration: 82, delay: -48, planetSize: 34 },
+    // El centro del sistema, y por eso el único sin órbita: la home ES este
+    // cuerpo. Que el laboratorio viva en el agujero negro no es decoración —
+    // los experimentos del propio build son literalmente lo que se ve al llegar.
+    // `size` es el radio APARENTE de la sombra, √27/2 ≈ 2.6 rs, que es lo que
+    // el raymarch dibuja y por tanto lo que hay que hacer pulsable.
+    placement: { orbitRadius: 0, phase: 0, inclination: 0, size: 2.598 },
     sceneName: "scene-gargantua",
   },
   ranger: {
@@ -119,7 +164,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    orbit: { size: 76, duration: 82, delay: -16, planetSize: 26 },
+    placement: { orbitRadius: 51, phase: 142, inclination: -13, size: 1.9 },
     sceneName: "scene-ranger",
   },
 };
