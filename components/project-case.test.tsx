@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Project } from "@/lib/projects";
 import { getProject } from "@/lib/projects";
-import { getWorlds } from "@/lib/worlds";
 import { ProjectCase } from "./project-case";
 
 describe("ProjectCase", () => {
@@ -13,7 +12,14 @@ describe("ProjectCase", () => {
       prose: { ...source.prose, gallery: undefined },
     };
 
-    render(<ProjectCase project={project} locale="es" worlds={getWorlds("es")} />);
+    render(
+      <ProjectCase
+        project={project}
+        locale="es"
+        projectsHref="/es/proyectos"
+        contactHref="/es/contacto"
+      />,
+    );
 
     expect(
       screen.getByRole("heading", { level: 1, name: project.prose.title }),

@@ -56,8 +56,21 @@
   box-sizing: border-box;
 }
 
+/*
+  El fondo del documento vive en `html`, NO en `body`, y esto no es una manía de
+  organización.
+
+  Todo el telón espacial —estrellas, halo, el campo estelar 2D y el canvas de la
+  escena— se pinta en `z-index: -1`. En el orden de pintado de CSS, los
+  descendientes con z-index negativo van justo encima del fondo del elemento
+  raíz, pero POR DEBAJO del fondo de los bloques en flujo. Con un fondo opaco en
+  `body`, ese telón quedaba tapado entero y lo único que se veía era el degradado
+  del propio `body`: exactamente la sensación de «no se ve nada».
+*/
 html {
-  background: var(--space-void);
+  background:
+    radial-gradient(circle at 77% 4%, rgba(64, 96, 158, 0.12), transparent 28rem),
+    var(--space-void);
   scroll-behavior: smooth;
   scroll-padding-top: 8rem;
 }
@@ -66,9 +79,7 @@ body {
   min-width: 20rem;
   margin: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 77% 4%, rgba(64, 96, 158, 0.12), transparent 28rem),
-    var(--space-void);
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -121,6 +132,33 @@ img {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+}
+
+/*
+  Canvas del nivel `flat`. Estas reglas vivían en el módulo CSS del narrador
+  y bajaron aquí al retirarlo: ahora el fondo es del layout, no de la home.
+  `position: fixed` no es cosmético — sin él el canvas entra en el flujo con su
+  tamaño intrínseco y empuja la página entera hacia abajo.
+*/
+.site-starfield {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms var(--ease-orbit);
+}
+
+html[data-starfield="ready"] .site-starfield {
+  opacity: 0.82;
+}
+
+/* Con el canvas encendido, las estrellas estáticas del CSS se retiran para no
+   duplicar densidad. */
+html[data-starfield="ready"] .space-backdrop__stars {
+  opacity: 0.18;
 }
 
 .space-backdrop__stars,
@@ -304,33 +342,6 @@ img {
   color: var(--ink);
 }
 
-.hero {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
-  align-items: center;
-  width: min(100%, var(--content-max));
-  min-height: calc(100svh - 7rem);
-  margin-inline: auto;
-  padding: clamp(4.5rem, 9vh, 8rem) var(--page-gutter) 7rem;
-}
-
-.hero::before {
-  position: absolute;
-  top: 8%;
-  right: 40%;
-  width: 1px;
-  height: 63%;
-  content: "";
-  background: linear-gradient(to bottom, transparent, var(--space-line-strong), transparent);
-}
-
-.hero__copy {
-  position: relative;
-  z-index: 2;
-  max-width: 52rem;
-}
-
 .mission-kicker,
 .section-kicker {
   color: var(--ink-muted);
@@ -351,46 +362,6 @@ img {
 
 .mission-kicker span:first-child {
   color: var(--amber);
-}
-
-.hero h1 {
-  max-width: 12ch;
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(3.5rem, 7.3vw, 7.5rem);
-  font-stretch: condensed;
-  font-weight: 650;
-  letter-spacing: -0.055em;
-  line-height: 0.87;
-  text-wrap: balance;
-}
-
-.hero h1 em {
-  display: block;
-  color: transparent;
-  font-style: normal;
-  -webkit-text-stroke: 1px rgba(238, 243, 255, 0.58);
-  text-shadow: 0 0 3rem rgba(127, 229, 255, 0.08);
-}
-
-.hero__name {
-  display: block;
-  margin-bottom: 1.1rem;
-  color: var(--cyan);
-  font-family: var(--font-mono);
-  font-size: clamp(0.68rem, 1vw, 0.8rem);
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  line-height: 1.3;
-  text-transform: uppercase;
-}
-
-.hero__intro {
-  max-width: 43rem;
-  margin: 2rem 0 0;
-  color: var(--ink-soft);
-  font-size: clamp(1.02rem, 1.5vw, 1.25rem);
-  line-height: 1.65;
 }
 
 .hero__actions {
@@ -453,217 +424,22 @@ img {
   color: var(--cyan);
 }
 
-.hero-proof {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 46rem;
-  margin: 3.2rem 0 0;
-  border-top: 1px solid var(--space-line);
-}
-
-.hero-proof div {
-  padding: 1.1rem 1rem 0 0;
-}
-
-.hero-proof div + div {
-  padding-left: 1rem;
-  border-left: 1px solid var(--space-line);
-}
-
-.hero-proof dt {
-  color: var(--amber);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-}
-
-.hero-proof dd {
-  max-width: 12rem;
-  margin: 0.35rem 0 0;
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.hero__visual {
-  position: relative;
-  display: grid;
-  min-height: min(43rem, 70vh);
-  place-items: center;
-}
-
-.orbital-instrument {
-  position: relative;
-  width: min(40vw, 37rem);
-  aspect-ratio: 1;
-  border-radius: 50%;
-}
-
-.orbital-instrument::before,
-.orbital-instrument::after {
-  position: absolute;
-  inset: 3%;
-  content: "";
-  border: 1px solid rgba(127, 229, 255, 0.08);
-  border-radius: 50%;
-}
-
-.orbital-instrument::after {
-  inset: 13%;
-  border-style: dashed;
-  border-color: rgba(242, 200, 121, 0.13);
-}
-
-.orbital-instrument__halo {
-  position: absolute;
-  inset: 19%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(127,229,255,.12), rgba(59,89,160,.05) 40%, transparent 70%);
-  filter: blur(2px);
-  box-shadow: 0 0 6rem rgba(91, 127, 201, 0.15);
-}
-
-.orbit {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border: 1px solid var(--space-line-strong);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.orbit--outer {
-  width: 91%;
-  height: 91%;
-  animation: orbit-spin 32s linear infinite;
-}
-
-.orbit--middle {
-  width: 66%;
-  height: 66%;
-  animation: orbit-spin-reverse 23s linear infinite;
-}
-
-.orbit--inner {
-  width: 41%;
-  height: 41%;
-  animation: orbit-spin 14s linear infinite;
-}
-
-.orbit__node {
-  position: absolute;
-  top: -0.28rem;
-  left: 50%;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
-
-.orbit__node--amber {
-  background: var(--amber);
-  box-shadow: 0 0 1.4rem var(--amber), 0 0 0 0.35rem rgba(242,200,121,.08);
-}
-
-.orbit__node--cyan {
-  background: var(--cyan);
-  box-shadow: 0 0 1.4rem var(--cyan), 0 0 0 0.35rem rgba(127,229,255,.08);
-}
-
-.orbit__node--white {
-  background: #fff;
-  box-shadow: 0 0 1rem #fff;
-}
-
-.orbital-instrument__core {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  width: 21%;
-  aspect-ratio: 1;
-  place-content: center;
-  border: 1px solid rgba(242,200,121,.48);
-  background: rgba(5, 7, 15, 0.72);
-  box-shadow: inset 0 0 2rem rgba(127,229,255,.08), 0 0 4rem rgba(242,200,121,.08);
-  text-align: center;
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.orbital-instrument__core span,
-.orbital-instrument__core small {
-  display: block;
-  font-family: var(--font-mono);
-  transform: rotate(-45deg);
-}
-
-.orbital-instrument__core span {
-  color: var(--ink);
-  font-size: clamp(1.3rem, 3vw, 2.4rem);
-  line-height: 1;
-}
-
-.orbital-instrument__core small {
-  margin-top: 0.4rem;
-  color: var(--amber);
-  font-size: 0.45rem;
-  letter-spacing: 0.2em;
-}
-
-.instrument-label {
-  position: absolute;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--space-line);
-  background: rgba(5, 7, 15, 0.74);
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
-  letter-spacing: 0.11em;
-}
-
-.instrument-label--a { top: 14%; left: 4%; }
-.instrument-label--b { top: 34%; right: 0; }
-.instrument-label--c { bottom: 13%; left: 14%; }
-
-.hero__scroll {
-  position: absolute;
-  bottom: 2rem;
-  left: var(--page-gutter);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-.hero__scroll span {
-  position: relative;
-  width: 2.7rem;
-  height: 1px;
-  overflow: hidden;
-  background: var(--space-line-strong);
-}
-
-.hero__scroll span::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background: var(--cyan);
-  animation: scan-x 2.5s var(--ease-orbit) infinite;
-}
-
-.world-section {
+/*
+  Página de mundo. Antes era una sección dentro de un scroll de siete; ahora es
+  una ruta con su propio h1, así que se lleva puesto el ancho de contenido y el
+  padding que antes ponían `__inner` y `__content`. El carril "0X / 07"
+  desapareció con el recorrido lineal: el orden ahora lo dan la cabecera y los
+  destinos contiguos del pie.
+*/
+.world-page {
   position: relative;
   isolation: isolate;
-  min-height: 82svh;
-  scroll-margin-top: 0;
-  border-top: 1px solid var(--space-line);
+  width: min(100%, var(--content-max));
+  margin-inline: auto;
+  padding: clamp(4rem, 7vw, 7rem) var(--page-gutter) clamp(3rem, 5vw, 5rem);
 }
 
-.world-section__atmosphere {
+.world-page__atmosphere {
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -673,7 +449,7 @@ img {
     linear-gradient(180deg, rgba(5,7,15,.2), rgba(5,7,15,.88));
 }
 
-.world-section__atmosphere::after {
+.world-page__atmosphere::after {
   position: absolute;
   top: 0;
   right: 8%;
@@ -684,52 +460,14 @@ img {
   opacity: 0.22;
 }
 
-.world-section__inner {
-  display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
-  width: min(100%, var(--content-max));
-  margin-inline: auto;
-  padding: clamp(5rem, 9vw, 9rem) var(--page-gutter);
-}
-
-.world-section__rail {
-  display: flex;
-  align-items: center;
-  align-self: stretch;
-  flex-direction: column;
-  gap: 0.8rem;
-  padding-top: 0.15rem;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.1em;
-}
-
-.world-section__number {
-  color: var(--world-accent);
-}
-
-.world-section__line {
-  width: 1px;
-  min-height: 5rem;
-  flex: 1;
-  background: linear-gradient(to bottom, var(--world-accent), var(--space-line), transparent);
-  opacity: 0.6;
-}
-
-.world-section__content {
-  min-width: 0;
-  padding-left: clamp(1rem, 3vw, 3rem);
-}
-
-.world-section__masthead {
+.world-page__masthead {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(15rem, 0.55fr);
   align-items: center;
   gap: clamp(2rem, 7vw, 8rem);
 }
 
-.world-section__eyebrow {
+.world-page__eyebrow {
   margin: 1rem 0 0;
   color: var(--world-accent);
   font-family: var(--font-mono);
@@ -738,7 +476,7 @@ img {
   text-transform: uppercase;
 }
 
-.world-section h2 {
+.world-page h1 {
   max-width: 14ch;
   margin: 0.35rem 0 0;
   font-family: var(--font-display);
@@ -748,7 +486,7 @@ img {
   line-height: 0.95;
 }
 
-.world-section__intro {
+.world-page__intro {
   max-width: 48rem;
   margin: 1.5rem 0 0;
   color: var(--ink-soft);
@@ -932,6 +670,21 @@ img {
   border-radius: 50%;
 }
 
+/*
+  La rejilla dibuja sus separadores con el fondo asomando por un gap de 1px, así
+  que una fila incompleta deja dos celdas del color del borde a la vista. Antes
+  no se notaba porque el carril del narrador estrechaba la rejilla; a ancho
+  completo son tres columnas y cuatro paneles dejan el hueco. El último panel
+  ocupa lo que sobre.
+*/
+.panel-grid > li:last-child:nth-child(3n + 1) {
+  grid-column: 1 / -1;
+}
+
+.panel-grid > li:last-child:nth-child(3n + 2) {
+  grid-column: span 2;
+}
+
 .panel-grid__index {
   color: var(--world-accent);
   font-family: var(--font-mono);
@@ -980,7 +733,7 @@ img {
   letter-spacing: 0.04em;
 }
 
-.world-section__closing {
+.world-page__closing {
   max-width: 48rem;
   margin: 3rem 0 0;
   color: var(--ink-soft);
@@ -989,7 +742,7 @@ img {
   font-style: italic;
 }
 
-.world-section__closing span {
+.world-page__closing span {
   margin-right: 0.65rem;
   color: var(--world-accent);
   font-family: var(--font-mono);
@@ -2224,25 +1977,13 @@ img {
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-@keyframes orbit-spin-reverse {
-  to { transform: translate(-50%, -50%) rotate(-360deg); }
-}
-
 @keyframes scan-x {
   0% { transform: translateX(-110%); }
   55%, 100% { transform: translateX(110%); }
 }
 
 @media (max-width: 72rem) {
-  .hero {
-    grid-template-columns: minmax(0, 1.15fr) minmax(17rem, 0.7fr);
-  }
-
-  .orbital-instrument {
-    width: min(35vw, 30rem);
-  }
-
-  .world-section__masthead {
+  .world-page__masthead {
     grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.42fr);
     gap: 3rem;
   }
@@ -2269,42 +2010,7 @@ img {
     font-size: 0.52rem;
   }
 
-  .hero {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    padding-top: 5rem;
-  }
-
-  .hero::before {
-    display: none;
-  }
-
-  .hero__copy {
-    max-width: 100%;
-  }
-
-  .hero__visual {
-    min-height: 28rem;
-    margin-top: 2rem;
-  }
-
-  .orbital-instrument {
-    width: min(82vw, 31rem);
-  }
-
-  .hero__scroll {
-    display: none;
-  }
-
-  .world-section__inner {
-    grid-template-columns: 2rem minmax(0, 1fr);
-  }
-
-  .world-section__content {
-    padding-left: 0.7rem;
-  }
-
-  .world-section__masthead {
+  .world-page__masthead {
     grid-template-columns: 1fr;
   }
 
@@ -2409,22 +2115,8 @@ img {
     padding-inline: 0.72rem;
   }
 
-  .hero {
-    padding-top: 3.8rem;
-    padding-bottom: 4rem;
-  }
-
   .mission-kicker span:last-child {
     display: none;
-  }
-
-  .hero h1 {
-    max-width: 11ch;
-    font-size: clamp(3rem, 16vw, 4.4rem);
-  }
-
-  .hero__intro {
-    margin-top: 1.5rem;
   }
 
   .hero__actions {
@@ -2440,51 +2132,12 @@ img {
     align-self: flex-start;
   }
 
-  .hero-proof {
-    grid-template-columns: 1fr;
-    margin-top: 2.4rem;
-  }
-
-  .hero-proof div,
-  .hero-proof div + div {
-    display: grid;
-    grid-template-columns: 3.5rem 1fr;
-    align-items: center;
-    padding: 0.75rem 0;
-    border-left: 0;
-    border-bottom: 1px solid var(--space-line);
-  }
-
-  .hero-proof dd {
-    margin: 0;
-  }
-
-  .hero__visual {
-    min-height: 22rem;
-  }
-
-  .instrument-label {
-    font-size: 0.42rem;
-  }
-
-  .world-section {
+  .world-page {
     min-height: auto;
-  }
-
-  .world-section__inner {
-    display: block;
     padding-block: 4.5rem;
   }
 
-  .world-section__rail {
-    display: none;
-  }
-
-  .world-section__content {
-    padding-left: 0;
-  }
-
-  .world-section h2 {
+  .world-page h1 {
     font-size: clamp(2.7rem, 15vw, 4.2rem);
   }
 
@@ -2632,6 +2285,12 @@ img {
     scroll-behavior: auto;
   }
 
+  /* Cinturón y tirantes: el componente ya veta el canvas con reduced-motion,
+     pero si alguna vez se montara, aquí no se ve. */
+  .site-starfield {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {
@@ -2639,5 +2298,599 @@ img {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Sistema Gargantúa — la capa de destinos sobre la escena
+   ──────────────────────────────────────────────────────────────────────────
+   Los siete nodos son enlaces del HTML servido. Su posición sale de dos sitios
+   distintos según haya escena o no, y ESE es todo el mecanismo:
+
+   · Sin escena (`flat`, sin JS, reduced-motion): las coordenadas vienen del
+     servidor en % dentro del cuadro, calculadas por lib/system-map.ts desde los
+     mismos datos orbitales. Se aplican con left/top y no cuestan nada.
+   · Con escena: el bucle de render escribe --map-x/--map-y en PÍXELES y aquí se
+     aplican con transform. Nunca con left/top: mover siete elementos por frame
+     con propiedades de layout obligaría a recalcularlo sesenta veces por segundo.
+
+   La ficha se abre con :hover y :focus-visible, sin una línea de JavaScript. Un
+   panel movido por estado de React se habría caído junto con la escena.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.system-map {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.system-map__field {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.system-map__slot {
+  position: absolute;
+  top: var(--map-y);
+  left: var(--map-x);
+  width: max-content;
+  transform: translate(-50%, -50%);
+}
+
+/* Con la escena viva las coordenadas llegan en píxeles y se aplican con
+   transform: la posición del nodo pasa a ser trabajo del compositor. */
+html[data-scene-live="true"] .system-map__slot{
+  top: 0;
+  left: 0;
+  transform: translate3d(var(--map-x, 50vw), var(--map-y, 50vh), 0)
+    translate(-50%, -50%);
+}
+
+.system-map__body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  pointer-events: auto;
+  transition:
+    border-color 220ms var(--ease-orbit),
+    background 220ms var(--ease-orbit),
+    transform 220ms var(--ease-orbit);
+}
+
+.system-map__body:hover,
+.system-map__body:focus-visible {
+  border-color: color-mix(in srgb, var(--world-accent) 55%, transparent);
+  background: rgba(4, 6, 12, 0.72);
+  backdrop-filter: blur(3px);
+  transform: translateY(-2px);
+}
+
+/*
+  El anillo del marcador. Es lo que ata la etiqueta a su cuerpo: crece con el
+  radio aparente que publica la escena, así que un planeta grande y cercano
+  lleva un anillo grande y la Ranger uno pequeño.
+*/
+.system-map__marker {
+  position: relative;
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--world-accent) 60%, transparent);
+  border-radius: 50%;
+}
+
+.system-map__marker::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  content: "";
+  border-radius: 50%;
+  background: var(--world-accent);
+  box-shadow: 0 0 0.7rem var(--world-accent);
+  transform: translate(-50%, -50%);
+}
+
+html[data-scene-live="true"] .system-map__marker{
+  /* La escena publica el radio aparente del cuerpo; el anillo lo abraza. */
+  width: calc(var(--map-radius, 22px) * 1.7);
+  height: calc(var(--map-radius, 22px) * 1.7);
+  border-color: color-mix(in srgb, var(--world-accent) 32%, transparent);
+}
+
+html[data-scene-live="true"] .system-map__marker::after{
+  /* Con el cuerpo real detrás, el punto sobra: sería una mancha encima. */
+  opacity: 0;
+}
+
+/*
+  Una palabra por destino. Siete bloques de tres líneas flotando sobre la escena
+  la tapaban y convertían un lugar en un menú: el nombre cósmico, el número y el
+  título completo se mudaron a la ficha, que solo aparece al enfocar.
+*/
+.system-map__label {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 560;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  text-shadow: 0 0 1.4rem rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+
+/*
+  La ficha. Vive en la esquina inferior izquierda — el hueco que deja el
+  encuadre con Gargantúa a la derecha — y es hija del propio enlace, así que
+  entra en su nombre accesible y la lee un lector de pantalla sin duplicar texto.
+*/
+.system-map__ficha {
+  position: fixed;
+  bottom: clamp(4.5rem, 9vh, 7rem);
+  left: var(--page-gutter);
+  z-index: 3;
+  display: grid;
+  gap: 0.5rem;
+  width: min(24rem, calc(100vw - var(--page-gutter) * 2));
+  padding: 1.1rem 1.3rem;
+  border: 1px solid color-mix(in srgb, var(--world-accent) 34%, transparent);
+  border-radius: var(--radius-md);
+  background: rgba(4, 6, 12, 0.82);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translateY(0.6rem);
+  transition:
+    opacity 220ms var(--ease-orbit),
+    transform 220ms var(--ease-orbit);
+  visibility: hidden;
+}
+
+.system-map__body:hover .system-map__ficha,
+.system-map__body:focus-visible .system-map__ficha {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.system-map__ficha-eyebrow {
+  color: var(--world-accent);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+}
+
+.system-map__ficha-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 610;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.system-map__ficha-summary {
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.system-map__ficha-go {
+  color: var(--world-accent);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+}
+
+/* ── La home a una sola pantalla ─────────────────────────────────────────── */
+
+/*
+  Sin scroll: la home es un lugar, no un documento. `:has()` acota la regla a
+  esta ruta sin necesidad de que el layout sepa qué página está debajo.
+*/
+body:has(.system-home) {
+  overflow: hidden;
+}
+
+.system-home {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  width: min(100%, var(--content-max));
+  margin-inline: auto;
+  padding: 0 var(--page-gutter);
+}
+
+/* El canvas de la escena. Detrás de todo y sin eventos: los blancos de clic
+   son los enlaces, nunca el canvas. */
+.system-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Con la escena viva, el fondo 2D se retira: dos campos de estrellas
+   superpuestos duplican densidad y ensucian el negro del horizonte. */
+html[data-scene-live="true"] .space-backdrop{
+  opacity: 0.18;
+}
+
+html[data-scene-live="true"] .site-starfield{
+  display: none;
+}
+
+/* ── El texto, reducido a instrumentación ───────────────────────────────────
+   Solo se ve el nombre y tres enlaces del tamaño de una lectura de panel. El
+   rol y la propuesta siguen en el HTML, invisibles: la regla 7 pide que estén
+   en el documento, no que ocupen media pantalla. */
+
+.hero {
+  position: absolute;
+  top: clamp(2.5rem, 6vh, 4.5rem);
+  left: var(--page-gutter);
+  z-index: 3;
+  display: grid;
+  gap: 1.1rem;
+  justify-items: start;
+  max-width: 24rem;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+}
+
+.hero__action {
+  position: relative;
+  padding-bottom: 0.3rem;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 200ms var(--ease-orbit);
+}
+
+.hero__action::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  content: "";
+  background: var(--amber);
+  transition: width 240ms var(--ease-orbit);
+}
+
+.hero__action:hover,
+.hero__action:focus-visible {
+  color: var(--ink);
+}
+
+.hero__action:hover::after,
+.hero__action:focus-visible::after {
+  width: 100%;
+}
+
+/*
+  Presente en el documento, ausente de la pantalla. Es lo que permite cumplir la
+  regla 7 —rol y propuesta en el HTML servido— sin llenar de texto una home que
+  quiere ser un sitio, no un folleto.
+*/
+.visually-hidden {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+  Salida para quien el gate mandó a `flat` por una heurística equivocada. No es
+  un ajuste escondido: es el mismo mecanismo que `?no3d=1`, pero en la dirección
+  contraria y a la vista (regla 5 — nada de esto depende de detectar auditores).
+*/
+.scene-toggle {
+  position: fixed;
+  right: var(--page-gutter);
+  bottom: clamp(1.2rem, 3vh, 2rem);
+  z-index: 4;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--space-line-strong);
+  border-radius: 999px;
+  background: rgba(4, 6, 12, 0.7);
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition:
+    color 200ms var(--ease-orbit),
+    border-color 200ms var(--ease-orbit);
+}
+
+.scene-toggle:hover,
+.scene-toggle:focus-visible {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+
+/*
+  Gargantúa dibujado con dos gradientes, para el nivel `flat`.
+
+  Sin esto, quien no puede ejecutar la escena veía siete puntos flotando sobre
+  un rectángulo negro — que es exactamente la sensación de «no se ve nada». El
+  fallback tiene que parecer una decisión, no una avería, y cuesta cero bytes.
+*/
+.space-backdrop__gargantua {
+  position: absolute;
+  top: 50%;
+  right: 6%;
+  width: min(52vw, 46rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* Las capas se pintan de arriba abajo: la sombra tapa al disco, y por eso el
+     disco parece pasar POR DETRÁS. Es la lectura que hace reconocible la
+     silueta sin una sola línea de WebGL. */
+  background:
+    /* 1 · la sombra: negro puro, sin degradado que la ensucie */
+    radial-gradient(circle at 50% 50%, #000 0 11.5%, transparent 12%),
+    /* 2 · el anillo de fotones, estrecho y brillante */
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 11.6%,
+      rgba(255, 226, 176, 0.95) 12.4%,
+      rgba(255, 176, 84, 0.35) 14.5%,
+      transparent 19%
+    ),
+    /* 3 · el arco de la cara lejana, subiendo por encima de la sombra */
+    radial-gradient(
+      ellipse 30% 26% at 50% 50%,
+      transparent 0 52%,
+      rgba(255, 205, 140, 0.55) 63%,
+      rgba(255, 170, 80, 0.12) 74%,
+      transparent 84%
+    ),
+    /* 4 · el disco visto casi de canto */
+    radial-gradient(
+      ellipse 50% 4.2% at 50% 50%,
+      rgba(255, 248, 232, 0.95) 0 18%,
+      rgba(255, 182, 92, 0.72) 52%,
+      rgba(192, 92, 26, 0.22) 80%,
+      transparent 100%
+    ),
+    /* 5 · el halo que envuelve al conjunto */
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 168, 76, 0.16) 0 16%,
+      rgba(255, 150, 60, 0.05) 30%,
+      transparent 52%
+    );
+  filter: blur(0.5px);
+  opacity: 0;
+  transform: translateY(-50%) rotate(-6deg);
+  transition: opacity 900ms var(--ease-orbit);
+}
+
+/* Solo en la home, y solo mientras la escena real no esté pintando. */
+body:has(.system-home) .space-backdrop__gargantua {
+  opacity: 0.9;
+}
+
+html[data-scene-live="true"] .space-backdrop__gargantua {
+  opacity: 0;
+}
+
+@media (max-width: 60rem) {
+  .hero {
+    position: static;
+    max-width: 100%;
+  }
+
+  .space-backdrop__gargantua {
+    top: 26%;
+    right: -14%;
+    width: 116vw;
+  }
+
+  /*
+    En un móvil, siete etiquetas ancladas sobre la escena se pisan y ninguna se
+    puede pulsar con el pulgar. Los destinos pasan a ser una lista compacta al
+    pie y la escena se queda de fondo — que sigue siendo lo que impresiona.
+  */
+  body:has(.system-home) {
+    overflow: auto;
+  }
+
+  .system-map {
+    position: static;
+    margin-top: 2rem;
+  }
+
+  .system-map__field,
+  html[data-scene-live="true"] .system-map__field{
+    position: static;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .system-map__slot,
+  html[data-scene-live="true"] .system-map__slot{
+    position: static;
+    width: auto;
+    transform: none;
+  }
+
+  .system-map__body {
+    border-color: var(--space-line);
+    border-radius: var(--radius-md);
+    background: rgba(4, 6, 12, 0.66);
+  }
+
+  .system-map__marker,
+  html[data-scene-live="true"] .system-map__marker{
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  html[data-scene-live="true"] .system-map__marker::after{
+    opacity: 1;
+  }
+
+  /* La ficha flotante no cabe: el resumen ya está en la página del destino. */
+  .system-map__ficha {
+    display: none;
+  }
+
+  .system-home {
+    justify-content: flex-start;
+    padding-top: 2.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .hero {
+    max-width: 100%;
+  }
+}
+
+/* Destinos contiguos al pie de cada mundo — lo que sustituye al scroll continuo. */
+.world-page__neighbours {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: clamp(3rem, 6vw, 5rem);
+  padding-top: 2rem;
+  border-top: 1px solid var(--space-line);
+}
+
+.world-page__neighbours a {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--space-line);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  transition: border-color 200ms var(--ease-orbit), background 200ms var(--ease-orbit);
+}
+
+.world-page__neighbours a:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.world-page__neighbours a:hover,
+.world-page__neighbours a:focus-visible {
+  border-color: var(--space-line-strong);
+  background: rgba(127, 229, 255, 0.05);
+}
+
+.world-page__neighbours small {
+  display: block;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.13em;
+}
+
+/* El mundo activo en la cabecera. Sin JavaScript: lo dice la ruta. */
+.mission-nav a[aria-current="page"] {
+  background: color-mix(in srgb, var(--nav-accent) 12%, transparent);
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--nav-accent);
+}
+
+@media (max-width: 60rem) {
+  .system-map__field {
+    display: grid;
+    gap: 0.9rem;
+    min-height: 0;
+  }
+
+  .system-map__field::before {
+    display: none;
+  }
+
+  .system-map__slot,
+  .system-map__slot[data-centre="true"] {
+    position: static;
+    width: auto;
+    transform: none;
+  }
+
+  .system-map__body {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 1.1rem;
+    border-color: var(--space-line);
+    background: rgba(9, 13, 25, 0.62);
+    text-align: left;
+  }
+
+  .system-map__slot .world-glyph {
+    width: 4.5rem;
+  }
+
+  .system-map__label {
+    justify-items: start;
+  }
+
+  .world-page__neighbours {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+  La navegación de mundos deja de ser un carril con scroll horizontal: sin el
+  efecto que centraba el elemento activo (murió con el store de scroll), en un
+  móvil el destino actual podía quedar fuera de la vista. Envuelta, los siete
+  destinos se ven siempre y no hace falta JavaScript para nada.
+*/
+@media (max-width: 54rem) {
+  .mission-nav {
+    overflow-x: visible;
+  }
+
+  .mission-nav ol {
+    flex-wrap: wrap;
+    width: auto;
+    min-width: 0;
+  }
+
+  .mission-nav a {
+    min-height: 2.5rem;
+    padding: 0 0.7rem;
   }
 }

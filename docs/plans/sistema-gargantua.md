@@ -371,7 +371,7 @@ Hallazgos de G0 que la escena de G2 debe heredar:
 Falta: medir en hardware real (portátil e Iris Xe + Android de referencia) y
 registrar el veredicto aquí. `app/spike/` se borra al cerrar G0.
 
-### G1 — Migración de rutas · *sin nada de 3D*
+### G1 — Migración de rutas · *sin nada de 3D* — **COMPLETADA 2026-08-07**
 
 Los 7 mundos pasan de secciones a rutas. Nivel `flat` únicamente.
 
@@ -385,10 +385,151 @@ Los 7 mundos pasan de secciones a rutas. Nivel `flat` únicamente.
 seguridad: si en algún momento urge tener el portafolio en línea, se despliega G1
 sin esperar a la escena.
 
-### G2 — La escena
+#### Qué se construyó
+
+| Pieza | Dónde |
+|---|---|
+| Contrato de rutas `WorldId ↔ slug` | `lib/worlds.ts` (`getWorldPath`, `getWorldBySlug`, `getWorldNeighbours`, `getWorldNavItems`) |
+| Ruta activa → mundo, función pura | `lib/world-route.ts` — **es el embrión de `cameraPose = f(ruta)`**; G2 la reutiliza tal cual |
+| Índice: mapa del sistema | `components/system-map.tsx` + `lib/system-map.ts` |
+| Página de mundo | `components/world-page.tsx` (sustituye a `world-section.tsx`) |
+| Shell sin JavaScript | `components/site-shell.tsx`, `site-header.tsx`, `mission-navigation.tsx` |
+| Nivel `flat` persistente | `app/[locale]/layout.tsx` + `components/site-backdrop.tsx` |
+| Tarjetas OG por mundo | `lib/world-og.tsx` + 3 `opengraph-image.tsx` |
+
+Decisiones tomadas al ejecutar, todas dentro de lo que §14 dejaba abierto:
+
+1. **Slugs ES fijados** en la propuesta funcional. Único cambio de contenido:
+   `tesseract` pasa de `historia` a `sobre-mi`.
+2. **La estructura del sistema es polar y vive en `content/worlds.data.ts`**
+   (`placement: { angle, radius, size }`), sustituyendo a los parámetros `orbit`
+   heredados de v2, que ya no tenían consumidor. El mapa 2D la proyecta a una
+   elipse achatada; **G2 puede leer el mismo ángulo y radio como posición real
+   en el plano del disco.** La estructura se decidió una vez y sobrevive al
+   cambio de capa visual.
+3. **Gargantúa es el centro del mapa** (`radius: 0`) y enlaza al laboratorio.
+4. **`?no3d=1` pasa a persistirse.** Con 8 rutas reales el parámetro moría en el
+   primer enlace; §5 ya pedía que la elección se persistiera. La URL es la
+   entrada; el almacenamiento, la memoria.
+5. **La navegación de mundos se envuelve en móvil** en vez de ser un carril con
+   scroll horizontal: el efecto que centraba el elemento activo murió con el
+   store de scroll, y sin él el destino actual podía quedar fuera de la vista.
+
+#### El DOM del mapa es un contrato con G2
+
+Los siete nodos de `SystemMap` son `<a href>` reales con `data-world` y su
+posición en `--map-x` / `--map-y`. G2 **no** añade una capa de blancos de clic
+sobre el canvas: reescribe esas dos variables con la posición proyectada de cada
+cuerpo. Por eso G5 («seleccionables por clic y por teclado») queda satisfecho por
+construcción, y no por una capa de eventos encima de la escena.
+
+#### Medición del presupuesto de JS (cierra la deuda de §8 y T8)
+
+Medido sobre `next start`, tamaño comprimido en el cable, sin contar prefetch:
+
+| Ruta | Total gz | Propio (total − baseline) |
+|---|---|---|
+| **Baseline compartido** (8 chunks) | **145,6 KiB** | — |
+| `/es` (Sistema Gargantúa) | 149,1 KiB | 3,5 KiB |
+| Los 5 mundos de prosa | 149,1 KiB | 3,5 KiB |
+| `/es/proyectos` y casos | 153,8 KiB | 8,3 KiB |
+| `/es/contacto` | 217,5 KiB | 71,9 KiB |
+| `/es/privacidad` | 149,1 KiB | 3,5 KiB |
+
+**La home baja de 231 a 149,1 KiB gz (−35 %).** No es una optimización: es el
+peso del aparato de scroll narrativo — `motion`, `zustand`, el controlador y el
+formulario de contacto, que vivía en la misma página — que ha desaparecido.
+`motion` y `zustand` se retiraron de `package.json` por quedarse sin consumidor.
+
+El presupuesto propuesto de «< 40 KB gz propios por ruta» **se cumple en 11 de
+las 12 rutas**. La excepción es `/es/contacto` con 71,9 KiB: formulario con
+máquina de estados, validación compartida con Zod y widget de Turnstile. Requiere
+decisión del dueño (§14): declarar la excepción para la ruta de conversión, o
+bajar la cifra atacando Zod en el cliente.
+
+### G2 — La escena — **CONSTRUIDA 2026-08-07, pendiente de validación visual**
 
 Canvas persistente, cámara fija, nivel `orbit`, selección de planeta → ruta.
 Gate de capacidad y botones «Activar experiencia 3D» / «Reducir efectos».
+
+#### Decisión del dueño que reencuadra la home
+
+`/es` deja de ser hero + mapa apilados y pasa a ser **una sola pantalla sin
+scroll**: la escena ocupa el viewport y el texto vive encima. No contradice
+nada — es lo que §4 decía desde el principio («la escena ES la home; el texto
+vive encima de ella»); G1 los apiló porque todavía no había escena.
+
+El texto visible se reduce al mínimo que exige la regla 7: nombre, una frase
+—*«No separo creatividad y tecnología: las mantengo en la misma órbita»*—, dos
+CTAs, el CV y los siete enlaces. Todo lo demás se mudó a su destino.
+
+#### Qué se construyó
+
+| Pieza | Dónde |
+|---|---|
+| Raymarch de geodésicas | `components/scene/gargantua-shaders.ts` (del spike, física intacta) |
+| Los 6 cuerpos + su shader | `components/scene/bodies.ts` |
+| Motor: órbitas, encuadre, proyección | `components/scene/system-scene.ts` |
+| Canvas persistente y unión con el DOM | `components/scene/gargantua-system.tsx` |
+| Gate de capacidad | `components/scene/capability.ts` |
+| `cameraPose = f(ruta)` | `lib/scene-poses.ts` |
+
+#### Las cinco decisiones técnicas que definen la escena
+
+1. **Los cuerpos NO van dentro del raymarch.** Serían siete tests de
+   intersección por paso, con 190–340 pasos por píxel. Van como geometría real
+   compuesta delante, con una cámara en perspectiva que copia a mano la base de
+   rayos del shader. Gargantúa lleva la física; los cuerpos, iluminación.
+2. **Nada ocluye a los cuerpos.** Un planeta que pasa medio minuto detrás del
+   disco es un enlace que desaparece del menú: eso es un fallo de accesibilidad,
+   no un detalle de realismo. Se dibujan siempre delante.
+3. **El encuadre se calcula, no se tabula.** La escena mide las siete órbitas
+   proyectadas y deduce la distancia mínima a la que todas caben en el viewport
+   actual. Con distancias fijas por tamaño de pantalla, cambiar un radio en
+   `worlds.data.ts` habría sacado un destino de cuadro sin que nadie se enterara.
+4. **Las etiquetas se apartan; los cuerpos, no.** Con órbitas reales dos cuerpos
+   se cruzan en pantalla tarde o temprano. Se separan las etiquetas con una
+   pasada de colisión suavizada, nunca falseando la órbita.
+5. **Veto al rasterizador por software.** SwiftShader, llvmpipe y el «basic
+   render driver» de Windows caen a `flat`. No es cosmética: sin GPU el raymarch
+   no completa un fotograma y el visitante ve un rectángulo negro con el
+   ventilador a tope. **No es detección del auditor (regla 5)**: se mira una
+   capacidad real, la misma para todo el mundo. Que un CI headless caiga aquí es
+   una consecuencia correcta, no el objetivo.
+
+#### Un error que conviene no repetir
+
+El primer intento giraba cada plano orbital por su propia fase para diversificar
+las elipses proyectadas. La trigonometría lo castigó: con `node = φ`, la
+coordenada x sale `r·(cos²φ + sen²φ·cos i)`, **positiva para cualquier fase**.
+Los siete cuerpos arrancaban apiñados al mismo lado del agujero negro. Las siete
+órbitas comparten ahora línea de nodos y la fase vuelve a decidir de verdad
+dónde está cada cuerpo.
+
+#### Presupuesto medido
+
+| | Antes de G2 | Ahora |
+|---|---|---|
+| Baseline compartido | 145,6 KiB gz | **147,9 KiB gz** |
+| `/es` (carga inicial) | 149,1 KiB gz | **151,4 KiB gz** |
+| Chunk de la escena | — | **144,1 KiB gz**, aparte y bajo demanda |
+| Texturas | — | **0 bytes** — todo procedural en shader |
+
+El chunk de la escena entra muy por debajo del techo de 350 KB gz de §8, y el
+presupuesto de texturas (1,2 MB) se gasta entero en nada: no hay ni una imagen.
+Quien recibe el nivel `flat` no descarga ni un byte de three.js — lo verifica el
+test G4.
+
+#### Lo que falta antes de dar G2 por cerrada
+
+- **Validación visual en GPU real.** No se ha podido hacer en este entorno:
+  Chromium headless sirve WebGL por software y el propio gate lo veta. Hay que
+  abrir `/es` en el portátil y en el Android de referencia y mirar.
+- **La medición formal de G0 sigue pendiente** y ahora manda de verdad: de ella
+  salen el número de pasos y los topes de DPR de cada nivel.
+- Botón visible de «Reducir efectos» (hoy solo existe `?no3d=1`, ya persistente).
+- Tests G5, G6, G8, G11 y G12 de la matriz, que necesitan una GPU en CI o un
+  doble de la escena.
 
 ### G3 — Viaje y profundidad
 
@@ -518,10 +659,14 @@ porque el scroll ya no toca la cámara.
 
 ## 14. Decisiones abiertas
 
-- **Presupuesto de JS re-línea-base** (§8): confirmar las cifras propuestas tras
-  medirlas en G1. Hereda y sustituye a T8.
-- **Slugs ES definitivos** (§2): `/es/sobre-mi`, `/es/formacion`,
-  `/es/desarrollo`, `/es/creatividad`, `/es/laboratorio` son propuestas; los
-  slugs viven en la prosa localizada y cambiarlos es barato ahora y caro después
-  del deploy.
+- **Presupuesto de JS re-línea-base** (§8): **medido en G1**, ver la tabla del
+  cierre de G1 en §9. Queda una sola decisión: `/es/contacto` gasta 71,9 KiB gz
+  propios contra los 40 propuestos. *Recomendación: declarar la excepción para la
+  única ruta de conversión del sitio y congelar el resto — el formulario es el
+  producto, no adorno.* Hereda y sustituye a T8.
+- **Slugs ES definitivos** (§2) — ✅ **CERRADA 2026-08-07.** Fijados los
+  funcionales: `/es/sobre-mi`, `/es/formacion`, `/es/desarrollo`,
+  `/es/proyectos`, `/es/creatividad`, `/es/laboratorio`, `/es/contacto`.
+- **Baseline de Next/React congelado en 145,6 KiB gz.** Regla de no-regresión:
+  cualquier subida se investiga antes de aceptarse.
 - **Dominio y 301** — heredado del plan principal, sin cambios.

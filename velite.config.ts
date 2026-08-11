@@ -29,7 +29,7 @@ const worldProse = defineCollection({
   schema: s
     .object({
       id: s.enum(WORLD_IDS),
-      /** Ancla localizada de la sección (p. ej. /es#proyectos). */
+      /** Segmento de ruta localizado (p. ej. /es/proyectos). */
       slug: s.string().regex(/^[a-z0-9-]+$/),
       title: s.string(),
       eyebrow: s.string(),

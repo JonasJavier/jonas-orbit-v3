@@ -2,39 +2,29 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
 import type { Project } from "@/lib/projects";
-import type { World } from "@/lib/worlds";
 import { MDXContent } from "./mdx-content";
-import { SiteHeader } from "./site-header";
 
 export function ProjectCase({
   project,
   locale,
-  worlds,
+  projectsHref,
+  contactHref,
 }: {
   project: Project;
   locale: Locale;
-  worlds: World[];
+  /** Índice de proyectos (Endurance) y contacto (Ranger), ya resueltos. */
+  projectsHref: string;
+  contactHref: string;
 }) {
   const isCaseStudy = project.kind === "case-study";
   const gallery = project.prose.gallery ?? [];
 
   return (
     <>
-      <a className="skip-link" href="#project-content">
-        Saltar al caso
-      </a>
-      <div className="space-backdrop" aria-hidden="true">
-        <span className="space-backdrop__stars" />
-        <span className="space-backdrop__haze" />
-        <span className="space-backdrop__grid" />
-      </div>
-      <SiteHeader locale={locale} worlds={worlds} />
-
-      <main id="project-content" className="case-page">
         <nav className="case-breadcrumb" aria-label="Migas de pan">
           <Link href={`/${locale}`}>Jonás Orbit</Link>
           <span aria-hidden="true">/</span>
-          <Link href={`/${locale}#proyectos`}>Proyectos</Link>
+          <Link href={projectsHref}>Proyectos</Link>
           <span aria-hidden="true">/</span>
           <span aria-current="page">{project.prose.title}</span>
         </nav>
@@ -153,20 +143,14 @@ export function ProjectCase({
             mantenible y listo para operar.
           </p>
           <div className="case-cta__actions">
-            <Link className="button button--primary" href={`/${locale}#contacto`}>
+            <Link className="button button--primary" href={contactHref}>
               Trabajemos juntos <span aria-hidden="true">→</span>
             </Link>
-            <Link className="text-link" href={`/${locale}#proyectos`}>
+            <Link className="text-link" href={projectsHref}>
               Ver otros proyectos
             </Link>
           </div>
         </aside>
-      </main>
-
-      <footer className="site-footer">
-        <p>JONÁS ORBIT · ARCHIVO DE MISIÓN {String(project.order).padStart(2, "0")}</p>
-        <Link href={`/${locale}`}>Regresar a la órbita ↑</Link>
-      </footer>
     </>
   );
 }

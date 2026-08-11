@@ -1,60 +1,48 @@
-"use client";
+import Link from "next/link";
+import type { WorldId } from "@/content/worlds.data";
+import type { WorldNavItem } from "@/lib/worlds";
 
-import { useEffect, useRef } from "react";
-import type { Locale } from "@/content/site.data";
-import { useNarrativeStore } from "@/lib/narrative-store";
-import type { NarrativeWorldSummary } from "@/lib/narrative-types";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
-
+/**
+ * Navegación entre los 7 mundos.
+ *
+ * Server component sin una línea de JavaScript: el mundo activo llega por
+ * props desde la ruta, no de un store del cliente. En F1A esto leía el progreso
+ * de scroll con Zustand y centraba el elemento activo con un efecto; con rutas
+ * reales, `aria-current` lo dice mejor y gratis.
+ *
+ * `<Link>` prefetchea las 8 rutas estáticas, que es lo que §7 del pivote exige
+ * para que la transición de viaje de G3 sea sensación de viaje y no una espera
+ * disfrazada.
+ */
 export function MissionNavigation({
-  locale,
   worlds,
+  activeWorldId,
 }: {
-  locale: Locale;
-  worlds: readonly NarrativeWorldSummary[];
+  worlds: readonly WorldNavItem[];
+  activeWorldId?: WorldId;
 }) {
-  const worldIndex = useNarrativeStore((state) => state.worldIndex);
-  const phase = useNarrativeStore((state) => state.phase);
-  const navRef = useRef<HTMLElement>(null);
-  const reducedMotion = usePrefersReducedMotion();
-
-  useEffect(() => {
-    if (phase !== "world") return;
-    const nav = navRef.current;
-    const active = nav?.querySelector<HTMLElement>('a[data-active="true"]');
-    if (!nav || !active) return;
-
-    const targetLeft =
-      active.offsetLeft - nav.clientWidth / 2 + active.clientWidth / 2;
-    nav.scrollTo({
-      left: Math.max(0, targetLeft),
-      behavior: reducedMotion ? "auto" : "smooth",
-    });
-  }, [phase, reducedMotion, worldIndex]);
-
   return (
     <nav
       aria-label="Navegación de mundos"
       className="mission-nav"
-      data-active-world={phase === "world" ? worlds[worldIndex].id : "hero"}
-      ref={navRef}
+      data-active-world={activeWorldId ?? "home"}
     >
       <ol>
-        {worlds.map((world, index) => {
-          const active = phase === "world" && index === worldIndex;
+        {worlds.map((world) => {
+          const active = world.id === activeWorldId;
           return (
             <li key={world.id}>
-              <a
-                aria-current={active ? "location" : undefined}
+              <Link
+                aria-current={active ? "page" : undefined}
                 data-active={active ? "true" : undefined}
-                href={`/${locale}#${world.slug}`}
+                href={world.href}
                 style={{ "--nav-accent": world.accent } as React.CSSProperties}
               >
                 <span aria-hidden="true">
                   {String(world.order).padStart(2, "0")}
                 </span>
                 {world.shortLabel}
-              </a>
+              </Link>
             </li>
           );
         })}

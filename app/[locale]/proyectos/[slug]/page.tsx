@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectCase } from "@/components/project-case";
+import { SiteShell } from "@/components/site-shell";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { getF1AProjectBySlug, getF1AProjects } from "@/lib/projects";
-import { getWorlds } from "@/lib/worlds";
+import { getWorld, getWorldPath } from "@/lib/worlds";
 
 type ProjectPageProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -58,16 +59,27 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  const project = getF1AProjectBySlug(slug, locale as Locale);
+  const typedLocale = locale as Locale;
+  const project = getF1AProjectBySlug(slug, typedLocale);
   if (!project) {
     notFound();
   }
 
+  // Un caso de estudio sigue perteneciendo a Endurance: la cabecera lo marca
+  // como mundo activo aunque la ruta sea hija.
   return (
-    <ProjectCase
-      project={project}
-      locale={locale as Locale}
-      worlds={getWorlds(locale as Locale)}
-    />
+    <SiteShell
+      locale={typedLocale}
+      activeWorldId="endurance"
+      mainClassName="case-page"
+      footerLabel={`JONÁS ORBIT · ARCHIVO DE MISIÓN ${String(project.order).padStart(2, "0")}`}
+    >
+      <ProjectCase
+        project={project}
+        locale={typedLocale}
+        projectsHref={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
+        contactHref={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}
+      />
+    </SiteShell>
   );
 }

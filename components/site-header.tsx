@@ -1,22 +1,26 @@
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
-import { getNarrativeWorldSummaries } from "@/lib/narrative-types";
-import type { World } from "@/lib/worlds";
+import type { WorldId } from "@/content/worlds.data";
+import type { WorldNavItem } from "@/lib/worlds";
 import { MissionNavigation } from "./mission-navigation";
 
 export function SiteHeader({
   locale,
   worlds,
+  activeWorldId,
 }: {
   locale: Locale;
-  worlds: World[];
+  worlds: readonly WorldNavItem[];
+  activeWorldId?: WorldId;
 }) {
-  const narrativeWorlds = getNarrativeWorldSummaries(worlds);
-
   return (
     <header className="site-header">
       <div className="site-header__bar">
-        <Link className="brand-lockup" href={`/${locale}`} aria-label="Jonás Orbit, inicio">
+        <Link
+          className="brand-lockup"
+          href={`/${locale}`}
+          aria-label="Jonás Orbit, inicio"
+        >
           <span className="brand-mark" aria-hidden="true">
             <span />
           </span>
@@ -26,13 +30,16 @@ export function SiteHeader({
           </span>
         </Link>
 
-        <div className="signal-status" aria-label="Ubicación y disponibilidad geográfica">
+        <div
+          className="signal-status"
+          aria-label="Ubicación y disponibilidad geográfica"
+        >
           <span className="signal-status__dot" aria-hidden="true" />
           SANTO DOMINGO · UTC−4
         </div>
       </div>
 
-      <MissionNavigation locale={locale} worlds={narrativeWorlds} />
+      <MissionNavigation worlds={worlds} activeWorldId={activeWorldId} />
     </header>
   );
 }

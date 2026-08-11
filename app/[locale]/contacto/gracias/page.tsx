@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/site-header";
+import { SiteShell } from "@/components/site-shell";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
-import { getWorlds } from "@/lib/worlds";
+import { getWorld, getWorldPath } from "@/lib/worlds";
 
 export const metadata: Metadata = {
   title: "Transmisión recibida",
@@ -24,46 +24,50 @@ export default async function ContactThanksPage({
   if (!PUBLISHED_LOCALES.includes(locale as Locale) || locale !== "es") {
     notFound();
   }
-  const worlds = getWorlds(locale as Locale);
+  const typedLocale = locale as Locale;
+  const ranger = getWorld("ranger", typedLocale);
 
   return (
-    <>
-      <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <div className="space-backdrop" aria-hidden="true">
-        <span className="space-backdrop__stars" />
-        <span className="space-backdrop__haze" />
-        <span className="space-backdrop__grid" />
+    <SiteShell
+      locale={typedLocale}
+      activeWorldId="ranger"
+      mainClassName="transmission-page"
+      footerLabel="JONÁS ORBIT · TRANSMISIÓN CONFIRMADA"
+    >
+      <div className="transmission-page__signal" aria-hidden="true">
+        <span />
+        <span />
+        <span />
       </div>
-      <SiteHeader locale={locale as Locale} worlds={worlds} />
-      <main className="transmission-page" id="main-content">
-        <div className="transmission-page__signal" aria-hidden="true">
-          <span /><span /><span />
-        </div>
-        <p className="section-kicker">RANGER / TRANSMISIÓN CONFIRMADA</p>
-        <h1>Tu señal llegó completa.</h1>
-        <p className="transmission-page__lead">
-          Gracias por compartir el contexto. Leeré el mensaje personalmente y
-          responderé por el correo que indicaste tan pronto como pueda.
-        </p>
-        <div className="transmission-page__status">
-          <span>ESTADO</span>
-          <strong>RECIBIDO</strong>
-          <span>PRÓXIMO PASO</span>
-          <strong>REVISIÓN HUMANA</strong>
-        </div>
-        <div className="transmission-page__actions">
-          <Link className="button button--primary" href={`/${locale}#proyectos`}>
-            Explorar proyectos <span aria-hidden="true">→</span>
-          </Link>
-          <Link className="button button--ghost" href={`/${locale}`}>
-            Volver al inicio
-          </Link>
-        </div>
-        <p className="transmission-page__fallback">
-          ¿Necesitas añadir algo? Escribe a{" "}
-          <a href="mailto:jonasjavier.dev@gmail.com">jonasjavier.dev@gmail.com</a>.
-        </p>
-      </main>
-    </>
+      <p className="section-kicker">RANGER / TRANSMISIÓN CONFIRMADA</p>
+      <h1>Tu señal llegó completa.</h1>
+      <p className="transmission-page__lead">
+        Gracias por compartir el contexto. Leeré el mensaje personalmente y
+        responderé por el correo que indicaste tan pronto como pueda.
+      </p>
+      <div className="transmission-page__status">
+        <span>ESTADO</span>
+        <strong>RECIBIDO</strong>
+        <span>PRÓXIMO PASO</span>
+        <strong>REVISIÓN HUMANA</strong>
+      </div>
+      <div className="transmission-page__actions">
+        <Link
+          className="button button--primary"
+          href={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
+        >
+          Explorar proyectos <span aria-hidden="true">→</span>
+        </Link>
+        <Link className="button button--ghost" href={`/${locale}`}>
+          Volver al inicio
+        </Link>
+      </div>
+      <p className="transmission-page__fallback">
+        ¿Necesitas añadir algo? Escribe a{" "}
+        <a href="mailto:jonasjavier.dev@gmail.com">jonasjavier.dev@gmail.com</a>{" "}
+        o vuelve a{" "}
+        <Link href={getWorldPath(ranger, typedLocale)}>{ranger.prose.title}</Link>.
+      </p>
+    </SiteShell>
   );
 }

@@ -1,5 +1,15 @@
 /**
- * G0 · Shaders del spike de Gargantúa — CÓDIGO DESECHABLE.
+ * Shaders de Gargantúa — raymarch de geodésicas nulas de Schwarzschild.
+ *
+ * Vienen del spike de G0 sin un solo cambio en la física: el spike existía
+ * justamente para llegar a esto y el gate era que se pareciera a la película a
+ * 60 fps. Lo único que se retiró al traerlo fue el andamiaje de medición.
+ *
+ * Los cinco hallazgos de G0 que este archivo encarna (§9 del plan): la sombra
+ * aparente está en √27/2 ≈ 2.6 rs, el borde interior del disco en 1.58 es lo
+ * que decide si el anillo de fotones parece dibujado, el bloom es quien pone
+ * gris la sombra (nunca se toca la geodésica para arreglar el glow), y el rango
+ * dinámico del disco hay que comprimirlo ANTES de ACES.
  *
  * No importar desde el sitio. Al cerrar G0 esta carpeta se borra entera; lo que
  * sobreviva se reescribe dentro de la escena de G2 (docs/plans/sistema-gargantua.md §9).
