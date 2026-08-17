@@ -114,8 +114,24 @@ const JITTER: readonly (readonly [number, number])[] = [
  */
 const INNER_PERIOD_S = 210;
 
-/** Paralaje máximo del puntero. §3 lo acota a 2°, y ese es el techo duro. */
-const MAX_PARALLAX_DEG = 2;
+/**
+ * Paralaje máximo del puntero. §3 lo acota a 2°, y ese es el techo duro; 1.5 es
+ * lo que se usa. A 42° de campo, 2° son ±41 px de vaivén del sistema entero
+ * siguiendo al ratón — mucho más de lo que se lee como «profundidad».
+ */
+const MAX_PARALLAX_DEG = 1.5;
+
+/**
+ * Constante de tiempo del paralaje, en segundos.
+ *
+ * Antes el ángulo saltaba al valor del puntero en el mismo fotograma del
+ * `pointermove`: el sistema perseguía al ratón 1:1 y eso era la mitad de la
+ * sensación de «los planetas se mueven muchísimo». Con un suavizado
+ * exponencial la cámara llega al mismo sitio, pero deriva en vez de dar
+ * tirones — y de paso el movimiento por fotograma baja tanto que la
+ * acumulación temporal del raymarch ya no hay que tirarla.
+ */
+const PARALLAX_TAU = 0.32;
 
 /**
  * Margen alrededor del sistema al encuadrar, en rs.
@@ -124,11 +140,13 @@ const MAX_PARALLAX_DEG = 2;
  * píxeles y el encuadre solo sabe de radios. Con el margen justo, un destino
  * queda dentro pero su nombre se sale.
  *
- * Bajó de 11 a 6 al encoger los cuerpos: menos margen es menos distancia de
- * cámara, y menos distancia es un Gargantúa más grande en cuadro. Las etiquetas
- * que rozan el borde ya no se salen porque se pasan al otro lado del marcador.
+ * Pasó por 11, 6 y 9 antes de llegar aquí. Cada rs de margen cuesta distancia
+ * de cámara, y con 9 el sistema se leía como un diagrama lejano. Con 5 quedan
+ * entre 84 y 150 px de aire alrededor del cuerpo más exterior en los cinco
+ * viewports que se comprueban, contando ya el paralaje — sitio de sobra para su
+ * etiqueta. Menos que eso y el nombre empieza a chocar con el borde.
  */
-const FRAME_MARGIN = 6;
+const FRAME_MARGIN = 5;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -213,7 +231,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     fragmentShader: GARGANTUA_FRAGMENT,
     depthTest: false,
     depthWrite: false,
-    defines: { MAX_STEPS: 1 }, // DEBUG TEMPORAL — revertir a TIER[tier].steps
+    defines: { MAX_STEPS: TIER[tier].steps },
     uniforms: {
       uCamPos: { value: new THREE.Vector3() },
       uCamRight: { value: new THREE.Vector3(1, 0, 0) },
@@ -271,7 +289,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     const body = createBody(input);
     if (body) {
       bodies.push(body);
-      bodyScene.add(body.mesh);
+      bodyScene.add(body.object);
     } else {
       centreIds.push(input.id);
       centreRadii.set(input.id, input.placement.size);
@@ -289,6 +307,24 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   // bloom: así el glow envuelve también a los planetas y no se ven pegados.
   const bodyPass = new RenderPass(bodyScene, bodyCamera);
   bodyPass.clear = false;
+  /*
+    Y hay que LIMPIAR LA PROFUNDIDAD, aunque no se limpie el color.
+
+    Este es el fallo que se veía como «los planetas tienen un bug». `clear =
+    false` en un RenderPass no limpia nada: ni color —que es lo que queremos,
+    porque debajo está el raymarch— ni profundidad, que es justo lo que NO
+    queremos. El z-buffer del render target sobrevivía de un fotograma al
+    siguiente, así que cada cuerpo iba dejando una pared invisible por donde
+    pasaba; en cuanto se alejaba un poco de la cámara, el test de profundidad
+    empezaba a rechazar sus propios píxeles contra su rastro de ayer. El
+    síntoma: siluetas que se comen por un borde, cuerpos que desaparecen a
+    trozos y vuelven al acercarse otra vez.
+
+    El raymarch no escribe profundidad (`depthWrite: false`), así que limpiarla
+    aquí no le quita nada: sólo garantiza que los seis cuerpos se ordenan entre
+    ellos y con nadie más.
+  */
+  bodyPass.clearDepth = true;
   composer.addPass(bodyPass);
 
   const bloomPass = new UnrealBloomPass(
@@ -311,8 +347,12 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   const scratch = new THREE.Vector3();
   const basis = new THREE.Matrix4();
 
+  /** Ángulo de paralaje ya aplicado a la cámara. */
   let parallaxX = 0;
   let parallaxY = 0;
+  /** A dónde apunta el puntero. El de arriba persigue a este, suavizado. */
+  let parallaxTargetX = 0;
+  let parallaxTargetY = 0;
   let frameDistance = 120;
   let cssWidth = 1;
   let cssHeight = 1;
@@ -332,19 +372,79 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     const elevation = (pose.elevation * Math.PI) / 180;
     const azimuth = (pose.azimuth * Math.PI) / 180;
 
-    // Base de la cámara mirando al origen, sin roll: solo hace falta para medir.
     const dir = new THREE.Vector3(
       Math.cos(elevation) * Math.sin(azimuth),
       Math.sin(elevation),
       Math.cos(elevation) * Math.cos(azimuth),
     );
     const f = dir.clone().negate();
-    const r = new THREE.Vector3().crossVectors(f, WORLD_UP).normalize();
-    const u = new THREE.Vector3().crossVectors(r, f).normalize();
+    const r0 = new THREE.Vector3().crossVectors(f, WORLD_UP).normalize();
+    const u0 = new THREE.Vector3().crossVectors(r0, f).normalize();
 
-    let extentX = DISK_OUTER;
-    let extentY = DISK_OUTER * 0.25;
+    // Con el MISMO roll que usa la cámara.
+    //
+    // Antes se medía con la base sin inclinar, y esa discrepancia dejaba a los
+    // dos cuerpos más exteriores fuera de cuadro: la escena calculaba que
+    // cabían sobre unos ejes que no eran los que luego proyectaban. Medir en un
+    // sistema de referencia distinto del que dibuja es pedir que no cuadre.
+    const cosRoll = Math.cos(pose.roll);
+    const sinRoll = Math.sin(pose.roll);
+    const r = r0.clone().multiplyScalar(cosRoll).addScaledVector(u0, sinRoll);
+    const u = u0.clone().multiplyScalar(cosRoll).addScaledVector(r0, -sinRoll);
+
+    const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
+    // El corrimiento lateral se come parte del semiancho: hay que pedir más.
+    const tanHalfWidth =
+      tanHalfFov * Math.max(aspect, 0.2) * (1 - pose.targetShiftFraction);
+
+    /**
+     * Distancia mínima a la que ESTE punto cabe, con su cuerpo y su margen.
+     *
+     * ── Por qué no vale medir en ortográfica ─────────────────────────────────
+     *
+     * La versión anterior comparaba la mayor extensión del sistema, |p·u|,
+     * contra `d · tan(fov/2)`: la geometría de una cámara ortográfica. Eso da
+     * el resultado correcto sólo para los puntos que están a la MISMA
+     * profundidad que el origen. Un cuerpo en el lado cercano de su órbita está
+     * bastante más cerca que eso, y la perspectiva amplía su separación del
+     * centro justo en la misma proporción — así que la medida lo daba por
+     * dentro cuando ya se había salido.
+     *
+     * Con las órbitas de 25-51 rs el error quedaba tapado por el margen. Con
+     * las de 23-42 ya no: la cámara está a 81 rs y el punto más cercano de la
+     * órbita de Edmunds cae a 43, la mitad de camino. Ahí el factor de
+     * perspectiva es casi 2 y Edmunds se salía del cuadro por abajo.
+     *
+     * La condición honesta usa la profundidad real del punto. Para una cámara a
+     * distancia `d` mirando al origen, la profundidad de vista de `p` es
+     * `d + p·f`, y la base (r, u, f) no depende de `d`. Así que la condición
+     *
+     *     |p·u| + radio + margen  ≤  tan(fov/2) · (d + p·f)
+     *
+     * se despeja de una vez, sin iterar.
+     */
+    function distanceFor(p: THREE.Vector3, radius: number): number {
+      // Positivo si el punto está MÁS LEJOS que el origen; negativo si más cerca.
+      const depth = p.dot(f);
+      const reach = radius + FRAME_MARGIN;
+      return Math.max(
+        (Math.abs(p.dot(u)) + reach) / tanHalfFov - depth,
+        (Math.abs(p.dot(r)) + reach) / tanHalfWidth - depth,
+      );
+    }
+
+    let tight = 0;
     const point = new THREE.Vector3();
+
+    // El borde del disco de acreción, que también tiene que caber entero. Antes
+    // entraba como dos números sueltos (su radio y un cuarto de él para el
+    // alto); muestrear su circunferencia lo somete a la misma regla que todo lo
+    // demás y de paso deja de suponer nada sobre la elevación de la cámara.
+    for (let i = 0; i < 48; i++) {
+      const angle = (i / 48) * Math.PI * 2;
+      point.set(Math.cos(angle) * DISK_OUTER, 0, Math.sin(angle) * DISK_OUTER);
+      tight = Math.max(tight, distanceFor(point, 0));
+    }
 
     for (const body of bodies) {
       // 48 muestras por órbita: el error de una elipse muestreada así es muy
@@ -355,28 +455,40 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
           INNER_PERIOD_S *
           Math.pow(body.placement.orbitRadius / 25, 1.5);
         orbitalPosition(body.placement, seconds, point);
-        extentX = Math.max(extentX, Math.abs(point.dot(r)) + body.radius);
-        extentY = Math.max(extentY, Math.abs(point.dot(u)) + body.radius);
+        tight = Math.max(tight, distanceFor(point, body.radius));
       }
     }
 
-    extentX += FRAME_MARGIN;
-    extentY += FRAME_MARGIN;
+    /*
+      Y un margen de seguridad sobre el resultado.
 
-    const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
-    // El corrimiento lateral se come parte del semiancho: hay que pedir más.
-    const neededHalfWidth = extentX / (1 - pose.targetShiftFraction);
-    return Math.max(
-      extentY / tanHalfFov,
-      neededHalfWidth / (tanHalfFov * Math.max(aspect, 0.2)),
-    );
+      Ya no cubre un error de modelo —la condición de arriba es la de la cámara
+      que luego dibuja, no una aproximación— sino sólo lo que queda: 48 muestras
+      por órbita, y el paralaje de ±1.5° que se suma después de medir. Con eso,
+      un 4 % es holgura de sobra; el 12 % de antes se pagaba entero en tamaño de
+      Gargantúa.
+    */
+    return tight * 1.04;
   }
 
+  /**
+   * Encuadre y orientación, separados a propósito.
+   *
+   * `measureFrameDistance` recorre seis órbitas con 48 muestras cada una: 288
+   * posiciones y sus proyecciones. Eso está bien al redimensionar o al cambiar
+   * de ruta, pero el paralaje suavizado mueve la cámara en CADA fotograma y
+   * ahí ese coste no pinta nada — la distancia de encuadre no depende del
+   * paralaje, sólo de la pose y del aspecto. Así que se mide cuando cambian
+   * esos dos y se orienta sesenta veces por segundo.
+   */
   function applyPose(aspect: number) {
+    frameDistance = measureFrameDistance(aspect) * pose.distanceScale;
+    orientCamera(aspect);
+  }
+
+  function orientCamera(aspect: number) {
     const elevation = ((pose.elevation + parallaxY * MAX_PARALLAX_DEG) * Math.PI) / 180;
     const azimuth = ((pose.azimuth + parallaxX * MAX_PARALLAX_DEG) * Math.PI) / 180;
-
-    frameDistance = measureFrameDistance(aspect) * pose.distanceScale;
 
     cameraPosition.set(
       Math.cos(elevation) * Math.sin(azimuth),
@@ -477,6 +589,23 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    */
   let elapsed = 0;
 
+  /**
+   * A qué lado quedó la etiqueta de cada cuerpo la última vez.
+   *
+   * Existe por la histéresis. Con un único umbral, un cuerpo que orbita justo
+   * sobre él hacía cambiar de lado a su nombre en fotogramas alternos: el texto
+   * parpadeaba de un extremo al otro del marcador varias veces por segundo. Con
+   * dos umbrales separados hay que cruzar la banda entera para volver, así que
+   * el cambio ocurre una vez por vuelta y se ve como lo que es.
+   */
+  const sides = new Map<WorldId, "left" | "right">();
+
+  function sideFor(id: WorldId, x: number): "left" | "right" {
+    if (x > cssWidth * 0.68) return "left";
+    if (x < cssWidth * 0.56) return "right";
+    return sides.get(id) ?? (x > cssWidth * 0.62 ? "left" : "right");
+  }
+
   function project(body: {
     id: WorldId;
     position: THREE.Vector3;
@@ -499,6 +628,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     const radius =
       (body.radius / Math.max(distance, 1)) * (cssHeight / (2 * tanHalfFov));
 
+    const side = sideFor(body.id, x);
+    sides.set(body.id, side);
+
     return {
       id: body.id,
       x,
@@ -511,7 +643,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         x < cssWidth &&
         y > 0 &&
         y < cssHeight,
-      side: x > cssWidth * 0.62 ? "left" : "right",
+      side,
     };
   }
 
@@ -521,17 +653,37 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
     for (const body of bodies) {
       orbitalPosition(body.placement, seconds, position);
-      body.mesh.position.copy(position);
-      body.mesh.rotateY(body.spin * 0.016);
+      body.object.position.copy(position);
+      body.spinAt(seconds);
 
-      const uniforms = body.material.uniforms;
-      uniforms.uTime.value = seconds;
-      uniforms.uCamPos.value.copy(cameraPosition);
-      // La luz cae con la distancia al disco, que es la única fuente que hay.
-      uniforms.uLightIntensity.value = Math.min(
-        1.6,
-        (30 / Math.max(body.placement.orbitRadius, 1)) * 1.15,
+      /*
+        La luz cae con la distancia al disco, que es la única fuente que hay —
+        pero MUCHO más despacio que un punto de luz.
+
+        La primera versión usaba 30/r y dejaba a Edmunds y a la Ranger, los dos
+        más lejanos, tan oscuros que directamente no se veían en pantalla. Un
+        destino invisible es un enlace que no existe, así que esto no era solo
+        un problema estético.
+
+        Y la caída suave es además la correcta: el disco de acreción mide 34 rs
+        de lado a lado. Para un cuerpo a 38 rs no es un punto lejano, es una
+        pared de luz que le ocupa media bóveda. Con una fuente extensa la
+        intensidad no va como 1/r².
+      */
+      const light = Math.min(
+        1.5,
+        Math.pow(30 / Math.max(body.placement.orbitRadius, 1), 0.45) * 1.25,
       );
+
+      // Un cuerpo lleva ahora hasta dos materiales —superficie y halo— y no
+      // comparten uniformes: el halo no sabe nada de cámara ni de luz. Se
+      // escribe lo que cada uno declara y punto.
+      for (const material of body.materials) {
+        const uniforms = material.uniforms;
+        uniforms.uTime.value = seconds;
+        uniforms.uCamPos?.value.copy(cameraPosition);
+        if (uniforms.uLightIntensity) uniforms.uLightIntensity.value = light;
+      }
 
       projected.push(project({ id: body.id, position, radius: body.radius }));
     }
@@ -573,6 +725,25 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
     if (pose.animated) {
       elapsed += delta;
+
+      /*
+        El paralaje persigue al puntero, no lo copia.
+
+        Suavizado exponencial con constante de tiempo fija: independiente del
+        framerate, sin rebote y sin cola infinita — por debajo de una milésima
+        de grado se da por llegado y se deja de tocar la cámara, que es lo que
+        permite que la acumulación temporal del raymarch converja cuando el
+        ratón está quieto.
+      */
+      const k = 1 - Math.exp(-delta / PARALLAX_TAU);
+      const nextX = parallaxX + (parallaxTargetX - parallaxX) * k;
+      const nextY = parallaxY + (parallaxTargetY - parallaxY) * k;
+      if (Math.abs(nextX - parallaxX) > 1e-4 || Math.abs(nextY - parallaxY) > 1e-4) {
+        parallaxX = nextX;
+        parallaxY = nextY;
+        // Sólo orientar: la distancia de encuadre no depende del paralaje.
+        orientCamera(cssWidth / cssHeight);
+      }
     } else {
       // Congelada: se mantiene el cuadro pero no se gasta GPU en repetirlo.
       if (accumulated > JITTER.length * 2 && now - lastFrozenDraw < FROZEN_FRAME_MS) {
@@ -664,16 +835,26 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     },
     setFocus(id) {
       for (const body of bodies) {
-        body.material.uniforms.uFocus.value = body.id === id ? 1 : 0;
+        const focus = body.id === id ? 1 : 0;
+        for (const material of body.materials) {
+          material.uniforms.uFocus.value = focus;
+        }
       }
     },
     setParallax(x, y) {
       if (!pose.animated) return;
-      parallaxX = Math.max(-1, Math.min(1, x));
-      parallaxY = Math.max(-1, Math.min(1, y));
-      applyPose(cssWidth / cssHeight);
-      // El historial pertenece a otro encuadre: mezclarlo dejaría un fantasma.
-      resetAccumulation();
+      /*
+        Sólo se apunta el objetivo. El bucle lo alcanza suavizado, y por eso
+        aquí ya NO se tira la acumulación temporal: antes cada `pointermove`
+        llamaba a `resetAccumulation()`, así que mientras el ratón se movía el
+        raymarch volvía a empezar de cero en cada fotograma y Gargantúa se veía
+        granulada — la escena parecía romperse justo cuando la estabas mirando.
+        Con el movimiento repartido, lo que la cámara se desplaza entre dos
+        fotogramas es una fracción de píxel y la mezcla del 18 % lo absorbe sin
+        dejar fantasma.
+      */
+      parallaxTargetX = Math.max(-1, Math.min(1, x));
+      parallaxTargetY = Math.max(-1, Math.min(1, y));
     },
     resize,
     dispose() {

@@ -66,25 +66,27 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                 */}
                 <span className="system-map__label">{world.shortLabel}</span>
                 {/*
-                  La ficha es una ayuda VISUAL: aparece al apuntar o enfocar y
-                  amplía lo que el rótulo ya dice. Va marcada como decorativa
-                  porque, dentro del enlace, su texto pasaría a formar parte del
-                  nombre accesible y cada destino se anunciaría con cuatro
-                  frases seguidas — justo el ruido que la home se quitó de
-                  encima. Quien usa lector de pantalla oye «Historia», entra, y
-                  lee el resumen en su página.
+                  Al enfocar, un solo dato más: el nombre cósmico del cuerpo.
 
-                  Sigue estando en el documento, así que Googlebot lo indexa: lo
-                  que cambia es a quién se le anuncia, no qué se sirve.
+                  Antes se abría una tarjeta con eyebrow, título largo, resumen
+                  y un «Aterrizar →». Cuatro elementos por destino, siete
+                  destinos: la escena acababa siendo el fondo de una interfaz.
+                  El rótulo ya dice a dónde vas; lo único que añade valor al
+                  apuntar es qué cuerpo estás mirando. Todo lo demás está a un
+                  clic, en su página.
                 */}
-                <span className="system-map__ficha" aria-hidden="true">
-                  <span className="system-map__ficha-eyebrow">
-                    DESTINO {String(world.order).padStart(2, "0")} ·{" "}
-                    {world.cosmicName}
-                  </span>
-                  <span className="system-map__ficha-title">{world.title}</span>
-                  <span className="system-map__ficha-summary">{world.summary}</span>
-                  <span className="system-map__ficha-go">Aterrizar →</span>
+                <span className="system-map__cosmic" aria-hidden="true">
+                  {world.cosmicName}
+                </span>
+                {/*
+                  El resumen se queda en el documento pero no en pantalla: lo
+                  indexa Googlebot y no ensucia la escena. Va oculto también para
+                  el lector de pantalla porque, dentro del enlace, su texto
+                  entraría en el nombre accesible y cada destino se anunciaría
+                  con una frase entera de más.
+                */}
+                <span className="visually-hidden" aria-hidden="true">
+                  {world.summary}
                 </span>
               </Link>
             </li>

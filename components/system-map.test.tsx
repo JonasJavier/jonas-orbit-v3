@@ -19,9 +19,11 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
         (candidate) => candidate.getAttribute("href") === world.href,
       );
       expect(link, `falta el enlace a ${world.href}`).toBeDefined();
-      // Toda la prosa del destino está en el documento — la indexa Googlebot y
-      // la lee quien navega sin escena.
-      expect(link).toHaveTextContent(world.title);
+      // El rótulo visible es una palabra, pero el enlace lleva además el nombre
+      // cósmico y el resumen en el documento: eso es lo que indexa Googlebot.
+      // El título largo vive en la página del destino, no aquí.
+      expect(link).toHaveTextContent(world.shortLabel);
+      expect(link).toHaveTextContent(world.cosmicName);
       expect(link).toHaveTextContent(world.summary);
     }
   });

@@ -98,9 +98,27 @@ export interface WorldStructuralData {
  * blanco de clic no depende del tamaño real — la escena le pone un suelo en
  * píxeles, así que un mundo diminuto sigue siendo pulsable con el pulgar.
  *
- * Las órbitas van de 25 a 51 rs, todas fuera del disco de acreción (que termina
+ * ── La órbita EXTERIOR es lo que decide cuánto ocupa Gargantúa ──────────────
+ *
+ * Las órbitas van de 21 a 37 rs, todas fuera del disco de acreción (que termina
  * en 17 rs), y ese rango está elegido para que los siete quepan en el encuadre
  * fijo durante TODA su vuelta. Un destino fuera de cuadro sería inalcanzable.
+ *
+ * Venían de 25-51. La escena calcula la distancia mínima a la que cabe el
+ * cuerpo MÁS EXTERIOR, así que la Ranger a 51 rs era, ella sola, quien decidía
+ * el tamaño del agujero negro en pantalla. Y sale una regla sencilla que
+ * conviene tener a mano:
+ *
+ *     cuánto ocupa el disco en pantalla ≈ (radio del disco) / (órbita exterior)
+ *
+ * Sólo depende del COCIENTE. Ni el campo de visión ni la distancia absoluta
+ * cambian nada — al alejar la cámara encoge todo por igual. Con 51/17 ≈ 3.0 el
+ * disco se quedaba en el 30 % del alto del viewport; con 37/17 ≈ 2.2 sube al
+ * 45-48 %, y los cuerpos pasan de 13-22 px de radio a 24-40. Bajar más la
+ * órbita exterior daría un Gargantúa aún mayor, al precio de apretar a los seis
+ * contra el borde del disco.
+ *
+ * Cambiar cualquiera de estos radios mueve la cámara. No es un número decorativo.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -109,7 +127,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 25, phase: 205, inclination: 27, size: 0.95 },
+    placement: { orbitRadius: 21, phase: 205, inclination: 27, size: 1.6 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -118,7 +136,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 31, phase: 260, inclination: -19, size: 0.8 },
+    placement: { orbitRadius: 25, phase: 260, inclination: -19, size: 1.45 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -127,7 +145,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    placement: { orbitRadius: 36, phase: 318, inclination: 15, size: 1.15 },
+    placement: { orbitRadius: 28, phase: 318, inclination: 15, size: 1.9 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -136,7 +154,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 41, phase: 20, inclination: -31, size: 0.85 },
+    placement: { orbitRadius: 31, phase: 20, inclination: -31, size: 1.75 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -145,7 +163,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    placement: { orbitRadius: 46, phase: 78, inclination: 23, size: 1.05 },
+    placement: { orbitRadius: 34, phase: 78, inclination: 23, size: 1.8 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -168,7 +186,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 51, phase: 142, inclination: -13, size: 0.62 },
+    placement: { orbitRadius: 37, phase: 142, inclination: -13, size: 1.15 },
     sceneName: "scene-ranger",
   },
 };

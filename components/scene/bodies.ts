@@ -9,7 +9,7 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  * La tentación era meterlos en el bucle de geodésicas y tener lente y oclusión
  * gratis. No sale: son siete tests de intersección por PASO, y hay entre 190 y
  * 340 pasos por píxel. El coste se multiplicaría por siete para un detalle que
- * a 25-51 rs del agujero apenas se nota.
+ * a 23-42 rs del agujero apenas se nota.
  *
  * Van como geometría real compuesta DELANTE del raymarch, con su propia cámara
  * en perspectiva alineada exactamente con la base de rayos del shader. Gargantúa
@@ -23,6 +23,21 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  * desaparece del menú, y eso es un fallo de accesibilidad, no un detalle de
  * realismo. La inexactitud se ve una vez cada varias vueltas y se lee como una
  * silueta recortada contra el disco.
+ *
+ * ── Forma real, y además resplandor ─────────────────────────────────────────
+ *
+ * Hubo una versión en la que las cuatro estructuras —tesseracto, estación,
+ * Endurance y Ranger— no eran malla sino un punto de luz con su destello. El
+ * motivo era bueno (a veinte píxeles un cilindro sin textura es un rectángulo
+ * gris) pero el resultado en pantalla no: con el núcleo cayendo como
+ * `(1-d)^12`, lo que quedaba era una chincheta de seis píxeles dentro de un
+ * anillo de interfaz vacío. Cuatro de los siete destinos no tenían cuerpo.
+ *
+ * El problema real no era la geometría, era el TAMAÑO. Con la cámara donde
+ * está ahora cada cuerpo ocupa entre 11 y 58 px de radio según por dónde ande
+ * su órbita, y eso es sitio de sobra para leer una silueta. Así que vuelven las
+ * seis mallas, y el resplandor se queda — pero detrás, como halo, que es lo que
+ * hace de verdad una fuente brillante vista a través de una óptica.
  *
  * ── La luz ──────────────────────────────────────────────────────────────────
  *
@@ -43,6 +58,81 @@ const KIND: Record<WorldStructuralData["visual"], number> = {
   // Gargantúa no tiene malla: la dibuja el raymarch.
   "black-hole": -1,
 };
+
+/**
+ * Lo que además de forma tiene RESPLANDOR.
+ *
+ * Son las cuatro cosas construidas del sistema. Un mundo se ve porque el disco
+ * lo ilumina; una nave se ve porque ella misma emite, y a esta distancia ese
+ * brillo desborda su silueta. El halo va detrás de la malla, no en su lugar.
+ */
+const GLOWING = new Set<WorldStructuralData["visual"]>([
+  "tesseract",
+  "station",
+  "ship",
+  "beacon",
+]);
+
+/**
+ * El cuad del halo siempre mira a cámara y se construye en espacio de vista: no
+ * hace falta girar nada por fotograma ni saber dónde está la cámara.
+ *
+ * Ojo con el detalle que lo hace inmune al giro propio del cuerpo: el centro
+ * sale de la TRASLACIÓN de `modelMatrix`, así que el grupo puede rotar todo lo
+ * que quiera y el halo no se entera.
+ */
+const GLOW_VERTEX = /* glsl */ `
+  uniform float uSize;
+  varying vec2 vQuad;
+
+  void main() {
+    vQuad = position.xy;
+    vec3 centre = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vec4 viewCentre = viewMatrix * vec4(centre, 1.0);
+    viewCentre.xy += position.xy * uSize;
+    gl_Position = projectionMatrix * viewCentre;
+  }
+`;
+
+const GLOW_FRAGMENT = /* glsl */ `
+  uniform vec3 uAccent;
+  uniform vec3 uSecondary;
+  uniform float uTime;
+  uniform float uFocus;
+  uniform float uPulse;
+  uniform float uSize;
+
+  varying vec2 vQuad;
+
+  void main() {
+    float d = length(vQuad);
+    if (d > 1.0) discard;
+
+    /* Sin núcleo duro: el cuerpo real ya está dibujado encima. Esto es sólo el
+       resplandor que una fuente brillante deja alrededor de su silueta, y por
+       eso cae suave en vez de concentrarse en un punto. La versión anterior
+       llevaba un núcleo (1-d)^12 porque ENTONCES el halo era el cuerpo; ahora
+       ese núcleo sería una mancha tapando la malla. */
+    float wide = pow(max(0.0, 1.0 - d), 3.2);
+    float tight = pow(max(0.0, 1.0 - d), 10.0);
+
+    /* Dos púas finas en cruz. Es el detalle que dice «esto brilla de verdad» y
+       no «alguien ha pegado un degradado radial». */
+    float spikes =
+      pow(max(0.0, 1.0 - abs(vQuad.x) * 1.05), 30.0) * exp(-abs(vQuad.y) * 11.0) +
+      pow(max(0.0, 1.0 - abs(vQuad.y) * 1.05), 30.0) * exp(-abs(vQuad.x) * 11.0);
+
+    /* Latido lento y desincronizado por cuerpo: el sistema respira en vez de
+       parpadear a la vez. La baliza de la Ranger late más. */
+    float breath = 1.0 + uPulse * 0.28 * sin(uTime * 1.6 + uSize * 9.0);
+
+    vec3 colour = mix(uAccent, uSecondary, 0.28);
+    float energy = (wide * 0.42 + tight * 0.85 + spikes * 0.5) * breath;
+    energy *= 1.0 + uFocus * 1.6;
+
+    gl_FragColor = vec4(colour * energy, 1.0);
+  }
+`;
 
 const BODY_VERTEX = /* glsl */ `
   varying vec3 vNormalW;
@@ -102,11 +192,18 @@ const BODY_FRAGMENT = /* glsl */ `
     return sum;
   }
 
-  /* Rayas de panel para las estructuras: una nave no tiene ruido geológico. */
+  /*
+    Rayas de panel para el casco de la estación: una nave no tiene ruido
+    geológico.
+
+    La frecuencia es baja a propósito. Con rayas finas, un casco de veinte
+    píxeles se convertía en un tejido de moiré porque el detalle caía por debajo
+    del píxel. Menos rayas y más anchas sobreviven al tamaño real en pantalla.
+  */
   float panels(vec3 p, float density) {
     float bands = abs(fract(p.y * density) - 0.5);
     float ribs = abs(fract((p.x + p.z) * density * 0.5) - 0.5);
-    return smoothstep(0.06, 0.16, min(bands, ribs));
+    return smoothstep(0.12, 0.32, min(bands, ribs));
   }
 
   void main() {
@@ -122,10 +219,9 @@ const BODY_FRAGMENT = /* glsl */ `
 
       El primer intento usaba lambert crudo más una envolvente ancha: el
       resultado era una bola uniformemente iluminada, sin cara noche, y eso es
-      exactamente el aspecto «de plástico». A la distancia a la que se ven estos
-      cuerpos apenas hay superficie que mirar — lo que se lee es la silueta, la
-      media luna encendida y el filo de atmósfera. Todo el presupuesto de shader
-      va ahí.
+      exactamente el aspecto «de plástico». Lo que se lee a esta distancia es la
+      silueta, la media luna encendida y el filo de atmósfera. Todo el
+      presupuesto de shader va ahí.
     */
     float day = smoothstep(-0.16, 0.42, ndl);
     /* Oscurecimiento de limbo: el borde del disco iluminado cae un poco. */
@@ -165,31 +261,70 @@ const BODY_FRAGMENT = /* glsl */ `
       atmosphere = vec3(1.0, 0.66, 0.42);
       atmosphereWeight = 0.55;
     } else if (uKind == 2) {
-      /* Tesseracto: no es un planeta. Cristal con las aristas encendidas. */
-      float edge = pow(1.0 - max(dot(normal, view), 0.0), 1.6);
-      albedo = mix(vec3(0.05, 0.07, 0.13), uSecondary * 0.4, edge);
-      emissive = uAccent * (0.35 + 0.65 * edge) * (0.7 + 0.3 * sin(uTime * 0.9));
-      gloss = 0.6;
+      /*
+        Tesseracto: no es un planeta ni una nave, es una retícula.
+
+        Como cubo sólido se leía a lo lejos como un cuadrado marrón — el objeto
+        que peor funcionaba de los seis. Ahora la malla son sus ARISTAS, y este
+        material solo tiene que hacerlas brillar. Una estructura que se
+        reconoce por su dibujo, no por su superficie.
+      */
+      albedo = vec3(0.0);
+      // Ámbar puro, no mezclado: mezclar el acento con el secundario daba un
+      // blanco lavado que a este tamaño no se distinguía de una estrella.
+      emissive = uAccent * (2.6 + 0.7 * sin(uTime * 0.8));
+      gloss = 0.0;
     } else if (uKind == 3) {
-      /* Cooper Station: cilindro habitado, ventanas encendidas.
-         A esta distancia los paneles no se resuelven; lo que se ve son las
-         LUCES. Por eso pesan más que la superficie. */
-      float p = panels(vLocal * 2.0, 3.0);
-      albedo = mix(vec3(0.20, 0.22, 0.27), vec3(0.55, 0.59, 0.66), p);
-      emissive = uSecondary * (1.0 - p) * 0.8;
-      gloss = 0.55;
+      /*
+        Cooper Station: cilindro habitado.
+
+        Casco claro, muy especular —es metal pulido bajo una pared de luz— y
+        una retícula de ventanas encendidas que es lo que de verdad delata que
+        ahí vive gente. Las ventanas pesan más que la superficie porque a esta
+        distancia son lo único que se resuelve.
+      */
+      float p = panels(vLocal * 1.6, 1.15);
+      albedo = mix(vec3(0.26, 0.28, 0.33), vec3(0.68, 0.71, 0.78), p);
+      emissive = uSecondary * (1.0 - p) * 1.15;
+      gloss = 0.7;
     } else if (uKind == 4) {
-      /* Endurance: el anillo de módulos. Casco claro y juntas oscuras. */
-      float p = panels(vLocal * 3.0, 4.5);
-      albedo = mix(vec3(0.15, 0.16, 0.2), vec3(0.72, 0.74, 0.78), p);
-      emissive = uSecondary * (1.0 - p) * 0.42;
-      gloss = 0.6;
+      /*
+        Endurance: el anillo de doce módulos.
+
+        Los módulos se marcan con la coordenada ANGULAR del toro, no con rayas
+        en espacio de objeto. Es la diferencia entre un detalle cuya frecuencia
+        está acotada por construcción —doce por vuelta, siempre— y uno que se
+        convierte en moiré en cuanto el cuerpo se aleja. Aquel tejido de cuadros
+        del primer intento salía justo de ahí.
+      */
+      float ring = atan(vLocal.y, vLocal.x);
+      float module = smoothstep(0.25, 0.75, 0.5 + 0.5 * cos(ring * 12.0));
+      albedo = mix(vec3(0.17, 0.18, 0.22), vec3(0.74, 0.76, 0.80), module);
+      /* Una luz de posición por módulo, en las juntas. */
+      emissive = uSecondary * pow(1.0 - module, 3.0) * 0.9;
+      gloss = 0.72;
     } else {
-      /* Ranger: nave pequeña con baliza. Late, para que se encuentre. */
+      /*
+        Ranger: la nave pequeña. Casco mate y baliza que late, para que se
+        encuentre — es el cuerpo más lejano y el más pequeño del sistema.
+      */
       float pulse = 0.5 + 0.5 * sin(uTime * 2.6);
-      albedo = vec3(0.2, 0.21, 0.26);
-      emissive = uAccent * (0.5 + 1.1 * pulse) * smoothstep(0.05, 0.55, fresnel);
-      gloss = 0.6;
+      albedo = vec3(0.28, 0.30, 0.36);
+      emissive = uAccent * (0.35 + 1.3 * pulse) * smoothstep(0.05, 0.55, fresnel);
+      gloss = 0.65;
+    }
+
+    /*
+      El tesseracto sale por aquí y no toca nada más.
+
+      Su malla son aristas (EdgesGeometry), que NO traen atributo de normal:
+      todo lo que sigue —difuso, especular, fresnel, atmósfera— saldría NaN y
+      pintaría basura. Y tampoco tendría sentido: una retícula no tiene cara
+      iluminada, solo brilla.
+    */
+    if (uKind == 2) {
+      gl_FragColor = vec4(emissive + uAccent * uFocus * 1.2, 1.0);
+      return;
     }
 
     vec3 color = albedo * (key * diffuse + fill);
@@ -226,22 +361,38 @@ function geometryFor(visual: WorldStructuralData["visual"]): THREE.BufferGeometr
   switch (visual) {
     case "water":
     case "desert":
-      return new THREE.SphereGeometry(1, 40, 28);
+      return new THREE.SphereGeometry(1, 48, 32);
     case "tesseract":
-      // Un cubo, no una esfera: el tesseracto es la única estructura del
-      // sistema que no es ni mundo ni nave.
-      return new THREE.BoxGeometry(1.35, 1.35, 1.35);
+      // Solo las aristas del cubo. Ver el comentario del shader: como sólido
+      // era un cuadrado de color, y como retícula se reconoce al instante.
+      return new THREE.EdgesGeometry(new THREE.BoxGeometry(1.3, 1.3, 1.3));
     case "station":
-      return new THREE.CylinderGeometry(0.62, 0.62, 2.3, 28, 1);
+      return new THREE.CylinderGeometry(0.62, 0.62, 2.3, 32, 1);
     case "ship":
       // El anillo de la Endurance. Doce módulos serían doce mallas; el toro con
-      // rayas de panel los sugiere por una fracción del coste.
-      return new THREE.TorusGeometry(1, 0.3, 12, 30);
+      // sus marcas angulares los sugiere por una fracción del coste.
+      return new THREE.TorusGeometry(1, 0.3, 16, 48);
     case "beacon":
-      return new THREE.ConeGeometry(0.52, 1.9, 14);
+      return new THREE.ConeGeometry(0.52, 1.9, 18);
     default:
       return new THREE.SphereGeometry(1, 16, 12);
   }
+}
+
+/**
+ * Orientación de reposo del cuerpo, ANTES de su giro propio.
+ *
+ * Vive en el grupo y no en la malla porque el giro va en la malla: así el
+ * cuerpo gira sobre su propio eje —el anillo de la Endurance rueda en su
+ * plano— en vez de bambolearse alrededor del eje del mundo, que es lo que sale
+ * cuando se compone al revés.
+ */
+function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Euler) {
+  // El anillo de la Endurance va de canto respecto de su avance, como en la
+  // película; la Ranger apunta con el morro por delante.
+  if (visual === "ship") return target.set(Math.PI / 2.6, 0, 0);
+  if (visual === "beacon") return target.set(0, 0, Math.PI / 2);
+  return target.set(0, 0, 0);
 }
 
 export interface SceneBodyInput {
@@ -254,23 +405,36 @@ export interface SceneBodyInput {
 
 export interface SceneBody {
   id: WorldId;
-  mesh: THREE.Mesh;
-  material: THREE.ShaderMaterial;
+  /** Lo que se mueve por la órbita: contiene la malla y, si lo lleva, el halo. */
+  object: THREE.Object3D;
+  /** Todos los materiales del cuerpo. El bucle les escribe los uniformes. */
+  materials: readonly THREE.ShaderMaterial[];
   placement: WorldStructuralData["placement"];
   /** Radio en rs, ya con la escala aplicada: lo usa el blanco de clic. */
   radius: number;
-  /** Eje de giro propio, en radianes por segundo. */
-  spin: number;
+  /**
+   * Coloca el giro propio para un instante dado.
+   *
+   * ABSOLUTO, no incremental. La versión anterior hacía `rotateY(spin * 0.016)`
+   * por fotograma, con el 0.016 escrito a mano: en una pantalla de 144 Hz los
+   * cuerpos giraban dos veces y media más rápido que en una de 60. Eso es
+   * exactamente lo que §8 prohíbe —el paso de animación va por tiempo real— y
+   * era una de las cosas que se veían como «los planetas se mueven raro».
+   */
+  spinAt(seconds: number): void;
 }
 
-/** Crea la malla de un cuerpo. Devuelve `null` para Gargantúa: la dibuja el
- *  raymarch y no tiene geometría. */
+/** Crea el cuerpo. Devuelve `null` para Gargantúa: la dibuja el raymarch y no
+ *  tiene geometría. */
 export function createBody(input: SceneBodyInput): SceneBody | null {
   const kind = KIND[input.visual];
   if (kind < 0) return null;
 
-  const geometry = geometryFor(input.visual);
-  const material = new THREE.ShaderMaterial({
+  const materials: THREE.ShaderMaterial[] = [];
+  const object = new THREE.Object3D();
+  restOrientation(input.visual, object.rotation);
+
+  const surface = new THREE.ShaderMaterial({
     vertexShader: BODY_VERTEX,
     fragmentShader: BODY_FRAGMENT,
     uniforms: {
@@ -283,26 +447,69 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
       uKind: { value: kind },
     },
   });
+  materials.push(surface);
 
-  const mesh = new THREE.Mesh(geometry, material);
+  const geometry = geometryFor(input.visual);
+  // El tesseracto se dibuja como líneas, no como superficie: es lo único del
+  // sistema cuya identidad está en su dibujo y no en su volumen.
+  const mesh =
+    input.visual === "tesseract"
+      ? new THREE.LineSegments(geometry, surface)
+      : new THREE.Mesh(geometry, surface);
   mesh.scale.setScalar(input.placement.size);
-  // El anillo de la Endurance va de canto respecto de su avance, como en la
-  // película; el resto conserva su orientación natural.
-  if (input.visual === "ship") mesh.rotation.x = Math.PI / 2.6;
-  if (input.visual === "beacon") mesh.rotation.z = Math.PI / 2;
+  object.add(mesh);
+
+  if (GLOWING.has(input.visual)) {
+    // El halo desborda la silueta lo justo para leerse como brillo propio. A
+    // 4.2 —lo que valía cuando el halo ERA el cuerpo— se comía al vecino.
+    const glow = new THREE.ShaderMaterial({
+      vertexShader: GLOW_VERTEX,
+      fragmentShader: GLOW_FRAGMENT,
+      transparent: true,
+      // Sin escritura de profundidad y con mezcla aditiva: dos halos cercanos
+      // se suman en vez de recortarse, y al cruzarse con el disco de Gargantúa
+      // se funden con él en lugar de pegarse encima.
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uAccent: { value: new THREE.Color(input.accent) },
+        uSecondary: { value: new THREE.Color(input.secondary) },
+        uSize: { value: input.placement.size * 2.9 },
+        uTime: { value: 0 },
+        uFocus: { value: 0 },
+        // La baliza de la Ranger late; una estación habitada apenas.
+        uPulse: { value: input.visual === "beacon" ? 1 : 0.25 },
+      },
+    });
+    materials.push(glow);
+
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glow);
+    // Después de la malla: es transparente y aditivo.
+    halo.renderOrder = 1;
+    object.add(halo);
+  }
+
+  // Las estructuras giran despacio; los mundos, un poco más rápido.
+  const spin = input.visual === "water" || input.visual === "desert" ? 0.055 : 0.02;
+  const axis = new THREE.Vector3(0, 1, 0);
 
   return {
     id: input.id,
-    mesh,
-    material,
+    object,
+    materials,
     placement: input.placement,
     radius: input.placement.size,
-    // Las estructuras giran despacio; los mundos, un poco más rápido.
-    spin: input.visual === "water" || input.visual === "desert" ? 0.055 : 0.02,
+    spinAt(seconds) {
+      // En el eje LOCAL de la malla, que es lo que hace que el anillo de la
+      // Endurance ruede en su plano en vez de cabecear.
+      mesh.quaternion.setFromAxisAngle(axis, spin * seconds);
+    },
   };
 }
 
 export function disposeBody(body: SceneBody) {
-  body.mesh.geometry.dispose();
-  body.material.dispose();
+  body.object.traverse((node) => {
+    (node as Partial<THREE.Mesh>).geometry?.dispose();
+  });
+  for (const material of body.materials) material.dispose();
 }
