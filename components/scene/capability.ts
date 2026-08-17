@@ -66,28 +66,63 @@ export interface CapabilitySignals {
 /** Rasterizadores por software conocidos. */
 const SOFTWARE_RENDERERS = /swiftshader|llvmpipe|softpipe|software|basic render/;
 
-export function detectLevel(signals: CapabilitySignals): EffectsLevel {
-  // Los dos vetos que no son suposiciones sobre el equipo.
-  if (!signals.hasWebGL2) return "flat";
-  if (signals.reducedMotion) return "flat";
+/**
+ * Por qué el gate decidió lo que decidió.
+ *
+ * Existe porque una escena que no aparece y no dice nada es indistinguible de
+ * una escena rota. Con el motivo se puede escribir un mensaje honesto, ofrecer
+ * la salida correcta y —esto es lo que lo hace valer— DIAGNOSTICAR desde fuera
+ * sin adivinar.
+ */
+export type LevelReason =
+  | "ok"
+  | "sin-webgl2"
+  | "movimiento-reducido"
+  | "perfil-ligero"
+  | "gpu-por-software"
+  | "red-lenta"
+  | "memoria-corta";
 
-  // A partir de aquí todo es heurística, y el visitante puede pasar por encima.
-  if (signals.forced) return "orbit";
+export interface CapabilityVerdict {
+  level: EffectsLevel;
+  reason: LevelReason;
+  /** Si tiene sentido ofrecer al visitante que la active de todas formas. */
+  canOverride: boolean;
+}
 
-  if (signals.lightEffects) return "flat";
-  if (signals.renderer && SOFTWARE_RENDERERS.test(signals.renderer)) {
-    return "flat";
+export function evaluateCapabilities(
+  signals: CapabilitySignals,
+): CapabilityVerdict {
+  // Único veto absoluto: sin WebGL2 no hay nada que activar. No es una
+  // preferencia ni una estimación, es la ausencia de la herramienta.
+  if (!signals.hasWebGL2) {
+    return { level: "flat", reason: "sin-webgl2", canOverride: false };
   }
 
+  // El visitante pidió la escena a mano: eso gana a todo lo demás, incluida la
+  // preferencia de movimiento. Respetar por defecto y permitir elegir es el
+  // patrón correcto; ignorar una petición explícita sería paternalismo.
+  if (signals.forced) {
+    return { level: "orbit", reason: "ok", canOverride: false };
+  }
+
+  if (signals.reducedMotion) {
+    return { level: "flat", reason: "movimiento-reducido", canOverride: true };
+  }
+  if (signals.lightEffects) {
+    return { level: "flat", reason: "perfil-ligero", canOverride: true };
+  }
+  if (signals.renderer && SOFTWARE_RENDERERS.test(signals.renderer)) {
+    return { level: "flat", reason: "gpu-por-software", canOverride: true };
+  }
   // Red muy mala: el chunk de la escena tardaría más que la paciencia de nadie.
   if (signals.effectiveType === "slow-2g" || signals.effectiveType === "2g") {
-    return "flat";
+    return { level: "flat", reason: "red-lenta", canOverride: true };
   }
-
   // Equipos claramente cortos de memoria: la escena arranca pero el navegador
   // acaba tirando el contexto WebGL, que es peor que no ofrecerla.
   if (signals.deviceMemory !== undefined && signals.deviceMemory <= 2) {
-    return "flat";
+    return { level: "flat", reason: "memoria-corta", canOverride: true };
   }
 
   // `deep` pide señales verdes, no ausencia de rojas: pantalla de escritorio,
@@ -99,7 +134,15 @@ export function detectLevel(signals: CapabilitySignals): EffectsLevel {
     (signals.cores === undefined || signals.cores >= 8) &&
     (signals.deviceMemory === undefined || signals.deviceMemory >= 8);
 
-  return desktopClass ? "deep" : "orbit";
+  return {
+    level: desktopClass ? "deep" : "orbit",
+    reason: "ok",
+    canOverride: false,
+  };
+}
+
+export function detectLevel(signals: CapabilitySignals): EffectsLevel {
+  return evaluateCapabilities(signals).level;
 }
 
 /** Lee las señales del navegador. Solo se llama en el cliente. */

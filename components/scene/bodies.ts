@@ -115,33 +115,55 @@ const BODY_FRAGMENT = /* glsl */ `
 
     /* La única luz del sistema es el disco, en el origen. */
     vec3 toLight = normalize(-vPositionW);
-    float diffuse = max(dot(normal, toLight), 0.0);
-    /* Un poco de luz envolvente: el disco es enorme, no un punto. */
-    float wrap = max(dot(normal, toLight) * 0.5 + 0.5, 0.0);
+    float ndl = dot(normal, toLight);
+
+    /*
+      El TERMINADOR es lo que hace que una esfera parezca un mundo.
+
+      El primer intento usaba lambert crudo más una envolvente ancha: el
+      resultado era una bola uniformemente iluminada, sin cara noche, y eso es
+      exactamente el aspecto «de plástico». A la distancia a la que se ven estos
+      cuerpos apenas hay superficie que mirar — lo que se lee es la silueta, la
+      media luna encendida y el filo de atmósfera. Todo el presupuesto de shader
+      va ahí.
+    */
+    float day = smoothstep(-0.16, 0.42, ndl);
+    /* Oscurecimiento de limbo: el borde del disco iluminado cae un poco. */
+    float limb = 0.55 + 0.45 * pow(max(dot(normal, view), 0.0), 0.4);
+    float diffuse = day * limb;
     float fresnel = pow(1.0 - max(dot(normal, view), 0.0), 3.0);
 
     /* Ámbar del disco para la clave; azul tenue del fondo estelar para el
-       relleno, que es lo que impide que la cara oscura sea un agujero negro. */
+       relleno, que es lo que impide que la cara noche sea un agujero recortado. */
     vec3 key = vec3(1.0, 0.72, 0.42) * uLightIntensity;
-    vec3 fill = vec3(0.13, 0.18, 0.32);
+    vec3 fill = vec3(0.055, 0.075, 0.14);
 
     vec3 albedo;
     float gloss = 0.0;
     vec3 emissive = vec3(0.0);
+    /* Atmósfera: color del halo y cuánto pesa. Cero en lo que no tiene aire. */
+    vec3 atmosphere = vec3(0.0);
+    float atmosphereWeight = 0.0;
 
     if (uKind == 0) {
       /* Miller: mundo oceánico. Bandas de nube sobre agua profunda. */
       float clouds = fbm(vLocal * 3.4 + vec3(0.0, uTime * 0.02, 0.0));
       float ocean = smoothstep(0.42, 0.62, fbm(vLocal * 2.1));
-      albedo = mix(vec3(0.03, 0.19, 0.36), vec3(0.18, 0.55, 0.68), ocean);
-      albedo = mix(albedo, vec3(0.86, 0.93, 1.0), smoothstep(0.55, 0.78, clouds) * 0.65);
+      albedo = mix(vec3(0.02, 0.13, 0.29), vec3(0.10, 0.42, 0.58), ocean);
+      albedo = mix(albedo, vec3(0.88, 0.94, 1.0), smoothstep(0.55, 0.78, clouds) * 0.7);
       gloss = 0.85 * (1.0 - ocean);
+      /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura. */
+      atmosphere = vec3(0.35, 0.62, 1.0);
+      atmosphereWeight = 1.0;
     } else if (uKind == 1) {
       /* Edmunds: desierto en calma, el mundo habitable del final. */
       float dunes = fbm(vLocal * 4.2);
-      albedo = mix(vec3(0.36, 0.19, 0.11), vec3(0.72, 0.47, 0.28), dunes);
-      albedo = mix(albedo, vec3(0.82, 0.68, 0.5), smoothstep(0.62, 0.8, dunes));
+      albedo = mix(vec3(0.30, 0.15, 0.09), vec3(0.66, 0.42, 0.24), dunes);
+      albedo = mix(albedo, vec3(0.80, 0.66, 0.48), smoothstep(0.62, 0.8, dunes));
       gloss = 0.05;
+      /* Atmósfera fina y polvorienta: menos pronunciada que la de Miller. */
+      atmosphere = vec3(1.0, 0.66, 0.42);
+      atmosphereWeight = 0.55;
     } else if (uKind == 2) {
       /* Tesseracto: no es un planeta. Cristal con las aristas encendidas. */
       float edge = pow(1.0 - max(dot(normal, view), 0.0), 1.6);
@@ -149,36 +171,47 @@ const BODY_FRAGMENT = /* glsl */ `
       emissive = uAccent * (0.35 + 0.65 * edge) * (0.7 + 0.3 * sin(uTime * 0.9));
       gloss = 0.6;
     } else if (uKind == 3) {
-      /* Cooper Station: cilindro habitado, ventanas encendidas. */
+      /* Cooper Station: cilindro habitado, ventanas encendidas.
+         A esta distancia los paneles no se resuelven; lo que se ve son las
+         LUCES. Por eso pesan más que la superficie. */
       float p = panels(vLocal * 2.0, 3.0);
-      albedo = mix(vec3(0.24, 0.26, 0.3), vec3(0.52, 0.56, 0.62), p);
-      emissive = uSecondary * (1.0 - p) * 0.55;
-      gloss = 0.35;
+      albedo = mix(vec3(0.20, 0.22, 0.27), vec3(0.55, 0.59, 0.66), p);
+      emissive = uSecondary * (1.0 - p) * 0.8;
+      gloss = 0.55;
     } else if (uKind == 4) {
       /* Endurance: el anillo de módulos. Casco claro y juntas oscuras. */
       float p = panels(vLocal * 3.0, 4.5);
-      albedo = mix(vec3(0.18, 0.19, 0.22), vec3(0.68, 0.7, 0.74), p);
-      emissive = uSecondary * (1.0 - p) * 0.28;
-      gloss = 0.45;
+      albedo = mix(vec3(0.15, 0.16, 0.2), vec3(0.72, 0.74, 0.78), p);
+      emissive = uSecondary * (1.0 - p) * 0.42;
+      gloss = 0.6;
     } else {
       /* Ranger: nave pequeña con baliza. Late, para que se encuentre. */
       float pulse = 0.5 + 0.5 * sin(uTime * 2.6);
-      albedo = vec3(0.22, 0.23, 0.28);
-      emissive = uAccent * (0.35 + 0.9 * pulse) * smoothstep(0.1, 0.6, fresnel);
-      gloss = 0.5;
+      albedo = vec3(0.2, 0.21, 0.26);
+      emissive = uAccent * (0.5 + 1.1 * pulse) * smoothstep(0.05, 0.55, fresnel);
+      gloss = 0.6;
     }
 
-    vec3 color = albedo * (key * (diffuse * 0.75 + wrap * 0.35) + fill);
+    vec3 color = albedo * (key * diffuse + fill);
 
     /* Especular del disco: una banda estrecha, no un punto de estudio.
        Ojo con el nombre de la variable: half es palabra reservada en GLSL. */
     vec3 halfVec = normalize(toLight + view);
-    float spec = pow(max(dot(normal, halfVec), 0.0), 42.0) * gloss;
+    float spec = pow(max(dot(normal, halfVec), 0.0), 42.0) * gloss * day;
     color += key * spec * 0.9;
 
-    /* Borde iluminado por el disco. Es lo que hace que el cuerpo se separe del
-       fondo negro sin necesidad de contorno dibujado. */
-    color += uAccent * fresnel * 0.16 * uLightIntensity;
+    /*
+      Atmósfera. Se acumula hacia el borde Y hacia la cara iluminada, que es la
+      dispersión real: el filo brillante aparece donde la luz atraviesa más aire.
+      Un poco desborda a la cara noche, como el amanecer visto desde órbita.
+    */
+    float rim = pow(1.0 - max(dot(normal, view), 0.0), 2.2);
+    float scatter = rim * smoothstep(-0.45, 0.5, ndl);
+    color += atmosphere * atmosphereWeight * scatter * uLightIntensity * 0.75;
+
+    /* Borde encendido por el disco, para todo lo demás: es lo que separa al
+       cuerpo del fondo negro sin dibujarle un contorno. */
+    color += uAccent * fresnel * 0.14 * uLightIntensity * (0.35 + 0.65 * day);
     color += emissive;
 
     /* Foco: al enfocar un destino, su cuerpo se enciende. La cámara no se

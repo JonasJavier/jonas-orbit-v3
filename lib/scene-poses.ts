@@ -58,7 +58,16 @@ export const SYSTEM_POSE: CameraPose = {
   distanceScale: 1,
   elevation: 9,
   azimuth: 0,
-  targetShiftFraction: 0.26,
+  /*
+    Cero: Gargantúa en el centro exacto.
+
+    Pasó por 0.26 y 0.12 antes de llegar aquí. El desplazamiento existía para
+    abrir hueco al bloque editorial del hero, y ese bloque ya no existe. Sin él,
+    descentrar solo rompía la simetría de las órbitas — y la simetría es
+    justamente lo que hace hipnótico un sistema: seis cuerpos girando alrededor
+    de un punto fijo, no un montón de objetos a un lado del cuadro.
+  */
+  targetShiftFraction: 0,
   fov: 42,
   roll: -0.11,
   exposure: 1,
