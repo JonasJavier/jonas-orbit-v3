@@ -367,8 +367,16 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
   // pasarse un par de píxeles que quedarse corto y dejar un solape.
   const PAD_Y = 20;
   const GAP = 11;
-  const RING_MIN = 12;
-  const RING_MAX = 80;
+  const RING_SCALE = 2.8;
+  const RING_MIN = 11;
+  const RING_MAX = 144;
+  /**
+   * Del borde de la píldora al CENTRO del aro va el relleno de ese lado más el
+   * borde: 0.45rem + 1px. Es el desplazamiento con el que el CSS clava el aro
+   * sobre el cuerpo, y aquí hace falta para saber por dónde cae la caja — la
+   * píldora ya no está centrada en el punto, cuelga hacia un lado.
+   */
+  const PILL_PAD = 8;
   /** Aire entre dos etiquetas apartadas. Absorbe el error del cálculo de caja. */
   const SEPARATION = 14;
 
@@ -392,18 +400,37 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
    * recalcular el layout sesenta veces por segundo, que es justo lo que este
    * diseño evita. Así que se mide el texto una vez y el anillo se deduce.
    */
-  function boxOf(id: string, radius: number) {
-    const text = textSizes.get(id) ?? { w: 90, h: 16 };
+  /** Diámetro del aro, igual que `--ring` en el CSS. */
+  function ringOf(id: string, radius: number) {
     // Gargantúa no lleva anillo: el agujero negro ya es su propio marcador, y
     // rodearlo de un aro de 137 px lo convertía en la caja más grande del
     // sistema — la que chocaba contra todo lo demás.
-    const ring = centres.has(id)
-      ? 0
-      : Math.min(Math.max(radius * 2.4, RING_MIN), RING_MAX);
+    if (centres.has(id)) return 0;
+    return Math.min(Math.max(radius * RING_SCALE, RING_MIN), RING_MAX);
+  }
+
+  function boxOf(id: string, radius: number) {
+    const text = textSizes.get(id) ?? { w: 90, h: 16 };
+    const ring = ringOf(id, radius);
     return {
       w: text.w + ring + GAP + PAD_X,
       h: Math.max(text.h, ring) + PAD_Y,
     };
+  }
+
+  /**
+   * Centro horizontal de la píldora, dado el punto del cuerpo.
+   *
+   * La píldora ya no está centrada en el cuerpo: el aro lo está, y el nombre
+   * cuelga hacia un lado. Sin esto, la separación creería que dos etiquetas se
+   * pisan cuando en realidad se han apartado cada una hacia su lado — o al
+   * revés, que están libres cuando se solapan.
+   */
+  function centreXOf(id: string, radius: number, x: number, side: "left" | "right") {
+    if (centres.has(id)) return x;
+    const anchor = PILL_PAD + ringOf(id, radius) / 2;
+    const width = boxOf(id, radius).w;
+    return side === "left" ? x + anchor - width / 2 : x - anchor + width / 2;
   }
 
   /** Aire mínimo entre una etiqueta y el borde de la ventana, en píxeles. */
@@ -421,18 +448,19 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     for (let pass = 0; pass < 2; pass++) {
       for (const body of order) {
         const size = boxOf(body.id, body.radius);
+        const centreX = centreXOf(body.id, body.radius, body.x, body.side);
         let y = placed.get(body.id)?.y ?? body.y;
 
         for (const [id, other] of placed) {
           if (id === body.id) continue;
-          const overlapX = Math.abs(body.x - other.x) < (size.w + other.w) / 2 - 8;
+          const overlapX = Math.abs(centreX - other.x) < (size.w + other.w) / 2 - 8;
           const overlapY = Math.abs(y - other.y) < (size.h + other.h) / 2 + SEPARATION;
           if (overlapX && overlapY) {
             y = other.y + (size.h + other.h) / 2 + SEPARATION;
           }
         }
 
-        placed.set(body.id, { x: body.x, y, w: size.w, h: size.h });
+        placed.set(body.id, { x: centreX, y, w: size.w, h: size.h });
       }
     }
 
@@ -459,12 +487,31 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
    * fotogramas la etiqueta estaría fuera de pantalla. Un destino fuera de la
    * ventana es un enlace que no existe, aunque sea medio segundo.
    */
-  function clamp(id: string, radius: number, x: number, y: number) {
+  function clamp(
+    id: string,
+    radius: number,
+    x: number,
+    y: number,
+    side: "left" | "right",
+  ) {
     const size = boxOf(id, radius);
-    const halfW = size.w / 2;
     const halfH = size.h / 2;
+
+    /*
+      El límite horizontal se calcula sobre la caja REAL, que cuelga hacia un
+      lado del ancla. Con la caja centrada —lo que valía antes— un destino a la
+      derecha del cuadro se daba por dentro cuando su nombre ya asomaba medio
+      fuera, porque el texto está todo a un lado y no repartido.
+    */
+    const anchor = centres.has(id) ? size.w / 2 : PILL_PAD + ringOf(id, radius) / 2;
+    const leftReach = side === "left" ? size.w - anchor : anchor;
+    const rightReach = side === "left" ? anchor : size.w - anchor;
+
     return {
-      x: Math.min(Math.max(x, halfW + EDGE), window.innerWidth - halfW - EDGE),
+      x: Math.min(
+        Math.max(x, leftReach + EDGE),
+        window.innerWidth - rightReach - EDGE,
+      ),
       y: Math.min(Math.max(y, halfH + EDGE), window.innerHeight - halfH - EDGE),
     };
   }
@@ -483,7 +530,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
         const slot = slots.get(body.id);
         if (!slot) continue;
         const nudge = nudges.get(body.id) ?? 0;
-        const at = clamp(body.id, body.radius, body.x, body.y + nudge);
+        const at = clamp(body.id, body.radius, body.x, body.y + nudge, body.side);
         slot.style.setProperty("--map-x", `${at.x.toFixed(1)}px`);
         slot.style.setProperty("--map-y", `${at.y.toFixed(1)}px`);
         slot.style.setProperty("--map-radius", `${body.radius.toFixed(1)}px`);

@@ -56,11 +56,12 @@ describe("G7 · cameraPose = f(ruta)", () => {
     );
   });
 
-  it("Gargantúa desplaza la mirada para dejar sitio al texto", () => {
-    // Si el desplazamiento fuese 0, el agujero negro quedaría centrado y el
-    // encuadre acordado (tercio derecho) se habría perdido en silencio.
-    expect(SYSTEM_POSE.targetShiftFraction).toBeGreaterThan(0);
-    // Y no tanto como para empujar medio sistema fuera de cuadro.
+  it("Gargantúa manda en el centro del cuadro", () => {
+    // El encuadre pasó por descentrarlo —había que dejar hueco al bloque
+    // editorial del hero— y volvió al centro cuando ese bloque desapareció: la
+    // simetría es lo que hace hipnótico un sistema en órbita. El tope superior
+    // sigue vigilado por si alguien lo vuelve a desplazar sin querer.
+    expect(SYSTEM_POSE.targetShiftFraction).toBeGreaterThanOrEqual(0);
     expect(SYSTEM_POSE.targetShiftFraction).toBeLessThan(0.45);
   });
 });

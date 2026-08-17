@@ -2314,8 +2314,9 @@ html[data-starfield="ready"] .space-backdrop__stars {
      aplican con transform. Nunca con left/top: mover siete elementos por frame
      con propiedades de layout obligaría a recalcularlo sesenta veces por segundo.
 
-   La ficha se abre con :hover y :focus-visible, sin una línea de JavaScript. Un
-   panel movido por estado de React se habría caído junto con la escena.
+   Al enfocar un destino solo aparece un dato más — el nombre cósmico del
+   cuerpo — y lo hace con :hover y :focus-visible, sin una línea de JavaScript.
+   Cualquier panel movido por estado de React se habría caído junto con la escena.
    ══════════════════════════════════════════════════════════════════════════ */
 
 .system-map {
@@ -2338,19 +2339,69 @@ html[data-starfield="ready"] .space-backdrop__stars {
   top: var(--map-y);
   left: var(--map-x);
   width: max-content;
+  /* Relleno del lado del anillo (más el borde de 1 px). Se necesita como
+     variable porque el anclaje de abajo tiene que descontarlo. */
+  --pill-pad: 0.45rem;
+  /*
+    Diámetro del anillo. Sale del radio aparente REAL que publica la escena, así
+    que un mundo cercano lleva un aro grande y la Ranger uno pequeño. El clamp
+    no falsea el tamaño: es para que un cuerpo de tres píxeles siga teniendo un
+    aro al que apuntar y para que uno muy cercano no se coma el cuadro.
+  */
+  --ring: clamp(0.7rem, calc(var(--map-radius, 8px) * 2.8), 9rem);
   transform: translate(-50%, -50%);
 }
 
-/* Con la escena viva las coordenadas llegan en píxeles y se aplican con
-   transform: la posición del nodo pasa a ser trabajo del compositor. */
+/*
+  Con la escena viva las coordenadas llegan en píxeles y se aplican con
+  transform: la posición del nodo pasa a ser trabajo del compositor.
+
+  Y el punto que publica el bucle de render es el CENTRO DEL CUERPO, no el
+  centro de la píldora. Centrar la píldora entera ahí —lo que se hacía antes—
+  dejaba el aro desplazado media etiqueta, unos noventa píxeles, flotando al
+  lado de su planeta en vez de encima. Peor todavía: al cruzar el umbral en el
+  que el texto se pasa al otro lado del marcador, el aro SALTABA de golpe el
+  ancho entero del nombre. Eso es lo que se veía como «los planetas tienen un
+  bug».
+
+  Aquí el slot es un ancla sin tamaño clavada en el cuerpo, y la píldora se
+  descuelga de ella descontando su propio relleno y medio anillo. El aro cae
+  sobre el planeta, y cambiar de lado sólo mueve el texto.
+*/
 html[data-scene-live="true"] .system-map__slot{
   top: 0;
   left: 0;
-  transform: translate3d(var(--map-x, 50vw), var(--map-y, 50vh), 0)
-    translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  transform: translate3d(var(--map-x, 50vw), var(--map-y, 50vh), 0);
+}
+
+html[data-scene-live="true"] .system-map__body{
+  position: absolute;
+  top: 0;
+  width: max-content;
+  transform: translateY(-50%);
+}
+
+html[data-scene-live="true"] .system-map__slot[data-side="right"] .system-map__body{
+  left: calc(-1px - var(--pill-pad) - var(--ring) / 2);
+}
+
+html[data-scene-live="true"] .system-map__slot[data-side="left"] .system-map__body{
+  right: calc(-1px - var(--pill-pad) - var(--ring) / 2);
+}
+
+/* Gargantúa no lleva aro, así que no hay nada que descontar: su nombre va
+   centrado bajo la sombra y la escena ya lo ha bajado lo que hace falta. */
+html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body{
+  right: auto;
+  left: 0;
+  transform: translate(-50%, -50%);
 }
 
 .system-map__body {
+  /* Contexto de posición para el nombre cósmico, que va fuera de flujo. */
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -2371,6 +2422,19 @@ html[data-scene-live="true"] .system-map__slot{
   background: rgba(4, 6, 12, 0.72);
   backdrop-filter: blur(3px);
   transform: translateY(-2px);
+}
+
+/* El mismo levantamiento, pero sin perder el centrado del anclaje. Van escritos
+   enteros en vez de con una variable: `transform` tiene que quedar interpolable
+   por la transición, y aquí eso importa más que ahorrar dos reglas. */
+html[data-scene-live="true"] .system-map__body:hover,
+html[data-scene-live="true"] .system-map__body:focus-visible{
+  transform: translateY(calc(-50% - 2px));
+}
+
+html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:hover,
+html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:focus-visible{
+  transform: translate(-50%, calc(-50% - 2px));
 }
 
 /*
@@ -2402,15 +2466,21 @@ html[data-scene-live="true"] .system-map__slot{
 
 html[data-scene-live="true"] .system-map__marker{
   /*
-    El anillo abraza al cuerpo con su radio aparente REAL, así que un mundo
-    cercano lleva un anillo grande y la Ranger uno diminuto. El `clamp` no es
-    para falsear el tamaño: es para que un cuerpo de tres píxeles siga teniendo
-    un aro visible al que apuntar, y para que uno muy cercano no se coma el
-    cuadro. El blanco de clic no depende de esto — lo da el relleno del enlace.
+    El aro abraza al cuerpo (ver `--ring` en el slot). Y va MUY tenue: ahora que
+    dentro hay una malla iluminada de verdad, un círculo marcado compite con
+    ella y devuelve el aspecto de interfaz sobre un fondo. Es una retícula, no
+    un botón — se enciende al apuntar y el resto del tiempo casi no está.
+    El blanco de clic no depende de esto: lo da el relleno del enlace.
   */
-  width: clamp(0.75rem, calc(var(--map-radius, 8px) * 2.4), 5rem);
-  height: clamp(0.75rem, calc(var(--map-radius, 8px) * 2.4), 5rem);
-  border-color: color-mix(in srgb, var(--world-accent) 30%, transparent);
+  width: var(--ring);
+  height: var(--ring);
+  border-color: color-mix(in srgb, var(--world-accent) 18%, transparent);
+  transition: border-color 220ms var(--ease-orbit);
+}
+
+html[data-scene-live="true"] .system-map__body:hover .system-map__marker,
+html[data-scene-live="true"] .system-map__body:focus-visible .system-map__marker{
+  border-color: color-mix(in srgb, var(--world-accent) 78%, transparent);
 }
 
 html[data-scene-live="true"] .system-map__marker::after{
@@ -2425,11 +2495,6 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   display: none;
 }
 
-/*
-  Una palabra por destino. Siete bloques de tres líneas flotando sobre la escena
-  la tapaban y convertían un lugar en un menú: el nombre cósmico, el número y el
-  título completo se mudaron a la ficha, que solo aparece al enfocar.
-*/
 /*
   Discretas a propósito.
 
@@ -2446,7 +2511,48 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   line-height: 1.1;
   text-shadow: 0 0 1.2rem rgba(0, 0, 0, 0.95);
   text-transform: uppercase;
+  transition: color 220ms var(--ease-orbit);
   white-space: nowrap;
+}
+
+/*
+  El único dato que aparece al enfocar: qué cuerpo estás mirando.
+
+  Vive DENTRO de la caja del rótulo y no la ensancha —está fuera de flujo—, así
+  que el sistema no da un salto al pasar el puntero. Sube y se enciende: el
+  movimiento es lo que lo hace vivo, no la cantidad de información.
+*/
+.system-map__cosmic {
+  position: absolute;
+  bottom: calc(100% + 0.15rem);
+  left: 0;
+  color: var(--world-accent);
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
+  opacity: 0;
+  text-transform: uppercase;
+  transform: translateY(0.35rem);
+  transition:
+    opacity 240ms var(--ease-orbit),
+    transform 240ms var(--ease-orbit);
+  white-space: nowrap;
+}
+
+.system-map__slot[data-side="left"] .system-map__cosmic {
+  right: 0;
+  left: auto;
+}
+
+.system-map__body:hover .system-map__cosmic,
+.system-map__body:focus-visible .system-map__cosmic {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.system-map__body:hover .system-map__label,
+.system-map__body:focus-visible .system-map__label {
+  color: var(--world-accent);
 }
 
 /*
@@ -2468,87 +2574,6 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   order: 1;
   justify-items: end;
   text-align: right;
-}
-
-/* Y la ficha se abre hacia dentro, no hacia fuera de la ventana. */
-.system-map__slot[data-side="left"] .system-map__ficha {
-  right: 0;
-  left: auto;
-}
-
-/*
-  La ficha. Vive en la esquina inferior izquierda — el hueco que deja el
-  encuadre con Gargantúa a la derecha — y es hija del propio enlace, así que
-  entra en su nombre accesible y la lee un lector de pantalla sin duplicar texto.
-*/
-/*
-  La ficha se abre JUNTO a su destino, no en una esquina.
-
-  El primer intento la fijaba abajo a la izquierda con `position: fixed`, y no
-  podía funcionar: el slot lleva un `transform` para seguir al cuerpo, y un
-  ancestro transformado se convierte en el bloque contenedor de sus
-  descendientes fijos. El panel quedaba anclado al slot igualmente, pero a
-  cientos de píxeles de donde el CSS creía.
-
-  Anclarla al destino además se lee mejor: la mirada ya está ahí.
-*/
-.system-map__ficha {
-  position: absolute;
-  top: calc(100% + 0.6rem);
-  left: 0;
-  z-index: 3;
-  gap: 0.45rem;
-  width: max(17rem, 100%);
-  padding: 0.9rem 1.05rem;
-  border: 1px solid color-mix(in srgb, var(--world-accent) 34%, transparent);
-  border-radius: var(--radius-md);
-  background: rgba(4, 6, 12, 0.82);
-  backdrop-filter: blur(6px);
-  /*
-    `display: none`, no `visibility: hidden`.
-
-    Al dejar de ser `fixed` —el transform del slot lo impedía— la ficha pasó a
-    contar en el alto del documento, y siete fichas ocultas colgando por debajo
-    de sus destinos añadían 45 px de scroll a una home que se define por NO
-    tenerlo. Oculta de verdad no ocupa layout. El precio es perder el fundido de
-    entrada, que es barato comparado con romper la promesa de una sola pantalla.
-  */
-  display: none;
-  pointer-events: none;
-  text-align: left;
-}
-
-.system-map__body:hover .system-map__ficha,
-.system-map__body:focus-visible .system-map__ficha {
-  display: grid;
-}
-
-.system-map__ficha-eyebrow {
-  color: var(--world-accent);
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.18em;
-}
-
-.system-map__ficha-title {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 610;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-.system-map__ficha-summary {
-  color: var(--ink-soft);
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-.system-map__ficha-go {
-  color: var(--world-accent);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.14em;
 }
 
 /* ── La home a una sola pantalla ─────────────────────────────────────────── */
@@ -2817,6 +2842,7 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   html[data-scene-live="true"] .system-map__slot{
     position: static;
     width: auto;
+    height: auto;
     transform: none;
   }
 
@@ -2824,6 +2850,23 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     border-color: var(--space-line);
     border-radius: var(--radius-md);
     background: rgba(4, 6, 12, 0.66);
+  }
+
+  /* En la lista al pie no hay cuerpo debajo al que anclarse: la píldora vuelve
+     al flujo y el anclaje de escritorio se deshace entero. */
+  html[data-scene-live="true"] .system-map__body,
+  html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body{
+    position: relative;
+    inset: auto;
+    width: auto;
+    transform: none;
+  }
+
+  html[data-scene-live="true"] .system-map__body:hover,
+  html[data-scene-live="true"] .system-map__body:focus-visible,
+  html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:hover,
+  html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:focus-visible{
+    transform: translateY(-2px);
   }
 
   .system-map__marker,
@@ -2834,11 +2877,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 
   html[data-scene-live="true"] .system-map__marker::after{
     opacity: 1;
-  }
-
-  /* La ficha flotante no cabe: el resumen ya está en la página del destino. */
-  .system-map__ficha {
-    display: none;
   }
 
   .system-home {
