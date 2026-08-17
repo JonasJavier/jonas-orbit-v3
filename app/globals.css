@@ -2401,10 +2401,16 @@ html[data-scene-live="true"] .system-map__slot{
 }
 
 html[data-scene-live="true"] .system-map__marker{
-  /* La escena publica el radio aparente del cuerpo; el anillo lo abraza. */
-  width: calc(var(--map-radius, 22px) * 1.7);
-  height: calc(var(--map-radius, 22px) * 1.7);
-  border-color: color-mix(in srgb, var(--world-accent) 32%, transparent);
+  /*
+    El anillo abraza al cuerpo con su radio aparente REAL, así que un mundo
+    cercano lleva un anillo grande y la Ranger uno diminuto. El `clamp` no es
+    para falsear el tamaño: es para que un cuerpo de tres píxeles siga teniendo
+    un aro visible al que apuntar, y para que uno muy cercano no se coma el
+    cuadro. El blanco de clic no depende de esto — lo da el relleno del enlace.
+  */
+  width: clamp(0.75rem, calc(var(--map-radius, 8px) * 2.4), 5rem);
+  height: clamp(0.75rem, calc(var(--map-radius, 8px) * 2.4), 5rem);
+  border-color: color-mix(in srgb, var(--world-accent) 30%, transparent);
 }
 
 html[data-scene-live="true"] .system-map__marker::after{
@@ -2412,19 +2418,62 @@ html[data-scene-live="true"] .system-map__marker::after{
   opacity: 0;
 }
 
+/* Gargantúa no lleva anillo: el agujero negro ya es su propio marcador, y un
+   aro alrededor del horizonte de sucesos solo compite con él. Su etiqueta se
+   coloca bajo la sombra, y de eso se encarga la escena. */
+html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__marker {
+  display: none;
+}
+
 /*
   Una palabra por destino. Siete bloques de tres líneas flotando sobre la escena
   la tapaban y convertían un lugar en un menú: el nombre cósmico, el número y el
   título completo se mudaron a la ficha, que solo aparece al enfocar.
 */
+/*
+  Discretas a propósito.
+
+  Iban en tipografía de display a 0.92rem y pesaban demasiado: siete rótulos
+  gordos flotando sobre la escena la convertían en el fondo de un menú. Aquí el
+  nombre solo tiene que identificar el destino — el protagonista es el sistema.
+  Mono, pequeña y espaciada: se lee como una lectura de instrumento y no compite.
+*/
 .system-map__label {
-  font-family: var(--font-display);
-  font-size: 0.92rem;
-  font-weight: 560;
-  letter-spacing: 0.01em;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   line-height: 1.1;
-  text-shadow: 0 0 1.4rem rgba(0, 0, 0, 0.9);
+  text-shadow: 0 0 1.2rem rgba(0, 0, 0, 0.95);
+  text-transform: uppercase;
   white-space: nowrap;
+}
+
+/*
+  Cerca del borde derecho, el texto se pasa al otro lado del marcador. No es un
+  capricho: el sistema es un anillo alrededor de Gargantúa, así que la mitad de
+  sus cuerpos rozan ese borde por diseño. La escena decide el lado y lo publica
+  en `data-side`; aquí solo se obedece.
+*/
+.system-map__slot[data-side="left"] .system-map__body {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.45rem 0.45rem 0.45rem 0.7rem;
+}
+
+.system-map__slot[data-side="left"] .system-map__marker {
+  order: 2;
+}
+
+.system-map__slot[data-side="left"] .system-map__label {
+  order: 1;
+  justify-items: end;
+  text-align: right;
+}
+
+/* Y la ficha se abre hacia dentro, no hacia fuera de la ventana. */
+.system-map__slot[data-side="left"] .system-map__ficha {
+  right: 0;
+  left: auto;
 }
 
 /*
@@ -2432,34 +2481,46 @@ html[data-scene-live="true"] .system-map__marker::after{
   encuadre con Gargantúa a la derecha — y es hija del propio enlace, así que
   entra en su nombre accesible y la lee un lector de pantalla sin duplicar texto.
 */
+/*
+  La ficha se abre JUNTO a su destino, no en una esquina.
+
+  El primer intento la fijaba abajo a la izquierda con `position: fixed`, y no
+  podía funcionar: el slot lleva un `transform` para seguir al cuerpo, y un
+  ancestro transformado se convierte en el bloque contenedor de sus
+  descendientes fijos. El panel quedaba anclado al slot igualmente, pero a
+  cientos de píxeles de donde el CSS creía.
+
+  Anclarla al destino además se lee mejor: la mirada ya está ahí.
+*/
 .system-map__ficha {
-  position: fixed;
-  bottom: clamp(4.5rem, 9vh, 7rem);
-  left: var(--page-gutter);
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 0;
   z-index: 3;
-  display: grid;
-  gap: 0.5rem;
-  width: min(24rem, calc(100vw - var(--page-gutter) * 2));
-  padding: 1.1rem 1.3rem;
+  gap: 0.45rem;
+  width: max(17rem, 100%);
+  padding: 0.9rem 1.05rem;
   border: 1px solid color-mix(in srgb, var(--world-accent) 34%, transparent);
   border-radius: var(--radius-md);
   background: rgba(4, 6, 12, 0.82);
   backdrop-filter: blur(6px);
-  opacity: 0;
+  /*
+    `display: none`, no `visibility: hidden`.
+
+    Al dejar de ser `fixed` —el transform del slot lo impedía— la ficha pasó a
+    contar en el alto del documento, y siete fichas ocultas colgando por debajo
+    de sus destinos añadían 45 px de scroll a una home que se define por NO
+    tenerlo. Oculta de verdad no ocupa layout. El precio es perder el fundido de
+    entrada, que es barato comparado con romper la promesa de una sola pantalla.
+  */
+  display: none;
   pointer-events: none;
   text-align: left;
-  transform: translateY(0.6rem);
-  transition:
-    opacity 220ms var(--ease-orbit),
-    transform 220ms var(--ease-orbit);
-  visibility: hidden;
 }
 
 .system-map__body:hover .system-map__ficha,
 .system-map__body:focus-visible .system-map__ficha {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
+  display: grid;
 }
 
 .system-map__ficha-eyebrow {
@@ -2644,6 +2705,13 @@ html[data-scene-live="true"] .site-starfield{
 .scene-toggle:focus-visible {
   border-color: var(--amber);
   color: var(--ink);
+}
+
+/* Cuando no hay nada que activar deja de ser un botón: informa y ya. */
+.scene-toggle--nota {
+  margin: 0;
+  cursor: default;
+  opacity: 0.6;
 }
 
 /*

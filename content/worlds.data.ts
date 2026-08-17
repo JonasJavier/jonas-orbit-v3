@@ -85,18 +85,22 @@ export interface WorldStructuralData {
 }
 
 /**
- * Escala del sistema — deliberadamente dramática, no física.
+ * Escala del sistema.
  *
- * Los cuerpos están agrandados varios órdenes de magnitud respecto de lo que
- * sería un planeta real junto a un agujero negro supermasivo. Es una decisión
- * consciente y no una mentira disfrazada: esto es un MAPA navegable, y un
- * destino que ocupa doce píxeles no se puede leer ni pulsar. Lo que sí es
- * riguroso es la física de Gargantúa, que es lo que el visitante mira.
+ * El primer intento agrandó los cuerpos para que fueran fáciles de pulsar, y el
+ * resultado fue el contrario del buscado: seis maquetas flotando delante de la
+ * cámara, compitiendo con el agujero negro y delatando que eran geometría.
+ * **Un cuerpo grande no parece cercano, parece falso.**
  *
- * Las órbitas van de 25 a 51 rs — todas fuera del disco de acreción, que
- * termina en 17 rs — y ese rango está elegido para que los siete cuerpos quepan
- * en el encuadre fijo durante TODA su órbita. Un destino que se saliera de
- * cuadro sería un destino inalcanzable.
+ * Ahora son pequeños, como se verían de verdad a decenas de radios de distancia:
+ * un disco de luz con atmósfera y un borde encendido por el disco de acreción.
+ * La identidad la lleva la etiqueta; el cuerpo aporta silueta y color. Y el
+ * blanco de clic no depende del tamaño real — la escena le pone un suelo en
+ * píxeles, así que un mundo diminuto sigue siendo pulsable con el pulgar.
+ *
+ * Las órbitas van de 25 a 51 rs, todas fuera del disco de acreción (que termina
+ * en 17 rs), y ese rango está elegido para que los siete quepan en el encuadre
+ * fijo durante TODA su vuelta. Un destino fuera de cuadro sería inalcanzable.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -105,7 +109,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 25, phase: 205, inclination: 27, size: 2.4 },
+    placement: { orbitRadius: 25, phase: 205, inclination: 27, size: 0.95 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -114,7 +118,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 31, phase: 260, inclination: -19, size: 2.1 },
+    placement: { orbitRadius: 31, phase: 260, inclination: -19, size: 0.8 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -123,7 +127,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    placement: { orbitRadius: 36, phase: 318, inclination: 15, size: 3.1 },
+    placement: { orbitRadius: 36, phase: 318, inclination: 15, size: 1.15 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -132,7 +136,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 41, phase: 20, inclination: -31, size: 2.3 },
+    placement: { orbitRadius: 41, phase: 20, inclination: -31, size: 0.85 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -141,7 +145,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    placement: { orbitRadius: 46, phase: 78, inclination: 23, size: 2.8 },
+    placement: { orbitRadius: 46, phase: 78, inclination: 23, size: 1.05 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -164,7 +168,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 51, phase: 142, inclination: -13, size: 1.9 },
+    placement: { orbitRadius: 51, phase: 142, inclination: -13, size: 0.62 },
     sceneName: "scene-ranger",
   },
 };

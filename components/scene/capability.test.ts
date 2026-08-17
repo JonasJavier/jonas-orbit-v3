@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { detectLevel, type CapabilitySignals } from "./capability";
+import {
+  detectLevel,
+  evaluateCapabilities,
+  type CapabilitySignals,
+} from "./capability";
 
 /** Equipo capaz y sin ninguna preferencia en contra. */
 const capable: CapabilitySignals = {
@@ -27,6 +31,56 @@ describe("detectLevel — el gate de capacidad", () => {
 
     it("con prefers-reduced-motion", () => {
       expect(detectLevel({ ...capable, reducedMotion: true })).toBe("flat");
+    });
+
+    it("todo motivo de veto se puede nombrar", () => {
+      // Una escena ausente y muda es indistinguible de una escena rota. Si un
+      // veto nuevo llegara sin motivo propio, el visitante vería un vacío sin
+      // explicación y yo no podría diagnosticarlo sin adivinar.
+      const casos: Array<[Partial<CapabilitySignals>, string]> = [
+        [{ hasWebGL2: false }, "sin-webgl2"],
+        [{ reducedMotion: true }, "movimiento-reducido"],
+        [{ lightEffects: true }, "perfil-ligero"],
+        [{ renderer: "google swiftshader" }, "gpu-por-software"],
+        [{ effectiveType: "2g" }, "red-lenta"],
+        [{ deviceMemory: 2 }, "memoria-corta"],
+      ];
+      for (const [señal, motivo] of casos) {
+        const veredicto = evaluateCapabilities({ ...capable, ...señal });
+        expect(veredicto.level, motivo).toBe("flat");
+        expect(veredicto.reason).toBe(motivo);
+      }
+    });
+
+    it("solo la ausencia de WebGL2 es irreversible", () => {
+      // El resto son suposiciones sobre el equipo y el visitante puede
+      // desmentirlas; sin WebGL2 no habría nada que activar.
+      expect(
+        evaluateCapabilities({ ...capable, hasWebGL2: false }).canOverride,
+      ).toBe(false);
+      for (const señal of [
+        { reducedMotion: true },
+        { lightEffects: true },
+        { renderer: "llvmpipe" },
+        { deviceMemory: 2 },
+      ]) {
+        expect(
+          evaluateCapabilities({ ...capable, ...señal }).canOverride,
+          JSON.stringify(señal),
+        ).toBe(true);
+      }
+    });
+
+    it("una petición explícita gana a la preferencia de movimiento", () => {
+      // Respetar por defecto y permitir elegir es el patrón correcto: ignorar
+      // una petición explícita del visitante sería paternalismo.
+      expect(
+        detectLevel({ ...capable, reducedMotion: true, forced: true }),
+      ).toBe("orbit");
+      // Pero no puede fabricar una GPU que no existe.
+      expect(detectLevel({ ...capable, hasWebGL2: false, forced: true })).toBe(
+        "flat",
+      );
     });
 
     it("con el perfil ligero pedido por el visitante", () => {

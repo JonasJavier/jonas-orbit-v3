@@ -123,8 +123,12 @@ const MAX_PARALLAX_DEG = 2;
  * No es estético: cada cuerpo arrastra una etiqueta de un par de centenares de
  * píxeles y el encuadre solo sabe de radios. Con el margen justo, un destino
  * queda dentro pero su nombre se sale.
+ *
+ * Bajó de 11 a 6 al encoger los cuerpos: menos margen es menos distancia de
+ * cámara, y menos distancia es un Gargantúa más grande en cuadro. Las etiquetas
+ * que rozan el borde ya no se salen porque se pasan al otro lado del marcador.
  */
-const FRAME_MARGIN = 11;
+const FRAME_MARGIN = 6;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -209,7 +213,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     fragmentShader: GARGANTUA_FRAGMENT,
     depthTest: false,
     depthWrite: false,
-    defines: { MAX_STEPS: TIER[tier].steps },
+    defines: { MAX_STEPS: 1 }, // DEBUG TEMPORAL — revertir a TIER[tier].steps
     uniforms: {
       uCamPos: { value: new THREE.Vector3() },
       uCamRight: { value: new THREE.Vector3(1, 0, 0) },
@@ -482,15 +486,18 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     const x = (projectionScratch.x * 0.5 + 0.5) * cssWidth;
     const y = (-projectionScratch.y * 0.5 + 0.5) * cssHeight;
 
-    // Radio aparente: el tamaño en rs escalado por la perspectiva. Es lo que
-    // dimensiona el blanco de clic, así que tiene un suelo — un destino nunca
-    // puede ser más pequeño que el dedo de quien lo pulsa.
+    // Radio aparente REAL, sin suelo.
+    //
+    // Antes llevaba un mínimo de 22 px para garantizar el blanco de clic, y eso
+    // mezclaba dos cosas que no son la misma: cuánto MIDE el cuerpo y cuánto
+    // hay que poder PULSAR. Con cuerpos pequeños el suelo ganaba siempre, así
+    // que los siete marcadores salían del mismo tamaño y el anillo flotaba
+    // alrededor de un punto. El tamaño del blanco lo resuelve el CSS con
+    // relleno; aquí se dice la verdad sobre el cuerpo.
     const distance = cameraPosition.distanceTo(body.position);
     const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
-    const radius = Math.max(
-      22,
-      (body.radius / Math.max(distance, 1)) * (cssHeight / (2 * tanHalfFov)),
-    );
+    const radius =
+      (body.radius / Math.max(distance, 1)) * (cssHeight / (2 * tanHalfFov));
 
     return {
       id: body.id,
@@ -500,10 +507,10 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       depth: projectionScratch.z,
       visible:
         projectionScratch.z < 1 &&
-        x > -radius &&
-        x < cssWidth + radius &&
-        y > -radius &&
-        y < cssHeight + radius,
+        x > 0 &&
+        x < cssWidth &&
+        y > 0 &&
+        y < cssHeight,
       side: x > cssWidth * 0.62 ? "left" : "right",
     };
   }
@@ -535,10 +542,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         position: position.set(0, 0, 0),
         radius: centreRadii.get(id) ?? 2.6,
       });
-      // La etiqueta de Gargantúa no puede ir en el centro exacto: ahí está la
-      // sombra, y texto sobre el horizonte de sucesos es texto ilegible sobre
-      // negro puro. Baja hasta quedar bajo el disco.
-      body.y += body.radius * 1.75;
+      // La etiqueta de Gargantúa baja hasta despejar el DISCO, no la sombra.
+      //
+      // El primer intento usaba 1.75 veces el radio de la sombra, y se quedaba
+      // corto por un factor grande: la sombra mide 2.6 rs pero el disco llega a
+      // 17, así que la etiqueta seguía cayendo sobre la parte más brillante del
+      // cuadro y chocando con los cuerpos que cruzan por ahí. El disco visto casi
+      // de canto ocupa en vertical del orden de tres radios de sombra.
+      body.y += body.radius * 3.4;
       projected.push(body);
     }
 

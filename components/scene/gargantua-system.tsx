@@ -7,7 +7,12 @@ import { useLightEffectsMode } from "@/lib/effects-mode";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { findWorldRoute, type WorldRoute } from "@/lib/world-route";
-import { detectLevel, readSignals, type EffectsLevel } from "./capability";
+import {
+  evaluateCapabilities,
+  readSignals,
+  type EffectsLevel,
+  type LevelReason,
+} from "./capability";
 import type { ProjectedBody, SceneHandle } from "./system-scene";
 
 /**
@@ -46,6 +51,31 @@ function serverLevel(): EffectsLevel {
   return "flat";
 }
 
+function serverReason(): LevelReason {
+  return "ok";
+}
+
+function serverCanOverride(): boolean {
+  return false;
+}
+
+/**
+ * Qué se le dice al visitante cuando la escena no está.
+ *
+ * Una escena ausente y muda es indistinguible de una escena rota. Cada motivo
+ * lleva su frase y su salida: la que se puede desmentir ofrece un botón, y la
+ * que no —no hay WebGL2— lo dice y se calla, porque no habría nada que activar.
+ */
+const REASON_COPY: Record<LevelReason, string | null> = {
+  ok: null,
+  "sin-webgl2": "Escena 3D no disponible en este navegador",
+  "movimiento-reducido": "Movimiento reducido activo · Activar escena 3D",
+  "perfil-ligero": "Perfil ligero activo · Activar escena 3D",
+  "gpu-por-software": "Sin aceleración por GPU · Activar igualmente",
+  "red-lenta": "Conexión lenta · Activar escena 3D",
+  "memoria-corta": "Memoria justa · Activar igualmente",
+};
+
 interface LabelBinding {
   update(projected: readonly ProjectedBody[]): void;
   /** Vuelve a medir las etiquetas: sus tamaños cambian al redimensionar. */
@@ -81,35 +111,46 @@ export function GargantuaSystem({
    * al que preguntar— y tras la hidratación se resuelve con las capacidades
    * reales, sin provocar mismatch. Es el mismo patrón que reduced-motion.
    */
+  //
+  // Se leen tres VALORES PRIMITIVOS, no un objeto. `useSyncExternalStore`
+  // compara la instantánea con `Object.is`: devolver un objeto nuevo en cada
+  // llamada lo metería en un bucle infinito de re-renders.
+  const readVerdict = () =>
+    evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced }));
+
   const detected = useSyncExternalStore(
     subscribeNothing,
-    () => detectLevel(readSignals({ reducedMotion, lightEffects, forced })),
+    () => readVerdict().level,
     serverLevel,
   );
-  const level: EffectsLevel = failed ? "flat" : detected;
-
-  /**
-   * ¿Tiene sentido ofrecer «activar»? Solo si el equipo PUEDE (hay WebGL2) y
-   * no lo pidió apagado por accesibilidad. Sin esta comprobación, el botón
-   * aparecería en equipos donde no haría absolutamente nada.
-   */
-  const canOffer = useSyncExternalStore(
+  const reason = useSyncExternalStore(
     subscribeNothing,
-    () => readSignals({ reducedMotion, lightEffects }).hasWebGL2 && !reducedMotion,
-    () => false,
+    () => readVerdict().reason,
+    serverReason,
   );
+  const canOverride = useSyncExternalStore(
+    subscribeNothing,
+    () => readVerdict().canOverride,
+    serverCanOverride,
+  );
+  const level: EffectsLevel = failed ? "flat" : detected;
 
   const worldId = findWorldRoute(pathname, routes)?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
 
-  // Publica el nivel activo en el DOM. Es lo que hace auditable el gate y lo que
-  // permite que el CSS retire el fondo 2D cuando la escena está viva.
+  // Publica el nivel y el motivo en el DOM. Es lo que hace auditable el gate, lo
+  // que permite que el CSS retire el fondo 2D cuando la escena está viva, y lo
+  // que convierte «no se ve nada» en un diagnóstico de una sola línea.
   useEffect(() => {
     document.documentElement.dataset.scene = level;
+    document.documentElement.dataset.sceneReason = failed
+      ? "escena-fallida"
+      : reason;
     return () => {
       delete document.documentElement.dataset.scene;
+      delete document.documentElement.dataset.sceneReason;
     };
-  }, [level]);
+  }, [level, reason, failed]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -216,17 +257,27 @@ export function GargantuaSystem({
   }, [level, reducedMotion]);
 
   if (level === "flat") {
-    // Nunca se deja al visitante sin explicación ni sin salida: o el gate creyó
-    // que su equipo no llegaba y puede desmentirlo, o la escena se rindió y hay
-    // que decirlo. El silencio es lo único que no vale.
-    if (!canOffer || failed) return null;
+    // Una escena que se rindió no se vuelve a ofrecer en esta visita: insistir
+    // contra una GPU que acaba de tirar el contexto solo gasta batería.
+    if (failed) return null;
+
+    const copy = REASON_COPY[reason];
+    if (!copy) return null;
+
+    // El que no se puede desmentir informa y no promete nada.
+    if (!canOverride) {
+      return (
+        <p className="scene-toggle scene-toggle--nota">{copy}</p>
+      );
+    }
+
     return (
       <button
         className="scene-toggle"
         onClick={() => setForced(true)}
         type="button"
       >
-        Activar escena 3D
+        {copy}
       </button>
     );
   }
@@ -301,43 +352,121 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
    * dos etiquetas al borde del contacto oscilarían entre separadas y juntas en
    * frames alternos, y el parpadeo se ve muchísimo más que el solape.
    */
-  const sizes = new Map<string, { w: number; h: number }>();
+  /** Tamaño del TEXTO de cada etiqueta. Estable: solo cambia al redimensionar. */
+  const textSizes = new Map<string, { w: number; h: number }>();
   const nudges = new Map<string, number>();
+  /** Cuerpos sin anillo de marcador: hoy solo el agujero negro. */
+  const centres = new Set(
+    [...slots].filter(([, slot]) => slot.dataset.centre === "true").map(([id]) => id),
+  );
+
+  /* Relleno y separación del enlace, y los topes del anillo. Tienen que
+     coincidir con el CSS: es el precio de calcular la caja en vez de medirla. */
+  const PAD_X = 18;
+  // Holgado a propósito: la caja se calcula en vez de medirse, y es preferible
+  // pasarse un par de píxeles que quedarse corto y dejar un solape.
+  const PAD_Y = 20;
+  const GAP = 11;
+  const RING_MIN = 12;
+  const RING_MAX = 80;
+  /** Aire entre dos etiquetas apartadas. Absorbe el error del cálculo de caja. */
+  const SEPARATION = 14;
 
   function measureSizes() {
     for (const [id, slot] of slots) {
-      sizes.set(id, { w: slot.offsetWidth, h: slot.offsetHeight });
+      const label = slot.querySelector<HTMLElement>(".system-map__label");
+      textSizes.set(id, {
+        w: label?.offsetWidth ?? 90,
+        h: label?.offsetHeight ?? 16,
+      });
     }
   }
 
+  /**
+   * Caja de la etiqueta, CALCULADA en vez de medida.
+   *
+   * Medirla con `offsetWidth` habría sido más directo, pero el anillo del
+   * marcador crece con el radio aparente del cuerpo y ese radio cambia en cada
+   * fotograma. Medir una vez daba cajas obsoletas —y con ellas, solapes que la
+   * separación no veía—; medir en cada fotograma obliga al navegador a
+   * recalcular el layout sesenta veces por segundo, que es justo lo que este
+   * diseño evita. Así que se mide el texto una vez y el anillo se deduce.
+   */
+  function boxOf(id: string, radius: number) {
+    const text = textSizes.get(id) ?? { w: 90, h: 16 };
+    // Gargantúa no lleva anillo: el agujero negro ya es su propio marcador, y
+    // rodearlo de un aro de 137 px lo convertía en la caja más grande del
+    // sistema — la que chocaba contra todo lo demás.
+    const ring = centres.has(id)
+      ? 0
+      : Math.min(Math.max(radius * 2.4, RING_MIN), RING_MAX);
+    return {
+      w: text.w + ring + GAP + PAD_X,
+      h: Math.max(text.h, ring) + PAD_Y,
+    };
+  }
+
+  /** Aire mínimo entre una etiqueta y el borde de la ventana, en píxeles. */
+  const EDGE = 12;
+
   function separate(projected: readonly ProjectedBody[]) {
-    if (sizes.size === 0) measureSizes();
+    if (textSizes.size === 0) measureSizes();
 
     // De arriba abajo: cada etiqueta empuja hacia abajo a la siguiente con la
-    // que choque. Una pasada basta para siete elementos.
+    // que choque. Dos pasadas, porque al apartar una puede aparecer un choque
+    // nuevo con la de más abajo.
     const order = [...projected].sort((a, b) => a.y - b.y);
-    const placed: Array<{ x: number; y: number; w: number; h: number }> = [];
+    const placed = new Map<string, { x: number; y: number; w: number; h: number }>();
 
-    for (const body of order) {
-      const size = sizes.get(body.id) ?? { w: 180, h: 60 };
-      let y = body.y;
+    for (let pass = 0; pass < 2; pass++) {
+      for (const body of order) {
+        const size = boxOf(body.id, body.radius);
+        let y = placed.get(body.id)?.y ?? body.y;
 
-      for (const other of placed) {
-        const overlapX =
-          Math.abs(body.x - other.x) < (size.w + other.w) / 2 - 8;
-        const overlapY = Math.abs(y - other.y) < (size.h + other.h) / 2 + 6;
-        if (overlapX && overlapY) {
-          y = other.y + (size.h + other.h) / 2 + 6;
+        for (const [id, other] of placed) {
+          if (id === body.id) continue;
+          const overlapX = Math.abs(body.x - other.x) < (size.w + other.w) / 2 - 8;
+          const overlapY = Math.abs(y - other.y) < (size.h + other.h) / 2 + SEPARATION;
+          if (overlapX && overlapY) {
+            y = other.y + (size.h + other.h) / 2 + SEPARATION;
+          }
         }
+
+        placed.set(body.id, { x: body.x, y, w: size.w, h: size.h });
       }
-
-      placed.push({ x: body.x, y, w: size.w, h: size.h });
-
-      const target = y - body.y;
-      const current = nudges.get(body.id) ?? 0;
-      // Suavizado exponencial: llega en ~10 frames y no vibra.
-      nudges.set(body.id, current + (target - current) * 0.22);
     }
+
+    for (const body of projected) {
+      const target = (placed.get(body.id)?.y ?? body.y) - body.y;
+      const current = nudges.get(body.id);
+
+      // La primera colocación es instantánea: no hay historial que conservar y
+      // suavizar desde cero solo produce un deslizamiento al entrar. A partir de
+      // ahí, suavizado exponencial — llega en ~10 fotogramas y no vibra, que es
+      // lo que impide el parpadeo entre «separadas» y «juntas» cuando dos
+      // etiquetas rondan el contacto.
+      nudges.set(
+        body.id,
+        current === undefined ? target : current + (target - current) * 0.22,
+      );
+    }
+  }
+
+  /**
+   * Mete la etiqueta dentro de la ventana. Se aplica al valor FINAL, después
+   * del suavizado, y ese orden importa: si se limitara antes, el suavizado
+   * seguiría acercándose al límite poco a poco y durante los primeros
+   * fotogramas la etiqueta estaría fuera de pantalla. Un destino fuera de la
+   * ventana es un enlace que no existe, aunque sea medio segundo.
+   */
+  function clamp(id: string, radius: number, x: number, y: number) {
+    const size = boxOf(id, radius);
+    const halfW = size.w / 2;
+    const halfH = size.h / 2;
+    return {
+      x: Math.min(Math.max(x, halfW + EDGE), window.innerWidth - halfW - EDGE),
+      y: Math.min(Math.max(y, halfH + EDGE), window.innerHeight - halfH - EDGE),
+    };
   }
 
   return {
@@ -354,8 +483,9 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
         const slot = slots.get(body.id);
         if (!slot) continue;
         const nudge = nudges.get(body.id) ?? 0;
-        slot.style.setProperty("--map-x", `${body.x.toFixed(1)}px`);
-        slot.style.setProperty("--map-y", `${(body.y + nudge).toFixed(1)}px`);
+        const at = clamp(body.id, body.radius, body.x, body.y + nudge);
+        slot.style.setProperty("--map-x", `${at.x.toFixed(1)}px`);
+        slot.style.setProperty("--map-y", `${at.y.toFixed(1)}px`);
         slot.style.setProperty("--map-radius", `${body.radius.toFixed(1)}px`);
         slot.dataset.offscreen = body.visible ? "false" : "true";
         slot.dataset.side = body.side;
