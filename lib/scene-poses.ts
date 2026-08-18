@@ -53,10 +53,27 @@ export interface CameraPose {
   animated: boolean;
 }
 
-/** La pose de la home: el sistema entero, Gargantúa en el tercio derecho. */
+/** La pose de la home: el sistema entero con Gargantúa centrado y dominante. */
 export const SYSTEM_POSE: CameraPose = {
   distanceScale: 1,
-  elevation: 9,
+  /*
+    Elevación sobre el plano del disco. **Es la palanca más barata que existe
+    para hacer grande a Gargantúa**, y durante mucho tiempo estuvo desperdiciada
+    en 9°.
+
+    El motivo es geométrico. La distancia de encuadre la fijan las órbitas, no el
+    disco: el disco cabe de sobra en cualquier caso, así que subir la elevación
+    NO aleja la cámara de forma apreciable. Pero el disco vive en el plano y =
+    0, de modo que su altura en pantalla vale su diámetro por el seno de la
+    elevación. A 9° eso son 8.9 % del alto del viewport — una raya. A 17° son
+    18.8 %: **más del doble de agujero negro por el mismo precio de encuadre.**
+
+    Y sigue siendo un ángulo bajo, que es lo que hace la imagen: el disco se ve
+    casi de canto, el arco lensado de la cara lejana pasa por encima de la sombra
+    y la imagen secundaria por debajo. Por encima de ~22° empieza a leerse como
+    un donut visto desde arriba y se pierde esa lectura.
+  */
+  elevation: 17,
   azimuth: 0,
   /*
     Cero: Gargantúa en el centro exacto.
@@ -68,8 +85,23 @@ export const SYSTEM_POSE: CameraPose = {
     de un punto fijo, no un montón de objetos a un lado del cuadro.
   */
   targetShiftFraction: 0,
-  fov: 42,
-  roll: -0.11,
+  /*
+    Campo de visión: 35°, no 42°.
+
+    Un teleobjetivo suave, y por dos motivos que apuntan al mismo sitio. El
+    primero es de tamaño: cerrar el campo agranda todo lo que hay dentro, así
+    que el disco gana otro punto largo de pantalla.
+
+    El segundo importa más y es de MOVIMIENTO. Para encuadrar el mismo sistema
+    con menos campo hay que alejar la cámara, y al alejarla se aplana la
+    perspectiva: la diferencia de tamaño aparente entre el punto cercano y el
+    lejano de una órbita baja de 2.2× a 1.8×. Ese vaivén —un cuerpo hinchándose
+    y encogiéndose media vuelta sí y media no— era parte de lo que se veía como
+    «los planetas se mueven raro». Un campo cerrado es también, sin más, el
+    lenguaje de una cámara de cine.
+  */
+  fov: 35,
+  roll: -0.13,
   exposure: 1,
   bloom: 1,
   opacity: 1,

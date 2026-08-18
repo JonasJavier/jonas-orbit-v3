@@ -2339,16 +2339,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   top: var(--map-y);
   left: var(--map-x);
   width: max-content;
-  /* Relleno del lado del anillo (más el borde de 1 px). Se necesita como
-     variable porque el anclaje de abajo tiene que descontarlo. */
-  --pill-pad: 0.45rem;
-  /*
-    Diámetro del anillo. Sale del radio aparente REAL que publica la escena, así
-    que un mundo cercano lleva un aro grande y la Ranger uno pequeño. El clamp
-    no falsea el tamaño: es para que un cuerpo de tres píxeles siga teniendo un
-    aro al que apuntar y para que uno muy cercano no se coma el cuadro.
-  */
-  --ring: clamp(0.7rem, calc(var(--map-radius, 8px) * 2.8), 9rem);
   transform: translate(-50%, -50%);
 }
 
@@ -2374,6 +2364,41 @@ html[data-scene-live="true"] .system-map__slot{
   width: 0;
   height: 0;
   transform: translate3d(var(--map-x, 50vw), var(--map-y, 50vh), 0);
+
+  /*
+    Puesta en marcha escalonada.
+
+    Los siete destinos no aparecen a la vez: se encienden en orden narrativo, uno
+    cada 110 ms, después de que la escena haya entregado su primer fotograma. Es
+    la diferencia entre que la interfaz «esté» y que la interfaz ARRANQUE, y
+    cuesta una animación de opacidad que el compositor resuelve solo.
+
+    Sólo opacidad. `transform` lo escribe el bucle de render sesenta veces por
+    segundo con la posición del cuerpo: animarlo aquí sería pelearse con él.
+  */
+  animation: destino-aparece 700ms var(--ease-orbit) both;
+  animation-delay: calc(200ms + var(--order, 1) * 70ms);
+}
+
+/*
+  Con movimiento reducido la regla global deja la animación en 0.01 ms, pero NO
+  toca el retardo — y con `fill-mode: both` el retardo mantiene el estado
+  inicial. O sea: el destino número siete se quedaría invisible 690 ms para
+  justo quien ha pedido que no haya movimiento. El escalonado se cancela entero.
+*/
+@media (prefers-reduced-motion: reduce) {
+  html[data-scene-live="true"] .system-map__slot {
+    animation-delay: 0s;
+  }
+}
+
+@keyframes destino-aparece {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 html[data-scene-live="true"] .system-map__body{
@@ -2383,12 +2408,19 @@ html[data-scene-live="true"] .system-map__body{
   transform: translateY(-50%);
 }
 
+/*
+  El nombre se descuelga del cuerpo por su radio aparente más un hueco fijo, y se
+  le descuenta el relleno invisible del enlace para que el TEXTO caiga donde toca
+  y no la caja de pulsación. Los tres números son los mismos que calcula
+  `bindLabels` en gargantua-system.tsx (LABEL_GAP y PAD_X): si cambian aquí,
+  cambian allí — es el precio de calcular la caja en vez de medirla por fotograma.
+*/
 html[data-scene-live="true"] .system-map__slot[data-side="right"] .system-map__body{
-  left: calc(-1px - var(--pill-pad) - var(--ring) / 2);
+  left: calc(var(--map-radius, 8px) + 12px - 14px);
 }
 
 html[data-scene-live="true"] .system-map__slot[data-side="left"] .system-map__body{
-  right: calc(-1px - var(--pill-pad) - var(--ring) / 2);
+  right: calc(var(--map-radius, 8px) + 12px - 14px);
 }
 
 /* Gargantúa no lleva aro, así que no hay nada que descontar: su nombre va
@@ -2399,42 +2431,39 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   transform: translate(-50%, -50%);
 }
 
+/*
+  ── El enlace es una caja de pulsación invisible ──────────────────────────────
+
+  Lo que había aquí era una píldora: borde de color, fondo negro al 72 %,
+  `backdrop-filter: blur(3px)` y un salto de 2 px al apuntar. Siete de esas
+  flotando sobre un agujero negro convertían la escena en el fondo de un menú, y
+  el desenfoque de fondo además obliga al compositor a releer el búfer justo
+  encima de la zona más cara del cuadro.
+
+  Ahora no dibuja NADA. Sólo aporta relleno, y el relleno existe por un motivo de
+  accesibilidad, no estético: a la vista queda una palabra de unos 60×12 px y el
+  mínimo recomendado para un blanco táctil es 44×44. El relleno lo da sin pintar
+  un solo píxel. Todo el estado visible lo lleva el rótulo — y su órbita, que se
+  enciende en la escena.
+*/
 .system-map__body {
-  /* Contexto de posición para el nombre cósmico, que va fuera de flujo. */
-  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.45rem 0.7rem 0.45rem 0.45rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  gap: 0.55rem;
+  /* En píxeles y no en rem a propósito: `bindLabels` calcula esta misma caja en
+     píxeles, y una unidad relativa haría depender la separación de etiquetas del
+     tamaño de fuente raíz sin que nadie se enterara. */
+  padding: 17px 14px;
   pointer-events: auto;
-  transition:
-    border-color 220ms var(--ease-orbit),
-    background 220ms var(--ease-orbit),
-    transform 220ms var(--ease-orbit);
+  text-decoration: none;
 }
 
-.system-map__body:hover,
+/* El anillo de foco del navegador rodearía el relleno entero: un rectángulo de
+   90×44 alrededor de una palabra. Se apaga aquí y se vuelve a dibujar sobre el
+   rótulo, que es lo que de verdad hay que señalar. */
 .system-map__body:focus-visible {
-  border-color: color-mix(in srgb, var(--world-accent) 55%, transparent);
-  background: rgba(4, 6, 12, 0.72);
-  backdrop-filter: blur(3px);
-  transform: translateY(-2px);
-}
-
-/* El mismo levantamiento, pero sin perder el centrado del anclaje. Van escritos
-   enteros en vez de con una variable: `transform` tiene que quedar interpolable
-   por la transición, y aquí eso importa más que ahorrar dos reglas. */
-html[data-scene-live="true"] .system-map__body:hover,
-html[data-scene-live="true"] .system-map__body:focus-visible{
-  transform: translateY(calc(-50% - 2px));
-}
-
-html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:hover,
-html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:focus-visible{
-  transform: translate(-50%, calc(-50% - 2px));
+  outline: none;
 }
 
 /*
@@ -2464,34 +2493,23 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   transform: translate(-50%, -50%);
 }
 
+/*
+  ── Con la escena viva, el marcador desaparece del todo ───────────────────────
+
+  El aro era el otro medio problema del hover. Rodeaba al cuerpo con un círculo
+  de interfaz dibujado ENCIMA de una malla iluminada de verdad, y su diámetro
+  salía del radio aparente del planeta — que cambia en cada fotograma según por
+  dónde ande su órbita. O sea: un círculo que además respiraba.
+
+  No hace falta un marcador cuando detrás hay un cuerpo. Lo que ata el nombre a
+  su planeta es la proximidad, y lo que acusa recibo al apuntar es su ÓRBITA
+  encendiéndose en la escena — que es una respuesta del mismo material que el
+  resto del sistema, no una capa de interfaz por encima.
+
+  El marcador se queda para el nivel `flat`: ahí no hay cuerpo detrás y sin él
+  los siete destinos serían siete palabras flotando en el vacío.
+*/
 html[data-scene-live="true"] .system-map__marker{
-  /*
-    El aro abraza al cuerpo (ver `--ring` en el slot). Y va MUY tenue: ahora que
-    dentro hay una malla iluminada de verdad, un círculo marcado compite con
-    ella y devuelve el aspecto de interfaz sobre un fondo. Es una retícula, no
-    un botón — se enciende al apuntar y el resto del tiempo casi no está.
-    El blanco de clic no depende de esto: lo da el relleno del enlace.
-  */
-  width: var(--ring);
-  height: var(--ring);
-  border-color: color-mix(in srgb, var(--world-accent) 18%, transparent);
-  transition: border-color 220ms var(--ease-orbit);
-}
-
-html[data-scene-live="true"] .system-map__body:hover .system-map__marker,
-html[data-scene-live="true"] .system-map__body:focus-visible .system-map__marker{
-  border-color: color-mix(in srgb, var(--world-accent) 78%, transparent);
-}
-
-html[data-scene-live="true"] .system-map__marker::after{
-  /* Con el cuerpo real detrás, el punto sobra: sería una mancha encima. */
-  opacity: 0;
-}
-
-/* Gargantúa no lleva anillo: el agujero negro ya es su propio marcador, y un
-   aro alrededor del horizonte de sucesos solo compite con él. Su etiqueta se
-   coloca bajo la sombra, y de eso se encarga la escena. */
-html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__marker {
   display: none;
 }
 
@@ -2504,15 +2522,79 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   Mono, pequeña y espaciada: se lee como una lectura de instrumento y no compite.
 */
 .system-map__label {
+  /* Contexto de posición para el nombre cósmico y para el trazo de abajo. */
+  position: relative;
+  color: var(--ink-muted);
   font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 400;
   letter-spacing: 0.16em;
   line-height: 1.1;
-  text-shadow: 0 0 1.2rem rgba(0, 0, 0, 0.95);
+  /*
+    En reposo el nombre está APAGADO, no ausente.
+
+    Siete rótulos a plena opacidad compiten con el agujero negro y devuelven la
+    lectura de menú. A 0.66 se leen sin esfuerzo pero ceden el primer plano a la
+    escena, que es el orden correcto: primero el sistema, después sus nombres.
+    Al apuntar uno, ese sube a 1 y los demás se quedan donde están — el contraste
+    entre el activo y el resto hace más por señalarlo que cualquier caja.
+  */
+  opacity: 0.66;
+  /* Doble sombra: la ancha lo despega del disco brillante cuando pasa por
+     delante, la corta le da filo sobre el cielo negro. */
+  text-shadow:
+    0 0 1.3rem rgba(0, 0, 0, 0.95),
+    0 0 0.4rem rgba(0, 0, 0, 0.9);
   text-transform: uppercase;
-  transition: color 220ms var(--ease-orbit);
+  transition:
+    color 260ms var(--ease-orbit),
+    opacity 260ms var(--ease-orbit),
+    text-shadow 260ms var(--ease-orbit);
   white-space: nowrap;
+}
+
+/*
+  El trazo bajo el nombre: 1 px que se dibuja desde el lado del cuerpo hacia
+  fuera. Es el único elemento que APARECE al apuntar, y aparece dibujándose —
+  un gesto, no un contenedor. `transform: scaleX` lo resuelve el compositor sin
+  tocar el layout, así que no mueve nada de lo que tiene alrededor.
+*/
+.system-map__label::after {
+  position: absolute;
+  bottom: -0.4rem;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  content: "";
+  background: currentColor;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition:
+    opacity 300ms var(--ease-orbit),
+    transform 340ms var(--ease-orbit);
+}
+
+/* Con el nombre a la izquierda del cuerpo, el trazo también crece hacia fuera. */
+.system-map__slot[data-side="left"] .system-map__label::after {
+  transform-origin: right center;
+}
+
+.system-map__body:hover .system-map__label::after,
+.system-map__body:focus-visible .system-map__label::after {
+  opacity: 0.5;
+  transform: scaleX(1);
+}
+
+/*
+  El foco de teclado SÍ necesita una marca propia, y no puede ser sólo color: hay
+  que poder distinguirlo sin ver el matiz. Es un filete alrededor de la palabra —
+  no del relleno de 90×44 — y sólo lo ve quien navega con teclado.
+*/
+.system-map__body:focus-visible .system-map__label {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--world-accent) 62%, transparent);
+  outline-offset: 7px;
 }
 
 /*
@@ -2524,46 +2606,58 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
 */
 .system-map__cosmic {
   position: absolute;
-  bottom: calc(100% + 0.15rem);
+  bottom: calc(100% + 0.4rem);
   left: 0;
   color: var(--world-accent);
   font-family: var(--font-mono);
   font-size: 0.5rem;
   letter-spacing: 0.24em;
   opacity: 0;
+  text-shadow: 0 0 0.9rem rgba(0, 0, 0, 0.95);
   text-transform: uppercase;
-  transform: translateY(0.35rem);
+  transform: translateY(0.3rem);
   transition:
-    opacity 240ms var(--ease-orbit),
-    transform 240ms var(--ease-orbit);
+    opacity 260ms var(--ease-orbit),
+    transform 260ms var(--ease-orbit);
   white-space: nowrap;
 }
 
 .system-map__slot[data-side="left"] .system-map__cosmic {
   right: 0;
   left: auto;
+  text-align: right;
 }
 
 .system-map__body:hover .system-map__cosmic,
 .system-map__body:focus-visible .system-map__cosmic {
-  opacity: 1;
+  opacity: 0.92;
   transform: translateY(0);
 }
 
+/*
+  El estado activo, entero: el nombre pasa al color del mundo y sube a plena
+  opacidad, con un halo del mismo color que lo separa del fondo. Ni una caja, ni
+  un desplazamiento, ni un aro. Lo demás —la órbita encendida y el propio cuerpo
+  brillando— ocurre en la escena, que es donde vive el sistema.
+*/
 .system-map__body:hover .system-map__label,
 .system-map__body:focus-visible .system-map__label {
   color: var(--world-accent);
+  opacity: 1;
+  text-shadow:
+    0 0 1.4rem rgba(0, 0, 0, 0.95),
+    0 0 0.9rem color-mix(in srgb, var(--world-accent) 40%, transparent);
 }
 
 /*
-  Cerca del borde derecho, el texto se pasa al otro lado del marcador. No es un
-  capricho: el sistema es un anillo alrededor de Gargantúa, así que la mitad de
-  sus cuerpos rozan ese borde por diseño. La escena decide el lado y lo publica
-  en `data-side`; aquí solo se obedece.
+  El nombre apunta hacia FUERA del sistema: los destinos de la mitad izquierda lo
+  llevan a su izquierda y los de la derecha a su derecha, de modo que el texto se
+  abre en abanico desde Gargantúa en vez de apilarse encima. La escena decide el
+  lado por geometría, la capa del DOM lo pliega si no cabe, y aquí sólo se
+  obedece lo que llega en `data-side`.
 */
 .system-map__slot[data-side="left"] .system-map__body {
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 0.45rem 0.45rem 0.45rem 0.7rem;
 }
 
 .system-map__slot[data-side="left"] .system-map__marker {
@@ -2572,7 +2666,6 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
 
 .system-map__slot[data-side="left"] .system-map__label {
   order: 1;
-  justify-items: end;
   text-align: right;
 }
 
@@ -2846,13 +2939,29 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     transform: none;
   }
 
+  /*
+    Aquí la lista SÍ es una lista, y una lista sí quiere sus tarjetas: el
+    argumento contra la píldora era que flotaba sobre la escena tapándola, y en
+    este ancho no flota sobre nada. El borde se declara entero —anchura incluida—
+    porque el enlace ya no la trae de base: en escritorio no dibuja nada.
+  */
   .system-map__body {
-    border-color: var(--space-line);
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--space-line);
     border-radius: var(--radius-md);
     background: rgba(4, 6, 12, 0.66);
+    transition:
+      border-color 220ms var(--ease-orbit),
+      background 220ms var(--ease-orbit);
   }
 
-  /* En la lista al pie no hay cuerpo debajo al que anclarse: la píldora vuelve
+  .system-map__body:hover,
+  .system-map__body:focus-visible {
+    border-color: color-mix(in srgb, var(--world-accent) 45%, transparent);
+    background: rgba(8, 12, 22, 0.8);
+  }
+
+  /* En la lista al pie no hay cuerpo debajo al que anclarse: la tarjeta vuelve
      al flujo y el anclaje de escritorio se deshace entero. */
   html[data-scene-live="true"] .system-map__body,
   html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body{
@@ -2862,21 +2971,62 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     transform: none;
   }
 
-  html[data-scene-live="true"] .system-map__body:hover,
-  html[data-scene-live="true"] .system-map__body:focus-visible,
-  html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:hover,
-  html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__body:focus-visible{
-    transform: translateY(-2px);
+  /*
+    Y el desanclaje tiene que alcanzar TAMBIÉN a las reglas por lado, que son más
+    específicas que la de arriba y por tanto sobrevivían a ella. Descolgaban cada
+    tarjeta de la lista el radio aparente de su cuerpo —unos 6 px a un lado o a
+    otro, distinto por fila y cambiante con la órbita— y el resultado era una
+    columna con los bordes izquierdos desalineados que además se movían solos.
+  */
+  html[data-scene-live="true"] .system-map__slot[data-side="left"] .system-map__body,
+  html[data-scene-live="true"] .system-map__slot[data-side="right"] .system-map__body{
+    inset: auto;
   }
 
+  /*
+    Y el marcador vuelve. En escritorio se retira porque detrás de cada nombre
+    hay un cuerpo iluminado que hace ese trabajo mejor; aquí detrás no hay nada,
+    así que sin él los siete destinos serían siete palabras sueltas en una caja.
+  */
   .system-map__marker,
   html[data-scene-live="true"] .system-map__marker{
+    display: block;
     width: 1.4rem;
     height: 1.4rem;
   }
 
-  html[data-scene-live="true"] .system-map__marker::after{
-    opacity: 1;
+  /* El trazo bajo el nombre es un gesto de la escena: en la lista sobra, porque
+     el estado ya lo lleva la tarjeta entera. */
+  .system-map__label::after {
+    content: none;
+  }
+
+  /*
+    Y el lado que publica la escena deja de significar nada.
+
+    `data-side` sigue escribiéndose aquí —la escena no sabe que abajo el mapa es
+    una lista— y sus reglas de escritorio invertían la fila entera: los destinos
+    que en ese momento estuvieran en la mitad izquierda del cuadro salían con el
+    texto a la derecha y el marcador detrás. En una columna apilada eso se lee
+    como filas desalineadas al azar. Todas se alinean igual.
+  */
+  .system-map__slot[data-side="left"] .system-map__body {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .system-map__slot[data-side="left"] .system-map__marker {
+    order: 0;
+  }
+
+  .system-map__slot[data-side="left"] .system-map__label {
+    order: 0;
+    text-align: left;
+  }
+
+  .system-map__slot[data-side="left"] .system-map__cosmic {
+    right: auto;
+    left: 0;
+    text-align: left;
   }
 
   .system-home {
@@ -2957,10 +3107,12 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   }
 
   .system-map__body {
-    grid-template-columns: 4.5rem minmax(0, 1fr);
+    /* `auto`, no `4.5rem`: esa medida era el hueco del glifo grande que la lista
+       ya no dibuja, y con el marcador de 1.4rem dejaba tres centímetros de vacío
+       delante de cada nombre. */
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 1.1rem;
-    border-color: var(--space-line);
     background: rgba(9, 13, 25, 0.62);
     text-align: left;
   }
