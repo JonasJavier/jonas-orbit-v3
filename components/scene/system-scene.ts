@@ -160,7 +160,7 @@ const PARALLAX_TAU = 0.32;
  * así que hace falta bastante menos aire para que quepa. Y cada rs de margen se
  * paga en distancia de cámara, o sea en tamaño de Gargantúa.
  */
-const FRAME_MARGIN = 3;
+const FRAME_MARGIN = 2.5;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -508,7 +508,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       lowest = Math.min(lowest, diskScratch.y);
     }
     // De NDC a píxeles CSS, y un respiro por debajo del borde del disco.
-    centreLabelDrop = ((centreY - lowest) / 2) * cssHeight + 16;
+    centreLabelDrop = ((centreY - lowest) / 2) * cssHeight + 6;
   }
 
   function orientCamera(aspect: number) {

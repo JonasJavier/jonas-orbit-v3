@@ -2526,9 +2526,9 @@ html[data-scene-live="true"] .system-map__marker{
   position: relative;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 400;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.2em;
   line-height: 1.1;
   /*
     En reposo el nombre está APAGADO, no ausente.
@@ -2538,8 +2538,12 @@ html[data-scene-live="true"] .system-map__marker{
     escena, que es el orden correcto: primero el sistema, después sus nombres.
     Al apuntar uno, ese sube a 1 y los demás se quedan donde están — el contraste
     entre el activo y el resto hace más por señalarlo que cualquier caja.
+
+    El tamaño subió de 0.62rem a 0.72rem y el tracking de 0.16em a 0.2em: a la
+    medida anterior había que acercarse a la pantalla para leer «CREATIVIDAD».
+    Un rótulo que no se lee de un vistazo no es discreción, es un fallo.
   */
-  opacity: 0.66;
+  opacity: 0.78;
   /* Doble sombra: la ancha lo despega del disco brillante cuando pasa por
      delante, la corta le da filo sobre el cielo negro. */
   text-shadow:
@@ -2647,6 +2651,29 @@ html[data-scene-live="true"] .system-map__marker{
   text-shadow:
     0 0 1.4rem rgba(0, 0, 0, 0.95),
     0 0 0.9rem color-mix(in srgb, var(--world-accent) 40%, transparent);
+}
+
+/*
+  Gargantúa se identifica, no se rotula.
+
+  Su nombre es el único que no cuelga al lado de un cuerpo pequeño: cae bajo un
+  disco incandescente que ocupa un tercio del cuadro. Con el mismo peso que los
+  otros seis se quedaba flotando en mitad del vacío, debajo del agujero negro y
+  sin nada que lo sujetara — un pie de foto perdido.
+
+  Aquí baja de tamaño y de opacidad hasta leerse como una identificación de
+  instrumento: la marca de que ese cuerpo también es un destino, no un rótulo
+  compitiendo con él. Al apuntarlo se enciende como todos los demás.
+*/
+html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__label {
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  opacity: 0.44;
+}
+
+.system-map__body:hover .system-map__label,
+.system-map__body:focus-visible .system-map__label {
+  opacity: 1;
 }
 
 /*
@@ -2919,6 +2946,19 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     overflow: auto;
   }
 
+  /*
+    Y la escena pasa a ser telón DE VERDAD.
+
+    Aquí el mapa deja de estar anclado a los cuerpos y se convierte en una lista,
+    pero el canvas seguía pintando a plena intensidad por detrás: las tarjetas
+    semitransparentes caían justo encima de un agujero negro y sus seis órbitas,
+    y el resultado era ilegible por los dos lados. Si la escena ya no es el
+    índice, tiene que comportarse como fondo.
+  */
+  html[data-scene-live="true"] .system-canvas {
+    opacity: 0.4;
+  }
+
   .system-map {
     position: static;
     margin-top: 2rem;
@@ -2949,7 +2989,7 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     padding: 0.85rem 1rem;
     border: 1px solid var(--space-line);
     border-radius: var(--radius-md);
-    background: rgba(4, 6, 12, 0.66);
+    background: rgba(4, 6, 12, 0.88);
     transition:
       border-color 220ms var(--ease-orbit),
       background 220ms var(--ease-orbit);
@@ -2999,6 +3039,17 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
      el estado ya lo lleva la tarjeta entera. */
   .system-map__label::after {
     content: none;
+  }
+
+  /*
+     Y Gargantúa vuelve a pesar lo mismo que el resto. Su rótulo se atenúa en
+     escritorio porque cae sobre un disco incandescente; aquí cae sobre una
+     tarjeta como los otros seis, y atenuarlo solo lo haría parecer desactivado.
+  */
+  html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__label {
+    font-size: inherit;
+    letter-spacing: 0.2em;
+    opacity: 0.78;
   }
 
   /*
@@ -3095,10 +3146,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     min-height: 0;
   }
 
-  .system-map__field::before {
-    display: none;
-  }
-
   .system-map__slot,
   .system-map__slot[data-centre="true"] {
     position: static;
@@ -3115,14 +3162,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     gap: 1.1rem;
     background: rgba(9, 13, 25, 0.62);
     text-align: left;
-  }
-
-  .system-map__slot .world-glyph {
-    width: 4.5rem;
-  }
-
-  .system-map__label {
-    justify-items: start;
   }
 
   .world-page__neighbours {

@@ -186,7 +186,7 @@ const GLOW_FRAGMENT = /* glsl */ `
     float breath = 1.0 + uPulse * 0.14 * sin(uTime * 0.42 + uSize * 9.0);
 
     vec3 colour = mix(uAccent, uSecondary, 0.28);
-    float energy = (wide * 0.42 + tight * 0.85 + spikes * 0.5) * breath;
+    float energy = (wide * 0.24 + tight * 0.46 + spikes * 0.26) * breath;
     energy *= 1.0 + uFocus * 1.6;
 
     gl_FragColor = vec4(colour * energy, 1.0);
@@ -274,14 +274,28 @@ const ORBIT_FRAGMENT = /* glsl */ `
     */
     float here = length(vWorld - uCamPos);
     float depth = clamp((here - length(uCamPos)) / max(uOrbitRadius, 1.0) * 0.5 + 0.5, 0.0, 1.0);
-    float fade = mix(1.0, 0.20, depth);
+    float fade = mix(1.0, 0.12, depth);
 
-    /* Los dos números que gobiernan la traza: reposo y foco. */
-    float energy = mix(0.085, 0.50, uFocus) * fade * edge;
+    /*
+      En reposo la traza es CASI GRIS, y esa es la corrección que más cambia la
+      escena.
+
+      Con las seis elipses a pleno color —ámbar, cian, violeta, naranja— lo
+      primero que leía el ojo no era el agujero negro: era una maraña de líneas
+      cruzándose. Seis trazas saturadas no dibujan un sistema, dibujan un
+      ESQUEMA. El color es información de estado, así que se guarda para el
+      estado: en reposo la órbita es una cuerda de acero apenas visible, y sólo
+      recupera el color de su mundo la que estás apuntando. El salto de reposo a
+      foco es de más de diez veces, así que no hace falta ningún adorno para
+      saber cuál está activa.
+    */
+    vec3 reposo = mix(vec3(0.44, 0.50, 0.62), uAccent, 0.22);
+    vec3 tinte = mix(reposo, uAccent, uFocus);
+    float energy = mix(0.042, 0.55, uFocus) * fade * edge;
 
     /* Aditivo sobre negro: el alfa va a 1 y la energía viaja en el color, igual
        que en el halo. Con la energía también en alfa se elevaría al cuadrado. */
-    gl_FragColor = vec4(uAccent * energy, 1.0);
+    gl_FragColor = vec4(tinte * energy, 1.0);
   }
 `;
 
@@ -546,7 +560,7 @@ function geometryFor(visual: WorldStructuralData["visual"]): THREE.BufferGeometr
 function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Euler) {
   // El anillo de la Endurance va de canto respecto de su avance, como en la
   // película; la Ranger apunta con el morro por delante.
-  if (visual === "ship") return target.set(Math.PI / 2.6, 0, 0);
+  if (visual === "ship") return target.set(Math.PI / 3.6, 0, 0);
   if (visual === "beacon") return target.set(0, 0, Math.PI / 2);
   return target.set(0, 0, 0);
 }
@@ -717,7 +731,7 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
       uniforms: {
         uAccent: { value: new THREE.Color(input.accent) },
         uSecondary: { value: new THREE.Color(input.secondary) },
-        uSize: { value: input.placement.size * 2.9 },
+        uSize: { value: input.placement.size * 2.3 },
         uTime: { value: 0 },
         uFocus: { value: 0 },
         // La baliza de la Ranger late; una estación habitada apenas.
