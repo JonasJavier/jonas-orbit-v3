@@ -49,12 +49,32 @@ type WorldVisual =
  * inclinaciones distintas, cada órbita se proyecta como una elipse propia
  * alrededor de Gargantúa y los siete destinos se separan en pantalla.
  *
- * Y hay una razón dura, no estética: **ninguna inclinación puede ser casi nula.**
- * Una órbita vista de canto proyecta una elipse degenerada que pasa por el
- * centro, y ahí el cuerpo cruzaría justo por delante de la sombra — su etiqueta
- * caería sobre el agujero negro y el destino sería ilegible. Con una elipse de
- * eje menor sano, el cuerpo nunca se proyecta sobre el centro. El test de
- * `worlds.data.test.ts` lo vigila.
+ * Y hay una razón dura, no estética: **ninguna órbita puede proyectarse de
+ * canto.** Una elipse degenerada pasa por el centro del cuadro, y ahí el cuerpo
+ * cruza justo por delante de la sombra: su etiqueta cae sobre el agujero negro y
+ * el destino se vuelve ilegible.
+ *
+ * ── La inclinación sola NO basta para garantizarlo ──────────────────────────
+ *
+ * Lo que decide el achatamiento en pantalla no es `inclination`, es su SUMA con
+ * la elevación de la cámara. Con la cámara a elevación `e`, un cuerpo en
+ * `(R·cos a, −R·sin a·sin i, R·sin a·cos i)` se proyecta sobre
+ *
+ *     x ∝ R·cos a           y ∝ −R·sin(i + e)·sin a
+ *
+ * así que el semieje menor de la elipse vale **R·|sin(i + e)|**, y la distancia
+ * mínima del cuerpo al centro del cuadro es exactamente eso.
+ *
+ * De ahí salió un fallo real: con la cámara a 9° e inclinaciones NEGATIVAS de
+ * −13° y −19°, la Ranger y Cooper Station daban `i + e` de −4° y −10°. Sus
+ * elipses eran casi rectas y las dos pasaban por encima de la sombra en cada
+ * vuelta — la Ranger llegaba a 22 px del centro con la sombra midiendo 30 px de
+ * radio: literalmente por dentro. El viejo test (`|inclination| ≥ 10`) las daba
+ * por buenas porque miraba la inclinación aislada.
+ *
+ * Ahora todas las inclinaciones son POSITIVAS y se suman a la elevación en vez
+ * de restarle, y `worlds.data.test.ts` verifica el invariante de verdad:
+ * R·|sin(i + e)| ≥ 4 radios de sombra. El más justo queda en 5.1.
  */
 interface WorldPlacement {
   /** Radio orbital en rs. 0 = el centro del sistema (solo Gargantúa). */
@@ -95,28 +115,43 @@ export interface WorldStructuralData {
  * Ahora son pequeños, como se verían de verdad a decenas de radios de distancia:
  * un disco de luz con atmósfera y un borde encendido por el disco de acreción.
  * La identidad la lleva la etiqueta; el cuerpo aporta silueta y color. Y el
- * blanco de clic no depende del tamaño real — la escena le pone un suelo en
- * píxeles, así que un mundo diminuto sigue siendo pulsable con el pulgar.
+ * blanco de clic no depende del tamaño real — lo da el relleno invisible del
+ * enlace, así que un mundo diminuto sigue siendo pulsable con el pulgar.
+ *
+ * Pequeños, pero NO todos iguales. El reparto anterior iba de 1.15 a 1.9 rs:
+ * una sexta parte de diferencia entre el mayor y el menor, que en pantalla es
+ * ninguna. Seis cuerpos del mismo tamaño aparente no forman un sistema, forman
+ * una fila de puntos. Ahora van de 0.95 a 2.25 — los dos mundos habitables
+ * mandan, las estructuras son claramente menores y la Ranger es una mota con
+ * baliza. La jerarquía de tamaños es la que dice qué mirar primero.
  *
  * ── La órbita EXTERIOR es lo que decide cuánto ocupa Gargantúa ──────────────
  *
- * Las órbitas van de 21 a 37 rs, todas fuera del disco de acreción (que termina
+ * Las órbitas van de 21 a 32 rs, todas fuera del disco de acreción (que termina
  * en 17 rs), y ese rango está elegido para que los siete quepan en el encuadre
  * fijo durante TODA su vuelta. Un destino fuera de cuadro sería inalcanzable.
  *
- * Venían de 25-51. La escena calcula la distancia mínima a la que cabe el
- * cuerpo MÁS EXTERIOR, así que la Ranger a 51 rs era, ella sola, quien decidía
- * el tamaño del agujero negro en pantalla. Y sale una regla sencilla que
- * conviene tener a mano:
+ * La escena calcula la distancia mínima a la que cabe el cuerpo MÁS EXTERIOR,
+ * así que la Ranger es, ella sola, quien decide el tamaño del agujero negro en
+ * pantalla. Venían de 25-51, luego de 21-37, y ahora de 21-32.
  *
- *     cuánto ocupa el disco en pantalla ≈ (radio del disco) / (órbita exterior)
+ * ── Y el reparto de inclinaciones decide cuánto CUESTA ese encuadre ─────────
  *
- * Sólo depende del COCIENTE. Ni el campo de visión ni la distancia absoluta
- * cambian nada — al alejar la cámara encoge todo por igual. Con 51/17 ≈ 3.0 el
- * disco se quedaba en el 30 % del alto del viewport; con 37/17 ≈ 2.2 sube al
- * 45-48 %, y los cuerpos pasan de 13-22 px de radio a 24-40. Bajar más la
- * órbita exterior daría un Gargantúa aún mayor, al precio de apretar a los seis
- * contra el borde del disco.
+ * Un cuerpo pide encuadre por dos lados a la vez: por ancho necesita R, y por
+ * alto necesita R·|sin(i + e)| (ver el bloque de WorldPlacement). En un viewport
+ * apaisado el alto es el lado caro — a 16:9, un radio vertical pesa 1.67 veces
+ * más que el mismo radio horizontal.
+ *
+ * De ahí la regla que ordena la tabla: **inclinación alta por dentro, baja por
+ * fuera.** El tesseracto se empina 39° porque a 21 rs eso apenas cuesta; la
+ * Ranger se queda en 10° porque a 32 rs cada grado se paga caro. Con las seis
+ * demandas verticales igualadas en torno a 17 rs, ninguna órbita desperdicia
+ * encuadre por su cuenta y la cámara se acerca todo lo que el sistema permite.
+ *
+ * El efecto secundario es de dirección de arte y es el que más se nota: el
+ * sistema deja de ser un anillo plano de seis puntos y se convierte en un
+ * embudo — las órbitas interiores muy abiertas, las exteriores casi tumbadas
+ * sobre el plano del disco. Eso es lo que se lee como PROFUNDIDAD.
  *
  * Cambiar cualquiera de estos radios mueve la cámara. No es un número decorativo.
  */
@@ -127,7 +162,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 21, phase: 205, inclination: 27, size: 1.6 },
+    placement: { orbitRadius: 21, phase: 196, inclination: 39, size: 1.55 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -136,7 +171,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 25, phase: 260, inclination: -19, size: 1.45 },
+    placement: { orbitRadius: 23.5, phase: 248, inclination: 31, size: 1.3 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -145,7 +180,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    placement: { orbitRadius: 28, phase: 318, inclination: 15, size: 1.9 },
+    placement: { orbitRadius: 25.5, phase: 300, inclination: 25, size: 2.25 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -154,7 +189,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 31, phase: 20, inclination: -31, size: 1.75 },
+    placement: { orbitRadius: 28, phase: 350, inclination: 18, size: 1.95 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -163,7 +198,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    placement: { orbitRadius: 34, phase: 78, inclination: 23, size: 1.8 },
+    placement: { orbitRadius: 30, phase: 68, inclination: 13, size: 2.0 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -186,7 +221,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 37, phase: 142, inclination: -13, size: 1.15 },
+    placement: { orbitRadius: 32, phase: 132, inclination: 10, size: 0.95 },
     sceneName: "scene-ranger",
   },
 };

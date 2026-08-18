@@ -48,6 +48,10 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   "--map-y": `${point.y.toFixed(2)}%`,
                   "--world-accent": world.accent,
                   "--world-secondary": world.secondary,
+                  // Orden narrativo, para escalonar la aparición. Los siete
+                  // destinos no tienen por qué encenderse a la vez: hacerlo en
+                  // secuencia convierte la llegada en una puesta en marcha.
+                  "--order": world.order,
                 } as React.CSSProperties
               }
             >
@@ -64,19 +68,27 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   bloques de tres líneas flotando sobre la escena la tapaban y
                   convertían un lugar en un menú de restaurante.
                 */}
-                <span className="system-map__label">{world.shortLabel}</span>
-                {/*
-                  Al enfocar, un solo dato más: el nombre cósmico del cuerpo.
+                <span className="system-map__label">
+                  {world.shortLabel}
+                  {/*
+                    Al enfocar, un solo dato más: el nombre cósmico del cuerpo.
 
-                  Antes se abría una tarjeta con eyebrow, título largo, resumen
-                  y un «Aterrizar →». Cuatro elementos por destino, siete
-                  destinos: la escena acababa siendo el fondo de una interfaz.
-                  El rótulo ya dice a dónde vas; lo único que añade valor al
-                  apuntar es qué cuerpo estás mirando. Todo lo demás está a un
-                  clic, en su página.
-                */}
-                <span className="system-map__cosmic" aria-hidden="true">
-                  {world.cosmicName}
+                    Antes se abría una tarjeta con eyebrow, título largo, resumen
+                    y un «Aterrizar →». Cuatro elementos por destino, siete
+                    destinos: la escena acababa siendo el fondo de una interfaz.
+                    El rótulo ya dice a dónde vas; lo único que añade valor al
+                    apuntar es qué cuerpo estás mirando. Todo lo demás está a un
+                    clic, en su página.
+
+                    Va DENTRO del rótulo y fuera de flujo: así se ancla al ras de
+                    la palabra en vez de al borde del relleno invisible del
+                    enlace, que es mucho más grande. Al estar fuera de flujo no
+                    ensancha la caja y `offsetWidth` sigue midiendo sólo el
+                    nombre, que es lo que la separación necesita saber.
+                  */}
+                  <span className="system-map__cosmic" aria-hidden="true">
+                    {world.cosmicName}
+                  </span>
                 </span>
                 {/*
                   El resumen se queda en el documento pero no en pantalla: lo

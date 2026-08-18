@@ -47,6 +47,58 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  * que el sistema se lea como un sistema y no como seis esferas flotando.
  */
 
+/**
+ * Periodo orbital del cuerpo de referencia (25 rs), en segundos. El resto sale
+ * de la tercera ley de Kepler (T ∝ r^1.5), así que el sistema se mueve como un
+ * sistema: lo de dentro corre, lo de fuera se arrastra.
+ *
+ * Deliberadamente enorme. «Órbitas lentas de verdad» significa que en la visita
+ * típica un cuerpo recorre una fracción pequeña de su vuelta: la escena está
+ * viva, no agitada. Con el cinturón actual las vueltas van de 2.6 a 4.9 minutos.
+ */
+const INNER_PERIOD_S = 210;
+
+export function orbitalPeriod(placement: WorldStructuralData["placement"]): number {
+  return INNER_PERIOD_S * Math.pow(placement.orbitRadius / 25, 1.5);
+}
+
+/**
+ * Posición de un cuerpo en su órbita para un instante dado. Pura.
+ *
+ * Vive aquí y no en la escena porque ahora tiene dos consumidores: el bucle que
+ * mueve los cuerpos y el constructor de la traza orbital, que necesita muestrear
+ * la MISMA curva. Duplicar la fórmula sería garantizar que un día la traza deje
+ * de coincidir con el cuerpo que la recorre.
+ */
+export function orbitalPosition(
+  placement: WorldStructuralData["placement"],
+  seconds: number,
+  target: THREE.Vector3,
+): THREE.Vector3 {
+  const { orbitRadius, phase, inclination } = placement;
+  if (orbitRadius === 0) return target.set(0, 0, 0);
+
+  const angle =
+    (phase * Math.PI) / 180 + (seconds / orbitalPeriod(placement)) * Math.PI * 2;
+
+  // Punto en el plano de la órbita, inclinado respecto del disco.
+  //
+  // Las seis órbitas comparten línea de nodos a propósito. El primer intento
+  // giraba cada plano por su propia fase, y la trigonometría lo castigó: con
+  // node = φ, la coordenada x sale r·(cos²φ + sen²φ·cos i), que es POSITIVA
+  // para cualquier fase. Los seis cuerpos arrancaban apiñados en el mismo lado
+  // del agujero negro. Compartiendo nodo, la fase vuelve a decidir de verdad
+  // dónde está cada uno y el sistema se abre a los dos lados.
+  const inc = (inclination * Math.PI) / 180;
+  const z = Math.sin(angle) * orbitRadius;
+
+  return target.set(
+    Math.cos(angle) * orbitRadius,
+    -z * Math.sin(inc),
+    z * Math.cos(inc),
+  );
+}
+
 /** Traducción del modelo visual del contenido al índice que usa el shader. */
 const KIND: Record<WorldStructuralData["visual"], number> = {
   water: 0,
@@ -122,15 +174,114 @@ const GLOW_FRAGMENT = /* glsl */ `
       pow(max(0.0, 1.0 - abs(vQuad.x) * 1.05), 30.0) * exp(-abs(vQuad.y) * 11.0) +
       pow(max(0.0, 1.0 - abs(vQuad.y) * 1.05), 30.0) * exp(-abs(vQuad.x) * 11.0);
 
-    /* Latido lento y desincronizado por cuerpo: el sistema respira en vez de
-       parpadear a la vez. La baliza de la Ranger late más. */
-    float breath = 1.0 + uPulse * 0.28 * sin(uTime * 1.6 + uSize * 9.0);
+    /*
+      Latido lento y desincronizado por cuerpo: el sistema respira en vez de
+      parpadear a la vez. La baliza de la Ranger late más.
+
+      El periodo pasó de 3.9 s a 15 s y la profundidad se partió por dos. A 3.9 s
+      esto no era respirar, era parpadear: seis destellos por minuto en cada
+      estructura, y con cuatro estructuras el borde del cuadro no paraba quieto
+      nunca. Lo que aporta atmósfera es el latido que se nota sin poder seguirlo.
+    */
+    float breath = 1.0 + uPulse * 0.14 * sin(uTime * 0.42 + uSize * 9.0);
 
     vec3 colour = mix(uAccent, uSecondary, 0.28);
     float energy = (wide * 0.42 + tight * 0.85 + spikes * 0.5) * breath;
     energy *= 1.0 + uFocus * 1.6;
 
     gl_FragColor = vec4(colour * energy, 1.0);
+  }
+`;
+
+/**
+ * La traza de la órbita.
+ *
+ * ── Qué problema resuelve ───────────────────────────────────────────────────
+ *
+ * Dos a la vez, y por eso existe. El primero es de composición: seis cuerpos
+ * pequeños sobre un fondo negro no forman un sistema, forman una constelación
+ * arbitraria. Con su elipse debajo, cada uno pasa a estar EN un sitio — se ve de
+ * dónde viene y a dónde va, y las seis elipses anidadas son lo que dibuja la
+ * profundidad del conjunto. El segundo es de interacción: el hover necesitaba un
+ * acuse de recibo, y el que había era un aro de interfaz pegado encima del
+ * planeta. Encender su órbita dice lo mismo con el vocabulario de la escena.
+ *
+ * En reposo está casi apagada (8.5 % sobre negro): se intuye, no se lee. Al
+ * apuntar un destino su órbita sube a 50 % y ninguna otra se mueve.
+ *
+ * ── Por qué es una cinta y no una línea ─────────────────────────────────────
+ *
+ * `THREE.Line` dibuja líneas de un píxel sin antialias —el renderer va con
+ * `antialias: false` porque el post-proceso lo desactiva de todas formas— y una
+ * elipse diagonal de un píxel duro es una escalera. Se ve barata, que es justo
+ * lo contrario de lo que busca esto.
+ *
+ * Así que es una cinta de dos triángulos por muestra que SE ORIENTA HACIA LA
+ * CÁMARA en el vertex shader, y el fragment shader le da los bordes suaves. El
+ * antialias sale del degradado, no del hardware. El ancho va en unidades de
+ * mundo escaladas con la distancia de encuadre, así que mide lo mismo en
+ * pantalla en un monitor que en un móvil.
+ */
+const ORBIT_VERTEX = /* glsl */ `
+  uniform vec3 uCamPos;
+  uniform float uWidth;
+
+  attribute vec3 aTangent;
+  attribute float aSide;
+
+  varying float vSide;
+  varying vec3 vWorld;
+
+  void main() {
+    vSide = aSide;
+
+    vec3 base = (modelMatrix * vec4(position, 1.0)).xyz;
+    vec3 tangent = normalize(mat3(modelMatrix) * aTangent);
+    vWorld = base;
+
+    /* La cinta se abre en la perpendicular común a la trayectoria y a la línea
+       de visión: así siempre da la cara y nunca se ve de canto. El cruce jamás
+       degenera porque ninguna órbita pasa por la cámara — la más tumbada forma
+       27° con la línea de visión (ver el invariante de worlds.data.ts). */
+    vec3 toCam = normalize(uCamPos - base);
+    vec3 across = cross(tangent, toCam);
+    across /= max(length(across), 1e-4);
+
+    gl_Position =
+      projectionMatrix * viewMatrix * vec4(base + across * aSide * uWidth, 1.0);
+  }
+`;
+
+const ORBIT_FRAGMENT = /* glsl */ `
+  uniform vec3 uAccent;
+  uniform vec3 uCamPos;
+  uniform float uFocus;
+  uniform float uTime;
+  uniform float uOrbitRadius;
+
+  varying float vSide;
+  varying vec3 vWorld;
+
+  void main() {
+    /* Bordes suaves: aquí está todo el antialias de la traza. */
+    float edge = 1.0 - smoothstep(0.35, 1.0, abs(vSide));
+
+    /*
+      El tramo que pasa por DELANTE del agujero está más cerca de la cámara que
+      el centro del sistema; el de detrás, más lejos. Atenuar con esa diferencia
+      es lo que convierte un óvalo dibujado sobre el cristal en una elipse que
+      rodea algo: el arco cercano se lee y el lejano se disuelve en el negro.
+    */
+    float here = length(vWorld - uCamPos);
+    float depth = clamp((here - length(uCamPos)) / max(uOrbitRadius, 1.0) * 0.5 + 0.5, 0.0, 1.0);
+    float fade = mix(1.0, 0.20, depth);
+
+    /* Los dos números que gobiernan la traza: reposo y foco. */
+    float energy = mix(0.085, 0.50, uFocus) * fade * edge;
+
+    /* Aditivo sobre negro: el alfa va a 1 y la energía viaja en el color, igual
+       que en el halo. Con la energía también en alfa se elevaría al cuadrado. */
+    gl_FragColor = vec4(uAccent * energy, 1.0);
   }
 `;
 
@@ -272,7 +423,9 @@ const BODY_FRAGMENT = /* glsl */ `
       albedo = vec3(0.0);
       // Ámbar puro, no mezclado: mezclar el acento con el secundario daba un
       // blanco lavado que a este tamaño no se distinguía de una estrella.
-      emissive = uAccent * (2.6 + 0.7 * sin(uTime * 0.8));
+      // La oscilación baja de ±27 % cada 8 s a ±12 % cada 24 s: la retícula
+      // respira en vez de titilar.
+      emissive = uAccent * (2.6 + 0.30 * sin(uTime * 0.26));
       gloss = 0.0;
     } else if (uKind == 3) {
       /*
@@ -308,9 +461,12 @@ const BODY_FRAGMENT = /* glsl */ `
         Ranger: la nave pequeña. Casco mate y baliza que late, para que se
         encuentre — es el cuerpo más lejano y el más pequeño del sistema.
       */
-      float pulse = 0.5 + 0.5 * sin(uTime * 2.6);
+      // La baliza latía a 2.6 rad/s — 2.4 destellos por segundo. Eso no es una
+      // baliza de navegación, es un aviso de alarma, y era el movimiento más
+      // nervioso de toda la escena. A 0.55 rad/s da una vuelta cada 11 s.
+      float pulse = 0.5 + 0.5 * sin(uTime * 0.55);
       albedo = vec3(0.28, 0.30, 0.36);
-      emissive = uAccent * (0.35 + 1.3 * pulse) * smoothstep(0.05, 0.55, fresnel);
+      emissive = uAccent * (0.50 + 0.75 * pulse) * smoothstep(0.05, 0.55, fresnel);
       gloss = 0.65;
     }
 
@@ -395,6 +551,87 @@ function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Eu
   return target.set(0, 0, 0);
 }
 
+/**
+ * Eje del giro propio, en el espacio LOCAL de la malla.
+ *
+ * ── El bug que corrige ──────────────────────────────────────────────────────
+ *
+ * Antes había un solo eje, Y, para los seis cuerpos, y para el anillo de la
+ * Endurance eso era sencillamente el eje equivocado. `TorusGeometry` construye
+ * el aro en el plano XY barriendo el tubo alrededor de **Z**: su eje de simetría
+ * es Z, no Y. Al girarlo sobre Y, el anillo no rodaba en su plano — daba
+ * volteretas de canto, pasando de aro a línea y vuelta a aro cada media vuelta.
+ *
+ * Era literalmente uno de los «planetas se mueven raro», y el más visible de
+ * todos porque la Endurance es de los cuerpos grandes. El comentario del código
+ * decía «rueda en su plano»; el código hacía lo contrario.
+ *
+ * El resto ya estaba bien y se deja como estaba: el cilindro de Cooper Station y
+ * el cono de la Ranger tienen su eje en Y por construcción, y una esfera o una
+ * retícula giran igual sobre cualquiera.
+ */
+function spinAxis(visual: WorldStructuralData["visual"]): THREE.Vector3 {
+  return visual === "ship"
+    ? new THREE.Vector3(0, 0, 1)
+    : new THREE.Vector3(0, 1, 0);
+}
+
+/**
+ * Construye la cinta de la órbita: dos vértices por muestra, uno a cada lado.
+ *
+ * La curva se muestrea de la MISMA función que mueve el cuerpo, así que la traza
+ * no puede desalinearse de lo que traza. La tangente va como atributo porque el
+ * vertex shader la necesita para orientar la cinta hacia la cámara, y calcularla
+ * ahí obligaría a mirar los vértices vecinos.
+ */
+const ORBIT_SAMPLES = 192;
+
+function orbitGeometry(
+  placement: WorldStructuralData["placement"],
+): THREE.BufferGeometry {
+  const period = orbitalPeriod(placement);
+  const positions = new Float32Array(ORBIT_SAMPLES * 2 * 3);
+  const tangents = new Float32Array(ORBIT_SAMPLES * 2 * 3);
+  const sides = new Float32Array(ORBIT_SAMPLES * 2);
+  const indices: number[] = [];
+
+  const point = new THREE.Vector3();
+  const ahead = new THREE.Vector3();
+  const tangent = new THREE.Vector3();
+
+  for (let i = 0; i < ORBIT_SAMPLES; i++) {
+    const t = (i / ORBIT_SAMPLES) * period;
+    orbitalPosition(placement, t, point);
+    // Diferencia adelantada sobre la propia curva: exacta para lo que hace
+    // falta y sin tener que derivar la parametrización a mano.
+    orbitalPosition(placement, t + period / ORBIT_SAMPLES, ahead);
+    tangent.subVectors(ahead, point).normalize();
+
+    for (const side of [0, 1]) {
+      const v = i * 2 + side;
+      positions[v * 3] = point.x;
+      positions[v * 3 + 1] = point.y;
+      positions[v * 3 + 2] = point.z;
+      tangents[v * 3] = tangent.x;
+      tangents[v * 3 + 1] = tangent.y;
+      tangents[v * 3 + 2] = tangent.z;
+      sides[v] = side === 0 ? -1 : 1;
+    }
+
+    // Se cierra el bucle contra la muestra 0: una órbita no tiene extremos.
+    const next = ((i + 1) % ORBIT_SAMPLES) * 2;
+    const here = i * 2;
+    indices.push(here, here + 1, next, here + 1, next + 1, next);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("aTangent", new THREE.BufferAttribute(tangents, 3));
+  geometry.setAttribute("aSide", new THREE.BufferAttribute(sides, 1));
+  geometry.setIndex(indices);
+  return geometry;
+}
+
 export interface SceneBodyInput {
   id: WorldId;
   visual: WorldStructuralData["visual"];
@@ -407,6 +644,12 @@ export interface SceneBody {
   id: WorldId;
   /** Lo que se mueve por la órbita: contiene la malla y, si lo lleva, el halo. */
   object: THREE.Object3D;
+  /**
+   * La traza de la órbita. Va aparte del cuerpo y NO cuelga de él: es geometría
+   * fija en el espacio del sistema y el cuerpo la recorre. Colgarla del objeto
+   * que se mueve la habría arrastrado consigo, que es exactamente lo contrario.
+   */
+  orbit: THREE.Object3D;
   /** Todos los materiales del cuerpo. El bucle les escribe los uniformes. */
   materials: readonly THREE.ShaderMaterial[];
   placement: WorldStructuralData["placement"];
@@ -489,13 +732,43 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
     object.add(halo);
   }
 
-  // Las estructuras giran despacio; los mundos, un poco más rápido.
-  const spin = input.visual === "water" || input.visual === "desert" ? 0.055 : 0.02;
-  const axis = new THREE.Vector3(0, 1, 0);
+  // La traza de la órbita. Gargantúa no llega aquí (sale antes por `kind < 0`),
+  // así que todo lo que se construye tiene órbita que dibujar.
+  const orbitMaterial = new THREE.ShaderMaterial({
+    vertexShader: ORBIT_VERTEX,
+    fragmentShader: ORBIT_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uAccent: { value: new THREE.Color(input.accent) },
+      uCamPos: { value: new THREE.Vector3() },
+      uFocus: { value: 0 },
+      uTime: { value: 0 },
+      uOrbitRadius: { value: input.placement.orbitRadius },
+      // Lo sobrescribe la escena al encuadrar: el ancho va atado a la distancia
+      // de cámara para que la traza mida lo mismo en pantalla en cualquier
+      // viewport. Este valor solo cubre el primer fotograma.
+      uWidth: { value: 0.12 },
+    },
+  });
+  materials.push(orbitMaterial);
+  const orbit = new THREE.Mesh(orbitGeometry(input.placement), orbitMaterial);
+  // Detrás de los cuerpos: es una guía, no un objeto del sistema.
+  orbit.renderOrder = -1;
+
+  // Las estructuras giran despacio; los mundos, un poco más rápido. Los dos
+  // bajan un tercio respecto de la versión anterior: la escena pedía menos
+  // movimiento y mejor, y un mundo que completa su vuelta en tres minutos se
+  // lee como que gira sin que el giro llame la atención.
+  const spin = input.visual === "water" || input.visual === "desert" ? 0.038 : 0.014;
+  const axis = spinAxis(input.visual);
 
   return {
     id: input.id,
     object,
+    orbit,
     materials,
     placement: input.placement,
     radius: input.placement.size,
@@ -508,8 +781,10 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
 }
 
 export function disposeBody(body: SceneBody) {
-  body.object.traverse((node) => {
-    (node as Partial<THREE.Mesh>).geometry?.dispose();
-  });
+  for (const root of [body.object, body.orbit]) {
+    root.traverse((node) => {
+      (node as Partial<THREE.Mesh>).geometry?.dispose();
+    });
+  }
   for (const material of body.materials) material.dispose();
 }

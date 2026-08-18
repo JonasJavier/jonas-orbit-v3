@@ -10,7 +10,14 @@ import {
   GARGANTUA_FRAGMENT,
   GARGANTUA_VERTEX,
 } from "./gargantua-shaders";
-import { createBody, disposeBody, type SceneBody, type SceneBodyInput } from "./bodies";
+import {
+  createBody,
+  disposeBody,
+  orbitalPeriod,
+  orbitalPosition,
+  type SceneBody,
+  type SceneBodyInput,
+} from "./bodies";
 
 /**
  * El Sistema Gargantúa.
@@ -43,10 +50,9 @@ export interface ProjectedBody {
   /** Falso cuando el cuerpo cae fuera del cuadro (no debería pasar nunca). */
   visible: boolean;
   /**
-   * A qué lado del marcador va el texto. Cerca del borde derecho la etiqueta se
-   * pasa al otro lado en vez de salirse: el sistema es un ring alrededor de
-   * Gargantúa y Gargantúa vive en el tercio derecho, así que sus cuerpos rozan
-   * ese borde por diseño.
+   * A qué lado del cuerpo va su nombre. Con Gargantúa centrado la regla es que
+   * apunte hacia FUERA, de modo que el texto se abra en abanico desde el centro
+   * en vez de apilarse sobre el agujero negro.
    */
   side: "left" | "right";
 }
@@ -82,12 +88,23 @@ const TIER: Record<QualityTier, { dpr: number; steps: number; stepScale: number 
   deep: { dpr: 1.35, steps: 340, stepScale: 0.085 },
 };
 
+/*
+  El bloom se ensancha MUCHO más de lo que se sube de fuerza, y esa proporción es
+  deliberada.
+
+  Lo que hace que una fuente de luz se sienta enorme no es que su núcleo esté más
+  quemado, es hasta dónde llega su resplandor: es la diferencia entre una bombilla
+  y un incendio. Subir `strength` sí sube el pico, pero además levanta el suelo
+  dentro de la SOMBRA — y la sombra tiene que quedarse negra, porque es lo único
+  que dice que ahí hay un agujero y no una lámpara. Ensanchar el radio reparte el
+  halo hacia fuera, sobre el cielo negro, donde no hay nada que ensuciar.
+*/
 const BLOOM: Record<QualityTier, { strength: number; radius: number; scale: number }> = {
-  orbit: { strength: 0.5, radius: 0.34, scale: 0.5 },
-  deep: { strength: 0.56, radius: 0.36, scale: 0.62 },
+  orbit: { strength: 0.56, radius: 0.52, scale: 0.5 },
+  deep: { strength: 0.62, radius: 0.55, scale: 0.62 },
 };
 
-const BASE_EXPOSURE = 0.78;
+const BASE_EXPOSURE = 0.82;
 const BLOOM_THRESHOLD = 2.0;
 const TEMPORAL_BLEND = 0.18;
 
@@ -104,15 +121,14 @@ const JITTER: readonly (readonly [number, number])[] = [
 ].map(([x, y]) => [x - 0.5, y - 0.5] as const);
 
 /**
- * Periodo orbital del cuerpo más interior, en segundos. El resto sale de la
- * tercera ley de Kepler (T ∝ r^1.5), así que el sistema se mueve como un
- * sistema: lo de dentro corre, lo de fuera se arrastra.
+ * Ancho de la traza orbital, como fracción de la distancia de encuadre.
  *
- * Deliberadamente enorme. «Órbitas lentas de verdad» significa que en la visita
- * típica un cuerpo recorre una fracción pequeña de su vuelta: la escena está
- * viva, no agitada.
+ * Va atado a la distancia y no fijo en rs porque la distancia cambia con el
+ * viewport: en un móvil en vertical la cámara se va a 250 rs y una cinta de
+ * ancho constante se quedaría en medio píxel — invisible justo donde el sistema
+ * ya es más pequeño. Así mide siempre ~1.6 px de lado a lado.
  */
-const INNER_PERIOD_S = 210;
+const ORBIT_WIDTH_RATIO = 0.0012;
 
 /**
  * Paralaje máximo del puntero. §3 lo acota a 2°, y ese es el techo duro; 1.5 es
@@ -136,17 +152,15 @@ const PARALLAX_TAU = 0.32;
 /**
  * Margen alrededor del sistema al encuadrar, en rs.
  *
- * No es estético: cada cuerpo arrastra una etiqueta de un par de centenares de
- * píxeles y el encuadre solo sabe de radios. Con el margen justo, un destino
- * queda dentro pero su nombre se sale.
+ * No es estético: cada cuerpo arrastra una etiqueta y el encuadre solo sabe de
+ * radios. Con el margen justo, un destino queda dentro pero su nombre se sale.
  *
- * Pasó por 11, 6 y 9 antes de llegar aquí. Cada rs de margen cuesta distancia
- * de cámara, y con 9 el sistema se leía como un diagrama lejano. Con 5 quedan
- * entre 84 y 150 px de aire alrededor del cuerpo más exterior en los cinco
- * viewports que se comprueban, contando ya el paralaje — sitio de sobra para su
- * etiqueta. Menos que eso y el nombre empieza a chocar con el borde.
+ * Pasó por 11, 9, 6 y 5. Baja a 3 con el rediseño de la etiqueta: al quitarle la
+ * píldora y el aro, la caja de un destino pasó de unos 200×60 px a unos 110×36,
+ * así que hace falta bastante menos aire para que quepa. Y cada rs de margen se
+ * paga en distancia de cámara, o sea en tamaño de Gargantúa.
  */
-const FRAME_MARGIN = 5;
+const FRAME_MARGIN = 3;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -154,37 +168,6 @@ const FRAME_MARGIN = 5;
 const FROZEN_FRAME_MS = 250;
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
-
-/** Posición de un cuerpo en su órbita para un instante dado. Pura. */
-function orbitalPosition(
-  placement: SceneBodyInput["placement"],
-  seconds: number,
-  target: THREE.Vector3,
-): THREE.Vector3 {
-  const { orbitRadius, phase, inclination } = placement;
-  if (orbitRadius === 0) return target.set(0, 0, 0);
-
-  const innerRadius = 25;
-  const period = INNER_PERIOD_S * Math.pow(orbitRadius / innerRadius, 1.5);
-  const angle = (phase * Math.PI) / 180 + (seconds / period) * Math.PI * 2;
-
-  // Punto en el plano de la órbita, inclinado respecto del disco.
-  //
-  // Las siete órbitas comparten línea de nodos a propósito. El primer intento
-  // giraba cada plano por su propia fase, y la trigonometría lo castigó: con
-  // node = φ, la coordenada x sale r·(cos²φ + sen²φ·cos i), que es POSITIVA
-  // para cualquier fase. Los siete cuerpos arrancaban apiñados en el mismo lado
-  // del agujero negro. Compartiendo nodo, la fase vuelve a decidir de verdad
-  // dónde está cada uno y el sistema se abre a los dos lados.
-  const inc = (inclination * Math.PI) / 180;
-  const z = Math.sin(angle) * orbitRadius;
-
-  return target.set(
-    Math.cos(angle) * orbitRadius,
-    -z * Math.sin(inc),
-    z * Math.cos(inc),
-  );
-}
 
 export function createSystemScene(options: SceneOptions): SceneHandle {
   const { canvas, onProject, onFailure } = options;
@@ -290,6 +273,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     if (body) {
       bodies.push(body);
       bodyScene.add(body.object);
+      // La traza va directa a la escena, no dentro del cuerpo: es fija.
+      bodyScene.add(body.orbit);
     } else {
       centreIds.push(input.id);
       centreRadii.set(input.id, input.placement.size);
@@ -450,10 +435,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       // 48 muestras por órbita: el error de una elipse muestreada así es muy
       // inferior al margen, y esto solo corre al redimensionar.
       for (let i = 0; i < 48; i++) {
-        const seconds =
-          (i / 48) *
-          INNER_PERIOD_S *
-          Math.pow(body.placement.orbitRadius / 25, 1.5);
+        const seconds = (i / 48) * orbitalPeriod(body.placement);
         orbitalPosition(body.placement, seconds, point);
         tight = Math.max(tight, distanceFor(point, body.radius));
       }
@@ -483,7 +465,50 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    */
   function applyPose(aspect: number) {
     frameDistance = measureFrameDistance(aspect) * pose.distanceScale;
+
+    // El ancho de la traza orbital se recalcula aquí y no por fotograma: sólo
+    // depende de la distancia de encuadre, que es justo lo que se acaba de
+    // medir.
+    const orbitWidth = frameDistance * ORBIT_WIDTH_RATIO;
+    for (const body of bodies) {
+      for (const material of body.materials) {
+        if (material.uniforms.uWidth) material.uniforms.uWidth.value = orbitWidth;
+      }
+    }
+
     orientCamera(aspect);
+  }
+
+  /**
+   * Cuánto hay que bajar la etiqueta de Gargantúa para que despeje el disco, en
+   * píxeles CSS.
+   *
+   * Antes era `radio de la sombra × 3.4`: un número atado a la cosa equivocada.
+   * La sombra mide 2.6 rs y el disco llega a 17, así que el factor tenía que
+   * absorber esa diferencia a ojo — y en cuanto la elevación de la cámara subió
+   * de 9° a 17° dejó de valer, porque el disco pasó a ocupar el doble de alto y
+   * el nombre volvió a caer encima de la parte más brillante del cuadro.
+   *
+   * Aquí se MIDE: se proyecta el borde del disco con la cámara que acaba de
+   * quedar montada y se coge su punto más bajo. Cambiar la elevación, el campo
+   * de visión o el radio del disco ya no puede volver a descolocar la etiqueta.
+   */
+  let centreLabelDrop = 0;
+  const diskScratch = new THREE.Vector3();
+
+  function measureCentreLabelDrop() {
+    const centreY = diskScratch.set(0, 0, 0).project(bodyCamera).y;
+    let lowest = centreY;
+    for (let i = 0; i < 32; i++) {
+      const angle = (i / 32) * Math.PI * 2;
+      diskScratch
+        .set(Math.cos(angle) * DISK_OUTER, 0, Math.sin(angle) * DISK_OUTER)
+        .project(bodyCamera);
+      // En NDC la Y crece hacia arriba, así que lo más bajo es el mínimo.
+      lowest = Math.min(lowest, diskScratch.y);
+    }
+    // De NDC a píxeles CSS, y un respiro por debajo del borde del disco.
+    centreLabelDrop = ((centreY - lowest) / 2) * cssHeight + 16;
   }
 
   function orientCamera(aspect: number) {
@@ -538,6 +563,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
     renderer.toneMappingExposure = BASE_EXPOSURE * pose.exposure;
     bloomPass.strength = BLOOM[tier].strength * pose.bloom;
+
+    measureCentreLabelDrop();
   }
 
   let accumulated = 0;
@@ -600,10 +627,39 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    */
   const sides = new Map<WorldId, "left" | "right">();
 
+  /**
+   * A qué lado del cuerpo va su nombre.
+   *
+   * ── El bug que corrige ─────────────────────────────────────────────────────
+   *
+   * Los umbrales eran 0.56 y 0.68 del ancho: dos números heredados de cuando
+   * Gargantúa vivía en el tercio derecho del cuadro. Al centrarlo, nadie los
+   * revisó, y quedaron los dos a la derecha del centro. El resultado era que
+   * TODA la mitad izquierda del sistema —tres de los seis destinos— colgaba su
+   * nombre hacia la derecha, o sea hacia dentro, amontonando texto justo encima
+   * del agujero negro. Y un cuerpo que cruzara la banda 0.56–0.68 hacía saltar
+   * su nombre el ancho entero de la palabra de un lado al otro.
+   *
+   * La regla correcta para un sistema centrado es que **el nombre apunte hacia
+   * fuera**: los destinos de la izquierda lo llevan a su izquierda y los de la
+   * derecha a su derecha. Así el texto se abre en abanico desde el centro, nunca
+   * se apila sobre Gargantúa y el cambio de lado ocurre una sola vez por vuelta,
+   * al cruzar el eje vertical del cuadro — donde además el cuerpo está arriba o
+   * abajo del todo y el salto apenas se nota.
+   *
+   * Aquí sólo se decide el lado NATURAL, por geometría. El pliegue contra el
+   * borde de la ventana lo hace la capa del DOM, que es la única que conoce el
+   * ancho real de cada palabra: la escena sabe de posiciones, no de tipografía.
+   */
   function sideFor(id: WorldId, x: number): "left" | "right" {
-    if (x > cssWidth * 0.68) return "left";
-    if (x < cssWidth * 0.56) return "right";
-    return sides.get(id) ?? (x > cssWidth * 0.62 ? "left" : "right");
+    const previous = sides.get(id);
+    const centre = cssWidth / 2;
+    // Banda muerta alrededor del eje: dentro de ella se conserva el lado que ya
+    // tenía. Fuera, manda la posición.
+    const band = cssWidth * 0.05;
+    if (x > centre + band) return "right";
+    if (x < centre - band) return "left";
+    return previous ?? (x >= centre ? "right" : "left");
   }
 
   function project(body: {
@@ -658,21 +714,26 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
       /*
         La luz cae con la distancia al disco, que es la única fuente que hay —
-        pero MUCHO más despacio que un punto de luz.
+        pero MUCHO más despacio que un punto de luz. El disco mide 34 rs de lado
+        a lado: para un cuerpo a 30 rs no es un punto lejano, es una pared de luz
+        que le ocupa media bóveda, y con una fuente extensa la intensidad no va
+        como 1/r².
 
-        La primera versión usaba 30/r y dejaba a Edmunds y a la Ranger, los dos
-        más lejanos, tan oscuros que directamente no se veían en pantalla. Un
-        destino invisible es un enlace que no existe, así que esto no era solo
-        un problema estético.
+        Lo que cambia respecto de la versión anterior es el RECORRIDO, no la
+        forma. Con exponente 0.45 sobre el cinturón de entonces, la iluminación
+        iba de 1.46 a 1.14: un 28 % de diferencia entre el cuerpo más interior y
+        el más exterior, que en pantalla es ninguna. Seis cuerpos igual de
+        iluminados se leen como seis calcomanías pegadas al mismo cristal — era
+        la mitad de por qué el sistema no tenía profundidad.
 
-        Y la caída suave es además la correcta: el disco de acreción mide 34 rs
-        de lado a lado. Para un cuerpo a 38 rs no es un punto lejano, es una
-        pared de luz que le ocupa media bóveda. Con una fuente extensa la
-        intensidad no va como 1/r².
+        Ahora el recorrido es de 1.36 a 0.89, un factor 1.5. El interior está
+        claramente bañado por el disco y el exterior claramente en penumbra, y
+        eso es lo que ordena las capas. El suelo de 0.85 existe por lo de
+        siempre: un destino que no se ve es un enlace que no existe.
       */
       const light = Math.min(
-        1.5,
-        Math.pow(30 / Math.max(body.placement.orbitRadius, 1), 0.45) * 1.25,
+        1.45,
+        Math.max(0.85, (22 / Math.max(body.placement.orbitRadius, 1)) * 1.3),
       );
 
       // Un cuerpo lleva ahora hasta dos materiales —superficie y halo— y no
@@ -694,14 +755,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         position: position.set(0, 0, 0),
         radius: centreRadii.get(id) ?? 2.6,
       });
-      // La etiqueta de Gargantúa baja hasta despejar el DISCO, no la sombra.
-      //
-      // El primer intento usaba 1.75 veces el radio de la sombra, y se quedaba
-      // corto por un factor grande: la sombra mide 2.6 rs pero el disco llega a
-      // 17, así que la etiqueta seguía cayendo sobre la parte más brillante del
-      // cuadro y chocando con los cuerpos que cruzan por ahí. El disco visto casi
-      // de canto ocupa en vertical del orden de tres radios de sombra.
-      body.y += body.radius * 3.4;
+      // La etiqueta de Gargantúa baja hasta despejar el DISCO, no la sombra, y
+      // esa distancia está medida (ver `measureCentreLabelDrop`).
+      body.y += centreLabelDrop;
       projected.push(body);
     }
 

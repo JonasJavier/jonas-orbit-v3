@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { SYSTEM_POSE } from "@/lib/scene-poses";
 import { WORLD_IDS, worldsData } from "./worlds.data";
+
+/** Radio aparente de la sombra de Gargantúa, √27/2 rs. */
+const SHADOW = worldsData.gargantua.placement.size;
 
 describe("worlds.data (estructura canónica)", () => {
   it("define exactamente 7 mundos, todos con datos estructurales", () => {
@@ -70,6 +74,40 @@ describe("worlds.data (estructura canónica)", () => {
         Math.abs(inclination),
         `${id} tiene una órbita casi de canto`,
       ).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  it("ningún cuerpo pasa por delante de la sombra de Gargantúa", () => {
+    /*
+      Este es el invariante DE VERDAD, y el de arriba no lo garantizaba.
+
+      Lo que decide el achatamiento en pantalla no es la inclinación sola, es su
+      suma con la elevación de la cámara: el semieje menor de la elipse que
+      dibuja un cuerpo vale R·|sin(i + e)|, y esa cantidad es exactamente su
+      distancia mínima al centro del cuadro (ver la deducción en worlds.data.ts).
+
+      Con la cámara a 9° hubo dos órbitas con inclinación NEGATIVA —la Ranger a
+      −13° y Cooper Station a −19°— que daban i + e de −4° y −10°. El test
+      anterior las aprobaba porque miraba |inclination| ≥ 10 y las dos pasaban.
+      En pantalla, la Ranger cruzaba a 22 px del centro con la sombra midiendo
+      30 px de radio: por dentro. Su nombre caía sobre el agujero negro una vez
+      por vuelta y el cuerpo se perdía contra el disco.
+
+      Cuatro radios de sombra es lo que hace falta para que el cuerpo y su nombre
+      despejen el horizonte de sucesos con holgura. El más justo del reparto
+      actual —la Ranger, la más tumbada— queda en 5.2.
+    */
+    for (const id of WORLD_IDS) {
+      const { orbitRadius, inclination } = worldsData[id].placement;
+      if (orbitRadius === 0) continue;
+
+      const effective = ((inclination + SYSTEM_POSE.elevation) * Math.PI) / 180;
+      const closest = orbitRadius * Math.abs(Math.sin(effective));
+
+      expect(
+        closest / SHADOW,
+        `${id} pasa demasiado cerca del centro del cuadro`,
+      ).toBeGreaterThanOrEqual(4);
     }
   });
 

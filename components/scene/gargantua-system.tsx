@@ -355,90 +355,121 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
   /** Tamaño del TEXTO de cada etiqueta. Estable: solo cambia al redimensionar. */
   const textSizes = new Map<string, { w: number; h: number }>();
   const nudges = new Map<string, number>();
-  /** Cuerpos sin anillo de marcador: hoy solo el agujero negro. */
+  /** Cuerpos cuyo nombre va centrado bajo ellos: hoy solo el agujero negro. */
   const centres = new Set(
     [...slots].filter(([, slot]) => slot.dataset.centre === "true").map(([id]) => id),
   );
+  /** El lado con el que se quedó cada etiqueta, para la histéresis del borde. */
+  const folded = new Map<string, "left" | "right">();
 
-  /* Relleno y separación del enlace, y los topes del anillo. Tienen que
-     coincidir con el CSS: es el precio de calcular la caja en vez de medirla. */
-  const PAD_X = 18;
-  // Holgado a propósito: la caja se calcula en vez de medirse, y es preferible
-  // pasarse un par de píxeles que quedarse corto y dejar un solape.
-  const PAD_Y = 20;
-  const GAP = 11;
-  const RING_SCALE = 2.8;
-  const RING_MIN = 11;
-  const RING_MAX = 144;
-  /**
-   * Del borde de la píldora al CENTRO del aro va el relleno de ese lado más el
-   * borde: 0.45rem + 1px. Es el desplazamiento con el que el CSS clava el aro
-   * sobre el cuerpo, y aquí hace falta para saber por dónde cae la caja — la
-   * píldora ya no está centrada en el punto, cuelga hacia un lado.
-   */
-  const PILL_PAD = 8;
+  /*
+    Relleno del enlace y hueco hasta el cuerpo. Tienen que coincidir con el CSS:
+    es el precio de calcular la caja en vez de medirla en cada fotograma.
+
+    El relleno es GRANDE y es invisible. Al quitar la píldora, lo que queda a la
+    vista es una palabra de unos 60×12 px, y eso no es un blanco de pulsación:
+    las recomendaciones de accesibilidad piden 44×44. El relleno se lo da sin
+    dibujar nada — es la razón por la que se puede tener a la vez un hover
+    limpísimo y un destino que se acierta con el pulgar.
+  */
+  const PAD_X = 14;
+  // 17 y no 16: con el rótulo en 11 px de alto, deja el blanco de pulsación en
+  // 45 px y cruza el mínimo de 44×44 que piden las pautas de accesibilidad.
+  const PAD_Y = 17;
+  /** Del centro del cuerpo al borde del texto, además de su radio aparente. */
+  const LABEL_GAP = 12;
+  /** Aire mínimo entre una etiqueta y el borde de la ventana, en píxeles. */
+  const EDGE = 14;
   /** Aire entre dos etiquetas apartadas. Absorbe el error del cálculo de caja. */
-  const SEPARATION = 14;
+  const SEPARATION = 12;
+  /** Holgura que hay que recuperar para deshacer un pliegue contra el borde. */
+  const FOLD_SLACK = 28;
 
   function measureSizes() {
     for (const [id, slot] of slots) {
       const label = slot.querySelector<HTMLElement>(".system-map__label");
       textSizes.set(id, {
-        w: label?.offsetWidth ?? 90,
-        h: label?.offsetHeight ?? 16,
+        w: label?.offsetWidth ?? 70,
+        h: label?.offsetHeight ?? 14,
       });
     }
   }
 
   /**
-   * Caja de la etiqueta, CALCULADA en vez de medida.
+   * Caja de la etiqueta.
    *
-   * Medirla con `offsetWidth` habría sido más directo, pero el anillo del
-   * marcador crece con el radio aparente del cuerpo y ese radio cambia en cada
-   * fotograma. Medir una vez daba cajas obsoletas —y con ellas, solapes que la
-   * separación no veía—; medir en cada fotograma obliga al navegador a
-   * recalcular el layout sesenta veces por segundo, que es justo lo que este
-   * diseño evita. Así que se mide el texto una vez y el anillo se deduce.
+   * ── Por qué ahora es ESTABLE, y por qué eso arregla un movimiento raro ─────
+   *
+   * Antes la caja incluía el aro del marcador, cuyo diámetro salía del radio
+   * aparente del cuerpo — un número que cambia en CADA fotograma porque el
+   * cuerpo se acerca y se aleja a lo largo de su órbita. Así que el tamaño de
+   * cada caja respiraba sesenta veces por segundo, y con él respiraba la
+   * decisión de qué etiquetas se solapan. El suavizado de abajo perseguía un
+   * objetivo que nunca se estaba quieto: los nombres derivaban despacio y sin
+   * motivo aparente. Era la «deriva rara» del sistema.
+   *
+   * Sin aro, la caja es texto más relleno: constante entre redimensionados. El
+   * objetivo de la separación deja de moverse solo y el suavizado converge y se
+   * calla.
    */
-  /** Diámetro del aro, igual que `--ring` en el CSS. */
-  function ringOf(id: string, radius: number) {
-    // Gargantúa no lleva anillo: el agujero negro ya es su propio marcador, y
-    // rodearlo de un aro de 137 px lo convertía en la caja más grande del
-    // sistema — la que chocaba contra todo lo demás.
-    if (centres.has(id)) return 0;
-    return Math.min(Math.max(radius * RING_SCALE, RING_MIN), RING_MAX);
+  function boxOf(id: string) {
+    const text = textSizes.get(id) ?? { w: 70, h: 14 };
+    return { w: text.w + PAD_X * 2, h: text.h + PAD_Y * 2 };
   }
 
-  function boxOf(id: string, radius: number) {
-    const text = textSizes.get(id) ?? { w: 90, h: 16 };
-    const ring = ringOf(id, radius);
-    return {
-      w: text.w + ring + GAP + PAD_X,
-      h: Math.max(text.h, ring) + PAD_Y,
-    };
+  /** Desplazamiento del borde de la caja respecto del cuerpo. Igual que el CSS. */
+  function offsetOf(radius: number) {
+    return radius + LABEL_GAP - PAD_X;
   }
 
   /**
-   * Centro horizontal de la píldora, dado el punto del cuerpo.
+   * Lado definitivo del nombre.
    *
-   * La píldora ya no está centrada en el cuerpo: el aro lo está, y el nombre
-   * cuelga hacia un lado. Sin esto, la separación creería que dos etiquetas se
-   * pisan cuando en realidad se han apartado cada una hacia su lado — o al
-   * revés, que están libres cuando se solapan.
+   * La escena ya ha decidido el lado natural —hacia fuera del sistema— pero no
+   * conoce el ancho de las palabras. Aquí se pliega hacia dentro si por ese lado
+   * el nombre se saldría de la ventana, con histéresis para que un cuerpo que
+   * roza el borde no lo haga en fotogramas alternos.
    */
-  function centreXOf(id: string, radius: number, x: number, side: "left" | "right") {
-    if (centres.has(id)) return x;
-    const anchor = PILL_PAD + ringOf(id, radius) / 2;
-    const width = boxOf(id, radius).w;
-    return side === "left" ? x + anchor - width / 2 : x - anchor + width / 2;
+  function sideOf(
+    id: string,
+    radius: number,
+    x: number,
+    natural: "left" | "right",
+  ): "left" | "right" {
+    if (centres.has(id)) return natural;
+
+    const width = boxOf(id).w;
+    const offset = offsetOf(radius);
+    const previous = folded.get(id);
+    // Cuánto sitio hace falta a cada lado para que la caja entre entera.
+    const needsRight = x + offset + width <= window.innerWidth - EDGE;
+    const needsLeft = x - offset - width >= EDGE;
+
+    let side = natural;
+    if (side === "right" && !needsRight && needsLeft) side = "left";
+    else if (side === "left" && !needsLeft && needsRight) side = "right";
+
+    // Volver al lado natural exige recuperar holgura de sobra, no sólo la justa.
+    if (previous && previous !== side) {
+      const slackRight = x + offset + width <= window.innerWidth - EDGE - FOLD_SLACK;
+      const slackLeft = x - offset - width >= EDGE + FOLD_SLACK;
+      if (side === "right" && !slackRight) side = previous;
+      else if (side === "left" && !slackLeft) side = previous;
+    }
+
+    folded.set(id, side);
+    return side;
   }
 
-  /** Aire mínimo entre una etiqueta y el borde de la ventana, en píxeles. */
-  const EDGE = 12;
+  /** Centro horizontal de la caja, dado el punto del cuerpo y su lado. */
+  function centreXOf(id: string, radius: number, x: number, side: "left" | "right") {
+    if (centres.has(id)) return x;
+    const half = boxOf(id).w / 2;
+    const offset = offsetOf(radius);
+    return side === "left" ? x - offset - half : x + offset + half;
+  }
 
   function separate(projected: readonly ProjectedBody[]) {
-    if (textSizes.size === 0) measureSizes();
-
     // De arriba abajo: cada etiqueta empuja hacia abajo a la siguiente con la
     // que choque. Dos pasadas, porque al apartar una puede aparecer un choque
     // nuevo con la de más abajo.
@@ -447,7 +478,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
 
     for (let pass = 0; pass < 2; pass++) {
       for (const body of order) {
-        const size = boxOf(body.id, body.radius);
+        const size = boxOf(body.id);
         const centreX = centreXOf(body.id, body.radius, body.x, body.side);
         let y = placed.get(body.id)?.y ?? body.y;
 
@@ -494,7 +525,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     y: number,
     side: "left" | "right",
   ) {
-    const size = boxOf(id, radius);
+    const size = boxOf(id);
     const halfH = size.h / 2;
 
     /*
@@ -503,15 +534,24 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
       derecha del cuadro se daba por dentro cuando su nombre ya asomaba medio
       fuera, porque el texto está todo a un lado y no repartido.
     */
-    const anchor = centres.has(id) ? size.w / 2 : PILL_PAD + ringOf(id, radius) / 2;
-    const leftReach = side === "left" ? size.w - anchor : anchor;
-    const rightReach = side === "left" ? anchor : size.w - anchor;
+    const offset = offsetOf(radius);
+    const left = centres.has(id)
+      ? x - size.w / 2
+      : side === "left"
+        ? x - offset - size.w
+        : x + offset;
+    const right = left + size.w;
+
+    // Se corrige el ANCLA lo justo para que la caja entre. El pliegue de lado ya
+    // ha hecho lo que ha podido; esto es el último recurso.
+    let shift = 0;
+    if (left < EDGE) shift = EDGE - left;
+    else if (right > window.innerWidth - EDGE) {
+      shift = window.innerWidth - EDGE - right;
+    }
 
     return {
-      x: Math.min(
-        Math.max(x, leftReach + EDGE),
-        window.innerWidth - rightReach - EDGE,
-      ),
+      x: x + shift,
       y: Math.min(Math.max(y, halfH + EDGE), window.innerHeight - halfH - EDGE),
     };
   }
@@ -524,9 +564,21 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
       // coordenadas en % del servidor como si fueran píxeles: los siete
       // destinos amontonados en una esquina hasta que llegara el primer frame.
       document.documentElement.dataset.sceneLive = "true";
-      separate(projected);
+      if (textSizes.size === 0) measureSizes();
 
-      for (const body of projected) {
+      // El lado definitivo se resuelve UNA vez por fotograma y viaja a todo lo
+      // demás. Calcularlo dentro de la separación y otra vez dentro del ajuste
+      // al borde permitiría que los dos discreparan durante un fotograma, y esa
+      // discrepancia se ve: la etiqueta se coloca contra un lado y se dibuja
+      // contra el otro.
+      const resolved = projected.map((body) => ({
+        ...body,
+        side: sideOf(body.id, body.radius, body.x, body.side),
+      }));
+
+      separate(resolved);
+
+      for (const body of resolved) {
         const slot = slots.get(body.id);
         if (!slot) continue;
         const nudge = nudges.get(body.id) ?? 0;
