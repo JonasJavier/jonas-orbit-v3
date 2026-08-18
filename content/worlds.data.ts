@@ -127,7 +127,7 @@ export interface WorldStructuralData {
  *
  * ── La órbita EXTERIOR es lo que decide cuánto ocupa Gargantúa ──────────────
  *
- * Las órbitas van de 21 a 32 rs, todas fuera del disco de acreción (que termina
+ * Las órbitas van de 21 a 30 rs, todas fuera del disco de acreción (que termina
  * en 17 rs), y ese rango está elegido para que los siete quepan en el encuadre
  * fijo durante TODA su vuelta. Un destino fuera de cuadro sería inalcanzable.
  *
@@ -171,7 +171,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 23.5, phase: 248, inclination: 31, size: 1.3 },
+    placement: { orbitRadius: 23, phase: 248, inclination: 31, size: 1.3 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -180,7 +180,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    placement: { orbitRadius: 25.5, phase: 300, inclination: 25, size: 2.25 },
+    placement: { orbitRadius: 24.5, phase: 300, inclination: 25, size: 2.25 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -189,7 +189,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 28, phase: 350, inclination: 18, size: 1.95 },
+    placement: { orbitRadius: 26.5, phase: 350, inclination: 18, size: 1.95 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -198,7 +198,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    placement: { orbitRadius: 30, phase: 68, inclination: 13, size: 2.0 },
+    placement: { orbitRadius: 28.5, phase: 68, inclination: 13, size: 2.0 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -221,7 +221,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 32, phase: 132, inclination: 10, size: 0.95 },
+    placement: { orbitRadius: 30, phase: 132, inclination: 10, size: 0.95 },
     sceneName: "scene-ranger",
   },
 };
