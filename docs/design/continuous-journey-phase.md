@@ -62,8 +62,12 @@ compitiendo, que es exactamente el problema que este diseño evita.
 
 El HUD expone `SYSTEM MAP ↑`, que conceptualmente hace `scrollTo("#system-map")`.
 La cámara se retira, los otros mundos reaparecen y Gargantúa vuelve al centro —
-todo como consecuencia del scroll, no como una animación aparte. El nombre de
-Jonás funciona además como afordancia de inicio.
+todo como consecuencia del scroll, no como una animación aparte. La marca mínima
+`JONAS ORBIT` funciona además como afordancia de inicio.
+
+En la arquitectura actual, todavía basada en rutas, volver al mapa es una
+navegación convencional a `/es`. No se implementa ahora una animación de retorno
+ni se anticipa el store futuro.
 
 ## 5. Prohibido el secuestro del scroll
 
@@ -78,7 +82,7 @@ animación para poder seguir.
 
 | Momento | Lectura |
 |---|---|
-| Hero | `ENDURANCE // NAVEGACIÓN` · `SYSTEM MAP` |
+| Hero | `ENDURANCE // NAVEGACIÓN` · `SYSTEM MAP ↑` |
 | En tránsito | `ENDURANCE // TRÁNSITO` · `DESTINO // MILLER` |
 | Dentro de un mundo | `MUNDO ACTUAL` · `03 // MILLER` |
 | Salida | `PARTIDA` · `SIGUIENTE // ENDURANCE` |
@@ -87,13 +91,15 @@ animación para poder seguir.
 
 El hero **ya está preparado**: no conoce rutas. Llama a `navigateToWorld(worldId)`
 (`lib/world-navigation.ts`), que hoy resuelve a `router.push(href)` y mañana
-resolverá a `scrollTo(ancla)`. El raíl, los rótulos y el NAV TARGET no cambian.
+resolverá a `scrollTo(ancla)`. Toda activación —raíl, eco visual o target— pasa
+por esa misma costura. El raíl conserva su `href` real como fallback; los rótulos,
+brackets y TARGET no cambian.
 
 ## 8. Criterios de aceptación de ESA fase
 
 Viaje continuo · siete mundos anclados · scroll como fuente primaria · cámara y
 HUD sincronizados con el progreso · seleccionar un planeta desplaza al destino ·
-los casos conservan ruta propia · `SYSTEM MAP` devuelve al hero · scroll natural
+los casos conservan ruta propia · `SYSTEM MAP ↑` devuelve al hero · scroll natural
 sin secuestro · teclado · paridad con movimiento reducido · comportamiento móvil
 propio.
 

@@ -364,14 +364,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   color: var(--amber);
 }
 
-.hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.8rem;
-  margin-top: 2rem;
-}
-
 .button {
   display: inline-flex;
   min-height: 3.25rem;
@@ -2119,11 +2111,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
     display: none;
   }
 
-  .hero__actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .button {
     width: 100%;
   }
@@ -2802,115 +2789,7 @@ html[data-scene-live="true"] .site-starfield{
   display: none;
 }
 
-/* ── El texto, reducido a instrumentación ───────────────────────────────────
-   Solo se ve el nombre y tres enlaces del tamaño de una lectura de panel. El
-   rol y la propuesta siguen en el HTML, invisibles: la regla 7 pide que estén
-   en el documento, no que ocupen media pantalla. */
-
-.hero {
-  /*
-    El bloque de identidad baja para dejar respirar la franja del HUD.
-
-    Con la franja superior a 1.55rem y el nombre a 2.5rem, «ENDURANCE //
-    NAVEGACIÓN» y «JONÁS JAVIER ENCARNACIÓN» quedaban pegados y se leían como
-    un solo bloque de texto confuso. Son dos voces distintas —la nave y la
-    persona— y necesitan separarse para que se entienda que lo son.
-  */
-  position: absolute;
-  top: clamp(5.5rem, 12vh, 8rem);
-  left: 3.4rem;
-  z-index: 3;
-  display: grid;
-  gap: 1.1rem;
-  justify-items: start;
-  max-width: 22rem;
-}
-
-
-.hero h1 {
-  margin: 0;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 400;
-  letter-spacing: 0.3em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-/*
-  Rol y propuesta: dos escalones por debajo del nombre y sin caja ninguna. El
-  bloque entero mide menos de 20 rem de ancho — informa en dos segundos y
-  devuelve la pantalla a Gargantúa.
-*/
-.hero__role {
-  margin: -0.35rem 0 0;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.18em;
-  line-height: 1.7;
-  text-transform: uppercase;
-}
-
-.hero__role-break {
-  display: block;
-}
-
-.hero__pitch {
-  max-width: 19rem;
-  margin: -0.4rem 0 0;
-  color: var(--ink-soft);
-  font-family: var(--font-display, inherit);
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-
-.hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.4rem;
-}
-
-.hero__action {
-  position: relative;
-  padding-bottom: 0.3rem;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: color 200ms var(--ease-orbit);
-}
-
-.hero__action::after {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 1px;
-  content: "";
-  background: var(--amber);
-  transition: width 240ms var(--ease-orbit);
-}
-
-.hero__action:hover,
-.hero__action:focus-visible {
-  color: var(--ink);
-}
-
-.hero__action:hover::after,
-.hero__action:focus-visible::after {
-  width: 100%;
-}
-
-/*
-  Presente en el documento, ausente de la pantalla. Es lo que permite cumplir la
-  regla 7 —rol y propuesta en el HTML servido— sin llenar de texto una home que
-  quiere ser un sitio, no un folleto.
-*/
+/* Presente en el documento, ausente del plano visual del System Map. */
 .visually-hidden {
   position: absolute;
   overflow: hidden;
@@ -2978,8 +2857,8 @@ html[data-scene-live="true"] .site-starfield{
 .space-backdrop__gargantua {
   position: absolute;
   top: 50%;
-  right: 6%;
-  width: min(52vw, 46rem);
+  left: 50%;
+  width: min(60vw, 54rem);
   aspect-ratio: 1;
   border-radius: 50%;
   /* Las capas se pintan de arriba abajo: la sombra tapa al disco, y por eso el
@@ -3021,7 +2900,7 @@ html[data-scene-live="true"] .site-starfield{
     );
   filter: blur(0.5px);
   opacity: 0;
-  transform: translateY(-50%) rotate(-6deg);
+  transform: translate(-50%, -50%) rotate(-6deg);
   transition: opacity 900ms var(--ease-orbit);
 }
 
@@ -3566,5 +3445,462 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   /* La escena se queda de telón: el índice ya no está anclado a ella. */
   html[data-scene-live="true"] .system-canvas {
     opacity: 0.55;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   System Map — art-direction pass 2026-08-29
+   Esta capa es la definición vigente del Hero: menos texto permanente, una
+   sola paleta de navegación y respuesta de target compartida por mundo/raíl.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.system-map,
+.hud {
+  --nav-accent: var(--cyan);
+  --world-accent: var(--cyan);
+}
+
+/* En el fallback no hay un aro permanente por destino: una cruz de
+   calibración y un punto bastan para conservar el blanco espacial. */
+.system-map__marker {
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(var(--nav-accent), var(--nav-accent)) center top / 1px 0.2rem
+      no-repeat,
+    linear-gradient(var(--nav-accent), var(--nav-accent)) center bottom / 1px
+      0.2rem no-repeat,
+    linear-gradient(var(--nav-accent), var(--nav-accent)) left center / 0.2rem
+      1px no-repeat,
+    linear-gradient(var(--nav-accent), var(--nav-accent)) right center / 0.2rem
+      1px no-repeat;
+  opacity: 0.46;
+}
+
+.system-map__marker::after {
+  width: 0.16rem;
+  height: 0.16rem;
+  background: var(--nav-accent);
+  box-shadow: 0 0 0.5rem color-mix(in srgb, var(--nav-accent) 65%, transparent);
+}
+
+/* El raíl lleva la orientación estable incluso en el fallback plano; los
+   rótulos junto a cuerpos sólo aparecen al adquirir un objetivo. */
+.system-map__label {
+  opacity: 0;
+  transform: translateY(0.2rem);
+  transition:
+    color 180ms var(--ease-orbit),
+    opacity 180ms var(--ease-orbit),
+    transform 220ms var(--ease-orbit);
+}
+
+.system-map__slot:not([data-target-state="idle"]) .system-map__label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.system-map__name {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  font-weight: 560;
+  letter-spacing: 0.18em;
+}
+
+.system-map__role {
+  color: var(--nav-accent);
+}
+
+.system-map__slot:not([data-target-state="idle"]) .system-map__name,
+.system-map__body:hover .system-map__name {
+  color: var(--ink);
+  opacity: 1;
+}
+
+.system-map__slot:not([data-target-state="idle"]) .system-map__role {
+  max-height: 1rem;
+  margin-top: 0.2rem;
+  opacity: 0.86;
+}
+
+/* Brackets de adquisición ligados al radio real proyectado del objeto. En el
+   fallback se centran sobre la micro-marca; la escena viva los lleva al origen
+   exacto que publica el proyector 3D. */
+.system-map__target-brackets {
+  position: absolute;
+  top: 50%;
+  left: 1.65rem;
+  display: block;
+  width: clamp(
+    2rem,
+    calc(var(--map-radius, 8px) + var(--map-radius, 8px) + 1.15rem),
+    7.5rem
+  );
+  height: clamp(
+    2rem,
+    calc(var(--map-radius, 8px) + var(--map-radius, 8px) + 1.15rem),
+    7.5rem
+  );
+  color: var(--nav-accent);
+  background:
+    linear-gradient(currentColor, currentColor) left top / 0.65rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) left top / 1px 0.65rem no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 0.65rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 1px 0.65rem no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 0.65rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 1px 0.65rem no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 0.65rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 1px 0.65rem no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.78);
+  transition:
+    color 180ms var(--ease-orbit),
+    opacity 180ms var(--ease-orbit),
+    transform 240ms var(--ease-orbit);
+}
+
+html[data-scene-live="true"] .system-map__target-brackets {
+  top: 0;
+  left: 0;
+}
+
+.system-map__slot:not([data-target-state="idle"])
+  .system-map__target-brackets {
+  opacity: 0.82;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.system-map__slot[data-target-state="locked"] .system-map__target-brackets {
+  color: var(--ink);
+  opacity: 1;
+}
+
+/* HUD: jerarquía, no brillo global. */
+.hud__glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud__bracket {
+  border-color: color-mix(in srgb, var(--ink-muted) 30%, transparent);
+}
+
+.hud__reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: color-mix(in srgb, var(--ink-muted) 20%, transparent);
+  background:
+    linear-gradient(currentColor, currentColor) center top / 1px 0.28rem no-repeat,
+    linear-gradient(currentColor, currentColor) center bottom / 1px 0.28rem no-repeat,
+    linear-gradient(currentColor, currentColor) left center / 0.28rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) right center / 0.28rem 1px no-repeat;
+  transform: translate(-50%, -50%);
+}
+
+.hud__top {
+  align-items: center;
+  color: color-mix(in srgb, var(--ink-muted) 74%, transparent);
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+}
+
+.hud__system {
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.38em;
+  text-shadow: 0 0 1.5rem rgba(127, 229, 255, 0.18);
+}
+
+.hud__state {
+  color: color-mix(in srgb, var(--ink-soft) 78%, transparent);
+}
+
+.hud__status-dot {
+  display: inline-block;
+  width: 0.34rem;
+  height: 0.34rem;
+  margin-right: 0.42rem;
+  border-radius: 50%;
+  background: var(--nav-accent);
+  box-shadow: 0 0 0.6rem color-mix(in srgb, var(--nav-accent) 70%, transparent);
+}
+
+.hud__target {
+  top: 25%;
+  gap: 0.38rem;
+  width: min(19rem, 32vw);
+  max-width: none;
+}
+
+.hud__target-rule {
+  width: 4rem;
+  margin: 0.05rem 0 0.55rem;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--nav-accent) 52%, transparent)
+  );
+  opacity: 0.55;
+}
+
+.hud__target:not([data-target-state="idle"]) .hud__target-rule {
+  width: 9rem;
+  opacity: 0.88;
+}
+
+.hud__target-eyebrow {
+  color: color-mix(in srgb, var(--ink-soft) 76%, transparent);
+  font-size: 0.56rem;
+  font-weight: 580;
+  letter-spacing: 0.28em;
+}
+
+.hud__target:not([data-target-state="idle"]) .hud__target-eyebrow {
+  color: var(--nav-accent);
+}
+
+.hud__target-index {
+  color: color-mix(in srgb, var(--ink-soft) 72%, transparent);
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+}
+
+.hud__target-name {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 1.7vw, 1.65rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-shadow: 0 0 1.6rem rgba(127, 229, 255, 0.14);
+}
+
+.hud__target[data-target-state="locked"] .hud__target-name {
+  color: var(--nav-accent);
+}
+
+.hud__target-name--idle {
+  max-width: 14rem;
+  color: color-mix(in srgb, var(--ink-soft) 72%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.19em;
+  line-height: 1.45;
+}
+
+.hud__target-role {
+  color: color-mix(in srgb, var(--ink-soft) 78%, transparent);
+  font-size: 0.62rem;
+  letter-spacing: 0.26em;
+}
+
+.hud__target-action {
+  margin-top: 0.65rem;
+  color: var(--nav-accent);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hud__readout {
+  color: color-mix(in srgb, var(--ink-muted) 62%, transparent);
+}
+
+.hud__readout--action {
+  color: color-mix(in srgb, var(--ink-soft) 78%, transparent);
+}
+
+.hud__readout--action:hover,
+.hud__readout--action:focus-visible {
+  color: var(--nav-accent);
+}
+
+/* Raíl: índice + destino, sin cajas ni acentos por mundo. */
+.nav-rail {
+  gap: 0.15rem;
+}
+
+.nav-rail__link {
+  position: relative;
+  grid-template-columns: 0.3rem auto;
+  grid-template-rows: auto auto auto;
+  min-height: 44px;
+  column-gap: 0.45rem;
+  padding: 0.42rem 0.62rem;
+  color: color-mix(in srgb, var(--ink-muted) 48%, transparent);
+}
+
+.nav-rail__active-marker {
+  grid-row: 1 / -1;
+  align-self: center;
+  width: 1px;
+  height: 0.75rem;
+  background: var(--nav-accent);
+  box-shadow: 0 0 0.55rem color-mix(in srgb, var(--nav-accent) 64%, transparent);
+  opacity: 0;
+  transform: scaleY(0.35);
+  transition:
+    opacity 180ms var(--ease-orbit),
+    transform 220ms var(--ease-orbit);
+}
+
+.nav-rail__index,
+.nav-rail__name,
+.nav-rail__role {
+  grid-column: 2;
+}
+
+.nav-rail__index {
+  font-size: 0.48rem;
+  letter-spacing: 0.18em;
+}
+
+.nav-rail__name {
+  font-size: 0.61rem;
+  font-weight: 580;
+  letter-spacing: 0.16em;
+}
+
+.nav-rail__role {
+  font-size: 0.43rem;
+  letter-spacing: 0.2em;
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__link,
+.nav-rail__link:hover,
+.nav-rail__link:focus-visible {
+  color: var(--ink);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__index,
+.nav-rail__link:hover .nav-rail__index,
+.nav-rail__link:focus-visible .nav-rail__index {
+  color: var(--nav-accent);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__active-marker,
+.nav-rail__link:hover .nav-rail__active-marker,
+.nav-rail__link:focus-visible .nav-rail__active-marker {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__role {
+  max-height: 1rem;
+  color: color-mix(in srgb, var(--nav-accent) 78%, var(--ink-soft));
+  opacity: 0.78;
+}
+
+.nav-rail__link:focus-visible {
+  outline: none;
+  background:
+    linear-gradient(var(--nav-accent), var(--nav-accent)) left top / 0.48rem 1px
+      no-repeat,
+    linear-gradient(var(--nav-accent), var(--nav-accent)) left top / 1px 0.48rem
+      no-repeat,
+    linear-gradient(var(--nav-accent), var(--nav-accent)) right bottom / 0.48rem
+      1px no-repeat,
+    linear-gradient(var(--nav-accent), var(--nav-accent)) right bottom / 1px
+      0.48rem no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-map__target-brackets,
+  .system-map__label,
+  .nav-rail__active-marker {
+    transition-duration: 0.01ms;
+  }
+}
+
+@media (max-width: 60rem) {
+  body:has(.system-home) {
+    overflow: hidden;
+  }
+
+  .system-home {
+    justify-content: center;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .system-map {
+    position: absolute;
+    margin-top: 0;
+  }
+
+  .hud__craft,
+  .hud__state,
+  .hud__bracket,
+  .hud__readout:not(.hud__readout--action) {
+    display: none;
+  }
+
+  .hud__system {
+    display: inline;
+    font-size: 0.62rem;
+  }
+
+  .hud__top {
+    right: 1rem;
+    left: 1rem;
+    justify-content: center;
+  }
+
+  .hud__target {
+    top: auto;
+    right: auto;
+    bottom: 5.25rem;
+    left: 1rem;
+    width: min(15rem, 66vw);
+  }
+
+  .hud__target-name {
+    font-size: 1.08rem;
+  }
+
+  .hud__target-name--idle {
+    font-size: 0.68rem;
+  }
+
+  .hud__controls {
+    display: none;
+  }
+
+  .scene-toggle {
+    display: none;
+  }
+
+  .nav-rail {
+    padding-inline: 0.55rem;
+  }
+
+  .nav-rail__link {
+    min-height: 48px;
+    padding: 0.5rem 0.7rem;
+  }
+
+  .nav-rail__role {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  html[data-scene-live="true"] .system-canvas {
+    opacity: 0.86;
+  }
+
+  .space-backdrop__gargantua {
+    top: 43%;
+    right: auto;
+    left: 50%;
+    width: 112vw;
   }
 }

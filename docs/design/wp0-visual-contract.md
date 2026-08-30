@@ -1,6 +1,11 @@
 # WP0 — contrato visual de Jonás Orbit
 
-Estado: **aprobado para implementación F1A** · 2026-08-03
+Estado histórico: **aprobado para implementación F1A** · 2026-08-03.
+
+Vigencia actual: contrato base. La dirección específica del Hero / System Map
+vive en [`hero-gargantua-direction.md`](hero-gargantua-direction.md) y manda sobre
+este documento en composición, mundos, HUD, interacción y motion; esa dirección
+permanece candidata hasta completar su validación visual.
 
 ## Dirección
 
@@ -15,7 +20,10 @@ Principios:
 2. El brillo comunica foco o estado, nunca rellena espacio.
 3. Una composición memorable por viewport, no diez efectos simultáneos.
 4. Toda estética espacial conserva semántica HTML, teclado y reduced-motion.
-5. El primer pantallazo responde quién, qué construye y dónde está la prueba.
+5. El primer pantallazo presenta el sistema, hace visibles sus destinos y ofrece
+   acceso inmediato a la prueba. La identidad profesional completa vive en el
+   HTML semántico y en las páginas de contenido, no en un bloque de perfil del
+   Hero.
 
 ## Tipografía
 
@@ -43,10 +51,14 @@ tipográfica desaparecía. Al revisarse desde Windows el fallo era invisible.
 
 - Fondo: `#03050a` / `#05070f`.
 - Texto: `#eef3ff`; secundario: `#929fba`.
-- Ámbar `#f2c879`: prueba, acción primaria y Endurance.
+- Ámbar `#f2c879`: luz de Gargantúa, prueba y activación secundaria.
 - Cian `#7fe5ff`: navegación, foco y sistemas.
-- Coral `#ff7a66`: señal semántica; no comparte color con Ranger.
+- Coral `#ff7a66`: señal semántica o error real; no es decoración del HUD.
 - Cada mundo hereda `accent` y `secondary` desde `worlds.data.ts`.
+
+El HUD usa blanco suave, cian y ámbar como un único sistema. Los acentos de los
+mundos no lo convierten en una interfaz arcoíris; el violeta queda limitado a la
+baliza de Ranger.
 
 Las superficies usan líneas al 17–32 % y brillos por debajo del 25 %. Ningún
 párrafo depende del color para comunicar significado.
@@ -63,32 +75,42 @@ párrafo depende del color para comunicar significado.
 
 | Mundo | Forma visual | Función |
 | --- | --- | --- |
-| Tesseracto | Cuadrados superpuestos y núcleo geométrico | Historia y visión |
-| Cooper Station | Cilindro/anillo inclinado | Formación modular |
+| Tesseracto | Marcos dimensionales anidados y núcleo interior | Historia y visión |
+| Cooper Station | Planeta anillado inventado + hábitat orbital pequeño | Formación modular |
 | Miller | Esfera oceánica estratificada | Ingeniería full-stack |
-| Endurance | Anillo técnico | Archivo de proyectos |
-| Edmunds | Esfera cálida y sedimentaria | Creatividad visual |
+| Endurance | Nave radial: hub, radios, módulos y anillo parcial | Archivo de proyectos |
+| Edmunds | Mundo cálido con terreno, atmósfera y bruma | Creatividad visual |
 | Gargantúa | Núcleo negro y disco luminoso | Laboratorio |
-| Ranger | Baliza/nave vertical | Contacto y conversión |
+| Ranger | Nave metálica pequeña con baliza mínima | Contacto y conversión |
 
-Son interpretaciones gráficas originales realizadas con CSS; no copias de assets
-cinematográficos.
+Son diseños originales construidos con geometría y materiales propios; no copias
+de assets cinematográficos. Gargantúa aporta la fuente cálida compartida y una
+luz ambiente fría recupera volumen en todos los cuerpos.
 
 ## Componentes
 
 ### Navegación
 
-- Cabecera sticky de dos niveles: identidad/estado y mapa de siete mundos.
-- El segundo nivel tiene scroll horizontal en móvil y no oculta destinos.
-- El estado activo consume el store canónico de WP4, centra el destino visible
-  en móvil y expone `aria-current="location"` sin convertir el menú en otro
-  controlador del scroll.
+- En la home, un raíl tipográfico expone siete enlaces reales en orden 01→07.
+- El raíl es el único recorrido de teclado; los rótulos junto a cuerpos son ecos
+  visuales y no duplican el árbol de accesibilidad.
+- Hover, focus y selección alimentan un único TARGET y los brackets del mismo
+  mundo.
+- Toda activación pasa por `navigateToWorld(worldId)`: hoy navega por ruta y la
+  futura fase continua podrá sustituirlo por scroll a un ancla.
+- En las páginas de mundo, la navegación actual sigue marcando la ruta con
+  `aria-current="page"` y ofrece retorno convencional a `/es`.
 
 ### Hero
 
-- Responde nombre, propuesta y prueba antes del primer scroll.
-- CTAs contractuales: “Ver proyectos”, “Trabajemos juntos” y “Descargar CV”.
-- Instrumento orbital CSS como firma visual, marcado `aria-hidden`.
+- Es System Map, navegación y exploración; no una introducción personal.
+- No muestra el bloque con nombre completo, roles y propuesta, ni lo reemplaza
+  con otra tarjeta o párrafo.
+- La marca visible se limita a `JONAS ORBIT` dentro del HUD.
+- Nombre completo, rol, CTAs y CV permanecen en el HTML semántico servido sin
+  JavaScript; el canvas sigue siendo una capa decorativa `aria-hidden`.
+- Gargantúa domina, Endurance es la segunda ancla y Cooper aporta una silueta
+  planetaria memorable.
 
 ### Tarjetas de proyecto
 
@@ -128,34 +150,34 @@ Los mensajes no dependen únicamente del color y se anuncian con `aria-live`.
 - Objetivo móvil de control: 375 px sin scroll horizontal del documento.
 - Foco cian de 2 px con offset; skip link; landmark y headings semánticos.
 - Targets primarios de al menos 44 px.
-- `prefers-reduced-motion` elimina órbitas, scans y desplazamientos sin retirar
-  contenido ni estados.
+- `prefers-reduced-motion` elimina paralaje, respiración, pulsos y adquisición sin
+  retirar contenido, focus, target ni destinos.
 - Contraste objetivo WCAG 2.2 AA; `ink-muted` no se usa para texto esencial por
   debajo de 16 px sobre fondos variables.
 
-## Movimiento permitido en WP0–WP2
+En móvil se priorizan `JONAS ORBIT`, sistema, TARGET y raíl. La instrumentación
+ambiental se oculta antes de comprimir el layout de desktop.
 
-- Órbitas CSS lentas y lineales.
-- Microelevación de tarjetas y zoom máximo de 1.8 %.
-- Línea de señal en el indicador de scroll.
-- Sin parallax, scroll listeners, canvas ni controlador de cámara: pertenecen a
-  WP4/F2B y no deben aparecer antes.
+## Movimiento del System Map
 
-## Contrato de narrativa espacial — WP4
+- Los cuerpos ocupan posiciones fijas de dirección de arte; no recorren órbitas.
+- Gargantúa mantiene el disco, los mundos pueden rotar localmente y las naves
+  derivan de forma casi imperceptible.
+- Hover/focus revela arcos breves; selected puede estabilizar una trayectoria
+  mayor. No aparece una elipse saturada de golpe.
+- El paralaje aditivo no supera 1.5° y se apaga con reduced-motion.
+- Tarjetas y páginas fuera del Hero conservan microelevación y zoom máximo de
+  1.8 % cuando no interfieren con lectura.
 
-- El scroll del documento es la única fuente de verdad. Un único `requestAnimationFrame`
-  bajo demanda calcula `worldIndex`, `worldProgress` y `globalProgress` y los
-  publica en Zustand; el canvas solo dibuja la fotografía de ese mismo estado.
-- La selección explícita usa `pushState`; el scroll usa `replaceState`. Cada
-  entrada conserva fase e índice para restaurar Atrás/Adelante sin contaminar el
-  historial ni depender de un slug como identidad estructural.
-- Los saltos re-miden y re-anclan tras materializar contenido diferido. Esto
-  evita drift en 375 px con `content-visibility: auto` y alturas intrínsecas.
-- Motion aporta entradas editoriales y el HUD; las scroll-driven animations CSS
-  son una mejora progresiva, nunca un requisito para comprender el contenido.
-- El starfield 2D es determinista, responde solo al progreso, limita DPR a 1.75
-  y se monta después de hidratación/idle. No mantiene un loop permanente.
-- `prefers-reduced-motion` veta el canvas, los desplazamientos y el scroll suave;
-  conserva los siete destinos, el fondo estático, anclas, historial y telemetría.
-- En móvil el HUD ocupa el corredor bajo la navegación sticky para no tapar CTAs,
-  canales ni campos del formulario.
+## Contrato actual de escena y rutas
+
+- `cameraPose = f(routeWorldId)`: la cámara no tiene controlador y el scroll no
+  le escribe.
+- No existen `OrbitControls`, drag, rueda ni scroll acoplado. La animación nunca
+  es dueña del router.
+- El canvas persistente es decorativo, está detrás y no sustituye HTML, enlaces,
+  headings ni contenido.
+- El nivel `flat` conserva el mismo contenido y no descarga Three.
+- La futura experiencia continua por scroll está documentada aparte en
+  [`continuous-journey-phase.md`](continuous-journey-phase.md) y permanece
+  diferida hasta que el Hero sea aprobado visualmente.

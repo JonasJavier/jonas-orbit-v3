@@ -29,6 +29,38 @@ export interface WorldDestination {
   href: string;
 }
 
+/** Estado compartido por el HUD, los cuerpos y el raíl del System Map. */
+export type WorldNavigationState = "idle" | "target" | "locked";
+
+/**
+ * La porción de un evento de enlace que decide si el Hero debe hacerse cargo.
+ *
+ * Se mantiene independiente de React para que la misma regla sirva a cualquier
+ * proxy visual futuro: clic principal simple viaja dentro de la experiencia;
+ * abrir en pestaña/ventana nueva sigue perteneciendo al navegador.
+ */
+export interface WorldNavigationActivation {
+  defaultPrevented: boolean;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+  button: number;
+}
+
+export function shouldNavigateToWorld(
+  event: WorldNavigationActivation,
+): boolean {
+  return (
+    !event.defaultPrevented &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey &&
+    event.button === 0
+  );
+}
+
 export function useWorldNavigation() {
   const router = useRouter();
 
