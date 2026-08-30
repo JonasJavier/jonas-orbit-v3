@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/hero";
 import { StructuredData } from "@/components/structured-data";
+import { SystemHud } from "@/components/system-hud";
 import { SystemMap } from "@/components/system-map";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
@@ -82,6 +83,12 @@ export default async function SystemPage({
         projectsHref={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
         contactHref={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}
       />
+      {/*
+        La instrumentación del puesto de navegación. Va antes que el mapa en el
+        DOM pero es `aria-hidden` casi entero: no aporta destinos, refleja
+        estado. Ver docs/design/endurance-navigation-interface.md.
+      */}
+      <SystemHud worlds={worlds} />
       <SystemMap worlds={worlds} />
     </main>
   );

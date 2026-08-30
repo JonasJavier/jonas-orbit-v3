@@ -1,5 +1,15 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+/*
+  El raíl navega a través de `useWorldNavigation`, la costura que aísla al Hero
+  de CÓMO se viaja a un mundo (hoy rutas, mañana scroll). Eso arrastra
+  `useRouter`, que no existe fuera del App Router: aquí se sustituye por un
+  doble. Lo que este archivo comprueba es el contrato del MARCADO, no el viaje.
+*/
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+}));
 import { getWorldNavItems } from "@/lib/worlds";
 import { SystemMap } from "./system-map";
 
@@ -28,18 +38,28 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     }
   });
 
-  it("cada destino se anuncia con una sola palabra", () => {
-    // Con la ficha contando dentro del nombre, un lector de pantalla anunciaba
-    // cada destino con cuatro frases seguidas: justo el ruido que la home se
-    // quitó de encima. El texto sigue en el documento para Googlebot.
+  it("cada destino se anuncia con su nombre cósmico y su función", () => {
+    /*
+      El nombre accesible pasó de «Desarrollo» a «Miller Desarrollo».
+
+      La etiqueta visible ahora tiene dos líneas: el nombre del cuerpo manda y
+      la función va debajo. Los dos entran en el nombre accesible, y eso es
+      deliberado por dos motivos: es más informativo que cualquiera de los dos
+      por separado, y cumple «Label in Name» (WCAG 2.5.3) — todo lo que se ve
+      forma parte de lo que se anuncia.
+
+      Lo que este test sigue vigilando es lo de antes: que el resumen NO se
+      cuele en el nombre. Con él dentro, cada destino se anunciaba con una frase
+      entera de más, que es justo el ruido del que la home se quitó de encima.
+    */
     render(<SystemMap worlds={worlds} />);
 
     for (const world of worlds) {
-      // Anclado a los extremos: `getByRole` normaliza el nombre, así que esto
-      // exige que el nombre sea EXACTAMENTE el rótulo y nada más.
-      const link = screen.getByRole("link", {
-        name: new RegExp(`^${world.shortLabel}$`),
-      });
+      const esperado = new RegExp(
+        "^" + world.cosmicName + " " + world.shortLabel + "$",
+        "i",
+      );
+      const link = screen.getByRole("link", { name: esperado });
       expect(link).toHaveAttribute("href", world.href);
     }
   });

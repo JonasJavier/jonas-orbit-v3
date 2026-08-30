@@ -1,22 +1,19 @@
 import Link from "next/link";
 
 /**
- * La capa de texto de la home, reducida al hueso.
+ * El bloque de identidad de la home.
  *
- * ── Por qué queda tan poco a la vista ───────────────────────────────────────
+ * ── Por qué vuelve a decir algo ─────────────────────────────────────────────
  *
- * La home es una experiencia inmersiva: cada palabra que no hace falta compite
- * con la escena. Aquí solo se VE el nombre y tres enlaces en tamaño de
- * instrumento — ni titular gigante, ni botones, ni navegación duplicada.
+ * La versión anterior dejaba a la vista SOLO el nombre y escondía el rol y la
+ * propuesta en texto para lectores de pantalla. Cumplía la regla 7 —el HTML
+ * servido los contenía— pero fallaba en lo humano: alguien podía quedarse diez
+ * segundos mirando un agujero negro precioso sin enterarse de a qué se dedica
+ * la persona del portafolio. Impresionar sin explicar es la mitad del trabajo.
  *
- * Pero la regla 7 del repositorio no se negocia: el HTML servido tiene que
- * contener el nombre, el rol, los dos CTAs, el CV y los siete destinos, sin
- * JavaScript. La salida no es quitar contenido, es **quitarlo de la vista sin
- * quitarlo del documento**: la frase y el rol siguen en el marcado, los lee un
- * lector de pantalla y los indexa Googlebot. Lo que desaparece es el ruido
- * visual, no la información.
- *
- * Sigue siendo el candidato a LCP: llega en el HTML, sin esperar a la escena.
+ * Ahora se ven tres cosas y ni una más: nombre, qué hace, y una frase. Siguen
+ * siendo tipografía de instrumento —mono, pequeña, muy espaciada— para que
+ * informen sin competir con Gargantúa, que es quien manda en el cuadro.
  */
 export function Hero({
   projectsHref,
@@ -29,14 +26,21 @@ export function Hero({
     <header className="hero" aria-labelledby="hero-title">
       <h1 id="hero-title" className="hero__name">
         Jonás Javier Encarnación
-        {/* Rol y propuesta: presentes para quien lee el documento, invisibles
-            para quien lo mira. */}
-        <span className="visually-hidden">
-          {" "}
-          — desarrollador full-stack y creador visual. No separo creatividad y
-          tecnología: las mantengo en la misma órbita.
-        </span>
       </h1>
+
+      {/*
+        El rol va en dos líneas cortas y no en una larga: a este tamaño y con
+        este tracking, una sola línea cruzaría medio cuadro y se convertiría en
+        un elemento de composición que compite con el sistema.
+      */}
+      <p className="hero__role">
+        Desarrollador full-stack
+        <span className="hero__role-break">Diseñador de producto digital</span>
+      </p>
+
+      <p className="hero__pitch">
+        Construyo productos digitales donde ingeniería y diseño orbitan juntos.
+      </p>
 
       <nav className="hero__actions" aria-label="Acciones principales">
         <Link className="hero__action" href={projectsHref}>

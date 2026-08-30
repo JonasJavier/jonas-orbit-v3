@@ -312,7 +312,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
       if (canvas) (canvas as HTMLElement).dataset.survivor = "sí";
     });
 
-    await systemMap(page).getByRole("link", { name: "Laboratorio" }).click();
+    await systemMap(page).getByRole("link", { name: /Laboratorio/ }).click();
     await expect(page).toHaveURL(/\/es\/laboratorio$/);
     await expect(page.getByTestId("starfield-2d")).toHaveAttribute(
       "data-survivor",
@@ -328,8 +328,19 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     for (const world of WORLDS) {
       // Primer salto desde el mapa de la home; a partir de ahí, la cabecera de
       // cada mundo. Es el recorrido real de quien navega con teclado.
-      const nav = page.url().endsWith("/es") ? systemMap(page) : missionNav(page);
-      const link = nav.getByRole("link", { name: world.label, exact: true });
+      // El mapa de la home anuncia «Miller Desarrollo» desde que la etiqueta
+      // lleva el nombre del cuerpo; la cabecera de cada mundo sigue anunciando
+      // sólo la función. Por eso el selector es exacto en una y por subcadena
+      // en el otro.
+      //
+      // Ojo con comparar locators: `systemMap(page)` devuelve uno NUEVO en cada
+      // llamada, así que `nav === systemMap(page)` es siempre falso. La rama se
+      // decide por la URL, que es el dato real.
+      const enLaHome = page.url().endsWith("/es");
+      const nav = enLaHome ? systemMap(page) : missionNav(page);
+      const link = enLaHome
+        ? nav.getByRole("link", { name: new RegExp(world.label) })
+        : nav.getByRole("link", { name: world.label, exact: true });
       for (
         let i = 0;
         i < 30 &&
@@ -429,11 +440,14 @@ test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
     // Rol y propuesta están OCULTOS a la vista pero presentes en el documento:
     // la regla 7 pide que el HTML los sirva, no que ocupen media pantalla. Por
     // eso se comprueba el contenido del <h1>, no su visibilidad.
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      /desarrollador full-stack y creador visual/,
+    // Rol y propuesta salieron del <h1> y volvieron A LA VISTA como párrafos:
+    // el HTML servido los sigue conteniendo, que es lo que la regla 7 exige,
+    // pero ahora además se leen sin lector de pantalla.
+    await expect(page.locator(".hero__role")).toContainText(
+      /Desarrollador full-stack/,
     );
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      /No separo creatividad y tecnología/,
+    await expect(page.locator(".hero__pitch")).toContainText(
+      /ingeniería y diseño orbitan juntos/,
     );
 
     await expect(
@@ -449,8 +463,13 @@ test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
     const map = page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" });
     await expect(map.getByRole("link")).toHaveCount(7);
     for (const world of WORLDS) {
+      // Se cuenta en el RAÍL, que es donde viven los siete enlaces reales. El
+      // mapa dibuja además un eco visual anclado a cada cuerpo — también un
+      // <a href> para que pulsar un planeta funcione sin JavaScript, pero
+      // `aria-hidden` y fuera del orden de tabulación, así que no duplica
+      // destinos para quien navega con lector de pantalla o teclado.
       await expect(
-        map.locator(`a[href="/es/${world.slug}"]`),
+        map.locator(`.nav-rail a[href="/es/${world.slug}"]`),
         `falta el enlace a ${world.slug}`,
       ).toHaveCount(1);
     }
@@ -519,7 +538,7 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
       "static",
     );
 
-    await systemMap(page).getByRole("link", { name: "Contacto" }).click();
+    await systemMap(page).getByRole("link", { name: /Contacto/ }).click();
     await expect(page).toHaveURL(/\/es\/contacto$/);
     await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute(
@@ -559,7 +578,7 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     );
 
     // La navegación entre mundos sigue siendo una navegación normal.
-    await systemMap(page).getByRole("link", { name: "Contacto" }).click();
+    await systemMap(page).getByRole("link", { name: /Contacto/ }).click();
     await expect(page).toHaveURL(/\/es\/contacto$/);
     await expect(
       page.getByRole("heading", { level: 1, name: "Contacto" }),

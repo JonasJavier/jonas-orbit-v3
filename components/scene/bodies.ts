@@ -58,7 +58,7 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  */
 const INNER_PERIOD_S = 210;
 
-export function orbitalPeriod(placement: WorldStructuralData["placement"]): number {
+function orbitalPeriod(placement: WorldStructuralData["placement"]): number {
   return INNER_PERIOD_S * Math.pow(placement.orbitRadius / 25, 1.5);
 }
 
@@ -274,7 +274,7 @@ const ORBIT_FRAGMENT = /* glsl */ `
     */
     float here = length(vWorld - uCamPos);
     float depth = clamp((here - length(uCamPos)) / max(uOrbitRadius, 1.0) * 0.5 + 0.5, 0.0, 1.0);
-    float fade = mix(1.0, 0.12, depth);
+    float fade = mix(1.0, 0.08, depth);
 
     /*
       En reposo la traza es CASI GRIS, y esa es la corrección que más cambia la
@@ -291,7 +291,7 @@ const ORBIT_FRAGMENT = /* glsl */ `
     */
     vec3 reposo = mix(vec3(0.44, 0.50, 0.62), uAccent, 0.22);
     vec3 tinte = mix(reposo, uAccent, uFocus);
-    float energy = mix(0.042, 0.55, uFocus) * fade * edge;
+    float energy = mix(0.026, 0.58, uFocus) * fade * edge;
 
     /* Aditivo sobre negro: el alfa va a 1 y la energía viaja en el color, igual
        que en el halo. Con la energía también en alfa se elevaría al cuadrado. */
@@ -479,9 +479,25 @@ const BODY_FRAGMENT = /* glsl */ `
       // baliza de navegación, es un aviso de alarma, y era el movimiento más
       // nervioso de toda la escena. A 0.55 rad/s da una vuelta cada 11 s.
       float pulse = 0.5 + 0.5 * sin(uTime * 0.55);
-      albedo = vec3(0.28, 0.30, 0.36);
-      emissive = uAccent * (0.50 + 0.75 * pulse) * smoothstep(0.05, 0.55, fresnel);
-      gloss = 0.65;
+
+      /*
+        Casco, no icono.
+
+        La versión anterior emitía uAccent puro sobre todo el borde, y el
+        acento de la Ranger es violeta: el resultado era una silueta violeta
+        uniforme que se leía como un pictograma de interfaz, no como una nave.
+        El resto del sistema son cascos grises iluminados por un disco ámbar, y
+        este era el único cuerpo que rompía ese idioma.
+
+        Ahora el casco se comporta como los demás —metal claro que recoge la luz
+        del disco— y el violeta queda reducido a lo que de verdad debe ser: la
+        luz de su BALIZA. La emisión se blanquea al 55 % y se concentra en el
+        filo, así que el color identifica al destino sin teñir el objeto entero.
+      */
+      albedo = vec3(0.34, 0.35, 0.40);
+      vec3 baliza = mix(vec3(1.0, 0.96, 0.92), uAccent, 0.55);
+      emissive = baliza * (0.34 + 0.62 * pulse) * smoothstep(0.25, 0.75, fresnel);
+      gloss = 0.72;
     }
 
     /*

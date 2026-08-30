@@ -193,8 +193,8 @@ float starLayer(vec3 dir, float scale, float density) {
   // ruido de sensor, no como cielo. El exponente sube a 9 para recortar las
   // gigantes blancas: estiradas por el lente eran lo que más competía con el
   // disco.
-  float magnitude = 0.20 + 1.05 * pow(h.y, 13.0);
-  return present * magnitude * exp(-d * d * 210.0);
+  float magnitude = 0.18 + 0.62 * pow(h.y, 16.0);
+  return present * magnitude * exp(-d * d * 320.0);
 }
 
 vec3 skySample(vec3 dir) {
@@ -204,9 +204,9 @@ vec3 skySample(vec3 dir) {
   // la pantalla se llena de arañazos y compite con el disco. Pocas y tenues, el
   // mismo cielo casi negro de las referencias.
   vec3 color = vec3(0.0);
-  color += starLayer(dir, 38.0, 0.042) * vec3(1.00, 0.97, 0.92) * 0.34;
-  color += starLayer(dir, 91.0, 0.032) * vec3(0.88, 0.93, 1.00) * 0.17;
-  color += starLayer(dir, 197.0, 0.024) * vec3(1.00, 0.93, 0.84) * 0.09;
+  color += starLayer(dir, 38.0, 0.030) * vec3(1.00, 0.97, 0.92) * 0.30;
+  color += starLayer(dir, 91.0, 0.040) * vec3(0.88, 0.93, 1.00) * 0.19;
+  color += starLayer(dir, 197.0, 0.038) * vec3(1.00, 0.93, 0.84) * 0.11;
 
   // Velo muy tenue. Existe para que el lente tenga algo continuo que curvar
   // además de puntos: sin él la distorsión del fondo es casi invisible.
