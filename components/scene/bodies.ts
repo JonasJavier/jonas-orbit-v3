@@ -311,7 +311,7 @@ const BODY_FRAGMENT = /* glsl */ `
       silueta, la media luna encendida y el filo de atmósfera. Todo el
       presupuesto de shader va ahí.
     */
-    float day = smoothstep(-0.16, 0.42, ndl);
+    float day = smoothstep(-0.08, 0.34, ndl);
     /* Oscurecimiento de limbo: el borde del disco iluminado cae un poco. */
     float limb = 0.55 + 0.45 * pow(max(dot(normal, view), 0.0), 0.4);
     float diffuse = day * limb;
@@ -319,11 +319,14 @@ const BODY_FRAGMENT = /* glsl */ `
 
     /* Ámbar del disco para la clave; azul tenue del fondo estelar para el
        relleno, que es lo que impide que la cara noche sea un agujero recortado. */
-    vec3 key = vec3(1.0, 0.72, 0.42) * uLightIntensity;
-    vec3 fill = vec3(0.055, 0.075, 0.14);
+    vec3 key = vec3(1.0, 0.84, 0.62) * uLightIntensity;
+    vec3 fill = vec3(0.05, 0.07, 0.135);
 
     vec3 albedo;
     float gloss = 0.0;
+    float specularPower = 42.0;
+    float specularStrength = 0.9;
+    float materialOcclusion = 1.0;
     vec3 emissive = vec3(0.0);
     /* Atmósfera: color del halo y cuánto pesa. Cero en lo que no tiene aire. */
     vec3 atmosphere = vec3(0.0);
@@ -332,14 +335,18 @@ const BODY_FRAGMENT = /* glsl */ `
 
     if (uKind == 0) {
       /* Miller: mundo oceánico. Bandas de nube sobre agua profunda. */
-      float clouds = fbm(vLocal * 3.4 + vec3(0.0, uTime * 0.02, 0.0));
-      float ocean = smoothstep(0.42, 0.62, fbm(vLocal * 2.1));
-      albedo = mix(vec3(0.02, 0.13, 0.29), vec3(0.10, 0.42, 0.58), ocean);
-      albedo = mix(albedo, vec3(0.88, 0.94, 1.0), smoothstep(0.55, 0.78, clouds) * 0.7);
-      gloss = 0.85 * (1.0 - ocean);
+      float weather = fbm(vLocal * 3.4 + vec3(0.0, uTime * 0.02, 0.0));
+      float stormBands = 0.5 + 0.5 * sin(vLocal.y * 17.0 + weather * 4.5);
+      float ocean = fbm(vLocal * 2.1);
+      float cloudCover = smoothstep(0.63, 0.82, weather * 0.72 + stormBands * 0.28);
+      albedo = mix(vec3(0.012, 0.075, 0.18), vec3(0.045, 0.25, 0.35), ocean * 0.78);
+      albedo = mix(albedo, vec3(0.55, 0.68, 0.76), cloudCover * 0.5);
+      gloss = mix(0.88, 0.16, cloudCover);
+      specularPower = 31.0;
+      specularStrength = 1.02;
       /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura. */
-      atmosphere = vec3(0.35, 0.62, 1.0);
-      atmosphereWeight = 1.0;
+      atmosphere = vec3(0.26, 0.54, 0.88);
+      atmosphereWeight = 1.1;
     } else if (uKind == 1) {
       /*
         Edmunds: cobre, relieve y una capa de polvo alta. Dos escalas de terreno
@@ -355,13 +362,13 @@ const BODY_FRAGMENT = /* glsl */ `
         fbm(vLocal * 2.65 + vec3(uTime * 0.0025, 8.0, 2.0))
       );
 
-      albedo = mix(vec3(0.20, 0.085, 0.045), vec3(0.57, 0.28, 0.13), continents);
+      albedo = mix(vec3(0.23, 0.095, 0.05), vec3(0.60, 0.30, 0.14), continents);
       albedo = mix(albedo, vec3(0.78, 0.48, 0.25), terrain * 0.58);
       albedo = mix(albedo, vec3(0.91, 0.69, 0.48), ridges * terrain * 0.22);
       albedo = mix(albedo, vec3(0.76, 0.55, 0.39), haze * 0.24);
       gloss = 0.07 + haze * 0.04;
       atmosphere = vec3(1.0, 0.61, 0.34);
-      atmosphereWeight = 0.78;
+      atmosphereWeight = 0.88;
     } else if (uKind == 2) {
       /*
         Tesseracto: no es un planeta ni una nave, es una retícula.
@@ -388,8 +395,13 @@ const BODY_FRAGMENT = /* glsl */ `
       albedo = mix(vec3(0.055, 0.10, 0.15), vec3(0.24, 0.36, 0.43), weather);
       albedo = mix(albedo, vec3(0.42, 0.49, 0.52), latitude * 0.22);
       gloss = 0.24;
+      specularPower = 34.0;
       atmosphere = vec3(0.31, 0.66, 0.78);
-      atmosphereWeight = 0.82;
+      atmosphereWeight = 0.9;
+      /* Sombra muy contenida del plano de anillos. No requiere shadow map y
+         hace que planeta y anillos pertenezcan al mismo objeto. */
+      float ringOcclusion = 1.0 - smoothstep(0.055, 0.20, abs(vLocal.y));
+      materialOcclusion = 1.0 - ringOcclusion * day * 0.28;
     } else if (uKind == 4) {
       /*
         Endurance: metal de módulos reales. La geometría ya dibuja las diez
@@ -397,9 +409,11 @@ const BODY_FRAGMENT = /* glsl */ `
       */
       float panel = panels(vLocal * 1.7, 1.35);
       float wear = fbm(vLocal * 6.0);
-      albedo = mix(vec3(0.12, 0.135, 0.16), vec3(0.40, 0.42, 0.45), panel * 0.48);
+      albedo = mix(vec3(0.145, 0.16, 0.19), vec3(0.44, 0.46, 0.50), panel * 0.5);
       albedo *= 0.86 + wear * 0.22;
       gloss = 0.66;
+      specularPower = 54.0;
+      specularStrength = 1.05;
     } else if (uKind == 5) {
       /*
         Ranger: sólo casco metálico. El violeta no toca esta rama; vive en una
@@ -408,6 +422,8 @@ const BODY_FRAGMENT = /* glsl */ `
       float plates = panels(vLocal * 2.1, 1.1);
       albedo = mix(vec3(0.16, 0.18, 0.21), vec3(0.48, 0.50, 0.53), plates * 0.42);
       gloss = 0.76;
+      specularPower = 58.0;
+      specularStrength = 1.08;
     } else if (uKind == 6) {
       /* Anillos de Cooper: pocas bandas minerales, finas y semitransparentes. */
       float ringRadius = length(vLocal.xy);
@@ -415,14 +431,15 @@ const BODY_FRAGMENT = /* glsl */ `
       float bandMask = smoothstep(0.18, 0.72, bands);
       if (bandMask < 0.08) discard;
       albedo = mix(vec3(0.15, 0.19, 0.22), vec3(0.50, 0.52, 0.50), bandMask);
-      emissive = key * abs(ndl) * bandMask * 0.07;
+      emissive = key * abs(ndl) * bandMask * 0.11;
       gloss = 0.34;
-      outputAlpha = 0.24 + bandMask * 0.48;
+      outputAlpha = 0.28 + bandMask * 0.52;
     } else if (uKind == 7) {
       /* Trusses, ejes y hábitat: el mismo metal oscuro en todo el sistema. */
       float structure = panels(vLocal * 1.35, 1.0);
-      albedo = mix(vec3(0.075, 0.09, 0.115), vec3(0.27, 0.29, 0.32), structure * 0.34);
+      albedo = mix(vec3(0.095, 0.11, 0.14), vec3(0.31, 0.33, 0.37), structure * 0.36);
       gloss = 0.58;
+      specularPower = 52.0;
     } else {
       /* Luces de navegación y núcleo del Tesseracto: geometría, no halo global. */
       float pulse = 0.94 + 0.06 * sin(uTime * 0.55);
@@ -444,13 +461,22 @@ const BODY_FRAGMENT = /* glsl */ `
       return;
     }
 
-    vec3 color = albedo * (key * diffuse + fill);
+    vec3 color = albedo * (key * diffuse * materialOcclusion + fill);
 
     /* Especular del disco: una banda estrecha, no un punto de estudio.
        Ojo con el nombre de la variable: half es palabra reservada en GLSL. */
     vec3 halfVec = normalize(toLight + view);
-    float spec = pow(max(dot(normal, halfVec), 0.0), 42.0) * gloss * day;
-    color += key * spec * 0.9;
+    float specBase = max(dot(normal, halfVec), 0.0);
+    float spec = pow(specBase, specularPower) * gloss * day * materialOcclusion;
+    color += key * spec * specularStrength;
+
+    /* Miller refleja una fuente EXTENSA: además del filo especular estrecho hay
+       una lámina de luz más ancha sobre el océano. Las nubes ya bajan el brillo,
+       así que la lectura sigue siendo agua y no una bola cromada. */
+    if (uKind == 0) {
+      float oceanSheen = pow(specBase, 11.0) * gloss * day;
+      color += mix(key, vec3(0.45, 0.68, 1.0), 0.28) * oceanSheen * 0.26;
+    }
 
     /*
       Atmósfera. Se acumula hacia el borde Y hacia la cara iluminada, que es la
@@ -459,12 +485,13 @@ const BODY_FRAGMENT = /* glsl */ `
     */
     float rim = pow(1.0 - max(dot(normal, view), 0.0), 2.2);
     float scatter = rim * smoothstep(-0.45, 0.5, ndl);
-    color += atmosphere * atmosphereWeight * scatter * uLightIntensity * 0.75;
+    color += atmosphere * atmosphereWeight * scatter * uLightIntensity * 0.9;
 
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
        cuerpo del fondo negro sin dibujarle un contorno. */
-    color += vec3(1.0, 0.72, 0.42) * fresnel * 0.13 * uLightIntensity
-      * (0.35 + 0.65 * day);
+    float warmRim = fresnel * smoothstep(-0.25, 0.42, ndl);
+    color += key * warmRim * 0.18;
+    color += fill * fresnel * 0.32;
     color += emissive;
 
     /* Foco: al enfocar un destino, su cuerpo se enciende. La cámara no se
@@ -877,6 +904,7 @@ export interface SceneBodyInput {
 
 export interface SceneBody {
   id: WorldId;
+  visual: WorldStructuralData["visual"];
   /** Raíz colocada en el sistema; contiene todas las piezas del modelo. */
   object: THREE.Object3D;
   /**
@@ -950,6 +978,7 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
 
   return {
     id: input.id,
+    visual: input.visual,
     object,
     orbit,
     materials,

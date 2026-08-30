@@ -4,8 +4,8 @@ Estado histórico: **aprobado para implementación F1A** · 2026-08-03.
 
 Vigencia actual: contrato base. La dirección específica del Hero / System Map
 vive en [`hero-gargantua-direction.md`](hero-gargantua-direction.md) y manda sobre
-este documento en composición, mundos, HUD, interacción y motion; esa dirección
-permanece candidata hasta completar su validación visual.
+este documento en composición, escala, mundos, luz, estrellas, HUD, interacción
+y motion; esa dirección permanece candidata hasta completar su validación visual.
 
 ## Dirección
 
@@ -58,7 +58,17 @@ tipográfica desaparecía. Al revisarse desde Windows el fallo era invisible.
 
 El HUD usa blanco suave, cian y ámbar como un único sistema. Los acentos de los
 mundos no lo convierten en una interfaz arcoíris; el violeta queda limitado a la
-baliza de Ranger.
+baliza de Ranger y a la capa efímera de stardust del puntero.
+
+Su contraste se reparte en cuatro niveles: `HUD_PRIMARY` (90–100 %) para marca y
+target, `HUD_SECONDARY` (60–75 %) para estado/índice/sección activos,
+`HUD_TERTIARY` (35–50 %) para navegación inactiva útil y `HUD_GHOST` (15–25 %)
+para calibración decorativa. Nunca se aclara todo a la vez.
+
+Gargantúa es la fuente cálida compartida: el disco recorre blanco caliente,
+crema y ámbar, mientras la sombra permanece negra. Un fill azul frío común
+recupera volumen y cada cuerpo calcula su rim en dirección al centro. Dark sides
+siguen oscuros; no se resuelven con exposición global o halos independientes.
 
 Las superficies usan líneas al 17–32 % y brillos por debajo del 25 %. Ningún
 párrafo depende del color para comunicar significado.
@@ -87,6 +97,10 @@ Son diseños originales construidos con geometría y materiales propios; no copi
 de assets cinematográficos. Gargantúa aporta la fuente cálida compartida y una
 luz ambiente fría recupera volumen en todos los cuerpos.
 
+La escala no es uniforme: Gargantúa domina, Endurance es la segunda ancla,
+Miller/Edmunds/Cooper forman el nivel planetario y Tesseracto/Ranger siguen
+menores. Los siete se perciben como destinos sin tener que buscarlos.
+
 ## Componentes
 
 ### Navegación
@@ -111,6 +125,29 @@ luz ambiente fría recupera volumen en todos los cuerpos.
   JavaScript; el canvas sigue siendo una capa decorativa `aria-hidden`.
 - Gargantúa domina, Endurance es la segunda ancla y Cooper aporta una silueta
   planetaria memorable.
+
+### Campo de estrellas
+
+- Tres capas batched: muchas `far` subpíxel y estáticas, algunas `mid` con
+  paralaje mínimo y casi ninguna `near` suave.
+- La densidad y luminancia bajan gradualmente junto al disco y se recuperan
+  hacia el exterior.
+- WebGL genera el fondo proceduralmente; `flat` agrupa las estrellas en un solo
+  canvas 2D. No hay miles de sprites, meshes o nodos DOM.
+- Navy, violeta y polvo cálido sólo existen como velos cerca de negro; nunca como
+  wallpaper de nebulosa.
+
+### Interacción del System Map
+
+- La navegación no usa R3F ni raycasting. Cada cuerpo publica centro y radio a
+  un proxy DOM dedicado, separado de su rótulo.
+- El proxy cubre 110–135 % de la silueta compuesta y al menos 44 px; Cooper
+  incluye sus anillos y Endurance sus módulos exteriores.
+- Los proxies son `aria-hidden` y no tabulables. El raíl conserva los únicos
+  siete enlaces accesibles.
+- `?debugHitboxes=1` sólo en desarrollo visualiza bounds sin alterarlos.
+- Desktop fine-pointer usa cursor de navegación mínimo y un canvas de stardust
+  con pool fijo/typed arrays. Touch no monta ninguno de los dos.
 
 ### Tarjetas de proyecto
 
@@ -150,13 +187,15 @@ Los mensajes no dependen únicamente del color y se anuncian con `aria-live`.
 - Objetivo móvil de control: 375 px sin scroll horizontal del documento.
 - Foco cian de 2 px con offset; skip link; landmark y headings semánticos.
 - Targets primarios de al menos 44 px.
-- `prefers-reduced-motion` elimina paralaje, respiración, pulsos y adquisición sin
-  retirar contenido, focus, target ni destinos.
+- `prefers-reduced-motion` conserva estrellas estáticas, contenido, focus,
+  target, brackets estáticos y destinos; elimina stardust, cursor animado,
+  paralaje, respiración, pulsos, adquisición y deriva del cielo.
 - Contraste objetivo WCAG 2.2 AA; `ink-muted` no se usa para texto esencial por
   debajo de 16 px sobre fondos variables.
 
 En móvil se priorizan `JONAS ORBIT`, sistema, TARGET y raíl. La instrumentación
-ambiental se oculta antes de comprimir el layout de desktop.
+ambiental se oculta antes de comprimir el layout de desktop. No hay cursor
+personalizado ni stardust en touch-only.
 
 ## Movimiento del System Map
 
@@ -166,6 +205,8 @@ ambiental se oculta antes de comprimir el layout de desktop.
 - Hover/focus revela arcos breves; selected puede estabilizar una trayectoria
   mayor. No aparece una elipse saturada de golpe.
 - El paralaje aditivo no supera 1.5° y se apaga con reduced-motion.
+- El stardust sólo nace durante pointermove fine-pointer, vive 320–680 ms y se
+  dibuja batched desde un pool fijo; no actualiza React por partícula.
 - Tarjetas y páginas fuera del Hero conservan microelevación y zoom máximo de
   1.8 % cuando no interfieren con lectura.
 
@@ -177,6 +218,8 @@ ambiental se oculta antes de comprimir el layout de desktop.
   es dueña del router.
 - El canvas persistente es decorativo, está detrás y no sustituye HTML, enlaces,
   headings ni contenido.
+- El canvas no recibe puntero. Los proxies DOM centrados reciben hit testing y
+  comparten `navigateToWorld(worldId)` con el raíl; no hay R3F/raycast.
 - El nivel `flat` conserva el mismo contenido y no descarga Three.
 - La futura experiencia continua por scroll está documentada aparte en
   [`continuous-journey-phase.md`](continuous-journey-phase.md) y permanece

@@ -1,264 +1,306 @@
 # Hero / System Map — dirección artística vigente
 
-**Estado:** candidato en iteración. Esta especificación guía la implementación y
-la revisión visual, pero no declara el Hero aprobado por el mero hecho de compilar
-o pasar tests.
+**Estado:** candidato en iteración. Esta especificación guía implementación y
+revisión visual; compilar o pasar tests no constituye aprobación artística.
 
 Manda sobre cualquier descripción anterior del Hero en
 `docs/plans/sistema-gargantua.md`, el plan principal y el contrato WP0. La
 arquitectura de rutas y cámara sigue perteneciendo al pivote; este documento
-manda en composición, mundos, HUD, interacción, luz y motion del System Map.
+manda en composición, escala, mundos, HUD, interacción, luz, estrellas y motion
+del System Map.
 
 ## 1. Propósito
 
-El Hero es tres cosas:
+El Hero es sistema espacial, navegación y exploración. No es una introducción
+personal ni una portada editorial.
 
-1. sistema espacial;
-2. navegación;
-3. exploración.
+El bloque visible con «Jonás Javier Encarnación», los dos roles y la propuesta
+desaparece por completo y no se sustituye por otro párrafo, tarjeta o panel de
+vidrio. La identidad visible es `JONAS ORBIT` en el HUD. Nombre completo, rol,
+acciones contractuales y CV permanecen en el HTML semántico servido sin
+JavaScript, pero no forman un bloque visual de perfil dentro del System Map.
 
-No es una introducción personal ni una portada editorial. El bloque visible con
-«Jonás Javier Encarnación», los dos roles y la frase de propuesta desaparece por
-completo y no se sustituye por otro párrafo, tarjeta o panel de vidrio.
+## 2. Escala y ocupación del viewport
 
-La identidad visible se reduce a `JONAS ORBIT` o `JONÁS // ORBIT` dentro del HUD.
-El nombre completo, el rol, las acciones contractuales y el CV permanecen en el
-HTML semántico servido sin JavaScript para conservar contexto, accesibilidad y
-conversión, pero no forman un bloque visual de perfil dentro del System Map.
+El primer frame debe sentirse como un viewport de navegación frente a cuerpos
+enormes, no como iconos pequeños dentro de un lienzo negro. La composición usa
+escala, profundidad y relaciones de primer plano; no llena el vacío con UI.
 
-## 2. El sistema está quieto
+| Jerarquía | Elemento | Calibración frente al mapa previo | Lectura requerida |
+|---|---|---:|---|
+| 1 | **Gargantúa** | +10–20 % si el encuadre lo permite | foco dominante y fuente de energía |
+| 2 | **Endurance** | +25–45 % | segunda ancla; nave radial reconocible |
+| 3 | **Miller, Edmunds y Cooper** | +25–40 % según silueta | destinos planetarios inmediatos |
+| 4 | **Tesseracto y Ranger** | +15–25 % | destinos menores pero localizables |
+
+Estos porcentajes son calibración visual, no un multiplicador uniforme ni una
+API. Cada modelo conserva su volumen compuesto para cámara, brackets e
+interacción. Ningún destino debe requerir búsqueda consciente y ningún lado del
+viewport queda muerto por conservar el layout del antiguo copy.
+
+Gargantúa permanece sin rótulo permanente: escala, sombra y disco ya establecen
+su identidad.
+
+## 3. El sistema está quieto, no muerto
 
 Las posiciones de los seis cuerpos alrededor de Gargantúa son constantes de
 dirección de arte. `phase` describe una posición, no una animación orbital.
 
-Permanecen vivos únicamente:
+La vida en reposo procede únicamente de:
 
-- el disco de acreción de Gargantúa;
-- la rotación local de los cuerpos cuando aporta materialidad;
-- una deriva mínima de las naves;
-- balizas pequeñas;
-- el campo de estrellas y una respiración de cámara apenas perceptibles;
-- paralaje aditivo de hasta 1.5°, apagado con reduced-motion.
+- disco de acreción de Gargantúa;
+- rotación local que aporte materialidad;
+- deriva mínima de naves y balizas pequeñas;
+- capas de estrellas con profundidad contenida;
+- respiración de cámara apenas perceptible;
+- paralaje aditivo de hasta 1.5°.
 
-La quietud permite componer, mantener etiquetas estables y usar el movimiento
-como respuesta de sistema. No se añade movimiento para llenar silencio.
-
-## 3. Jerarquía y composición
-
-| Nivel | Elemento | Lectura requerida |
-|---|---|---|
-| 1 | **Gargantúa** | foco dominante; escala, luz y contraste mayores |
-| 2 | **Endurance** | segunda ancla; nave radial reconocible en primer plano |
-| 3 | **Cooper system**, Miller y Edmunds | siluetas claras y profundidad intermedia |
-| 4 | Tesseracto y Ranger | destinos menores, legibles y deliberadamente distantes |
-
-La retirada del copy libera espacio para el universo. Ese espacio se resuelve con
-escala, profundidad y posición, no con más texto. Gargantúa puede ocupar más
-territorio; Endurance gana presencia; Cooper aporta una silueta planetaria
-memorable. Ningún objeto se agranda por igual ni se deja una mitad muerta del
-viewport por conservar el layout anterior.
-
-Gargantúa permanece sin rótulo permanente. Su escala ya establece identidad.
+Hover, focus y selected despiertan respuesta coordinada. No se añade touring,
+movimiento de órbita ni objetos volando para rellenar silencio.
 
 ## 4. Identidad de los mundos
 
 ### Gargantúa
 
-Se conserva el motor actual. Revisar brillo, contraste, detalle del disco y su
-integración lumínica, sin reiniciar la dirección ni añadir una etiqueta fija.
+Se conserva el raymarch de geodésicas. La sombra permanece negra; nunca se
+simula energía iluminando el centro. El disco concentra el rango cálido
+`hot white → cream → amber/gold`, con naranja saturado sólo como residuo. Su
+luminancia, detalle y halo deben crecer sin lavar la textura ni convertir el
+frame en bloom.
 
 ### Endurance — Proyectos
 
 Endurance es una nave original de espacio profundo, no una copia cinematográfica
-y no un toro decorativo. Su estructura contiene:
-
-- hub central;
-- radios estructurales;
-- entre 8 y 12 módulos de hábitat o misión;
-- anillo exterior parcial o disposición radial abierta;
-- antenas y pequeños elementos de comunicación;
-- estructura mecánica visible;
-- luces de navegación discretas.
+ni un toro decorativo. Su estructura contiene hub central, radios, 8–12 módulos,
+anillo exterior parcial, antenas, estructura mecánica y luces pequeñas.
 
 El casco es metálico oscuro o gris, con borde cálido de Gargantúa, relleno frío
-contenido y como máximo un acento de sistema cian. No hay bandas gigantes
-azules/blancas ni un anillo exterior macizo. A primera vista debe leerse como
-vehículo diseñado y ser la segunda ancla después de Gargantúa.
+contenido y como máximo un acento cian. No hay bandas azules/blancas gigantes ni
+un anillo macizo. Su escala de primer plano la convierte en segunda ancla y su
+silueta completa entra en el volumen interactivo.
 
 ### Cooper Station — Formación
 
-Cooper se representa como un **planeta anillado inventado con un pequeño hábitat
-orbital**. El planeta aporta la silueta; la estación justifica el nombre sin
-dominarla.
+Cooper es un **planeta anillado inventado con un hábitat orbital pequeño**. El
+planeta aporta la silueta; la estación justifica el nombre sin dominarla.
 
-La atmósfera es fría y desaturada, con reflejo cálido de Gargantúa. Los anillos
-son finos y elegantes. El hábitat puede incluir un anillo pequeño, eje, antenas y
-pocos módulos iluminados. Debe comunicar conocimiento, orden, calma y una
-civilización aspiracional; nunca un cilindro provisional.
+La atmósfera es fría y desaturada, los anillos son finos y muestran profundidad
+y sombra, y Gargantúa añade el borde cálido común. El hábitat puede tener anillo,
+eje, antenas y pocos módulos iluminados. Debe comunicar conocimiento, orden,
+calma y civilización aspiracional; nunca un cilindro provisional. Planeta y
+anillos forman un único volumen percibido para hit testing.
 
 ### Tesseracto — Historia
 
-Mantiene su escala distante y misteriosa. Se construye con marcos anidados,
-profundidad real, brillo interior sutil y una leve sensación de perspectiva
-imposible. No compite por tamaño.
+Marcos anidados, profundidad real, núcleo sutil y una leve perspectiva imposible.
+Permanece misterioso y distante, pero no tan pequeño que parezca un icono.
 
 ### Miller — Desarrollo
 
-Se preserva. Solo se ajustan material y luz para recibir un borde cálido coherente
-con Gargantúa.
+Mundo oceánico, frío, peligroso y bello. Aumentan su escala, reflexión de agua,
+atmósfera contenida y borde cálido central sin convertirlo en la Tierra.
 
 ### Edmunds — Creatividad
 
-Gana riqueza fotográfica mediante terreno sutil, bruma o atmósfera, posible velo
-de nubes y una paleta cálida/cobre. No se convierte en otra Tierra ni usa efectos
-arcoíris.
+Mundo cobre con variación de terreno, bruma atmosférica y riqueza material. Puede
+ser el planeta más expresivo, pero sigue creíble y comparte la misma fuente de
+luz; no usa arcoíris.
 
 ### Ranger — Contacto
 
-Sigue siendo una nave metálica pequeña. El violeta se limita a una baliza mínima;
-no invade el casco ni el HUD.
+Nave metálica pequeña con silueta legible. El violeta se limita a una baliza
+mínima; no invade casco ni HUD.
 
-## 5. Luz compartida
+## 5. Modelo de luz compartida
 
-Gargantúa es la fuente cálida principal. Cada cuerpo recibe un borde o frente
-cálido consistente con su posición respecto al centro. Una luz ambiente fría y
-contenida recupera volumen en sombra.
+Todo objeto pertenece al mismo entorno:
 
-La dirección, temperatura e intensidad forman un solo entorno. Los mundos no se
-iluminan como assets independientes y el HUD no hereda el arcoíris de sus acentos.
+1. **Primaria:** Gargantúa emite influencia cálida desde el centro. El disco, no
+   la sombra, es la fuente perceptual.
+2. **Secundaria:** un fill azul frío, débil y común recupera volumen en sombra.
+3. **Rim:** cada material deriva el borde desde su orientación y posición
+   respecto de Gargantúa; no usa un halo independiente pegado al asset.
 
-## 6. HUD: jerarquía y paleta
+Los lados oscuros permanecen oscuros. La legibilidad procede de silueta,
+terminador, atmósfera y especular localizados, no de subir globalmente exposición
+o emissive. El usuario debe inferir de forma subconsciente que la energía viene
+del centro.
 
-El HUD utiliza tres niveles:
+## 6. Campo de estrellas y profundidad
 
-| Nivel | Contenido | Contraste |
-|---|---|---|
-| 1 — importante | `JONAS ORBIT`, objetivo, destino actual, acción crítica | alto |
-| 2 — sistema | modo, estado, índice y sección | medio |
-| 3 — ambiente | ticks, marcas y lecturas secundarias | bajo o muy bajo |
+El espacio usa tres capas perceptuales dentro de una implementación batched:
 
-Paleta:
+| Capa | Densidad | Tamaño/movimiento | Función |
+|---|---|---|---|
+| **far** | muy alta | puntos subpíxel, estáticos | profundidad de cielo sin «space snow» |
+| **mid** | media | algo más brillantes, paralaje y deriva mínimos | escala relativa |
+| **near** | muy baja | motas pequeñas y suaves, movimiento lento | profundidad próxima, nunca nevada |
 
-- blanco suave para información primaria;
-- cian o azul frío para navegación y foco;
-- ámbar cálido derivado de Gargantúa para activación secundaria;
-- rojo apagado solo para advertencia o error real.
+En WebGL las estrellas pertenecen al fondo procedural del shader; en `flat` se
+dibujan agrupadas en un único canvas 2D. No existen miles de meshes o nodos DOM.
+El orden de magnitud siempre es muchas far, algunas mid y casi ninguna near.
 
-El violeta no es un color principal de navegación. La legibilidad se corrige por
-jerarquía individual, no subiendo globalmente la opacidad.
+La densidad y luminancia se atenúan gradualmente junto al disco para proteger su
+contraste y se recuperan hacia el exterior. El fondo añade sólo trazas casi
+negras de navy, violeta y polvo cálido central; nunca una nebulosa púrpura de
+wallpaper.
 
-La franja superior se limita a:
+## 7. HUD: cuatro niveles de contraste
 
-- izquierda: `ENDURANCE // NAV`;
-- centro: `JONAS ORBIT`;
-- derecha: un punto real de estado y `SYSTEM NOMINAL` o su estado verdadero.
+El HUD no se aclara de forma global. Usa tokens perceptuales explícitos:
 
-## 7. TARGET y brackets
+| Nivel | Brillo orientativo | Contenido |
+|---|---:|---|
+| **PRIMARY** | 90–100 % | `JONAS ORBIT`, nombre del target, destino bloqueado, acción crítica |
+| **SECONDARY** | 60–75 % | modo, estado real, índice y sección activos |
+| **TERTIARY** | 35–50 % | destinos inactivos y lecturas auxiliares útiles |
+| **GHOST** | 15–25 % | ticks, marco, calibración y marcas decorativas |
 
-El subsistema TARGET no usa tarjeta, fondo ni panel.
+Paleta: blanco suave para primario, cian frío para navegación/focus, ámbar de
+Gargantúa para respuesta secundaria y rojo apagado sólo para error real. El
+indicador de sistema puede usar un único punto cian/verde contenido. El violeta
+no es color del HUD: pertenece a la baliza de Ranger y al stardust de puntero.
 
-En reposo:
+La franja superior se limita a `ENDURANCE // NAV`, `JONAS ORBIT` y un indicador
+real `SYSTEM NOMINAL`, `SYSTEM FLAT` o equivalente.
+
+## 8. TARGET, brackets y trayectorias
+
+TARGET se compone con texto, regla, micro marcadores y espacio negativo; nunca
+es una tarjeta.
 
 ```text
-NAVIGATION
-──────────
-SELECT DESTINATION
+NAVIGATION                 TARGET LOCK              DESTINATION LOCKED
+──────────                 04                       04
+SELECT DESTINATION         ENDURANCE                ENDURANCE
+                           PROJECTS                 PROJECTS
+                           [ ENTER ]
 ```
 
-Con hover o focus sobre Endurance:
+El nombre apuntado es uno de los textos más brillantes y grandes del HUD. Sólo
+el objetivo actual recibe cuatro brackets de esquina:
 
-```text
-TARGET LOCK
-04
+- idle: ninguno;
+- hover/focus: cian/blanco sutil;
+- selected: algo más brillante y estable.
 
-ENDURANCE
-PROJECTS
+La trayectoria es feedback: ausente en reposo, arco corto y tenue al apuntar y
+recorrido mayor sólo cuando selected y útil. No aparece una elipse saturada de
+golpe. El mundo puede intensificar apenas su rim; la combinación de mundo, HUD,
+brackets, raíl y trayectoria crea vida sin que un efecto individual grite.
 
-[ ENTER ]
-```
+La información de hover no usa `aria-live`. El enlace enfocado del raíl ya
+aporta nombre accesible y la ruta confirma la navegación.
 
-Al activar un destino cambia a `DESTINATION LOCKED`, mantiene nombre, sección e
-índice y estabiliza su trayectoria. El nombre del objetivo es uno de los textos
-más grandes del HUD.
+## 9. Proxies de interacción
 
-El cuerpo apuntado recibe cuatro brackets de esquina pequeños. Solo existen para
-hover, focus o selected; nunca se dibuja un círculo permanente alrededor de cada
-cuerpo ni un retículo gigante. El focus del raíl activa los brackets del mismo
-mundo para que teclado y puntero produzcan una respuesta equivalente.
+El canvas es decorativo y no recibe puntero. La escena **no usa React Three
+Fiber ni raycasting para navegación**. El bug histórico de hover parcial nació
+porque el hit target era la caja desplazada del rótulo, mucho menor que la
+silueta visible.
 
-La información de hover es ambiental y no se anuncia por `aria-live` en cada
-movimiento. El enlace enfocado aporta el nombre accesible; la navegación final se
-confirma con la ruta y el heading de destino.
+Cada destino usa ahora un proxy DOM dedicado:
 
-## 8. Trayectorias y etiquetas
+- comparte el centro proyectado `--map-x` / `--map-y`;
+- consume el radio compuesto real `--map-radius`, incluidos anillos de Cooper y
+  estructura extrema de Endurance;
+- mide 110–135 % de la silueta según el arquetipo;
+- conserva mínimo táctil de 44 px y fallback por mundo;
+- etiqueta y proxy son hermanos: el texto nunca intercepta el puntero;
+- queda `aria-hidden` y fuera de tabulación; el raíl sigue siendo el único
+  recorrido accesible de siete enlaces;
+- hover, leave y click alimentan el mismo TARGET y `navigateToWorld` que el raíl.
 
-Las trayectorias son feedback:
+`/es?debugHitboxes=1` publica bounds translúcidos únicamente en desarrollo. El
+modo no altera su tamaño, estado ni navegación y nunca aparece por defecto o en
+producción. La prueba manual cruza centro, cuatro bordes y partes extremas de los
+siete destinos; JSDOM sólo valida el contrato DOM, no geometría visual real.
 
-- reposo: invisibles o casi subliminales;
-- hover/focus: uno o varios arcos cortos y tenues;
-- selected: una trayectoria mayor o completa solo si ayuda a leer el destino.
+## 10. Raíl y costura de navegación
 
-No aparece una elipse grande y saturada de golpe. Los rótulos de escena se
-reducen al nombre en reposo y revelan índice/función solo al apuntar. Gargantúa no
-tiene rótulo permanente.
+El raíl inferior es selector de misión y único recorrido accesible 01→07. Su
+gramática es índice, nombre, tick y espacio; no siete botones rectangulares.
 
-## 9. Raíl de destinos
+- inactivo: TERTIARY, apagado pero legible;
+- hover/focus: SECONDARY y foco geométrico;
+- target/selected: PRIMARY blanco/cian y marcador corto.
 
-El raíl inferior es el selector de misión y el único recorrido accesible de los
-siete destinos. Su gramática es tipográfica: índice, nombre, tick y espacio. No
-son siete botones rectangulares.
+Los enlaces conservan `href` y nombre accesible. Toda activación pasa por
+`navigateToWorld(worldId)`: hoy cambia de ruta; una fase futura podrá resolver a
+un ancla sin rehacer HUD, raíl, proxies ni TARGET.
 
-- inactivo: muy apagado;
-- hover/focus: contraste medio y señal inequívoca de foco;
-- selected: blanco/cian y marcador corto.
+## 11. Cursor de navegación y stardust
 
-Los enlaces conservan `href` real y nombre accesible. El orden del DOM es 01→07,
-independiente de la posición espacial.
+Esta capa sólo existe en desktop con `(hover: hover) and (pointer: fine)` y
+dentro del System Map.
 
-## 10. Navegación actual y futura
+El cursor es un retículo mínimo. En espacio permanece pequeño; sobre un proxy
+adopta estado target; al activar, locked. Sobre raíl y controles conserva una
+afordancia convencional clara. Nunca es un crosshair grande ni sustituye el
+cursor fuera del viewport.
 
-Hoy seleccionar un mundo navega a su ruta. La cámara sigue siendo una función
-pura de la ruta activa: `cameraPose = f(routeWorldId)`.
+El stardust usa un único canvas 2D decorativo y un pool circular de 112 slots en
+typed arrays:
 
-Toda activación del Hero pasa por `navigateToWorld(worldId)`. El raíl conserva
-enlaces reales como fallback; los ecos de la escena no crean un segundo recorrido
-de teclado. La implementación futura podrá cambiar rutas por anclas sin rehacer
-el HUD, el raíl ni el target.
+- capacidad fija; no hay React state ni objetos DOM por partícula;
+- spawn sólo durante movimiento, de 1–5 motas según velocidad y con techo duro;
+- vida aproximada de 320–680 ms, deriva baja y fade cuadrático;
+- violeta, magenta y pink dominan; cian es raro;
+- blend aditivo contenido, partículas diminutas y sin línea continua;
+- el RAF sólo vive mientras existen partículas y se pausa con `document.hidden`.
 
-El viaje continuo permanece diferido. `SYSTEM MAP ↑` pertenece a esa fase futura;
-en la arquitectura actual las páginas de mundo vuelven a `/es` con navegación
-convencional.
+No es un glitter brush, una cola de cometa ni un cursor neon. Al parar el puntero
+desaparece rápido y nunca se convierte en otro campo de estrellas permanente.
 
-## 11. Responsive, accesibilidad y rendimiento
+## 12. Mobile y reduced-motion
 
-Desktop y móvil son composiciones distintas:
+Móvil no es desktop escalado:
 
-- desktop conserva top HUD, target lateral y raíl;
-- móvil prioriza `JONAS ORBIT`, sistema, target y selector;
-- la instrumentación ambiental de poco valor se oculta antes de comprimirla;
-- el documento no desborda a 375 px.
+- conserva cuerpos grandes y recompone su distribución;
+- prioriza `JONAS ORBIT`, TARGET y raíl;
+- oculta instrumentación GHOST antes de comprimirla;
+- usa targets táctiles de al menos 44 px;
+- mantiene un starfield estático denso;
+- no monta cursor personalizado ni stardust y no los emula con el dedo.
 
-Los siete mundos son alcanzables por teclado mediante el raíl. El foco no depende
-solo de glow o color. El canvas sigue `aria-hidden`, detrás del HTML y nunca es el
-contenido ni candidato a LCP.
+`prefers-reduced-motion` conserva contenido, estrellas estáticas, estados,
+focus, brackets estáticos y navegación. Desactiva stardust, animación del cursor,
+respiración de cámara, paralaje, deriva del starfield, pulsos y adquisición no
+esencial.
 
-La dirección se resuelve con geometría, composición, luz y material. No se añade
-postprocesado costoso, bloom general, partículas o shaders sin medición y una
-ganancia visual demostrable.
+## 13. Accesibilidad y rendimiento
 
-## 12. Gate de aprobación visual
+Los siete mundos se alcanzan por teclado mediante el raíl y el foco no depende
+de glow o color. El canvas y las capas de partículas son `aria-hidden`, están
+detrás del HTML y nunca son contenido ni candidato a LCP.
 
-Cada iteración se revisa con un frame estático y estados de interacción. Deben
-responderse afirmativamente estas preguntas:
+El starfield se agrupa por capa; el stardust se agrupa en un canvas con pool
+fijo; los cuerpos comparten materiales y la interacción no hace raycast. No se
+añade postprocesado costoso o bloom global para compensar problemas de escala o
+luz. Se miden FPS, draw calls, GPU, memoria y DPR en hardware real.
 
-1. ¿Se siente como navegación de una nave y no como un menú web?
-2. ¿Hay menos texto y más jerarquía?
-3. ¿El HUD despierta sin volverse más ruidoso?
-4. ¿Endurance se reconoce inmediatamente como nave?
-5. ¿Cooper es bello y memorable?
-6. ¿Todos los mundos comparten la misma luz?
-7. ¿Gargantúa sigue dominando?
-8. ¿La interacción se entiende en menos de tres segundos?
+## 14. Continuous Journey
+
+El viaje continuo permanece **DEFERRED** y se documenta únicamente en
+[`continuous-journey-phase.md`](continuous-journey-phase.md). `SYSTEM MAP ↑`
+pertenece a esa fase. En la arquitectura actual las páginas vuelven a `/es` con
+navegación convencional.
+
+## 15. Gate de aprobación visual
+
+Cada iteración se revisa con frame estático, estados y movimiento de puntero:
+
+1. ¿Los mundos parecen destinos y no iconos?
+2. ¿Gargantúa ilumina el sistema y sigue dominando?
+3. ¿El cielo se siente profundo sin parecer nieve?
+4. ¿Centro y bordes de los siete destinos activan hover?
+5. ¿El HUD despierta y sigue siendo legible, no ruidoso?
+6. ¿Endurance se reconoce como nave y Cooper como mundo memorable?
+7. ¿El cursor y el stardust hacen el espacio reactivo sin parecer un gimmick?
+8. ¿Touch y reduced-motion reciben una experiencia completa y tranquila?
+9. ¿El frame estático ya se siente luminoso, vasto y premium?
+10. ¿El universo se siente vivo aunque nada recorra una órbita?
 
 Tests verdes son obligatorios, pero no responden estas preguntas. Hasta que la
-evidencia visual las responda, el estado sigue siendo **candidato en iteración**.
+evidencia visual en GPU real las responda, el Hero sigue siendo **candidato en
+iteración**.

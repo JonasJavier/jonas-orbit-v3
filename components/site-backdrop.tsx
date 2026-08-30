@@ -1,19 +1,17 @@
 "use client";
 
 /**
- * Nivel `flat` del pivote (docs/plans/sistema-gargantua.md §5): el fondo que ve
- * quien tiene reduced-motion, `?no3d=1`, o un equipo que no puede pagar WebGL.
- * Hereda intacto el starfield 2D de F1A — el plan es explícito en que no se
- * tira código que ya funciona y ya tiene tests.
+ * Cielo persistente del layout. Es la profundidad completa detrás de WebGL y
+ * pasa a ser el primer plano espacial en `flat`; reduced-motion conserva las
+ * tres capas pero las dibuja una sola vez.
  *
  * Dos cambios respecto de F1A:
  *
  * 1. **Vive en el layout, no en la home.** Sobrevive a la navegación entre las
  *    12 rutas sin remontarse. Es el mismo hueco donde G2 colgará el canvas
  *    persistente de la escena (§4), y por eso se estrena ya.
- * 2. **Lo mueve el tiempo, no el scroll.** El scroll dejó de ser fuente de
- *    verdad de nada visual (regla 6 reescrita). La deriva es una onda triangular
- *    lentísima, así que no hay salto al cerrar el ciclo.
+ * 2. **Lo mueve el tiempo, no el scroll.** FAR es estático; MID/NEAR usan una
+ *    onda triangular lentísima y paralaje acotado sólo en puntero fino.
  */
 
 import { usePathname } from "next/navigation";
@@ -22,10 +20,12 @@ import { useLightEffectsMode } from "@/lib/effects-mode";
 import {
   createStarPoints,
   drawStarfield,
+  STARFIELD_FRAME_INTERVAL_MS,
   type StarPoint,
 } from "@/lib/starfield";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { findWorldRoute, type WorldRoute } from "@/lib/world-route";
+import { PointerLife } from "./pointer-life";
 import { Starfield2D } from "./starfield-2d";
 
 type IdleWindow = Window & {
@@ -38,8 +38,7 @@ type IdleWindow = Window & {
 
 /** Un ciclo completo de ida y vuelta de la deriva. Deliberadamente enorme. */
 const DRIFT_PERIOD_MS = 180_000;
-/** ~20 fps. La deriva es tan lenta que 60 fps solo gastaría batería. */
-const FRAME_INTERVAL_MS = 50;
+const FINE_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
 
 export function SiteBackdrop({
   routes,
@@ -50,20 +49,17 @@ export function SiteBackdrop({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [sceneLive, setSceneLive] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
   const pathname = usePathname();
 
-  // Los dos vetos duros del plan. El contenido es idéntico en ambos casos:
-  // solo cambia si se monta el canvas.
-  const starfieldEnabled = !reducedMotion && !lightEffects;
+  // Reduced motion y el perfil ligero conservan el cielo, pero lo congelan.
+  // La reducción afecta al movimiento, no a la profundidad del primer frame.
+  const pointerLifeDisabled = reducedMotion || lightEffects;
   const accent = findWorldRoute(pathname, routes)?.accent ?? fallbackAccent;
 
   useEffect(() => {
-    // No hace falta revertir `canvasReady` cuando el perfil ligero se enciende:
-    // el render exige AMBAS condiciones, así que el canvas se desmonta solo.
-    if (!starfieldEnabled) return;
-
     const idleWindow = window as IdleWindow;
     if (idleWindow.requestIdleCallback) {
       const handle = idleWindow.requestIdleCallback(
@@ -75,20 +71,39 @@ export function SiteBackdrop({
 
     const handle = window.setTimeout(() => setCanvasReady(true), 220);
     return () => window.clearTimeout(handle);
-  }, [starfieldEnabled]);
+  }, []);
+
+  // La escena WebGL ya dibuja sus tres estratos de estrellas dentro del shader
+  // (donde el lente puede curvarlas). El canvas 2D permanece como fallback pero
+  // deja de solicitar frames cuando la escena publica su primer fotograma.
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => setSceneLive(root.dataset.sceneLive === "true");
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["data-scene-live"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   // Señales observables que F1A ya publicaba y que los tests E2E leen: decir en
   // el DOM qué perfil está activo es también lo que hace auditable la regla 5.
   useEffect(() => {
     const root = document.documentElement;
+    const finePointer = window.matchMedia?.(FINE_POINTER_QUERY).matches ?? false;
     root.dataset.reducedMotion = String(reducedMotion);
-    root.dataset.starfield =
-      canvasReady && starfieldEnabled ? "ready" : "static";
-  }, [canvasReady, reducedMotion, starfieldEnabled]);
+    root.dataset.starfield = canvasReady ? "ready" : "static";
+    root.dataset.starfieldMotion =
+      canvasReady && !pointerLifeDisabled && !sceneLive && finePointer
+        ? "animated"
+        : "static";
+  }, [canvasReady, pointerLifeDisabled, reducedMotion, sceneLive]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !canvasReady || !starfieldEnabled) return;
+    if (!canvas || !canvasReady) return;
 
     const context: CanvasRenderingContext2D | null = canvas.getContext("2d");
     if (!context) return;
@@ -101,6 +116,14 @@ export function SiteBackdrop({
     let frame = 0;
     let lastDraw = 0;
     const start = performance.now();
+    const animated =
+      !pointerLifeDisabled &&
+      !sceneLive &&
+      (window.matchMedia?.(FINE_POINTER_QUERY).matches ?? false);
+    let parallaxX = 0;
+    let parallaxY = 0;
+    let targetParallaxX = 0;
+    let targetParallaxY = 0;
 
     function measure() {
       const ratio = Math.min(window.devicePixelRatio || 1, 1.75);
@@ -110,18 +133,41 @@ export function SiteBackdrop({
       surface.height = Math.round(height * ratio);
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       stars = createStarPoints(width, height);
+      let farCount = 0;
+      let midCount = 0;
+      for (const star of stars) {
+        if (star.layer === "far") farCount += 1;
+        else if (star.layer === "mid") midCount += 1;
+      }
+      const nearCount = stars.length - farCount - midCount;
+      surface.dataset.starCount = String(stars.length);
+      surface.dataset.starBudget = `${farCount}/${midCount}/${nearCount}`;
+      surface.dataset.motion = animated ? "mid-near" : "static";
       lastDraw = 0;
+
+      if (!animated) {
+        drawStarfield({
+          context: ctx,
+          width,
+          height,
+          stars,
+          globalProgress: 0,
+          accent,
+        });
+      }
     }
 
     function draw(now: number) {
       frame = requestAnimationFrame(draw);
-      if (now - lastDraw < FRAME_INTERVAL_MS) return;
+      if (now - lastDraw < STARFIELD_FRAME_INTERVAL_MS) return;
       lastDraw = now;
 
-      // Onda triangular: sube y baja sin discontinuidad. Con una rampa que
-      // salta de 1 a 0 el anillo de la escena pegaría un brinco cada ciclo.
+      // Onda triangular: sube y baja sin discontinuidad. Una rampa 1→0 haría
+      // saltar MID/NEAR al cerrar cada ciclo de tres minutos.
       const cycle = ((now - start) % DRIFT_PERIOD_MS) / DRIFT_PERIOD_MS;
       const progress = 1 - Math.abs(1 - 2 * cycle);
+      parallaxX += (targetParallaxX - parallaxX) * 0.085;
+      parallaxY += (targetParallaxY - parallaxY) * 0.085;
 
       drawStarfield({
         context: ctx,
@@ -129,9 +175,15 @@ export function SiteBackdrop({
         height,
         stars,
         globalProgress: progress,
-        worldProgress: 0.5,
+        parallaxX,
+        parallaxY,
         accent,
       });
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      targetParallaxX = (event.clientX / Math.max(1, width) - 0.5) * 2;
+      targetParallaxY = (event.clientY / Math.max(1, height) - 0.5) * 2;
     }
 
     // Presupuesto de §8, adelantado: en segundo plano no se dibuja nada.
@@ -139,25 +191,31 @@ export function SiteBackdrop({
       if (document.hidden) {
         cancelAnimationFrame(frame);
         frame = 0;
-      } else if (!frame) {
+      } else if (animated && !frame) {
         lastDraw = 0;
         frame = requestAnimationFrame(draw);
       }
     }
 
     measure();
-    frame = requestAnimationFrame(draw);
+    if (animated) frame = requestAnimationFrame(draw);
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
+    if (animated) {
+      window.addEventListener("pointermove", handlePointerMove, {
+        passive: true,
+      });
+    }
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", measure);
       window.removeEventListener("orientationchange", measure);
+      window.removeEventListener("pointermove", handlePointerMove);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [accent, canvasReady, starfieldEnabled]);
+  }, [accent, canvasReady, pointerLifeDisabled, sceneLive]);
 
   return (
     <>
@@ -170,7 +228,12 @@ export function SiteBackdrop({
             CSS lo retira en cuanto la escena real empieza a pintar. */}
         <span className="space-backdrop__gargantua" />
       </div>
-      {canvasReady && starfieldEnabled ? <Starfield2D ref={canvasRef} /> : null}
+      {canvasReady ? (
+        <>
+          <Starfield2D ref={canvasRef} />
+          <PointerLife disabled={pointerLifeDisabled} scopeKey={pathname} />
+        </>
+      ) : null}
     </>
   );
 }

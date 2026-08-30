@@ -81,6 +81,69 @@ describe("cuerpos del Sistema Gargantúa", () => {
     }
   });
 
+  it("mantiene la jerarquía de escala sin igualar todos los destinos", () => {
+    const ids = [
+      "tesseract",
+      "cooper-station",
+      "miller",
+      "endurance",
+      "edmunds",
+      "ranger",
+    ] as const;
+    const bodies = Object.fromEntries(ids.map((id) => [id, bodyFor(id)])) as Record<
+      (typeof ids)[number],
+      SceneBody
+    >;
+
+    try {
+      const secondaryAnchor = bodies.endurance.radius;
+      const majorWorlds = [
+        bodies["cooper-station"].radius,
+        bodies.miller.radius,
+        bodies.edmunds.radius,
+      ];
+      const distantObjects = [bodies.tesseract.radius, bodies.ranger.radius];
+
+      expect(secondaryAnchor).toBeGreaterThan(Math.max(...majorWorlds));
+      expect(Math.min(...majorWorlds)).toBeGreaterThan(Math.max(...distantObjects));
+      expect(bodies.tesseract.radius).toBeGreaterThan(bodies.ranger.radius);
+    } finally {
+      for (const body of Object.values(bodies)) disposeBody(body);
+    }
+  });
+
+  it("conserva los modelos compuestos en un presupuesto de batches pequeño", () => {
+    const ids = [
+      "tesseract",
+      "cooper-station",
+      "miller",
+      "endurance",
+      "edmunds",
+      "ranger",
+    ] as const;
+    let batches = 1; // Quad de Gargantúa; los pases de post no son geometría de mundos.
+    let vertices = 4;
+
+    for (const id of ids) {
+      const body = bodyFor(id);
+      try {
+        for (const root of [body.object, body.orbit]) {
+          root.traverse((node) => {
+            const renderable = node as Partial<THREE.Mesh>;
+            if (!renderable.geometry) return;
+            batches += 1;
+            vertices += renderable.geometry.getAttribute("position")?.count ?? 0;
+          });
+        }
+      } finally {
+        disposeBody(body);
+      }
+    }
+
+    expect(batches).toBeLessThanOrEqual(20);
+    expect(vertices).toBeLessThan(10_000);
+  });
+
   it("limita el foco orbital a un arco alrededor del cuerpo", () => {
     const body = bodyFor("endurance");
     try {
