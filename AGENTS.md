@@ -17,11 +17,15 @@ Ante contradicción entre ambos, manda el pivote.
 
 **Dirección artística del hero (2026-08-29):**
 `docs/design/hero-gargantua-direction.md` manda sobre los dos anteriores en
-**composición del hero, escala de Gargantúa, posiciones de los cuerpos, motion
-en reposo, órbitas, etiquetas y estados**. Su cambio central: **el sistema está
-quieto** — los cuerpos no recorren su órbita, y sus posiciones son constantes de
-dirección de arte. Cualquier texto anterior que describa cuerpos orbitando de
-forma continua está obsoleto.
+**composición del hero, identidad visible, diseño de los mundos, HUD, interacción,
+escala de Gargantúa, posiciones de los cuerpos, motion en reposo, trayectorias,
+etiquetas y estados**. Sus cambios centrales: **el sistema está quieto** — los
+cuerpos no recorren su órbita — y el Hero **no muestra un bloque personal**. La
+identidad profesional, rol, CTAs y CV siguen en el HTML semántico y metadata; la
+marca visible del HUD es `JONAS ORBIT`. Cualquier texto anterior que describa
+cuerpos orbitando continuamente, Cooper como cilindro, Endurance como toro o el
+copy personal como bloque visible está obsoleto. El viaje continuo y
+`SYSTEM MAP ↑` siguen diferidos en `docs/design/continuous-journey-phase.md`.
 
 ## Comandos
 
@@ -70,9 +74,11 @@ se lee como verde. Redirige a un archivo y consulta `$?`.
    timeout duro: **la animación nunca es dueña del router**.
 7. **La escena nunca es el contenido.** El HTML servido de cada ruta contiene el
    texto real sin JavaScript — en `/es`: nombre, rol, dos CTAs, CV y siete
-   enlaces `<a href>` a los mundos. El canvas es `aria-hidden`, va detrás y
-   nunca es candidato a LCP. Un reclutador con red lenta, un lector de pantalla
-   y Googlebot ven lo mismo.
+   enlaces `<a href>` a los mundos. Nombre, rol, CTAs y CV forman el fallback
+   semántico, pero **no** un bloque personal visible dentro del Hero; el raíl sí
+   presenta los destinos. El canvas es `aria-hidden`, va detrás y nunca es
+   candidato a LCP. Un reclutador con red lenta, un lector de pantalla y
+   Googlebot conservan el mismo significado y las mismas rutas.
 8. **Contenido honesto.** Sin lorem ipsum, sin métricas inventadas, sin
    placeholders disfrazados. Las fichas breves son un formato completo.
 9. **Middleware:** no existe en F1 (redirect estático `/` → `/es` en

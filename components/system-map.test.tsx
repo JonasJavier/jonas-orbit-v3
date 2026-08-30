@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
   El raíl navega a través de `useWorldNavigation`, la costura que aísla al Hero
@@ -7,8 +7,10 @@ import { describe, expect, it, vi } from "vitest";
   `useRouter`, que no existe fuera del App Router: aquí se sustituye por un
   doble. Lo que este archivo comprueba es el contrato del MARCADO, no el viaje.
 */
+const routerPush = vi.hoisted(() => vi.fn());
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push: routerPush, replace: vi.fn(), prefetch: vi.fn() }),
 }));
 import { getWorldNavItems } from "@/lib/worlds";
 import { SystemMap } from "./system-map";
@@ -17,6 +19,24 @@ const worlds = getWorldNavItems("es");
 const MAP_LABEL = "Destinos del Sistema Gargantúa";
 
 describe("SystemMap — el contrato entre el HTML y la escena", () => {
+  beforeEach(() => {
+    routerPush.mockClear();
+  });
+
+  it("expone la marca mínima y un TARGET en reposo sin copy personal", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+
+    expect(container.querySelector(".hud__system")).toHaveTextContent(
+      /Jonas Orbit/i,
+    );
+    const target = container.querySelector(".hud__target");
+    expect(target).toHaveAttribute("data-target-state", "idle");
+    expect(target).toHaveTextContent(/Navigation/i);
+    expect(target).toHaveTextContent(/Select destination/i);
+    expect(container).not.toHaveTextContent(/Jonás Javier Encarnación/i);
+    expect(container).not.toHaveTextContent(/ingeniería y diseño orbitan juntos/i);
+  });
+
   it("sirve los 7 destinos como enlaces reales", () => {
     render(<SystemMap worlds={worlds} />);
 
@@ -68,7 +88,8 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     // Quien tabula recorre la historia 01→07; la posición la ponen el CSS y,
     // cuando existe, la escena.
     render(<SystemMap worlds={worlds} />);
-    const hrefs = screen
+    const map = screen.getByRole("navigation", { name: MAP_LABEL });
+    const hrefs = within(map)
       .getAllByRole("link")
       .map((link) => link.getAttribute("href"));
     expect(hrefs).toEqual(worlds.map((world) => world.href));
@@ -102,5 +123,103 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     const centres = container.querySelectorAll('[data-centre="true"]');
     expect(centres).toHaveLength(1);
     expect(centres[0].querySelector('[data-world="gargantua"]')).not.toBeNull();
+  });
+
+  it("hover despierta HUD, raíl y brackets sólo para el destino apuntado", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const map = screen.getByRole("navigation", { name: MAP_LABEL });
+    const endurance = within(map).getByRole("link", {
+      name: /^Endurance Proyectos$/i,
+    });
+
+    fireEvent.pointerEnter(endurance);
+
+    expect(endurance).toHaveAttribute("data-target-state", "target");
+    const target = container.querySelector(".hud__target");
+    expect(target).toHaveAttribute("data-target-state", "target");
+    expect(target).toHaveTextContent(/Target lock/i);
+    expect(target).toHaveTextContent(/04/);
+    expect(target).toHaveTextContent(/Endurance/i);
+    expect(target).toHaveTextContent(/Proyectos/i);
+    expect(target).toHaveTextContent(/\[ Enter \]/i);
+
+    const slot = container
+      .querySelector('[data-system-body="endurance"]')
+      ?.closest(".system-map__slot");
+    expect(slot).toHaveAttribute("data-target-state", "target");
+    expect(slot?.querySelector(".system-map__target-brackets")).not.toBeNull();
+
+    const activeRailItems = container.querySelectorAll(
+      '.nav-rail__item[data-target-state="target"]',
+    );
+    expect(activeRailItems).toHaveLength(1);
+
+    fireEvent.pointerLeave(endurance);
+    expect(endurance).toHaveAttribute("data-target-state", "idle");
+    expect(target).toHaveAttribute("data-target-state", "idle");
+  });
+
+  it("focus de teclado produce el mismo TARGET sin depender de glow", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const cooper = screen.getByRole("link", {
+      name: /^Cooper Station Formación$/i,
+    });
+
+    fireEvent.focus(cooper);
+
+    expect(cooper).toHaveAttribute("data-active", "true");
+    expect(cooper).toHaveAttribute("data-target-state", "target");
+    expect(container.querySelector(".hud__target")).toHaveTextContent(
+      /Cooper Station/i,
+    );
+    expect(
+      container.querySelector(
+        '[data-system-body="cooper-station"][data-target-state="target"]',
+      ),
+    ).not.toBeNull();
+
+    fireEvent.blur(cooper);
+    expect(cooper).not.toHaveAttribute("data-active");
+    expect(cooper).toHaveAttribute("data-target-state", "idle");
+  });
+
+  it("clic principal bloquea el destino y navega por la abstracción", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const endurance = screen.getByRole("link", {
+      name: /^Endurance Proyectos$/i,
+    });
+
+    fireEvent.click(endurance, { button: 0 });
+
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith("/es/proyectos");
+    expect(endurance).toHaveAttribute("data-target-state", "locked");
+    const target = container.querySelector(".hud__target");
+    expect(target).toHaveAttribute("data-target-state", "locked");
+    expect(target).toHaveTextContent(/Destination locked/i);
+    expect(target).not.toHaveTextContent(/\[ Enter \]/i);
+  });
+
+  it("un clic modificado conserva el comportamiento nativo del enlace", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const endurance = screen.getByRole("link", {
+      name: /^Endurance Proyectos$/i,
+    });
+
+    // El listener de document corre después del handler React delegado: deja
+    // que la implementación vea el Ctrl-clic intacto, pero evita que JSDOM
+    // intente abrir otra página una vez comprobado el contrato.
+    document.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    fireEvent.click(endurance, { button: 0, ctrlKey: true });
+
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(endurance).toHaveAttribute("href", "/es/proyectos");
+    expect(endurance).toHaveAttribute("data-target-state", "idle");
+    expect(container.querySelector(".hud__target")).toHaveAttribute(
+      "data-target-state",
+      "idle",
+    );
   });
 });

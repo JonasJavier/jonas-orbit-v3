@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import type { WorldId } from "@/content/worlds.data";
 import type { WorldNavItem } from "@/lib/worlds";
-import { useWorldNavigation } from "@/lib/world-navigation";
+import type {
+  WorldDestination,
+  WorldNavigationState,
+} from "@/lib/world-navigation";
 
 /**
  * El raíl de destinos: los siete enlaces REALES del sistema.
@@ -20,51 +25,65 @@ import { useWorldNavigation } from "@/lib/world-navigation";
  * Es la diferencia entre poder implementar el viaje continuo y tener que
  * reconstruir el Hero para implementarlo.
  */
-export function NavRail({ worlds }: { worlds: readonly WorldNavItem[] }) {
-  const navigate = useWorldNavigation();
-
+export function NavRail({
+  worlds,
+  activeWorldId,
+  navigationState,
+  onPointerTargetChange,
+  onFocusTargetChange,
+  onActivate,
+}: {
+  worlds: readonly WorldNavItem[];
+  activeWorldId: WorldId | null;
+  navigationState: WorldNavigationState;
+  onPointerTargetChange(id: WorldId | null): void;
+  onFocusTargetChange(id: WorldId | null): void;
+  onActivate(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    destination: WorldDestination,
+  ): void;
+}) {
   return (
     <ul className="nav-rail">
-      {worlds.map((world) => (
-        <li
-          key={world.id}
-          className="nav-rail__item"
-          style={{ "--world-accent": world.accent } as React.CSSProperties}
-        >
-          <Link
-            className="nav-rail__link"
-            href={world.href}
-            data-rail-world={world.id}
-            onClick={(event) => {
-              // Se respetan los gestos del navegador: abrir en pestaña nueva,
-              // en ventana, o descargar. Sólo se intercepta el clic simple.
-              if (
-                event.defaultPrevented ||
-                event.metaKey ||
-                event.ctrlKey ||
-                event.shiftKey ||
-                event.altKey ||
-                event.button !== 0
-              ) {
-                return;
-              }
-              event.preventDefault();
-              navigate({ id: world.id, href: world.href });
-            }}
+      {worlds.map((world) => {
+        const itemState =
+          world.id === activeWorldId ? navigationState : "idle";
+
+        return (
+          <li
+            key={world.id}
+            className="nav-rail__item"
+            data-target-state={itemState}
           >
-            {/* El número orienta la vista pero no entra en el nombre accesible:
-                dentro convertiría cada destino en «cero tres Miller Desarrollo». */}
-            <span className="nav-rail__index" aria-hidden="true">
-              {String(world.order).padStart(2, "0")}
-            </span>
-            <span className="nav-rail__name">{world.cosmicName}</span>{" "}
-            <span className="nav-rail__role">{world.shortLabel}</span>
-            <span className="visually-hidden" aria-hidden="true">
-              {world.summary}
-            </span>
-          </Link>
-        </li>
-      ))}
+            <Link
+              className="nav-rail__link"
+              href={world.href}
+              data-active={itemState !== "idle" ? "true" : undefined}
+              data-rail-world={world.id}
+              data-target-state={itemState}
+              onPointerEnter={() => onPointerTargetChange(world.id)}
+              onPointerLeave={() => onPointerTargetChange(null)}
+              onFocus={() => onFocusTargetChange(world.id)}
+              onBlur={() => onFocusTargetChange(null)}
+              onClick={(event) =>
+                onActivate(event, { id: world.id, href: world.href })
+              }
+            >
+              <span className="nav-rail__active-marker" aria-hidden="true" />
+              {/* El número orienta la vista pero no entra en el nombre accesible:
+                  dentro convertiría cada destino en «cero tres Miller Desarrollo». */}
+              <span className="nav-rail__index" aria-hidden="true">
+                {String(world.order).padStart(2, "0")}
+              </span>
+              <span className="nav-rail__name">{world.cosmicName}</span>{" "}
+              <span className="nav-rail__role">{world.shortLabel}</span>
+              <span className="visually-hidden" aria-hidden="true">
+                {world.summary}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

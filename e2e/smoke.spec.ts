@@ -24,11 +24,38 @@ const WORLDS = [
 const ROUTES = ["/es", ...WORLDS.map((world) => `/es/${world.slug}`)];
 
 function heroLink(page: Page, name: string) {
-  // El mapa usa los mismos rótulos que el hero: hay que acotar la búsqueda o
-  // el selector encuentra dos y falla por ambigüedad.
+  // Los accesos de conversión siguen en el HTML como respaldo semántico, pero
+  // ya no ocupan el plano visual del System Map. Se localizan en el DOM en vez
+  // de por rol visible: Playwright omite deliberadamente el subárbol recortado
+  // en sus consultas de accesibilidad.
   return page
-    .getByRole("navigation", { name: "Acciones principales" })
-    .getByRole("link", { name, exact: true });
+    .locator(".hero-semantic nav a")
+    .filter({ hasText: new RegExp(`^${name}$`) });
+}
+
+async function expectSemanticHeroFallback(page: Page) {
+  const fallback = page.locator(".hero-semantic");
+  await expect(fallback).toHaveClass(/visually-hidden/);
+  await expect(fallback.locator("h1")).toContainText(
+    "Jonás Javier Encarnación",
+  );
+  await expect(fallback).toContainText(/Desarrollador full-stack/);
+  await expect(fallback).toContainText(/Diseñador de producto digital/);
+
+  // `visually-hidden` conserva este contenido para lector/HTML, así que
+  // `toBeHidden()` sería una expectativa incorrecta. Probamos el contrato
+  // visual real: caja de 1px recortada fuera del plano de composición.
+  const presentation = await fallback.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return {
+      width: box.width,
+      height: box.height,
+      clipPath: getComputedStyle(element).clipPath,
+    };
+  });
+  expect(presentation.width).toBeLessThanOrEqual(1);
+  expect(presentation.height).toBeLessThanOrEqual(1);
+  expect(presentation.clipPath).toBe("inset(50%)");
 }
 
 /**
@@ -67,11 +94,16 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     expect([307, 308]).toContain(fromStatus);
   });
 
-  test("/es muestra los CTAs del hero y el CV descargable", async ({ page }) => {
+  test("/es muestra JONAS ORBIT y conserva el perfil sólo como respaldo semántico", async ({
+    page,
+  }) => {
     await page.goto("/es");
-    await expect(
-      page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
-    ).toBeVisible();
+    await expect(page.locator(".hud__system")).toBeVisible();
+    await expect(page.locator(".hud__system")).toHaveText(/Jonas Orbit/i);
+    await expectSemanticHeroFallback(page);
+    await expect(page.locator("body")).not.toContainText(
+      /ingeniería y diseño orbitan juntos/i,
+    );
     await expect(
       heroLink(page, "Proyectos"),
     ).toHaveAttribute("href", "/es/proyectos");
@@ -79,9 +111,39 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
       heroLink(page, "Contacto"),
     ).toHaveAttribute("href", "/es/contacto");
     const cv = heroLink(page, "CV");
-    await expect(cv).toBeVisible();
     await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
     await expect(cv).toHaveAttribute("download", "");
+  });
+
+  test("el TARGET despierta con hover y foco aun en el perfil sin GPU", async ({
+    page,
+  }) => {
+    await page.goto("/es?no3d=1");
+    const map = systemMap(page);
+    const endurance = map.getByRole("link", {
+      name: /Endurance Proyectos/i,
+    });
+    const target = page.locator(".hud__target");
+
+    await expect(target).toHaveAttribute("data-target-state", "idle");
+    await endurance.hover();
+    await expect(target).toHaveAttribute("data-target-state", "target");
+    await expect(target).toContainText(/Target lock/i);
+    await expect(target).toContainText(/04/);
+    await expect(target).toContainText(/Endurance/i);
+    await expect(
+      page.locator(
+        '.system-map__slot:has([data-system-body="endurance"])',
+      ),
+    ).toHaveAttribute("data-target-state", "target");
+
+    const cooper = map.getByRole("link", {
+      name: /Cooper Station Formación/i,
+    });
+    await cooper.focus();
+    await expect(cooper).toBeFocused();
+    await expect(cooper).toHaveAttribute("data-target-state", "target");
+    await expect(target).toContainText(/Cooper Station/i);
   });
 
   test("G1 · cada mundo responde 200 en su ruta y una desconocida da 404", async ({
@@ -140,7 +202,9 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     page,
   }) => {
     await page.goto("/es");
-    await heroLink(page, "Proyectos").click();
+    await systemMap(page)
+      .getByRole("link", { name: /Endurance Proyectos/i })
+      .click();
     await expect(page).toHaveURL(/\/es\/proyectos$/);
 
     await page.getByRole("link", { name: "Abrir caso completo" }).click();
@@ -157,7 +221,9 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     page,
   }) => {
     await page.goto("/es");
-    await heroLink(page, "Contacto").click();
+    await systemMap(page)
+      .getByRole("link", { name: /Ranger Contacto/i })
+      .click();
     await expect(page).toHaveURL(/\/es\/contacto$/);
     await expect(
       page.getByRole("heading", { level: 1, name: "Contacto" }),
@@ -429,25 +495,16 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
 test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("nombre, rol, dos CTAs, CV y siete enlaces reales a los mundos", async ({
+  test("perfil semántico, HUD mínimo y siete enlaces reales a los mundos", async ({
     page,
   }) => {
     await page.goto("/es");
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
-    ).toBeVisible();
-    // Rol y propuesta están OCULTOS a la vista pero presentes en el documento:
-    // la regla 7 pide que el HTML los sirva, no que ocupen media pantalla. Por
-    // eso se comprueba el contenido del <h1>, no su visibilidad.
-    // Rol y propuesta salieron del <h1> y volvieron A LA VISTA como párrafos:
-    // el HTML servido los sigue conteniendo, que es lo que la regla 7 exige,
-    // pero ahora además se leen sin lector de pantalla.
-    await expect(page.locator(".hero__role")).toContainText(
-      /Desarrollador full-stack/,
-    );
-    await expect(page.locator(".hero__pitch")).toContainText(
-      /ingeniería y diseño orbitan juntos/,
+    await expectSemanticHeroFallback(page);
+    await expect(page.locator(".hud__system")).toBeVisible();
+    await expect(page.locator(".hud__system")).toHaveText(/Jonas Orbit/i);
+    await expect(page.locator("body")).not.toContainText(
+      /ingeniería y diseño orbitan juntos/i,
     );
 
     await expect(
@@ -507,13 +564,15 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
       "false",
     );
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
-    ).toBeVisible();
+    await expectSemanticHeroFallback(page);
+    await expect(page.locator(".hud__system")).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
     ).toHaveCount(7);
-    await expect(heroLink(page, "CV")).toBeVisible();
+    await expect(heroLink(page, "CV")).toHaveAttribute(
+      "href",
+      "/cv/jonas-javier-cv-es.pdf",
+    );
   });
 
   test("la URL canónica sin el parámetro sí monta el starfield", async ({
@@ -565,9 +624,8 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es");
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: /Jonás Javier Encarnación/ }),
-    ).toBeVisible();
+    await expectSemanticHeroFallback(page);
+    await expect(page.locator(".hud__system")).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
     ).toHaveCount(7);

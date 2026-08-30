@@ -1,8 +1,9 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
 
 /**
- * Los seis cuerpos que orbitan Gargantúa.
+ * Los seis destinos dispuestos alrededor de Gargantúa.
  *
  * ── Por qué NO están dentro del raymarch ────────────────────────────────────
  *
@@ -17,14 +18,13 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  *
  * ── Y por qué nunca los ocluye nada ─────────────────────────────────────────
  *
- * Un cuerpo que pasa por detrás del disco debería desaparecer. No lo hacemos, y
- * es deliberado: **cada destino tiene que estar siempre visible y pulsable.**
- * Un planeta que se esconde medio minuto detrás del disco es un enlace que
- * desaparece del menú, y eso es un fallo de accesibilidad, no un detalle de
- * realismo. La inexactitud se ve una vez cada varias vueltas y se lee como una
- * silueta recortada contra el disco.
+ * Un cuerpo situado por dirección de arte detrás del disco debería desaparecer.
+ * No lo hacemos, y es deliberado: **cada destino tiene que estar siempre visible
+ * y pulsable.** Ocultar una parte del menú por realismo sería un fallo de
+ * accesibilidad; la pequeña inexactitud se lee como una silueta recortada contra
+ * el disco.
  *
- * ── Forma real, y además resplandor ─────────────────────────────────────────
+ * ── Forma real, y emisión localizada ────────────────────────────────────────
  *
  * Hubo una versión en la que las cuatro estructuras —tesseracto, estación,
  * Endurance y Ranger— no eran malla sino un punto de luz con su destello. El
@@ -33,11 +33,10 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  * `(1-d)^12`, lo que quedaba era una chincheta de seis píxeles dentro de un
  * anillo de interfaz vacío. Cuatro de los siete destinos no tenían cuerpo.
  *
- * El problema real no era la geometría, era el TAMAÑO. Con la cámara donde
- * está ahora cada cuerpo ocupa entre 11 y 58 px de radio según por dónde ande
- * su órbita, y eso es sitio de sobra para leer una silueta. Así que vuelven las
- * seis mallas, y el resplandor se queda — pero detrás, como halo, que es lo que
- * hace de verdad una fuente brillante vista a través de una óptica.
+ * El problema real no era la geometría, era usar una silueta genérica y cubrirla
+ * con un halo. Los modelos construidos se leen por estructura; sólo sus balizas
+ * y núcleos emiten. El bloom óptico ya convierte esos puntos físicos en luz sin
+ * envolver la nave o el planeta entero en un degradado de interfaz.
  *
  * ── La luz ──────────────────────────────────────────────────────────────────
  *
@@ -48,13 +47,12 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  */
 
 /**
- * Periodo orbital del cuerpo de referencia (25 rs), en segundos. El resto sale
- * de la tercera ley de Kepler (T ∝ r^1.5), así que el sistema se mueve como un
- * sistema: lo de dentro corre, lo de fuera se arrastra.
+ * Periodo orbital del cuerpo de referencia (25 rs), en segundos. Se conserva
+ * sólo como parametrización de la curva: la dirección de arte fija `seconds=0`
+ * para los cuerpos y la traza usa el periodo para muestrear una vuelta exacta.
  *
- * Deliberadamente enorme. «Órbitas lentas de verdad» significa que en la visita
- * típica un cuerpo recorre una fracción pequeña de su vuelta: la escena está
- * viva, no agitada. Con el cinturón actual las vueltas van de 2.6 a 4.9 minutos.
+ * No implica movimiento visible ni vuelve a hacer dueña de la composición a la
+ * animación orbital.
  */
 const INNER_PERIOD_S = 210;
 
@@ -65,10 +63,9 @@ function orbitalPeriod(placement: WorldStructuralData["placement"]): number {
 /**
  * Posición de un cuerpo en su órbita para un instante dado. Pura.
  *
- * Vive aquí y no en la escena porque ahora tiene dos consumidores: el bucle que
- * mueve los cuerpos y el constructor de la traza orbital, que necesita muestrear
- * la MISMA curva. Duplicar la fórmula sería garantizar que un día la traza deje
- * de coincidir con el cuerpo que la recorre.
+ * Vive aquí y no en la escena porque la posición fija y el constructor de la
+ * traza deben muestrear la MISMA curva. Duplicar la fórmula sería garantizar que
+ * un día la traza deje de coincidir con el destino.
  */
 export function orbitalPosition(
   placement: WorldStructuralData["placement"],
@@ -112,102 +109,13 @@ const KIND: Record<WorldStructuralData["visual"], number> = {
 };
 
 /**
- * Lo que además de forma tiene RESPLANDOR.
- *
- * Son las cuatro cosas construidas del sistema. Un mundo se ve porque el disco
- * lo ilumina; una nave se ve porque ella misma emite, y a esta distancia ese
- * brillo desborda su silueta. El halo va detrás de la malla, no en su lugar.
- */
-const GLOWING = new Set<WorldStructuralData["visual"]>([
-  "tesseract",
-  "station",
-  "ship",
-  "beacon",
-]);
-
-/**
- * El cuad del halo siempre mira a cámara y se construye en espacio de vista: no
- * hace falta girar nada por fotograma ni saber dónde está la cámara.
- *
- * Ojo con el detalle que lo hace inmune al giro propio del cuerpo: el centro
- * sale de la TRASLACIÓN de `modelMatrix`, así que el grupo puede rotar todo lo
- * que quiera y el halo no se entera.
- */
-const GLOW_VERTEX = /* glsl */ `
-  uniform float uSize;
-  varying vec2 vQuad;
-
-  void main() {
-    vQuad = position.xy;
-    vec3 centre = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-    vec4 viewCentre = viewMatrix * vec4(centre, 1.0);
-    viewCentre.xy += position.xy * uSize;
-    gl_Position = projectionMatrix * viewCentre;
-  }
-`;
-
-const GLOW_FRAGMENT = /* glsl */ `
-  uniform vec3 uAccent;
-  uniform vec3 uSecondary;
-  uniform float uTime;
-  uniform float uFocus;
-  uniform float uPulse;
-  uniform float uSize;
-
-  varying vec2 vQuad;
-
-  void main() {
-    float d = length(vQuad);
-    if (d > 1.0) discard;
-
-    /* Sin núcleo duro: el cuerpo real ya está dibujado encima. Esto es sólo el
-       resplandor que una fuente brillante deja alrededor de su silueta, y por
-       eso cae suave en vez de concentrarse en un punto. La versión anterior
-       llevaba un núcleo (1-d)^12 porque ENTONCES el halo era el cuerpo; ahora
-       ese núcleo sería una mancha tapando la malla. */
-    float wide = pow(max(0.0, 1.0 - d), 3.2);
-    float tight = pow(max(0.0, 1.0 - d), 10.0);
-
-    /* Dos púas finas en cruz. Es el detalle que dice «esto brilla de verdad» y
-       no «alguien ha pegado un degradado radial». */
-    float spikes =
-      pow(max(0.0, 1.0 - abs(vQuad.x) * 1.05), 30.0) * exp(-abs(vQuad.y) * 11.0) +
-      pow(max(0.0, 1.0 - abs(vQuad.y) * 1.05), 30.0) * exp(-abs(vQuad.x) * 11.0);
-
-    /*
-      Latido lento y desincronizado por cuerpo: el sistema respira en vez de
-      parpadear a la vez. La baliza de la Ranger late más.
-
-      El periodo pasó de 3.9 s a 15 s y la profundidad se partió por dos. A 3.9 s
-      esto no era respirar, era parpadear: seis destellos por minuto en cada
-      estructura, y con cuatro estructuras el borde del cuadro no paraba quieto
-      nunca. Lo que aporta atmósfera es el latido que se nota sin poder seguirlo.
-    */
-    float breath = 1.0 + uPulse * 0.14 * sin(uTime * 0.42 + uSize * 9.0);
-
-    vec3 colour = mix(uAccent, uSecondary, 0.28);
-    float energy = (wide * 0.24 + tight * 0.46 + spikes * 0.26) * breath;
-    energy *= 1.0 + uFocus * 1.6;
-
-    gl_FragColor = vec4(colour * energy, 1.0);
-  }
-`;
-
-/**
  * La traza de la órbita.
  *
  * ── Qué problema resuelve ───────────────────────────────────────────────────
  *
- * Dos a la vez, y por eso existe. El primero es de composición: seis cuerpos
- * pequeños sobre un fondo negro no forman un sistema, forman una constelación
- * arbitraria. Con su elipse debajo, cada uno pasa a estar EN un sitio — se ve de
- * dónde viene y a dónde va, y las seis elipses anidadas son lo que dibuja la
- * profundidad del conjunto. El segundo es de interacción: el hover necesitaba un
- * acuse de recibo, y el que había era un aro de interfaz pegado encima del
- * planeta. Encender su órbita dice lo mismo con el vocabulario de la escena.
- *
- * En reposo está casi apagada (8.5 % sobre negro): se intuye, no se lee. Al
- * apuntar un destino su órbita sube a 50 % y ninguna otra se mueve.
+ * En reposo deja apenas una insinuación de profundidad. Al apuntar, sólo un arco
+ * corto alrededor del destino adquiere color: localiza el cuerpo y su dirección
+ * sin convertir el hero en seis elipses saturadas.
  *
  * ── Por qué es una cinta y no una línea ─────────────────────────────────────
  *
@@ -228,12 +136,15 @@ const ORBIT_VERTEX = /* glsl */ `
 
   attribute vec3 aTangent;
   attribute float aSide;
+  attribute float aCue;
 
   varying float vSide;
+  varying float vCue;
   varying vec3 vWorld;
 
   void main() {
     vSide = aSide;
+    vCue = aCue;
 
     vec3 base = (modelMatrix * vec4(position, 1.0)).xyz;
     vec3 tangent = normalize(mat3(modelMatrix) * aTangent);
@@ -254,12 +165,14 @@ const ORBIT_VERTEX = /* glsl */ `
 
 const ORBIT_FRAGMENT = /* glsl */ `
   uniform vec3 uAccent;
+  uniform vec3 uNavigation;
   uniform vec3 uCamPos;
   uniform float uFocus;
   uniform float uTime;
   uniform float uOrbitRadius;
 
   varying float vSide;
+  varying float vCue;
   varying vec3 vWorld;
 
   void main() {
@@ -285,16 +198,25 @@ const ORBIT_FRAGMENT = /* glsl */ `
       cruzándose. Seis trazas saturadas no dibujan un sistema, dibujan un
       ESQUEMA. El color es información de estado, así que se guarda para el
       estado: en reposo la órbita es una cuerda de acero apenas visible, y sólo
-      recupera el color de su mundo la que estás apuntando. El salto de reposo a
-      foco es de más de diez veces, así que no hace falta ningún adorno para
-      saber cuál está activa.
+      adquiere el cian común de navegación el tramo del destino apuntado. El
+      salto de reposo a foco es de más de diez veces, así que no hace falta
+      ningún adorno para saber cuál está activa.
     */
-    vec3 reposo = mix(vec3(0.44, 0.50, 0.62), uAccent, 0.22);
-    vec3 tinte = mix(reposo, uAccent, uFocus);
-    float energy = mix(0.026, 0.58, uFocus) * fade * edge;
+    vec3 reposo = mix(vec3(0.44, 0.50, 0.62), uAccent, 0.16);
+    float cue = uFocus * vCue;
+    vec3 tinte = mix(reposo, uNavigation, cue);
 
-    /* Aditivo sobre negro: el alfa va a 1 y la energía viaja en el color, igual
-       que en el halo. Con la energía también en alfa se elevaría al cuadrado. */
+    /*
+      Hover no dibuja la elipse entera. vCue vale uno junto a la posición fija
+      del cuerpo y cae suavemente en un arco corto a ambos lados; fuera de ese
+      tramo la órbita conserva únicamente su lectura ambiental. Así la respuesta
+      se siente como adquisición de trayectoria, no como volver a encender un
+      diagrama orbital completo.
+    */
+    float energy = (0.018 + cue * 0.44) * fade * edge;
+
+    /* Aditivo sobre negro: el alfa va a 1 y la energía viaja en el color. Con
+       la energía también en alfa se elevaría al cuadrado. */
     gl_FragColor = vec4(tinte * energy, 1.0);
   }
 `;
@@ -316,6 +238,7 @@ const BODY_VERTEX = /* glsl */ `
 const BODY_FRAGMENT = /* glsl */ `
   uniform vec3 uAccent;
   uniform vec3 uSecondary;
+  uniform vec3 uNavigation;
   uniform vec3 uCamPos;
   uniform float uLightIntensity;
   uniform float uTime;
@@ -405,6 +328,7 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Atmósfera: color del halo y cuánto pesa. Cero en lo que no tiene aire. */
     vec3 atmosphere = vec3(0.0);
     float atmosphereWeight = 0.0;
+    float outputAlpha = 1.0;
 
     if (uKind == 0) {
       /* Miller: mundo oceánico. Bandas de nube sobre agua profunda. */
@@ -417,14 +341,27 @@ const BODY_FRAGMENT = /* glsl */ `
       atmosphere = vec3(0.35, 0.62, 1.0);
       atmosphereWeight = 1.0;
     } else if (uKind == 1) {
-      /* Edmunds: desierto en calma, el mundo habitable del final. */
-      float dunes = fbm(vLocal * 4.2);
-      albedo = mix(vec3(0.30, 0.15, 0.09), vec3(0.66, 0.42, 0.24), dunes);
-      albedo = mix(albedo, vec3(0.80, 0.66, 0.48), smoothstep(0.62, 0.8, dunes));
-      gloss = 0.05;
-      /* Atmósfera fina y polvorienta: menos pronunciada que la de Miller. */
-      atmosphere = vec3(1.0, 0.66, 0.42);
-      atmosphereWeight = 0.55;
+      /*
+        Edmunds: cobre, relieve y una capa de polvo alta. Dos escalas de terreno
+        rompen la lectura de «bola marrón» sin acercarlo a una Tierra: continentes
+        minerales grandes, crestas secas y haze parcial que deriva casi quieto.
+      */
+      float continents = fbm(vLocal * 1.75 + vec3(4.2, 1.1, 7.3));
+      float terrain = fbm(vLocal * 5.4 + continents * 1.3);
+      float ridges = 1.0 - abs(fbm(vLocal * 9.2) * 2.0 - 1.0);
+      float haze = smoothstep(
+        0.58,
+        0.78,
+        fbm(vLocal * 2.65 + vec3(uTime * 0.0025, 8.0, 2.0))
+      );
+
+      albedo = mix(vec3(0.20, 0.085, 0.045), vec3(0.57, 0.28, 0.13), continents);
+      albedo = mix(albedo, vec3(0.78, 0.48, 0.25), terrain * 0.58);
+      albedo = mix(albedo, vec3(0.91, 0.69, 0.48), ridges * terrain * 0.22);
+      albedo = mix(albedo, vec3(0.76, 0.55, 0.39), haze * 0.24);
+      gloss = 0.07 + haze * 0.04;
+      atmosphere = vec3(1.0, 0.61, 0.34);
+      atmosphereWeight = 0.78;
     } else if (uKind == 2) {
       /*
         Tesseracto: no es un planeta ni una nave, es una retícula.
@@ -443,61 +380,55 @@ const BODY_FRAGMENT = /* glsl */ `
       gloss = 0.0;
     } else if (uKind == 3) {
       /*
-        Cooper Station: cilindro habitado.
-
-        Casco claro, muy especular —es metal pulido bajo una pared de luz— y
-        una retícula de ventanas encendidas que es lo que de verdad delata que
-        ahí vive gente. Las ventanas pesan más que la superficie porque a esta
-        distancia son lo único que se resuelve.
+        Cooper: planeta inventado, frío y ordenado. Las bandas son atmosféricas,
+        no una copia de Saturno; el calor aparece sólo donde Gargantúa lo toca.
       */
-      float p = panels(vLocal * 1.6, 1.15);
-      albedo = mix(vec3(0.26, 0.28, 0.33), vec3(0.68, 0.71, 0.78), p);
-      emissive = uSecondary * (1.0 - p) * 1.15;
-      gloss = 0.7;
+      float weather = fbm(vLocal * 3.1 + vec3(0.0, uTime * 0.003, 0.0));
+      float latitude = 0.5 + 0.5 * cos(vLocal.y * 13.0 + weather * 1.8);
+      albedo = mix(vec3(0.055, 0.10, 0.15), vec3(0.24, 0.36, 0.43), weather);
+      albedo = mix(albedo, vec3(0.42, 0.49, 0.52), latitude * 0.22);
+      gloss = 0.24;
+      atmosphere = vec3(0.31, 0.66, 0.78);
+      atmosphereWeight = 0.82;
     } else if (uKind == 4) {
       /*
-        Endurance: el anillo de doce módulos.
-
-        Los módulos se marcan con la coordenada ANGULAR del toro, no con rayas
-        en espacio de objeto. Es la diferencia entre un detalle cuya frecuencia
-        está acotada por construcción —doce por vuelta, siempre— y uno que se
-        convierte en moiré en cuanto el cuerpo se aleja. Aquel tejido de cuadros
-        del primer intento salía justo de ahí.
+        Endurance: metal de módulos reales. La geometría ya dibuja las diez
+        secciones, así que el material no necesita fingirlas con franjas.
       */
-      float ring = atan(vLocal.y, vLocal.x);
-      float module = smoothstep(0.25, 0.75, 0.5 + 0.5 * cos(ring * 12.0));
-      albedo = mix(vec3(0.17, 0.18, 0.22), vec3(0.74, 0.76, 0.80), module);
-      /* Una luz de posición por módulo, en las juntas. */
-      emissive = uSecondary * pow(1.0 - module, 3.0) * 0.9;
-      gloss = 0.72;
+      float panel = panels(vLocal * 1.7, 1.35);
+      float wear = fbm(vLocal * 6.0);
+      albedo = mix(vec3(0.12, 0.135, 0.16), vec3(0.40, 0.42, 0.45), panel * 0.48);
+      albedo *= 0.86 + wear * 0.22;
+      gloss = 0.66;
+    } else if (uKind == 5) {
+      /*
+        Ranger: sólo casco metálico. El violeta no toca esta rama; vive en una
+        esfera emisiva separada que funciona como baliza física y diminuta.
+      */
+      float plates = panels(vLocal * 2.1, 1.1);
+      albedo = mix(vec3(0.16, 0.18, 0.21), vec3(0.48, 0.50, 0.53), plates * 0.42);
+      gloss = 0.76;
+    } else if (uKind == 6) {
+      /* Anillos de Cooper: pocas bandas minerales, finas y semitransparentes. */
+      float ringRadius = length(vLocal.xy);
+      float bands = 0.5 + 0.5 * cos((ringRadius - 0.82) * 66.0);
+      float bandMask = smoothstep(0.18, 0.72, bands);
+      if (bandMask < 0.08) discard;
+      albedo = mix(vec3(0.15, 0.19, 0.22), vec3(0.50, 0.52, 0.50), bandMask);
+      emissive = key * abs(ndl) * bandMask * 0.07;
+      gloss = 0.34;
+      outputAlpha = 0.24 + bandMask * 0.48;
+    } else if (uKind == 7) {
+      /* Trusses, ejes y hábitat: el mismo metal oscuro en todo el sistema. */
+      float structure = panels(vLocal * 1.35, 1.0);
+      albedo = mix(vec3(0.075, 0.09, 0.115), vec3(0.27, 0.29, 0.32), structure * 0.34);
+      gloss = 0.58;
     } else {
-      /*
-        Ranger: la nave pequeña. Casco mate y baliza que late, para que se
-        encuentre — es el cuerpo más lejano y el más pequeño del sistema.
-      */
-      // La baliza latía a 2.6 rad/s — 2.4 destellos por segundo. Eso no es una
-      // baliza de navegación, es un aviso de alarma, y era el movimiento más
-      // nervioso de toda la escena. A 0.55 rad/s da una vuelta cada 11 s.
-      float pulse = 0.5 + 0.5 * sin(uTime * 0.55);
-
-      /*
-        Casco, no icono.
-
-        La versión anterior emitía uAccent puro sobre todo el borde, y el
-        acento de la Ranger es violeta: el resultado era una silueta violeta
-        uniforme que se leía como un pictograma de interfaz, no como una nave.
-        El resto del sistema son cascos grises iluminados por un disco ámbar, y
-        este era el único cuerpo que rompía ese idioma.
-
-        Ahora el casco se comporta como los demás —metal claro que recoge la luz
-        del disco— y el violeta queda reducido a lo que de verdad debe ser: la
-        luz de su BALIZA. La emisión se blanquea al 55 % y se concentra en el
-        filo, así que el color identifica al destino sin teñir el objeto entero.
-      */
-      albedo = vec3(0.34, 0.35, 0.40);
-      vec3 baliza = mix(vec3(1.0, 0.96, 0.92), uAccent, 0.55);
-      emissive = baliza * (0.34 + 0.62 * pulse) * smoothstep(0.25, 0.75, fresnel);
-      gloss = 0.72;
+      /* Luces de navegación y núcleo del Tesseracto: geometría, no halo global. */
+      float pulse = 0.94 + 0.06 * sin(uTime * 0.55);
+      albedo = vec3(0.0);
+      emissive = uAccent * (2.75 + uFocus * 0.55) * pulse;
+      gloss = 0.0;
     }
 
     /*
@@ -508,8 +439,8 @@ const BODY_FRAGMENT = /* glsl */ `
       pintaría basura. Y tampoco tendría sentido: una retícula no tiene cara
       iluminada, solo brilla.
     */
-    if (uKind == 2) {
-      gl_FragColor = vec4(emissive + uAccent * uFocus * 1.2, 1.0);
+    if (uKind == 2 || uKind == 8) {
+      gl_FragColor = vec4(emissive + uNavigation * uFocus * 0.75, 1.0);
       return;
     }
 
@@ -532,78 +463,345 @@ const BODY_FRAGMENT = /* glsl */ `
 
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
        cuerpo del fondo negro sin dibujarle un contorno. */
-    color += uAccent * fresnel * 0.14 * uLightIntensity * (0.35 + 0.65 * day);
+    color += vec3(1.0, 0.72, 0.42) * fresnel * 0.13 * uLightIntensity
+      * (0.35 + 0.65 * day);
     color += emissive;
 
     /* Foco: al enfocar un destino, su cuerpo se enciende. La cámara no se
        mueve — es el contrato de §3 — así que toda la respuesta es luz. */
-    color += uAccent * uFocus * (0.35 + fresnel * 1.1);
+    color += uNavigation * uFocus * (0.055 + fresnel * 0.62);
 
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, outputAlpha);
   }
 `;
 
-function geometryFor(visual: WorldStructuralData["visual"]): THREE.BufferGeometry {
-  switch (visual) {
-    case "water":
-    case "desert":
-      return new THREE.SphereGeometry(1, 48, 32);
-    case "tesseract":
-      // Solo las aristas del cubo. Ver el comentario del shader: como sólido
-      // era un cuadrado de color, y como retícula se reconoce al instante.
-      return new THREE.EdgesGeometry(new THREE.BoxGeometry(1.3, 1.3, 1.3));
-    case "station":
-      return new THREE.CylinderGeometry(0.62, 0.62, 2.3, 32, 1);
-    case "ship":
-      // El anillo de la Endurance. Doce módulos serían doce mallas; el toro con
-      // sus marcas angulares los sugiere por una fracción del coste.
-      return new THREE.TorusGeometry(1, 0.3, 16, 48);
-    case "beacon":
-      return new THREE.ConeGeometry(0.52, 1.9, 18);
-    default:
-      return new THREE.SphereGeometry(1, 16, 12);
+const NAVIGATION_COLOUR = "#7fe5ff";
+const STRUCTURE_KIND = 7;
+const EMISSIVE_KIND = 8;
+
+interface MaterialOptions {
+  accent?: string;
+  secondary?: string;
+  transparent?: boolean;
+  depthWrite?: boolean;
+  side?: THREE.Side;
+}
+
+/**
+ * Todos los materiales, incluidos luces y anillos, exponen el mismo contrato de
+ * uniformes. `system-scene.ts` puede actualizar tiempo/foco sin saber cuántas
+ * piezas tiene un mundo; la complejidad queda encapsulada aquí.
+ */
+function bodyMaterial(
+  input: SceneBodyInput,
+  kind: number,
+  options: MaterialOptions = {},
+): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: BODY_VERTEX,
+    fragmentShader: BODY_FRAGMENT,
+    transparent: options.transparent ?? false,
+    depthWrite: options.depthWrite ?? true,
+    side: options.side ?? THREE.FrontSide,
+    uniforms: {
+      uAccent: { value: new THREE.Color(options.accent ?? input.accent) },
+      uSecondary: { value: new THREE.Color(options.secondary ?? input.secondary) },
+      uNavigation: { value: new THREE.Color(NAVIGATION_COLOUR) },
+      uCamPos: { value: new THREE.Vector3() },
+      uLightIntensity: { value: 1 },
+      uTime: { value: 0 },
+      uFocus: { value: 0 },
+      uKind: { value: kind },
+    },
+  });
+}
+
+type VectorTuple = readonly [number, number, number];
+
+/** Aplica una transformación y la hornea en la geometría antes de fusionarla. */
+function placed(
+  geometry: THREE.BufferGeometry,
+  position: VectorTuple = [0, 0, 0],
+  rotation: VectorTuple = [0, 0, 0],
+): THREE.BufferGeometry {
+  const matrix = new THREE.Matrix4().compose(
+    new THREE.Vector3(...position),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)),
+    new THREE.Vector3(1, 1, 1),
+  );
+  return geometry.applyMatrix4(matrix);
+}
+
+/** Una malla por familia material: detalle real sin pagar un draw por módulo. */
+function mergedMesh(
+  geometries: THREE.BufferGeometry[],
+  material: THREE.ShaderMaterial,
+): THREE.Mesh {
+  const geometry = mergeGeometries(geometries, false);
+  for (const part of geometries) part.dispose();
+  return new THREE.Mesh(geometry, material);
+}
+
+interface BodyModel {
+  root: THREE.Object3D;
+  materials: THREE.ShaderMaterial[];
+}
+
+function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
+  const material = bodyMaterial(input, kind);
+  const root = new THREE.Object3D();
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), material);
+  sphere.name = `${input.id}-surface`;
+  root.add(sphere);
+  return { root, materials: [material] };
+}
+
+/**
+ * Endurance original: un vehículo radial, no un toro decorado.
+ *
+ * Diez módulos independientes definen la silueta. El hub, los radios y dos
+ * trusses parciales explican cómo se sostiene; el eje y la antena explican qué
+ * hace. Sólo cuatro balizas emiten y todas caben en tres draws totales.
+ */
+function enduranceModel(input: SceneBodyInput): BodyModel {
+  const hull = bodyMaterial(input, KIND.ship);
+  const structure = bodyMaterial(input, STRUCTURE_KIND);
+  const lights = bodyMaterial(input, EMISSIVE_KIND, { accent: input.secondary });
+  const root = new THREE.Object3D();
+
+  const hullParts: THREE.BufferGeometry[] = [
+    placed(new THREE.CylinderGeometry(0.18, 0.18, 0.3, 16), [0, 0, 0], [Math.PI / 2, 0, 0]),
+    placed(new THREE.CylinderGeometry(0.075, 0.075, 0.68, 12), [0, 0, 0.2], [Math.PI / 2, 0, 0]),
+    placed(new THREE.ConeGeometry(0.13, 0.09, 12, 1, true), [0, 0, 0.58], [Math.PI / 2, 0, 0]),
+  ];
+  const structureParts: THREE.BufferGeometry[] = [
+    placed(new THREE.TorusGeometry(0.67, 0.018, 6, 42, 2.48), [0, 0, 0], [0, 0, 0.22]),
+    placed(
+      new THREE.TorusGeometry(0.67, 0.018, 6, 42, 2.48),
+      [0, 0, 0],
+      [0, 0, Math.PI + 0.22],
+    ),
+  ];
+  const lightParts: THREE.BufferGeometry[] = [];
+  const modules = 10;
+
+  for (let index = 0; index < modules; index++) {
+    const angle = (index / modules) * Math.PI * 2;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const moduleRadius = 0.79;
+
+    hullParts.push(
+      placed(
+        new THREE.BoxGeometry(0.3, 0.17, 0.18),
+        [cos * moduleRadius, sin * moduleRadius, index % 2 === 0 ? 0.012 : -0.012],
+        [0, 0, angle + Math.PI / 2],
+      ),
+    );
+    structureParts.push(
+      placed(
+        new THREE.BoxGeometry(0.54, 0.044, 0.044),
+        [cos * 0.44, sin * 0.44, 0],
+        [0, 0, angle],
+      ),
+    );
+
+    if (index % 3 === 0) {
+      lightParts.push(
+        placed(new THREE.SphereGeometry(0.027, 8, 6), [cos * 0.91, sin * 0.91, 0.055]),
+      );
+    }
   }
+
+  const hullMesh = mergedMesh(hullParts, hull);
+  hullMesh.name = "endurance-hub-and-modules";
+  root.add(hullMesh);
+  const structureMesh = mergedMesh(structureParts, structure);
+  structureMesh.name = "endurance-spokes-and-partial-truss";
+  root.add(structureMesh);
+  const lightMesh = mergedMesh(lightParts, lights);
+  lightMesh.name = "endurance-navigation-lights";
+  lightMesh.renderOrder = 2;
+  root.add(lightMesh);
+
+  return { root, materials: [hull, structure, lights] };
+}
+
+/** Planeta anillado más un hábitat que orbita dentro del mismo modelo lógico. */
+function cooperModel(input: SceneBodyInput): BodyModel {
+  const planet = bodyMaterial(input, KIND.station);
+  const rings = bodyMaterial(input, 6, {
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const habitat = bodyMaterial(input, STRUCTURE_KIND);
+  const lights = bodyMaterial(input, EMISSIVE_KIND, { accent: NAVIGATION_COLOUR });
+  const root = new THREE.Object3D();
+
+  const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(0.66, 48, 32), planet);
+  planetMesh.name = "cooper-planet";
+  root.add(planetMesh);
+
+  const ringMesh = new THREE.Mesh(new THREE.RingGeometry(0.82, 1.18, 72, 3), rings);
+  ringMesh.name = "cooper-rings";
+  ringMesh.rotation.x = Math.PI / 2;
+  ringMesh.renderOrder = 1;
+  root.add(ringMesh);
+
+  const habitatCentre = 1.29;
+  const habitatParts = [
+    placed(
+      new THREE.TorusGeometry(0.12, 0.024, 6, 20),
+      [habitatCentre, 0, 0],
+      [0, Math.PI / 2, 0],
+    ),
+    placed(
+      new THREE.CylinderGeometry(0.024, 0.024, 0.3, 8),
+      [habitatCentre, 0, 0],
+      [0, 0, Math.PI / 2],
+    ),
+    placed(new THREE.BoxGeometry(0.09, 0.065, 0.08), [habitatCentre, 0.13, 0]),
+    placed(new THREE.BoxGeometry(0.09, 0.065, 0.08), [habitatCentre, -0.13, 0]),
+    placed(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 6), [habitatCentre, 0.2, 0]),
+  ];
+  const habitatMesh = mergedMesh(habitatParts, habitat);
+  habitatMesh.name = "cooper-orbital-habitat";
+  root.add(habitatMesh);
+
+  const habitatLight = new THREE.Mesh(
+    placed(new THREE.SphereGeometry(0.03, 8, 6), [habitatCentre, 0.315, 0]),
+    lights,
+  );
+  habitatLight.name = "cooper-habitat-light";
+  habitatLight.renderOrder = 2;
+  root.add(habitatLight);
+
+  return { root, materials: [planet, rings, habitat, lights] };
+}
+
+function tesseractModel(input: SceneBodyInput): BodyModel {
+  const frames = bodyMaterial(input, KIND.tesseract);
+  const core = bodyMaterial(input, EMISSIVE_KIND, { accent: input.secondary });
+  const root = new THREE.Object3D();
+  const frameParts: THREE.BufferGeometry[] = [];
+  const definitions: ReadonlyArray<readonly [number, VectorTuple]> = [
+    [1.2, [0.04, 0.08, -0.04]],
+    [0.88, [0.31, -0.23, 0.18]],
+    [0.6, [-0.27, 0.38, 0.46]],
+    [0.34, [0.52, 0.16, -0.32]],
+  ];
+
+  for (const [size, rotation] of definitions) {
+    const box = new THREE.BoxGeometry(size, size, size);
+    const edges = new THREE.EdgesGeometry(box);
+    box.dispose();
+    frameParts.push(placed(edges, [0, 0, 0], rotation));
+  }
+
+  const frameLines = new THREE.LineSegments(mergeGeometries(frameParts, false), frames);
+  frameLines.name = "tesseract-nested-frames";
+  for (const part of frameParts) part.dispose();
+  frameLines.renderOrder = 1;
+  root.add(frameLines);
+
+  const coreMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), core);
+  coreMesh.name = "tesseract-core";
+  coreMesh.rotation.set(0.35, 0.2, 0.55);
+  coreMesh.renderOrder = 2;
+  root.add(coreMesh);
+
+  return { root, materials: [frames, core] };
+}
+
+function rangerModel(input: SceneBodyInput): BodyModel {
+  const hull = bodyMaterial(input, KIND.beacon);
+  const beacon = bodyMaterial(input, EMISSIVE_KIND, { accent: input.accent });
+  const root = new THREE.Object3D();
+
+  const hullParts = [
+    placed(new THREE.ConeGeometry(0.23, 1.25, 6), [0, 0, 0], [0, 0, -Math.PI / 2]),
+    placed(new THREE.BoxGeometry(0.38, 0.055, 0.72), [-0.2, 0, 0]),
+    placed(new THREE.BoxGeometry(0.32, 0.34, 0.055), [-0.42, 0.07, 0]),
+    placed(new THREE.SphereGeometry(0.12, 12, 8), [0.13, 0.09, 0]),
+    placed(
+      new THREE.CylinderGeometry(0.16, 0.16, 0.18, 10),
+      [-0.59, 0, 0],
+      [0, 0, Math.PI / 2],
+    ),
+  ];
+  const hullMesh = mergedMesh(hullParts, hull);
+  hullMesh.name = "ranger-metallic-hull";
+  root.add(hullMesh);
+
+  const beaconMesh = new THREE.Mesh(
+    placed(new THREE.SphereGeometry(0.042, 8, 6), [-0.33, 0.23, 0]),
+    beacon,
+  );
+  beaconMesh.name = "ranger-violet-beacon";
+  beaconMesh.renderOrder = 2;
+  root.add(beaconMesh);
+
+  return { root, materials: [hull, beacon] };
+}
+
+function bodyModel(input: SceneBodyInput): BodyModel {
+  switch (input.visual) {
+    case "water":
+      return simpleWorld(input, KIND.water);
+    case "desert":
+      return simpleWorld(input, KIND.desert);
+    case "tesseract":
+      return tesseractModel(input);
+    case "station":
+      return cooperModel(input);
+    case "ship":
+      return enduranceModel(input);
+    case "beacon":
+      return rangerModel(input);
+    default:
+      return simpleWorld(input, KIND.water);
+  }
+}
+
+/** Radio real desde el origen, ya con transforms y escala del modelo aplicados. */
+function modelRadius(root: THREE.Object3D): number {
+  const sphere = new THREE.Sphere();
+  let radius = 0;
+  root.updateMatrixWorld(true);
+  root.traverse((node) => {
+    const geometry = (node as Partial<THREE.Mesh>).geometry;
+    if (!geometry) return;
+    geometry.computeBoundingSphere();
+    if (!geometry.boundingSphere) return;
+    sphere.copy(geometry.boundingSphere).applyMatrix4(node.matrixWorld);
+    radius = Math.max(radius, sphere.center.length() + sphere.radius);
+  });
+  return radius;
 }
 
 /**
  * Orientación de reposo del cuerpo, ANTES de su giro propio.
  *
- * Vive en el grupo y no en la malla porque el giro va en la malla: así el
- * cuerpo gira sobre su propio eje —el anillo de la Endurance rueda en su
- * plano— en vez de bambolearse alrededor del eje del mundo, que es lo que sale
- * cuando se compone al revés.
+ * Vive en el grupo y no en las piezas porque el giro va en la raíz del modelo:
+ * así cada cuerpo gira sobre su propio eje en vez de bambolearse alrededor del
+ * eje del mundo, que es lo que sale cuando se compone al revés.
  */
 function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Euler) {
-  // El anillo de la Endurance va de canto respecto de su avance, como en la
-  // película; la Ranger apunta con el morro por delante.
+  // Endurance enseña radios y módulos; Cooper inclina los anillos lo justo para
+  // conservar la elipse; Ranger ofrece el perfil metálico, no un triángulo plano.
   if (visual === "ship") return target.set(Math.PI / 3.6, 0, 0);
-  if (visual === "beacon") return target.set(0, 0, Math.PI / 2);
+  if (visual === "station") return target.set(0.28, 0, -0.18);
+  if (visual === "tesseract") return target.set(0.12, 0.18, -0.08);
+  if (visual === "beacon") return target.set(0.08, -0.2, -0.08);
   return target.set(0, 0, 0);
 }
 
-/**
- * Eje del giro propio, en el espacio LOCAL de la malla.
- *
- * ── El bug que corrige ──────────────────────────────────────────────────────
- *
- * Antes había un solo eje, Y, para los seis cuerpos, y para el anillo de la
- * Endurance eso era sencillamente el eje equivocado. `TorusGeometry` construye
- * el aro en el plano XY barriendo el tubo alrededor de **Z**: su eje de simetría
- * es Z, no Y. Al girarlo sobre Y, el anillo no rodaba en su plano — daba
- * volteretas de canto, pasando de aro a línea y vuelta a aro cada media vuelta.
- *
- * Era literalmente uno de los «planetas se mueven raro», y el más visible de
- * todos porque la Endurance es de los cuerpos grandes. El comentario del código
- * decía «rueda en su plano»; el código hacía lo contrario.
- *
- * El resto ya estaba bien y se deja como estaba: el cilindro de Cooper Station y
- * el cono de la Ranger tienen su eje en Y por construcción, y una esfera o una
- * retícula giran igual sobre cualquiera.
- */
+/** Eje de giro propio, en el espacio local de la raíz de cada modelo. */
 function spinAxis(visual: WorldStructuralData["visual"]): THREE.Vector3 {
-  return visual === "ship"
-    ? new THREE.Vector3(0, 0, 1)
-    : new THREE.Vector3(0, 1, 0);
+  if (visual === "ship") return new THREE.Vector3(0, 0, 1);
+  if (visual === "beacon") return new THREE.Vector3(1, 0, 0);
+  return new THREE.Vector3(0, 1, 0);
 }
 
 /**
@@ -623,6 +821,7 @@ function orbitGeometry(
   const positions = new Float32Array(ORBIT_SAMPLES * 2 * 3);
   const tangents = new Float32Array(ORBIT_SAMPLES * 2 * 3);
   const sides = new Float32Array(ORBIT_SAMPLES * 2);
+  const cues = new Float32Array(ORBIT_SAMPLES * 2);
   const indices: number[] = [];
 
   const point = new THREE.Vector3();
@@ -630,7 +829,11 @@ function orbitGeometry(
   const tangent = new THREE.Vector3();
 
   for (let i = 0; i < ORBIT_SAMPLES; i++) {
-    const t = (i / ORBIT_SAMPLES) * period;
+    const progress = i / ORBIT_SAMPLES;
+    const t = progress * period;
+    const distanceFromBody = Math.min(progress, 1 - progress);
+    // Uno junto al cuerpo fijo; cero después de un arco corto a cada lado.
+    const cue = 1 - THREE.MathUtils.smoothstep(distanceFromBody, 0.025, 0.085);
     orbitalPosition(placement, t, point);
     // Diferencia adelantada sobre la propia curva: exacta para lo que hace
     // falta y sin tener que derivar la parametrización a mano.
@@ -646,6 +849,7 @@ function orbitGeometry(
       tangents[v * 3 + 1] = tangent.y;
       tangents[v * 3 + 2] = tangent.z;
       sides[v] = side === 0 ? -1 : 1;
+      cues[v] = cue;
     }
 
     // Se cierra el bucle contra la muestra 0: una órbita no tiene extremos.
@@ -658,6 +862,7 @@ function orbitGeometry(
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute("aTangent", new THREE.BufferAttribute(tangents, 3));
   geometry.setAttribute("aSide", new THREE.BufferAttribute(sides, 1));
+  geometry.setAttribute("aCue", new THREE.BufferAttribute(cues, 1));
   geometry.setIndex(indices);
   return geometry;
 }
@@ -672,12 +877,11 @@ export interface SceneBodyInput {
 
 export interface SceneBody {
   id: WorldId;
-  /** Lo que se mueve por la órbita: contiene la malla y, si lo lleva, el halo. */
+  /** Raíz colocada en el sistema; contiene todas las piezas del modelo. */
   object: THREE.Object3D;
   /**
-   * La traza de la órbita. Va aparte del cuerpo y NO cuelga de él: es geometría
-   * fija en el espacio del sistema y el cuerpo la recorre. Colgarla del objeto
-   * que se mueve la habría arrastrado consigo, que es exactamente lo contrario.
+   * La traza de la órbita va aparte del cuerpo: es geometría fija en el espacio
+   * del sistema y su cue se alinea con la posición de dirección de arte.
    */
   orbit: THREE.Object3D;
   /** Todos los materiales del cuerpo. El bucle les escribe los uniformes. */
@@ -703,64 +907,12 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
   const kind = KIND[input.visual];
   if (kind < 0) return null;
 
-  const materials: THREE.ShaderMaterial[] = [];
   const object = new THREE.Object3D();
   restOrientation(input.visual, object.rotation);
-
-  const surface = new THREE.ShaderMaterial({
-    vertexShader: BODY_VERTEX,
-    fragmentShader: BODY_FRAGMENT,
-    uniforms: {
-      uAccent: { value: new THREE.Color(input.accent) },
-      uSecondary: { value: new THREE.Color(input.secondary) },
-      uCamPos: { value: new THREE.Vector3() },
-      uLightIntensity: { value: 1 },
-      uTime: { value: 0 },
-      uFocus: { value: 0 },
-      uKind: { value: kind },
-    },
-  });
-  materials.push(surface);
-
-  const geometry = geometryFor(input.visual);
-  // El tesseracto se dibuja como líneas, no como superficie: es lo único del
-  // sistema cuya identidad está en su dibujo y no en su volumen.
-  const mesh =
-    input.visual === "tesseract"
-      ? new THREE.LineSegments(geometry, surface)
-      : new THREE.Mesh(geometry, surface);
-  mesh.scale.setScalar(input.placement.size);
-  object.add(mesh);
-
-  if (GLOWING.has(input.visual)) {
-    // El halo desborda la silueta lo justo para leerse como brillo propio. A
-    // 4.2 —lo que valía cuando el halo ERA el cuerpo— se comía al vecino.
-    const glow = new THREE.ShaderMaterial({
-      vertexShader: GLOW_VERTEX,
-      fragmentShader: GLOW_FRAGMENT,
-      transparent: true,
-      // Sin escritura de profundidad y con mezcla aditiva: dos halos cercanos
-      // se suman en vez de recortarse, y al cruzarse con el disco de Gargantúa
-      // se funden con él en lugar de pegarse encima.
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        uAccent: { value: new THREE.Color(input.accent) },
-        uSecondary: { value: new THREE.Color(input.secondary) },
-        uSize: { value: input.placement.size * 2.3 },
-        uTime: { value: 0 },
-        uFocus: { value: 0 },
-        // La baliza de la Ranger late; una estación habitada apenas.
-        uPulse: { value: input.visual === "beacon" ? 1 : 0.25 },
-      },
-    });
-    materials.push(glow);
-
-    const halo = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glow);
-    // Después de la malla: es transparente y aditivo.
-    halo.renderOrder = 1;
-    object.add(halo);
-  }
+  const model = bodyModel(input);
+  model.root.scale.setScalar(input.placement.size);
+  const radius = modelRadius(model.root);
+  object.add(model.root);
 
   // La traza de la órbita. Gargantúa no llega aquí (sale antes por `kind < 0`),
   // así que todo lo que se construye tiene órbita que dibujar.
@@ -773,6 +925,7 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
     side: THREE.DoubleSide,
     uniforms: {
       uAccent: { value: new THREE.Color(input.accent) },
+      uNavigation: { value: new THREE.Color(NAVIGATION_COLOUR) },
       uCamPos: { value: new THREE.Vector3() },
       uFocus: { value: 0 },
       uTime: { value: 0 },
@@ -783,7 +936,7 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
       uWidth: { value: 0.12 },
     },
   });
-  materials.push(orbitMaterial);
+  const materials = [...model.materials, orbitMaterial];
   const orbit = new THREE.Mesh(orbitGeometry(input.placement), orbitMaterial);
   // Detrás de los cuerpos: es una guía, no un objeto del sistema.
   orbit.renderOrder = -1;
@@ -801,11 +954,11 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
     orbit,
     materials,
     placement: input.placement,
-    radius: input.placement.size,
+    radius,
     spinAt(seconds) {
-      // En el eje LOCAL de la malla, que es lo que hace que el anillo de la
-      // Endurance ruede en su plano en vez de cabecear.
-      mesh.quaternion.setFromAxisAngle(axis, spin * seconds);
+      // En el eje LOCAL del modelo completo: módulos, trusses, planeta y hábitat
+      // conservan sus relaciones y no bambolean alrededor del eje del mundo.
+      model.root.quaternion.setFromAxisAngle(axis, spin * seconds);
     },
   };
 }

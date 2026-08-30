@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/hero";
 import { StructuredData } from "@/components/structured-data";
-import { SystemHud } from "@/components/system-hud";
 import { SystemMap } from "@/components/system-map";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
@@ -52,10 +51,10 @@ export async function generateMetadata({
  * marcado vive encima: no es un documento con un fondo bonito, es un LUGAR
  * (docs/plans/sistema-gargantua.md §1 y §4).
  *
- * Server component puro, cero JavaScript propio. El HTML servido ya trae el
- * nombre, la frase, los dos CTAs, el CV y los siete enlaces a los mundos —
- * exactamente lo que exige la regla 7 y ni una palabra más, porque todo lo
- * demás se mudó a su destino.
+ * Server component puro, cero JavaScript propio. El HTML servido ya trae la
+ * identidad y los accesos contractuales como respaldo semántico, además de los
+ * siete enlaces a los mundos. Visualmente, el sistema y su navegación son el
+ * Hero: no hay un bloque de presentación personal sobre la escena.
  */
 export default async function SystemPage({
   params,
@@ -83,12 +82,6 @@ export default async function SystemPage({
         projectsHref={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
         contactHref={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}
       />
-      {/*
-        La instrumentación del puesto de navegación. Va antes que el mapa en el
-        DOM pero es `aria-hidden` casi entero: no aporta destinos, refleja
-        estado. Ver docs/design/endurance-navigation-interface.md.
-      */}
-      <SystemHud worlds={worlds} />
       <SystemMap worlds={worlds} />
     </main>
   );
