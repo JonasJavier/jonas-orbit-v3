@@ -13,7 +13,6 @@ import {
 import {
   createBody,
   disposeBody,
-  orbitalPeriod,
   orbitalPosition,
   type SceneBody,
   type SceneBodyInput,
@@ -160,7 +159,7 @@ const PARALLAX_TAU = 0.32;
  * así que hace falta bastante menos aire para que quepa. Y cada rs de margen se
  * paga en distancia de cámara, o sea en tamaño de Gargantúa.
  */
-const FRAME_MARGIN = 2.5;
+const FRAME_MARGIN = 7;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -432,13 +431,19 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     }
 
     for (const body of bodies) {
-      // 48 muestras por órbita: el error de una elipse muestreada así es muy
-      // inferior al margen, y esto solo corre al redimensionar.
-      for (let i = 0; i < 48; i++) {
-        const seconds = (i / 48) * orbitalPeriod(body.placement);
-        orbitalPosition(body.placement, seconds, point);
-        tight = Math.max(tight, distanceFor(point, body.radius));
-      }
+      // Una sola muestra por cuerpo, porque el sistema está QUIETO.
+      //
+      // Antes se recorrían 48 fases de cada órbita: había que garantizar que
+      // ningún destino saliera de cuadro en ningún momento de su vuelta, y eso
+      // obligaba a encuadrar la unión de las seis elipses enteras. El precio lo
+      // pagaba Gargantúa — la cámara se iba a 90 rs para dejar sitio a
+      // posiciones que ningún visitante llegaba a ver.
+      //
+      // Con las posiciones congeladas el encuadre solo tiene que encajar seis
+      // puntos, y eso acerca la cámara de 90 a 73 rs. El disco pasa del 35 % al
+      // 42 % del ancho del cuadro sin tocar una sola constante de tamaño.
+      orbitalPosition(body.placement, 0, point);
+      tight = Math.max(tight, distanceFor(point, body.radius));
     }
 
     /*
@@ -708,7 +713,21 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     projected.length = 0;
 
     for (const body of bodies) {
-      orbitalPosition(body.placement, seconds, position);
+      /*
+        POSICIÓN CONGELADA.
+
+        Los cuerpos ya no recorren su órbita. No es una limitación técnica: es
+        dirección de arte. Seis objetos deslizándose sin parar sobre seis elipses
+        concéntricas se leen como un diagrama animado, y además obligaban a
+        encuadrar la unión de todas las trayectorias — lo que dejaba a Gargantúa
+        pequeño. Un sistema real a esta escala tampoco se mueve de forma
+        perceptible: la Endurance tarda horas en cruzar un grado.
+
+        Lo que queda vivo es lo que sí aporta atmósfera y no ruido: el giro
+        propio de cada cuerpo, el latido de las balizas, el paralaje del puntero
+        y el propio disco de acreción, que no para nunca.
+      */
+      orbitalPosition(body.placement, 0, position);
       body.object.position.copy(position);
       body.spinAt(seconds);
 

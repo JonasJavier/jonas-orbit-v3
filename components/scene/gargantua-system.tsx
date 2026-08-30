@@ -321,8 +321,25 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     slots.set(id, node.closest<HTMLElement>(".system-map__slot") ?? node);
   }
 
+  /*
+    Apuntar una entrada del RAÍL enciende el mismo cuerpo y la misma órbita que
+    apuntar el planeta. Sin esto, el raíl sería una lista de enlaces al lado de
+    un universo mudo; con esto, es el mando del universo — y es lo que da
+    usabilidad a los destinos que la composición deja pequeños o lejanos.
+
+    El raíl no mueve etiquetas, así que no entra en `slots`: sólo en el foco.
+  */
+  const focusable = new Map<string, HTMLElement[]>();
+  for (const [id, node] of nodes) focusable.set(id, [node]);
+  for (const node of document.querySelectorAll<HTMLElement>("[data-rail-world]")) {
+    const id = node.getAttribute("data-rail-world");
+    if (!id) continue;
+    focusable.set(id, [...(focusable.get(id) ?? []), node]);
+  }
+
   const teardown: Array<() => void> = [];
-  for (const [id, node] of nodes) {
+  for (const [id, group] of focusable) {
+    for (const node of group) {
     const enter = () => getHandle()?.setFocus(id as WorldId);
     const leave = () => getHandle()?.setFocus(null);
     node.addEventListener("pointerenter", enter);
@@ -335,6 +352,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
       node.removeEventListener("focus", enter);
       node.removeEventListener("blur", leave);
     });
+    }
   }
 
   /**

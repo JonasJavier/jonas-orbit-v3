@@ -162,7 +162,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 21, phase: 196, inclination: 39, size: 1.55 },
+    placement: { orbitRadius: 33, phase: 233, inclination: 20, size: 1.7 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -171,7 +171,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 23, phase: 248, inclination: 31, size: 1.3 },
+    placement: { orbitRadius: 30, phase: 272, inclination: 26, size: 1.6 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -180,7 +180,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    placement: { orbitRadius: 24.5, phase: 300, inclination: 25, size: 2.25 },
+    placement: { orbitRadius: 23.5, phase: 337, inclination: 38, size: 2.3 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -189,7 +189,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 26.5, phase: 350, inclination: 18, size: 1.95 },
+    placement: { orbitRadius: 22, phase: 45, inclination: 12, size: 2.9 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -198,7 +198,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    placement: { orbitRadius: 28.5, phase: 68, inclination: 13, size: 2.0 },
+    placement: { orbitRadius: 22, phase: 167, inclination: 56, size: 2.2 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -221,7 +221,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 30, phase: 132, inclination: 10, size: 0.95 },
+    placement: { orbitRadius: 30, phase: 180, inclination: 10, size: 1.2 },
     sceneName: "scene-ranger",
   },
 };

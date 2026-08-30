@@ -15,6 +15,14 @@ plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
 transiciones y presupuestos**. En todo lo demás el plan principal sigue intacto.
 Ante contradicción entre ambos, manda el pivote.
 
+**Dirección artística del hero (2026-08-29):**
+`docs/design/hero-gargantua-direction.md` manda sobre los dos anteriores en
+**composición del hero, escala de Gargantúa, posiciones de los cuerpos, motion
+en reposo, órbitas, etiquetas y estados**. Su cambio central: **el sistema está
+quieto** — los cuerpos no recorren su órbita, y sus posiciones son constantes de
+dirección de arte. Cualquier texto anterior que describa cuerpos orbitando de
+forma continua está obsoleto.
+
 ## Comandos
 
 - `npm run check` — lint + typecheck + knip + test + build (lo que corre CI).
