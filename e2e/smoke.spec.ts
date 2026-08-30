@@ -550,13 +550,25 @@ test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
 });
 
 test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
-  test("no monta el canvas y conserva el contenido íntegro", async ({ page }) => {
+  test("congela el cielo, omite WebGL y conserva el contenido íntegro", async ({
+    page,
+  }) => {
     await page.goto("/es?no3d=1");
 
-    await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
+      timeout: 3_000,
+    });
     await expect(page.locator("html")).toHaveAttribute(
       "data-starfield",
+      "ready",
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield-motion",
       "static",
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-pointer-life",
+      "off",
     );
     // ...pero NO es reduced-motion: son dos conceptos distintos.
     await expect(page.locator("html")).toHaveAttribute(
@@ -594,14 +606,22 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
     await page.goto("/es?no3d=1");
     await expect(page.locator("html")).toHaveAttribute(
       "data-starfield",
+      "ready",
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield-motion",
       "static",
     );
 
     await systemMap(page).getByRole("link", { name: /Contacto/ }).click();
     await expect(page).toHaveURL(/\/es\/contacto$/);
-    await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(1);
     await expect(page.locator("html")).toHaveAttribute(
       "data-starfield",
+      "ready",
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield-motion",
       "static",
     );
   });
@@ -610,7 +630,13 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
     page,
   }) => {
     await page.goto("/es?no3d=1");
-    await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
+      timeout: 3_000,
+    });
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield-motion",
+      "static",
+    );
 
     await page.goto("/es?no3d=0");
     await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
@@ -629,7 +655,21 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     await expect(
       page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
     ).toHaveCount(7);
-    await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
+    await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
+      timeout: 3_000,
+    });
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield",
+      "ready",
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield-motion",
+      "static",
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-pointer-life",
+      "off",
+    );
     await expect(page.locator("html")).toHaveAttribute(
       "data-reduced-motion",
       "true",

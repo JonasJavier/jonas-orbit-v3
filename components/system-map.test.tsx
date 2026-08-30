@@ -38,11 +38,14 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("sirve los 7 destinos como enlaces reales", () => {
-    render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} />);
 
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const links = within(map).getAllByRole("link");
     expect(links).toHaveLength(7);
+    expect(container.querySelectorAll(".system-map__hit-target")).toHaveLength(
+      7,
+    );
 
     for (const world of worlds) {
       const link = links.find(
@@ -95,7 +98,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(hrefs).toEqual(worlds.map((world) => world.href));
   });
 
-  it("cada nodo lleva el gancho que la escena reposiciona", () => {
+  it("cada destino lleva un proxy dedicado centrado en el radio de la escena", () => {
     // Es el contrato con G2: la escena NO crea nodos, solo escribe --map-x y
     // --map-y sobre estos. Si el atributo desapareciera, los cuerpos 3D
     // quedarían mudos y sin blanco de clic — y ningún test de la escena lo
@@ -103,10 +106,30 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
 
     for (const world of worlds) {
+      const proxy = container.querySelector<HTMLElement>(
+        `[data-system-body="${world.id}"]`,
+      );
       expect(
-        container.querySelector(`[data-system-body="${world.id}"]`),
+        proxy,
         `falta data-system-body="${world.id}"`,
       ).not.toBeNull();
+      expect(proxy).toHaveClass("system-map__hit-target");
+      expect(proxy).toHaveAttribute("data-hitbox-proxy", world.id);
+      expect(proxy).toHaveAttribute("aria-hidden", "true");
+      expect(proxy).toHaveAttribute("tabindex", "-1");
+
+      const slot = proxy?.closest<HTMLElement>(".system-map__slot");
+      const scale = Number(slot?.style.getPropertyValue("--hitbox-scale"));
+      const fallbackRadius = Number.parseFloat(
+        slot?.style.getPropertyValue("--map-fallback-radius") ?? "0",
+      );
+      expect(scale).toBeGreaterThanOrEqual(1.1);
+      expect(scale).toBeLessThanOrEqual(1.35);
+      expect(fallbackRadius).toBeGreaterThanOrEqual(22);
+      expect(slot?.style.getPropertyValue("--hitbox-min")).toBe("44px");
+      expect(slot?.querySelector(".system-map__body")).not.toContainElement(
+        proxy,
+      );
     }
 
     const slots = container.querySelectorAll<HTMLElement>(".system-map__slot");
@@ -115,6 +138,34 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     for (const slot of slots) {
       expect(slot.style.getPropertyValue("--map-x")).toMatch(/%$/);
       expect(slot.style.getPropertyValue("--map-y")).toMatch(/%$/);
+    }
+  });
+
+  it("todo el volumen conceptual —centro y cuatro bordes— adquiere target", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const samplePoints = [
+      { clientX: 50, clientY: 50 },
+      { clientX: 0, clientY: 50 },
+      { clientX: 100, clientY: 50 },
+      { clientX: 50, clientY: 0 },
+      { clientX: 50, clientY: 100 },
+    ];
+
+    for (const world of worlds) {
+      const proxy = container.querySelector<HTMLElement>(
+        `[data-hitbox-proxy="${world.id}"]`,
+      );
+      expect(proxy).not.toBeNull();
+
+      for (const point of samplePoints) {
+        fireEvent.pointerEnter(proxy as HTMLElement, point);
+        expect(proxy).toHaveAttribute("data-target-state", "target");
+        expect(container.querySelector(".hud__target")).toHaveTextContent(
+          world.cosmicName,
+        );
+        fireEvent.pointerLeave(proxy as HTMLElement, point);
+        expect(proxy).toHaveAttribute("data-target-state", "idle");
+      }
     }
   });
 
@@ -220,6 +271,28 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(container.querySelector(".hud__target")).toHaveAttribute(
       "data-target-state",
       "idle",
+    );
+  });
+
+  it("el proxy visual comparte lock y respeta clicks modificados", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const cooperProxy = container.querySelector<HTMLElement>(
+      '[data-hitbox-proxy="cooper-station"]',
+    );
+    expect(cooperProxy).not.toBeNull();
+
+    document.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    fireEvent.click(cooperProxy as HTMLElement, { button: 0, metaKey: true });
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(cooperProxy).toHaveAttribute("data-target-state", "idle");
+
+    fireEvent.click(cooperProxy as HTMLElement, { button: 0 });
+    expect(routerPush).toHaveBeenCalledWith("/es/formacion");
+    expect(cooperProxy).toHaveAttribute("data-target-state", "locked");
+    expect(container.querySelector(".hud__target")).toHaveTextContent(
+      /Destination locked/i,
     );
   });
 });

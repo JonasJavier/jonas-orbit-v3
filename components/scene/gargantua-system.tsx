@@ -34,7 +34,7 @@ export interface SceneBodyDescriptor {
   placement: WorldStructuralData["placement"];
 }
 
-/** Atributo que enlaza un enlace del HTML servido con su cuerpo en la escena. */
+/** Atributo que enlaza el proxy DOM dedicado con su cuerpo en la escena. */
 const BODY_ATTRIBUTE = "data-system-body";
 
 /**
@@ -295,17 +295,18 @@ export function GargantuaSystem({
 /**
  * Une la escena con el HTML servido.
  *
- * Los siete enlaces YA existen en el marcado: esto no los crea, solo les escribe
- * dónde está su cuerpo. Por eso la escena puede fallar entera y los destinos
- * siguen ahí, y por eso el recorrido con teclado funciona sin que la escena se
- * entere de nada.
+ * Los siete enlaces accesibles YA existen en el raíl: esto no los crea. Sólo
+ * escribe posición y radio compuesto sobre el ancla de cada cuerpo. El proxy
+ * visual es un enlace separado, `aria-hidden` y fuera de tabulación; así el área
+ * de puntero puede cubrir la silueta completa sin duplicar navegación accesible.
+ * Por eso la escena puede fallar entera y los destinos siguen navegables.
  *
  * Se escribe `transform` vía variables CSS, nunca `left`/`top`: mover siete
  * elementos por frame con propiedades de layout obligaría al navegador a
  * recalcularlo sesenta veces por segundo.
  */
 function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
-  const nodes = new Map<string, HTMLElement>();
+  const proxies = new Map<string, HTMLElement>();
   /**
    * Las coordenadas se escriben en el CONTENEDOR posicionado, no en el enlace.
    * Las variables CSS heredan hacia abajo, nunca hacia arriba: escribirlas en el
@@ -317,7 +318,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
   for (const node of document.querySelectorAll<HTMLElement>(`[${BODY_ATTRIBUTE}]`)) {
     const id = node.getAttribute(BODY_ATTRIBUTE);
     if (!id) continue;
-    nodes.set(id, node);
+    proxies.set(id, node);
     slots.set(id, node.closest<HTMLElement>(".system-map__slot") ?? node);
   }
 
@@ -330,7 +331,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     El raíl no mueve etiquetas, así que no entra en `slots`: sólo en el foco.
   */
   const focusable = new Map<string, HTMLElement[]>();
-  for (const [id, node] of nodes) focusable.set(id, [node]);
+  for (const [id, node] of proxies) focusable.set(id, [node]);
   for (const node of document.querySelectorAll<HTMLElement>("[data-rail-world]")) {
     const id = node.getAttribute("data-rail-world");
     if (!id) continue;
@@ -340,18 +341,18 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
   const teardown: Array<() => void> = [];
   for (const [id, group] of focusable) {
     for (const node of group) {
-    const enter = () => getHandle()?.setFocus(id as WorldId);
-    const leave = () => getHandle()?.setFocus(null);
-    node.addEventListener("pointerenter", enter);
-    node.addEventListener("pointerleave", leave);
-    node.addEventListener("focus", enter);
-    node.addEventListener("blur", leave);
-    teardown.push(() => {
-      node.removeEventListener("pointerenter", enter);
-      node.removeEventListener("pointerleave", leave);
-      node.removeEventListener("focus", enter);
-      node.removeEventListener("blur", leave);
-    });
+      const enter = () => getHandle()?.setFocus(id as WorldId);
+      const leave = () => getHandle()?.setFocus(null);
+      node.addEventListener("pointerenter", enter);
+      node.addEventListener("pointerleave", leave);
+      node.addEventListener("focus", enter);
+      node.addEventListener("blur", leave);
+      teardown.push(() => {
+        node.removeEventListener("pointerenter", enter);
+        node.removeEventListener("pointerleave", leave);
+        node.removeEventListener("focus", enter);
+        node.removeEventListener("blur", leave);
+      });
     }
   }
 
@@ -381,18 +382,15 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
   const folded = new Map<string, "left" | "right">();
 
   /*
-    Relleno del enlace y hueco hasta el cuerpo. Tienen que coincidir con el CSS:
+    Relleno del rótulo y hueco hasta el cuerpo. Tienen que coincidir con el CSS:
     es el precio de calcular la caja en vez de medirla en cada fotograma.
 
-    El relleno es GRANDE y es invisible. Al quitar la píldora, lo que queda a la
-    vista es una palabra de unos 60×12 px, y eso no es un blanco de pulsación:
-    las recomendaciones de accesibilidad piden 44×44. El relleno se lo da sin
-    dibujar nada — es la razón por la que se puede tener a la vez un hover
-    limpísimo y un destino que se acierta con el pulgar.
+    Este cálculo sólo separa texto; el blanco de interacción ya no depende de
+    esta caja. El proxy centrado usa `--map-radius` y su propio mínimo de 44 px.
   */
   const PAD_X = 14;
-  // 17 y no 16: con el rótulo en 11 px de alto, deja el blanco de pulsación en
-  // 45 px y cruza el mínimo de 44×44 que piden las pautas de accesibilidad.
+  // Coincide con el padding visual del rótulo para que su caja de colisión sea
+  // estable; el mínimo táctil de 44 px pertenece ahora al proxy independiente.
   const PAD_Y = 17;
   /** Del centro del cuerpo al borde del texto, además de su radio aparente. */
   const LABEL_GAP = 12;
@@ -491,14 +489,17 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     // De arriba abajo: cada etiqueta empuja hacia abajo a la siguiente con la
     // que choque. Dos pasadas, porque al apartar una puede aparecer un choque
     // nuevo con la de más abajo.
-    const order = [...projected].sort((a, b) => a.y - b.y);
+    const order = [...projected].sort(
+      (a, b) => a.y + (a.labelDrop ?? 0) - (b.y + (b.labelDrop ?? 0)),
+    );
     const placed = new Map<string, { x: number; y: number; w: number; h: number }>();
 
     for (let pass = 0; pass < 2; pass++) {
       for (const body of order) {
         const size = boxOf(body.id);
         const centreX = centreXOf(body.id, body.radius, body.x, body.side);
-        let y = placed.get(body.id)?.y ?? body.y;
+        const labelY = body.y + (body.labelDrop ?? 0);
+        let y = placed.get(body.id)?.y ?? labelY;
 
         for (const [id, other] of placed) {
           if (id === body.id) continue;
@@ -514,7 +515,8 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     }
 
     for (const body of projected) {
-      const target = (placed.get(body.id)?.y ?? body.y) - body.y;
+      const labelY = body.y + (body.labelDrop ?? 0);
+      const target = (placed.get(body.id)?.y ?? labelY) - labelY;
       const current = nudges.get(body.id);
 
       // La primera colocación es instantánea: no hay historial que conservar y
@@ -574,6 +576,8 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
     };
   }
 
+  let sceneLivePublished = false;
+
   return {
     update(projected) {
       // El interruptor se acciona con la PRIMERA proyección, no al decidir el
@@ -581,7 +585,10 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
       // milisegundos, y durante ese hueco el CSS de la escena leería las
       // coordenadas en % del servidor como si fueran píxeles: los siete
       // destinos amontonados en una esquina hasta que llegara el primer frame.
-      document.documentElement.dataset.sceneLive = "true";
+      if (!sceneLivePublished) {
+        document.documentElement.dataset.sceneLive = "true";
+        sceneLivePublished = true;
+      }
       if (textSizes.size === 0) measureSizes();
 
       // El lado definitivo se resuelve UNA vez por fotograma y viaja a todo lo
@@ -600,10 +607,27 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
         const slot = slots.get(body.id);
         if (!slot) continue;
         const nudge = nudges.get(body.id) ?? 0;
-        const at = clamp(body.id, body.radius, body.x, body.y + nudge, body.side);
-        slot.style.setProperty("--map-x", `${at.x.toFixed(1)}px`);
-        slot.style.setProperty("--map-y", `${at.y.toFixed(1)}px`);
+        const labelY = body.y + (body.labelDrop ?? 0) + nudge;
+        const at = clamp(body.id, body.radius, body.x, labelY, body.side);
+        slot.style.setProperty("--map-x", `${body.x.toFixed(1)}px`);
+        slot.style.setProperty("--map-y", `${body.y.toFixed(1)}px`);
         slot.style.setProperty("--map-radius", `${body.radius.toFixed(1)}px`);
+        slot.style.setProperty(
+          "--map-hit-radius-x",
+          `${(body.hitRadiusX ?? body.radius).toFixed(1)}px`,
+        );
+        slot.style.setProperty(
+          "--map-hit-radius-y",
+          `${(body.hitRadiusY ?? body.radius).toFixed(1)}px`,
+        );
+        slot.style.setProperty(
+          "--map-label-shift-x",
+          `${(at.x - body.x).toFixed(1)}px`,
+        );
+        slot.style.setProperty(
+          "--map-label-shift-y",
+          `${(at.y - body.y).toFixed(1)}px`,
+        );
         slot.dataset.offscreen = body.visible ? "false" : "true";
         slot.dataset.side = body.side;
       }
@@ -616,6 +640,10 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
         slot.style.removeProperty("--map-x");
         slot.style.removeProperty("--map-y");
         slot.style.removeProperty("--map-radius");
+        slot.style.removeProperty("--map-hit-radius-x");
+        slot.style.removeProperty("--map-hit-radius-y");
+        slot.style.removeProperty("--map-label-shift-x");
+        slot.style.removeProperty("--map-label-shift-y");
         delete slot.dataset.offscreen;
         delete slot.dataset.side;
       }

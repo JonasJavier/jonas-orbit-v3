@@ -3535,13 +3535,19 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   display: block;
   width: clamp(
     2rem,
-    calc(var(--map-radius, 8px) + var(--map-radius, 8px) + 1.15rem),
-    7.5rem
+    calc(
+      var(--map-hit-radius-x, var(--map-radius, 8px)) +
+        var(--map-hit-radius-x, var(--map-radius, 8px)) + 0.55rem
+    ),
+    18rem
   );
   height: clamp(
     2rem,
-    calc(var(--map-radius, 8px) + var(--map-radius, 8px) + 1.15rem),
-    7.5rem
+    calc(
+      var(--map-hit-radius-y, var(--map-radius, 8px)) +
+        var(--map-hit-radius-y, var(--map-radius, 8px)) + 0.55rem
+    ),
+    10rem
   );
   color: var(--nav-accent);
   background:
@@ -3902,5 +3908,374 @@ html[data-scene-live="true"] .system-map__target-brackets {
     right: auto;
     left: 50%;
     width: 112vw;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   System Map — life pass / jerarquía luminosa
+
+   Cuatro niveles compartidos evitan el antiguo "todo gris tenue". La energía
+   se concentra en marca, destino y acción; la telemetría permanece ambiental.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.system-home {
+  --hud-primary: color-mix(in srgb, var(--ink) 97%, transparent);
+  --hud-secondary: color-mix(in srgb, var(--ink-soft) 74%, transparent);
+  --hud-tertiary: color-mix(in srgb, var(--ink-muted) 50%, transparent);
+  --hud-ghost: color-mix(in srgb, var(--ink-muted) 22%, transparent);
+  --hud-active: color-mix(in srgb, var(--nav-accent, var(--cyan)) 94%, white 6%);
+  --hud-nominal: #83e8cf;
+}
+
+/* El canvas sigue siendo decorativo y no recibe eventos. Cada cuerpo publica su
+   centro/radio a este proxy DOM independiente del rótulo: toda la silueta
+   percibida responde, mientras el texto deja de ser accidentalmente el hitbox. */
+.system-map__slot {
+  z-index: 4;
+}
+
+.system-map__slot[data-centre="true"] {
+  z-index: 1;
+}
+
+.system-map__slot:not([data-target-state="idle"]) {
+  z-index: 7;
+}
+
+.system-map__hit-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: max(
+    var(--hitbox-min, 44px),
+    calc(
+      var(
+          --map-hit-radius-x,
+          var(--map-radius, var(--map-fallback-radius, 22px))
+        ) +
+        var(
+          --map-hit-radius-x,
+          var(--map-radius, var(--map-fallback-radius, 22px))
+        )
+    )
+  );
+  height: max(
+    var(--hitbox-min, 44px),
+    calc(
+      var(
+          --map-hit-radius-y,
+          var(--map-radius, var(--map-fallback-radius, 22px))
+        ) +
+        var(
+          --map-hit-radius-y,
+          var(--map-radius, var(--map-fallback-radius, 22px))
+        )
+    )
+  );
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(var(--hitbox-scale, 1.18));
+  transform-origin: center;
+}
+
+.system-map__hit-target[data-hit-shape="box"] {
+  border-radius: 14%;
+}
+
+.system-map__hit-target[data-hit-shape="craft"] {
+  border-radius: 30%;
+}
+
+.system-map__hit-target[data-hit-shape="ringed"] {
+  border-radius: 42%;
+}
+
+.system-map__body {
+  pointer-events: none;
+}
+
+html[data-scene-live="true"] .system-map__body {
+  translate: var(--map-label-shift-x, 0px) var(--map-label-shift-y, 0px);
+}
+
+/* Sólo `next dev` puede publicar el atributo. El modo dibuja el volumen real
+   usado por el puntero, pero no altera su tamaño ni el estado de navegación. */
+.system-map[data-debug-hitboxes="true"] .system-map__hit-target {
+  border: 1px solid rgba(255, 91, 146, 0.88);
+  background: rgba(255, 69, 132, 0.11);
+  box-shadow:
+    inset 0 0 1rem rgba(255, 80, 145, 0.1),
+    0 0 0.75rem rgba(255, 80, 145, 0.16);
+}
+
+.system-map[data-debug-hitboxes="true"]
+  .system-map__hit-target[data-hit-shape="ringed"] {
+  border-color: rgba(127, 229, 255, 0.92);
+  background: rgba(127, 229, 255, 0.1);
+}
+
+.hud__bracket {
+  border-color: var(--hud-ghost);
+}
+
+.hud__reticle {
+  color: var(--hud-ghost);
+}
+
+.hud__top {
+  color: var(--hud-tertiary);
+}
+
+.hud__craft {
+  color: var(--hud-tertiary);
+}
+
+.hud__system {
+  color: var(--hud-primary);
+  font-size: 0.74rem;
+  font-weight: 680;
+  letter-spacing: 0.31em;
+  text-shadow: 0 0 1.35rem rgba(127, 229, 255, 0.22);
+}
+
+.hud__state {
+  color: var(--hud-secondary);
+}
+
+.hud__status-dot {
+  background: var(--hud-nominal);
+  box-shadow:
+    0 0 0.22rem color-mix(in srgb, var(--hud-nominal) 92%, transparent),
+    0 0 0.72rem color-mix(in srgb, var(--hud-nominal) 44%, transparent);
+}
+
+.hud__target-rule {
+  background: linear-gradient(to right, transparent, var(--hud-tertiary));
+  opacity: 0.7;
+}
+
+.hud__target:not([data-target-state="idle"]) .hud__target-rule {
+  background: linear-gradient(to right, transparent, var(--hud-active));
+  opacity: 0.92;
+}
+
+.hud__target-eyebrow,
+.hud__target-index,
+.hud__target-role {
+  color: var(--hud-secondary);
+}
+
+.hud__target:not([data-target-state="idle"]) .hud__target-eyebrow,
+.hud__target-action {
+  color: var(--hud-active);
+}
+
+.hud__target-name {
+  color: var(--hud-primary);
+  font-size: clamp(1.34rem, 1.95vw, 1.9rem);
+  text-shadow:
+    0 0 0.55rem rgba(127, 229, 255, 0.08),
+    0 0 1.9rem rgba(127, 229, 255, 0.17);
+}
+
+.hud__target[data-target-state="locked"] .hud__target-name {
+  color: var(--hud-active);
+}
+
+.hud__target-name--idle {
+  color: var(--hud-secondary);
+  font-size: 0.78rem;
+  text-shadow: none;
+}
+
+.hud__readout {
+  color: var(--hud-tertiary);
+}
+
+.hud__readout--action {
+  color: var(--hud-secondary);
+}
+
+.nav-rail__link {
+  color: var(--hud-tertiary);
+}
+
+.nav-rail__index {
+  color: var(--hud-tertiary);
+}
+
+.nav-rail__name {
+  color: var(--hud-secondary);
+}
+
+.nav-rail__role {
+  color: var(--hud-ghost);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__link,
+.nav-rail__link:hover,
+.nav-rail__link:focus-visible {
+  color: var(--hud-primary);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__name,
+.nav-rail__link:hover .nav-rail__name,
+.nav-rail__link:focus-visible .nav-rail__name {
+  color: var(--hud-primary);
+  text-shadow: 0 0 1rem rgba(127, 229, 255, 0.18);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__index,
+.nav-rail__link:hover .nav-rail__index,
+.nav-rail__link:focus-visible .nav-rail__index {
+  color: var(--hud-active);
+}
+
+.nav-rail__item:not([data-target-state="idle"]) .nav-rail__active-marker,
+.nav-rail__link:hover .nav-rail__active-marker,
+.nav-rail__link:focus-visible .nav-rail__active-marker {
+  background: var(--hud-active);
+  box-shadow: 0 0 0.72rem color-mix(in srgb, var(--hud-active) 64%, transparent);
+}
+
+.system-map__slot:not([data-target-state="idle"])
+  .system-map__target-brackets {
+  color: var(--hud-active);
+  opacity: 0.9;
+}
+
+@media (max-width: 60rem) {
+  .hud__system {
+    font-size: 0.68rem;
+    letter-spacing: 0.27em;
+  }
+
+  .hud__target-name {
+    font-size: 1.2rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Profundidad y respuesta del puntero
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* WebGL curva sus propias tres capas de estrellas; el canvas 2D queda como
+   profundidad del perfil flat y se congela cuando llega el primer frame 3D. */
+
+.site-stardust {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+html[data-pointer-life="ready"] .site-stardust {
+  opacity: 1;
+}
+
+.navigation-cursor {
+  --navigation-cursor-x: -4rem;
+  --navigation-cursor-y: -4rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 8;
+  width: 1.12rem;
+  height: 1.12rem;
+  color: color-mix(in srgb, var(--ink) 76%, transparent);
+  background:
+    linear-gradient(currentColor, currentColor) center top / 1px 0.24rem
+      no-repeat,
+    linear-gradient(currentColor, currentColor) center bottom / 1px 0.24rem
+      no-repeat,
+    linear-gradient(currentColor, currentColor) left center / 0.24rem 1px
+      no-repeat,
+    linear-gradient(currentColor, currentColor) right center / 0.24rem 1px
+      no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(
+      var(--navigation-cursor-x),
+      var(--navigation-cursor-y),
+      0
+    )
+    translate3d(-50%, -50%, 0);
+  transition:
+    width 150ms var(--ease-orbit),
+    height 150ms var(--ease-orbit),
+    color 150ms ease,
+    opacity 100ms ease;
+  will-change: transform;
+}
+
+.navigation-cursor::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.15rem;
+  height: 0.15rem;
+  content: "";
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0.42rem currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.navigation-cursor[data-state="space"] {
+  opacity: 0.76;
+}
+
+.navigation-cursor[data-state="target"] {
+  width: 1.72rem;
+  height: 1.72rem;
+  color: var(--hud-active, var(--cyan));
+  opacity: 0.98;
+}
+
+.navigation-cursor[data-state="locked"] {
+  width: 1.46rem;
+  height: 1.46rem;
+  color: var(--ink);
+  opacity: 1;
+}
+
+.navigation-cursor[data-state="hidden"],
+.navigation-cursor[data-state="control"] {
+  opacity: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-pointer-life="ready"]
+    .system-home:has(.system-map[data-navigation-cursor="active"]) {
+    cursor: none;
+  }
+
+  html[data-pointer-life="ready"]
+    .system-home:has(.system-map[data-navigation-cursor="active"])
+    :is(.nav-rail__link, .hud__readout--action, button, input, textarea, select) {
+    cursor: pointer;
+  }
+
+  html[data-pointer-life="ready"] .system-map__hit-target {
+    cursor: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+  /* La profundidad permanece: sólo se apagan la respuesta y la deriva. */
+  .site-starfield {
+    display: block;
+    transition: none;
+  }
+
+  .site-stardust,
+  .navigation-cursor {
+    display: none;
   }
 }

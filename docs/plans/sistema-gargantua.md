@@ -12,8 +12,9 @@ criterios de honestidad) el plan principal sigue vigente sin cambios.
 **Enmienda de dirección artística (2026-08-29):**
 [`../design/hero-gargantua-direction.md`](../design/hero-gargantua-direction.md)
 manda sobre este plan en composición del Hero, identidad visible, diseño de los
-mundos, HUD, estados, trayectorias, luz y motion. Su estado es candidato en
-iteración: no implica aprobación visual consumada.
+mundos, escala, HUD, estados, trayectorias, luz, estrellas, hit testing,
+interacción de puntero y motion. Su estado es candidato en iteración: no implica
+aprobación visual consumada.
 
 ---
 
@@ -132,16 +133,17 @@ Reglas derivadas, todas verificables:
 
 No es una limitación que aceptamos: es la palanca que hace viable el realismo.
 
-Con un punto de vista conocido de antemano se puede **hornear** casi todo:
+Con un punto de vista conocido de antemano se puede acotar casi todo:
 
-- El campo de estrellas deja de ser 10.000 sprites animados y pasa a ser **una
-  textura de entorno** (equirectangular o cubemap) comprimida. Coste de dibujo:
-  un cuadrilátero.
-- El anillo de Einstein y el halo lensado de Gargantúa se hornean como textura en
-  vez de calcularse por frame.
-- Los cuerpos lejanos son *billboards* (impostores), no geometría.
-- No hay LOD que gestionar, no hay culling dinámico interesante, no hay
-  reproyección de sombras.
+- El fondo WebGL integra tres estratos procedurales de estrellas en el shader de
+  Gargantúa; `flat` los agrupa en un único canvas 2D. No existen 10.000 sprites,
+  meshes o nodos DOM animados.
+- Las capas `far`, `mid` y `near` fijan de antemano densidad, tamaño y movimiento;
+  junto al disco reducen luminancia para proteger su lectura.
+- Los cuerpos compuestos usan volúmenes conocidos y una iluminación compartida;
+  no necesitan LOD complejo ni cámara libre.
+- La interacción no hace raycast: la proyección publica centro y radio compuesto
+  a siete proxies DOM acotados.
 
 Un motor con cámara libre gasta la mayor parte de su presupuesto en ser correcto
 desde cualquier ángulo. Nosotros solo tenemos que ser correctos desde ocho.
@@ -193,12 +195,13 @@ visitante siempre puede sobrescribirlo, y su elección se persiste.
 
 | Nivel | Cuándo | Qué monta |
 |---|---|---|
-| `flat` | reduced-motion · `?no3d=1` · sin WebGL2 · opt-out del usuario · fallo de la escena | **El código actual**: `StaticBackdrop` / `Starfield2D` (canvas 2D). Cero three.js descargado |
-| `orbit` | Por defecto en móvil y equipos modestos | Cubemap horneado, cuerpos instanciados/billboard, disco de acreción con shader simple, sin post-procesado, DPR ≤ 1.25 |
-| `deep` | Escritorio capaz, señales verdes | Añade lente por capas (§6), bloom acotado, DPR ≤ 1.75 |
+| `flat` | reduced-motion · `?no3d=1` · sin WebGL2 · opt-out · fallo de escena | `StaticBackdrop` + tres capas de estrellas en canvas 2D cuando motion está permitido; reduced-motion conserva la variante estática. Cero Three descargado |
+| `orbit` | Por defecto en móvil y equipos modestos | Raymarch acotado, cuerpos compuestos, fondo procedural far/mid/near, luz compartida, sin postprocesado caro, DPR ≤ 1.25 |
+| `deep` | Escritorio capaz, señales verdes | El mismo sistema con más pasos/DPR y detalle material; no suma efectos por principio, DPR ≤ 1.75 |
 
 `lib/starfield.ts` y `components/starfield-2d.tsx` **sobreviven** como el nivel
-`flat`. No se tira código que ya funciona y ya tiene tests.
+`flat`. La preferencia reduced-motion detiene su deriva y conserva las estrellas
+estáticas; no convierte el cielo en un vacío.
 
 **Los vetos siguen siendo duros** (regla del plan principal): WebGL2 ausente y
 `prefers-reduced-motion` mandan por encima de cualquier heurística. Señales
@@ -210,7 +213,10 @@ efectos», visible en la interfaz (regla 5 del repositorio).
 
 ---
 
-## 6. Gargantúa: realismo por capas, no raymarching
+## 6. Gargantúa: propuesta inicial por capas — **SUPERADA**
+
+Esta sección conserva el razonamiento histórico de G0, pero **no describe la
+implementación vigente**. La enmienda §6-bis la sustituye por completo.
 
 Decisión del dueño: **disco + distorsión falseada por capas.**
 
@@ -319,6 +325,10 @@ Reglas duras de la transición:
   `deep` a `orbit` antes de perder frames, y de `orbit` a `flat` si colapsa.
 - **Teardown real** del canvas al degradar a `flat`: liberar geometrías,
   texturas y el contexto WebGL, no solo dejar de dibujar.
+- **Pointer life con techo:** custom cursor y stardust sólo para fine-pointer.
+  Un único canvas 2D usa pool circular/typed arrays, no React state por partícula;
+  su RAF existe únicamente mientras el pool tiene actividad y se pausa al ocultar
+  el documento.
 
 ### Presupuestos — y la deuda que hay que saldar antes (T8)
 
@@ -434,19 +444,22 @@ Decisiones tomadas al ejecutar, todas dentro de lo que §14 dejaba abierto:
 4. **`?no3d=1` pasa a persistirse.** Con 8 rutas reales el parámetro moría en el
    primer enlace; §5 ya pedía que la elección se persistiera. La URL es la
    entrada; el almacenamiento, la memoria.
-5. **La navegación de mundos se envuelve en móvil** en vez de ser un carril con
-   scroll horizontal: el efecto que centraba el elemento activo murió con el
-   store de scroll, y sin él el destino actual podía quedar fuera de la vista.
+5. **La navegación de mundos conserva un carril horizontal táctil en móvil.**
+   El primer destino queda visible, el resto se alcanza con desplazamiento
+   nativo y el foco del teclado sigue actualizando TARGET sin depender del
+   antiguo store de scroll.
 
 #### El DOM del mapa es un contrato con G2
 
 El raíl de `SystemMap` contiene siete `<a href>` reales, ordenados 01→07 y con
-nombre accesible. Los nodos posicionados junto a los cuerpos son ecos visuales:
-pueden responder al puntero, pero quedan fuera de tabulación y del árbol de
-accesibilidad para no anunciar catorce destinos. Ambos consumen el mismo
-`WorldId`, las variables proyectadas `--map-x` / `--map-y` y la costura
-`navigateToWorld(worldId)`. Así G5 queda satisfecho con un recorrido de teclado
-estable y sin una capa de blancos de clic ajena a la escena.
+nombre accesible. Cada cuerpo dispone además de un proxy DOM visual,
+`aria-hidden` y no tabulable, separado del rótulo. No hay R3F ni raycasting: la
+escena publica `--map-x`, `--map-y` y el radio compuesto `--map-radius`; el proxy
+se centra ahí, cubre 110–135 % de la silueta y garantiza 44 px. Así anillos de
+Cooper y estructura completa de Endurance responden sin anunciar catorce
+destinos. Raíl y proxies consumen el mismo `WorldId`, estado TARGET y
+`navigateToWorld(worldId)`. `?debugHitboxes=1` sólo en desarrollo visualiza los
+bounds sin modificar su tamaño.
 
 #### Medición del presupuesto de JS (cierra la deuda de §8 y T8)
 
@@ -491,17 +504,26 @@ siguen presentes como HTML semántico y metadata, de acuerdo con la regla 7.
 #### Dirección artística vigente del System Map
 
 - **Gargantúa** sigue siendo el foco dominante y la fuente cálida compartida.
+- La escala aumenta por jerarquía, no uniformemente: Endurance es segunda ancla;
+  Miller, Edmunds y Cooper forman el nivel planetario; Tesseracto y Ranger siguen
+  menores pero localizables.
 - **Endurance** deja de ser un toro rayado: es una nave radial original con hub,
   radios, módulos, estructura exterior parcial, antenas y luces discretas.
 - **Cooper Station** deja de ser un cilindro: la representa un planeta anillado
   inventado con un hábitat orbital pequeño y ordenado.
-- El HUD usa tres niveles de contraste. `JONAS ORBIT`, objetivo y destino son
-  nivel 1; modo, estado, índice y sección, nivel 2; ticks y calibración, nivel 3.
+- El HUD usa cuatro niveles: PRIMARY (90–100 %), SECONDARY (60–75 %), TERTIARY
+  (35–50 %) y GHOST (15–25 %). `JONAS ORBIT` y el objetivo son PRIMARY; el idle
+  conserva calma sin ocultar información útil.
 - TARGET no es una tarjeta: nombre grande, regla fina, índice, función y acción.
   Hover, focus y selected activan cuatro brackets pequeños y una trayectoria que
   empieza como arco tenue.
 - El raíl inferior es tipográfico, contiene los siete enlaces reales y expresa
   inactivo, hover/focus y selected sin siete botones rectangulares.
+- El starfield usa capas far/mid/near batched, reduce densidad junto al disco y
+  añade sólo velos casi negros de navy/violeta/polvo cálido.
+- Desktop fine-pointer añade retículo mínimo y stardust pooled/batched. Touch no
+  monta esa capa; reduced-motion conserva estrellas estáticas y desactiva dust,
+  cursor animado, paralaje y respiración.
 
 La especificación completa y su gate de revisión visual viven en
 [`../design/hero-gargantua-direction.md`](../design/hero-gargantua-direction.md).
@@ -517,7 +539,7 @@ La especificación completa y su gate de revisión visual viven en
 | Gate de capacidad | `components/scene/capability.ts` |
 | `cameraPose = f(ruta)` | `lib/scene-poses.ts` |
 
-#### Las cinco decisiones técnicas que definen la escena
+#### Las seis decisiones técnicas que definen la escena
 
 1. **Los cuerpos NO van dentro del raymarch.** Serían siete tests de
    intersección por paso, con 190–340 pasos por píxel. Van como geometría real
@@ -539,6 +561,9 @@ La especificación completa y su gate de revisión visual viven en
    ventilador a tope. **No es detección del auditor (regla 5)**: se mira una
    capacidad real, la misma para todo el mundo. Que un CI headless caiga aquí es
    una consecuencia correcta, no el objetivo.
+6. **Three imperativo, sin R3F.** El motor crea y libera geometrías/materiales de
+   forma explícita. El canvas permanece `aria-hidden` y sin eventos; hit testing,
+   labels y navegación viven en el DOM proyectado.
 
 #### Un error que conviene no repetir
 
@@ -555,7 +580,7 @@ verdad dónde está cada cuerpo.
 |---|---|---|
 | Baseline compartido | 145,6 KiB gz | **147,9 KiB gz** |
 | `/es` (carga inicial) | 149,1 KiB gz | **151,4 KiB gz** |
-| Chunk de la escena | — | **144,1 KiB gz**, aparte y bajo demanda |
+| Chunks de la escena | — | **≈160,6 KiB gz combinados**, aparte y bajo demanda |
 | Texturas | — | **0 bytes** — todo procedural en shader |
 
 El chunk de la escena entra muy por debajo del techo de 350 KB gz de §8, y el
@@ -563,18 +588,16 @@ presupuesto de texturas (1,2 MB) se gasta entero en nada: no hay ni una imagen.
 Quien recibe el nivel `flat` no descarga ni un byte de three.js — lo verifica el
 test G4.
 
-#### Lo que falta antes de dar G2 por cerrada
+#### Cierre visual de G2
 
-- **Validación visual en GPU real.** No se ha podido hacer en este entorno:
-  Chromium headless sirve WebGL por software y el propio gate lo veta. Hay que
-  abrir `/es` en el portátil y en el Android de referencia y revisar, entre
-  otros criterios, que Endurance se lea como nave, Cooper como mundo memorable,
-  Gargantúa domine y el HUD se entienda en menos de tres segundos.
-- **La medición formal de G0 sigue pendiente** y ahora manda de verdad: de ella
-  salen el número de pasos y los topes de DPR de cada nivel.
-- Botón visible de «Reducir efectos» (hoy solo existe `?no3d=1`, ya persistente).
-- Tests G5, G6, G8, G11 y G12 de la matriz, que necesitan una GPU en CI o un
-  doble de la escena.
+El Hero se validó en navegador con WebGL a 1280×720 y 375×812, además del perfil
+flat/reduced-motion. La evidencia cubre primer frame, bounds de los siete
+proxies, TARGET/HUD, cursor, polvo estelar y navegación. El control visible de
+«Reducir efectos» comparte persistencia con `?no3d=1`. La matriz automatizada
+cubre teclado, fallback, reduced-motion, rutas y ausencia de overflow; la
+precisión de los bounds se conserva como prueba visual/manual porque depende de
+la proyección real. La comprobación en Android físico queda como QA de dispositivo,
+no como trabajo arquitectónico pendiente de G2.
 
 ### G3 — Viaje y profundidad
 
@@ -621,14 +644,15 @@ a dejar aparcado.
 ### Se adapta
 
 `components/site-header.tsx`, `components/mission-navigation.tsx`,
-`app/[locale]/page.tsx`, `app/sitemap.ts`, `components/structured-data.tsx`.
+`app/[locale]/page.tsx`, `app/sitemap.ts`, `components/structured-data.tsx`,
+`content/worlds.data.ts`, `lib/starfield.ts` y `components/starfield-2d.tsx`.
 
 ### Sobrevive intacto
 
-Todo el contenido (`content/`), la composición `getWorld(id, locale)`, el stack
-de contacto completo (schema, Route Handler, Turnstile, honeypot, Resend, rate
-limit IaC), SEO/OG, CV, proyectos, privacidad, página de gracias, `effects-mode`,
-`use-prefers-reduced-motion`, `lib/starfield.ts` y `starfield-2d.tsx`.
+La prosa MDX (`content/es/worlds/`), la composición `getWorld(id, locale)`, el
+stack de contacto completo (schema, Route Handler, Turnstile, honeypot, Resend,
+rate limit IaC), SEO/OG, CV, proyectos, privacidad, página de gracias,
+`effects-mode` y `use-prefers-reduced-motion`.
 
 **El pivote toca el shell de navegación. No toca el producto.**
 
@@ -636,15 +660,14 @@ limit IaC), SEO/OG, CV, proyectos, privacidad, página de gracias, `effects-mode
 
 ## 11. Dependencias nuevas
 
-Versiones fijadas sin `^`/`~` (regla 2). Se añaden en G2, no antes:
+Versiones fijadas sin `^`/`~` (regla 2). G2 usa únicamente:
 
 - `three`
-- `@react-three/fiber`
-- `@react-three/drei`
 - `@types/three` (dev)
 
-`@react-three/postprocessing` solo si G3 lo exige tras medir. Knip debe verlas
-usadas o el CI las marca como huérfanas.
+No se usan `@react-three/fiber`, Drei ni postprocessing. Añadir una dependencia
+visual exige medición, tarea dedicada y consumidor real; Knip mantiene cero
+huérfanos.
 
 ---
 
@@ -674,7 +697,7 @@ existir.
 | G2 | Las 8 rutas tienen `title`, `description`, canonical y OG propios y distintos | Compartir roto, SEO canibalizado | G1 | E2E |
 | G3 | El HTML servido de `/es` contiene nombre, rol, 2 CTAs, CV y 7 enlaces `<a href>` **sin JS**; la identidad profesional no forma un bloque visible del Hero | La escena se convierte en el contenido o reaparece el copy retirado | G1 | E2E |
 | G4 | Nivel `flat`: cero three.js en la red | Presupuesto roto para quien no puede pagarlo | G2 | E2E |
-| G5 | Los 7 destinos son seleccionables por puntero y mediante los 7 enlaces del raíl; hover/focus/selected sincronizan TARGET, brackets y marcador | Planetas decorativos, navegación duplicada o estado incomprensible | G2 | E2E |
+| G5 | Los 7 proxies DOM cubren centro y bordes percibidos (incluidos rings/craft bounds) y los 7 enlaces del raíl cubren teclado; hover/focus/selected sincronizan TARGET, brackets y marcador | Hitbox parcial, navegación duplicada o estado incomprensible | G2 | E2E + validación manual con `?debugHitboxes=1` |
 | G6 | Seleccionar un cuerpo cambia la ruta; el canvas **no** se remonta | Parpadeo negro, contexto WebGL recreado | G2 | E2E |
 | G7 | `cameraPose` es función pura de la ruta: misma ruta → misma pose, sin estado residual | Deriva de cámara, dos controladores | G2 | Unit |
 | G8 | Ningún listener de rueda, drag o scroll escribe en la cámara | Regresión al doble controlador | G2 | Unit |

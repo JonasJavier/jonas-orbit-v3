@@ -44,6 +44,11 @@ export interface ProjectedBody {
   y: number;
   /** Radio aparente en píxeles CSS: el blanco de clic se dimensiona con esto. */
   radius: number;
+  /** Semiejes opcionales cuando la silueta percibida no es circular. */
+  hitRadiusX?: number;
+  hitRadiusY?: number;
+  /** Desplazamiento exclusivo del rótulo; nunca mueve el proxy de interacción. */
+  labelDrop?: number;
   /** Distancia a la cámara, para ordenar etiquetas que se solapen. */
   depth: number;
   /** Falso cuando el cuerpo cae fuera del cuadro (no debería pasar nunca). */
@@ -99,8 +104,8 @@ const TIER: Record<QualityTier, { dpr: number; steps: number; stepScale: number 
   halo hacia fuera, sobre el cielo negro, donde no hay nada que ensuciar.
 */
 const BLOOM: Record<QualityTier, { strength: number; radius: number; scale: number }> = {
-  orbit: { strength: 0.56, radius: 0.52, scale: 0.5 },
-  deep: { strength: 0.62, radius: 0.55, scale: 0.62 },
+  orbit: { strength: 0.6, radius: 0.57, scale: 0.5 },
+  deep: { strength: 0.67, radius: 0.61, scale: 0.62 },
 };
 
 const BASE_EXPOSURE = 0.82;
@@ -154,12 +159,16 @@ const PARALLAX_TAU = 0.32;
  * No es estético: cada cuerpo arrastra una etiqueta y el encuadre solo sabe de
  * radios. Con el margen justo, un destino queda dentro pero su nombre se sale.
  *
- * Pasó por 11, 9, 6 y 5. Baja a 3 con el rediseño de la etiqueta: al quitarle la
+ * Pasó por 11, 9, 7 y 5. Baja a 3 con el rediseño de la etiqueta: al quitarle la
  * píldora y el aro, la caja de un destino pasó de unos 200×60 px a unos 110×36,
  * así que hace falta bastante menos aire para que quepa. Y cada rs de margen se
  * paga en distancia de cámara, o sea en tamaño de Gargantúa.
  */
-const FRAME_MARGIN = 7;
+const FRAME_MARGIN = 3;
+// En portrait no hay rótulos pegados a los cuerpos y cada píxel horizontal
+// cuenta. Conservamos holgura geométrica, pero no pagamos el margen de desktop
+// que hacía que el sistema completo pareciera una miniatura en móvil.
+const PORTRAIT_FRAME_MARGIN = 1;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -380,6 +389,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // El corrimiento lateral se come parte del semiancho: hay que pedir más.
     const tanHalfWidth =
       tanHalfFov * Math.max(aspect, 0.2) * (1 - pose.targetShiftFraction);
+    const frameMargin = aspect < 0.75 ? PORTRAIT_FRAME_MARGIN : FRAME_MARGIN;
 
     /**
      * Distancia mínima a la que ESTE punto cabe, con su cuerpo y su margen.
@@ -410,7 +420,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     function distanceFor(p: THREE.Vector3, radius: number): number {
       // Positivo si el punto está MÁS LEJOS que el origen; negativo si más cerca.
       const depth = p.dot(f);
-      const reach = radius + FRAME_MARGIN;
+      const reach = radius + frameMargin;
       return Math.max(
         (Math.abs(p.dot(u)) + reach) / tanHalfFov - depth,
         (Math.abs(p.dot(r)) + reach) / tanHalfWidth - depth,
@@ -461,9 +471,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   /**
    * Encuadre y orientación, separados a propósito.
    *
-   * `measureFrameDistance` recorre seis órbitas con 48 muestras cada una: 288
-   * posiciones y sus proyecciones. Eso está bien al redimensionar o al cambiar
-   * de ruta, pero el paralaje suavizado mueve la cámara en CADA fotograma y
+   * `measureFrameDistance` recorre el disco y los seis cuerpos en sus posiciones
+   * congeladas. Eso está bien al redimensionar o al cambiar de ruta, pero el
+   * paralaje suavizado mueve la cámara en CADA fotograma y
    * ahí ese coste no pinta nada — la distancia de encuadre no depende del
    * paralaje, sólo de la pose y del aspecto. Así que se mide cuando cambian
    * esos dos y se orienta sesenta veces por segundo.
@@ -499,20 +509,31 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    * de visión o el radio del disco ya no puede volver a descolocar la etiqueta.
    */
   let centreLabelDrop = 0;
+  let centreHitRadiusX = 0;
+  let centreHitRadiusY = 0;
   const diskScratch = new THREE.Vector3();
 
   function measureCentreLabelDrop() {
-    const centreY = diskScratch.set(0, 0, 0).project(bodyCamera).y;
+    const centre = diskScratch.set(0, 0, 0).project(bodyCamera).clone();
+    const centreY = centre.y;
+    let leftmost = centre.x;
+    let rightmost = centre.x;
     let lowest = centreY;
+    let highest = centreY;
     for (let i = 0; i < 32; i++) {
       const angle = (i / 32) * Math.PI * 2;
       diskScratch
         .set(Math.cos(angle) * DISK_OUTER, 0, Math.sin(angle) * DISK_OUTER)
         .project(bodyCamera);
-      // En NDC la Y crece hacia arriba, así que lo más bajo es el mínimo.
+      leftmost = Math.min(leftmost, diskScratch.x);
+      rightmost = Math.max(rightmost, diskScratch.x);
       lowest = Math.min(lowest, diskScratch.y);
+      highest = Math.max(highest, diskScratch.y);
     }
-    // De NDC a píxeles CSS, y un respiro por debajo del borde del disco.
+    // De NDC a píxeles CSS. El label recibe además seis píxeles de respiro; el
+    // hitbox conserva exactamente el plano proyectado y luego CSS le da 110 %.
+    centreHitRadiusX = ((rightmost - leftmost) / 4) * cssWidth;
+    centreHitRadiusY = ((highest - lowest) / 4) * cssHeight;
     centreLabelDrop = ((centreY - lowest) / 2) * cssHeight + 6;
   }
 
@@ -607,7 +628,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   }
 
   // === Bucle ===============================================================
-  const clock = new THREE.Clock();
+  const timer = new THREE.Timer();
   const projected: ProjectedBody[] = [];
   const projectionScratch = new THREE.Vector3();
   let frameHandle = 0;
@@ -671,6 +692,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     id: WorldId;
     position: THREE.Vector3;
     radius: number;
+    hitScaleX?: number;
+    hitScaleY?: number;
   }): ProjectedBody {
     projectionScratch.copy(body.position).project(bodyCamera);
     const x = (projectionScratch.x * 0.5 + 0.5) * cssWidth;
@@ -697,6 +720,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       x,
       y,
       radius,
+      hitRadiusX: radius * (body.hitScaleX ?? 1),
+      hitRadiusY: radius * (body.hitScaleY ?? 1),
       depth: projectionScratch.z,
       visible:
         projectionScratch.z < 1 &&
@@ -745,14 +770,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         iluminados se leen como seis calcomanías pegadas al mismo cristal — era
         la mitad de por qué el sistema no tenía profundidad.
 
-        Ahora el recorrido es de 1.36 a 0.89, un factor 1.5. El interior está
+        Ahora el recorrido es de 1.48 a 0.98, un factor 1.5. El interior está
         claramente bañado por el disco y el exterior claramente en penumbra, y
-        eso es lo que ordena las capas. El suelo de 0.85 existe por lo de
+        eso es lo que ordena las capas. El suelo de 0.98 existe por lo de
         siempre: un destino que no se ve es un enlace que no existe.
       */
       const light = Math.min(
-        1.45,
-        Math.max(0.85, (22 / Math.max(body.placement.orbitRadius, 1)) * 1.3),
+        1.55,
+        Math.max(0.98, (25 / Math.max(body.placement.orbitRadius, 1)) * 1.3),
       );
 
       // Un cuerpo lleva ahora hasta dos materiales —superficie y halo— y no
@@ -765,7 +790,23 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         if (uniforms.uLightIntensity) uniforms.uLightIntensity.value = light;
       }
 
-      projected.push(project({ id: body.id, position, radius: body.radius }));
+      let hitScaleX = 1;
+      let hitScaleY = 1;
+      if (body.visual === "ship") {
+        hitScaleX = 0.86;
+        hitScaleY = 0.42;
+      } else if (body.visual === "station") {
+        hitScaleY = 0.65;
+      }
+      projected.push(
+        project({
+          id: body.id,
+          position,
+          radius: body.radius,
+          hitScaleX,
+          hitScaleY,
+        }),
+      );
     }
 
     for (const id of centreIds) {
@@ -774,21 +815,24 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         position: position.set(0, 0, 0),
         radius: centreRadii.get(id) ?? 2.6,
       });
-      // La etiqueta de Gargantúa baja hasta despejar el DISCO, no la sombra, y
-      // esa distancia está medida (ver `measureCentreLabelDrop`).
-      body.y += centreLabelDrop;
+      // El proxy permanece en el centro físico. Sólo el rótulo baja hasta
+      // despejar el disco; sus semiejes de hit testing cubren el disco percibido.
+      body.labelDrop = centreLabelDrop;
+      body.hitRadiusX = centreHitRadiusX;
+      body.hitRadiusY = centreHitRadiusY * 1.18;
       projected.push(body);
     }
 
     onProject(projected);
   }
 
-  function renderFrame() {
+  function renderFrame(timestamp: number) {
     if (disposed) return;
     frameHandle = requestAnimationFrame(renderFrame);
 
-    const delta = clock.getDelta();
-    const now = performance.now();
+    timer.update(timestamp);
+    const delta = timer.getDelta();
+    const now = timestamp;
 
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
@@ -865,7 +909,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       if (frameHandle) cancelAnimationFrame(frameHandle);
       frameHandle = 0;
     } else if (!frameHandle && !disposed) {
-      clock.getDelta();
+      timer.reset();
       resetAccumulation();
       frameHandle = requestAnimationFrame(renderFrame);
     }
@@ -937,6 +981,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       if (frameHandle) cancelAnimationFrame(frameHandle);
       document.removeEventListener("visibilitychange", handleVisibility);
       canvas.removeEventListener("webglcontextlost", handleContextLost);
+      timer.dispose();
       // Teardown real, no «dejar de dibujar» (§8).
       for (const body of bodies) disposeBody(body);
       quadGeometry.dispose();
