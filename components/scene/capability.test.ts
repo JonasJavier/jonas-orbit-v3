@@ -52,14 +52,19 @@ describe("detectLevel — el gate de capacidad", () => {
       }
     });
 
-    it("solo la ausencia de WebGL2 es irreversible", () => {
-      // El resto son suposiciones sobre el equipo y el visitante puede
-      // desmentirlas; sin WebGL2 no habría nada que activar.
-      expect(
-        evaluateCapabilities({ ...capable, hasWebGL2: false }).canOverride,
-      ).toBe(false);
+    it("WebGL2 ausente y reduced motion son irreversibles", () => {
+      // El resto son suposiciones sobre el equipo o una elección anterior y el
+      // visitante puede desmentirlas. Estos dos casos no se negocian.
       for (const señal of [
+        { hasWebGL2: false },
         { reducedMotion: true },
+      ]) {
+        expect(
+          evaluateCapabilities({ ...capable, ...señal }).canOverride,
+          JSON.stringify(señal),
+        ).toBe(false);
+      }
+      for (const señal of [
         { lightEffects: true },
         { renderer: "llvmpipe" },
         { deviceMemory: 2 },
@@ -71,16 +76,22 @@ describe("detectLevel — el gate de capacidad", () => {
       }
     });
 
-    it("una petición explícita gana a la preferencia de movimiento", () => {
-      // Respetar por defecto y permitir elegir es el patrón correcto: ignorar
-      // una petición explícita del visitante sería paternalismo.
+    it("una petición explícita no salta los vetos de accesibilidad o plataforma", () => {
       expect(
         detectLevel({ ...capable, reducedMotion: true, forced: true }),
-      ).toBe("orbit");
-      // Pero no puede fabricar una GPU que no existe.
+      ).toBe("flat");
       expect(detectLevel({ ...capable, hasWebGL2: false, forced: true })).toBe(
         "flat",
       );
+    });
+
+    it("una petición explícita sí puede superar heurísticas y un opt-out previo", () => {
+      expect(
+        detectLevel({ ...capable, lightEffects: true, forced: true }),
+      ).toBe("orbit");
+      expect(
+        detectLevel({ ...capable, renderer: "llvmpipe", forced: true }),
+      ).toBe("orbit");
     });
 
     it("con el perfil ligero pedido por el visitante", () => {

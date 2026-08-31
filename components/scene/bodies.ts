@@ -3,6 +3,7 @@ import {
   mergeGeometries,
   mergeVertices,
 } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
 
 /**
@@ -424,26 +425,29 @@ const BODY_FRAGMENT = /* glsl */ `
       materialOcclusion = 1.0 - ringOcclusion * day * 0.42;
     } else if (uKind == 4) {
       /*
-        Endurance: metal de módulos reales. La geometría ya dibuja las diez
-        secciones, así que el material no necesita fingirlas con franjas.
+        Endurance: mantas térmicas y panel pintado, no metal cromado.
+
+        La nave de la película comparte lenguaje con la ISS: blanco roto,
+        costuras anchas, recesos grises y variación de roughness. A la escala
+        del Hero las costuras finas sólo producen moiré, así que el patrón
+        trabaja en bloques grandes y deja que la silueta cuente los módulos.
       */
-      float panel = panels(vLocal * 1.7, 1.35);
-      float wear = fbm(vLocal * 6.0);
-      albedo = mix(vec3(0.145, 0.16, 0.19), vec3(0.44, 0.46, 0.50), panel * 0.5);
-      albedo *= 0.86 + wear * 0.22;
-      gloss = 0.66;
-      specularPower = 54.0;
-      specularStrength = 1.05;
+      float blanket = panels(vLocal * 1.35, 1.05);
+      float quilt = fbm(vLocal * 4.2 + vec3(2.7, 0.8, 5.1));
+      albedo = mix(vec3(0.39, 0.40, 0.40), vec3(0.84, 0.83, 0.79), blanket * 0.66);
+      albedo *= 0.92 + quilt * 0.15;
+      gloss = 0.24 + blanket * 0.07;
+      specularPower = 34.0;
+      specularStrength = 0.66;
     } else if (uKind == 5) {
-      /*
-        Ranger: sólo casco metálico. El violeta no toca esta rama; vive en una
-        esfera emisiva separada que funciona como baliza física y diminuta.
-      */
-      float plates = panels(vLocal * 2.1, 1.1);
-      albedo = mix(vec3(0.16, 0.18, 0.21), vec3(0.48, 0.50, 0.53), plates * 0.42);
-      gloss = 0.76;
-      specularPower = 58.0;
-      specularStrength = 1.08;
+      /* Ranger: lifting body blanco con vientre oscuro separado en geometría. */
+      float plates = panels(vLocal * 1.55, 1.0);
+      float blanket = fbm(vLocal * 4.6 + vec3(4.0, 1.2, 0.5));
+      albedo = mix(vec3(0.28, 0.31, 0.35), vec3(0.69, 0.72, 0.73), plates * 0.58);
+      albedo *= 0.92 + blanket * 0.14;
+      gloss = 0.4;
+      specularPower = 42.0;
+      specularStrength = 0.82;
     } else if (uKind == 6) {
       /*
         Anillos de Cooper: bandas minerales finas y semitransparentes.
@@ -473,6 +477,13 @@ const BODY_FRAGMENT = /* glsl */ `
       albedo = mix(vec3(0.095, 0.11, 0.14), vec3(0.31, 0.33, 0.37), structure * 0.36);
       gloss = 0.58;
       specularPower = 52.0;
+    } else if (uKind == 9) {
+      /* Paneles de servicio de Endurance: naranja quemado, muy localizado. */
+      float serviceWear = fbm(vLocal * 5.2 + vec3(1.1, 7.0, 3.4));
+      albedo = mix(vec3(0.18, 0.075, 0.025), uAccent * 0.72, 0.55 + serviceWear * 0.22);
+      gloss = 0.24;
+      specularPower = 30.0;
+      specularStrength = 0.62;
     } else {
       /* Luces de navegación y núcleo del Tesseracto: geometría, no halo global. */
       float pulse = 0.94 + 0.06 * sin(uTime * 0.55);
@@ -531,12 +542,21 @@ const BODY_FRAGMENT = /* glsl */ `
     */
     if (uKind == 4 || uKind == 5 || uKind == 7) {
       float sheen = pow(specBase, 6.0) * gloss * day;
-      color += mix(key, vec3(0.62, 0.76, 1.0), 0.42) * sheen * 0.3;
-      /* Contraluz del campo estelar en el canto opuesto: separa el casco del
-         negro por el lado que la clave no toca. */
       float coldRim = pow(1.0 - max(dot(normal, view), 0.0), 2.6)
                     * smoothstep(0.25, -0.55, ndl);
-      color += vec3(0.30, 0.42, 0.72) * coldRim * 0.34;
+
+      if (uKind == 4) {
+        /* Endurance no es azul: el fill frío sólo separa su canto. La manta
+           conserva un rebote casi neutro como en la miniatura de producción. */
+        color += albedo * vec3(0.048, 0.046, 0.042);
+        color += mix(key, vec3(0.72, 0.75, 0.80), 0.22) * sheen * 0.24;
+        color += vec3(0.18, 0.22, 0.30) * coldRim * 0.22;
+      } else {
+        color += mix(key, vec3(0.62, 0.76, 1.0), 0.42) * sheen * 0.3;
+        /* Contraluz del campo estelar en el canto opuesto: separa el casco del
+           negro por el lado que la clave no toca. */
+        color += vec3(0.30, 0.42, 0.72) * coldRim * 0.34;
+      }
     }
 
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
@@ -565,6 +585,7 @@ const BODY_FRAGMENT = /* glsl */ `
 const NAVIGATION_COLOUR = "#7fe5ff";
 const STRUCTURE_KIND = 7;
 const EMISSIVE_KIND = 8;
+const ENDURANCE_SERVICE_KIND = 9;
 
 interface MaterialOptions {
   accent?: string;
@@ -619,6 +640,19 @@ function placed(
   return geometry.applyMatrix4(matrix);
 }
 
+/** RoundedBox sale no indexada; se normaliza para poder fusionarla con boxes. */
+function roundedBox(
+  width: number,
+  height: number,
+  depth: number,
+  radius: number,
+): THREE.BufferGeometry {
+  const geometry = new RoundedBoxGeometry(width, height, depth, 2, radius);
+  const indexed = mergeVertices(geometry);
+  geometry.dispose();
+  return indexed;
+}
+
 /** Una malla por familia material: detalle real sin pagar un draw por módulo. */
 function mergedMesh(
   geometries: THREE.BufferGeometry[],
@@ -626,6 +660,9 @@ function mergedMesh(
 ): THREE.Mesh {
   const geometry = mergeGeometries(geometries, false);
   for (const part of geometries) part.dispose();
+  if (!geometry) {
+    throw new Error("No se pudieron fusionar las geometrías del cuerpo");
+  }
   return new THREE.Mesh(geometry, material);
 }
 
@@ -671,148 +708,228 @@ function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
 }
 
 /**
- * Endurance: la nave-estación radial. Segundo ancla visual después de Gargantúa.
+ * Endurance de Interstellar: silueta cinematográfica traducida a tiempo real.
  *
  * ── Qué fallaba en la versión anterior ──────────────────────────────────────
  *
- * Diez cajas colgadas de dos arcos de truss. A tamaño real leía como un aro
- * dentado: había módulos, pero no había NAVE. Faltaba lo que hace creíble a un
- * vehículo de espacio profundo — un eje longitudinal que explique por dónde
- * empuja, un hub que explique dónde vive la tripulación y una jerarquía de
- * piezas que diga qué es estructura y qué es habitáculo.
+ * La reconstrucción anterior tenía doce radios, dos toros y una espina. En el
+ * frame se comprimía en una cruz: grande, pero ajena a la nave de la película.
  *
  * ── Lo que la hace legible ahora ────────────────────────────────────────────
  *
- * 1. **El anillo se cierra.** Un truss partido en dos arcos se lee como una
- *    pieza rota; entero se lee como ingeniería. Detrás va un segundo aro de
- *    servicio, más fino, que da la profundidad que faltaba entre hub y módulos.
- * 2. **Doce módulos alternados en Z.** El escalonado dibuja un dentado suave en
- *    la silueta en lugar de un contorno plano, y es lo que da sensación de
- *    construcción modular sin añadir un solo draw.
- * 3. **Un eje real.** Espina de proa, morro, collarines de atraque y tobera de
- *    popa: perpendiculares al anillo, son lo que convierte el aro en un
- *    vehículo con proa y popa.
- * 4. **Paneles y plato.** Dos radiadores y una antena rompen la simetría
- *    perfecta, que es lo que separa una nave diseñada de una figura geométrica.
+ * 1. **Doce cápsulas separadas.** El vacío entre módulos es parte de la forma.
+ * 2. **Un solo spoke.** El gran centro vacío deja de parecer una rueda.
+ * 3. **Full stack.** Dos Ranger y dos Lander cargan el hub compacto.
+ * 4. **Cuatro bloques de motor.** Sus doce campanas cuentan ingeniería real.
  *
- * Sigue costando TRES draws: casco, estructura y balizas. El detalle está en la
- * geometría fusionada, no en el número de objetos.
+ * Cuatro draws: manta/panel, estructura, servicio y balizas. El detalle vive en
+ * geometría fusionada, no en un kitbash de objetos independientes.
  */
 function enduranceModel(input: SceneBodyInput): BodyModel {
   const hull = bodyMaterial(input, KIND.ship);
   const structure = bodyMaterial(input, STRUCTURE_KIND);
+  const service = bodyMaterial(input, ENDURANCE_SERVICE_KIND, {
+    accent: "#c0793d",
+  });
   const lights = bodyMaterial(input, EMISSIVE_KIND, { accent: input.secondary });
   const root = new THREE.Object3D();
 
-  /** Radio del anillo de módulos. Todo lo demás se mide contra él. */
-  const RING = 0.82;
   const MODULES = 12;
+  const RING = 0.78;
+  const MODULE_RADIAL = 0.36;
+  const MODULE_TANGENTIAL = 0.25;
+  const MODULE_DEPTH = 0.22;
+  const STEP = (Math.PI * 2) / MODULES;
+  const ENGINE_MODULES = new Set([2, 4, 8, 10]);
+  const LANDING_MODULES = new Set([1, 5, 7, 11]);
+  const HABITAT_MODULES = new Set([0, 6]);
 
-  const hullParts: THREE.BufferGeometry[] = [
-    // Hub central: tambor presurizado y sus dos collarines de atraque.
-    placed(new THREE.CylinderGeometry(0.2, 0.2, 0.38, 14), [0, 0, 0], [Math.PI / 2, 0, 0]),
-    placed(new THREE.CylinderGeometry(0.135, 0.135, 0.1, 10), [0, 0, 0.23], [Math.PI / 2, 0, 0]),
-    placed(new THREE.CylinderGeometry(0.135, 0.135, 0.1, 10), [0, 0, -0.23], [Math.PI / 2, 0, 0]),
-    // Espina de proa y morro: el eje que dice hacia dónde mira la nave.
-    placed(new THREE.CylinderGeometry(0.062, 0.082, 0.66, 12), [0, 0, 0.6], [Math.PI / 2, 0, 0]),
-    placed(new THREE.ConeGeometry(0.062, 0.2, 12), [0, 0, 1.03], [Math.PI / 2, 0, 0]),
-    // Tobera de popa, abierta: una campana, no un tapón.
+  const hullParts: THREE.BufferGeometry[] = [];
+  const structureParts: THREE.BufferGeometry[] = [
+    // Hub multipuerto compacto. El vacío central sigue dominando la lectura.
     placed(
-      new THREE.CylinderGeometry(0.088, 0.15, 0.24, 14, 1, true),
-      [0, 0, -0.44],
+      new THREE.CylinderGeometry(0.135, 0.135, 0.18, 12),
+      [0, 0, 0],
       [Math.PI / 2, 0, 0],
     ),
-  ];
-
-  const structureParts: THREE.BufferGeometry[] = [
-    // Truss exterior COMPLETO y aro de servicio interior.
-    new THREE.TorusGeometry(RING, 0.017, 4, 72),
-    new THREE.TorusGeometry(0.58, 0.009, 3, 56),
-    // Radiadores sobre la espina: rompen la simetría radial perfecta.
-    placed(new THREE.BoxGeometry(0.46, 0.012, 0.26), [0, 0.24, 0.6]),
-    placed(new THREE.BoxGeometry(0.46, 0.012, 0.26), [0, -0.24, 0.6]),
-    // Plato de alta ganancia, apuntando hacia fuera del plano del anillo.
+    new THREE.TorusGeometry(0.17, 0.024, 5, 18),
+    // Collars del único spoke, que se dibuja en manta clara más abajo.
     placed(
-      new THREE.SphereGeometry(0.11, 10, 4, 0, Math.PI * 2, 0, Math.PI * 0.42),
-      [0.26, 0, 0.5],
-      [0, 0, -Math.PI / 2.4],
+      new THREE.CylinderGeometry(0.064, 0.064, 0.055, 10),
+      [0.18, 0, 0],
+      [0, 0, -Math.PI / 2],
+    ),
+    placed(
+      new THREE.CylinderGeometry(0.064, 0.064, 0.055, 10),
+      [0.59, 0, 0],
+      [0, 0, -Math.PI / 2],
     ),
   ];
-
+  hullParts.push(
+    // Casco claro del hub: pequeño frente al vacío, pero visible en el frame.
+    placed(
+      new THREE.CylinderGeometry(0.155, 0.155, 0.12, 12),
+      [0, 0, 0],
+      [Math.PI / 2, 0, 0],
+    ),
+    placed(
+      new THREE.CylinderGeometry(0.048, 0.055, 0.6, 9),
+      [0.38, 0, 0],
+      [0, 0, -Math.PI / 2],
+    ),
+  );
+  const serviceParts: THREE.BufferGeometry[] = [];
   const lightParts: THREE.BufferGeometry[] = [
-    // Baliza de proa y luz de popa: los dos extremos del eje quedan marcados.
-    placed(new THREE.SphereGeometry(0.03, 8, 6), [0, 0, 1.15]),
-    placed(new THREE.SphereGeometry(0.026, 8, 6), [0, 0, -0.58]),
+    placed(new THREE.SphereGeometry(0.022, 8, 6), [0, 0.19, 0.07]),
+    placed(new THREE.SphereGeometry(0.022, 8, 6), [0, -0.19, 0.07]),
   ];
 
   for (let index = 0; index < MODULES; index++) {
-    const angle = (index / MODULES) * Math.PI * 2;
+    // Índice 0 = las 12; sentido horario como el diagrama de producción.
+    const angle = Math.PI / 2 - index * STEP;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    // El escalonado en Z es lo que dibuja el dentado de la silueta.
-    const stagger = index % 2 === 0 ? 0.055 : -0.055;
+    const moduleDepth = LANDING_MODULES.has(index) ? 0.25 : MODULE_DEPTH;
+    const moduleTangential = HABITAT_MODULES.has(index)
+      ? 0.28
+      : MODULE_TANGENTIAL;
 
-    // Módulo presurizado, tangente al anillo. El eje Y del cilindro rota con
-    // `angle`, que es exactamente la dirección tangencial de la circunferencia.
+    // Cápsulas radiales independientes. Los huecos entre ellas son parte del
+    // modelo, no líneas pintadas sobre un aro continuo.
     hullParts.push(
       placed(
-        new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8),
-        [cos * RING, sin * RING, stagger],
+        roundedBox(MODULE_RADIAL, moduleTangential, moduleDepth, 0.025),
+        [cos * RING, sin * RING, 0],
         [0, 0, angle],
       ),
     );
-    // Tapa exterior del módulo: da volumen al canto sin cerrarlo con una esfera.
-    hullParts.push(
-      placed(
-        new THREE.CylinderGeometry(0.062, 0.1, 0.07, 8),
-        [cos * (RING + 0.09), sin * (RING + 0.09), stagger],
-        [0, 0, angle + Math.PI],
-      ),
-    );
 
-    // Radio del hub al módulo, ligeramente cónico.
+    if (LANDING_MODULES.has(index)) {
+      hullParts.push(
+        placed(
+          new THREE.CylinderGeometry(0.085, 0.125, 0.13, 4),
+          [cos * (RING + 0.22), sin * (RING + 0.22), 0],
+          [0, 0, angle - Math.PI / 2],
+        ),
+      );
+    }
+
+    // Airlock entre cápsulas: doce segmentos describen el anillo sin toro.
+    const connectorAngle = angle - STEP / 2;
     structureParts.push(
       placed(
-        new THREE.BoxGeometry(0.62, 0.03, 0.03),
-        [cos * 0.5, sin * 0.5, 0],
-        [0, 0, angle],
+        new THREE.CylinderGeometry(0.031, 0.031, 0.17, 7),
+        [Math.cos(connectorAngle) * RING, Math.sin(connectorAngle) * RING, 0],
+        [0, 0, connectorAngle],
+      ),
+    );
+    structureParts.push(
+      placed(
+        new THREE.CylinderGeometry(0.055, 0.055, 0.045, 8),
+        [cos * (RING - 0.2), sin * (RING - 0.2), 0],
+        [0, 0, angle - Math.PI / 2],
       ),
     );
 
-    // Aleta de servicio cada tres módulos: asimetría controlada.
-    if (index % 3 === 0) {
-      structureParts.push(
+    // Cuatro módulos de motor, con tres campanas oscuras cada uno.
+    if (ENGINE_MODULES.has(index)) {
+      for (const tangentialOffset of [-0.075, 0, 0.075]) {
+        const tangentX = -sin * tangentialOffset;
+        const tangentY = cos * tangentialOffset;
+        structureParts.push(
+          placed(
+            new THREE.CylinderGeometry(0.025, 0.047, 0.15, 9, 1, true),
+            [
+              cos * (RING + 0.25) + tangentX,
+              sin * (RING + 0.25) + tangentY,
+              -0.035,
+            ],
+            [0, 0, angle - Math.PI / 2],
+          ),
+        );
+      }
+      serviceParts.push(
         placed(
-          new THREE.BoxGeometry(0.016, 0.15, 0.22),
-          [cos * (RING + 0.13), sin * (RING + 0.13), 0],
+          new THREE.BoxGeometry(0.12, 0.12, 0.016),
+          [cos * RING, sin * RING, moduleDepth / 2 + 0.009],
           [0, 0, angle],
         ),
       );
     }
 
-    // Cuatro balizas de navegación repartidas por el anillo.
-    if (index % 3 === 1) {
+    if (HABITAT_MODULES.has(index) || index === 3 || index === 9) {
+      serviceParts.push(
+        placed(
+          new THREE.BoxGeometry(0.1, 0.15, 0.014),
+          [cos * (RING - 0.03), sin * (RING - 0.03), moduleDepth / 2 + 0.008],
+          [0, 0, angle],
+        ),
+      );
+    }
+
+    if (!ENGINE_MODULES.has(index) && index !== 3 && index !== 9) {
+      structureParts.push(
+        placed(
+          new THREE.BoxGeometry(0.11, 0.12, 0.012),
+          [cos * (RING - 0.03), sin * (RING - 0.03), moduleDepth / 2 + 0.008],
+          [0, 0, angle],
+        ),
+      );
+    }
+
+    if (index % 3 === 0) {
       lightParts.push(
         placed(
-          new THREE.SphereGeometry(0.026, 8, 6),
-          [cos * (RING + 0.04), sin * (RING + 0.04), stagger + 0.085],
+          new THREE.SphereGeometry(0.018, 7, 5),
+          [cos * (RING - 0.21), sin * (RING - 0.21), 0.075],
         ),
       );
     }
   }
 
+  // Full stack: dos Ranger planos y dos Lander pesados alrededor del hub.
+  hullParts.push(
+    placed(foil(0.16, -0.16, 0.2, 0.025, -0.13, 0.045), [0, 0.22, 0.035]),
+    placed(
+      foil(0.16, -0.16, -0.2, 0.025, -0.13, 0.045),
+      [0, -0.22, 0.035],
+      [0, 0, Math.PI],
+    ),
+    placed(roundedBox(0.22, 0.15, 0.16, 0.022), [0.22, 0, -0.02]),
+    placed(roundedBox(0.22, 0.15, 0.16, 0.022), [-0.22, 0, -0.02]),
+  );
+  structureParts.push(
+    placed(new THREE.CylinderGeometry(0.022, 0.022, 0.34, 7)),
+    placed(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.34, 7),
+      [0, 0, 0],
+      [0, 0, Math.PI / 2],
+    ),
+  );
+
   const hullMesh = mergedMesh(hullParts, hull);
-  hullMesh.name = "endurance-hub-and-modules";
+  hullMesh.name = "endurance-twelve-module-ring";
   root.add(hullMesh);
   const structureMesh = mergedMesh(structureParts, structure);
-  structureMesh.name = "endurance-spokes-and-partial-truss";
+  structureMesh.name = "endurance-single-spoke-connectors-and-engines";
   root.add(structureMesh);
+  const serviceMesh = mergedMesh(serviceParts, service);
+  serviceMesh.name = "endurance-service-panels";
+  root.add(serviceMesh);
   const lightMesh = mergedMesh(lightParts, lights);
-  lightMesh.name = "endurance-navigation-lights";
+  lightMesh.name = "endurance-airlock-lights";
   lightMesh.renderOrder = 2;
   root.add(lightMesh);
 
-  return { root, materials: [hull, structure, lights] };
+  root.userData.enduranceArchitecture = {
+    modules: MODULES,
+    engineModules: ENGINE_MODULES.size,
+    spokes: 1,
+    dockedRangers: 2,
+    dockedLanders: 2,
+  };
+
+  return { root, materials: [hull, structure, service, lights] };
 }
 
 /** Planeta anillado más un hábitat que orbita dentro del mismo modelo lógico. */
@@ -1015,21 +1132,21 @@ function foil(
  *
  * ── Qué fallaba ─────────────────────────────────────────────────────────────
  *
- * Un cono hexagonal con dos cajas cruzadas. A su tamaño en pantalla eso no es
- * una nave: es una mota con una punta. Y al ser el destino más pequeño del
- * sistema, era justo el que menos podía permitirse una silueta ambigua.
+ * La iteración anterior ya tenía alas, pero conservaba fuselaje, cono y derivas
+ * de caza. En pantalla se reconocía como avión, no como la Ranger de la película.
  *
  * ── Qué la hace legible ─────────────────────────────────────────────────────
  *
- * Una lanzadera se reconoce por tres cosas y ninguna es el tamaño: fuselaje con
- * morro afilado, ALAS EN FLECHA y estabilizadores. Con eso, a veinte píxeles
- * sigue leyéndose como nave; sin eso, a cien píxeles sigue siendo un cono.
+ * La Ranger se reconoce por su lifting body bajo, ancho y acolchado: planform de
+ * manta, vientre negro de escudo térmico y cabina integrada. La flecha sigue
+ * presente, pero ahora pertenece al cuerpo completo y no a dos alas añadidas.
  *
  * Se mantiene deliberadamente por debajo de los mundos y de la Endurance: la
  * jerarquía del sistema no cambia, cambia la calidad de la lectura.
  */
 function rangerModel(input: SceneBodyInput): BodyModel {
   const hull = bodyMaterial(input, KIND.beacon);
+  const structure = bodyMaterial(input, STRUCTURE_KIND);
   const beacon = bodyMaterial(input, EMISSIVE_KIND, { accent: input.accent });
   const root = new THREE.Object3D();
   // Grupo propio: el giro de `spinAt` va en la raíz, y la actitud aquí dentro.
@@ -1038,55 +1155,74 @@ function rangerModel(input: SceneBodyInput): BodyModel {
 
   // Marco local: +X proa, +Y arriba, +Z estribor.
   const hullParts = [
-    // Fuselaje: ligeramente cónico hacia proa, no un tubo.
+    // Volumen central bajo y ancho: lifting body, no fuselaje de caza.
     placed(
-      new THREE.CylinderGeometry(0.125, 0.17, 0.92, 12),
-      [0.05, 0, 0],
-      [0, 0, -Math.PI / 2],
+      new THREE.SphereGeometry(0.5, 18, 10).scale(1.34, 0.28, 0.58),
+      [-0.03, 0.015, 0],
     ),
-    // Morro.
-    placed(new THREE.ConeGeometry(0.125, 0.42, 12), [0.72, 0, 0], [0, 0, -Math.PI / 2]),
-    // Sección de popa y su carenado.
+    // Planform de manta: el borde de ataque en flecha define la silueta.
     placed(
-      new THREE.CylinderGeometry(0.17, 0.115, 0.2, 12),
-      [-0.51, 0, 0],
-      [0, 0, -Math.PI / 2],
-    ),
-    // Cabina: esfera achatada, no una burbuja.
-    placed(
-      new THREE.SphereGeometry(0.1, 12, 8).scale(1.75, 0.52, 0.95),
-      [0.27, 0.1, 0],
-      [0, 0, -0.06],
-    ),
-    // Alas en flecha, una por banda. El extrudido va en Z y se tumba en Y.
-    placed(foil(0.3, -0.34, 0.52, -0.08, -0.34, 0.045), [-0.02, -0.02, 0], [Math.PI / 2, 0, 0]),
-    placed(foil(0.3, -0.34, -0.52, -0.08, -0.34, 0.045), [-0.02, -0.02, 0], [Math.PI / 2, 0, 0]),
-    // Estabilizadores verticales, ligeramente abiertos hacia fuera.
-    placed(foil(-0.26, -0.54, 0.3, -0.44, -0.54, 0.03), [0, 0.02, 0.13], [0, 0, 0]),
-    placed(foil(-0.26, -0.54, 0.3, -0.44, -0.54, 0.03), [0, 0.02, -0.13], [0, 0, 0]),
-    // Toberas gemelas.
-    placed(
-      new THREE.CylinderGeometry(0.055, 0.078, 0.17, 10, 1, true),
-      [-0.67, 0, 0.09],
-      [0, 0, Math.PI / 2],
+      foil(0.48, -0.5, 0.66, 0.06, -0.37, 0.085),
+      [-0.02, -0.045, 0],
+      [Math.PI / 2, 0, 0],
     ),
     placed(
-      new THREE.CylinderGeometry(0.055, 0.078, 0.17, 10, 1, true),
-      [-0.67, 0, -0.09],
-      [0, 0, Math.PI / 2],
+      foil(0.48, -0.5, -0.66, 0.06, -0.37, 0.085),
+      [-0.02, -0.045, 0],
+      [Math.PI / 2, 0, 0],
     ),
+    // Cabina acolchada, integrada en la superficie superior.
+    placed(
+      new THREE.SphereGeometry(0.13, 14, 8).scale(1.6, 0.48, 1.45),
+      [0.21, 0.12, 0],
+      [0, 0, -0.08],
+    ),
+    // Dos pequeñas derivas de popa, muy contenidas.
+    placed(foil(-0.24, -0.48, 0.2, -0.39, -0.5, 0.028), [0, 0.02, 0.2]),
+    placed(foil(-0.24, -0.48, 0.2, -0.39, -0.5, 0.028), [0, 0.02, -0.2]),
   ];
   const hullMesh = mergedMesh(hullParts, hull);
   hullMesh.name = "ranger-metallic-hull";
   craft.add(hullMesh);
 
+  const structureMesh = mergedMesh(
+    [
+      // Escudo térmico negro: una segunda silueta apenas más pequeña bajo la
+      // nave, visible en el canto y fiel al lenguaje del Shuttle.
+      placed(
+        foil(0.42, -0.46, 0.58, 0.04, -0.34, 0.05),
+        [-0.03, -0.095, 0],
+        [Math.PI / 2, 0, 0],
+      ),
+      placed(
+        foil(0.42, -0.46, -0.58, 0.04, -0.34, 0.05),
+        [-0.03, -0.095, 0],
+        [Math.PI / 2, 0, 0],
+      ),
+      // Toberas gemelas, oscuras en reposo.
+      placed(
+        new THREE.CylinderGeometry(0.055, 0.082, 0.16, 10, 1, true),
+        [-0.58, 0, 0.15],
+        [0, 0, Math.PI / 2],
+      ),
+      placed(
+        new THREE.CylinderGeometry(0.055, 0.082, 0.16, 10, 1, true),
+        [-0.58, 0, -0.15],
+        [0, 0, Math.PI / 2],
+      ),
+    ],
+    structure,
+  );
+  structureMesh.name = "ranger-heat-shield-and-engines";
+  craft.add(structureMesh);
+
   // Balizas: puntas de ala y luz de morro. Físicas y diminutas, como en el
   // resto del sistema: el bloom óptico las convierte en luz, no un degradado.
   const beaconMesh = mergedMesh(
     [
-      placed(new THREE.SphereGeometry(0.036, 8, 6), [-0.2, -0.01, 0.52]),
-      placed(new THREE.SphereGeometry(0.036, 8, 6), [-0.2, -0.01, -0.52]),
-      placed(new THREE.SphereGeometry(0.03, 8, 6), [0.93, 0, 0]),
+      placed(new THREE.SphereGeometry(0.032, 8, 6), [-0.13, -0.01, 0.65]),
+      placed(new THREE.SphereGeometry(0.032, 8, 6), [-0.13, -0.01, -0.65]),
+      placed(new THREE.SphereGeometry(0.026, 8, 6), [0.68, 0.01, 0]),
     ],
     beacon,
   );
@@ -1096,7 +1232,7 @@ function rangerModel(input: SceneBodyInput): BodyModel {
 
   return {
     root,
-    materials: [hull, beacon],
+    materials: [hull, structure, beacon],
     animate(seconds) {
       /*
         Mantenimiento de actitud, no bamboleo.
@@ -1157,14 +1293,14 @@ function modelRadius(root: THREE.Object3D): number {
 function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Euler) {
   // Endurance enseña radios y módulos; Cooper inclina los anillos lo justo para
   // conservar la elipse; Ranger ofrece el perfil metálico, no un triángulo plano.
-  // Tres cuartos, no perfil: con el eje apuntando a la cámara el anillo se veía
-  // de canto y la espina se leía como una espina de pescado. Girado 22° en Y el
-  // aro se abre en elipse y el eje cruza el cuadro — la lectura de VEHÍCULO.
-  if (visual === "ship") return target.set(Math.PI / 3.3, 0.38, 0.06);
+  // Endurance se muestra a 30°: conserva el círculo, enseña el grosor axial y
+  // deja leer módulos/campanas. Más inclinación vuelve a comprimirla en una cruz.
+  if (visual === "ship") return target.set(0.5, 0.16, -0.08);
   if (visual === "station") return target.set(0.28, 0, -0.18);
   if (visual === "tesseract") return target.set(0.12, 0.18, -0.08);
-  // La Ranger enseña planta y perfil a la vez: alas legibles y morro en fuga.
-  if (visual === "beacon") return target.set(0.34, -0.62, -0.12);
+  // La Ranger enseña casi toda la planta de lifting body y sólo un canto del
+  // escudo térmico: lo suficiente para que no parezca un icono plano.
+  if (visual === "beacon") return target.set(0.24, -0.2, -0.1);
   return target.set(0, 0, 0);
 }
 
@@ -1188,7 +1324,7 @@ const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
   water: 0.05,
   desert: 0.042,
   station: 0.03,
-  ship: 0.016,
+  ship: 0.012,
   tesseract: 0.009,
   beacon: 0.011,
   "black-hole": 0,

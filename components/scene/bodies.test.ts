@@ -39,11 +39,41 @@ describe("cuerpos del Sistema Gargantúa", () => {
     const ranger = bodyFor("ranger");
 
     try {
-      expect(endurance.object.getObjectByName("endurance-hub-and-modules")).toBeDefined();
       expect(
-        endurance.object.getObjectByName("endurance-spokes-and-partial-truss"),
+        endurance.object.getObjectByName("endurance-twelve-module-ring"),
       ).toBeDefined();
-      expect(endurance.object.getObjectByName("endurance-navigation-lights")).toBeDefined();
+      expect(
+        endurance.object.getObjectByName(
+          "endurance-single-spoke-connectors-and-engines",
+        ),
+      ).toBeDefined();
+      expect(
+        endurance.object.getObjectByName("endurance-service-panels"),
+      ).toBeDefined();
+      expect(
+        endurance.object.getObjectByName("endurance-airlock-lights"),
+      ).toBeDefined();
+
+      for (const name of [
+        "endurance-twelve-module-ring",
+        "endurance-single-spoke-connectors-and-engines",
+        "endurance-service-panels",
+        "endurance-airlock-lights",
+      ]) {
+        const mesh = endurance.object.getObjectByName(name) as THREE.Mesh;
+        expect(mesh.geometry.getAttribute("position").count, name).toBeGreaterThan(0);
+      }
+
+      const enduranceRoot = endurance.object.getObjectByName(
+        "endurance-twelve-module-ring",
+      )?.parent;
+      expect(enduranceRoot?.userData.enduranceArchitecture).toEqual({
+        modules: 12,
+        engineModules: 4,
+        spokes: 1,
+        dockedRangers: 2,
+        dockedLanders: 2,
+      });
 
       expect(cooper.object.getObjectByName("cooper-planet")).toBeDefined();
       expect(cooper.object.getObjectByName("cooper-rings")).toBeDefined();
@@ -55,6 +85,9 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(tesseract.object.getObjectByName("tesseract-core")).toBeDefined();
 
       expect(ranger.object.getObjectByName("ranger-metallic-hull")).toBeDefined();
+      expect(
+        ranger.object.getObjectByName("ranger-heat-shield-and-engines"),
+      ).toBeDefined();
       expect(ranger.object.getObjectByName("ranger-violet-beacon")).toBeDefined();
     } finally {
       for (const body of [endurance, cooper, tesseract, ranger]) disposeBody(body);
@@ -140,12 +173,40 @@ describe("cuerpos del Sistema Gargantúa", () => {
       }
     }
 
-    // Sube de 20 a 21 por una razón concreta: el tesseracto pasó de una malla
-    // rígida a dos cáscaras que contrarrotan, y eso son dos objetos o no es
-    // contrarrotación. Los anillos de Cooper, en cambio, ganaron su división sin
-    // pagar draw: la abre el shader. Un draw más, no dos.
-    expect(batches).toBeLessThanOrEqual(21);
-    expect(vertices).toBeLessThan(10_000);
+    // Endurance gana una familia material para paneles de servicio y Ranger un
+    // vientre térmico separado: dos draws con lectura real, no greeble suelto.
+    expect(batches).toBeLessThanOrEqual(23);
+    expect(vertices).toBeLessThan(15_000);
+  });
+
+  it("anima localmente sin desplazar los destinos y es determinista", () => {
+    const ids = [
+      "tesseract",
+      "cooper-station",
+      "miller",
+      "endurance",
+      "edmunds",
+      "ranger",
+    ] as const;
+
+    for (const id of ids) {
+      const body = bodyFor(id);
+      try {
+        const destination = body.object.position.clone();
+        const model = body.object.children[0];
+        const initial = model.quaternion.clone();
+
+        body.spinAt(37);
+        const first = model.quaternion.clone();
+        body.spinAt(37);
+
+        expect(body.object.position, id).toEqual(destination);
+        expect(model.quaternion.equals(first), id).toBe(true);
+        expect(first.equals(initial), id).toBe(false);
+      } finally {
+        disposeBody(body);
+      }
+    }
   });
 
   it("limita el foco orbital a un arco alrededor del cuerpo", () => {

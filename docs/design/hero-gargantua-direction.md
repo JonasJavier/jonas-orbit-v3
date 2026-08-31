@@ -1,7 +1,8 @@
 # Hero / System Map — dirección artística vigente
 
-**Estado:** candidato en iteración. Esta especificación guía implementación y
-revisión visual; compilar o pasar tests no constituye aprobación artística.
+**Estado:** candidato aprobado tras el pase de calidad de 2026-08-31. Esta
+especificación guía implementación y revisión visual; compilar o pasar tests no
+constituye por sí solo aprobación artística.
 
 Manda sobre cualquier descripción anterior del Hero en
 `docs/plans/sistema-gargantua.md`, el plan principal y el contrato WP0. La
@@ -70,14 +71,19 @@ frame en bloom.
 
 ### Endurance — Proyectos
 
-Endurance es una nave original de espacio profundo, no una copia cinematográfica
-ni un toro decorativo. Su estructura contiene hub central, radios, 8–12 módulos,
-anillo exterior parcial, antenas, estructura mecánica y luces pequeñas.
+La petición explícita de 2026-08-31 sustituye la dirección anterior de nave
+«original»: **Endurance debe reconocerse como la Endurance de _Interstellar_**,
+sin reinterpretarla como otra estación radial. La reconstrucción procedural usa
+doce módulos rectangulares independientes con huecos visibles, un gran centro
+vacío, un único brazo radial hacia un hub compacto, cuatro módulos de motor y el
+full stack de dos Ranger y dos Lander.
 
-El casco es metálico oscuro o gris, con borde cálido de Gargantúa, relleno frío
-contenido y como máximo un acento cian. No hay bandas azules/blancas gigantes ni
-un anillo macizo. Su escala de primer plano la convierte en segunda ancla y su
-silueta completa entra en el volumen interactivo.
+El casco comparte el lenguaje NASA/ISS de la miniatura: mantas térmicas blanco
+roto y gris, recesos casi negros, paneles de servicio naranja muy localizados y
+balizas pequeñas. El relleno frío separa el canto pero nunca vuelve azul la nave.
+No hay toro continuo, rueda de radios ni kitbash ruidoso. Su escala de primer
+plano la convierte en segunda ancla y su silueta completa entra en el volumen
+interactivo.
 
 ### Cooper Station — Formación
 
@@ -286,7 +292,7 @@ El viaje continuo permanece **DEFERRED** y se documenta únicamente en
 pertenece a esa fase. En la arquitectura actual las páginas vuelven a `/es` con
 navegación convencional.
 
-## 14 bis. Pase de calidad y vida (2026-08-30)
+## 14 bis. Pase de calidad y vida (2026-08-31)
 
 Refinamiento sobre la dirección aprobada, **no** un concepto nuevo. Lo que sigue
 manda sobre cualquier descripción anterior de estos siete puntos.
@@ -295,9 +301,9 @@ manda sobre cualquier descripción anterior de estos siete puntos.
 
 | Destino | `size` antes | `size` ahora | Motivo |
 | --- | --- | --- | --- |
-| Endurance | 4.7 | 5.0 | Segundo ancla: tenía que sostener la mirada después de Gargantúa. |
-| Ranger | 1.5 | 2.05 | Radio aparente ×2,3. Era una mota con punta, no un destino. |
-| Tesseracto | 2.05 | 2.5 | Conserva la jerarquía por encima de la Ranger tras su crecimiento. |
+| Endurance | 4.7 | 5.15 | Segundo ancla: sostiene la mirada y permite contar los doce módulos. |
+| Ranger | 1.5 | 2.5 | Deja de ser una mota y conserva una silueta de lifting body legible. |
+| Tesseracto | 2.05 | 2.7 | Conserva la jerarquía por encima de la Ranger tras su crecimiento. |
 | Cooper Station | 2.16 | 2.45 | El sistema de anillos necesita superficie para leerse. |
 | Miller | 3.0 | 3.05 | Ajuste fino. |
 | Edmunds | 2.9 | 3.0 | Ajuste fino. |
@@ -308,12 +314,13 @@ lectura del sistema aunque la escena siga compilando.
 
 ### Modelos
 
-- **Endurance.** Truss cerrado, aro de servicio interior, doce módulos
-  escalonados en Z, eje longitudinal completo (espina, morro, collarines,
-  tobera), radiadores y plato. Sigue costando tres draws.
-- **Ranger.** Lanzadera con fuselaje cónico, **alas en flecha extruidas**,
-  estabilizadores y toberas gemelas. Una lanzadera se reconoce por su flecha,
-  no por su tamaño.
+- **Endurance.** Doce módulos rectangulares separados, centro abierto, **un solo
+  brazo radial**, hub compacto con dos Ranger y dos Lander, cuatro bloques de
+  motor y doce campanas. Cuatro familias materiales fusionadas mantienen cuatro
+  draws: manta/panel, estructura, servicio y balizas.
+- **Ranger.** Lifting body bajo y ancho con planta de manta, cabina integrada,
+  vientre oscuro de escudo térmico y toberas gemelas. Se reconoce como la
+  lanzadera de la película, no como un caza con alas añadidas.
 - **Cooper.** Un solo anillo con **división abierta por el shader** (`discard`),
   no dos mallas.
 - **Tesseracto.** Dos cáscaras de retícula que contrarrotan; el espacio imposible
@@ -340,6 +347,8 @@ raymarch necesita que la cámara se quede quieta para converger.
 - **Sin lectura de movimiento.** `MOTION // REDUCED` se retiró del cristal: era
   telemetría sobre una preferencia que el visitante ya conoce y no podía cambiar
   desde ahí. El estado sigue en `<html data-reduced-motion>`.
+- **Copy corto.** El reposo usa `SYSTEM MAP / SELECT TARGET`; en móvil desaparece
+  hasta que existe un objetivo porque el raíl ya comunica la acción.
 - **Tres niveles opacos.** `--hud-primary` / `--hud-secondary` / `--hud-tertiary`
   son colores, no opacidades. La jerarquía se construye separando luminancias;
   bajar el alfa hasta desaparecer no es discreción, es niebla. El nivel más bajo
@@ -367,6 +376,6 @@ Cada iteración se revisa con frame estático, estados y movimiento de puntero:
 9. ¿El frame estático ya se siente luminoso, vasto y premium?
 10. ¿El universo se siente vivo aunque nada recorra una órbita?
 
-Tests verdes son obligatorios, pero no responden estas preguntas. Hasta que la
-evidencia visual en GPU real las responda, el Hero sigue siendo **candidato en
-iteración**.
+Tests verdes son obligatorios, pero no responden estas preguntas. La evidencia
+de 2026-08-31 cubre frame estático, target de Endurance, target de Ranger, 390 px
+y reduced-motion; el resultado queda como **candidato aprobado**.

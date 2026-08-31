@@ -31,8 +31,8 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     );
     const target = container.querySelector(".hud__target");
     expect(target).toHaveAttribute("data-target-state", "idle");
-    expect(target).toHaveTextContent(/Navigation/i);
-    expect(target).toHaveTextContent(/Select destination/i);
+    expect(target).toHaveTextContent(/System map/i);
+    expect(target).toHaveTextContent(/Select target/i);
     expect(container).not.toHaveTextContent(/Jonás Javier Encarnación/i);
     expect(container).not.toHaveTextContent(/ingeniería y diseño orbitan juntos/i);
   });
@@ -250,7 +250,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(endurance).toHaveAttribute("data-target-state", "locked");
     const target = container.querySelector(".hud__target");
     expect(target).toHaveAttribute("data-target-state", "locked");
-    expect(target).toHaveTextContent(/Destination locked/i);
+    expect(target).toHaveTextContent(/Target locked/i);
     expect(target).not.toHaveTextContent(/\[ Enter \]/i);
   });
 
@@ -295,7 +295,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(routerPush).toHaveBeenCalledWith("/es/formacion");
     expect(cooperProxy).toHaveAttribute("data-target-state", "locked");
     expect(container.querySelector(".hud__target")).toHaveTextContent(
-      /Destination locked/i,
+      /Target locked/i,
     );
   });
 });

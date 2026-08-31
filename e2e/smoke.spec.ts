@@ -685,30 +685,16 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     ).toBeVisible();
   });
 
-  /**
-   * La regresión que motivó este test: con movimiento reducido activo en el
-   * sistema, pulsar «Activar escena 3D» encendía el raymarch y dejaba muertos
-   * el cursor de navegación y el polvo estelar. La activación vivía como estado
-   * local de la escena, y el CSS ocultaba las otras dos capas con un
-   * `display: none` bajo la media query — que no puede enterarse de que alguien
-   * pidió lo contrario. Media petición atendida se ve igual que un efecto roto.
-   *
-   * Lo que se comprueba es la petición COMPLETA, no la escena: `data-pointer-life`
-   * y la visibilidad real de las dos capas. Así el test vale igual en un entorno
-   * sin GPU, donde la escena puede acabar en `flat` por sus propios motivos.
-   */
-  test("activar la escena enciende también el cursor y el polvo", async ({
+  test("una activación guardada no salta el veto ni ofrece reactivarlo", async ({
     page,
-    viewport,
   }) => {
-    // Por debajo de 60rem el HUD retira sus mandos y con ellos el botón de
-    // activación; además cursor y polvo son de puntero fino. El caso vive en
-    // escritorio: correrlo en el proyecto móvil sería comprobar otra cosa.
-    test.skip(
-      (viewport?.width ?? 0) < 960,
-      "la activación y la respuesta al puntero son de escritorio",
-    );
-
+    // Simula una visita anterior en la que el usuario sí había forzado efectos.
+    // Al activar reduced-motion después, esa memoria no puede volver a encender
+    // ninguna de las capas ni dejar una acción engañosa en el Hero.
+    await page.addInitScript(() => {
+      window.localStorage.setItem("jonas-orbit:efectos-forzados", "true");
+      window.localStorage.setItem("jonas-orbit:reducir-efectos", "true");
+    });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es");
 
@@ -716,19 +702,28 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       "data-pointer-life",
       "off",
     );
-    await expect(page.locator(".site-stardust")).toBeHidden();
-
-    await page.getByRole("button", { name: /Activar escena 3D/ }).click();
-
+    await expect(page.locator("html")).toHaveAttribute("data-scene", "flat");
     await expect(page.locator("html")).toHaveAttribute(
-      "data-pointer-life",
-      "ready",
-      { timeout: 5_000 },
+      "data-scene-reason",
+      "movimiento-reducido",
     );
-    await expect(page.locator(".site-stardust")).toBeVisible();
-    // El retículo sustituye al cursor nativo: si el sistema no lo oculta, se
-    // ven los dos a la vez y eso se lee como un fallo de la página.
-    await expect(page.locator(".system-home")).toHaveCSS("cursor", "none");
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-starfield-motion",
+      "static",
+    );
+    await expect(page.locator(".site-stardust")).toBeHidden();
+    await expect(page.locator(".navigation-cursor")).toHaveAttribute(
+      "data-state",
+      "hidden",
+    );
+    await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /Activar escena 3D/ }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: /Activar escena 3D/ }),
+    ).toHaveCount(0);
+    await expect(page.locator(".scene-toggle")).toHaveCount(0);
   });
 });
 
