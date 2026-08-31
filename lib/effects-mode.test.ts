@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isLightEffectsMode,
+  pointerLifeEnabled,
   readLightEffectsParam,
   resolveLightEffectsMode,
 } from "./effects-mode";
@@ -65,5 +66,57 @@ describe("resolveLightEffectsMode — la elección sobrevive a la navegación", 
   it("un valor corrupto en el almacenamiento no enciende el perfil ligero", () => {
     expect(resolveLightEffectsMode("", "sí")).toBe(false);
     expect(resolveLightEffectsMode("", "1")).toBe(false);
+  });
+});
+
+/**
+ * La avería que originó este bloque: pulsar «Activar escena 3D» encendía el
+ * raymarch y dejaba apagados el cursor de navegación y el polvo estelar, porque
+ * cada capa leía la preferencia por su cuenta y sólo una conocía la activación.
+ * Media petición atendida se ve exactamente igual que un efecto roto.
+ */
+describe("pointerLifeEnabled — la activación explícita manda sobre la preferencia", () => {
+  it("hay respuesta al puntero cuando nada la desaconseja", () => {
+    expect(
+      pointerLifeEnabled({
+        reducedMotion: false,
+        lightEffects: false,
+        forcedEffects: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("se respeta por defecto tanto reduced-motion como el perfil ligero", () => {
+    expect(
+      pointerLifeEnabled({
+        reducedMotion: true,
+        lightEffects: false,
+        forcedEffects: false,
+      }),
+    ).toBe(false);
+    expect(
+      pointerLifeEnabled({
+        reducedMotion: false,
+        lightEffects: true,
+        forcedEffects: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("la activación explícita gana a las dos, incluso juntas", () => {
+    expect(
+      pointerLifeEnabled({
+        reducedMotion: true,
+        lightEffects: false,
+        forcedEffects: true,
+      }),
+    ).toBe(true);
+    expect(
+      pointerLifeEnabled({
+        reducedMotion: true,
+        lightEffects: true,
+        forcedEffects: true,
+      }),
+    ).toBe(true);
   });
 });

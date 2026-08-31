@@ -14,17 +14,17 @@ describe("starfield 2D por capas", () => {
     const mid = desktop.filter((star) => star.layer === "mid");
     const near = desktop.filter((star) => star.layer === "near");
 
-    expect(desktop).toHaveLength(1_395);
-    expect(far).toHaveLength(1_127);
-    expect(mid).toHaveLength(231);
-    expect(near).toHaveLength(37);
+    expect(desktop).toHaveLength(2_044);
+    expect(far).toHaveLength(1_662);
+    expect(mid).toHaveLength(332);
+    expect(near).toHaveLength(50);
     expect(far.length).toBeGreaterThan(mid.length * 4);
     expect(near.length).toBeLessThan(far.length / 25);
   });
 
   it("mantiene presupuestos acotados desde móvil hasta escritorio grande", () => {
-    expect(createStarPoints(320, 568)).toHaveLength(524);
-    expect(createStarPoints(2_560, 1_440)).toHaveLength(2_036);
+    expect(createStarPoints(320, 568)).toHaveLength(808);
+    expect(createStarPoints(2_560, 1_440)).toHaveLength(3_186);
   });
 
   it("mantiene FAR diminuto/estático y limita los puntos grandes a NEAR", () => {
@@ -40,7 +40,7 @@ describe("starfield 2D por capas", () => {
 
   it("reduce luminancia de estrellas detrás del disco de Gargantua", () => {
     const stars = createStarPoints(1_440, 900);
-    const central = stars.filter((star) => star.occlusion === 0.12);
+    const central = stars.filter((star) => star.occlusion === 0.24);
     const outer = stars.filter((star) => star.occlusion === 1);
 
     expect(central.length).toBeGreaterThan(0);

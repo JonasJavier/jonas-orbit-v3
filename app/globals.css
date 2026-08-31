@@ -69,7 +69,7 @@
 */
 html {
   background:
-    radial-gradient(circle at 77% 4%, rgba(64, 96, 158, 0.12), transparent 28rem),
+    radial-gradient(circle at 77% 4%, rgba(66, 100, 165, 0.17), transparent 30rem),
     var(--space-void);
   scroll-behavior: smooth;
   scroll-padding-top: 8rem;
@@ -152,7 +152,7 @@ img {
 }
 
 html[data-starfield="ready"] .site-starfield {
-  opacity: 0.82;
+  opacity: 0.95;
 }
 
 /* Con el canvas encendido, las estrellas estáticas del CSS se retiran para no
@@ -181,8 +181,8 @@ html[data-starfield="ready"] .space-backdrop__stars {
 
 .space-backdrop__haze {
   background:
-    radial-gradient(ellipse at 77% 17%, rgba(63, 111, 202, 0.17), transparent 35%),
-    radial-gradient(ellipse at 12% 54%, rgba(255, 122, 102, 0.05), transparent 26%);
+    radial-gradient(ellipse at 77% 17%, rgba(66, 118, 213, 0.23), transparent 37%),
+    radial-gradient(ellipse at 12% 54%, rgba(255, 122, 102, 0.075), transparent 28%);
   filter: blur(32px);
 }
 
@@ -4273,9 +4273,21 @@ html[data-pointer-life="ready"] .site-stardust {
     display: block;
     transition: none;
   }
+}
 
-  .site-stardust,
-  .navigation-cursor {
-    display: none;
-  }
+/*
+  Quién apaga el cursor y el polvo: `data-pointer-life`, nunca una media query.
+
+  Antes esto era un `display: none` bajo `prefers-reduced-motion`, y convertía la
+  activación explícita en una mentira: el visitante pulsaba «Activar escena 3D»,
+  el raymarch arrancaba, y el CSS seguía ocultando las dos capas para siempre —
+  un efecto vivo, invisible y sin forma de diagnosticarlo desde fuera.
+
+  La media query no puede saber que alguien pidió lo contrario. El atributo sí,
+  porque lo escribe el MISMO efecto que decide si hay respuesta al puntero:
+  reduced-motion, perfil ligero, activación explícita, puntero fino y canvas
+  disponible entran todos por ahí. Una sola autoridad, y auditable en el DOM.
+*/
+html:not([data-pointer-life="ready"]) :is(.site-stardust, .navigation-cursor) {
+  display: none;
 }

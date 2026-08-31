@@ -18,7 +18,7 @@ describe("stardust pool", () => {
     expect(pool.x).toBeInstanceOf(Float32Array);
     expect(pool.active).toBeInstanceOf(Uint8Array);
     for (let index = 0; index < 12; index += 1) {
-      spawnStardust(pool, 100, 100, 1.5, 0, fixedRandom(0.4));
+      spawnStardust(pool, 100, 100, 1.5, 0, 16, fixedRandom(0.4));
     }
 
     expect(pool.capacity).toBe(8);
@@ -26,17 +26,54 @@ describe("stardust pool", () => {
     expect(pool.x).toHaveLength(8);
   });
 
-  it("responde a velocidad con 1–5 partículas y un techo explícito", () => {
-    const pool = createStardustPool(20);
+  it("responde a la distancia recorrida con 1–14 motas y un techo explícito", () => {
+    const pool = createStardustPool(30);
 
-    expect(spawnStardust(pool, 0, 0, 0.01, 0, fixedRandom(0.5))).toBe(0);
-    expect(spawnStardust(pool, 0, 0, 0.03, 0, fixedRandom(0.5))).toBe(1);
-    expect(spawnStardust(pool, 0, 0, 20, 0, fixedRandom(0.5))).toBe(5);
+    // Puntero prácticamente quieto: no hay gesto que acompañar.
+    expect(spawnStardust(pool, 0, 0, 0.01, 0, 16, fixedRandom(0.5))).toBe(0);
+    // Movimiento mínimo: una mota, no un chorro.
+    expect(spawnStardust(pool, 0, 0, 0.03, 0, 16, fixedRandom(0.5))).toBe(1);
+    // Barrido violento: el techo, y el tramo sembrado se corta por su tope.
+    expect(spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5))).toBe(14);
   });
 
-  it("mantiene vidas entre 320 y 680 ms y libera todo el pool", () => {
+  it("una pausa larga no dibuja una raya que el gesto nunca recorrió", () => {
+    // Puntero que vuelve a la ventana tras dos segundos fuera: el tramo entre
+    // muestras es enorme, pero lo que se siembra está acotado.
+    const pool = createStardustPool(30);
+    expect(spawnStardust(pool, 900, 400, 0.9, 0, 2_000, fixedRandom(0.5))).toBe(
+      10,
+    );
+
+    let furthest = 900;
+    for (let index = 0; index < pool.capacity; index += 1) {
+      if (pool.active[index]) furthest = Math.min(furthest, pool.x[index]);
+    }
+
+    expect(900 - furthest).toBeLessThanOrEqual(64 * 0.9 + 6);
+  });
+
+  it("siembra la estela sobre el tramo ya recorrido, no en un punto", () => {
+    // Emitir todas las motas en la posición actual deja huecos en cuanto el
+    // puntero corre; lo que se comprueba aquí es que ocupan el tramo entero.
+    const pool = createStardustPool(30);
+    const count = spawnStardust(pool, 400, 200, 1.2, 0, 16, fixedRandom(0.5));
+    expect(count).toBeGreaterThan(1);
+
+    const xs: number[] = [];
+    for (let index = 0; index < pool.capacity; index += 1) {
+      if (pool.active[index]) xs.push(pool.x[index]);
+    }
+
+    expect(xs).toHaveLength(count);
+    // Nada por delante del puntero, y el tramo de ~19 px queda cubierto.
+    expect(Math.max(...xs)).toBeLessThanOrEqual(400);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(10);
+  });
+
+  it("mantiene las vidas dentro del rango declarado y libera todo el pool", () => {
     const pool = createStardustPool(12);
-    spawnStardust(pool, 20, 20, 1, 0, fixedRandom(0.35));
+    spawnStardust(pool, 20, 20, 1, 0, 16, fixedRandom(0.35));
 
     for (let index = 0; index < pool.capacity; index += 1) {
       if (!pool.active[index]) continue;

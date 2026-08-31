@@ -16,7 +16,11 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useLightEffectsMode } from "@/lib/effects-mode";
+import {
+  pointerLifeEnabled,
+  useForcedEffects,
+  useLightEffectsMode,
+} from "@/lib/effects-mode";
 import {
   createStarPoints,
   drawStarfield,
@@ -52,11 +56,21 @@ export function SiteBackdrop({
   const [sceneLive, setSceneLive] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
+  const forcedEffects = useForcedEffects();
   const pathname = usePathname();
 
   // Reduced motion y el perfil ligero conservan el cielo, pero lo congelan.
   // La reducción afecta al movimiento, no a la profundidad del primer frame.
-  const pointerLifeDisabled = reducedMotion || lightEffects;
+  //
+  // …salvo que el visitante haya pulsado «Activar escena 3D». Esa es una
+  // petición explícita, y respetarla a medias —encender el raymarch y dejar
+  // muertos el cursor y el polvo— era la contradicción que hacía parecer roto el
+  // efecto. Respetar por defecto, obedecer cuando se pide: en las tres capas.
+  const pointerLifeDisabled = !pointerLifeEnabled({
+    reducedMotion,
+    lightEffects,
+    forcedEffects,
+  });
   const accent = findWorldRoute(pathname, routes)?.accent ?? fallbackAccent;
 
   useEffect(() => {

@@ -1,6 +1,46 @@
-export const STARDUST_POOL_CAPACITY = 112;
-export const STARDUST_MIN_LIFETIME_MS = 320;
-export const STARDUST_MAX_LIFETIME_MS = 680;
+/**
+ * Polvo estelar del puntero.
+ *
+ * Es la única capa del sitio que responde al gesto en tiempo real, así que tiene
+ * que leerse como un rastro de ceniza luminosa y no como un cursor con partículas
+ * pegadas. Tres decisiones sostienen eso:
+ *
+ * 1. **Se dibuja con sprites de resplandor, no con círculos.** Un `arc()` de
+ *    radio 1 con alfa 0.4 es literalmente invisible sobre un cielo negro con
+ *    bruma; lo que se ve en pantalla es el HALO, no el núcleo. Los sprites se
+ *    generan una vez por tono y se pintan con `drawImage`, que es más barato que
+ *    un gradiente por partícula por varios órdenes de magnitud.
+ * 2. **La estela se siembra sobre el TRAMO recorrido, no sobre un punto.** Con
+ *    `velocidad × transcurrido` se reconstruye exactamente dónde estaba el
+ *    puntero en la muestra anterior, y las motas se reparten por ese segmento.
+ *    Emitirlas todas en la posición actual dejaba huecos en cuanto el ratón
+ *    corría —a 1,2 px/ms salta ~20 px entre eventos— y el rastro salía a cuentas
+ *    sueltas. Por lo mismo el número de motas sale de la DISTANCIA y no de la
+ *    velocidad: lo que hay que cubrir es el hueco, y el hueco es distancia.
+ * 3. **Nada se asigna durante `pointermove`.** Buffers tipados, anillo de
+ *    reescritura y cero objetos por frame — el presupuesto de §8 del pivote.
+ */
+
+export const STARDUST_POOL_CAPACITY = 420;
+export const STARDUST_MIN_LIFETIME_MS = 520;
+export const STARDUST_MAX_LIFETIME_MS = 1_020;
+
+/** Alfa del pico, antes de la envolvente de vida y del centelleo. */
+const PEAK_ALPHA = 0.92;
+/** Separación objetivo entre motas de un mismo tramo, en píxeles CSS. */
+const TRAIL_STEP_PX = 6;
+/** Techo de motas por evento. Acota el coste del peor gesto posible. */
+const MAX_BURST = 14;
+/**
+ * Topes del tramo que se siembra hacia atrás. Existen para el caso raro —
+ * puntero que vuelve a la ventana tras dos segundos fuera, pestaña que
+ * recupera el foco— en el que «lo recorrido desde la última muestra» sería una
+ * raya de media pantalla que el gesto nunca dibujó.
+ */
+const TRAIL_MAX_SPAN_MS = 64;
+const TRAIL_MAX_TRAVEL_PX = 150;
+/** Del radio del núcleo al lado del sprite: el halo es 3,4 veces el núcleo. */
+const GLOW_SCALE = 3.4;
 
 interface StardustPool {
   readonly capacity: number;
@@ -12,6 +52,8 @@ interface StardustPool {
   readonly age: Float32Array;
   readonly lifetime: Float32Array;
   readonly size: Float32Array;
+  /** Desfase del centelleo. Sin él las 256 motas parpadean a la vez. */
+  readonly phase: Float32Array;
   readonly tone: Uint8Array;
   cursor: number;
   activeCount: number;
@@ -31,6 +73,7 @@ export function createStardustPool(
     age: new Float32Array(safeCapacity),
     lifetime: new Float32Array(safeCapacity),
     size: new Float32Array(safeCapacity),
+    phase: new Float32Array(safeCapacity),
     tone: new Uint8Array(safeCapacity),
     cursor: 0,
     activeCount: 0,
@@ -42,8 +85,14 @@ function clamp(value: number, min: number, max: number) {
 }
 
 /**
- * Añade 1–5 motas según velocidad y sobrescribe slots antiguos al alcanzar el
- * techo. Nunca asigna arrays ni crea objetos durante pointermove.
+ * Siembra el tramo recorrido desde la muestra anterior con 1–14 motas, y
+ * sobrescribe slots antiguos al alcanzar el techo del pool. Nunca asigna arrays
+ * ni crea objetos durante `pointermove`.
+ *
+ * `elapsedMs` es el tiempo desde la muestra anterior — el mismo con el que se
+ * calculó la velocidad. Ese emparejamiento no es casual: `velocidad × elapsed`
+ * devuelve el punto de partida EXACTO, así que el segmento que se rellena es el
+ * que el puntero recorrió de verdad, no una estimación.
  */
 export function spawnStardust(
   pool: StardustPool,
@@ -51,31 +100,52 @@ export function spawnStardust(
   pointerY: number,
   velocityX: number,
   velocityY: number,
+  elapsedMs: number,
   random: () => number = Math.random,
 ) {
-  const speed = clamp(Math.hypot(velocityX, velocityY), 0, 1.5);
-  if (speed < 0.025) return 0;
+  const rawSpeed = Math.hypot(velocityX, velocityY);
+  const speed = clamp(rawSpeed, 0, 1.5);
+  // Umbral de gesto: por debajo, el puntero está quieto y un rastro permanente
+  // bajo un ratón parado dejaría de ser respuesta para ser decoración.
+  if (speed < 0.02) return 0;
 
-  const count = Math.min(5, 1 + Math.floor(speed / 0.27));
+  const span = Math.min(
+    Math.max(0, elapsedMs),
+    TRAIL_MAX_SPAN_MS,
+    TRAIL_MAX_TRAVEL_PX / Math.max(rawSpeed, 1e-4),
+  );
+  const travel = rawSpeed * span;
+  const count = clamp(1 + Math.floor(travel / TRAIL_STEP_PX), 1, MAX_BURST);
+
   for (let particle = 0; particle < count; particle += 1) {
     const index = pool.cursor;
     const wasActive = pool.active[index] === 1;
     const angle = random() * Math.PI * 2;
-    const drift = 0.006 + random() * 0.022;
-    const spread = 1.25 + random() * (2.8 + speed * 2.2);
+    const drift = 0.008 + random() * 0.03;
+    // Dispersión y tamaño siguen una ley de potencias, no un uniforme: la
+    // mayoría de las motas caen pegadas a la línea y son diminutas, y unas
+    // pocas se salen y brillan. Con distribución uniforme salían todas iguales
+    // y el rastro se leía como un collar de cuentas, que es justo lo contrario
+    // de polvo.
+    const spread = 0.5 + Math.pow(random(), 1.6) * (3.2 + speed * 2.4);
+    // Reparto a lo largo del tramo recién recorrido, no en un punto.
+    const back = ((particle + random()) / count) * span;
 
     pool.active[index] = 1;
-    pool.x[index] = pointerX + Math.cos(angle) * spread;
-    pool.y[index] = pointerY + Math.sin(angle) * spread;
+    pool.x[index] = pointerX - velocityX * back + Math.cos(angle) * spread;
+    pool.y[index] = pointerY - velocityY * back + Math.sin(angle) * spread;
+    // La mota hereda parte del gesto: sin esa herencia el rastro se queda
+    // clavado donde nació y parece pintura, no polvo levantado.
     pool.vx[index] =
-      Math.cos(angle) * drift + clamp(velocityX, -1.5, 1.5) * 0.012;
+      Math.cos(angle) * drift + clamp(velocityX, -1.5, 1.5) * 0.055;
     pool.vy[index] =
-      Math.sin(angle) * drift + clamp(velocityY, -1.5, 1.5) * 0.012;
+      Math.sin(angle) * drift + clamp(velocityY, -1.5, 1.5) * 0.055;
     pool.age[index] = 0;
     pool.lifetime[index] =
       STARDUST_MIN_LIFETIME_MS +
       random() * (STARDUST_MAX_LIFETIME_MS - STARDUST_MIN_LIFETIME_MS);
-    pool.size[index] = 0.45 + random() * (0.65 + speed * 0.14);
+    pool.size[index] = 0.72 + Math.pow(random(), 2.2) * (2.5 + speed * 1.1);
+    pool.phase[index] = random() * Math.PI * 2;
     // Violet/magenta/pink dominan; el cyan es una señal rara (1/12 aprox.).
     pool.tone[index] = Math.min(3, Math.floor(random() * 3.24));
 
@@ -89,7 +159,7 @@ export function spawnStardust(
 export function updateStardust(pool: StardustPool, deltaMs: number) {
   const elapsed = Math.max(0, deltaMs);
   const step = Math.min(elapsed, 50);
-  const drag = Math.pow(0.982, step / 16.67);
+  const drag = Math.pow(0.974, step / 16.67);
 
   for (let index = 0; index < pool.capacity; index += 1) {
     if (pool.active[index] === 0) continue;
@@ -116,6 +186,57 @@ const PARTICLE_TONES = [
   "126, 220, 255",
 ] as const;
 
+/**
+ * Sprites de resplandor, uno por tono, generados a la primera pintada.
+ *
+ * El lado es potencia de dos y generoso: el sprite se dibuja SIEMPRE reducido,
+ * nunca ampliado, y así el halo no muestra las bandas del gradiente. Se cachean
+ * a nivel de módulo porque el contenido no depende del pool ni del viewport.
+ */
+const SPRITE_SIDE = 64;
+let spriteCache: readonly HTMLCanvasElement[] | null = null;
+let spriteCacheFailed = false;
+
+function buildSprites(): readonly HTMLCanvasElement[] | null {
+  if (spriteCache) return spriteCache;
+  if (spriteCacheFailed || typeof document === "undefined") return null;
+
+  const sprites: HTMLCanvasElement[] = [];
+  for (const tone of PARTICLE_TONES) {
+    const canvas = document.createElement("canvas");
+    canvas.width = SPRITE_SIDE;
+    canvas.height = SPRITE_SIDE;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      spriteCacheFailed = true;
+      return null;
+    }
+
+    const centre = SPRITE_SIDE / 2;
+    const gradient = context.createRadialGradient(
+      centre,
+      centre,
+      0,
+      centre,
+      centre,
+      centre,
+    );
+    // Núcleo casi blanco: es lo que hace que se lea como una chispa y no como
+    // una mancha de color. El tono aparece en el halo, que es lo que se ve.
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.98)");
+    gradient.addColorStop(0.12, `rgba(${tone}, 0.92)`);
+    gradient.addColorStop(0.3, `rgba(${tone}, 0.44)`);
+    gradient.addColorStop(0.58, `rgba(${tone}, 0.13)`);
+    gradient.addColorStop(1, `rgba(${tone}, 0)`);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, SPRITE_SIDE, SPRITE_SIDE);
+    sprites.push(canvas);
+  }
+
+  spriteCache = sprites;
+  return spriteCache;
+}
+
 export function drawStardust(
   context: CanvasRenderingContext2D,
   width: number,
@@ -125,18 +246,57 @@ export function drawStardust(
   context.clearRect(0, 0, width, height);
   if (pool.activeCount === 0) return;
 
+  const sprites = buildSprites();
+
   context.save();
+  // Aditivo: dos motas superpuestas suman luz, que es lo que hace un rastro y
+  // no un montón de pegatinas semitransparentes apiladas.
   context.globalCompositeOperation = "lighter";
+
   for (let index = 0; index < pool.capacity; index += 1) {
     if (pool.active[index] === 0) continue;
-    const remaining = 1 - pool.age[index] / pool.lifetime[index];
-    const opacity = remaining * remaining * 0.42;
+
+    const life = pool.age[index] / pool.lifetime[index];
+    const remaining = 1 - life;
+    // Ataque corto y caída larga. Sin el ataque las motas aparecen de golpe con
+    // todo su brillo justo bajo el cursor y el efecto se lee como parpadeo.
+    const attack = Math.min(1, life / 0.09);
+    const twinkle = 0.82 + 0.18 * Math.sin(pool.phase[index] + life * 9.4);
+    const alpha = clamp(
+      remaining * remaining * attack * twinkle * PEAK_ALPHA,
+      0,
+      1,
+    );
+    if (alpha <= 0.004) continue;
+
+    // La mota se expande al morir: es lo que convierte la desaparición en una
+    // dispersión y no en un apagón.
+    const radius = pool.size[index] * (1 + life * 0.85);
+    const tone = PARTICLE_TONES[pool.tone[index] ?? 0] ?? PARTICLE_TONES[0];
+
+    if (sprites) {
+      const side = radius * 2 * GLOW_SCALE;
+      const half = side / 2;
+      context.globalAlpha = alpha;
+      context.drawImage(
+        sprites[pool.tone[index] ?? 0] ?? sprites[0],
+        pool.x[index] - half,
+        pool.y[index] - half,
+        side,
+        side,
+      );
+      continue;
+    }
+
+    // Sin sprites (canvas sin 2D en el entorno) se conserva la forma mínima:
+    // el efecto pierde el halo, pero nunca desaparece en silencio.
+    context.globalAlpha = 1;
     context.beginPath();
-    const tone =
-      PARTICLE_TONES[pool.tone[index] ?? 0] ?? PARTICLE_TONES[0];
-    context.fillStyle = `rgba(${tone}, ${opacity})`;
-    context.arc(pool.x[index], pool.y[index], pool.size[index], 0, Math.PI * 2);
+    context.fillStyle = `rgba(${tone}, ${alpha})`;
+    context.arc(pool.x[index], pool.y[index], radius, 0, Math.PI * 2);
     context.fill();
   }
+
+  context.globalAlpha = 1;
   context.restore();
 }

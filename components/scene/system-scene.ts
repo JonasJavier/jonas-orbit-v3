@@ -108,7 +108,7 @@ const BLOOM: Record<QualityTier, { strength: number; radius: number; scale: numb
   deep: { strength: 0.67, radius: 0.61, scale: 0.62 },
 };
 
-const BASE_EXPOSURE = 0.82;
+const BASE_EXPOSURE = 0.95;
 const BLOOM_THRESHOLD = 2.0;
 const TEMPORAL_BLEND = 0.18;
 
@@ -770,14 +770,17 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         iluminados se leen como seis calcomanías pegadas al mismo cristal — era
         la mitad de por qué el sistema no tenía profundidad.
 
-        Ahora el recorrido es de 1.48 a 0.98, un factor 1.5. El interior está
+        Ahora el recorrido es de 1.55 a 1.08, un factor 1.43. El interior está
         claramente bañado por el disco y el exterior claramente en penumbra, y
-        eso es lo que ordena las capas. El suelo de 0.98 existe por lo de
-        siempre: un destino que no se ve es un enlace que no existe.
+        eso es lo que ordena las capas. El suelo subió de 0.98 a 1.08 por lo de
+        siempre, sólo que un punto más arriba: un destino que no se ve es un
+        enlace que no existe, y en penumbra cerrada los tres cuerpos exteriores
+        estaban a un paso de no verse. El contraste entre capas apenas cae —
+        pierde media décima de factor y gana legibilidad en todo el cinturón.
       */
       const light = Math.min(
-        1.55,
-        Math.max(0.98, (25 / Math.max(body.placement.orbitRadius, 1)) * 1.3),
+        1.66,
+        Math.max(1.08, (25 / Math.max(body.placement.orbitRadius, 1)) * 1.36),
       );
 
       // Un cuerpo lleva ahora hasta dos materiales —superficie y halo— y no

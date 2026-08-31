@@ -320,7 +320,10 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Ámbar del disco para la clave; azul tenue del fondo estelar para el
        relleno, que es lo que impide que la cara noche sea un agujero recortado. */
     vec3 key = vec3(1.0, 0.84, 0.62) * uLightIntensity;
-    vec3 fill = vec3(0.05, 0.07, 0.135);
+    /* Relleno del cielo estelar. Sube con el campo de estrellas: si el fondo
+       tiene más luz, la cara noche recibe más rebote — bajarlo sería pintar
+       cuerpos recortados sobre un cielo que ya no es negro. */
+    vec3 fill = vec3(0.078, 0.101, 0.181);
 
     vec3 albedo;
     float gloss = 0.0;
