@@ -2525,12 +2525,14 @@ html[data-scene-live="true"] .system-map__marker{
 */
 .system-map__name {
   display: block;
-  color: var(--ink-muted);
+  /* Nivel secundario del cristal: el nombre de un destino tiene que poder
+     leerse sin apuntarlo. Con `ink-muted` al 82 % había que buscarlo. */
+  color: var(--hud-secondary, var(--ink-soft));
   font-family: var(--font-mono);
   font-size: 0.74rem;
   letter-spacing: 0.22em;
   line-height: 1.15;
-  opacity: 0.82;
+  opacity: 0.92;
   text-transform: uppercase;
   transition:
     color 260ms var(--ease-orbit),
@@ -3090,7 +3092,7 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 
 .hud i,
 .hud em {
-  color: color-mix(in srgb, var(--ink-muted) 45%, transparent);
+  color: color-mix(in srgb, var(--hud-tertiary, var(--ink-muted)) 62%, transparent);
   font-style: normal;
 }
 
@@ -3277,13 +3279,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   transition: color 200ms var(--ease-orbit);
 }
 
-.nav-rail__index {
-  color: color-mix(in srgb, var(--ink-muted) 50%, transparent);
-  font-size: 0.5rem;
-  letter-spacing: 0.16em;
-  transition: color 200ms var(--ease-orbit);
-}
-
 .nav-rail__name {
   font-size: 0.58rem;
   letter-spacing: 0.2em;
@@ -3309,11 +3304,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 
 .nav-rail__link:hover,
 .nav-rail__link:focus-visible {
-  color: var(--world-accent);
-}
-
-.nav-rail__link:hover .nav-rail__index,
-.nav-rail__link:focus-visible .nav-rail__index {
   color: var(--world-accent);
 }
 
@@ -3591,6 +3581,116 @@ html[data-scene-live="true"] .system-map__target-brackets {
   pointer-events: none;
 }
 
+/*
+  ── EL CRISTAL ────────────────────────────────────────────────────────────────
+
+  Lo que convierte «un universo en una pantalla» en «un universo VISTO DESDE
+  algún sitio». Son dos capas y ninguna dibuja cabina.
+
+  La regla que las gobierna: se tienen que SENTIR, no mirar. Nada de marcos
+  metálicos, nada de mamparos, nada de instrumentos con volumen. Si al describir
+  la home alguien menciona el visor antes que Gargantúa, está mal hecho.
+
+  1. **Viñeta y reflejo.** El canto del cuadro se oscurece como se oscurece el
+     borde de un vitral grueso, y un frío levísimo baja del canto superior: es la
+     luz del propio puesto rebotando en el cristal. Sube el contraste del texto
+     del HUD de paso, que es la mitad de por qué está aquí.
+  2. **Marcas de calibración.** Cinco trazos de un píxel arriba y abajo, y dos
+     al centro de los cantos laterales. Ni miden nada ni pretenden medirlo:
+     dicen que ESTA superficie es un instrumento. Con eso basta.
+*/
+.hud__glass::before,
+.hud__glass::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.hud__glass::before {
+  inset: 0;
+  background:
+    radial-gradient(
+      124% 98% at 50% 46%,
+      transparent 56%,
+      rgba(2, 5, 12, 0.34) 84%,
+      rgba(1, 3, 8, 0.62) 100%
+    ),
+    linear-gradient(180deg, rgba(127, 229, 255, 0.045), transparent 22%),
+    linear-gradient(0deg, rgba(127, 229, 255, 0.022), transparent 16%);
+}
+
+.hud__glass::after {
+  /* Alineado con los corchetes: el cristal tiene UN borde, no dos. */
+  inset: 1.1rem;
+  background:
+    linear-gradient(var(--hud-ghost), var(--hud-ghost)) left center / 0.42rem 1px
+      no-repeat,
+    linear-gradient(var(--hud-ghost), var(--hud-ghost)) right center / 0.42rem 1px
+      no-repeat,
+    repeating-linear-gradient(
+        to right,
+        var(--hud-ghost) 0 1px,
+        transparent 1px 4.4rem
+      )
+      top center / 22rem 0.3rem no-repeat,
+    repeating-linear-gradient(
+        to right,
+        var(--hud-ghost) 0 1px,
+        transparent 1px 4.4rem
+      )
+      bottom center / 22rem 0.3rem no-repeat;
+}
+
+/*
+  La respiración del puesto.
+
+  Dos píxeles en veinticuatro segundos: por debajo del umbral en el que se ve
+  moverse algo y justo por encima del que hace falta para que el cuadro no se
+  sienta impreso. Se mueve el CRISTAL, no la cámara, y eso no es una aproximación
+  barata sino la decisión correcta por dos motivos: la pose sigue siendo función
+  pura de la ruta (regla 6 del repositorio), y la acumulación temporal del
+  raymarch —que necesita que la cámara se quede quieta para converger— no se
+  entera de nada.
+
+  ── Por qué sólo con la escena viva ─────────────────────────────────────────
+
+  Porque una animación infinita sobre una capa del tamaño del cuadro cuesta un
+  compuesto por fotograma, y en el perfil `flat` eso se paga justo donde no hay
+  con qué: equipos sin aceleración, que son precisamente los que reciben ese
+  perfil. Medido, no supuesto — con el rasterizador por software del entorno E2E
+  esta sola regla dejaba el hilo principal sin turnos suficientes para completar
+  una navegación de cliente en cinco segundos.
+
+  Y además es lo coherente: el cristal respira cuando hay un sistema vivo
+  detrás. Sobre el fondo congelado no había nada que acompañar.
+*/
+html[data-scene-live="true"] .hud__glass::after {
+  animation: viewport-breath 24s var(--ease-orbit) infinite alternate;
+}
+
+@keyframes viewport-breath {
+  from {
+    transform: translate3d(-1px, -1.5px, 0);
+  }
+  to {
+    transform: translate3d(1px, 1.5px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-scene-live="true"] .hud__glass::after {
+    animation: none;
+  }
+}
+
+/* En el layout estrecho el cristal conserva la viñeta y pierde las marcas: a
+   375 px cada trazo que no ayuda a navegar es un trazo encima del universo. */
+@media (max-width: 60rem) {
+  .hud__glass::after {
+    display: none;
+  }
+}
+
 .hud__bracket {
   border-color: color-mix(in srgb, var(--ink-muted) 30%, transparent);
 }
@@ -3673,12 +3773,6 @@ html[data-scene-live="true"] .system-map__target-brackets {
   color: var(--nav-accent);
 }
 
-.hud__target-index {
-  color: color-mix(in srgb, var(--ink-soft) 72%, transparent);
-  font-size: 0.74rem;
-  letter-spacing: 0.22em;
-}
-
 .hud__target-name {
   color: var(--ink);
   font-family: var(--font-display);
@@ -3738,7 +3832,7 @@ html[data-scene-live="true"] .system-map__target-brackets {
 .nav-rail__link {
   position: relative;
   grid-template-columns: 0.3rem auto;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto;
   min-height: 44px;
   column-gap: 0.45rem;
   padding: 0.42rem 0.62rem;
@@ -3759,15 +3853,9 @@ html[data-scene-live="true"] .system-map__target-brackets {
     transform 220ms var(--ease-orbit);
 }
 
-.nav-rail__index,
 .nav-rail__name,
 .nav-rail__role {
   grid-column: 2;
-}
-
-.nav-rail__index {
-  font-size: 0.48rem;
-  letter-spacing: 0.18em;
 }
 
 .nav-rail__name {
@@ -3787,12 +3875,6 @@ html[data-scene-live="true"] .system-map__target-brackets {
   color: var(--ink);
 }
 
-.nav-rail__item:not([data-target-state="idle"]) .nav-rail__index,
-.nav-rail__link:hover .nav-rail__index,
-.nav-rail__link:focus-visible .nav-rail__index {
-  color: var(--nav-accent);
-}
-
 .nav-rail__item:not([data-target-state="idle"]) .nav-rail__active-marker,
 .nav-rail__link:hover .nav-rail__active-marker,
 .nav-rail__link:focus-visible .nav-rail__active-marker {
@@ -3803,7 +3885,7 @@ html[data-scene-live="true"] .system-map__target-brackets {
 .nav-rail__item:not([data-target-state="idle"]) .nav-rail__role {
   max-height: 1rem;
   color: color-mix(in srgb, var(--nav-accent) 78%, var(--ink-soft));
-  opacity: 0.78;
+  opacity: 0.95;
 }
 
 .nav-rail__link:focus-visible {
@@ -3918,11 +4000,24 @@ html[data-scene-live="true"] .system-map__target-brackets {
    se concentra en marca, destino y acción; la telemetría permanece ambiental.
    ══════════════════════════════════════════════════════════════════════════ */
 
+/*
+  Los tres niveles del cristal, y por qué ahora son COLORES y no opacidades.
+
+  Antes cada nivel era el mismo gris azulado con menos alfa: `ink-muted` al 50 %
+  sobre un fondo casi negro compone un #4A5260 que da 2,6:1 de contraste. A 0,5
+  rem y con 0,24 em de espaciado, eso no es «discreto», es ilegible — y era
+  exactamente la queja: texto del HUD demasiado apagado.
+
+  La jerarquía no se construye bajando el alfa hasta desaparecer, se construye
+  separando LUMINANCIAS. Los tres niveles son opacos, están claramente
+  escalonados entre sí, y el más bajo cumple 4,5:1 contra el negro del espacio.
+  El nivel fantasma se queda con alfa porque no es texto: es el cristal.
+*/
 .system-home {
-  --hud-primary: color-mix(in srgb, var(--ink) 97%, transparent);
-  --hud-secondary: color-mix(in srgb, var(--ink-soft) 74%, transparent);
-  --hud-tertiary: color-mix(in srgb, var(--ink-muted) 50%, transparent);
-  --hud-ghost: color-mix(in srgb, var(--ink-muted) 22%, transparent);
+  --hud-primary: #f3f7ff;
+  --hud-secondary: #cbd8f0;
+  --hud-tertiary: #93a4c4;
+  --hud-ghost: color-mix(in srgb, #93a4c4 34%, transparent);
   --hud-active: color-mix(in srgb, var(--nav-accent, var(--cyan)) 94%, white 6%);
   --hud-nominal: #83e8cf;
 }
@@ -4028,8 +4123,11 @@ html[data-scene-live="true"] .system-map__body {
   color: var(--hud-tertiary);
 }
 
+/* La identidad de la nave es lo primero que se lee del cristal: sube a
+   secundario. Con el nivel terciario quedaba por debajo del umbral en el que un
+   nombre propio se reconoce sin buscarlo. */
 .hud__craft {
-  color: var(--hud-tertiary);
+  color: var(--hud-secondary);
 }
 
 .hud__system {
@@ -4062,7 +4160,6 @@ html[data-scene-live="true"] .system-map__body {
 }
 
 .hud__target-eyebrow,
-.hud__target-index,
 .hud__target-role {
   color: var(--hud-secondary);
 }
@@ -4102,16 +4199,12 @@ html[data-scene-live="true"] .system-map__body {
   color: var(--hud-tertiary);
 }
 
-.nav-rail__index {
-  color: var(--hud-tertiary);
-}
-
 .nav-rail__name {
   color: var(--hud-secondary);
 }
 
 .nav-rail__role {
-  color: var(--hud-ghost);
+  color: var(--hud-tertiary);
 }
 
 .nav-rail__item:not([data-target-state="idle"]) .nav-rail__link,
@@ -4125,12 +4218,6 @@ html[data-scene-live="true"] .system-map__body {
 .nav-rail__link:focus-visible .nav-rail__name {
   color: var(--hud-primary);
   text-shadow: 0 0 1rem rgba(127, 229, 255, 0.18);
-}
-
-.nav-rail__item:not([data-target-state="idle"]) .nav-rail__index,
-.nav-rail__link:hover .nav-rail__index,
-.nav-rail__link:focus-visible .nav-rail__index {
-  color: var(--hud-active);
 }
 
 .nav-rail__item:not([data-target-state="idle"]) .nav-rail__active-marker,

@@ -796,8 +796,10 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       let hitScaleX = 1;
       let hitScaleY = 1;
       if (body.visual === "ship") {
-        hitScaleX = 0.86;
-        hitScaleY = 0.42;
+        // El anillo se cerró y creció, así que la silueta llena mucho más de su
+        // esfera envolvente que cuando eran dos arcos: el blanco se abre con ella.
+        hitScaleX = 0.8;
+        hitScaleY = 0.52;
       } else if (body.visual === "station") {
         hitScaleY = 0.65;
       }

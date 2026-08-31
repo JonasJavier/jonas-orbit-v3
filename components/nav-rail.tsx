@@ -70,11 +70,11 @@ export function NavRail({
               }
             >
               <span className="nav-rail__active-marker" aria-hidden="true" />
-              {/* El número orienta la vista pero no entra en el nombre accesible:
-                  dentro convertiría cada destino en «cero tres Miller Desarrollo». */}
-              <span className="nav-rail__index" aria-hidden="true">
-                {String(world.order).padStart(2, "0")}
-              </span>
+              {/* Sin numeración. El orden narrativo sigue existiendo —lo fija
+                  `worlds.data.ts` y lo recorre el tabulador— pero pintarlo delante
+                  de cada destino no orientaba a nadie: siete pares de dígitos
+                  compitiendo con siete nombres son catorce cosas que leer para
+                  elegir una. El nombre es el destino; el número era ruido. */}
               <span className="nav-rail__name">{world.cosmicName}</span>{" "}
               <span className="nav-rail__role">{world.shortLabel}</span>
               <span className="visually-hidden" aria-hidden="true">

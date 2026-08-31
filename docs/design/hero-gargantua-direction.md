@@ -286,6 +286,72 @@ El viaje continuo permanece **DEFERRED** y se documenta únicamente en
 pertenece a esa fase. En la arquitectura actual las páginas vuelven a `/es` con
 navegación convencional.
 
+## 14 bis. Pase de calidad y vida (2026-08-30)
+
+Refinamiento sobre la dirección aprobada, **no** un concepto nuevo. Lo que sigue
+manda sobre cualquier descripción anterior de estos siete puntos.
+
+### Escala de los destinos
+
+| Destino | `size` antes | `size` ahora | Motivo |
+| --- | --- | --- | --- |
+| Endurance | 4.7 | 5.0 | Segundo ancla: tenía que sostener la mirada después de Gargantúa. |
+| Ranger | 1.5 | 2.05 | Radio aparente ×2,3. Era una mota con punta, no un destino. |
+| Tesseracto | 2.05 | 2.5 | Conserva la jerarquía por encima de la Ranger tras su crecimiento. |
+| Cooper Station | 2.16 | 2.45 | El sistema de anillos necesita superficie para leerse. |
+| Miller | 3.0 | 3.05 | Ajuste fino. |
+| Edmunds | 2.9 | 3.0 | Ajuste fino. |
+
+Invariante que fija `bodies.test.ts`: Endurance > mundos mayores > objetos
+lejanos, y Tesseracto > Ranger. Cambiar una escala sin comprobarlo rompe la
+lectura del sistema aunque la escena siga compilando.
+
+### Modelos
+
+- **Endurance.** Truss cerrado, aro de servicio interior, doce módulos
+  escalonados en Z, eje longitudinal completo (espina, morro, collarines,
+  tobera), radiadores y plato. Sigue costando tres draws.
+- **Ranger.** Lanzadera con fuselaje cónico, **alas en flecha extruidas**,
+  estabilizadores y toberas gemelas. Una lanzadera se reconoce por su flecha,
+  no por su tamaño.
+- **Cooper.** Un solo anillo con **división abierta por el shader** (`discard`),
+  no dos mallas.
+- **Tesseracto.** Dos cáscaras de retícula que contrarrotan; el espacio imposible
+  sale del cruce de aristas, no de más aristas.
+
+### Movimiento
+
+Cada cuerpo tiene su propia velocidad de giro (`SPIN_RATE`) porque un mundo
+necesita más vueltas que una estructura para contar lo mismo: lo que se ve girar
+en un planeta es su relieve cruzando el terminador. Además, `BodyModel.animate`
+mueve piezas DENTRO del cuerpo — anillo en su plano, hábitat en su órbita,
+retículas contrarrotando, actitud de la Ranger. Nada recorre su trayectoria: el
+sistema sigue congelado en composición.
+
+**La cámara no respira.** La respiración vive en el cristal del HUD (2 px en 24 s)
+y no en la pose, por dos razones que no son negociables: la pose sigue siendo
+función pura de la ruta (regla 6 del repositorio) y la acumulación temporal del
+raymarch necesita que la cámara se quede quieta para converger.
+
+### HUD
+
+- **Sin numeración.** Ni `01…07` en el raíl ni índice en el NAV TARGET. El orden
+  narrativo existe en el DOM y en el tabulador; imprimirlo era ruido.
+- **Sin lectura de movimiento.** `MOTION // REDUCED` se retiró del cristal: era
+  telemetría sobre una preferencia que el visitante ya conoce y no podía cambiar
+  desde ahí. El estado sigue en `<html data-reduced-motion>`.
+- **Tres niveles opacos.** `--hud-primary` / `--hud-secondary` / `--hud-tertiary`
+  son colores, no opacidades. La jerarquía se construye separando luminancias;
+  bajar el alfa hasta desaparecer no es discreción, es niebla. El nivel más bajo
+  cumple 4,5:1 contra el negro del espacio.
+
+### Cristal del visor
+
+Viñeta, reflejo frío del canto superior y marcas de calibración de 1 px. Ni una
+mampara, ni un marco metálico, ni un instrumento con volumen. Criterio de
+aceptación: si al describir la home alguien menciona el visor antes que
+Gargantúa, está mal hecho.
+
 ## 15. Gate de aprobación visual
 
 Cada iteración se revisa con frame estático, estados y movimiento de puntero:

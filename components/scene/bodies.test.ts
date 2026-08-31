@@ -140,7 +140,11 @@ describe("cuerpos del Sistema Gargantúa", () => {
       }
     }
 
-    expect(batches).toBeLessThanOrEqual(20);
+    // Sube de 20 a 21 por una razón concreta: el tesseracto pasó de una malla
+    // rígida a dos cáscaras que contrarrotan, y eso son dos objetos o no es
+    // contrarrotación. Los anillos de Cooper, en cambio, ganaron su división sin
+    // pagar draw: la abre el shader. Un draw más, no dos.
+    expect(batches).toBeLessThanOrEqual(21);
     expect(vertices).toBeLessThan(10_000);
   });
 

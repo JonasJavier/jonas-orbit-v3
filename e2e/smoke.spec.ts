@@ -129,7 +129,9 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     await endurance.hover();
     await expect(target).toHaveAttribute("data-target-state", "target");
     await expect(target).toContainText(/Target lock/i);
-    await expect(target).toContainText(/04/);
+    // El NAV TARGET dice a dónde vas y para qué sirve. La posición en la lista
+    // dejó de imprimirse: el orden narrativo vive en el DOM y en el tabulador.
+    await expect(target).not.toContainText(/\d\d/);
     await expect(target).toContainText(/Endurance/i);
     await expect(
       page.locator(
