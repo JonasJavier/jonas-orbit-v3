@@ -62,8 +62,9 @@ export function SiteBackdrop({
   // Reduced motion y el perfil ligero conservan el cielo, pero lo congelan.
   // La reducción afecta al movimiento, no a la profundidad del primer frame.
   //
-  // Una activación explícita puede recuperar el perfil ligero, pero nunca salta
-  // reduced-motion: cursor, polvo, paralaje y deriva permanecen congelados.
+  // Una activación explícita recupera el conjunto entero —escena, cursor,
+  // polvo, paralaje y deriva—. Sin esa acción, reduced-motion conserva el cielo
+  // congelado como primer frame deliberado.
   const pointerLifeDisabled = !pointerLifeEnabled({
     reducedMotion,
     lightEffects,
@@ -106,12 +107,13 @@ export function SiteBackdrop({
     const root = document.documentElement;
     const finePointer = window.matchMedia?.(FINE_POINTER_QUERY).matches ?? false;
     root.dataset.reducedMotion = String(reducedMotion);
+    root.dataset.effectsForced = String(forcedEffects);
     root.dataset.starfield = canvasReady ? "ready" : "static";
     root.dataset.starfieldMotion =
       canvasReady && !pointerLifeDisabled && !sceneLive && finePointer
         ? "animated"
         : "static";
-  }, [canvasReady, pointerLifeDisabled, reducedMotion, sceneLive]);
+  }, [canvasReady, forcedEffects, pointerLifeDisabled, reducedMotion, sceneLive]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -4,8 +4,9 @@
  * Es una función PURA sobre señales explícitas, y está separada de la escena
  * para poder cubrirla con tests sin WebGL. Tres reglas la gobiernan:
  *
- * 1. **Los vetos son duros.** Sin WebGL2, con `prefers-reduced-motion` o con el
- *    perfil ligero pedido por el visitante, no hay negociación: `flat`.
+ * 1. **Sin WebGL2 no hay negociación.** `prefers-reduced-motion` y el perfil
+ *    ligero parten de `flat`, pero el visitante puede encender los efectos de
+ *    forma voluntaria desde un control visible.
  * 2. **Una señal ausente es neutral**, nunca una pista en contra. `deviceMemory`
  *    y `effectiveType` no existen en Safari, y penalizar su ausencia habría
  *    mandado a `flat` a media población de iPhone.
@@ -33,9 +34,9 @@ export interface CapabilitySignals {
    * consecuencia correcta, no el objetivo: ese entorno tampoco podría pintarlo.
    */
   renderer?: string;
-  /** Veto duro: preferencia de accesibilidad del sistema. */
+  /** Preferencia de accesibilidad del sistema: `flat` por defecto. */
   reducedMotion: boolean;
-  /** Veto duro: el visitante pidió el perfil ligero (`?no3d=1`). */
+  /** Preferencia explícita: el visitante pidió el perfil ligero (`?no3d=1`). */
   lightEffects: boolean;
   /** `navigator.deviceMemory` en GB. Ausente en Safari y Firefox. */
   deviceMemory?: number;
@@ -52,10 +53,10 @@ export interface CapabilitySignals {
   /**
    * El visitante pulsó «Activar escena 3D».
    *
-   * Salta las HEURÍSTICAS —renderer por software, memoria justa, red lenta—,
-   * que son suposiciones sobre su equipo y pueden equivocarse. No salta los
-   * vetos que no son suposiciones: sin WebGL2 no hay nada que activar, y
-   * `prefers-reduced-motion` es una necesidad declarada, no una estimación.
+   * Salta las HEURÍSTICAS —renderer por software, memoria justa, red lenta— y
+   * también una preferencia de movimiento reducido cuando el visitante acaba
+   * de pedir explícitamente lo contrario. No salta la ausencia de WebGL2: ahí
+   * no existe una escena que el navegador pueda montar.
    *
    * Al forzar se entra en `orbit`, nunca en `deep`: si el gate creía que este
    * equipo no llegaba, lo prudente es empezar por el nivel barato.
@@ -99,22 +100,21 @@ export function evaluateCapabilities(
     return { level: "flat", reason: "sin-webgl2", canOverride: false };
   }
 
-  // Reduced motion es un veto de accesibilidad, no una heurística de capacidad.
-  // Se evalúa ANTES que una activación guardada para que ninguna preferencia de
-  // una visita anterior vuelva a encender movimiento a espaldas del visitante.
+  // La activación explícita gana a todas las preferencias y heurísticas, pero
+  // sólo DESPUÉS de comprobar WebGL2. El estado inicial con reduced-motion
+  // sigue siendo `flat`: únicamente una acción inequívoca cambia este valor.
+  if (signals.forced) {
+    return { level: "orbit", reason: "ok", canOverride: false };
+  }
+
   if (signals.reducedMotion) {
     return {
       level: "flat",
       reason: "movimiento-reducido",
-      canOverride: false,
+      canOverride: true,
     };
   }
 
-  // La activación explícita sólo gana a heurísticas o a un opt-out previo. No
-  // puede fabricar WebGL2 ni saltarse el veto de movimiento reducido de arriba.
-  if (signals.forced) {
-    return { level: "orbit", reason: "ok", canOverride: false };
-  }
   if (signals.lightEffects) {
     return { level: "flat", reason: "perfil-ligero", canOverride: true };
   }

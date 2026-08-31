@@ -74,7 +74,8 @@ const REASON_COPY: Record<LevelReason, string | null> = {
   ok: null,
   "sin-webgl2": "Escena 3D no disponible en este navegador",
   // El estado ya vive en `<html data-reduced-motion>` y no se imprime como
-  // telemetría persistente. Al ser veto duro tampoco se ofrece activación.
+  // telemetría persistente. El control reversible pertenece al HUD, donde se
+  // mantiene visible tanto en `flat` como cuando la escena vuelve a vivir.
   "movimiento-reducido": null,
   "perfil-ligero": "Perfil ligero activo · Activar escena 3D",
   "gpu-por-software": "Sin aceleración por GPU · Activar igualmente",
@@ -238,9 +239,11 @@ export function GargantuaSystem({
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
   }, [worldId]);
 
-  // Paralaje aditivo del puntero, acotado a 2° dentro de la escena (§3).
+  // Paralaje aditivo del puntero, acotado a 2° dentro de la escena (§3). La
+  // preferencia del sistema lo apaga por defecto; el consentimiento explícito
+  // que montó la escena recupera también este efecto, no sólo el canvas.
   useEffect(() => {
-    if (level === "flat" || reducedMotion) return;
+    if (level === "flat" || (reducedMotion && !forced)) return;
 
     let frame = 0;
     let pendingX = 0;
@@ -262,7 +265,7 @@ export function GargantuaSystem({
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onPointerMove);
     };
-  }, [level, reducedMotion]);
+  }, [forced, level, reducedMotion]);
 
   if (level === "flat") {
     // Una escena que se rindió no se vuelve a ofrecer en esta visita: insistir
