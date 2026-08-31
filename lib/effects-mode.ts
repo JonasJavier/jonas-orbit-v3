@@ -74,8 +74,9 @@ export function resolveLightEffectsMode(
  * que decía «escena activada» mientras el CSS mantenía las dos capas en
  * `display: none`: la avería que se estaba diagnosticando.
  *
- * La regla es la misma del gate de capacidad: se respeta por defecto, y una
- * petición explícita del visitante gana a la preferencia que la motivó.
+ * La regla es la misma del gate de capacidad: reduced-motion es un veto duro;
+ * una petición explícita sólo puede recuperar efectos desactivados por el
+ * perfil ligero o por heurísticas de capacidad.
  */
 export function pointerLifeEnabled({
   reducedMotion,
@@ -86,8 +87,9 @@ export function pointerLifeEnabled({
   lightEffects: boolean;
   forcedEffects: boolean;
 }): boolean {
+  if (reducedMotion) return false;
   if (forcedEffects) return true;
-  return !reducedMotion && !lightEffects;
+  return !lightEffects;
 }
 
 function readStored(key: string): string | null {

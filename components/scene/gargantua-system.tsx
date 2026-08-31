@@ -73,7 +73,9 @@ function serverCanOverride(): boolean {
 const REASON_COPY: Record<LevelReason, string | null> = {
   ok: null,
   "sin-webgl2": "Escena 3D no disponible en este navegador",
-  "movimiento-reducido": "Movimiento reducido activo · Activar escena 3D",
+  // El estado ya vive en `<html data-reduced-motion>` y no se imprime como
+  // telemetría persistente. Al ser veto duro tampoco se ofrece activación.
+  "movimiento-reducido": null,
   "perfil-ligero": "Perfil ligero activo · Activar escena 3D",
   "gpu-por-software": "Sin aceleración por GPU · Activar igualmente",
   "red-lenta": "Conexión lenta · Activar escena 3D",

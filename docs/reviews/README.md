@@ -6,6 +6,7 @@ Salidas de las revisiones del proyecto (plan y código).
 |---|---|---|
 | 2026-07-21 | Eng review del plan (CLEAR) | resumen incorporado al plan · Appendix A |
 | 2026-07-23 | `/autoplan` (CEO + Diseño + Eng, doble voz) contra el repo real | [`autoplan-2026-07-23.md`](autoplan-2026-07-23.md) |
+| 2026-08-31 | Hero / System Map · quality + life pass | [`hero-quality-pass-2026-08-31.md`](hero-quality-pass-2026-08-31.md) |
 
 > Nota: el plan cita `docs/reviews/eng-review-test-plan-2026-07-21.md` como
 > fuente; ese archivo no existe en el repo. La matriz de tests vive en el

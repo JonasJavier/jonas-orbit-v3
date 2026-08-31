@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { WorldId } from "@/content/worlds.data";
 import { useLightEffectsMode } from "@/lib/effects-mode";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { WorldNavigationState } from "@/lib/world-navigation";
 import type { WorldNavItem } from "@/lib/worlds";
 
@@ -18,6 +19,7 @@ export function SystemHud({
 }) {
   const [sceneLevel, setSceneLevel] = useState<string | null>(null);
   const lightEffects = useLightEffectsMode();
+  const reducedMotion = usePrefersReducedMotion();
 
   // El gate publica el nivel real en `<html data-scene>`. El HUD lo observa en
   // vez de duplicar la heurística de capacidad.
@@ -39,7 +41,7 @@ export function SystemHud({
         ? "FLAT"
         : "STANDBY";
   const targetLabel =
-    navigationState === "locked" ? "Destination locked" : "Target lock";
+    navigationState === "locked" ? "Target locked" : "Target lock";
 
   return (
     <div className="hud">
@@ -80,10 +82,10 @@ export function SystemHud({
           </>
         ) : (
           <>
-            <span className="hud__target-eyebrow">Navigation</span>
+            <span className="hud__target-eyebrow">System map</span>
             <span className="hud__target-rule" />
             <span className="hud__target-name hud__target-name--idle">
-              Select destination
+              Select target
             </span>
           </>
         )}
@@ -96,20 +98,22 @@ export function SystemHud({
         sobre una preferencia del sistema operativo que el visitante ya conoce
         —la puso él— y que además no podía cambiar desde aquí: texto permanente
         que ocupaba sitio sin ofrecer nada. El estado real sigue publicado en
-        `<html data-reduced-motion>` para diagnóstico y para los tests, y quien
-        quiera actuar sobre los efectos tiene justo al lado el único control que
-        sí hace algo.
+        `<html data-reduced-motion>` para diagnóstico y para los tests. Fuera de
+        ese veto accesible, el único control que queda sí permite reducir o
+        recuperar el perfil 3D.
       */}
-      <div className="hud__controls">
-        <a
-          aria-label={lightEffects ? "Activar escena 3D" : "Reducir efectos 3D"}
-          className="hud__readout hud__readout--action"
-          href={lightEffects ? "?no3d=0" : "?no3d=1"}
-        >
-          3D <i aria-hidden="true">{"//"}</i>{" "}
-          {lightEffects ? "OFF" : "ACTIVE"}
-        </a>
-      </div>
+      {!reducedMotion ? (
+        <div className="hud__controls">
+          <a
+            aria-label={lightEffects ? "Activar escena 3D" : "Reducir efectos 3D"}
+            className="hud__readout hud__readout--action"
+            href={lightEffects ? "?no3d=0" : "?no3d=1"}
+          >
+            3D <i aria-hidden="true">{"//"}</i>{" "}
+            {lightEffects ? "OFF" : "ACTIVE"}
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

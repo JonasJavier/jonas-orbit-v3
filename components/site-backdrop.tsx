@@ -62,10 +62,8 @@ export function SiteBackdrop({
   // Reduced motion y el perfil ligero conservan el cielo, pero lo congelan.
   // La reducción afecta al movimiento, no a la profundidad del primer frame.
   //
-  // …salvo que el visitante haya pulsado «Activar escena 3D». Esa es una
-  // petición explícita, y respetarla a medias —encender el raymarch y dejar
-  // muertos el cursor y el polvo— era la contradicción que hacía parecer roto el
-  // efecto. Respetar por defecto, obedecer cuando se pide: en las tres capas.
+  // Una activación explícita puede recuperar el perfil ligero, pero nunca salta
+  // reduced-motion: cursor, polvo, paralaje y deriva permanecen congelados.
   const pointerLifeDisabled = !pointerLifeEnabled({
     reducedMotion,
     lightEffects,

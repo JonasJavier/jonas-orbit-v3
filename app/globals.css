@@ -3951,6 +3951,13 @@ html[data-scene-live="true"] .hud__glass::after {
     width: min(15rem, 66vw);
   }
 
+  /* En reposo el raíl ya explica la acción. Ocultar esta instrucción duplicada
+     devuelve espacio al sistema; al enfocar un destino el NAV TARGET reaparece. */
+  .hud__target[data-target-state="idle"] {
+    visibility: hidden;
+    opacity: 0;
+  }
+
   .hud__target-name {
     font-size: 1.08rem;
   }

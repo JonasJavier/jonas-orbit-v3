@@ -83,7 +83,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 33, phase: 233, inclination: 20, size: 2.5 },
+    placement: { orbitRadius: 33, phase: 233, inclination: 20, size: 2.7 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -110,7 +110,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 22, phase: 45, inclination: 12, size: 5 },
+    placement: { orbitRadius: 22, phase: 45, inclination: 12, size: 5.15 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -142,7 +142,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 30, phase: 180, inclination: 10, size: 2.05 },
+    placement: { orbitRadius: 30, phase: 180, inclination: 10, size: 2.5 },
     sceneName: "scene-ranger",
   },
 };

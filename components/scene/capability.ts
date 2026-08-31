@@ -93,21 +93,27 @@ export interface CapabilityVerdict {
 export function evaluateCapabilities(
   signals: CapabilitySignals,
 ): CapabilityVerdict {
-  // Único veto absoluto: sin WebGL2 no hay nada que activar. No es una
-  // preferencia ni una estimación, es la ausencia de la herramienta.
+  // Sin WebGL2 no hay nada que activar. No es una preferencia ni una
+  // estimación, es la ausencia de la herramienta.
   if (!signals.hasWebGL2) {
     return { level: "flat", reason: "sin-webgl2", canOverride: false };
   }
 
-  // El visitante pidió la escena a mano: eso gana a todo lo demás, incluida la
-  // preferencia de movimiento. Respetar por defecto y permitir elegir es el
-  // patrón correcto; ignorar una petición explícita sería paternalismo.
-  if (signals.forced) {
-    return { level: "orbit", reason: "ok", canOverride: false };
+  // Reduced motion es un veto de accesibilidad, no una heurística de capacidad.
+  // Se evalúa ANTES que una activación guardada para que ninguna preferencia de
+  // una visita anterior vuelva a encender movimiento a espaldas del visitante.
+  if (signals.reducedMotion) {
+    return {
+      level: "flat",
+      reason: "movimiento-reducido",
+      canOverride: false,
+    };
   }
 
-  if (signals.reducedMotion) {
-    return { level: "flat", reason: "movimiento-reducido", canOverride: true };
+  // La activación explícita sólo gana a heurísticas o a un opt-out previo. No
+  // puede fabricar WebGL2 ni saltarse el veto de movimiento reducido de arriba.
+  if (signals.forced) {
+    return { level: "orbit", reason: "ok", canOverride: false };
   }
   if (signals.lightEffects) {
     return { level: "flat", reason: "perfil-ligero", canOverride: true };
