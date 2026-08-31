@@ -50,7 +50,7 @@ function interactionVolumeFor(world: WorldNavItem): InteractionVolume {
     case "tesseract":
       return { fallbackRadius: 25, scale: 1.24, shape: "box" };
     case "beacon":
-      return { fallbackRadius: 22, scale: 1.34, shape: "craft" };
+      return { fallbackRadius: 30, scale: 1.2, shape: "craft" };
     case "water":
     case "desert":
       return { fallbackRadius: 28, scale: 1.18, shape: "sphere" };
@@ -185,7 +185,6 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   <span className="system-map__label">
                     <span className="system-map__name">{world.cosmicName}</span>
                     <span className="system-map__role">
-                      {String(world.order).padStart(2, "0")} {"// "}
                       {world.shortLabel}
                     </span>
                   </span>

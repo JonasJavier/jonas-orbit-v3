@@ -88,8 +88,9 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("el orden del DOM es el narrativo, no el espacial", () => {
-    // Quien tabula recorre la historia 01→07; la posición la ponen el CSS y,
-    // cuando existe, la escena.
+    // Quien tabula recorre la historia de principio a fin; la posición la ponen
+    // el CSS y, cuando existe, la escena. El orden es real aunque ya no se
+    // imprima delante de cada destino.
     render(<SystemMap worlds={worlds} />);
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const hrefs = within(map)
@@ -189,7 +190,9 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     const target = container.querySelector(".hud__target");
     expect(target).toHaveAttribute("data-target-state", "target");
     expect(target).toHaveTextContent(/Target lock/i);
-    expect(target).toHaveTextContent(/04/);
+    // Sin numeración: el NAV TARGET dice a dónde vas y para qué sirve, no en qué
+    // posición de una lista está. El orden narrativo vive en el DOM, no pintado.
+    expect(target).not.toHaveTextContent(/\d\d/);
     expect(target).toHaveTextContent(/Endurance/i);
     expect(target).toHaveTextContent(/Proyectos/i);
     expect(target).toHaveTextContent(/\[ Enter \]/i);

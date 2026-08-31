@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import type { WorldId } from "@/content/worlds.data";
 import { useLightEffectsMode } from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { WorldNavigationState } from "@/lib/world-navigation";
 import type { WorldNavItem } from "@/lib/worlds";
 
@@ -18,7 +17,6 @@ export function SystemHud({
   navigationState: WorldNavigationState;
 }) {
   const [sceneLevel, setSceneLevel] = useState<string | null>(null);
-  const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
 
   // El gate publica el nivel real en `<html data-scene>`. El HUD lo observa en
@@ -34,7 +32,6 @@ export function SystemHud({
 
   const world =
     worlds.find((candidate) => candidate.id === activeWorldId) ?? null;
-  const index = world ? String(world.order).padStart(2, "0") : null;
   const systemState =
     sceneLevel === "deep" || sceneLevel === "orbit"
       ? "NOMINAL"
@@ -75,7 +72,6 @@ export function SystemHud({
           <>
             <span className="hud__target-eyebrow">{targetLabel}</span>
             <span className="hud__target-rule" />
-            <span className="hud__target-index">{index}</span>
             <span className="hud__target-name">{world.cosmicName}</span>
             <span className="hud__target-role">{world.shortLabel}</span>
             {navigationState === "target" ? (
@@ -93,10 +89,18 @@ export function SystemHud({
         )}
       </div>
 
+      {/*
+        Un solo control, y es accionable.
+
+        La lectura «MOTION // REDUCED» se ha ido del cristal. Era telemetría
+        sobre una preferencia del sistema operativo que el visitante ya conoce
+        —la puso él— y que además no podía cambiar desde aquí: texto permanente
+        que ocupaba sitio sin ofrecer nada. El estado real sigue publicado en
+        `<html data-reduced-motion>` para diagnóstico y para los tests, y quien
+        quiera actuar sobre los efectos tiene justo al lado el único control que
+        sí hace algo.
+      */}
       <div className="hud__controls">
-        <span className="hud__readout" aria-hidden="true">
-          Motion <i>{"//"}</i> {reducedMotion ? "REDUCED" : "FULL"}
-        </span>
         <a
           aria-label={lightEffects ? "Activar escena 3D" : "Reducir efectos 3D"}
           className="hud__readout hud__readout--action"
