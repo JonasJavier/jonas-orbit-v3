@@ -192,7 +192,7 @@ float starLayer(vec3 dir, float scale, float density) {
   // Muchas diminutas y unas pocas legibles. El brillo conserva una cola corta:
   // suficiente para dar profundidad, sin fabricar copos blancos ni competir
   // con el disco cuando el lente las estira.
-  float magnitude = 0.22 + 0.78 * pow(h.y, 13.0);
+  float magnitude = 0.30 + 0.80 * pow(h.y, 12.0);
   return present * magnitude * exp(-d * d * 245.0);
 }
 
@@ -202,17 +202,21 @@ vec3 skySample(vec3 dir) {
   // puntos con más presencia. El campo sigue siendo negro y el disco continúa
   // ocultándolo naturalmente donde domina su luminancia.
   vec3 color = vec3(0.0);
-  color += starLayer(dir, 44.0, 0.070) * vec3(1.00, 0.97, 0.92) * 0.34;
-  color += starLayer(dir, 112.0, 0.105) * vec3(0.88, 0.93, 1.00) * 0.23;
-  color += starLayer(dir, 246.0, 0.140) * vec3(1.00, 0.93, 0.84) * 0.13;
+  color += starLayer(dir, 44.0, 0.100) * vec3(1.00, 0.97, 0.92) * 0.48;
+  color += starLayer(dir, 112.0, 0.150) * vec3(0.88, 0.93, 1.00) * 0.33;
+  color += starLayer(dir, 246.0, 0.205) * vec3(1.00, 0.93, 0.84) * 0.19;
+  // Cuarta escala, la más fina: densidad subpíxel que rellena el cielo entre
+  // las tres anteriores. Sin ella, subir sólo el brillo daba estrellas más
+  // gordas en vez de un cielo más poblado, que es lo que se pedía.
+  color += starLayer(dir, 520.0, 0.235) * vec3(0.94, 0.96, 1.00) * 0.10;
 
   // Velo muy tenue. Existe para que el lente tenga algo continuo que curvar
   // además de puntos: sin él la distorsión del fondo es casi invisible.
   vec2 sph = vec2(atan(dir.z, dir.x), asin(clamp(dir.y, -1.0, 1.0)));
   float cloud = fbm(vec2(sph.x * 1.15, sph.y * 2.3) * 1.7);
   float veil = smoothstep(0.54, 1.00, cloud);
-  color += mix(vec3(0.012, 0.020, 0.034), vec3(0.036, 0.018, 0.010), cloud)
-         * veil * 0.22;
+  color += mix(vec3(0.014, 0.024, 0.041), vec3(0.043, 0.022, 0.012), cloud)
+         * veil * 0.32;
 
   return color;
 }

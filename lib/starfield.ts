@@ -13,10 +13,16 @@ export interface StarPoint {
 
 export const STARFIELD_FRAME_INTERVAL_MS = 66;
 
+/**
+ * Densidad por capa. FAR sube fuerte porque es donde vive la sensación de cielo
+ * profundo y cuesta casi nada: son `fillRect` de un píxel sin cambio de estado.
+ * NEAR sube poco a propósito — cada punto cercano lleva halo, y pasarse ahí no
+ * da profundidad, da nieve.
+ */
 const LAYER_BUDGET = {
-  far: { divisor: 1_150, min: 420, max: 1_650 },
-  mid: { divisor: 5_600, min: 92, max: 340 },
-  near: { divisor: 35_000, min: 12, max: 46 },
+  far: { divisor: 780, min: 640, max: 2_600 },
+  mid: { divisor: 3_900, min: 150, max: 520 },
+  near: { divisor: 26_000, min: 18, max: 66 },
 } as const;
 
 const TONES = {
@@ -53,9 +59,9 @@ function gargantuaOcclusion(x: number, y: number) {
   const dx = (x - 0.5) / 0.34;
   const dy = (y - 0.49) / 0.22;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  if (distance < 0.42) return 0.12;
-  if (distance < 0.72) return 0.42;
-  if (distance < 1) return 0.72;
+  if (distance < 0.42) return 0.24;
+  if (distance < 0.72) return 0.54;
+  if (distance < 1) return 0.82;
   return 1;
 }
 
@@ -75,7 +81,7 @@ function layerPoint(
       y,
       radius: 0.18 + random() * 0.34,
       depth: 0,
-      opacity: 0.2 + (index % 7) * 0.045,
+      opacity: 0.32 + (index % 7) * 0.058,
       occlusion,
       layer,
       tone:
@@ -93,7 +99,7 @@ function layerPoint(
       y,
       radius: 0.38 + random() * 0.5,
       depth: 0.35 + random() * 0.2,
-      opacity: 0.3 + (index % 5) * 0.085,
+      opacity: 0.46 + (index % 5) * 0.1,
       occlusion,
       layer,
       tone:
@@ -110,7 +116,7 @@ function layerPoint(
     y,
     radius: 0.72 + random() * 0.7,
     depth: 0.72 + random() * 0.2,
-    opacity: 0.16 + (index % 4) * 0.065,
+    opacity: 0.3 + (index % 4) * 0.085,
     occlusion,
     layer,
     tone: colorIndex % 7 === 0 ? "cyan" : "white",
@@ -166,7 +172,7 @@ function drawHaze(
     height * 0.18,
     Math.max(width, height) * 0.72,
   );
-  navy.addColorStop(0, "rgba(18, 35, 67, 0.105)");
+  navy.addColorStop(0, "rgba(21, 41, 78, 0.165)");
   navy.addColorStop(1, "rgba(2, 6, 14, 0)");
   context.fillStyle = navy;
   context.fillRect(0, 0, width, height);
@@ -179,7 +185,7 @@ function drawHaze(
     height * 0.67,
     Math.max(width, height) * 0.48,
   );
-  violet.addColorStop(0, "rgba(87, 45, 117, 0.052)");
+  violet.addColorStop(0, "rgba(96, 50, 129, 0.095)");
   violet.addColorStop(1, "rgba(9, 5, 17, 0)");
   context.fillStyle = violet;
   context.fillRect(0, 0, width, height);
@@ -193,8 +199,8 @@ function drawHaze(
     height * 0.49,
     Math.min(width, height) * 0.57,
   );
-  warm.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.035)`);
-  warm.addColorStop(0.55, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.012)`);
+  warm.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.062)`);
+  warm.addColorStop(0.55, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.022)`);
   warm.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
   context.fillStyle = warm;
   context.fillRect(0, 0, width, height);
@@ -249,8 +255,8 @@ export function drawStarfield({
 
     context.beginPath();
     if (star.layer === "near") {
-      context.fillStyle = `rgba(${tone}, ${opacity * 0.14})`;
-      context.arc(x, y, star.radius * 2.35, 0, Math.PI * 2);
+      context.fillStyle = `rgba(${tone}, ${opacity * 0.2})`;
+      context.arc(x, y, star.radius * 2.9, 0, Math.PI * 2);
       context.fill();
       context.beginPath();
       context.fillStyle = `rgba(${tone}, ${opacity})`;

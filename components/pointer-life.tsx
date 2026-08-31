@@ -139,6 +139,9 @@ export function PointerLife({
             event.clientY,
             velocityX,
             velocityY,
+            // El mismo `elapsed` con el que se midió la velocidad: juntos
+            // reconstruyen el tramo exacto que hay que sembrar.
+            elapsed,
           ) > 0
         ) {
           ensureAnimation();

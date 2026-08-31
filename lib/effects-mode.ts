@@ -24,6 +24,16 @@ import { useEffect, useSyncExternalStore } from "react";
 
 const LIGHT_EFFECTS_PARAM = "no3d";
 const STORAGE_KEY = "jonas-orbit:reducir-efectos";
+/**
+ * La activación explícita: «lo quiero todo aunque mi sistema diga que no».
+ *
+ * Vive AQUÍ y no dentro de la escena porque la petición no es sobre la escena,
+ * es sobre los efectos. Cuando era `useState` de `GargantuaSystem`, pulsar
+ * «Activar escena 3D» encendía el raymarch y dejaba apagados el cursor de
+ * navegación y el polvo estelar, que leen la preferencia por su cuenta: el
+ * visitante pedía una cosa y recibía media. Un solo almacén, tres lectores.
+ */
+const FORCED_STORAGE_KEY = "jonas-orbit:efectos-forzados";
 /** Cambios dentro de la misma pestaña: `storage` solo avisa a las OTRAS. */
 const CHANGE_EVENT = "jonas:effects-mode";
 
@@ -55,13 +65,46 @@ export function resolveLightEffectsMode(
   return stored === "true";
 }
 
-function readStored(): string | null {
+/**
+ * Quién tiene derecho a respuesta del puntero — cursor de navegación y polvo
+ * estelar — expresado UNA vez, en positivo y sin DOM.
+ *
+ * Estaba escrito en línea dentro del telón como `reducedMotion || lightEffects`,
+ * y esa expresión no conocía la activación explícita. El resultado era un sitio
+ * que decía «escena activada» mientras el CSS mantenía las dos capas en
+ * `display: none`: la avería que se estaba diagnosticando.
+ *
+ * La regla es la misma del gate de capacidad: se respeta por defecto, y una
+ * petición explícita del visitante gana a la preferencia que la motivó.
+ */
+export function pointerLifeEnabled({
+  reducedMotion,
+  lightEffects,
+  forcedEffects,
+}: {
+  reducedMotion: boolean;
+  lightEffects: boolean;
+  forcedEffects: boolean;
+}): boolean {
+  if (forcedEffects) return true;
+  return !reducedMotion && !lightEffects;
+}
+
+function readStored(key: string): string | null {
   try {
-    return window.localStorage.getItem(STORAGE_KEY);
+    return window.localStorage.getItem(key);
   } catch {
     // Safari en modo privado y navegadores con almacenamiento bloqueado: la
     // preferencia deja de recordarse, pero la página no se cae por eso.
     return null;
+  }
+}
+
+function writeStored(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* almacenamiento no disponible: la preferencia dura lo que la pestaña */
   }
 }
 
@@ -77,7 +120,35 @@ function subscribe(callback: () => void) {
 
 function getSnapshot() {
   if (typeof window === "undefined") return false;
-  return resolveLightEffectsMode(window.location.search, readStored());
+  return resolveLightEffectsMode(window.location.search, readStored(STORAGE_KEY));
+}
+
+function getForcedSnapshot() {
+  if (typeof window === "undefined") return false;
+  return readStored(FORCED_STORAGE_KEY) === "true";
+}
+
+function announce() {
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+/**
+ * Guarda —o retira— la activación explícita y avisa a los tres lectores en el
+ * mismo tick. Se persiste por la misma razón que el perfil ligero: quien ya dijo
+ * «enciéndelo» no tiene que volver a decirlo en cada ruta ni en cada visita.
+ */
+export function setForcedEffects(value: boolean) {
+  if (getForcedSnapshot() === value) return;
+  writeStored(FORCED_STORAGE_KEY, String(value));
+  announce();
+}
+
+/**
+ * Instantánea de servidor `false` a propósito: el HTML servido es idéntico para
+ * todo el mundo y la activación se resuelve tras hidratar, sin mismatch.
+ */
+export function useForcedEffects() {
+  return useSyncExternalStore(subscribe, getForcedSnapshot, () => false);
 }
 
 /**
@@ -93,11 +164,11 @@ export function useLightEffectsMode() {
   useEffect(() => {
     const fromUrl = readLightEffectsParam(window.location.search);
     if (fromUrl === null) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, String(fromUrl));
-    } catch {
-      /* almacenamiento no disponible: la preferencia dura lo que la pestaña */
-    }
+    writeStored(STORAGE_KEY, String(fromUrl));
+    // Pedir MENOS efectos tiene que reducirlos de verdad: una activación
+    // guardada de otra visita no puede sobrevivir a `?no3d=1` y dejar el botón
+    // «Reducir efectos» sin efecto. `?no3d=0` no la toca — ahí no hay conflicto.
+    if (fromUrl) setForcedEffects(false);
   }, [value]);
 
   return value;

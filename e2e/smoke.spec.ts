@@ -682,6 +682,52 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       page.getByRole("heading", { level: 1, name: "Contacto" }),
     ).toBeVisible();
   });
+
+  /**
+   * La regresión que motivó este test: con movimiento reducido activo en el
+   * sistema, pulsar «Activar escena 3D» encendía el raymarch y dejaba muertos
+   * el cursor de navegación y el polvo estelar. La activación vivía como estado
+   * local de la escena, y el CSS ocultaba las otras dos capas con un
+   * `display: none` bajo la media query — que no puede enterarse de que alguien
+   * pidió lo contrario. Media petición atendida se ve igual que un efecto roto.
+   *
+   * Lo que se comprueba es la petición COMPLETA, no la escena: `data-pointer-life`
+   * y la visibilidad real de las dos capas. Así el test vale igual en un entorno
+   * sin GPU, donde la escena puede acabar en `flat` por sus propios motivos.
+   */
+  test("activar la escena enciende también el cursor y el polvo", async ({
+    page,
+    viewport,
+  }) => {
+    // Por debajo de 60rem el HUD retira sus mandos y con ellos el botón de
+    // activación; además cursor y polvo son de puntero fino. El caso vive en
+    // escritorio: correrlo en el proyecto móvil sería comprobar otra cosa.
+    test.skip(
+      (viewport?.width ?? 0) < 960,
+      "la activación y la respuesta al puntero son de escritorio",
+    );
+
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/es");
+
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-pointer-life",
+      "off",
+    );
+    await expect(page.locator(".site-stardust")).toBeHidden();
+
+    await page.getByRole("button", { name: /Activar escena 3D/ }).click();
+
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-pointer-life",
+      "ready",
+      { timeout: 5_000 },
+    );
+    await expect(page.locator(".site-stardust")).toBeVisible();
+    // El retículo sustituye al cursor nativo: si el sistema no lo oculta, se
+    // ven los dos a la vez y eso se lee como un fallo de la página.
+    await expect(page.locator(".system-home")).toHaveCSS("cursor", "none");
+  });
 });
 
 /**
