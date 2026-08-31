@@ -4385,3 +4385,77 @@ html[data-pointer-life="ready"] .site-stardust {
 html:not([data-pointer-life="ready"]) :is(.site-stardust, .navigation-cursor) {
   display: none;
 }
+
+/* ── Consentimiento explícito para movimiento ─────────────────────────────
+   `prefers-reduced-motion` mantiene el sistema plano al entrar, pero deja una
+   salida deliberada y reversible. Es un <button>, no telemetría decorativa:
+   el reset evita que los estilos nativos rompan el lenguaje del HUD. */
+button.hud__readout--action {
+  padding: 0;
+  border: 0;
+  margin: 0;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.hud__controls[data-effects-control="motion-preference"] {
+  right: clamp(1rem, 3.4vw, 3.4rem);
+  bottom: 4.25rem;
+  z-index: 12;
+}
+
+.hud__effects-toggle {
+  min-height: 2.5rem;
+  padding: 0.66rem 0.9rem !important;
+  border: 1px solid color-mix(in srgb, var(--cyan) 52%, transparent) !important;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--space-black) 78%, transparent) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.025) inset,
+    0 0 1.4rem rgba(127, 229, 255, 0.09);
+  color: var(--hud-primary);
+  letter-spacing: 0.16em;
+  backdrop-filter: blur(12px);
+}
+
+.hud__effects-toggle::before {
+  display: inline-block;
+  width: 0.36rem;
+  height: 0.36rem;
+  margin-right: 0.65rem;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0.65rem color-mix(in srgb, var(--cyan) 74%, transparent);
+  content: "";
+  vertical-align: 0.04rem;
+}
+
+.hud__effects-toggle[aria-pressed="true"]::before {
+  background: var(--amber);
+  box-shadow: 0 0 0.65rem color-mix(in srgb, var(--amber) 68%, transparent);
+}
+
+.hud__effects-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+@media (max-width: 60rem) {
+  /* La regla responsive general oculta lecturas secundarias del HUD. Este
+     control no es una lectura: es la única forma de cambiar la experiencia. */
+  .hud__controls[data-effects-control="motion-preference"] {
+    position: fixed;
+    right: 0.85rem;
+    bottom: 4.45rem;
+    display: flex;
+  }
+
+  .hud__effects-toggle {
+    min-height: 2.75rem;
+    padding-inline: 0.82rem !important;
+    font-size: 0.53rem;
+    letter-spacing: 0.12em;
+  }
+}

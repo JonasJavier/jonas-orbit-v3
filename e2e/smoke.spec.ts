@@ -685,16 +685,9 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     ).toBeVisible();
   });
 
-  test("una activación guardada no salta el veto ni ofrece reactivarlo", async ({
+  test("parte en plano y permite activar y volver a reducir toda la experiencia", async ({
     page,
   }) => {
-    // Simula una visita anterior en la que el usuario sí había forzado efectos.
-    // Al activar reduced-motion después, esa memoria no puede volver a encender
-    // ninguna de las capas ni dejar una acción engañosa en el Hero.
-    await page.addInitScript(() => {
-      window.localStorage.setItem("jonas-orbit:efectos-forzados", "true");
-      window.localStorage.setItem("jonas-orbit:reducir-efectos", "true");
-    });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es");
 
@@ -717,13 +710,49 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       "hidden",
     );
     await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
-    await expect(
-      page.getByRole("button", { name: /Activar escena 3D/ }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("link", { name: /Activar escena 3D/ }),
-    ).toHaveCount(0);
-    await expect(page.locator(".scene-toggle")).toHaveCount(0);
+
+    const effectsToggle = page.getByRole("button", {
+      name: "Activar escena 3D y movimiento",
+    });
+    await expect(effectsToggle).toBeVisible();
+    await expect(effectsToggle).toHaveAttribute("aria-pressed", "false");
+
+    await effectsToggle.click();
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-effects-forced",
+      "true",
+    );
+    await expect(page.locator("html")).toHaveAttribute("data-scene", "orbit");
+    await expect(page.getByTestId("gargantua-canvas")).toHaveCount(1);
+    const hasFinePointer = await page.evaluate(
+      () => window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-pointer-life",
+      hasFinePointer ? "ready" : "off",
+    );
+
+    const reduceToggle = page.getByRole("button", {
+      name: "Volver a reducir movimiento y efectos",
+    });
+    await expect(reduceToggle).toHaveAttribute("aria-pressed", "true");
+    await reduceToggle.click();
+
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-effects-forced",
+      "false",
+    );
+    await expect(page.locator("html")).toHaveAttribute("data-scene", "flat");
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-scene-reason",
+      "movimiento-reducido",
+    );
+    await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-pointer-life",
+      "off",
+    );
+    await expect(effectsToggle).toBeVisible();
   });
 });
 

@@ -24,7 +24,7 @@ describe("detectLevel — el gate de capacidad", () => {
     expect(detectLevel(capable)).toBe("deep");
   });
 
-  describe("los vetos son duros y no se negocian", () => {
+  describe("el modo plano es el punto de partida seguro", () => {
     it("sin WebGL2", () => {
       expect(detectLevel({ ...capable, hasWebGL2: false })).toBe("flat");
     });
@@ -52,19 +52,12 @@ describe("detectLevel — el gate de capacidad", () => {
       }
     });
 
-    it("WebGL2 ausente y reduced motion son irreversibles", () => {
-      // El resto son suposiciones sobre el equipo o una elección anterior y el
-      // visitante puede desmentirlas. Estos dos casos no se negocian.
+    it("sólo la ausencia de WebGL2 es irreversible", () => {
+      expect(
+        evaluateCapabilities({ ...capable, hasWebGL2: false }).canOverride,
+      ).toBe(false);
       for (const señal of [
-        { hasWebGL2: false },
         { reducedMotion: true },
-      ]) {
-        expect(
-          evaluateCapabilities({ ...capable, ...señal }).canOverride,
-          JSON.stringify(señal),
-        ).toBe(false);
-      }
-      for (const señal of [
         { lightEffects: true },
         { renderer: "llvmpipe" },
         { deviceMemory: 2 },
@@ -76,10 +69,10 @@ describe("detectLevel — el gate de capacidad", () => {
       }
     });
 
-    it("una petición explícita no salta los vetos de accesibilidad o plataforma", () => {
+    it("una petición explícita puede activar movimiento, pero no fabricar WebGL2", () => {
       expect(
         detectLevel({ ...capable, reducedMotion: true, forced: true }),
-      ).toBe("flat");
+      ).toBe("orbit");
       expect(detectLevel({ ...capable, hasWebGL2: false, forced: true })).toBe(
         "flat",
       );

@@ -17,6 +17,7 @@ import {
   type WorldNavigationState,
 } from "@/lib/world-navigation";
 import type { WorldNavItem } from "@/lib/worlds";
+import { FlatWorldBody } from "./flat-world-body";
 import { NavRail } from "./nav-rail";
 import { SystemHud } from "./system-hud";
 
@@ -141,6 +142,9 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                 key={world.id}
                 className="system-map__slot"
                 data-centre={isCentre ? "true" : undefined}
+                data-flat-side={
+                  isCentre ? "centre" : point.x < 50 ? "left" : "right"
+                }
                 data-target-state={itemState}
                 style={
                   {
@@ -153,6 +157,7 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   } as CSSProperties
                 }
               >
+                <FlatWorldBody world={world} />
                 <span className="system-map__target-brackets" aria-hidden="true" />
                 <Link
                   aria-hidden="true"

@@ -1,0 +1,80 @@
+.body {
+  position: absolute;
+  /* En flat, el centro visible actual es la cruz de calibración: el slot
+     conserva ancho por el rótulo oculto y por eso su origen no coincide con
+     esa cruz. Estas dos variables permiten que SystemMap cambie el ancla sin
+     acoplar el dibujo a un nuevo layout. */
+  top: var(--flat-anchor-y, 50%);
+  left: var(--flat-anchor-x, 1.65rem);
+  z-index: 0;
+  display: block;
+  width: var(--flat-size, 5rem);
+  aspect-ratio: 1;
+  color: var(--flat-secondary, #7fe5ff);
+  filter:
+    drop-shadow(0 0 0.45rem color-mix(in srgb, var(--flat-secondary) 16%, transparent))
+    drop-shadow(0 0 1.7rem rgba(0, 0, 0, 0.82));
+  opacity: 0.92;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+}
+
+.body svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.tesseract {
+  --flat-size: clamp(4.3rem, 5.2vw, 6.4rem);
+}
+
+.station {
+  --flat-size: clamp(7rem, 9vw, 10.4rem);
+
+  aspect-ratio: 18 / 11;
+}
+
+.water,
+.desert {
+  --flat-size: clamp(4.8rem, 6.2vw, 7.4rem);
+}
+
+.ship {
+  --flat-size: clamp(7.2rem, 9.4vw, 10.8rem);
+}
+
+.beacon {
+  --flat-size: clamp(6.1rem, 7.7vw, 9rem);
+
+  aspect-ratio: 16 / 9;
+}
+
+/* La escena real reemplaza esta ilustración; nunca se superponen ambas. */
+:global(html[data-scene-live="true"]) .body {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* El estado se comparte con proxy, HUD y raíl sin añadir listeners. */
+:global(.system-map__slot:not([data-target-state="idle"])) .body {
+  filter:
+    drop-shadow(0 0 0.34rem color-mix(in srgb, var(--flat-accent) 48%, transparent))
+    drop-shadow(0 0 1.1rem color-mix(in srgb, var(--flat-secondary) 24%, transparent))
+    drop-shadow(0 0 1.8rem rgba(0, 0, 0, 0.82));
+  opacity: 1;
+}
+
+@media (max-width: 60rem) {
+  .body {
+    width: min(var(--flat-size), 21vw);
+  }
+
+  .station,
+  .ship,
+  .beacon {
+    width: min(var(--flat-size), 28vw);
+  }
+}

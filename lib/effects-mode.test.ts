@@ -75,7 +75,7 @@ describe("resolveLightEffectsMode — la elección sobrevive a la navegación", 
  * cada capa leía la preferencia por su cuenta y sólo una conocía la activación.
  * Media petición atendida se ve exactamente igual que un efecto roto.
  */
-describe("pointerLifeEnabled — reduced motion es un veto duro", () => {
+describe("pointerLifeEnabled — el consentimiento gobierna el conjunto", () => {
   it("hay respuesta al puntero cuando nada la desaconseja", () => {
     expect(
       pointerLifeEnabled({
@@ -103,21 +103,21 @@ describe("pointerLifeEnabled — reduced motion es un veto duro", () => {
     ).toBe(false);
   });
 
-  it("la activación explícita no recupera cursor ni polvo con reduced motion", () => {
+  it("la activación explícita recupera cursor y polvo incluso con reduced motion", () => {
     expect(
       pointerLifeEnabled({
         reducedMotion: true,
         lightEffects: false,
         forcedEffects: true,
       }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       pointerLifeEnabled({
         reducedMotion: true,
         lightEffects: true,
         forcedEffects: true,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("la activación explícita sí supera el perfil ligero sin reduced motion", () => {

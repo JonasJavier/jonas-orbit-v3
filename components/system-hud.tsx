@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { WorldId } from "@/content/worlds.data";
-import { useLightEffectsMode } from "@/lib/effects-mode";
+import {
+  setForcedEffects,
+  useForcedEffects,
+  useLightEffectsMode,
+} from "@/lib/effects-mode";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { WorldNavigationState } from "@/lib/world-navigation";
 import type { WorldNavItem } from "@/lib/worlds";
@@ -18,17 +22,25 @@ export function SystemHud({
   navigationState: WorldNavigationState;
 }) {
   const [sceneLevel, setSceneLevel] = useState<string | null>(null);
+  const [sceneReason, setSceneReason] = useState<string | null>(null);
   const lightEffects = useLightEffectsMode();
+  const forcedEffects = useForcedEffects();
   const reducedMotion = usePrefersReducedMotion();
 
   // El gate publica el nivel real en `<html data-scene>`. El HUD lo observa en
   // vez de duplicar la heurística de capacidad.
   useEffect(() => {
     const root = document.documentElement;
-    const read = () => setSceneLevel(root.dataset.scene ?? null);
+    const read = () => {
+      setSceneLevel(root.dataset.scene ?? null);
+      setSceneReason(root.dataset.sceneReason ?? null);
+    };
     read();
     const observer = new MutationObserver(read);
-    observer.observe(root, { attributes: true, attributeFilter: ["data-scene"] });
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["data-scene", "data-scene-reason"],
+    });
     return () => observer.disconnect();
   }, []);
 
@@ -42,6 +54,8 @@ export function SystemHud({
         : "STANDBY";
   const targetLabel =
     navigationState === "locked" ? "Target locked" : "Target lock";
+  const sceneUnavailable =
+    sceneReason === "sin-webgl2" || sceneReason === "escena-fallida";
 
   return (
     <div className="hud">
@@ -91,29 +105,44 @@ export function SystemHud({
         )}
       </div>
 
-      {/*
-        Un solo control, y es accionable.
-
-        La lectura «MOTION // REDUCED» se ha ido del cristal. Era telemetría
-        sobre una preferencia del sistema operativo que el visitante ya conoce
-        —la puso él— y que además no podía cambiar desde aquí: texto permanente
-        que ocupaba sitio sin ofrecer nada. El estado real sigue publicado en
-        `<html data-reduced-motion>` para diagnóstico y para los tests. Fuera de
-        ese veto accesible, el único control que queda sí permite reducir o
-        recuperar el perfil 3D.
-      */}
-      {!reducedMotion ? (
-        <div className="hud__controls">
+      {/* Un control real, siempre reversible. Reduced-motion conserva el frame
+          plano por defecto, pero no es una cárcel: una acción inequívoca puede
+          activar la experiencia completa y el mismo lugar vuelve a reducirla. */}
+      <div
+        className="hud__controls"
+        data-effects-control={reducedMotion ? "motion-preference" : "standard"}
+      >
+        {reducedMotion ? (
+          <button
+            aria-label={
+              forcedEffects
+                ? "Volver a reducir movimiento y efectos"
+                : sceneUnavailable
+                  ? "Escena 3D no disponible"
+                  : "Activar escena 3D y movimiento"
+            }
+            aria-pressed={forcedEffects}
+            className="hud__readout hud__readout--action hud__effects-toggle"
+            disabled={!forcedEffects && sceneUnavailable}
+            onClick={() => setForcedEffects(!forcedEffects)}
+            type="button"
+          >
+            {forcedEffects
+              ? "Reducir movimiento"
+              : sceneUnavailable
+                ? "3D no disponible"
+                : "Activar 3D + movimiento"}
+          </button>
+        ) : (
           <a
             aria-label={lightEffects ? "Activar escena 3D" : "Reducir efectos 3D"}
             className="hud__readout hud__readout--action"
             href={lightEffects ? "?no3d=0" : "?no3d=1"}
           >
-            3D <i aria-hidden="true">{"//"}</i>{" "}
-            {lightEffects ? "OFF" : "ACTIVE"}
+            {lightEffects ? "Activar 3D" : "Reducir efectos"}
           </a>
-        </div>
-      ) : null}
+        )}
+      </div>
     </div>
   );
 }
