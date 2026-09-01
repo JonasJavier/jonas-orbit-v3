@@ -11,12 +11,15 @@ import type { Vector3 } from "three";
 const BODY_DEPTH_LAYER: Readonly<
   Record<Exclude<WorldId, "gargantua">, number>
 > = {
-  tesseract: -7,
-  "cooper-station": -4,
+  tesseract: -3,
+  "cooper-station": -1,
   miller: 0,
   endurance: 4,
   edmunds: 1,
-  ranger: 8,
+  // Sigue siendo el cuerpo más adelantado —es la nave pequeña y necesita el
+  // plano cercano—, pero su fase nueva ya la acerca 18 rs por sí sola: con +8
+  // se comía a la Endurance.
+  ranger: 5,
 };
 
 export function bodyDepthLayerFor(id: WorldId): number {

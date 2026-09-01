@@ -142,7 +142,19 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 30, phase: 180, inclination: 10, size: 2.6 },
+    /*
+      Estaba en el extremo izquierdo del cuadro (fase 180, radio 30): pegada al
+      borde, sola, alineada con el centro y en el punto de la trayectoria MÁS
+      lejano a la cámara. Tres problemas de una vez —composición desequilibrada,
+      cuerpo pequeño y el único hueco grande del encuadre sin ocupar.
+
+      Fase 105 con radio 24 la lleva al vacío de abajo, por delante del plano
+      del disco: gana un tercio de tamaño aparente sin tocar su escala, apunta
+      hacia Gargantúa en diagonal y cierra el triángulo con Endurance y Edmunds.
+      El mapa plano usa esta misma fase, así que las dos vistas siguen contando
+      lo mismo.
+    */
+    placement: { orbitRadius: 24, phase: 105, inclination: 23, size: 2.6 },
     sceneName: "scene-ranger",
   },
 };

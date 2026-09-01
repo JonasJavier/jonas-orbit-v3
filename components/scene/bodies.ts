@@ -234,6 +234,7 @@ const BODY_VERTEX = /* glsl */ `
   varying vec3 vLocal;
   varying vec2 vUv;
   varying float vSurfaceMask;
+  varying vec3 vLightLocal;
 
   void main() {
     vLocal = position;
@@ -243,6 +244,21 @@ const BODY_VERTEX = /* glsl */ `
     vec4 world = modelMatrix * vec4(position, 1.0);
     vPositionW = world.xyz;
     vNormalW = normalize(mat3(modelMatrix) * normal);
+    /*
+      La dirección de la luz, en el espacio LOCAL del cuerpo.
+
+      Se calcula aquí y no en el fragmento porque three sólo inyecta
+      modelMatrix en el vertex shader. Como la matriz es rotación por escala
+      uniforme, los productos escalares con sus columnas deshacen la rotación,
+      y basta normalizar al otro lado. Lo usa la sombra de los anillos de
+      Cooper, que necesita cortar el plano del anillo.
+    */
+    vec3 toLightW = normalize(-world.xyz);
+    vLightLocal = vec3(
+      dot(modelMatrix[0].xyz, toLightW),
+      dot(modelMatrix[1].xyz, toLightW),
+      dot(modelMatrix[2].xyz, toLightW)
+    );
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `;
@@ -264,6 +280,7 @@ const BODY_FRAGMENT = /* glsl */ `
   varying vec3 vLocal;
   varying vec2 vUv;
   varying float vSurfaceMask;
+  varying vec3 vLightLocal;
 
   /* Ruido de valor barato. Los mapas de superficie de las naves se generan en
      memoria; la escena no transfiere texturas por red y conserva intacto el
@@ -332,20 +349,27 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 toLight = normalize(-vPositionW);
     float ndl = dot(normal, toLight);
 
-    /*
-      El TERMINADOR es lo que hace que una esfera parezca un mundo.
-
-      El primer intento usaba lambert crudo más una envolvente ancha: el
-      resultado era una bola uniformemente iluminada, sin cara noche, y eso es
-      exactamente el aspecto «de plástico». Lo que se lee a esta distancia es la
-      silueta, la media luna encendida y el filo de atmósfera. Todo el
-      presupuesto de shader va ahí.
-    */
-    float day = smoothstep(-0.08, 0.34, ndl);
-    /* Oscurecimiento de limbo: el borde del disco iluminado cae un poco. */
-    float limb = 0.55 + 0.45 * pow(max(dot(normal, view), 0.0), 0.4);
-    float diffuse = day * limb;
     float fresnel = pow(1.0 - max(dot(normal, view), 0.0), 3.0);
+
+    /*
+      RELIEVE, y por qué se declara aquí arriba.
+
+      Un mundo procedural puede tener toda la variación de color del mundo y
+      seguir pareciendo una calcomanía esférica: sin sombra propia, el ojo no
+      tiene con qué construir volumen. Lo que faltaba en Edmunds no era paleta,
+      era topografía iluminada.
+
+      Un mapa de normales de verdad pediría el gradiente del ruido, y eso son
+      tres evaluaciones más por octava —el presupuesto que este shader tiene
+      medido y cerrado—. La salida es usar relieve cuyo gradiente sea
+      ANALÍTICO: sumas de ondas direccionales, donde la derivada es la misma
+      onda desfasada y no cuesta una sola muestra extra.
+
+      Cada mundo escribe aquí el desplazamiento de su término lambert; el
+      terminador se recalcula después de los materiales con esa corrección
+      dentro. A primer orden, inclinar la normal es exactamente eso.
+    */
+    float reliefOffset = 0.0;
 
     /* Ámbar del disco para la clave; azul tenue del fondo estelar para el
        relleno, que es lo que impide que la cara noche sea un agujero recortado. */
@@ -406,47 +430,87 @@ const BODY_FRAGMENT = /* glsl */ `
       atmosphereWeight = 1.22;
     } else if (uKind == 1) {
       /*
-        Edmunds: cobre, relieve y una capa de polvo alta. Dos escalas de terreno
-        rompen la lectura de «bola marrón» sin acercarlo a una Tierra: continentes
-        minerales grandes, crestas secas y haze parcial que deriva casi quieto.
+        Edmunds: el mundo de la Creatividad, y por tanto el que no puede ser
+        «un planeta marrón genérico».
+
+        ── Qué fallaba ─────────────────────────────────────────────────────
+        Tenía cinco escalas de ruido y todas pintaban COLOR. El resultado era
+        una red de grietas naranjas de frecuencia uniforme cubriendo el disco
+        entero: se leía como una textura de lava aplicada a una bola, no como
+        un paisaje. Y sin sombra propia, la esfera no tenía volumen más allá
+        del terminador.
+
+        ── Qué lo cambia ───────────────────────────────────────────────────
+        1. **Topografía iluminada.** Tres ondas direccionales de gradiente
+           analítico inclinan el término lambert: las laderas encaradas a
+           Gargantúa se encienden y las opuestas caen. Es sombra propia de
+           verdad, y no cuesta ni una muestra de ruido.
+        2. **Dos terrenos, no cinco.** Tierras altas de cobre y cuencas de
+           basalto oscuro, separadas por un umbral duro. El contraste grande
+           va entre regiones; el detalle fino sólo las texturiza por dentro.
+        3. **Sales y polvo.** Depósitos claros en las cuencas y una capa de
+           polvo alta que lava el color hacia el limbo. Es lo que le da el
+           aire cálido y habitable que pide su nombre.
       */
       float continents = fbm(vLocal * 1.75 + vec3(4.2, 1.1, 7.3));
       float terrain = fbm(vLocal * 5.4 + continents * 1.3);
       float ridges = 1.0 - abs(fbm(vLocal * 9.2) * 2.0 - 1.0);
       float haze = smoothstep(
-        0.58,
-        0.78,
+        0.52,
+        0.8,
         fbm(vLocal * 2.65 + vec3(uTime * 0.0025, 8.0, 2.0))
       );
-
-      /* Depósitos minerales: la cuarta escala, fina y de alto contraste. Es la
-         que impide que el planeta se lea como una textura uniforme al girar. */
+      /* Depósitos minerales: la escala fina y de alto contraste. Es la que
+         impide que el planeta se lea como una textura uniforme al girar. */
       float veins = smoothstep(0.52, 0.74, fbm(vLocal * 13.5 + continents));
-      float dunes = 0.5 + 0.5 * sin(
-        vLocal.x * 23.0 + vLocal.z * 7.0 + terrain * 4.0
-      );
-      /* Escarpes: una octava basta para quebrar el cobre en el terminador. */
-      float escarpments = smoothstep(
-        0.58,
-        0.82,
-        1.0 - abs(noise(vLocal * 16.0 + vec3(3.0, 8.0, 1.0)) * 2.0 - 1.0)
-      );
+
+      /*
+        Relieve. Tres ondas de números de onda primos entre sí, así que el
+        patrón no se repite en la esfera; la amplitud sube donde hay tierra
+        alta y se apaga en las cuencas, que es donde el terreno real es plano.
+        El gradiente es la derivada exacta —la misma onda en coseno— y su
+        componente tangencial es la pendiente que ve la luz.
+      */
+      float highland = smoothstep(0.38, 0.62, continents);
+      vec3 waveA = vec3(8.7, 5.3, -6.1);
+      vec3 waveB = vec3(-4.9, 9.7, 7.1);
+      vec3 waveC = vec3(6.3, -7.9, 10.3);
+      float phaseA = dot(vLocal, waveA);
+      float phaseB = dot(vLocal, waveB);
+      float phaseC = dot(vLocal, waveC);
+      float height = sin(phaseA) * 0.5 + sin(phaseB) * 0.34 + sin(phaseC) * 0.26;
+      vec3 slope = waveA * cos(phaseA) * 0.5
+                 + waveB * cos(phaseB) * 0.34
+                 + waveC * cos(phaseC) * 0.26;
+      vec3 up = normalize(vLocal);
+      vec3 tangentSlope = slope - up * dot(slope, up);
+      vec3 lightLocal = normalize(vLightLocal);
+      /* Amplitud pequeña a propósito: 0.012 por unidad de gradiente da laderas
+         de unos 20°, que es orografía, no una pelota de golf. */
+      float reliefStrength = 0.05 * (0.35 + highland * 0.9);
+      reliefOffset = -dot(tangentSlope, lightLocal) * reliefStrength;
+
       /* Casquetes: no nieve, sales heladas. Rompen la monotonía del cobre y dan
          un eje visible — sin polos, una esfera girando no tiene norte. */
       float polar = smoothstep(0.62, 0.93, abs(vLocal.y));
 
-      albedo = mix(vec3(0.19, 0.075, 0.04), vec3(0.62, 0.30, 0.13), continents);
-      albedo = mix(albedo, vec3(0.83, 0.5, 0.24), terrain * 0.62);
-      albedo = mix(albedo, vec3(0.95, 0.72, 0.49), ridges * terrain * 0.26);
-      albedo = mix(albedo, vec3(0.34, 0.17, 0.11), veins * 0.3);
-      albedo = mix(albedo, vec3(0.91, 0.55, 0.27), dunes * terrain * 0.12);
-      albedo = mix(albedo, vec3(0.12, 0.045, 0.032), escarpments * 0.3);
-      albedo = mix(albedo, vec3(0.78, 0.56, 0.4), haze * 0.26);
-      albedo = mix(albedo, vec3(0.86, 0.85, 0.83), polar * 0.55);
-      gloss = 0.045 + haze * 0.035 + polar * 0.2 + veins * 0.035;
+      /* Cuenca de basalto oscuro y tierra alta de cobre: el salto de valor
+         grande va aquí, entre dos regiones, no repartido en cien grietas. */
+      albedo = mix(vec3(0.135, 0.062, 0.042), vec3(0.58, 0.29, 0.135), highland);
+      albedo = mix(albedo, vec3(0.86, 0.53, 0.26), terrain * highland * 0.72);
+      albedo = mix(albedo, vec3(0.97, 0.76, 0.53), ridges * highland * 0.34);
+      /* Sal seca en el fondo de las cuencas, donde el terreno es bajo. */
+      albedo = mix(albedo, vec3(0.72, 0.63, 0.52), veins * (1.0 - highland) * 0.42);
+      /* Y el relieve también tiñe: las crestas están más expuestas y pierden
+         el óxido; los valles lo acumulan. */
+      albedo = mix(albedo, vec3(0.9, 0.66, 0.42), smoothstep(0.3, 0.95, height) * 0.2);
+      albedo = mix(albedo, vec3(0.1, 0.04, 0.03), smoothstep(-0.3, -0.95, height) * 0.28);
+      albedo = mix(albedo, vec3(0.8, 0.6, 0.44), haze * 0.3);
+      albedo = mix(albedo, vec3(0.88, 0.87, 0.85), polar * 0.55);
+      gloss = 0.045 + haze * 0.04 + polar * 0.2 + veins * 0.05;
       specularPower = 26.0;
-      atmosphere = vec3(1.0, 0.61, 0.34);
-      atmosphereWeight = 1.06;
+      atmosphere = vec3(1.0, 0.63, 0.36);
+      atmosphereWeight = 1.18;
     } else if (uKind == 2) {
       /*
         Tesseracto: vigas de verdad, no aristas.
@@ -524,7 +588,18 @@ const BODY_FRAGMENT = /* glsl */ `
       /* Filo contra el cielo: sin este rebote la silueta se come el objeto. */
       emissive += vec3(0.055, 0.072, 0.126) * fresnel * 1.15;
 
-      if (vSurfaceMask > 1.5) {
+      if (vSurfaceMask > 2.5) {
+        /*
+          Pozo interior. Mismo metal, canal más frío y más intenso: la
+          temperatura de la luz es lo que separa el fondo del túnel de su borde
+          cuando el objeto entero mide cuarenta píxeles. El ámbar queda fuera,
+          el azul dentro, y entre los dos hay dieciséis tirantes convergiendo.
+        */
+        albedo = vec3(0.09, 0.098, 0.115);
+        gloss = 0.6;
+        emissive = mix(uAccent, uSecondary, 0.72) * channel * travelling * 3.1;
+        emissive += uSecondary * fresnel * 0.35;
+      } else if (vSurfaceMask > 1.5) {
         /* Jaula interior: la parte de la estructura que ya sólo es luz. */
         albedo = vec3(0.0);
         gloss = 0.0;
@@ -546,28 +621,77 @@ const BODY_FRAGMENT = /* glsl */ `
       /*
         Cooper: planeta inventado, frío y ordenado. Las bandas son atmosféricas,
         no una copia de Saturno; el calor aparece sólo donde Gargantúa lo toca.
+
+        La versión anterior era correcta y LAVADA: un teal casi uniforme con
+        bandas de bajo contraste. Aquí el rango tonal se abre por los dos
+        extremos —cinturón ecuatorial más claro y cálido, casquetes fríos y
+        oscuros— y las tormentas dejan de ser textura para convertirse en
+        óvalos localizados a una latitud concreta, como en un gigante real.
       */
       float weather = fbm(vLocal * 3.1 + vec3(0.0, uTime * 0.003, 0.0));
       float latitude = 0.5 + 0.5 * cos(vLocal.y * 13.0 + weather * 1.8);
       float fineBands = 0.5 + 0.5 * sin(vLocal.y * 29.0 + weather * 3.5);
       /* Una octava: los vórtices son textura de nube, no relieve. */
-      float vortices = noise(vLocal * 8.4 + vec3(1.7, uTime * 0.002, 5.2));
-      albedo = mix(vec3(0.035, 0.085, 0.15), vec3(0.19, 0.39, 0.5), weather);
-      albedo = mix(albedo, vec3(0.46, 0.59, 0.65), latitude * 0.2);
-      albedo = mix(albedo, vec3(0.21, 0.34, 0.48), fineBands * 0.12);
-      albedo = mix(albedo, vec3(0.6, 0.7, 0.75), vortices * latitude * 0.08);
+      /* Muestreo anisótropo: comprimir la latitud alarga los rasgos en
+         longitud, que es como se ven las tormentas de un gigante gaseoso.
+         Sale de la misma llamada, así que no cuesta nada. */
+      float vortices = noise(
+        vec3(vLocal.x, vLocal.y * 3.4, vLocal.z) * 8.4
+          + vec3(1.7, uTime * 0.002, 5.2)
+      );
+      /* Cinturón ecuatorial y casquetes: el eje del planeta tiene que verse. */
+      float equator = 1.0 - smoothstep(0.05, 0.46, abs(vLocal.y));
+      float polar = smoothstep(0.42, 0.68, abs(vLocal.y));
+      /* Óvalo de tormenta: sólo donde coinciden vórtice fuerte y latitud media. */
+      float storm = smoothstep(0.74, 0.95, vortices)
+                  * smoothstep(0.1, 0.3, abs(vLocal.y))
+                  * (1.0 - polar);
+      albedo = mix(vec3(0.028, 0.072, 0.135), vec3(0.2, 0.42, 0.53), weather);
+      albedo = mix(albedo, vec3(0.52, 0.63, 0.66), latitude * 0.24);
+      albedo = mix(albedo, vec3(0.18, 0.31, 0.46), fineBands * 0.16);
+      albedo = mix(albedo, vec3(0.62, 0.66, 0.6), equator * 0.26);
+      albedo = mix(albedo, vec3(0.055, 0.13, 0.24), polar * 0.44);
+      albedo = mix(albedo, vec3(0.78, 0.81, 0.79), storm * 0.34);
       gloss = 0.16 + fineBands * 0.07 + vortices * 0.035;
       specularPower = 34.0;
-      atmosphere = vec3(0.31, 0.66, 0.78);
-      atmosphereWeight = 0.9;
+      atmosphere = vec3(0.34, 0.68, 0.82);
+      atmosphereWeight = 1.18;
+
       /*
-        Sombra del plano de anillos. No requiere shadow map y es lo que hace que
-        planeta y anillos pertenezcan al mismo objeto en vez de ser dos piezas
-        superpuestas. Se ensancha un poco y gana un núcleo más oscuro: con la
-        franja anterior, apenas contenida, el anillo parecía pegado encima.
+        SOMBRA DE LOS ANILLOS, proyectada de verdad.
+
+        Antes era una franja de latitud fija, dependiente sólo de |y|. Se veía
+        como una banda pintada alrededor del ecuador y no se movía con la luz,
+        de modo que planeta y anillos seguían pareciendo dos piezas superpuestas
+        —que es justo lo que la sombra tenía que resolver.
+
+        Ahora se traza el rayo. La única fuente del sistema está en el origen,
+        así que basta llevar su dirección al espacio local del planeta —la
+        deja preparada el vertex shader en vLightLocal— y cortar el plano del
+        anillo, que en el espacio del planeta es y = 0. Si el corte cae dentro del anillo, ese punto está a la sombra;
+        y la densidad usa las MISMAS bandas y la MISMA división que dibuja el
+        anillo, así que la sombra tiene su estructura, con la división limpia
+        cruzando el planeta. Sin shadow map y sin un solo fbm más.
       */
-      float ringOcclusion = 1.0 - smoothstep(0.045, 0.23, abs(vLocal.y));
-      materialOcclusion = 1.0 - ringOcclusion * day * 0.42;
+      vec3 lightLocal = normalize(vLightLocal);
+      float ringShadow = 0.0;
+      // Con la luz casi en el plano del anillo la sombra se degrada sola: el
+      // rayo recorre una distancia enorme y el denominador la desvanece.
+      if (abs(lightLocal.y) > 0.035) {
+        float travel = -vLocal.y / lightLocal.y;
+        if (travel > 0.0) {
+          vec3 crossing = vLocal + lightLocal * travel;
+          float ringRadius = length(crossing.xz);
+          float bands = 0.5 + 0.5 * cos((ringRadius - 0.82) * 74.0);
+          float gap = smoothstep(0.988, 1.012, ringRadius)
+                    * (1.0 - smoothstep(1.048, 1.072, ringRadius));
+          float inside = smoothstep(0.78, 0.84, ringRadius)
+                       * (1.0 - smoothstep(1.2, 1.28, ringRadius));
+          ringShadow = inside * (1.0 - gap * 0.92)
+                     * (0.55 + 0.45 * smoothstep(0.16, 0.72, bands));
+        }
+      }
+      materialOcclusion = 1.0 - ringShadow * 0.72;
     } else if (uKind == 4) {
       /*
         Endurance: mantas térmicas y panel pintado, no metal cromado.
@@ -583,17 +707,46 @@ const BODY_FRAGMENT = /* glsl */ `
       float seam = surface.b;
       float microRoughness = surface.a;
       float macroVariation = fbm(vLocal * 3.6 + vec3(2.7, 0.8, 5.1));
-      albedo = mix(vec3(0.25, 0.27, 0.29), vec3(0.9, 0.885, 0.83), blanket);
-      albedo = mix(albedo, vec3(0.86, 0.64, 0.39), warmFoil * 0.11);
-      albedo = mix(albedo, vec3(0.055, 0.065, 0.078), seam * 0.68);
+      /*
+        VALOR, que es lo que ordena una silueta a 160 px.
+
+        Con toda la nave en manta clara el conjunto se leía como una mancha
+        blanca con motas oscuras: había piezas, pero no jerarquía. La manta
+        estándar —rieles, cordones, satélites— baja a gris medio y deja el
+        blanco casi puro para los cuatro módulos principales. Tres valores
+        separados hacen el trabajo que doce siluetas iguales no hacían.
+      */
+      albedo = mix(vec3(0.22, 0.235, 0.255), vec3(0.63, 0.635, 0.61), blanket);
+      albedo = mix(albedo, vec3(0.86, 0.64, 0.39), warmFoil * 0.34);
+      /* La costura pesaba 0.68 y dibujaba una rejilla casi negra sobre cada
+         cara: a tamaño de Hero la nave parecía forrada de azulejos. Una manta
+         térmica real tiene juntas, pero no son surcos —van cosidas, no
+         mecanizadas— y a esta distancia valen un cuarto de lo que valían. */
+      albedo = mix(albedo, vec3(0.12, 0.13, 0.145), seam * 0.34);
       albedo *= 0.9 + macroVariation * 0.17;
       gloss = mix(0.34, 0.13, microRoughness);
       specularPower = 38.0;
       specularStrength = 0.72;
 
-      /* El full stack del hub se separa en grafito satinado sin pagar otro
-         draw: la máscara viaja como atributo y la textura sigue siendo común. */
-      if (vSurfaceMask > 1.5) {
+      /* Cuatro acabados dentro del mismo draw: la máscara viaja como atributo
+         de vértice y la textura sigue siendo común. */
+      /* El canal de manta ya lleva la junta restada, así que arrastra consigo
+         la rejilla de paneles. El ala la devuelve: un plano sustentador tiene
+         largueros en el sentido de la cuerda, no un damero. */
+      float smoothPlate = clamp(blanket + seam * 0.4, 0.0, 1.0);
+
+      if (vSurfaceMask > 2.5) {
+        /*
+          Radiador. No es «una caja más oscura»: es la única superficie de la
+          nave con estriado DIRECCIONAL, y esa dirección —perpendicular al
+          brazo— es lo que la separa de todo lo demás en una silueta de 160 px.
+        */
+        float ribs = smoothstep(0.28, 0.5, abs(fract(vUv.x * 13.0) - 0.5));
+        albedo = mix(vec3(0.052, 0.062, 0.079), vec3(0.2, 0.225, 0.255), ribs);
+        gloss = 0.28 + ribs * 0.3;
+        specularPower = 44.0;
+        specularStrength = 0.58;
+      } else if (vSurfaceMask > 1.5) {
         albedo = mix(vec3(0.11, 0.14, 0.17), vec3(0.49, 0.54, 0.58), blanket * 0.55);
         albedo = mix(albedo, vec3(0.04, 0.055, 0.07), seam * 0.72);
         gloss = 0.46;
@@ -601,37 +754,64 @@ const BODY_FRAGMENT = /* glsl */ `
       } else if (vSurfaceMask > 0.5) {
         /* Módulos principales: manta más clara y reflectante. La repetición
            cada 90° crea jerarquía sin sumar colores ni paneles aleatorios. */
-        albedo = mix(vec3(0.2, 0.23, 0.25), vec3(0.96, 0.94, 0.87), blanket);
-        albedo = mix(albedo, vec3(0.055, 0.064, 0.072), seam * 0.62);
+        albedo = mix(vec3(0.2, 0.23, 0.25), vec3(0.99, 0.97, 0.92), blanket);
+        albedo = mix(albedo, vec3(0.13, 0.14, 0.155), seam * 0.3);
         gloss = mix(0.46, 0.2, microRoughness);
         specularPower = 48.0;
       }
     } else if (uKind == 5) {
-      /* Ranger: panelado térmico real, cabina oscura y dos tapas de servicio.
-         Todo comparte un draw; la máscara selecciona material dentro del casco. */
-      vec4 surface = texture2D(uSurfaceMap, fract(vUv));
+      /*
+        Ranger: chapa aeronáutica, no manta térmica.
+
+        La textura de esta nave lleva junta marcada y remache; aquí se traduce
+        en un metal más oscuro y bastante más pulido que el de la Endurance —una
+        lanzadera de veinte metros se fabrica, no se forra— y con la variación
+        de rugosidad subiendo al doble. Es lo que hace que el barrido especular
+        del disco recorra el fuselaje en vez de dejarlo plano.
+      */
+      vec4 surface = texture2D(uSurfaceMap, fract(vUv * 1.15));
       float blanket = surface.r;
       float warmFoil = surface.g;
       float seam = surface.b;
       float microRoughness = surface.a;
-      albedo = mix(vec3(0.23, 0.27, 0.31), vec3(0.82, 0.84, 0.82), blanket);
-      albedo = mix(albedo, vec3(0.74, 0.61, 0.43), warmFoil * 0.09);
-      albedo = mix(albedo, vec3(0.045, 0.06, 0.075), seam * 0.7);
-      gloss = mix(0.52, 0.2, microRoughness);
-      specularPower = 48.0;
-      specularStrength = 0.88;
+      albedo = mix(vec3(0.185, 0.21, 0.245), vec3(0.83, 0.85, 0.86), blanket);
+      albedo = mix(albedo, vec3(0.74, 0.61, 0.43), warmFoil * 0.22);
+      albedo = mix(albedo, vec3(0.06, 0.075, 0.095), seam * 0.55);
+      gloss = mix(0.74, 0.26, microRoughness);
+      specularPower = 62.0;
+      specularStrength = 1.05;
 
-      if (vSurfaceMask > 0.5 && vSurfaceMask < 1.5) {
+      /* El canal de manta ya lleva la junta restada, así que arrastra consigo
+         la rejilla de paneles. El ala la devuelve: un plano sustentador tiene
+         largueros en el sentido de la cuerda, no un damero. */
+      float smoothPlate = clamp(blanket + seam * 0.4, 0.0, 1.0);
+
+      if (vSurfaceMask > 2.5) {
+        /*
+          Plano sustentador. Un valor propio, más oscuro y más mate que el
+          fuselaje: sin esa diferencia el ala y el cuerpo se funden en una sola
+          mancha y la nave pierde su planta justo al tamaño en que se mira.
+          Las líneas de cuerda van con la envergadura, como los largueros.
+        */
+        float chordwise = smoothstep(0.42, 0.5, abs(fract(vUv.y * 4.0) - 0.5));
+        albedo = mix(vec3(0.115, 0.135, 0.165), vec3(0.46, 0.49, 0.52), 0.3 + smoothPlate * 0.45);
+        albedo = mix(albedo, vec3(0.05, 0.062, 0.078), chordwise * 0.45);
+        gloss = mix(0.5, 0.2, microRoughness);
+        specularPower = 46.0;
+        specularStrength = 0.82;
+      } else if (vSurfaceMask > 1.5) {
+        /* Tapa de servicio. Bajó de saturación: en naranja pleno eran lo
+           primero que se veía de la nave, por delante de la proa. */
+        albedo = mix(vec3(0.17, 0.075, 0.03), vec3(0.56, 0.28, 0.09), smoothPlate);
+        gloss = 0.31;
+        specularPower = 38.0;
+      } else if (vSurfaceMask > 0.5) {
         /* Cristal polarizado: casi negro, con suficiente azul para recuperar
            volumen cuando el barrido especular cruza la cabina. */
         albedo = vec3(0.018, 0.055, 0.075);
         gloss = 0.96;
         specularPower = 96.0;
         specularStrength = 1.22;
-      } else if (vSurfaceMask >= 1.5) {
-        albedo = mix(vec3(0.25, 0.085, 0.025), vec3(0.83, 0.38, 0.09), blanket);
-        gloss = 0.31;
-        specularPower = 38.0;
       }
     } else if (uKind == 6) {
       /*
@@ -656,7 +836,7 @@ const BODY_FRAGMENT = /* glsl */ `
       albedo = mix(albedo, uSecondary * 0.48, (1.0 - bands) * 0.12);
       emissive = key * abs(ndl) * bandMask * 0.13;
       gloss = 0.34;
-      outputAlpha = 0.24 + bandMask * 0.56;
+      outputAlpha = 0.17 + bandMask * 0.52;
     } else if (uKind == 7) {
       /* Trusses, ejes y hábitat: metal oscuro con grano direccional. El
          contraste ancho sobrevive al tamaño del Hero; no es greeble fino. */
@@ -695,6 +875,34 @@ const BODY_FRAGMENT = /* glsl */ `
       return;
     }
 
+    /*
+      El TERMINADOR es lo que hace que una esfera parezca un mundo.
+
+      El primer intento usaba lambert crudo más una envolvente ancha: el
+      resultado era una bola uniformemente iluminada, sin cara noche, y eso es
+      exactamente el aspecto «de plástico». Lo que se lee a esta distancia es la
+      silueta, la media luna encendida y el filo de atmósfera. Todo el
+      presupuesto de shader va ahí.
+
+      Se resuelve DESPUÉS de los materiales porque el relieve de cada mundo
+      entra aquí: es el mismo terminador, corrido punto a punto por la
+      pendiente del terreno.
+    */
+    float shadedNdl = clamp(ndl + reliefOffset, -1.0, 1.0);
+    float day = smoothstep(-0.08, 0.34, shadedNdl);
+    /* Oscurecimiento de limbo: el borde del disco iluminado cae un poco. */
+    float limb = 0.55 + 0.45 * pow(max(dot(normal, view), 0.0), 0.4);
+    /*
+      Y el relieve modula TAMBIÉN la cara ya iluminada.
+
+      La envolvente del terminador satura por encima de 0.34, así que
+      corregir sólo su argumento dejaba el hemisferio diurno completamente
+      plano: la topografía sólo se veía en la franja del amanecer. El segundo
+      término es el que pone ladera iluminada y ladera en sombra en pleno día,
+      que es donde el ojo lee la orografía.
+    */
+    float diffuse = day * limb * clamp(1.0 + reliefOffset * 2.6, 0.4, 1.6);
+
     /* Los mundos pierden más fill en su hemisferio nocturno. El terminador
        gana una línea de penumbra cálida: la dirección hacia Gargantúa se
        entiende antes de analizar conscientemente la luz. */
@@ -705,7 +913,7 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 color = albedo * (
       key * diffuse * materialOcclusion + fill * nightFill
     );
-    float terminatorBand = exp(-abs(ndl - 0.055) * 15.0) * (1.0 - day * 0.34);
+    float terminatorBand = exp(-abs(shadedNdl - 0.055) * 15.0) * (1.0 - day * 0.34);
     if (uKind == 0 || uKind == 1 || uKind == 3) {
       color += albedo * key * terminatorBand * 0.09;
     }
@@ -774,6 +982,31 @@ const BODY_FRAGMENT = /* glsl */ `
       }
     }
 
+    /*
+      CONTRALUZ de la Ranger.
+
+      Está colocada por delante del plano del disco, así que la única fuente del
+      sistema le llega por detrás: 122° entre la luz y la cámara. Con el
+      tratamiento común eso da una nave negra, y era justo lo contrario de lo
+      que pide la dirección de arte —«iluminación cálida mucho más clara
+      proveniente de Gargantúa»—.
+
+      La respuesta correcta a contraluz no es subir el difuso, que no existe:
+      es el filo. Aquí la luz envuelve el canto —el término de envoltura deja
+      pasar también algo de la cara oscura, como hace una fuente extensa— y el
+      término ámbar corto dibuja la línea encendida del borde de ataque, de la
+      cabina y de las góndolas.
+      Es la lectura de cine para un objeto delante de una fuente enorme.
+    */
+    if (uKind == 5) {
+      float wrap = smoothstep(-0.62, 0.3, ndl);
+      color += key * fresnel * wrap * 0.62;
+      color += vec3(1.0, 0.72, 0.42) * pow(fresnel, 1.5) * wrap * 0.3;
+      // Y el relleno del cielo por el lado opuesto, para que la sombra tenga
+      // materia en vez de ser un recorte negro.
+      color += albedo * vec3(0.05, 0.062, 0.094);
+    }
+
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
        cuerpo del fondo negro sin dibujarle un contorno. */
     float warmRim = fresnel * smoothstep(-0.25, 0.42, ndl);
@@ -820,19 +1053,37 @@ function surfaceNoise(x: number, y: number, seed: number): number {
   return ((value ^ (value >>> 16)) >>> 0) / 4_294_967_295;
 }
 
+/** Recorte a [0,1]. Aparece en cada canal de la textura de casco. */
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
 /**
  * Textura de casco generada en memoria.
  *
  * No es ruido pegado encima: empaqueta brillo de manta, tono térmico, costura
- * y micro-rugosidad en RGBA. Los UV de cada módulo repiten la misma gramática,
- * pero la variación de macroescala del shader evita que parezcan clones. Son
- * 64 KiB por nave en memoria y cero bytes de red; `flat` ni siquiera importa
- * este módulo.
+ * y micro-rugosidad en RGBA. Son 64 KiB por nave en memoria y cero bytes de
+ * red; `flat` ni siquiera importa este módulo.
+ *
+ * ── Por qué las dos naves NO comparten parámetros ───────────────────────────
+ *
+ * La versión anterior usaba una sola gramática con una celda distinta, y el
+ * resultado era el mismo damero en las dos: dieciséis cuadros por cara con
+ * medio punto de contraste entre vecinos. Sobre el módulo de una estación eso
+ * pasa por manta acolchada; sobre el ala de una lanzadera parecía suelo de
+ * baldosas, y era la mitad de por qué la Ranger se leía como asset barato.
+ *
+ * Ahora la Endurance lleva manta térmica —clara, casi uniforme, con acolchado
+ * fino y costuras suaves— y la Ranger, panelado aeronáutico: chapa más oscura,
+ * junta marcada y fila de remaches. La misma textura, dos oficios distintos.
  */
 function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
   const size = 128;
-  const cell = kind === "endurance" ? 32 : 24;
-  const seed = kind === "endurance" ? 41 : 73;
+  const blanketed = kind === "endurance";
+  // Celda pequeña = panel pequeño. La manta se acolcha cada 16 px; la chapa de
+  // la Ranger va en paneles de 32 px porque su UV cubre el ala entera.
+  const cell = blanketed ? 24 : 32;
+  const seed = blanketed ? 41 : 73;
   const data = new Uint8Array(size * size * 4);
 
   for (let y = 0; y < size; y++) {
@@ -852,33 +1103,47 @@ function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
         cell - 1 - localX,
         cell - 1 - localY,
       );
-      const seam = edgeDistance < 1.5 ? 1 : edgeDistance < 2.6 ? 0.42 : 0;
-      const quilt =
-        0.5 +
-        0.5 *
-          Math.sin((x / size) * Math.PI * 18 + Math.sin((y / size) * 9));
-      const blanket = Math.min(
-        1,
-        Math.max(
-          0,
-          (kind === "endurance" ? 0.69 : 0.62) +
-            broad * 0.2 +
-            (grain - 0.5) * 0.1 -
-            seam * 0.42,
-        ),
+      // Costura: dura en la chapa, apenas insinuada en la manta.
+      const seam = blanketed
+        ? edgeDistance < 1
+          ? 0.34
+          : edgeDistance < 1.8
+            ? 0.13
+            : 0
+        : edgeDistance < 1.2
+          ? 1
+          : edgeDistance < 2.4
+            ? 0.45
+            : 0;
+      // Remaches: sólo la Ranger, y sólo sobre la junta. Es el detalle que
+      // convierte un plano liso en una pieza fabricada.
+      const rivet =
+        !blanketed && edgeDistance < 2.6 && (x + y) % 8 === 0 ? 0.55 : 0;
+      const quilt = blanketed
+        ? 0.5 + 0.5 * Math.sin((x / size) * Math.PI * 34 + Math.sin((y / size) * 21))
+        : 0.5 + 0.5 * Math.sin((x / size) * Math.PI * 12);
+
+      const blanket = clamp01(
+        blanketed
+          ? // Manta clara y CASI uniforme: ±0.05 entre paneles vecinos, no ±0.2.
+            0.84 + (broad - 0.5) * 0.1 + (grain - 0.5) * 0.055 - seam * 0.3
+          : 0.6 + (broad - 0.5) * 0.16 + (grain - 0.5) * 0.07 - seam * 0.4 + rivet * 0.3,
       );
-      const warmth = Math.min(
-        1,
-        Math.max(0, broad * 0.62 + quilt * 0.18 - seam * 0.24),
+      // Lámina dorada: parches raros y grandes, no un tinte general.
+      const warmth = clamp01(
+        blanketed
+          ? Math.max(0, broad - 0.62) * 2.4 + quilt * 0.08
+          : Math.max(0, broad - 0.7) * 1.8,
       );
-      const roughness = Math.min(
-        1,
-        Math.max(0, 0.46 + grain * 0.32 + quilt * 0.12),
+      const roughness = clamp01(
+        blanketed
+          ? 0.52 + grain * 0.28 + quilt * 0.14
+          : 0.3 + grain * 0.24 + quilt * 0.1 - rivet * 0.2,
       );
 
       data[offset] = Math.round(blanket * 255);
       data[offset + 1] = Math.round(warmth * 255);
-      data[offset + 2] = Math.round(seam * 255);
+      data[offset + 2] = Math.round(Math.max(seam, rivet) * 255);
       data[offset + 3] = Math.round(roughness * 255);
     }
   }
@@ -1052,22 +1317,33 @@ function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
 }
 
 /**
- * Endurance de Interstellar: silueta cinematográfica traducida a tiempo real.
+ * Endurance: el objeto con mejor diseño industrial del sistema.
  *
- * ── Qué fallaba en la versión anterior ──────────────────────────────────────
+ * ── Qué fallaba ─────────────────────────────────────────────────────────────
  *
- * La reconstrucción anterior tenía doce radios, dos toros y una espina. En el
- * frame se comprimía en una cruz: grande, pero ajena a la nave de la película.
+ * La versión anterior tenía piezas —doce cápsulas, cuatro motores, un mástil—
+ * pero no JERARQUÍA. Doce módulos del mismo peso repartidos cada 30°, brazos de
+ * dos centímetros de canto que a tamaño de Hero no existen y un hub más pequeño
+ * que cualquiera de sus módulos: en pantalla eso no es una nave, es una nube de
+ * cubos. Se leía «tiene muchas piezas», no «entiendo cómo se construyó esto».
  *
- * ── Lo que la hace legible ahora ────────────────────────────────────────────
+ * ── El orden de lectura, ahora explícito ────────────────────────────────────
  *
- * 1. **Doce cápsulas separadas.** El vacío entre módulos es parte de la forma.
- * 2. **Hub + cuatro trusses.** La jerarquía radial se entiende antes del detalle.
- * 3. **Full stack.** Dos Ranger y dos Lander cargan el hub compacto.
- * 4. **Cuatro bloques de motor.** Sus doce campanas cuentan ingeniería real.
+ * 1. **Núcleo.** Barril axial con collar de atraque a proa y bloque de cuatro
+ *    campanas a popa. Es la pieza individual más grande y la única que rompe el
+ *    plano del anillo: se ve primero y explica dónde está el eje.
+ * 2. **Estructura primaria.** Dos rieles continuos cierran la circunferencia
+ *    ENTERA, también donde no hay módulos. La rueda existe aunque falte carga,
+ *    y ése es el dato que convierte doce cajas en una nave.
+ * 3. **Cuatro brazos.** Celosía de verdad —dos cordones, diagonales alternas y
+ *    travesaños— con canto suficiente para leerse a 160 px de ancho total.
+ * 4. **Cuatro grupos de tres módulos.** Un módulo principal por brazo y dos
+ *    satélites flanqueándolo a 22°, con 46° de riel desnudo entre grupos. La
+ *    agrupación es lo que convierte doce repeticiones en cuatro decisiones.
+ * 5. **Sistemas secundarios.** Radiadores, paneles de servicio, dos Ranger y
+ *    dos Lander atracadas y balizas. Detalle, y sólo después de la silueta.
  *
- * Cuatro draws: manta/panel, estructura, servicio y balizas. El detalle vive en
- * geometría fusionada, no en un kitbash de objetos independientes.
+ * Sigue costando cuatro draws: manta/panel, estructura, servicio y balizas.
  */
 function enduranceModel(input: SceneBodyInput): BodyModel {
   const hull = bodyMaterial(input, KIND.ship, {
@@ -1083,245 +1359,405 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   assembly.name = "endurance-assembly";
   root.add(assembly);
 
-  const MODULES = 12;
-  const RING = 0.82;
-  const MODULE_RADIAL = 0.31;
-  const MODULE_TANGENTIAL = 0.21;
-  const MODULE_DEPTH = 0.19;
-  const STEP = (Math.PI * 2) / MODULES;
-  // Cuatro familias repetidas cada 90°: jerarquía legible, no kitbash.
-  const PRIMARY_MODULES = new Set([0, 3, 6, 9]);
-  const ENGINE_MODULES = new Set([1, 4, 7, 10]);
-  const LANDING_MODULES = new Set([2, 5, 8, 11]);
+  /* Acabados dentro del mismo draw: manta estándar, manta principal —más clara
+     y reflectante—, grafito satinado y radiador acanalado. */
+  const BLANKET = 0;
+  const PRIMARY_BLANKET = 1;
+  const GRAPHITE = 2;
+  const RADIATOR = 3;
+
+  const GROUPS = 4;
+  const MODULES_PER_GROUP = 3;
+  /** Radio de la circunferencia de módulos. Todo lo demás se mide contra esto. */
+  const RING = 0.88;
+  const GROUP_STEP = (Math.PI * 2) / GROUPS;
+  /** Separación dentro del grupo. 22° dejan 46° de riel desnudo entre grupos. */
+  const SLOT_SPREAD = (22 * Math.PI) / 180;
+  /** Semiseparación axial de los dos rieles primarios. */
+  const RAIL_Z = 0.125;
 
   const hullParts: THREE.BufferGeometry[] = [];
-  const structureParts: THREE.BufferGeometry[] = [
-    // Hub multipuerto: tres diámetros claros, sin una nube de piezas iguales.
-    placed(
-      new THREE.CylinderGeometry(0.17, 0.17, 0.27, 14),
-      [0, 0, 0],
-      [Math.PI / 2, 0, 0],
-    ),
-    new THREE.TorusGeometry(0.225, 0.027, 6, 24),
-    placed(
-      new THREE.TorusGeometry(0.095, 0.012, 5, 16),
-      [0, 0, 0.155],
-      [Math.PI / 2, 0, 0],
-    ),
-  ];
+  const structureParts: THREE.BufferGeometry[] = [];
+  const serviceParts: THREE.BufferGeometry[] = [];
+  const lightParts: THREE.BufferGeometry[] = [];
+
+  /* ── 1. Núcleo ─────────────────────────────────────────────────────────────
+     El eje va en Z, perpendicular al plano del anillo. El barril mide 0.5 de
+     largo por 0.48 de diámetro: más volumen que el módulo principal, que es
+     exactamente lo que hacía falta para que el centro se lea como centro. */
   hullParts.push(
-    // Casco claro del hub. Es deliberadamente mayor que cualquier detalle.
     surfaceMasked(
       placed(
-        new THREE.CylinderGeometry(0.205, 0.205, 0.145, 14),
+        new THREE.CylinderGeometry(0.24, 0.24, 0.5, 18),
         [0, 0, 0],
         [Math.PI / 2, 0, 0],
       ),
-      1,
+      PRIMARY_BLANKET,
     ),
+    // Proa: collar de atraque troncocónico. Por aquí entra todo lo que llega.
     surfaceMasked(
       placed(
-        new THREE.CylinderGeometry(0.105, 0.13, 0.105, 12),
-        [0, 0, 0.165],
+        new THREE.CylinderGeometry(0.125, 0.215, 0.22, 16),
+        [0, 0, 0.33],
         [Math.PI / 2, 0, 0],
       ),
-      2,
+      PRIMARY_BLANKET,
+    ),
+    // Popa: sección de servicio en grafito, más estrecha y claramente distinta.
+    surfaceMasked(
+      placed(
+        new THREE.CylinderGeometry(0.185, 0.205, 0.24, 16),
+        [0, 0, -0.32],
+        [Math.PI / 2, 0, 0],
+      ),
+      GRAPHITE,
     ),
   );
-  const serviceParts: THREE.BufferGeometry[] = [];
-  const lightParts: THREE.BufferGeometry[] = [
-    placed(new THREE.SphereGeometry(0.021, 8, 6), [0.145, 0.145, 0.105]),
-    placed(new THREE.SphereGeometry(0.021, 8, 6), [-0.145, -0.145, 0.105]),
-  ];
 
-  /* Cuatro brazos de doble larguero. A esta escala una celosía literal sería
-     ruido subpíxel; dos rails y tres travesaños cuentan la misma ingeniería y
-     conservan aire entre hub y anillo. */
-  const ARM_INNER = 0.24;
-  const ARM_OUTER = RING - 0.18;
-  const ARM_LENGTH = ARM_OUTER - ARM_INNER;
-  const ARM_MIDDLE = (ARM_INNER + ARM_OUTER) / 2;
-  for (const index of PRIMARY_MODULES) {
-    const angle = Math.PI / 2 - index * STEP;
+  structureParts.push(
+    // Cinturón: el nudo donde el núcleo recoge la carga de los cuatro brazos.
+    new THREE.TorusGeometry(0.3, 0.052, 8, 26),
+    placed(new THREE.TorusGeometry(0.25, 0.018, 5, 18), [0, 0, 0.2]),
+    placed(new THREE.TorusGeometry(0.25, 0.018, 5, 18), [0, 0, -0.19]),
+    // Mástil y reflector de alta ganancia: escala y función en dos piezas.
+    placed(
+      new THREE.CylinderGeometry(0.012, 0.012, 0.26, 7),
+      [0, 0, 0.55],
+      [Math.PI / 2, 0, 0],
+    ),
+    placed(
+      new THREE.ConeGeometry(0.075, 0.03, 12, 1, true),
+      [0, 0, 0.69],
+      [Math.PI / 2, 0, 0],
+    ),
+  );
+
+  // Propulsión principal: cuatro campanas alrededor del eje, no doce repartidas
+  // por el anillo. Una nave empuja desde su centro de masas.
+  for (let index = 0; index < 4; index++) {
+    const angle = Math.PI / 4 + index * (Math.PI / 2);
+    const x = Math.cos(angle) * 0.115;
+    const y = Math.sin(angle) * 0.115;
+    structureParts.push(
+      placed(
+        new THREE.CylinderGeometry(0.05, 0.082, 0.22, 10, 1, true),
+        [x, y, -0.55],
+        [Math.PI / 2, 0, 0],
+      ),
+      placed(new THREE.TorusGeometry(0.079, 0.011, 5, 12), [x, y, -0.655]),
+    );
+  }
+
+  /* ── 2. Estructura primaria: la circunferencia completa ────────────────────
+     Dos rieles y sus travesaños. Es la pieza que faltaba: sin ella los módulos
+     eran cubos suspendidos a la misma distancia del centro por casualidad. */
+  /* Los rieles van en el material de CASCO, no en el de estructura. Es una
+     decisión de lectura, no de física: a tamaño de Hero el metal oscuro
+     desaparece contra el fondo, y lo que tiene que verse desde el primer
+     píxel es la circunferencia. Un aro claro dice «nave de anillo» antes de
+     que se distinga un solo módulo. */
+  hullParts.push(
+    surfaceMasked(
+      placed(new THREE.TorusGeometry(RING, 0.032, 6, 52), [0, 0, RAIL_Z]),
+      BLANKET,
+    ),
+    surfaceMasked(
+      placed(new THREE.TorusGeometry(RING, 0.032, 6, 52), [0, 0, -RAIL_Z]),
+      BLANKET,
+    ),
+  );
+  const TIES = 24;
+  for (let index = 0; index < TIES; index++) {
+    const angle = (index / TIES) * Math.PI * 2;
+    structureParts.push(
+      placed(
+        new THREE.BoxGeometry(0.028, 0.024, RAIL_Z * 2),
+        [Math.cos(angle) * RING, Math.sin(angle) * RING, 0],
+        [0, 0, angle],
+      ),
+    );
+  }
+
+  /* ── 3. Cuatro brazos ──────────────────────────────────────────────────────
+     Dos cordones de 55 mm de sección, cinco travesaños y cuatro diagonales
+     alternas. A tamaño de Hero cada brazo mide unos 3 px de canto: por debajo
+     de eso no hay celosía que valga, y por eso los cordones anteriores —de 22
+     mm— sencillamente no existían en pantalla. */
+  const ARM_INNER = 0.34;
+  const ARM_OUTER = RING - 0.24;
+  const ARM_BAYS = 4;
+  /** Semiseparación tangencial de los cordones. */
+  const CHORD = 0.095;
+
+  for (let group = 0; group < GROUPS; group++) {
+    // Índice 0 = las 12; sentido horario, como el diagrama de producción.
+    const angle = Math.PI / 2 - group * GROUP_STEP;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    for (const offset of [-0.038, 0.038]) {
+    /** Punto del brazo en coordenadas (radio, lado del cordón). */
+    const at = (radius: number, side: number): VectorTuple => [
+      cos * radius - sin * side * CHORD,
+      sin * radius + cos * side * CHORD,
+      0,
+    ];
+
+    // Cordones en casco claro por el mismo motivo que los rieles: son la
+    // segunda línea que el ojo tiene que encontrar, y no puede ser negra.
+    for (const side of [-1, 1]) {
+      hullParts.push(
+        surfaceMasked(
+          placed(
+            new THREE.BoxGeometry(ARM_OUTER - ARM_INNER, 0.055, 0.055),
+            at((ARM_INNER + ARM_OUTER) / 2, side),
+            [0, 0, angle],
+          ),
+          BLANKET,
+        ),
+      );
+    }
+
+    const bayLength = (ARM_OUTER - ARM_INNER) / ARM_BAYS;
+    for (let bay = 0; bay <= ARM_BAYS; bay++) {
+      const radius = ARM_INNER + bay * bayLength;
       structureParts.push(
         placed(
-          new THREE.BoxGeometry(ARM_LENGTH, 0.022, 0.032),
-          [
-            cos * ARM_MIDDLE - sin * offset,
-            sin * ARM_MIDDLE + cos * offset,
-            0,
-          ],
+          new THREE.BoxGeometry(0.036, CHORD * 2, 0.036),
+          [cos * radius, sin * radius, 0],
           [0, 0, angle],
         ),
       );
-    }
-    for (const radius of [0.31, 0.45, 0.59]) {
+      if (bay === ARM_BAYS) continue;
+      // Diagonales alternas: la celosía se lee incluso cuando el brazo mide
+      // tres píxeles, porque el zigzag rompe la simetría de los dos cordones.
+      const rise = bay % 2 === 0 ? 1 : -1;
       structureParts.push(
-        placed(
-          new THREE.BoxGeometry(0.105, 0.018, 0.034),
-          [cos * radius, sin * radius, 0],
-          [0, 0, angle + Math.PI / 2],
+        strut(
+          new THREE.Vector3(...at(radius, -rise)),
+          new THREE.Vector3(...at(radius + bayLength, rise)),
+          0.03,
         ),
       );
     }
-  }
 
-  for (let index = 0; index < MODULES; index++) {
-    // Índice 0 = las 12; sentido horario como el diagrama de producción.
-    const angle = Math.PI / 2 - index * STEP;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const isPrimary = PRIMARY_MODULES.has(index);
-    const moduleRadial = isPrimary ? 0.39 : MODULE_RADIAL;
-    const moduleDepth = isPrimary
-      ? 0.245
-      : LANDING_MODULES.has(index)
-        ? 0.22
-        : MODULE_DEPTH;
-    const moduleTangential = isPrimary ? 0.275 : MODULE_TANGENTIAL;
-
-    // Cápsulas radiales independientes. Los huecos entre ellas son parte del
-    // modelo, no líneas pintadas sobre un aro continuo.
+    // Encastre en el cinturón: la carga entra en el núcleo por una pieza ancha.
     hullParts.push(
       surfaceMasked(
         placed(
-          roundedBox(moduleRadial, moduleTangential, moduleDepth, 0.025),
-          [cos * RING, sin * RING, 0],
+          roundedBox(0.17, CHORD * 2 + 0.085, 0.18, 0.022),
+          [cos * (ARM_INNER + 0.02), sin * (ARM_INNER + 0.02), 0],
           [0, 0, angle],
         ),
-        isPrimary ? 1 : 0,
+        GRAPHITE,
       ),
     );
 
-    if (LANDING_MODULES.has(index)) {
-      hullParts.push(
+    /* Horquilla: el brazo se abre en tres y entrega a los tres módulos del
+       grupo. Es la pieza que hace que el grupo sea un grupo, y no tres cajas
+       que casualmente están cerca. */
+    hullParts.push(
+      surfaceMasked(
         placed(
-          new THREE.CylinderGeometry(0.075, 0.105, 0.125, 6),
-          [cos * (RING + 0.2), sin * (RING + 0.2), 0],
-          [0, 0, angle - Math.PI / 2],
+          new THREE.BoxGeometry(0.22, 0.1, 0.1),
+          [cos * (ARM_OUTER + 0.11), sin * (ARM_OUTER + 0.11), 0],
+          [0, 0, angle],
         ),
-      );
-    }
-
-    // Airlock entre cápsulas: doce segmentos describen el anillo sin toro.
-    const connectorAngle = angle - STEP / 2;
-    structureParts.push(
-      placed(
-        new THREE.CylinderGeometry(0.031, 0.031, 0.17, 7),
-        [Math.cos(connectorAngle) * RING, Math.sin(connectorAngle) * RING, 0],
-        [0, 0, connectorAngle],
+        BLANKET,
       ),
     );
-    if (isPrimary) {
+    for (const slot of [-1, 1]) {
+      const slotAngle = angle + slot * SLOT_SPREAD;
       structureParts.push(
-        placed(
-          new THREE.CylinderGeometry(0.062, 0.062, 0.055, 10),
-          [cos * (RING - 0.2), sin * (RING - 0.2), 0],
-          [0, 0, angle - Math.PI / 2],
-        ),
-      );
-    }
-
-    // Cuatro módulos de motor, con tres campanas oscuras cada uno.
-    if (ENGINE_MODULES.has(index)) {
-      for (const tangentialOffset of [-0.075, 0, 0.075]) {
-        const tangentX = -sin * tangentialOffset;
-        const tangentY = cos * tangentialOffset;
-        structureParts.push(
-          placed(
-            new THREE.CylinderGeometry(0.025, 0.047, 0.15, 9, 1, true),
-            [
-              cos * (RING + 0.25) + tangentX,
-              sin * (RING + 0.25) + tangentY,
-              -0.035,
-            ],
-            [0, 0, angle - Math.PI / 2],
+        strut(
+          new THREE.Vector3(cos * (ARM_OUTER + 0.04), sin * (ARM_OUTER + 0.04), 0),
+          new THREE.Vector3(
+            Math.cos(slotAngle) * (RING - 0.17),
+            Math.sin(slotAngle) * (RING - 0.17),
+            0,
           ),
-        );
-      }
-      serviceParts.push(
-        placed(
-          new THREE.BoxGeometry(0.12, 0.12, 0.016),
-          [cos * RING, sin * RING, moduleDepth / 2 + 0.009],
-          [0, 0, angle],
-        ),
-      );
-    }
-
-    if (isPrimary) {
-      serviceParts.push(
-        placed(
-          new THREE.BoxGeometry(0.15, 0.13, 0.014),
-          [cos * (RING - 0.02), sin * (RING - 0.02), moduleDepth / 2 + 0.008],
-          [0, 0, angle],
-        ),
-      );
-    }
-
-    if (!ENGINE_MODULES.has(index) && !isPrimary) {
-      structureParts.push(
-        placed(
-          new THREE.BoxGeometry(0.1, 0.1, 0.012),
-          [cos * (RING - 0.03), sin * (RING - 0.03), moduleDepth / 2 + 0.008],
-          [0, 0, angle],
-        ),
-      );
-    }
-
-    if (isPrimary) {
-      lightParts.push(
-        placed(
-          new THREE.SphereGeometry(0.017, 7, 5),
-          [cos * (RING - 0.23), sin * (RING - 0.23), 0.095],
+          0.038,
         ),
       );
     }
   }
 
-  // Full stack: dos Ranger planos y dos Lander pesados alrededor del hub.
-  hullParts.push(
-    surfaceMasked(
-      placed(foil(0.16, -0.16, 0.2, 0.025, -0.13, 0.045), [0, 0.22, 0.035]),
-      2,
-    ),
-    surfaceMasked(
-      placed(
-        foil(0.16, -0.16, -0.2, 0.025, -0.13, 0.045),
-        [0, -0.22, 0.035],
-        [0, 0, Math.PI],
-      ),
-      2,
-    ),
-    surfaceMasked(
-      placed(roundedBox(0.22, 0.15, 0.16, 0.022), [0.22, 0, -0.02]),
-      2,
-    ),
-    surfaceMasked(
-      placed(roundedBox(0.22, 0.15, 0.16, 0.022), [-0.22, 0, -0.02]),
-      2,
-    ),
-  );
-  structureParts.push(
-    placed(new THREE.CylinderGeometry(0.022, 0.022, 0.34, 7)),
-    placed(
-      new THREE.CylinderGeometry(0.022, 0.022, 0.34, 7),
-      [0, 0, 0],
-      [0, 0, Math.PI / 2],
-    ),
-    // Mástil y reflector: un detalle único que confirma escala y función.
-    placed(
-      new THREE.CylinderGeometry(0.011, 0.011, 0.22, 7),
-      [0, 0, 0.25],
-      [Math.PI / 2, 0, 0],
-    ),
-    placed(
-      new THREE.ConeGeometry(0.068, 0.028, 12, 1, true),
-      [0, 0, 0.37],
-      [Math.PI / 2, 0, 0],
-    ),
+  /* ── 4. Cuatro grupos de tres módulos ──────────────────────────────────────
+     El módulo principal es un 44 % más largo y ocupa el eje del brazo; los dos
+     satélites son claramente menores. Tres tamaños distintos por grupo son lo
+     que produce lectura de ingeniería en vez de repetición. */
+  for (let group = 0; group < GROUPS; group++) {
+    const groupAngle = Math.PI / 2 - group * GROUP_STEP;
+
+    for (let slot = -1; slot <= 1; slot++) {
+      const isPrimary = slot === 0;
+      const angle = groupAngle + slot * SLOT_SPREAD;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const radial = isPrimary ? 0.46 : 0.32;
+      const tangential = isPrimary ? 0.33 : 0.25;
+      const depth = isPrimary ? 0.33 : 0.25;
+
+      hullParts.push(
+        surfaceMasked(
+          placed(
+            roundedBox(radial, tangential, depth, 0.03),
+            [cos * RING, sin * RING, 0],
+            [0, 0, angle],
+          ),
+          isPrimary ? PRIMARY_BLANKET : BLANKET,
+        ),
+      );
+
+      // Cuello al riel: el módulo está montado sobre la estructura, no flotando.
+      structureParts.push(
+        placed(
+          new THREE.CylinderGeometry(0.052, 0.052, 0.16, 10),
+          [
+            cos * (RING - radial / 2 - 0.06),
+            sin * (RING - radial / 2 - 0.06),
+            0,
+          ],
+          [0, 0, angle - Math.PI / 2],
+        ),
+      );
+
+      if (isPrimary) {
+        // Escotilla y panel de servicio: el módulo principal es el que trabaja.
+        structureParts.push(
+          placed(
+            new THREE.CylinderGeometry(0.062, 0.062, 0.05, 12),
+            [cos * (RING + 0.04), sin * (RING + 0.04), depth / 2 + 0.02],
+            [Math.PI / 2, 0, 0],
+          ),
+        );
+        serviceParts.push(
+          placed(
+            new THREE.BoxGeometry(0.17, 0.15, 0.014),
+            [cos * (RING - 0.09), sin * (RING - 0.09), depth / 2 + 0.008],
+            [0, 0, angle],
+          ),
+        );
+        lightParts.push(
+          placed(new THREE.SphereGeometry(0.019, 7, 5), [
+            cos * (RING - 0.24),
+            sin * (RING - 0.24),
+            0.12,
+          ]),
+        );
+        /*
+          Un radiador por grupo, en el eje del brazo. Hubo ocho —dos por
+          grupo, sobre los satélites— y el contorno se volvió un engranaje:
+          dieciséis puntas alrededor del anillo son ruido, no ingeniería.
+          Cuatro paneles alineados con los cuatro brazos repiten el mismo
+          ritmo que ya cuentan brazos, grupos y campanas.
+
+          Y van EN EL PLANO del anillo, no perpendiculares. Perpendiculares se
+          veían de canto justo desde la pose del Hero: cuatro palos rayados
+          saliendo del aro. En el plano prolongan el disco de la nave y
+          aportan lo que ninguna otra pieza aporta, superficie plana grande.
+        */
+        hullParts.push(
+          surfaceMasked(
+            placed(
+              new THREE.BoxGeometry(0.32, 0.36, 0.014),
+              [cos * (RING + 0.35), sin * (RING + 0.35), 0],
+              [0, 0, angle],
+            ),
+            RADIATOR,
+          ),
+        );
+        structureParts.push(
+          placed(
+            new THREE.BoxGeometry(0.12, 0.032, 0.032),
+            [cos * (RING + 0.24), sin * (RING + 0.24), 0],
+            [0, 0, angle],
+          ),
+        );
+      } else {
+        if (slot > 0) {
+          serviceParts.push(
+            placed(
+              new THREE.BoxGeometry(0.12, 0.11, 0.012),
+              [cos * RING, sin * RING, depth / 2 + 0.007],
+              [0, 0, angle],
+            ),
+          );
+        }
+      }
+    }
+
+    /* ── 5. Naves atracadas ────────────────────────────────────────────────
+       Dos Ranger y dos Lander, atracadas sobre la cara +Z de los módulos
+       principales. Ahí no compiten con el núcleo —que es lo que arruinaba la
+       versión anterior, con el full stack encima del hub— y confirman la
+       escala: son las únicas piezas cuyo tamaño real conocemos. */
+    const cos = Math.cos(groupAngle);
+    const sin = Math.sin(groupAngle);
+    // Alternan cara: dos por delante del plano del anillo y dos por detrás.
+    // Cuatro cosas apiladas del mismo lado se leen como una sola masa.
+    const dockZ = (group % 2 === 0 ? 1 : -1) * (0.33 / 2 + 0.075);
+    if (group % 2 === 0) {
+      // Ranger: dos semialas en flecha y una cabina mínima.
+      for (const side of [1, -1]) {
+        hullParts.push(
+          surfaceMasked(
+            placed(
+              foil(0.15, -0.15, side * 0.16, 0.01, -0.11, 0.03),
+              [cos * (RING - 0.02), sin * (RING - 0.02), dockZ],
+              [0, 0, groupAngle],
+            ),
+            GRAPHITE,
+          ),
+        );
+      }
+      structureParts.push(
+        placed(
+          new THREE.BoxGeometry(0.16, 0.07, 0.055),
+          [cos * (RING + 0.02), sin * (RING + 0.02), dockZ + 0.03],
+          [0, 0, groupAngle],
+        ),
+      );
+    } else {
+      // Lander: bloque corto y pesado con dos toberas hacia popa.
+      hullParts.push(
+        surfaceMasked(
+          placed(
+            roundedBox(0.24, 0.18, 0.14, 0.025),
+            [cos * RING, sin * RING, dockZ * 1.15],
+            [0, 0, groupAngle],
+          ),
+          GRAPHITE,
+        ),
+      );
+      for (const side of [-1, 1]) {
+        structureParts.push(
+          placed(
+            new THREE.CylinderGeometry(0.028, 0.042, 0.09, 8, 1, true),
+            [
+              cos * (RING - 0.16) - sin * side * 0.055,
+              sin * (RING - 0.16) + cos * side * 0.055,
+              dockZ * 1.15,
+            ],
+            [0, 0, groupAngle + Math.PI / 2],
+          ),
+        );
+      }
+    }
+
+    // Baliza de brazo: una por grupo, en el vértice de la horquilla.
+    lightParts.push(
+      placed(new THREE.SphereGeometry(0.021, 7, 5), [
+        cos * (ARM_OUTER + 0.02),
+        sin * (ARM_OUTER + 0.02),
+        0.075,
+      ]),
+    );
+  }
+
+  // Balizas del núcleo: proa y popa, para que el eje tenga principio y final.
+  lightParts.push(
+    placed(new THREE.SphereGeometry(0.023, 8, 6), [0, 0, 0.45]),
+    placed(new THREE.SphereGeometry(0.019, 7, 5), [0.19, 0.19, -0.2]),
+    placed(new THREE.SphereGeometry(0.019, 7, 5), [-0.19, -0.19, -0.2]),
   );
 
   const hullMesh = mergedMesh(hullParts, hull);
@@ -1339,10 +1775,12 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   assembly.add(lightMesh);
 
   assembly.userData.enduranceArchitecture = {
-    modules: MODULES,
-    engineModules: ENGINE_MODULES.size,
-    primaryModules: PRIMARY_MODULES.size,
-    spokes: PRIMARY_MODULES.size,
+    modules: GROUPS * MODULES_PER_GROUP,
+    groups: GROUPS,
+    arms: GROUPS,
+    primaryModules: GROUPS,
+    engineBells: 4,
+    radiators: GROUPS * 2,
     dockedRangers: 2,
     dockedLanders: 2,
   };
@@ -1439,6 +1877,9 @@ function cooperModel(input: SceneBodyInput): BodyModel {
     siguen congelados en su trayectoria — esto es una pieza dentro de un cuerpo.
   */
   const habitatOrbit = new THREE.Object3D();
+  // Fuera del cálculo de radio: es un detalle de cien metros, no la silueta
+  // del destino. Ver `modelRadius`.
+  habitatOrbit.userData.excludeFromRadius = true;
   root.add(habitatOrbit);
 
   const habitatMesh = mergedMesh(habitatParts, habitat);
@@ -1469,18 +1910,6 @@ function cooperModel(input: SceneBodyInput): BodyModel {
   };
 }
 
-/**
- * Tesseracto: dos cáscaras de retícula que CONTRARROTAN.
- *
- * Antes eran cuatro marcos fusionados en una sola malla, y por tanto una pieza
- * rígida: girase como girase, seguía leyéndose como un objeto sólido con
- * aristas. Separarlo en dos cáscaras que giran en sentidos opuestos y a ritmos
- * distintos es lo que produce la lectura de espacio imposible — las aristas se
- * cruzan y se separan sin que nada se mueva de sitio.
- *
- * Cuatro draws —retículas, estratos, núcleo y órbita— y sigue siendo un objeto
- * lejano: no compite con Gargantúa, insinúa.
- */
 /**
  * Viga de sección cuadrada con la longitud en el eje Y local.
  *
@@ -1558,26 +1987,31 @@ function latticeNode(radius: number): THREE.BufferGeometry {
  *
  * ── Qué fallaba ─────────────────────────────────────────────────────────────
  *
- * Las cáscaras eran `LineSegments`. Una línea mide un píxel a cualquier
- * distancia: no tiene volumen, no recibe luz y no gana nada cuando la cámara se
- * acerca — es exactamente el fallo que hacía que el objeto se leyera como un
- * wireframe de SVG flotando sobre el cielo. Además, cuatro cubos girados a
- * ángulos arbitrarios no son un espacio imposible: son un garabato.
+ * Dejó de ser un wireframe hace dos iteraciones —las líneas de un píxel no
+ * tienen volumen, no reciben luz y no ganan nada al acercar la cámara— y ganó
+ * vigas, nodos y tirantes. Pero seguía siendo el destino más débil del sistema
+ * por dos motivos a la vez: era el más pequeño en pantalla de los siete y su
+ * interior estaba vacío, así que a tamaño de Hero volvía a leerse como un icono
+ * decorativo en la esquina.
  *
- * ── Qué lo hace legible ahora ───────────────────────────────────────────────
+ * ── Qué lo sostiene ahora ───────────────────────────────────────────────────
  *
- * La proyección canónica del hipercubo: cubo exterior, cubo interior concéntrico
- * y ocho tirantes uniendo vértices homólogos. Esa topología —y no el número de
- * aristas— es la que el ojo lee como «esto no cabe en tres dimensiones». Se
- * construye con vigas de sección cuadrada, nodos facetados en cada vértice y una
- * jaula emisiva en el corazón que contrarrota como un giroscopio.
- *
- * ── Por qué aguanta el zoom ─────────────────────────────────────────────────
+ * 1. **Tres cáscaras concéntricas** en progresión geométrica, no dos. Dieciséis
+ *    tirantes en dos tramos convergen hacia el centro: la fuga es lo que se lee
+ *    como profundidad imposible.
+ * 2. **Temperatura por profundidad.** Las vigas de fuera llevan canal ámbar; el
+ *    pozo interior, uno más frío y más intenso. El fondo del túnel se distingue
+ *    del borde incluso a treinta píxeles.
+ * 3. **Un 27 % más de tamaño aparente**, repartido entre escala de modelo y un
+ *    plano de profundidad menos hundido.
  *
  * Todo el detalle fino —veta del metal, juntas modulares, canal de luz— es
  * procedural sobre las UV de viga. No hay textura que se pixele ni línea que se
  * quede en un píxel: a tamaño de Hero se lee como un filo brillante y de cerca
  * sigue siendo una viga con su ranura, su junta y su reflejo.
+ *
+ * Cuatro draws —retícula, pozo, jaula y núcleo— y sigue siendo el objeto más
+ * lejano del cuadro: no compite con Gargantúa, insinúa.
  */
 function tesseractModel(input: SceneBodyInput): BodyModel {
   const structure = bodyMaterial(input, KIND.tesseract);
@@ -1585,32 +2019,43 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   const root = new THREE.Object3D();
 
   /*
-    Las tres escalas están medidas, no elegidas por gusto: el radio del modelo
-    tiene que quedar por debajo del de Miller para no romper la jerarquía del
-    sistema (los nodos exteriores son lo que fija la esfera envolvente).
+    TRES cáscaras, no dos.
+
+    La proyección canónica del hipercubo son dos cubos y ocho tirantes, y con
+    eso el objeto era correcto y plano: a tamaño de Hero se leía como un
+    cuadrado con un cuadrado dentro. Lo que le faltaba era POZO. Una tercera
+    cáscara concéntrica añade una segunda fuga de perspectiva —tres cuadrados
+    que se encogen y dieciséis diagonales que convergen— y eso es exactamente
+    lo que el ojo interpreta como profundidad imposible.
+
+    Los radios van en progresión ~0.58: cada cáscara mide algo más de la mitad
+    de la anterior, que es la razón que mantiene la fuga constante. Con pasos
+    iguales el conjunto parece tres marcos apilados, no un túnel.
   */
-  const OUTER = 0.535;
-  const INNER = 0.245;
+  const OUTER = 0.56;
+  const MIDDLE = 0.325;
+  const INNER = 0.185;
   /*
-    La jaula gira, así que su semilado no puede medirse contra la cara del cubo
-    interior sino contra su ESQUINA: a 0.152 el vértice llegaba a 0.263 rs y
-    barría las vigas interiores media vuelta sí y media no. A 0.122 el vértice
-    queda en 0.211 y la holgura se mantiene en cualquier ángulo.
+    La jaula gira, así que su semilado no se mide contra la cara del cubo
+    interior sino contra su ESQUINA: a 0.115 el vértice llegaría a 0.199 y
+    barrería las vigas de dentro media vuelta sí y media no. A 0.092 el vértice
+    queda en 0.159 y la holgura se mantiene en cualquier ángulo.
   */
-  const CAGE = 0.122;
+  const CAGE = 0.092;
 
   const outerCorners = cubeCorners(OUTER);
+  const middleCorners = cubeCorners(MIDDLE);
   const innerCorners = cubeCorners(INNER);
 
   const lattice = mergedMesh(
     [
       ...latticeCube(OUTER, 0.058),
-      ...latticeCube(INNER, 0.042),
-      // Las ocho diagonales del hipercubo: el vértice de fuera con el de dentro.
-      // Ambas listas se generan en el mismo orden, así que el índice ya empareja
-      // cada vértice con su homólogo.
+      ...latticeCube(MIDDLE, 0.04),
+      // Las diagonales del hipercubo, ahora en dos tramos: vértice de fuera con
+      // su homólogo del medio, y el del medio con el de dentro. Ambas listas se
+      // generan en el mismo orden, así que el índice ya empareja cada par.
       ...outerCorners.map((corner, index) =>
-        strut(corner, innerCorners[index], 0.034),
+        strut(corner, middleCorners[index], 0.034),
       ),
       // Nodos. Sin ellos, doce vigas que se cruzan son doce vigas que se cruzan.
       ...outerCorners.map((corner) =>
@@ -1619,9 +2064,9 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
           1,
         ),
       ),
-      ...innerCorners.map((corner) =>
+      ...middleCorners.map((corner) =>
         surfaceMasked(
-          placed(latticeNode(0.054), [corner.x, corner.y, corner.z]),
+          placed(latticeNode(0.05), [corner.x, corner.y, corner.z]),
           1,
         ),
       ),
@@ -1633,19 +2078,39 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   root.add(lattice);
 
   /*
-    La jaula interior es la única pieza que se mueve, y se mueve porque está
-    suelta: no toca ningún tirante, así que puede girar sin romper la estructura.
-    Es materia que ya pasó a ser luz — de ahí que lleve su propia máscara.
+    La cáscara interior va aparte y con su propia máscara: es la que está más
+    cerca del núcleo, y por tanto la que ya ha empezado a convertirse en luz.
+    Su canal es más frío y más intenso que el de las vigas de fuera, así que el
+    fondo del pozo tira a azul mientras el borde se queda en ámbar. Sin esa
+    diferencia de temperatura, tres cáscaras del mismo color vuelven a ser un
+    dibujo plano.
+  */
+  const well = mergedMesh(
+    [
+      ...latticeCube(INNER, 0.028),
+      ...middleCorners.map((corner, index) =>
+        strut(corner, innerCorners[index], 0.024),
+      ),
+    ].map((part) => surfaceMasked(part, 3)),
+    structure,
+  );
+  well.name = "tesseract-inner-well";
+  well.renderOrder = 1;
+  root.add(well);
+
+  /*
+    La jaula es la única pieza que se mueve, y se mueve porque está suelta: no
+    toca ningún tirante, así que puede girar sin romper la estructura.
   */
   const cage = mergedMesh(
     [
-      ...latticeCube(CAGE, 0.02),
+      ...latticeCube(CAGE, 0.017),
       /*
         Y el mismo marco girado 45°. Dos cubos concéntricos que no comparten
         orientación no pueden ser el mismo objeto en tres dimensiones: es ahí,
         y no en el número de aristas, donde está lo imposible.
       */
-      ...latticeCube(CAGE * 0.72, 0.014).map((part) =>
+      ...latticeCube(CAGE * 0.72, 0.012).map((part) =>
         placed(part, [0, 0, 0], [Math.PI / 4, Math.PI / 4, 0]),
       ),
     ].map((part) => surfaceMasked(part, 2)),
@@ -1655,7 +2120,7 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   cage.renderOrder = 2;
   root.add(cage);
 
-  const coreMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.062, 0), core);
+  const coreMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.05, 0), core);
   coreMesh.name = "tesseract-core";
   coreMesh.rotation.set(0.35, 0.2, 0.55);
   coreMesh.renderOrder = 3;
@@ -1726,17 +2191,31 @@ function foil(
  *
  * ── Qué fallaba ─────────────────────────────────────────────────────────────
  *
- * La iteración anterior ya tenía alas, pero conservaba fuselaje, cono y derivas
- * de caza. En pantalla se reconocía como avión, no como la Ranger de la película.
+ * La iteración anterior ya se reconocía como nave pequeña, y ahí se acababa lo
+ * bueno: era un elipsoide aplastado con dos cuadriláteros extruidos por alas.
+ * Sin proa, sin cabina enmarcada, sin toberas visibles desde la pose del Hero y
+ * con el mismo damero de la textura estirado sobre un ala entera. Se leía como
+ * asset de videojuego al lado de mundos que sí tienen superficie.
  *
- * ── Qué la hace legible ─────────────────────────────────────────────────────
+ * ── Qué la define ahora ─────────────────────────────────────────────────────
  *
- * La Ranger se reconoce por su lifting body bajo, ancho y acolchado: planform de
- * manta, vientre negro de escudo térmico y cabina integrada. La flecha sigue
- * presente, pero ahora pertenece al cuerpo completo y no a dos alas añadidas.
+ * 1. **Proa facetada.** Un cono de ocho caras, aplastado: la nave tiene morro y
+ *    tiene dirección. Es lo primero que faltaba.
+ * 2. **Cabina con marco.** Cristal oscuro hundido entre dos montantes claros.
+ *    Un reflejo sin marco es una mancha; con marco es una cabina.
+ * 3. **Alas con borde de ataque.** Un larguero oscuro recorre la flecha entera:
+ *    separa el ala del fuselaje y da un filo que la luz puede encontrar.
+ * 4. **Dos góndolas con tobera.** Cuerpo claro, anillo, campana oscura y una
+ *    brasa dentro. Los motores existen desde cualquier ángulo del Hero.
+ * 5. **Deriva en V.** Dos planos de cola inclinados, no dos aletas verticales:
+ *    rompen la silueta por arriba sin competir con las alas.
  *
- * Se mantiene deliberadamente por debajo de los mundos y de la Endurance: la
- * jerarquía del sistema no cambia, cambia la calidad de la lectura.
+ * ── Y ya no gira ────────────────────────────────────────────────────────────
+ *
+ * Una nave de veinte metros dando una vuelta completa sobre su eje longitudinal
+ * cada seis minutos no es vida, es un error de lectura: parece un modelo colgado
+ * de un hilo. Su pose es fija —proa hacia Gargantúa, dorso hacia la cámara— y lo
+ * único que se mueve es la corrección de actitud de menos de un grado.
  */
 function rangerModel(input: SceneBodyInput): BodyModel {
   const hull = bodyMaterial(input, KIND.beacon, {
@@ -1745,102 +2224,174 @@ function rangerModel(input: SceneBodyInput): BodyModel {
   const structure = bodyMaterial(input, STRUCTURE_KIND);
   const beacon = bodyMaterial(input, EMISSIVE_KIND, { accent: input.accent });
   const root = new THREE.Object3D();
-  // Grupo propio: el giro de `spinAt` va en la raíz, y la actitud aquí dentro.
+  // Grupo propio: la pose de reposo va en la raíz y la actitud viva aquí dentro.
   const craft = new THREE.Object3D();
   root.add(craft);
 
+  /* Acabados dentro del casco: chapa, cristal de cabina, tapa de servicio y
+     plano sustentador. El ala tiene su propio valor a propósito —es la
+     diferencia entre «una nave» y «un cuerpo con dos aletas del mismo color». */
+  const PLATE = 0;
+  const GLASS = 1;
+  const SERVICE = 2;
+  const WING = 3;
+
   // Marco local: +X proa, +Y arriba, +Z estribor.
+  const WING_ROOT_LEADING = 0.24;
+  const WING_TIP_LEADING = -0.16;
+  const WING_SPAN = 0.6;
+
   const hullParts = [
-    // Volumen central bajo y ancho: lifting body, no fuselaje de caza.
-    placed(
-      new THREE.SphereGeometry(0.5, 20, 12).scale(1.48, 0.3, 0.64),
-      [-0.015, 0.018, 0],
+    // Fuselaje: bloque bajo y ancho, con los cantos redondeados de una nave
+    // que reentra. No es un cilindro: es un lifting body.
+    surfaceMasked(
+      placed(roundedBox(0.94, 0.28, 0.37, 0.09), [-0.07, 0.035, 0]),
+      PLATE,
     ),
-    // Planform de manta: el borde de ataque en flecha define la silueta.
-    placed(
-      foil(0.58, -0.55, 0.78, 0.08, -0.42, 0.09),
-      [-0.02, -0.045, 0],
-      [Math.PI / 2, 0, 0],
-    ),
-    placed(
-      foil(0.58, -0.55, -0.78, 0.08, -0.42, 0.09),
-      [-0.02, -0.045, 0],
-      [Math.PI / 2, 0, 0],
-    ),
-    // Cabina acolchada, integrada en la superficie superior.
+    // Proa facetada. Ocho caras y un aplastado vertical: a 70 px lo que se lee
+    // es la punta y los dos quiebres de la faceta superior.
     surfaceMasked(
       placed(
-        new THREE.SphereGeometry(0.155, 16, 10).scale(1.82, 0.52, 1.36),
-        [0.29, 0.135, 0],
-        [0, 0, -0.08],
+        new THREE.ConeGeometry(0.19, 0.36, 8, 1).scale(0.76, 1, 1),
+        [0.58, 0.025, 0],
+        [0, 0, -Math.PI / 2],
       ),
-      1,
+      PLATE,
     ),
-    // Tapas de servicio cálidas, pequeñas y rasantes a la manta superior.
+    // Popa: cierre troncocónico corto, para que la cola no acabe en un canto.
     surfaceMasked(
-      placed(roundedBox(0.17, 0.02, 0.11, 0.006), [-0.11, 0.155, 0.2]),
-      2,
+      placed(
+        new THREE.CylinderGeometry(0.12, 0.18, 0.14, 8),
+        [-0.61, 0.035, 0],
+        [0, 0, Math.PI / 2],
+      ),
+      PLATE,
+    ),
+    // Alas en flecha. La cuerda de raíz casi dobla a la de punta y el borde de
+    // salida retrocede: la planta es la de una nave que vuela, no un triángulo.
+    surfaceMasked(
+      placed(
+        foil(WING_ROOT_LEADING, -0.5, WING_SPAN, WING_TIP_LEADING, -0.4, 0.055),
+        [0, -0.045, 0],
+        [Math.PI / 2, 0, 0],
+      ),
+      WING,
     ),
     surfaceMasked(
-      placed(roundedBox(0.17, 0.02, 0.11, 0.006), [-0.11, 0.155, -0.2]),
-      2,
+      placed(
+        foil(WING_ROOT_LEADING, -0.5, -WING_SPAN, WING_TIP_LEADING, -0.4, 0.055),
+        [0, -0.045, 0],
+        [Math.PI / 2, 0, 0],
+      ),
+      WING,
     ),
-    // Dos pequeñas derivas de popa, muy contenidas.
-    placed(foil(-0.24, -0.55, 0.26, -0.42, -0.58, 0.03), [0, 0.015, 0.28]),
-    placed(foil(-0.24, -0.55, 0.26, -0.42, -0.58, 0.03), [0, 0.015, -0.28]),
+    // Cabina: cristal hundido en la superficie superior, no una burbuja encima.
+    surfaceMasked(
+      placed(
+        new THREE.SphereGeometry(0.115, 14, 8).scale(1.5, 0.44, 1.05),
+        [0.31, 0.13, 0],
+        [0, 0, -0.06],
+      ),
+      GLASS,
+    ),
+    // Góndolas de motor: cuerpo claro bajo el encastre del ala.
+    ...[-1, 1].map((side) =>
+      surfaceMasked(
+        placed(
+          new THREE.CylinderGeometry(0.1, 0.112, 0.42, 12),
+          [-0.29, -0.06, side * 0.215],
+          [0, 0, Math.PI / 2],
+        ),
+        PLATE,
+      ),
+    ),
+    // Deriva en V. Dos planos inclinados 38°: rompen el perfil por arriba y
+    // dejan ver el fuselaje entre ellos.
+    ...[-1, 1].map((side) =>
+      surfaceMasked(
+        placed(
+          foil(-0.26, -0.54, 0.26, -0.44, -0.57, 0.032),
+          [0, 0.12, side * 0.05],
+          [side * 0.66, 0, 0],
+        ),
+        WING,
+      ),
+    ),
+    // Tapas de servicio: dos rectángulos cálidos, rasantes al dorso.
+    ...[-1, 1].map((side) =>
+      surfaceMasked(
+        placed(roundedBox(0.15, 0.018, 0.075, 0.005), [-0.19, 0.165, side * 0.115]),
+        SERVICE,
+      ),
+    ),
   ];
   const hullMesh = mergedMesh(hullParts, hull);
   hullMesh.name = "ranger-metallic-hull";
   craft.add(hullMesh);
 
-  const structureMesh = mergedMesh(
-    [
-      // Escudo térmico negro: una segunda silueta apenas más pequeña bajo la
-      // nave, visible en el canto y fiel al lenguaje del Shuttle.
-      placed(
-        foil(0.5, -0.51, 0.69, 0.06, -0.39, 0.055),
-        [-0.03, -0.095, 0],
-        [Math.PI / 2, 0, 0],
+  const structureParts: THREE.BufferGeometry[] = [
+    // Quilla: escudo térmico oscuro bajo el vientre. Se ve por el canto y da
+    // una segunda silueta —la del Shuttle— sin pagar otra ala.
+    placed(
+      new THREE.BoxGeometry(0.84, 0.07, 0.29),
+      [-0.07, -0.115, 0],
+    ),
+    // Montante central de la cabina, más los dos travesaños del marco.
+    placed(new THREE.BoxGeometry(0.26, 0.026, 0.02), [0.31, 0.165, 0]),
+    placed(new THREE.BoxGeometry(0.018, 0.028, 0.16), [0.43, 0.145, 0]),
+    placed(new THREE.BoxGeometry(0.018, 0.028, 0.2), [0.19, 0.15, 0]),
+  ];
+
+  for (const side of [-1, 1]) {
+    /* Borde de ataque: un larguero oscuro que recorre la flecha entera. Es la
+       pieza que separa el ala del fuselaje a distancia —sin él, ala y cuerpo
+       comparten valor y la nave se lee como una mancha con puntas. */
+    structureParts.push(
+      strut(
+        new THREE.Vector3(WING_ROOT_LEADING, -0.045, side * 0.155),
+        new THREE.Vector3(WING_TIP_LEADING, -0.045, side * WING_SPAN),
+        0.045,
       ),
+      // Campana de la tobera y su anillo.
       placed(
-        foil(0.5, -0.51, -0.69, 0.06, -0.39, 0.055),
-        [-0.03, -0.095, 0],
-        [Math.PI / 2, 0, 0],
-      ),
-      // Toberas gemelas, oscuras en reposo.
-      placed(
-        new THREE.CylinderGeometry(0.062, 0.095, 0.19, 12, 1, true),
-        [-0.66, 0, 0.18],
+        new THREE.CylinderGeometry(0.088, 0.12, 0.18, 12, 1, true),
+        [-0.58, -0.06, side * 0.215],
         [0, 0, Math.PI / 2],
       ),
       placed(
-        new THREE.CylinderGeometry(0.062, 0.095, 0.19, 12, 1, true),
-        [-0.66, 0, -0.18],
+        new THREE.TorusGeometry(0.112, 0.014, 6, 14),
+        [-0.49, -0.06, side * 0.215],
+        [0, Math.PI / 2, 0],
+      ),
+      // Góndola colgada del ala por un pilón corto y visible.
+      placed(
+        new THREE.BoxGeometry(0.32, 0.085, 0.045),
+        [-0.29, 0.005, side * 0.215],
+      ),
+      // Contenedor de punta de ala: cierra el plano y sostiene la baliza.
+      placed(
+        new THREE.CylinderGeometry(0.028, 0.028, 0.18, 8),
+        [-0.28, -0.042, side * (WING_SPAN + 0.005)],
         [0, 0, Math.PI / 2],
       ),
-      placed(
-        new THREE.TorusGeometry(0.092, 0.014, 6, 16),
-        [-0.765, 0, 0.18],
-        [0, Math.PI / 2, 0],
-      ),
-      placed(
-        new THREE.TorusGeometry(0.092, 0.014, 6, 16),
-        [-0.765, 0, -0.18],
-        [0, Math.PI / 2, 0],
-      ),
-    ],
-    structure,
-  );
+    );
+  }
+
+  const structureMesh = mergedMesh(structureParts, structure);
   structureMesh.name = "ranger-heat-shield-and-engines";
   craft.add(structureMesh);
 
-  // Balizas: puntas de ala y luz de morro. Físicas y diminutas, como en el
-  // resto del sistema: el bloom óptico las convierte en luz, no un degradado.
+  /* Balizas: punta de ala, morro y las dos brasas de tobera. Físicas y
+     diminutas —el bloom óptico las convierte en luz, no un degradado— y ahora
+     las de motor viven DENTRO de la campana, que es lo que hace que el escape
+     se lea como escape y no como dos puntos pegados a la cola. */
   const beaconMesh = mergedMesh(
     [
-      placed(new THREE.SphereGeometry(0.032, 8, 6), [-0.12, -0.01, 0.78]),
-      placed(new THREE.SphereGeometry(0.032, 8, 6), [-0.12, -0.01, -0.78]),
-      placed(new THREE.SphereGeometry(0.027, 8, 6), [0.8, 0.01, 0]),
+      placed(new THREE.SphereGeometry(0.021, 7, 5), [-0.2, -0.042, WING_SPAN + 0.02]),
+      placed(new THREE.SphereGeometry(0.021, 7, 5), [-0.2, -0.042, -WING_SPAN - 0.02]),
+      placed(new THREE.SphereGeometry(0.019, 7, 5), [0.75, 0.025, 0]),
+      placed(new THREE.CircleGeometry(0.082, 12), [-0.645, -0.06, 0.215], [0, -Math.PI / 2, 0]),
+      placed(new THREE.CircleGeometry(0.082, 12), [-0.645, -0.06, -0.215], [0, -Math.PI / 2, 0]),
     ],
     beacon,
   );
@@ -1855,13 +2406,14 @@ function rangerModel(input: SceneBodyInput): BodyModel {
       /*
         Mantenimiento de actitud, no bamboleo.
 
-        Amplitud de ~1,2° y periodos de 47 y 71 segundos: dos senos primos entre
+        Amplitud de ~0,7° y periodos de 47 y 71 segundos: dos senos primos entre
         sí, así que el gesto nunca se repite igual y nunca llega a leerse como
-        una oscilación. Es la diferencia entre una nave que se sostiene sobre sus
-        propulsores y una maqueta colgada de un hilo.
+        una oscilación. Con la nave ya sin giro propio, esto es todo su
+        movimiento: la diferencia entre una nave que se sostiene sobre sus
+        propulsores y una maqueta clavada en el cielo.
       */
-      craft.rotation.z = Math.sin(seconds * 0.134) * 0.021;
-      craft.rotation.y = Math.sin(seconds * 0.088) * 0.017;
+      craft.rotation.z = Math.sin(seconds * 0.134) * 0.013;
+      craft.rotation.y = Math.sin(seconds * 0.088) * 0.011;
     },
   };
 }
@@ -1885,21 +2437,75 @@ function bodyModel(input: SceneBodyInput): BodyModel {
   }
 }
 
-/** Radio real desde el origen, ya con transforms y escala del modelo aplicados. */
+/**
+ * Radio real desde el origen, ya con transforms y escala del modelo aplicados.
+ *
+ * Una pieza puede EXCLUIRSE. El hábitat orbital de Cooper vive a dos radios
+ * planetarios de su mundo, y mientras contó para el radio arrastraba con él el
+ * blanco de clic y la distancia a la que se coloca el rótulo: el nombre del
+ * destino quedaba flotando en negro, alineado con una mota que nadie ve. El
+ * radio tiene que medir lo que el visitante llama «Cooper Station» —planeta y
+ * anillos—, no la caja envolvente de todo lo que orbita ahí.
+ */
 function modelRadius(root: THREE.Object3D): number {
   const sphere = new THREE.Sphere();
   let radius = 0;
   root.updateMatrixWorld(true);
-  root.traverse((node) => {
+
+  // Recursión propia y no `traverse`: hay que poder podar un SUBÁRBOL entero,
+  // y el callback de traverse no puede detener el descenso a los hijos.
+  const visit = (node: THREE.Object3D) => {
+    if (node.userData.excludeFromRadius) return;
     const geometry = (node as Partial<THREE.Mesh>).geometry;
-    if (!geometry) return;
-    geometry.computeBoundingSphere();
-    if (!geometry.boundingSphere) return;
-    sphere.copy(geometry.boundingSphere).applyMatrix4(node.matrixWorld);
-    radius = Math.max(radius, sphere.center.length() + sphere.radius);
-  });
+    if (geometry) {
+      geometry.computeBoundingSphere();
+      if (geometry.boundingSphere) {
+        sphere.copy(geometry.boundingSphere).applyMatrix4(node.matrixWorld);
+        radius = Math.max(radius, sphere.center.length() + sphere.radius);
+      }
+    }
+    for (const child of node.children) visit(child);
+  };
+
+  visit(root);
   return radius;
 }
+
+/**
+ * Actitud de la Ranger, construida como base ortonormal.
+ *
+ * Tres ángulos de Euler escritos a ojo son ilegibles y no dicen a dónde apunta
+ * la nave. Aquí se declara lo que importa —dorso y proa— y la matriz sale de
+ * ahí.
+ *
+ * ── Por qué estos dos vectores y no otros ───────────────────────────────────
+ *
+ * La Ranger es un cuerpo aerodinámico: casi toda su superficie mira a un mismo
+ * sitio. Eso la hace MUY sensible a la actitud, al revés que la Endurance, que
+ * con doce módulos siempre tiene caras encaradas a la luz. Colocada de plano
+ * contra la cámara quedaba en penumbra entera, porque la única fuente del
+ * sistema le llega por detrás.
+ *
+ * El dorso apunta al punto medio entre la cámara y Gargantúa: se ve al 70 % de
+ * su área y recibe dos tercios de la luz de clave. Ése es el compromiso —ni
+ * planta iluminada de canto ni tres cuartos a oscuras—, y es lo que cumple la
+ * dirección de arte de que Gargantúa la ilumine de verdad.
+ *
+ * La proa va en el plano del dorso, hacia la derecha del cuadro: apunta a la
+ * Endurance. La nave pequeña señalando a la nave grande cuenta un viaje sin
+ * que nada se mueva.
+ *
+ * Se calcula una vez al cargar el módulo; el cuerpo ya no gira, así que esta
+ * pose es toda su orientación.
+ */
+const RANGER_ATTITUDE = (() => {
+  const top = new THREE.Vector3(0.337, 0.918, 0.229).normalize();
+  const nose = new THREE.Vector3(0.855, -0.185, -0.489)
+    .projectOnPlane(top)
+    .normalize();
+  const side = new THREE.Vector3().crossVectors(nose, top).normalize();
+  return new THREE.Matrix4().makeBasis(nose, top, side);
+})();
 
 /**
  * Orientación de reposo del cuerpo, ANTES de su giro propio.
@@ -1909,16 +2515,20 @@ function modelRadius(root: THREE.Object3D): number {
  * eje del mundo, que es lo que sale cuando se compone al revés.
  */
 function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Euler) {
-  // Endurance enseña radios y módulos; Cooper inclina los anillos lo justo para
-  // conservar la elipse; Ranger ofrece el perfil metálico, no un triángulo plano.
-  // Endurance se muestra a 30°: conserva el círculo, enseña el grosor axial y
-  // deja leer módulos/campanas. Más inclinación vuelve a comprimirla en una cruz.
-  if (visual === "ship") return target.set(0.54, 0.25, -0.1);
-  if (visual === "station") return target.set(0.34, 0.08, -0.17);
+  /*
+    Endurance. El ángulo se mide contra el EJE DE VISTA, no contra el mundo: el
+    cuerpo está a 22 rs del centro y la cámara mira al centro, así que su rayo
+    llega oblicuo. Con la pose anterior el anillo quedaba a 60° de frontal —una
+    elipse aplastada donde no cabía leer ni un brazo—; a 48° la circunferencia
+    se reconoce, los cuatro brazos separan sus grupos y el núcleo sigue
+    asomando por delante del plano.
+  */
+  if (visual === "ship") return target.set(0.3, 0.2, -0.08);
+  // Cooper gana diez grados de inclinación: el anillo deja de ser una elipse
+  // casi cerrada y enseña su cara, que es donde vive la sombra proyectada.
+  if (visual === "station") return target.set(0.44, 0.12, -0.2);
   if (visual === "tesseract") return target.set(0.2, 0.28, -0.12);
-  // La Ranger enseña casi toda la planta de lifting body y sólo un canto del
-  // escudo térmico: lo suficiente para que no parezca un icono plano.
-  if (visual === "beacon") return target.set(0.34, -0.52, -0.14);
+  if (visual === "beacon") return target.setFromRotationMatrix(RANGER_ATTITUDE);
   return target.set(0, 0, 0);
 }
 
@@ -1944,7 +2554,17 @@ const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
   station: 0.032,
   ship: 0.016,
   tesseract: 0.014,
-  beacon: 0.018,
+  /*
+    CERO, y es la única excepción deliberada de la tabla.
+
+    Un mundo que gira sobre su eje es física; una lanzadera de veinte metros
+    dando una vuelta completa cada seis minutos es un modelo colgado de un
+    hilo. La Ranger tiene proa, cabina y toberas: en cuanto rota, el ojo ve
+    que la dirección a la que apunta no significa nada. Con pose fija, apuntar
+    a Gargantúa sí significa algo. Lo único que le queda es la corrección de
+    actitud de menos de un grado que pone su propio `animate`.
+  */
+  beacon: 0,
   "black-hole": 0,
 };
 
@@ -1959,12 +2579,24 @@ const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
 const MODEL_SCALE: Record<WorldStructuralData["visual"], number> = {
   water: 1.12,
   desert: 1.12,
-  station: 1.35,
+  station: 1.6,
   ship: 1,
-  tesseract: 1.22,
-  // La planta nueva aporta ~1.18×. Esta escala y el plano foreground completan
-  // un crecimiento aparente de ~1.6× respecto de la Ranger anterior.
-  beacon: 1.22,
+  /*
+    El Tesseracto era el destino más pequeño en pantalla y encima el más
+    hundido en profundidad: dos factores multiplicándose en la misma dirección.
+    Sube a 1.45 y su capa pasa de -7 a -3 rs; entre las dos, +27 % de tamaño
+    aparente. Sigue siendo el cuerpo más lejano y el segundo más pequeño del
+    cuadro, que es lo que pide la composición.
+  */
+  tesseract: 1.45,
+  /*
+    La Ranger nueva es MÁS COMPACTA que la anterior —fuselaje de verdad en vez
+    de dos alas anchas— así que su esfera envolvente cayó de 4.04 a 2.70 rs con
+    la misma escala. Sin corregirlo, un rediseño pensado para hacerla crecer la
+    habría encogido un 15 %. Con 1.75 y su fase nueva queda en +21 % de tamaño
+    aparente respecto de la versión anterior, dentro de lo pedido.
+  */
+  beacon: 1.75,
   "black-hole": 1,
 };
 
