@@ -89,6 +89,31 @@ describe("cuerpos del Sistema Gargantúa", () => {
         ranger.object.getObjectByName("ranger-heat-shield-and-engines"),
       ).toBeDefined();
       expect(ranger.object.getObjectByName("ranger-violet-beacon")).toBeDefined();
+
+      const enduranceHull = endurance.object.getObjectByName(
+        "endurance-twelve-module-ring",
+      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+      const rangerHull = ranger.object.getObjectByName(
+        "ranger-metallic-hull",
+      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+
+      for (const [name, mesh, textureName] of [
+        ["Endurance", enduranceHull, "endurance-thermal-surface"],
+        ["Ranger", rangerHull, "ranger-thermal-surface"],
+      ] as const) {
+        const texture = mesh.material.uniforms.uSurfaceMap.value as THREE.DataTexture;
+        expect(texture, name).toBeInstanceOf(THREE.DataTexture);
+        expect(texture.name, name).toBe(textureName);
+        expect(texture.image.width, name).toBe(128);
+        expect(texture.image.height, name).toBe(128);
+
+        const masks = mesh.geometry.getAttribute("aSurfaceMask");
+        expect(masks, `${name} no publicó máscaras de acabado`).toBeDefined();
+        expect(
+          Math.max(...Array.from(masks.array as ArrayLike<number>)),
+          `${name} no diferencia sus piezas especiales`,
+        ).toBeGreaterThanOrEqual(2);
+      }
     } finally {
       for (const body of [endurance, cooper, tesseract, ranger]) disposeBody(body);
     }

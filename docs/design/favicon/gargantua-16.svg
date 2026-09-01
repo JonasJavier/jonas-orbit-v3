@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Gargantúa">
+  <defs>
+    <linearGradient id="s-disc" x1="0.4" y1="0" x2="31.6" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffeecb" stop-opacity="0.45"/>
+      <stop offset="0.24" stop-color="#fffefb"/>
+      <stop offset="0.72" stop-color="#f2c879"/>
+      <stop offset="1" stop-color="#dd9c48" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="s-bow" x1="5.6" y1="0" x2="26.4" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f0bc72" stop-opacity="0.15"/>
+      <stop offset="0.28" stop-color="#fffdf6"/>
+      <stop offset="0.62" stop-color="#ffeec4"/>
+      <stop offset="1" stop-color="#e8a94f" stop-opacity="0.25"/>
+    </linearGradient>
+    <linearGradient id="s-bow-b" x1="6.2" y1="0" x2="25.8" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f0bc72" stop-opacity="0.1"/>
+      <stop offset="0.36" stop-color="#fbe6c0" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#e8a94f" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="6" fill="#080d1a"/>
+  <circle cx="16" cy="16.2" r="7.6" fill="#04060d"/>
+  <path d="M5.6 13.0A10.7 10.7 0 0 1 26.4 13.0" fill="none" stroke="url(#s-bow)" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M6.2 20.6A10.6 10.6 0 0 0 25.8 20.6" fill="none" stroke="url(#s-bow-b)" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M0.4 17.6C8 15.9 24 15.9 31.6 17.6C24 19.3 8 19.3 0.4 17.6Z" fill="url(#s-disc)"/>
+</svg>

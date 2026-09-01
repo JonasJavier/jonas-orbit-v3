@@ -755,6 +755,24 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       "off",
     );
     await expect(effectsToggle).toBeVisible();
+
+    // La escena imperativa retira --map-x/y al desmontarse. El mapa plano debe
+    // conservar su propio par de coordenadas o los siete destinos colapsan en
+    // una esquina hasta la siguiente recarga completa.
+    await expect
+      .poll(async () => {
+        const centres = await page.locator(".system-map__slot").evaluateAll(
+          (slots) =>
+            slots.map((slot) => {
+              const bounds = slot.getBoundingClientRect();
+              return `${Math.round(bounds.left + bounds.width / 2)}:${Math.round(
+                bounds.top + bounds.height / 2,
+              )}`;
+            }),
+        );
+        return new Set(centres).size;
+      })
+      .toBeGreaterThan(4);
   });
 });
 

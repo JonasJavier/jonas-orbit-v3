@@ -140,10 +140,10 @@ export function SystemHud({
             type="button"
           >
             {sceneUnavailable
-              ? "3D no disponible"
+              ? "3D offline"
               : sceneIsLive
-                ? "Mapa sin animación"
-                : "Activar animación"}
+                ? "Mapa 2D"
+                : "Activar 3D"}
           </button>
         ) : (
           <a

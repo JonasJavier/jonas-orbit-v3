@@ -330,9 +330,9 @@ manda sobre cualquier descripción anterior de estos siete puntos.
 | Destino | `size` antes | `size` ahora | Motivo |
 | --- | --- | --- | --- |
 | Endurance | 4.7 | 5.15 | Segundo ancla: sostiene la mirada y permite contar los doce módulos. |
-| Ranger | 1.5 | 2.5 | Deja de ser una mota y conserva una silueta de lifting body legible. |
+| Ranger | 1.5 | 2.6 | Deja de ser una mota y conserva una silueta de lifting body legible. |
 | Tesseracto | 2.05 | 2.7 | Conserva la jerarquía por encima de la Ranger tras su crecimiento. |
-| Cooper Station | 2.16 | 2.45 | El sistema de anillos necesita superficie para leerse. |
+| Cooper Station | 2.16 | 2.6 | El sistema de anillos necesita superficie para leerse. |
 | Miller | 3.0 | 3.05 | Ajuste fino. |
 | Edmunds | 2.9 | 3.0 | Ajuste fino. |
 
@@ -344,11 +344,14 @@ lectura del sistema aunque la escena siga compilando.
 
 - **Endurance.** Doce módulos rectangulares separados, centro abierto, **un solo
   brazo radial**, hub compacto con dos Ranger y dos Lander, cuatro bloques de
-  motor y doce campanas. Cuatro familias materiales fusionadas mantienen cuatro
-  draws: manta/panel, estructura, servicio y balizas.
+  motor y doce campanas. Un mapa térmico procedural de 128×128, con costuras,
+  manta y máscaras de servicio, aporta lectura material sin descargar imágenes.
+  Cuatro familias materiales fusionadas mantienen cuatro draws: manta/panel,
+  estructura, servicio y balizas.
 - **Ranger.** Lifting body bajo y ancho con planta de manta, cabina integrada,
-  vientre oscuro de escudo térmico y toberas gemelas. Se reconoce como la
-  lanzadera de la película, no como un caza con alas añadidas.
+  cristal frío, paneles de servicio cobre, vientre oscuro de escudo térmico y
+  toberas gemelas. Su mapa procedural comparte el mismo presupuesto sin red. Se
+  reconoce como la lanzadera de la película, no como un caza con alas añadidas.
 - **Cooper.** Un solo anillo con **división abierta por el shader** (`discard`),
   no dos mallas.
 - **Tesseracto.** Dos cáscaras de retícula que contrarrotan; el espacio imposible

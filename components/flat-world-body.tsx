@@ -224,6 +224,11 @@ function Ranger() {
           <stop offset="0.78" stopColor="#5d666d" />
           <stop offset="1" stopColor="#1a2025" />
         </linearGradient>
+        <linearGradient id="flat-ranger-canopy" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop stopColor="#b9e4ed" />
+          <stop offset="0.38" stopColor="#4e7888" />
+          <stop offset="1" stopColor="#111b22" />
+        </linearGradient>
       </defs>
       <g data-flat-part="lifting-body" transform="rotate(-5 80 45)">
         <path
@@ -234,7 +239,22 @@ function Ranger() {
         />
         <path d="m20 53 39-17 16-6h10l16 6 39 17-39-7-17 10h-8L59 46Z" fill="#d8dde0" fillOpacity="0.44" />
         <path data-flat-part="heat-shield" d="m45 51 30-10h10l30 10-26 10H71Z" fill="#0a0f14" opacity="0.9" />
-        <path d="m73 31 7-6 7 6-3 13h-8Z" fill="#283139" stroke="#c7d3da" strokeOpacity="0.6" />
+        <path
+          data-flat-part="cockpit"
+          d="m73 31 7-6 7 6-3 13h-8Z"
+          fill="url(#flat-ranger-canopy)"
+          stroke="#d9eef2"
+          strokeOpacity="0.72"
+        />
+        <path
+          data-flat-part="service-panels"
+          d="m46 40 14-5 5 4-14 5Zm49-1 5-4 14 5-5 4Z"
+          fill="#c6743d"
+          fillOpacity="0.88"
+          stroke="#f0b17c"
+          strokeOpacity="0.5"
+          strokeWidth="0.55"
+        />
         <path d="M37 47h20M103 47h20M68 38h24" stroke="#30383e" strokeOpacity="0.62" />
         <g data-flat-part="engines" fill="#05080b" stroke="#b7c1c7" strokeWidth="0.8">
           <ellipse cx="68" cy="58" rx="5" ry="2.3" />
