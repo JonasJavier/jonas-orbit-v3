@@ -449,24 +449,99 @@ const BODY_FRAGMENT = /* glsl */ `
       atmosphereWeight = 1.06;
     } else if (uKind == 2) {
       /*
-        Tesseracto: no es un planeta ni una nave, es una retícula.
+        Tesseracto: vigas de verdad, no aristas.
 
-        Como cubo sólido se leía a lo lejos como un cuadrado marrón — el objeto
-        que peor funcionaba de los seis. Ahora la malla son sus ARISTAS, y este
-        material solo tiene que hacerlas brillar. Una estructura que se
-        reconoce por su dibujo, no por su superficie.
+        La versión anterior pintaba LineSegments puramente emisivas porque la
+        malla eran aristas de un píxel y no había superficie que sombrear. Ahora
+        hay estructura, así que este material tiene que comportarse como metal.
+
+        Las UV son las de la viga —u cruza la sección, v la recorre—, así que
+        todo el detalle es procedural y no tiene resolución: ni textura que se
+        pixele al acercarse ni línea que se quede en un píxel al alejarse.
+
+        Las frecuencias son deliberadamente bajas. A tamaño de Hero la viga mide
+        unos tres píxeles de ancho, y ahí una veta fina no es detalle: es moiré.
       */
-      albedo = vec3(0.0);
-      // Ámbar puro, no mezclado: mezclar el acento con el secundario daba un
-      // blanco lavado que a este tamaño no se distinguía de una estrella.
-      // La oscilación baja de ±27 % cada 8 s a ±12 % cada 24 s: la retícula
-      // respira en vez de titilar.
-      float lattice = 0.5 + 0.5 * sin(
-        (vLocal.x - vLocal.y + vLocal.z) * 18.0 + uTime * 0.08
-      );
-      emissive = mix(uAccent, vec3(1.0, 0.93, 0.78), lattice * 0.24)
-               * (2.55 + 0.28 * sin(uTime * 0.26));
-      gloss = 0.0;
+      float along = vUv.y;
+      float across = abs(vUv.x - 0.5);
+
+      /*
+        El chaflán es lo que da SECCIÓN.
+
+        Una caja iluminada por una sola fuente lejana devuelve una cara plana
+        por lado: sin cantos, cuatro vigas paralelas se leen como cuatro cintas
+        pegadas al cielo. Dos filos pulidos en los bordes de cada cara resuelven
+        el volumen —son la primera cosa que la luz encuentra— y cuestan un
+        smoothstep.
+      */
+      float chamfer = smoothstep(0.44, 0.5, across);
+      /*
+        Acoplamientos, no juntas pintadas. Cada cuarto de viga hay un collar de
+        metal más claro con su costura oscura dentro: la estructura está
+        montada por tramos, que es como se construye algo de este tamaño.
+      */
+      float span = abs(fract(along * 4.0) - 0.5);
+      float collar = 1.0 - smoothstep(0.055, 0.115, span);
+      float seam = 1.0 - smoothstep(0.008, 0.032, span);
+      float grain = 0.5 + 0.5 * sin(across * 38.0);
+
+      albedo = mix(vec3(0.107, 0.114, 0.132), vec3(0.27, 0.283, 0.322), grain * 0.36);
+      albedo = mix(albedo, vec3(0.3, 0.315, 0.352), collar * 0.5);
+      albedo = mix(albedo, vec3(0.021, 0.022, 0.028), seam * 0.85);
+      albedo = mix(albedo, vec3(0.44, 0.45, 0.49), chamfer * 0.6);
+      gloss = mix(0.5, 0.86, chamfer) + collar * 0.16 - seam * 0.24;
+      specularPower = mix(72.0, 132.0, chamfer);
+      specularStrength = 1.08 + chamfer * 0.62;
+
+      /*
+        El canal de luz va EMBUTIDO: primero la ranura oscura, después la línea
+        ámbar dentro. Sin el escalón oscuro la línea flota sobre el metal como
+        una calcomanía; con él, la viga tiene un surco mecanizado.
+
+        Ancho de verdad —un tercio de la cara— para que a tamaño de Hero siga
+        midiendo más de un píxel, y con un pulso que viaja a lo largo: el
+        Tesseracto es tiempo, no un LED.
+      */
+      float slot = 1.0 - smoothstep(0.17, 0.235, across);
+      float channel = 1.0 - smoothstep(0.1, 0.155, across);
+      albedo = mix(albedo, vec3(0.012, 0.013, 0.017), slot * 0.85);
+      gloss = mix(gloss, 0.22, slot * 0.7);
+      float travelling = 0.64 + 0.36 * sin(along * 6.2831 - uTime * 0.21);
+      // La luz se interrumpe en cada acoplamiento: pasa por dentro del metal.
+      /*
+        Intensidad alta a propósito. El Tesseracto vive en el plano lejano y
+        recibe la luz más débil del sistema (1.08 frente a 1.55 del interior):
+        si su canal no emite, a tamaño de Hero desaparece. El bloom convierte
+        esta línea en el resplandor que lo hace localizable de lejos, y de cerca
+        sigue siendo una ranura de un tercio de cara, no un halo.
+
+        La interrupción del acoplamiento se queda corta a propósito: a 35 px la
+        viga entera mide lo que aquí mide un tramo, y una línea de puntos a esa
+        escala es ruido.
+      */
+      emissive = uAccent * channel * travelling * (1.0 - collar * 0.34) * 2.25;
+
+      /* Filo contra el cielo: sin este rebote la silueta se come el objeto. */
+      emissive += vec3(0.055, 0.072, 0.126) * fresnel * 1.15;
+
+      if (vSurfaceMask > 1.5) {
+        /* Jaula interior: la parte de la estructura que ya sólo es luz. */
+        albedo = vec3(0.0);
+        gloss = 0.0;
+        emissive = mix(uAccent, uSecondary, 0.28 + 0.34 * sin(along * 3.1))
+                 * (1.52 + 0.34 * sin(uTime * 0.29 + along * 3.1));
+      } else if (vSurfaceMask > 0.5) {
+        /*
+          Nodos. Acero pulido y facetado: son las dieciséis piezas que devuelven
+          un destello duro del disco, y ese destello es lo que convierte el
+          objeto en algo construido en vez de dibujado.
+        */
+        albedo = vec3(0.115, 0.123, 0.142);
+        gloss = 0.84;
+        specularPower = 112.0;
+        specularStrength = 1.45;
+        emissive = uSecondary * fresnel * 0.2;
+      }
     } else if (uKind == 3) {
       /*
         Cooper: planeta inventado, frío y ordenado. Las bandas son atmosféricas,
@@ -599,19 +674,6 @@ const BODY_FRAGMENT = /* glsl */ `
       gloss = 0.24;
       specularPower = 30.0;
       specularStrength = 0.62;
-    } else if (uKind == 10) {
-      /* Capas imposibles del Tesseracto: casi transparentes. Su shimmer nace
-         dentro del volumen y nunca cubre la retícula principal. */
-      float strata = 0.5 + 0.5 * sin(
-        (vLocal.x * 1.7 - vLocal.y * 2.1 + vLocal.z * 1.3) * 11.0 + uTime * 0.11
-      );
-      float innerRim = pow(1.0 - max(dot(normal, view), 0.0), 2.4);
-      albedo = mix(uSecondary * 0.16, uAccent * 0.22, strata);
-      emissive = mix(uSecondary, uAccent, strata) * (0.12 + innerRim * 0.22);
-      gloss = 0.22;
-      specularPower = 44.0;
-      specularStrength = 0.34;
-      outputAlpha = 0.035 + innerRim * 0.075 + strata * 0.025;
     } else {
       /* Luces de navegación y núcleo del Tesseracto: geometría, no halo global. */
       float pulse = 0.94 + 0.06 * sin(uTime * 0.55);
@@ -739,7 +801,6 @@ const NAVIGATION_COLOUR = "#7fe5ff";
 const STRUCTURE_KIND = 7;
 const EMISSIVE_KIND = 8;
 const ENDURANCE_SERVICE_KIND = 9;
-const TESSERACT_LAYER_KIND = 10;
 
 interface MaterialOptions {
   accent?: string;
@@ -1420,76 +1481,201 @@ function cooperModel(input: SceneBodyInput): BodyModel {
  * Cuatro draws —retículas, estratos, núcleo y órbita— y sigue siendo un objeto
  * lejano: no compite con Gargantúa, insinúa.
  */
+/**
+ * Viga de sección cuadrada con la longitud en el eje Y local.
+ *
+ * Todas las vigas nacen igual y se rotan al colocarlas, así que sus UV
+ * significan lo mismo en las cuatro caras largas: `u` cruza la sección y `v`
+ * recorre la viga. De ahí salen el canal de luz y las juntas sin una sola
+ * textura y sin resolución que se agote al acercar la cámara.
+ */
+function beam(section: number, length: number): THREE.BufferGeometry {
+  return new THREE.BoxGeometry(section, length, section);
+}
+
+/** Las doce aristas de un cubo, como vigas. El solape cierra las esquinas. */
+function latticeCube(half: number, section: number): THREE.BufferGeometry[] {
+  const span = half * 2 + section;
+  const ends = [-half, half] as const;
+  const parts: THREE.BufferGeometry[] = [];
+
+  for (const a of ends) {
+    for (const b of ends) {
+      parts.push(placed(beam(section, span), [a, 0, b]));
+      parts.push(placed(beam(section, span), [a, b, 0], [Math.PI / 2, 0, 0]));
+      parts.push(placed(beam(section, span), [0, a, b], [0, 0, Math.PI / 2]));
+    }
+  }
+  return parts;
+}
+
+/** Tirante entre dos puntos: el hipercubo son sus diagonales, no sus caras. */
+function strut(
+  from: THREE.Vector3,
+  to: THREE.Vector3,
+  section: number,
+): THREE.BufferGeometry {
+  const direction = new THREE.Vector3().subVectors(to, from);
+  const length = direction.length();
+  const midpoint = new THREE.Vector3()
+    .addVectors(from, to)
+    .multiplyScalar(0.5);
+  const orientation = new THREE.Euler().setFromQuaternion(
+    new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      direction.normalize(),
+    ),
+  );
+
+  return placed(
+    beam(section, length),
+    [midpoint.x, midpoint.y, midpoint.z],
+    [orientation.x, orientation.y, orientation.z],
+  );
+}
+
+/** Los ocho vértices de un cubo de semilado `half`. */
+function cubeCorners(half: number): THREE.Vector3[] {
+  const corners: THREE.Vector3[] = [];
+  for (const x of [-half, half]) {
+    for (const y of [-half, half]) {
+      for (const z of [-half, half]) corners.push(new THREE.Vector3(x, y, z));
+    }
+  }
+  return corners;
+}
+
+/** Nodo facetado. Indexado a mano: `OctahedronGeometry` no lo está y no fusiona. */
+function latticeNode(radius: number): THREE.BufferGeometry {
+  const geometry = new THREE.OctahedronGeometry(radius, 0);
+  const indexed = mergeVertices(geometry);
+  geometry.dispose();
+  return indexed;
+}
+
+/**
+ * Tesseracto: una ESTRUCTURA, no un icono.
+ *
+ * ── Qué fallaba ─────────────────────────────────────────────────────────────
+ *
+ * Las cáscaras eran `LineSegments`. Una línea mide un píxel a cualquier
+ * distancia: no tiene volumen, no recibe luz y no gana nada cuando la cámara se
+ * acerca — es exactamente el fallo que hacía que el objeto se leyera como un
+ * wireframe de SVG flotando sobre el cielo. Además, cuatro cubos girados a
+ * ángulos arbitrarios no son un espacio imposible: son un garabato.
+ *
+ * ── Qué lo hace legible ahora ───────────────────────────────────────────────
+ *
+ * La proyección canónica del hipercubo: cubo exterior, cubo interior concéntrico
+ * y ocho tirantes uniendo vértices homólogos. Esa topología —y no el número de
+ * aristas— es la que el ojo lee como «esto no cabe en tres dimensiones». Se
+ * construye con vigas de sección cuadrada, nodos facetados en cada vértice y una
+ * jaula emisiva en el corazón que contrarrota como un giroscopio.
+ *
+ * ── Por qué aguanta el zoom ─────────────────────────────────────────────────
+ *
+ * Todo el detalle fino —veta del metal, juntas modulares, canal de luz— es
+ * procedural sobre las UV de viga. No hay textura que se pixele ni línea que se
+ * quede en un píxel: a tamaño de Hero se lee como un filo brillante y de cerca
+ * sigue siendo una viga con su ranura, su junta y su reflejo.
+ */
 function tesseractModel(input: SceneBodyInput): BodyModel {
-  const frames = bodyMaterial(input, KIND.tesseract);
-  const layers = bodyMaterial(input, TESSERACT_LAYER_KIND, {
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
+  const structure = bodyMaterial(input, KIND.tesseract);
   const core = bodyMaterial(input, EMISSIVE_KIND, { accent: input.secondary });
   const root = new THREE.Object3D();
 
-  function shell(
-    definitions: ReadonlyArray<readonly [number, VectorTuple]>,
-  ): THREE.LineSegments {
-    const parts: THREE.BufferGeometry[] = [];
-    for (const [size, rotation] of definitions) {
-      const box = new THREE.BoxGeometry(size, size, size);
-      const edges = new THREE.EdgesGeometry(box);
-      box.dispose();
-      parts.push(placed(edges, [0, 0, 0], rotation));
-    }
-    const lines = new THREE.LineSegments(mergeGeometries(parts, false), frames);
-    for (const part of parts) part.dispose();
-    lines.renderOrder = 1;
-    return lines;
-  }
+  /*
+    Las tres escalas están medidas, no elegidas por gusto: el radio del modelo
+    tiene que quedar por debajo del de Miller para no romper la jerarquía del
+    sistema (los nodos exteriores son lo que fija la esfera envolvente).
+  */
+  const OUTER = 0.535;
+  const INNER = 0.245;
+  /*
+    La jaula gira, así que su semilado no puede medirse contra la cara del cubo
+    interior sino contra su ESQUINA: a 0.152 el vértice llegaba a 0.263 rs y
+    barría las vigas interiores media vuelta sí y media no. A 0.122 el vértice
+    queda en 0.211 y la holgura se mantiene en cualquier ángulo.
+  */
+  const CAGE = 0.122;
 
-  const outerShell = shell([
-    [1.2, [0.04, 0.08, -0.04]],
-    [0.88, [0.31, -0.23, 0.18]],
-  ]);
-  outerShell.name = "tesseract-nested-frames";
-  root.add(outerShell);
+  const outerCorners = cubeCorners(OUTER);
+  const innerCorners = cubeCorners(INNER);
 
-  const innerShell = shell([
-    [0.6, [-0.27, 0.38, 0.46]],
-    [0.34, [0.52, 0.16, -0.32]],
-  ]);
-  innerShell.name = "tesseract-inner-frames";
-  root.add(innerShell);
-
-  const layerMesh = mergedMesh(
+  const lattice = mergedMesh(
     [
-      placed(new THREE.BoxGeometry(1.02, 1.02, 1.02), [0, 0, 0], [0.16, -0.11, 0.09]),
-      placed(new THREE.BoxGeometry(0.42, 0.42, 0.42), [0, 0, 0], [0.37, 0.12, -0.29]),
+      ...latticeCube(OUTER, 0.058),
+      ...latticeCube(INNER, 0.042),
+      // Las ocho diagonales del hipercubo: el vértice de fuera con el de dentro.
+      // Ambas listas se generan en el mismo orden, así que el índice ya empareja
+      // cada vértice con su homólogo.
+      ...outerCorners.map((corner, index) =>
+        strut(corner, innerCorners[index], 0.034),
+      ),
+      // Nodos. Sin ellos, doce vigas que se cruzan son doce vigas que se cruzan.
+      ...outerCorners.map((corner) =>
+        surfaceMasked(
+          placed(latticeNode(0.078), [corner.x, corner.y, corner.z]),
+          1,
+        ),
+      ),
+      ...innerCorners.map((corner) =>
+        surfaceMasked(
+          placed(latticeNode(0.054), [corner.x, corner.y, corner.z]),
+          1,
+        ),
+      ),
     ],
-    layers,
+    structure,
   );
-  layerMesh.name = "tesseract-translucent-strata";
-  layerMesh.renderOrder = 0;
-  root.add(layerMesh);
+  lattice.name = "tesseract-hypercube-lattice";
+  lattice.renderOrder = 1;
+  root.add(lattice);
 
-  const coreMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), core);
+  /*
+    La jaula interior es la única pieza que se mueve, y se mueve porque está
+    suelta: no toca ningún tirante, así que puede girar sin romper la estructura.
+    Es materia que ya pasó a ser luz — de ahí que lleve su propia máscara.
+  */
+  const cage = mergedMesh(
+    [
+      ...latticeCube(CAGE, 0.02),
+      /*
+        Y el mismo marco girado 45°. Dos cubos concéntricos que no comparten
+        orientación no pueden ser el mismo objeto en tres dimensiones: es ahí,
+        y no en el número de aristas, donde está lo imposible.
+      */
+      ...latticeCube(CAGE * 0.72, 0.014).map((part) =>
+        placed(part, [0, 0, 0], [Math.PI / 4, Math.PI / 4, 0]),
+      ),
+    ].map((part) => surfaceMasked(part, 2)),
+    structure,
+  );
+  cage.name = "tesseract-inner-cage";
+  cage.renderOrder = 2;
+  root.add(cage);
+
+  const coreMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.062, 0), core);
   coreMesh.name = "tesseract-core";
   coreMesh.rotation.set(0.35, 0.2, 0.55);
-  coreMesh.renderOrder = 2;
+  coreMesh.renderOrder = 3;
   root.add(coreMesh);
 
   return {
     root,
-    materials: [frames, layers, core],
+    materials: [structure, core],
     animate(seconds) {
-      outerShell.rotation.set(seconds * 0.021, seconds * 0.033, 0);
-      innerShell.rotation.set(-seconds * 0.037, -seconds * 0.026, seconds * 0.014);
-      layerMesh.rotation.set(
-        Math.sin(seconds * 0.047) * 0.08,
-        -seconds * 0.012,
-        Math.cos(seconds * 0.039) * 0.06,
+      /*
+        Periodos largos y primos entre sí: el giro nunca vuelve a la misma pose
+        y nunca se lee como un bucle. La estructura exterior no se mueve — es
+        arquitectura, y la arquitectura no tiembla.
+      */
+      cage.rotation.set(seconds * 0.048, -seconds * 0.037, seconds * 0.019);
+      coreMesh.rotation.set(
+        0.35 + seconds * 0.061,
+        0.2 - seconds * 0.043,
+        0.55,
       );
-      layerMesh.scale.setScalar(1 + Math.sin(seconds * 0.083) * 0.018);
-      coreMesh.rotation.set(0.35 + seconds * 0.05, 0.2 - seconds * 0.041, 0.55);
     },
   };
 }
@@ -1775,7 +1961,7 @@ const MODEL_SCALE: Record<WorldStructuralData["visual"], number> = {
   desert: 1.12,
   station: 1.35,
   ship: 1,
-  tesseract: 1.17,
+  tesseract: 1.22,
   // La planta nueva aporta ~1.18×. Esta escala y el plano foreground completan
   // un crecimiento aparente de ~1.6× respecto de la Ranger anterior.
   beacon: 1.22,

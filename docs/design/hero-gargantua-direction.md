@@ -99,8 +99,14 @@ anillos forman un único volumen percibido para hit testing.
 
 ### Tesseracto — Historia
 
-Marcos anidados, profundidad real, núcleo sutil y una leve perspectiva imposible.
-Permanece misterioso y distante, pero no tan pequeño que parezca un icono.
+La proyección canónica del hipercubo, construida como arquitectura: cubo
+exterior, cubo interior concéntrico y ocho tirantes uniendo vértices homólogos.
+Esa topología —y no el número de aristas— es lo que el ojo lee como «esto no cabe
+en tres dimensiones». Dentro, una jaula emisiva de dos marcos cruzados a 45°
+contrarrota como un giroscopio, con el núcleo en su centro.
+
+Permanece misterioso y distante, pero no es un icono: es una estructura con
+sección, juntas y luz propia.
 
 ### Miller — Desarrollo
 
@@ -357,8 +363,9 @@ Ranger puede crecer sin tocar aquel layout y permanece subordinada a Endurance.
   reconoce como la lanzadera de la película, no como un caza con alas añadidas.
 - **Cooper.** Un solo anillo con **división abierta por el shader** (`discard`),
   no dos mallas.
-- **Tesseracto.** Dos cáscaras de retícula que contrarrotan; el espacio imposible
-  sale del cruce de aristas, no de más aristas.
+- **Tesseracto.** Vigas reales de sección cuadrada con nodos facetados, no
+  `LineSegments`. El espacio imposible sale de la topología del hipercubo, no de
+  cruzar aristas al azar.
 
 ### Movimiento
 
@@ -413,8 +420,12 @@ envolvente del mismo modo.
   aumento aparente aproximado de `1.6×` sin falsear el mapa 2D.
 - **Cooper:** `1.35×` en WebGL, planeta algo mayor, anillo de doble superficie
   con cantos físicos y hábitat con dos paneles, antena y dos luces.
-- **Tesseracto:** `1.17×`, dos estratos translúcidos entre cuatro marcos y
-  contrarrotación interna. La transparencia suma profundidad, no glow global.
+- **Tesseracto:** `1.22×` y geometría sólida —vigas, tirantes y dieciséis nodos—
+  en lugar de aristas de un píxel. Su detalle (chaflán, acoplamientos y canal de
+  luz embutido) es procedural sobre las UV de viga, así que no tiene resolución:
+  es la única pieza del sistema preparada para un acercamiento de cámara. La caja
+  translúcida se retiró: en una caja el Fresnel es constante por cara y el
+  «cristal» se veía como cuatro paneles grises planos.
 - **Miller / Edmunds:** `1.12×` y más contraste material. Miller añade dos
   escalas de ola, espuma y glints; Edmunds añade escarpes y roughness mineral.
 
@@ -447,8 +458,10 @@ alfa de `0.92` a `0.68`, reduce tamaño, vida y ráfaga, y mantiene su paleta
 magenta; `flat` conserva exactamente su perfil anterior.
 
 El presupuesto actualizado es ≤ 24 draws reales —incluidos los pases de caras
-transparentes— y < 15 000 vértices para Gargantúa, los seis cuerpos y sus
-trayectorias.
+transparentes; hoy son 23— y < 18 000 vértices para Gargantúa, los seis cuerpos y
+sus trayectorias. El techo de vértices subió de 15 000 cuando el Tesseracto pasó
+a ser geometría: mil vértices más no los nota ninguna GPU de esta década, y son
+lo que separa una estructura de un wireframe.
 
 Hay un tercer presupuesto, menos obvio y más caro de romper: **≤ 12 sitios de
 llamada a `fbm` en el fragment de los cuerpos**. Los seis comparten un único
