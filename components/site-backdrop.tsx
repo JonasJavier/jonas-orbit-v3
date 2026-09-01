@@ -240,7 +240,11 @@ export function SiteBackdrop({
         {/* Gargantúa dibujado con gradientes para el nivel `flat`: quien no
             puede ejecutar la escena sigue viendo un sistema, no un vacío. El
             CSS lo retira en cuanto la escena real empieza a pintar. */}
-        <span className="space-backdrop__gargantua" />
+        <span className="space-backdrop__gargantua">
+          <span className="space-backdrop__gargantua-lensing" />
+          <span className="space-backdrop__gargantua-disk" />
+          <span className="space-backdrop__gargantua-shadow" />
+        </span>
       </div>
       {canvasReady ? (
         <>

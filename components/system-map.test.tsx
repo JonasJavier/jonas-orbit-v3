@@ -156,10 +156,18 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
     const slots = container.querySelectorAll<HTMLElement>(".system-map__slot");
     expect(slots).toHaveLength(7);
-    // Sin escena, la posición la trae el servidor en % y el mapa funciona igual.
+    // Sin escena, la posición la trae el servidor en %. Conserva además un par
+    // estable que el teardown de WebGL nunca toca: es lo que permite volver a
+    // flat sin recargar ni amontonar los siete destinos en la esquina 0,0.
     for (const slot of slots) {
       expect(slot.style.getPropertyValue("--map-x")).toMatch(/%$/);
       expect(slot.style.getPropertyValue("--map-y")).toMatch(/%$/);
+      expect(slot.style.getPropertyValue("--map-flat-x")).toBe(
+        slot.style.getPropertyValue("--map-x"),
+      );
+      expect(slot.style.getPropertyValue("--map-flat-y")).toBe(
+        slot.style.getPropertyValue("--map-y"),
+      );
     }
   });
 

@@ -169,6 +169,16 @@ const FRAME_MARGIN = 3;
 // cuenta. Conservamos holgura geométrica, pero no pagamos el margen de desktop
 // que hacía que el sistema completo pareciera una miniatura en móvil.
 const PORTRAIT_FRAME_MARGIN = 1;
+/**
+ * En vertical no se escala el sistema de escritorio: se recompone en el plano
+ * de cámara. La elipse alta conserva los mismos radios/fases estructurales,
+ * pero usa el viewport disponible en lugar de encoger todo a una franja.
+ */
+const PORTRAIT_ASPECT = 0.75;
+const PORTRAIT_HORIZONTAL_SCALE = 0.72;
+const PORTRAIT_VERTICAL_SCALE = 1.05;
+const PORTRAIT_DEPTH_SCALE = 0.18;
+const PORTRAIT_DISK_FRAME = 0.78;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -279,6 +289,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   for (const input of options.bodies) {
     const body = createBody(input);
     if (body) {
+      const anisotropy = Math.min(4, capabilities.getMaxAnisotropy());
+      for (const material of body.materials) {
+        const surface = material.uniforms.uSurfaceMap?.value as
+          | THREE.Texture
+          | null
+          | undefined;
+        if (surface?.isTexture) surface.anisotropy = anisotropy;
+      }
       bodies.push(body);
       bodyScene.add(body.object);
       // La traza va directa a la escena, no dentro del cuerpo: es fija.
@@ -351,6 +369,35 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   let cssHeight = 1;
   let pixelWidth = 1;
   let pixelHeight = 1;
+
+  function composedBodyPosition(
+    body: SceneBody,
+    aspect: number,
+    cameraRight: THREE.Vector3,
+    cameraUp: THREE.Vector3,
+    cameraForward: THREE.Vector3,
+    target: THREE.Vector3,
+  ): THREE.Vector3 {
+    orbitalPosition(body.placement, 0, target);
+    if (aspect >= PORTRAIT_ASPECT) return target;
+
+    const phase = (body.placement.phase * Math.PI) / 180;
+    const depth = target.dot(cameraForward) * PORTRAIT_DEPTH_SCALE;
+    const horizontal =
+      Math.cos(phase) *
+      body.placement.orbitRadius *
+      PORTRAIT_HORIZONTAL_SCALE;
+    const vertical =
+      -Math.sin(phase) *
+      body.placement.orbitRadius *
+      PORTRAIT_VERTICAL_SCALE;
+
+    return target
+      .copy(cameraRight)
+      .multiplyScalar(horizontal)
+      .addScaledVector(cameraUp, vertical)
+      .addScaledVector(cameraForward, depth);
+  }
 
   /**
    * Distancia mínima a la que TODO el sistema cabe en el viewport actual.
@@ -434,9 +481,17 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // entraba como dos números sueltos (su radio y un cuarto de él para el
     // alto); muestrear su circunferencia lo somete a la misma regla que todo lo
     // demás y de paso deja de suponer nada sobre la elevación de la cámara.
+    const framedDiskOuter =
+      aspect < PORTRAIT_ASPECT
+        ? DISK_OUTER * PORTRAIT_DISK_FRAME
+        : DISK_OUTER;
     for (let i = 0; i < 48; i++) {
       const angle = (i / 48) * Math.PI * 2;
-      point.set(Math.cos(angle) * DISK_OUTER, 0, Math.sin(angle) * DISK_OUTER);
+      point.set(
+        Math.cos(angle) * framedDiskOuter,
+        0,
+        Math.sin(angle) * framedDiskOuter,
+      );
       tight = Math.max(tight, distanceFor(point, 0));
     }
 
@@ -452,7 +507,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       // Con las posiciones congeladas el encuadre solo tiene que encajar seis
       // puntos, y eso acerca la cámara de 90 a 73 rs. El disco pasa del 35 % al
       // 42 % del ancho del cuadro sin tocar una sola constante de tamaño.
-      orbitalPosition(body.placement, 0, point);
+      composedBodyPosition(body, aspect, r, u, f, point);
       tight = Math.max(tight, distanceFor(point, body.radius));
     }
 
@@ -486,6 +541,11 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // medir.
     const orbitWidth = frameDistance * ORBIT_WIDTH_RATIO;
     for (const body of bodies) {
+      // Las curvas 3D de escritorio pertenecen a sus planos orbitales reales.
+      // En vertical los cuerpos se recomponen en el plano de cámara; esconder
+      // estas guías GHOST evita dibujar una trayectoria que ya no pasaría por
+      // su destino. Brackets, TARGET y raíl siguen íntegros.
+      body.orbit.visible = aspect >= PORTRAIT_ASPECT;
       for (const material of body.materials) {
         if (material.uniforms.uWidth) material.uniforms.uWidth.value = orbitWidth;
       }
@@ -752,7 +812,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         propio de cada cuerpo, el latido de las balizas, el paralaje del puntero
         y el propio disco de acreción, que no para nunca.
       */
-      orbitalPosition(body.placement, 0, position);
+      composedBodyPosition(
+        body,
+        cssWidth / cssHeight,
+        rolledRight,
+        rolledUp,
+        forward,
+        position,
+      );
       body.object.position.copy(position);
       body.spinAt(seconds);
 

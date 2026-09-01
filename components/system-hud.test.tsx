@@ -71,7 +71,7 @@ describe("SystemHud — control único y reversible de animación", () => {
     const control = await screen.findByRole("button", {
       name: "Activar animación 3D",
     });
-    expect(control).toHaveTextContent("Activar animación");
+    expect(control).toHaveTextContent("Activar 3D");
     expect(screen.queryByRole("link", { name: /Reducir efectos/ })).toBeNull();
   });
 

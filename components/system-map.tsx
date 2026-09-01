@@ -150,6 +150,14 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                 data-target-state={itemState}
                 style={
                   {
+                    // La posición plana conserva su propio par de variables.
+                    // La escena 3D escribe --map-x/y cada frame y las retira al
+                    // desmontarse; React no vuelve a aplicar una propiedad
+                    // inline borrada imperativamente si no hubo otro render.
+                    // Separar ambas fuentes evita que 3D → flat deje todos los
+                    // destinos en 0,0 hasta recargar la página.
+                    "--map-flat-x": `${point.x.toFixed(2)}%`,
+                    "--map-flat-y": `${point.y.toFixed(2)}%`,
                     "--map-x": `${point.x.toFixed(2)}%`,
                     "--map-y": `${point.y.toFixed(2)}%`,
                     "--order": world.order,

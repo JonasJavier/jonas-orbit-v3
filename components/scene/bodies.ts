@@ -226,12 +226,20 @@ const ORBIT_FRAGMENT = /* glsl */ `
 `;
 
 const BODY_VERTEX = /* glsl */ `
+  attribute float aSurfaceMask;
+
   varying vec3 vNormalW;
+  varying vec3 vNormalL;
   varying vec3 vPositionW;
   varying vec3 vLocal;
+  varying vec2 vUv;
+  varying float vSurfaceMask;
 
   void main() {
     vLocal = position;
+    vNormalL = normal;
+    vUv = uv;
+    vSurfaceMask = aSurfaceMask;
     vec4 world = modelMatrix * vec4(position, 1.0);
     vPositionW = world.xyz;
     vNormalW = normalize(mat3(modelMatrix) * normal);
@@ -248,13 +256,18 @@ const BODY_FRAGMENT = /* glsl */ `
   uniform float uTime;
   uniform float uFocus;
   uniform int uKind;
+  uniform sampler2D uSurfaceMap;
 
   varying vec3 vNormalW;
+  varying vec3 vNormalL;
   varying vec3 vPositionW;
   varying vec3 vLocal;
+  varying vec2 vUv;
+  varying float vSurfaceMask;
 
-  /* Ruido de valor barato. No hay ni una textura en toda la escena: el
-     presupuesto de red del plan es de 1,2 MB para texturas y aquí se gasta 0. */
+  /* Ruido de valor barato. Los mapas de superficie de las naves se generan en
+     memoria; la escena no transfiere texturas por red y conserva intacto el
+     presupuesto de 1,2 MB del plan. */
   float hash(vec3 p) {
     p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
     p *= 17.0;
@@ -341,16 +354,23 @@ const BODY_FRAGMENT = /* glsl */ `
     float outputAlpha = 1.0;
 
     if (uKind == 0) {
-      /* Miller: mundo oceánico. Bandas de nube sobre agua profunda. */
+      /* Miller: mundo oceánico. Dos escalas de oleaje y espuma hacen visible
+         la rotación sin convertir la superficie en una textura terrestre. */
       float weather = fbm(vLocal * 3.4 + vec3(0.0, uTime * 0.02, 0.0));
       float stormBands = 0.5 + 0.5 * sin(vLocal.y * 17.0 + weather * 4.5);
       float ocean = fbm(vLocal * 2.1);
       float cloudCover = smoothstep(0.63, 0.82, weather * 0.72 + stormBands * 0.28);
-      albedo = mix(vec3(0.012, 0.075, 0.18), vec3(0.045, 0.25, 0.35), ocean * 0.78);
-      albedo = mix(albedo, vec3(0.55, 0.68, 0.76), cloudCover * 0.5);
-      gloss = mix(0.88, 0.16, cloudCover);
+      float waveField = 0.5 + 0.5 * sin(
+        vLocal.y * 31.0 + vLocal.x * 7.0 + fbm(vLocal * 7.2) * 5.2
+      );
+      float foam = smoothstep(0.76, 0.94, waveField * 0.58 + weather * 0.42);
+      albedo = mix(vec3(0.008, 0.052, 0.15), vec3(0.028, 0.29, 0.41), ocean * 0.86);
+      albedo = mix(albedo, vec3(0.48, 0.68, 0.78), cloudCover * 0.54);
+      albedo = mix(albedo, vec3(0.62, 0.9, 0.94), foam * (1.0 - cloudCover) * 0.18);
+      gloss = mix(0.92, 0.14, cloudCover);
+      gloss *= 0.9 + waveField * 0.1;
       specularPower = 31.0;
-      specularStrength = 1.02;
+      specularStrength = 1.08;
       /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura. */
       atmosphere = vec3(0.26, 0.54, 0.88);
       atmosphereWeight = 1.1;
@@ -372,6 +392,9 @@ const BODY_FRAGMENT = /* glsl */ `
       /* Depósitos minerales: la cuarta escala, fina y de alto contraste. Es la
          que impide que el planeta se lea como una textura uniforme al girar. */
       float veins = smoothstep(0.52, 0.74, fbm(vLocal * 13.5 + continents));
+      float dunes = 0.5 + 0.5 * sin(
+        vLocal.x * 23.0 + vLocal.z * 7.0 + terrain * 4.0
+      );
       /* Casquetes: no nieve, sales heladas. Rompen la monotonía del cobre y dan
          un eje visible — sin polos, una esfera girando no tiene norte. */
       float polar = smoothstep(0.62, 0.93, abs(vLocal.y));
@@ -380,6 +403,7 @@ const BODY_FRAGMENT = /* glsl */ `
       albedo = mix(albedo, vec3(0.83, 0.5, 0.24), terrain * 0.62);
       albedo = mix(albedo, vec3(0.95, 0.72, 0.49), ridges * terrain * 0.26);
       albedo = mix(albedo, vec3(0.34, 0.17, 0.11), veins * 0.3);
+      albedo = mix(albedo, vec3(0.91, 0.55, 0.27), dunes * terrain * 0.12);
       albedo = mix(albedo, vec3(0.78, 0.56, 0.4), haze * 0.26);
       albedo = mix(albedo, vec3(0.86, 0.85, 0.83), polar * 0.55);
       gloss = 0.07 + haze * 0.04 + polar * 0.2;
@@ -400,7 +424,11 @@ const BODY_FRAGMENT = /* glsl */ `
       // blanco lavado que a este tamaño no se distinguía de una estrella.
       // La oscilación baja de ±27 % cada 8 s a ±12 % cada 24 s: la retícula
       // respira en vez de titilar.
-      emissive = uAccent * (2.6 + 0.30 * sin(uTime * 0.26));
+      float lattice = 0.5 + 0.5 * sin(
+        (vLocal.x - vLocal.y + vLocal.z) * 18.0 + uTime * 0.08
+      );
+      emissive = mix(uAccent, vec3(1.0, 0.93, 0.78), lattice * 0.24)
+               * (2.55 + 0.28 * sin(uTime * 0.26));
       gloss = 0.0;
     } else if (uKind == 3) {
       /*
@@ -409,9 +437,11 @@ const BODY_FRAGMENT = /* glsl */ `
       */
       float weather = fbm(vLocal * 3.1 + vec3(0.0, uTime * 0.003, 0.0));
       float latitude = 0.5 + 0.5 * cos(vLocal.y * 13.0 + weather * 1.8);
-      albedo = mix(vec3(0.055, 0.10, 0.15), vec3(0.24, 0.36, 0.43), weather);
-      albedo = mix(albedo, vec3(0.42, 0.49, 0.52), latitude * 0.22);
-      gloss = 0.24;
+      float fineBands = 0.5 + 0.5 * sin(vLocal.y * 29.0 + weather * 3.5);
+      albedo = mix(vec3(0.035, 0.085, 0.15), vec3(0.19, 0.39, 0.5), weather);
+      albedo = mix(albedo, vec3(0.46, 0.59, 0.65), latitude * 0.2);
+      albedo = mix(albedo, vec3(0.21, 0.34, 0.48), fineBands * 0.12);
+      gloss = 0.2 + fineBands * 0.06;
       specularPower = 34.0;
       atmosphere = vec3(0.31, 0.66, 0.78);
       atmosphereWeight = 0.9;
@@ -432,22 +462,55 @@ const BODY_FRAGMENT = /* glsl */ `
         del Hero las costuras finas sólo producen moiré, así que el patrón
         trabaja en bloques grandes y deja que la silueta cuente los módulos.
       */
-      float blanket = panels(vLocal * 1.35, 1.05);
-      float quilt = fbm(vLocal * 4.2 + vec3(2.7, 0.8, 5.1));
-      albedo = mix(vec3(0.39, 0.40, 0.40), vec3(0.84, 0.83, 0.79), blanket * 0.66);
-      albedo *= 0.92 + quilt * 0.15;
-      gloss = 0.24 + blanket * 0.07;
-      specularPower = 34.0;
-      specularStrength = 0.66;
+      vec4 surface = texture2D(uSurfaceMap, fract(vUv));
+      float blanket = surface.r;
+      float warmFoil = surface.g;
+      float seam = surface.b;
+      float microRoughness = surface.a;
+      float macroVariation = fbm(vLocal * 3.6 + vec3(2.7, 0.8, 5.1));
+      albedo = mix(vec3(0.25, 0.27, 0.29), vec3(0.9, 0.885, 0.83), blanket);
+      albedo = mix(albedo, vec3(0.86, 0.64, 0.39), warmFoil * 0.11);
+      albedo = mix(albedo, vec3(0.055, 0.065, 0.078), seam * 0.68);
+      albedo *= 0.9 + macroVariation * 0.17;
+      gloss = mix(0.34, 0.13, microRoughness);
+      specularPower = 38.0;
+      specularStrength = 0.72;
+
+      /* El full stack del hub se separa en grafito satinado sin pagar otro
+         draw: la máscara viaja como atributo y la textura sigue siendo común. */
+      if (vSurfaceMask > 1.5) {
+        albedo = mix(vec3(0.11, 0.14, 0.17), vec3(0.49, 0.54, 0.58), blanket * 0.55);
+        albedo = mix(albedo, vec3(0.04, 0.055, 0.07), seam * 0.72);
+        gloss = 0.46;
+        specularPower = 58.0;
+      }
     } else if (uKind == 5) {
-      /* Ranger: lifting body blanco con vientre oscuro separado en geometría. */
-      float plates = panels(vLocal * 1.55, 1.0);
-      float blanket = fbm(vLocal * 4.6 + vec3(4.0, 1.2, 0.5));
-      albedo = mix(vec3(0.28, 0.31, 0.35), vec3(0.69, 0.72, 0.73), plates * 0.58);
-      albedo *= 0.92 + blanket * 0.14;
-      gloss = 0.4;
-      specularPower = 42.0;
-      specularStrength = 0.82;
+      /* Ranger: panelado térmico real, cabina oscura y dos tapas de servicio.
+         Todo comparte un draw; la máscara selecciona material dentro del casco. */
+      vec4 surface = texture2D(uSurfaceMap, fract(vUv));
+      float blanket = surface.r;
+      float warmFoil = surface.g;
+      float seam = surface.b;
+      float microRoughness = surface.a;
+      albedo = mix(vec3(0.23, 0.27, 0.31), vec3(0.82, 0.84, 0.82), blanket);
+      albedo = mix(albedo, vec3(0.74, 0.61, 0.43), warmFoil * 0.09);
+      albedo = mix(albedo, vec3(0.045, 0.06, 0.075), seam * 0.7);
+      gloss = mix(0.52, 0.2, microRoughness);
+      specularPower = 48.0;
+      specularStrength = 0.88;
+
+      if (vSurfaceMask > 0.5 && vSurfaceMask < 1.5) {
+        /* Cristal polarizado: casi negro, con suficiente azul para recuperar
+           volumen cuando el barrido especular cruza la cabina. */
+        albedo = vec3(0.018, 0.055, 0.075);
+        gloss = 0.96;
+        specularPower = 96.0;
+        specularStrength = 1.22;
+      } else if (vSurfaceMask >= 1.5) {
+        albedo = mix(vec3(0.25, 0.085, 0.025), vec3(0.83, 0.38, 0.09), blanket);
+        gloss = 0.31;
+        specularPower = 38.0;
+      }
     } else if (uKind == 6) {
       /*
         Anillos de Cooper: bandas minerales finas y semitransparentes.
@@ -467,7 +530,8 @@ const BODY_FRAGMENT = /* glsl */ `
                 * (1.0 - smoothstep(1.048, 1.072, ringRadius));
       float bandMask = smoothstep(0.16, 0.72, bands) * clumps * (1.0 - gap);
       if (bandMask < 0.07) discard;
-      albedo = mix(vec3(0.17, 0.21, 0.25), vec3(0.58, 0.59, 0.56), bandMask);
+      albedo = mix(vec3(0.11, 0.17, 0.24), vec3(0.63, 0.64, 0.59), bandMask);
+      albedo = mix(albedo, uSecondary * 0.48, (1.0 - bands) * 0.12);
       emissive = key * abs(ndl) * bandMask * 0.13;
       gloss = 0.34;
       outputAlpha = 0.24 + bandMask * 0.56;
@@ -513,6 +577,12 @@ const BODY_FRAGMENT = /* glsl */ `
     float specBase = max(dot(normal, halfVec), 0.0);
     float spec = pow(specBase, specularPower) * gloss * day * materialOcclusion;
     color += key * spec * specularStrength;
+
+    if (uKind == 5 && vSurfaceMask > 0.5 && vSurfaceMask < 1.5) {
+      float glassGlint = pow(specBase, 118.0) * day;
+      color += mix(key, vec3(0.34, 0.72, 1.0), 0.64) * glassGlint * 1.35;
+      color += vec3(0.018, 0.1, 0.16) * fresnel * 0.72;
+    }
 
     /* Miller refleja una fuente EXTENSA: además del filo especular estrecho hay
        una lámina de luz más ancha sobre el océano. Las nubes ya bajan el brillo,
@@ -593,6 +663,96 @@ interface MaterialOptions {
   transparent?: boolean;
   depthWrite?: boolean;
   side?: THREE.Side;
+  surfaceTexture?: THREE.Texture;
+}
+
+type HullSurface = "endurance" | "ranger";
+
+function surfaceNoise(x: number, y: number, seed: number): number {
+  let value = Math.imul(x + seed * 17, 374_761_393);
+  value = Math.imul(value ^ (y + seed * 31), 668_265_263);
+  value = Math.imul(value ^ (value >>> 13), 1_274_126_177);
+  return ((value ^ (value >>> 16)) >>> 0) / 4_294_967_295;
+}
+
+/**
+ * Textura de casco generada en memoria.
+ *
+ * No es ruido pegado encima: empaqueta brillo de manta, tono térmico, costura
+ * y micro-rugosidad en RGBA. Los UV de cada módulo repiten la misma gramática,
+ * pero la variación de macroescala del shader evita que parezcan clones. Son
+ * 64 KiB por nave en memoria y cero bytes de red; `flat` ni siquiera importa
+ * este módulo.
+ */
+function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
+  const size = 128;
+  const cell = kind === "endurance" ? 32 : 24;
+  const seed = kind === "endurance" ? 41 : 73;
+  const data = new Uint8Array(size * size * 4);
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const offset = (y * size + x) * 4;
+      const grain = surfaceNoise(x, y, seed);
+      const broad = surfaceNoise(
+        Math.floor(x / cell),
+        Math.floor(y / cell),
+        seed + 11,
+      );
+      const localX = x % cell;
+      const localY = y % cell;
+      const edgeDistance = Math.min(
+        localX,
+        localY,
+        cell - 1 - localX,
+        cell - 1 - localY,
+      );
+      const seam = edgeDistance < 1.5 ? 1 : edgeDistance < 2.6 ? 0.42 : 0;
+      const quilt =
+        0.5 +
+        0.5 *
+          Math.sin((x / size) * Math.PI * 18 + Math.sin((y / size) * 9));
+      const blanket = Math.min(
+        1,
+        Math.max(
+          0,
+          (kind === "endurance" ? 0.69 : 0.62) +
+            broad * 0.2 +
+            (grain - 0.5) * 0.1 -
+            seam * 0.42,
+        ),
+      );
+      const warmth = Math.min(
+        1,
+        Math.max(0, broad * 0.62 + quilt * 0.18 - seam * 0.24),
+      );
+      const roughness = Math.min(
+        1,
+        Math.max(0, 0.46 + grain * 0.32 + quilt * 0.12),
+      );
+
+      data[offset] = Math.round(blanket * 255);
+      data[offset + 1] = Math.round(warmth * 255);
+      data[offset + 2] = Math.round(seam * 255);
+      data[offset + 3] = Math.round(roughness * 255);
+    }
+  }
+
+  const texture = new THREE.DataTexture(
+    data,
+    size,
+    size,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
+  texture.name = `${kind}-thermal-surface`;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 /**
@@ -605,7 +765,7 @@ function bodyMaterial(
   kind: number,
   options: MaterialOptions = {},
 ): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     vertexShader: BODY_VERTEX,
     fragmentShader: BODY_FRAGMENT,
     transparent: options.transparent ?? false,
@@ -620,8 +780,15 @@ function bodyMaterial(
       uTime: { value: 0 },
       uFocus: { value: 0 },
       uKind: { value: kind },
+      uSurfaceMap: { value: options.surfaceTexture ?? null },
     },
   });
+
+  // Las mallas sin máscara reciben cero sin crear un buffer inútil. Three
+  // permite defaults por atributo en ShaderMaterial; extendemos el contrato
+  // incorporado (color/uv/uv1) para nuestro canal de material.
+  Object.assign(material.defaultAttributeValues, { aSurfaceMask: [0] });
+  return material;
 }
 
 type VectorTuple = readonly [number, number, number];
@@ -638,6 +805,19 @@ function placed(
     new THREE.Vector3(1, 1, 1),
   );
   return geometry.applyMatrix4(matrix);
+}
+
+/** Marca una pieza para seleccionar un acabado dentro del mismo draw call. */
+function surfaceMasked(
+  geometry: THREE.BufferGeometry,
+  mask: number,
+): THREE.BufferGeometry {
+  const count = geometry.getAttribute("position").count;
+  geometry.setAttribute(
+    "aSurfaceMask",
+    new THREE.BufferAttribute(new Float32Array(count).fill(mask), 1),
+  );
+  return geometry;
 }
 
 /** RoundedBox sale no indexada; se normaliza para poder fusionarla con boxes. */
@@ -658,6 +838,19 @@ function mergedMesh(
   geometries: THREE.BufferGeometry[],
   material: THREE.ShaderMaterial,
 ): THREE.Mesh {
+  const usesSurfaceMask = geometries.some((geometry) =>
+    Boolean(geometry.getAttribute("aSurfaceMask")),
+  );
+  if (usesSurfaceMask) {
+    for (const geometry of geometries) {
+      if (geometry.getAttribute("aSurfaceMask")) continue;
+      const count = geometry.getAttribute("position").count;
+      geometry.setAttribute(
+        "aSurfaceMask",
+        new THREE.BufferAttribute(new Float32Array(count), 1),
+      );
+    }
+  }
   const geometry = mergeGeometries(geometries, false);
   for (const part of geometries) part.dispose();
   if (!geometry) {
@@ -726,13 +919,18 @@ function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
  * geometría fusionada, no en un kitbash de objetos independientes.
  */
 function enduranceModel(input: SceneBodyInput): BodyModel {
-  const hull = bodyMaterial(input, KIND.ship);
+  const hull = bodyMaterial(input, KIND.ship, {
+    surfaceTexture: createHullSurfaceTexture("endurance"),
+  });
   const structure = bodyMaterial(input, STRUCTURE_KIND);
   const service = bodyMaterial(input, ENDURANCE_SERVICE_KIND, {
     accent: "#c0793d",
   });
   const lights = bodyMaterial(input, EMISSIVE_KIND, { accent: input.secondary });
   const root = new THREE.Object3D();
+  const assembly = new THREE.Object3D();
+  assembly.name = "endurance-assembly";
+  root.add(assembly);
 
   const MODULES = 12;
   const RING = 0.78;
@@ -889,14 +1087,26 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
 
   // Full stack: dos Ranger planos y dos Lander pesados alrededor del hub.
   hullParts.push(
-    placed(foil(0.16, -0.16, 0.2, 0.025, -0.13, 0.045), [0, 0.22, 0.035]),
-    placed(
-      foil(0.16, -0.16, -0.2, 0.025, -0.13, 0.045),
-      [0, -0.22, 0.035],
-      [0, 0, Math.PI],
+    surfaceMasked(
+      placed(foil(0.16, -0.16, 0.2, 0.025, -0.13, 0.045), [0, 0.22, 0.035]),
+      2,
     ),
-    placed(roundedBox(0.22, 0.15, 0.16, 0.022), [0.22, 0, -0.02]),
-    placed(roundedBox(0.22, 0.15, 0.16, 0.022), [-0.22, 0, -0.02]),
+    surfaceMasked(
+      placed(
+        foil(0.16, -0.16, -0.2, 0.025, -0.13, 0.045),
+        [0, -0.22, 0.035],
+        [0, 0, Math.PI],
+      ),
+      2,
+    ),
+    surfaceMasked(
+      placed(roundedBox(0.22, 0.15, 0.16, 0.022), [0.22, 0, -0.02]),
+      2,
+    ),
+    surfaceMasked(
+      placed(roundedBox(0.22, 0.15, 0.16, 0.022), [-0.22, 0, -0.02]),
+      2,
+    ),
   );
   structureParts.push(
     placed(new THREE.CylinderGeometry(0.022, 0.022, 0.34, 7)),
@@ -909,19 +1119,19 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
 
   const hullMesh = mergedMesh(hullParts, hull);
   hullMesh.name = "endurance-twelve-module-ring";
-  root.add(hullMesh);
+  assembly.add(hullMesh);
   const structureMesh = mergedMesh(structureParts, structure);
   structureMesh.name = "endurance-single-spoke-connectors-and-engines";
-  root.add(structureMesh);
+  assembly.add(structureMesh);
   const serviceMesh = mergedMesh(serviceParts, service);
   serviceMesh.name = "endurance-service-panels";
-  root.add(serviceMesh);
+  assembly.add(serviceMesh);
   const lightMesh = mergedMesh(lightParts, lights);
   lightMesh.name = "endurance-airlock-lights";
   lightMesh.renderOrder = 2;
-  root.add(lightMesh);
+  assembly.add(lightMesh);
 
-  root.userData.enduranceArchitecture = {
+  assembly.userData.enduranceArchitecture = {
     modules: MODULES,
     engineModules: ENGINE_MODULES.size,
     spokes: 1,
@@ -929,7 +1139,16 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     dockedLanders: 2,
   };
 
-  return { root, materials: [hull, structure, service, lights] };
+  return {
+    root,
+    materials: [hull, structure, service, lights],
+    animate(seconds) {
+      // Corrección de actitud subgrado. Se suma al giro axial del conjunto y
+      // hace que las mantas crucen el terminador sin que la nave derive de sitio.
+      assembly.rotation.x = Math.sin(seconds * 0.071) * 0.007;
+      assembly.rotation.y = Math.sin(seconds * 0.049) * 0.009;
+    },
+  };
 }
 
 /** Planeta anillado más un hábitat que orbita dentro del mismo modelo lógico. */
@@ -1145,7 +1364,9 @@ function foil(
  * jerarquía del sistema no cambia, cambia la calidad de la lectura.
  */
 function rangerModel(input: SceneBodyInput): BodyModel {
-  const hull = bodyMaterial(input, KIND.beacon);
+  const hull = bodyMaterial(input, KIND.beacon, {
+    surfaceTexture: createHullSurfaceTexture("ranger"),
+  });
   const structure = bodyMaterial(input, STRUCTURE_KIND);
   const beacon = bodyMaterial(input, EMISSIVE_KIND, { accent: input.accent });
   const root = new THREE.Object3D();
@@ -1172,10 +1393,22 @@ function rangerModel(input: SceneBodyInput): BodyModel {
       [Math.PI / 2, 0, 0],
     ),
     // Cabina acolchada, integrada en la superficie superior.
-    placed(
-      new THREE.SphereGeometry(0.13, 14, 8).scale(1.6, 0.48, 1.45),
-      [0.21, 0.12, 0],
-      [0, 0, -0.08],
+    surfaceMasked(
+      placed(
+        new THREE.SphereGeometry(0.13, 14, 8).scale(1.6, 0.48, 1.45),
+        [0.21, 0.12, 0],
+        [0, 0, -0.08],
+      ),
+      1,
+    ),
+    // Tapas de servicio cálidas, pequeñas y rasantes a la manta superior.
+    surfaceMasked(
+      placed(roundedBox(0.17, 0.02, 0.11, 0.006), [-0.11, 0.155, 0.2]),
+      2,
+    ),
+    surfaceMasked(
+      placed(roundedBox(0.17, 0.02, 0.11, 0.006), [-0.11, 0.155, -0.2]),
+      2,
     ),
     // Dos pequeñas derivas de popa, muy contenidas.
     placed(foil(-0.24, -0.48, 0.2, -0.39, -0.5, 0.028), [0, 0.02, 0.2]),
@@ -1323,10 +1556,10 @@ function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Eu
 const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
   water: 0.05,
   desert: 0.042,
-  station: 0.03,
-  ship: 0.012,
-  tesseract: 0.009,
-  beacon: 0.011,
+  station: 0.032,
+  ship: 0.016,
+  tesseract: 0.014,
+  beacon: 0.018,
   "black-hole": 0,
 };
 
@@ -1504,5 +1737,9 @@ export function disposeBody(body: SceneBody) {
       (node as Partial<THREE.Mesh>).geometry?.dispose();
     });
   }
-  for (const material of body.materials) material.dispose();
+  for (const material of body.materials) {
+    const surface = material.uniforms.uSurfaceMap?.value as unknown;
+    if (surface instanceof THREE.Texture) surface.dispose();
+    material.dispose();
+  }
 }

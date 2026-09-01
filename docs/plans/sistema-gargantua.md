@@ -601,12 +601,13 @@ verdad dónde está cada cuerpo.
 | Baseline compartido | 145,6 KiB gz | **147,9 KiB gz** |
 | `/es` (carga inicial) | 149,1 KiB gz | **151,4 KiB gz** |
 | Chunks de la escena | — | **≈160,6 KiB gz combinados**, aparte y bajo demanda |
-| Texturas | — | **0 bytes** — todo procedural en shader |
+| Texturas | — | **0 B transferidos**; 128 KiB RGBA generados en runtime (≈171 KiB con mipmaps GPU) |
 
-El chunk de la escena entra muy por debajo del techo de 350 KB gz de §8, y el
-presupuesto de texturas (1,2 MB) se gasta entero en nada: no hay ni una imagen.
-Quien recibe el nivel `flat` no descarga ni un byte de three.js — lo verifica el
-test G4.
+El chunk de la escena entra muy por debajo del techo de 350 KB gz de §8. Los dos
+mapas de 128×128 para Endurance y Ranger se fabrican de forma determinista en el
+cliente: no hay imágenes externas y el presupuesto de red de texturas (1,2 MB)
+permanece intacto. Quien recibe el nivel `flat` no descarga ni un byte de
+three.js — lo verifica el test G4.
 
 #### Cierre visual de G2
 

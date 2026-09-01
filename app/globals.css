@@ -2849,13 +2849,8 @@ html[data-scene-live="true"] .site-starfield{
   opacity: 0.6;
 }
 
-/*
-  Gargantúa dibujado con dos gradientes, para el nivel `flat`.
-
-  Sin esto, quien no puede ejecutar la escena veía siete puntos flotando sobre
-  un rectángulo negro — que es exactamente la sensación de «no se ve nada». El
-  fallback tiene que parecer una decisión, no una avería, y cuesta cero bytes.
-*/
+/* Gargantúa 2D por capas. El disco, las imágenes lensadas y la sombra son
+   piezas distintas para conservar detalle y profundidad sin montar WebGL. */
 .space-backdrop__gargantua {
   position: absolute;
   top: 50%;
@@ -2863,47 +2858,151 @@ html[data-scene-live="true"] .site-starfield{
   width: min(60vw, 54rem);
   aspect-ratio: 1;
   border-radius: 50%;
-  /* Las capas se pintan de arriba abajo: la sombra tapa al disco, y por eso el
-     disco parece pasar POR DETRÁS. Es la lectura que hace reconocible la
-     silueta sin una sola línea de WebGL. */
+  isolation: isolate;
   background:
-    /* 1 · la sombra: negro puro, sin degradado que la ensucie */
-    radial-gradient(circle at 50% 50%, #000 0 11.5%, transparent 12%),
-    /* 2 · el anillo de fotones, estrecho y brillante */
+    /* Arco lensado superior e imagen secundaria inferior. */
     radial-gradient(
-      circle at 50% 50%,
-      transparent 0 11.6%,
-      rgba(255, 226, 176, 0.95) 12.4%,
-      rgba(255, 176, 84, 0.35) 14.5%,
-      transparent 19%
+      ellipse 30% 29% at 50% 50%,
+      transparent 0 50%,
+      rgba(255, 245, 218, 0.8) 54%,
+      rgba(255, 193, 113, 0.42) 59%,
+      rgba(194, 91, 33, 0.1) 69%,
+      transparent 76%
     ),
-    /* 3 · el arco de la cara lejana, subiendo por encima de la sombra */
     radial-gradient(
-      ellipse 30% 26% at 50% 50%,
-      transparent 0 52%,
-      rgba(255, 205, 140, 0.55) 63%,
-      rgba(255, 170, 80, 0.12) 74%,
-      transparent 84%
+      ellipse 32% 24% at 50% 51%,
+      transparent 0 60%,
+      rgba(255, 176, 80, 0.22) 65%,
+      transparent 75%
     ),
-    /* 4 · el disco visto casi de canto */
+    /* Halo térmico contenido: no lava el cielo ni el centro. */
     radial-gradient(
-      ellipse 50% 4.2% at 50% 50%,
-      rgba(255, 248, 232, 0.95) 0 18%,
-      rgba(255, 182, 92, 0.72) 52%,
-      rgba(192, 92, 26, 0.22) 80%,
-      transparent 100%
-    ),
-    /* 5 · el halo que envuelve al conjunto */
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(255, 168, 76, 0.16) 0 16%,
-      rgba(255, 150, 60, 0.05) 30%,
-      transparent 52%
+      ellipse 47% 22% at 50% 50%,
+      rgba(255, 183, 94, 0.13),
+      rgba(215, 102, 36, 0.035) 48%,
+      transparent 74%
     );
-  filter: blur(0.5px);
   opacity: 0;
   transform: translate(-50%, -50%) rotate(-6deg);
   transition: opacity 900ms var(--ease-orbit);
+}
+
+.space-backdrop__gargantua-lensing,
+.space-backdrop__gargantua-disk,
+.space-backdrop__gargantua-shadow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+/* Irregularidad larga y tenue: rompe el aro perfecto sin convertirlo en una
+   nebulosa decorativa. */
+.space-backdrop__gargantua-lensing {
+  z-index: 0;
+  width: 62%;
+  height: 48%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 214deg,
+    transparent 0 12%,
+    rgba(255, 176, 82, 0.34) 17%,
+    rgba(255, 247, 224, 0.7) 24%,
+    rgba(255, 199, 119, 0.16) 35%,
+    transparent 43% 66%,
+    rgba(189, 86, 31, 0.16) 73%,
+    rgba(255, 205, 133, 0.34) 82%,
+    transparent 91%
+  );
+  filter: blur(5px);
+  opacity: 0.74;
+  -webkit-mask-image: radial-gradient(
+    ellipse,
+    transparent 0 42%,
+    #000 49% 57%,
+    transparent 67%
+  );
+  mask-image: radial-gradient(
+    ellipse,
+    transparent 0 42%,
+    #000 49% 57%,
+    transparent 67%
+  );
+}
+
+/* Disco de acreción de canto: varias escalas de polvo, costuras oscuras y un
+   gradiente térmico asimétrico sustituyen la antigua barra luminosa uniforme. */
+.space-backdrop__gargantua-disk {
+  z-index: 1;
+  width: 90%;
+  height: 10.5%;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(
+      ellipse at 50% 50%,
+      transparent 0 7%,
+      rgba(25, 10, 4, 0.52) 8%,
+      rgba(255, 225, 174, 0.13) 9.5%,
+      transparent 12%
+    ),
+    radial-gradient(
+      ellipse at 45% 50%,
+      rgba(255, 255, 248, 0.98) 0 4%,
+      rgba(255, 235, 193, 0.86) 12%,
+      transparent 37%
+    ),
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(137, 52, 15, 0.2) 7%,
+      rgba(218, 113, 42, 0.54) 22%,
+      rgba(255, 242, 210, 0.96) 43%,
+      rgba(255, 199, 110, 0.78) 58%,
+      rgba(164, 67, 20, 0.35) 79%,
+      transparent
+    );
+  filter:
+    blur(0.8px)
+    drop-shadow(0 0 0.6rem rgba(255, 210, 141, 0.28))
+    drop-shadow(0 0 1.5rem rgba(192, 84, 25, 0.14));
+  box-shadow: 0 0 1.25rem rgba(255, 166, 73, 0.12) inset;
+}
+
+.space-backdrop__gargantua-disk::after {
+  position: absolute;
+  inset: 35% 4%;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 168, 74, 0.15) 16%,
+    rgba(255, 252, 238, 0.88) 44%,
+    rgba(255, 195, 99, 0.42) 63%,
+    transparent
+  );
+  content: "";
+  filter: blur(0.7px);
+}
+
+/* El centro sigue negro puro. El borde brillante pertenece al anillo de
+   fotones, no a una esfera iluminada. */
+.space-backdrop__gargantua-shadow {
+  z-index: 2;
+  width: 23.5%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #000 0 72%,
+    #010101 75%,
+    rgba(255, 250, 231, 0.98) 77.5%,
+    rgba(255, 188, 91, 0.72) 80%,
+    rgba(168, 70, 22, 0.16) 84%,
+    transparent 88%
+  );
+  filter: drop-shadow(0 0 0.42rem rgba(255, 222, 163, 0.33));
 }
 
 /* Solo en la home, y solo mientras la escena real no esté pintando. */
@@ -4427,6 +4526,8 @@ html:not([data-scene-live="true"]) .system-map__field::after {
    el rótulo invisible y `translate(-50%)` desplazaba cuerpo, hitbox y brackets
    media palabra fuera de su coordenada orbital. */
 html:not([data-scene-live="true"]) .system-map__slot {
+  top: var(--map-flat-y, 50%);
+  left: var(--map-flat-x, 50%);
   width: 0;
   height: 0;
   transform: none;
@@ -4547,39 +4648,68 @@ button.hud__readout--action {
 
 .hud__controls[data-effects-control="primary-toggle"] {
   right: clamp(1rem, 3.4vw, 3.4rem);
-  bottom: 4.25rem;
+  bottom: 3.95rem;
   z-index: 12;
 }
 
 .hud__effects-toggle {
-  min-height: 2.5rem;
-  padding: 0.66rem 0.9rem !important;
-  border: 1px solid color-mix(in srgb, var(--cyan) 52%, transparent) !important;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--space-black) 78%, transparent) !important;
+  position: relative;
+  min-height: 2.05rem;
+  padding: 0.48rem 0.72rem !important;
+  border: 1px solid color-mix(in srgb, var(--cyan) 44%, transparent) !important;
+  border-radius: 2px;
+  background:
+    linear-gradient(105deg, rgba(127, 229, 255, 0.075), transparent 38%),
+    color-mix(in srgb, var(--space-black) 84%, transparent) !important;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.025) inset,
-    0 0 1.4rem rgba(127, 229, 255, 0.09);
+    0 0 0 1px rgba(255, 255, 255, 0.022) inset,
+    0 0 0.9rem rgba(127, 229, 255, 0.065);
   color: var(--hud-primary);
-  letter-spacing: 0.16em;
-  backdrop-filter: blur(12px);
+  font-size: 0.49rem;
+  font-weight: 650;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  clip-path: polygon(
+    0.48rem 0,
+    100% 0,
+    100% calc(100% - 0.48rem),
+    calc(100% - 0.48rem) 100%,
+    0 100%,
+    0 0.48rem
+  );
+  backdrop-filter: blur(10px);
+  transition:
+    border-color 180ms var(--ease-orbit),
+    box-shadow 180ms var(--ease-orbit),
+    color 180ms var(--ease-orbit),
+    transform 180ms var(--ease-orbit);
 }
 
 .hud__effects-toggle::before {
   display: inline-block;
-  width: 0.36rem;
-  height: 0.36rem;
-  margin-right: 0.65rem;
-  border-radius: 50%;
+  width: 0.28rem;
+  height: 0.28rem;
+  margin-right: 0.5rem;
+  border-radius: 1px;
   background: var(--cyan);
-  box-shadow: 0 0 0.65rem color-mix(in srgb, var(--cyan) 74%, transparent);
+  box-shadow: 0 0 0.5rem color-mix(in srgb, var(--cyan) 68%, transparent);
   content: "";
-  vertical-align: 0.04rem;
+  transform: rotate(45deg);
+  vertical-align: 0.02rem;
 }
 
 .hud__effects-toggle[aria-pressed="true"]::before {
   background: var(--amber);
-  box-shadow: 0 0 0.65rem color-mix(in srgb, var(--amber) 68%, transparent);
+  box-shadow: 0 0 0.5rem color-mix(in srgb, var(--amber) 62%, transparent);
+}
+
+.hud__effects-toggle:hover,
+.hud__effects-toggle:focus-visible {
+  border-color: color-mix(in srgb, var(--cyan) 72%, transparent) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 0 1.05rem rgba(127, 229, 255, 0.11);
+  transform: translateY(-1px);
 }
 
 .hud__effects-toggle:disabled {
@@ -4599,9 +4729,9 @@ button.hud__readout--action {
 
   .hud__effects-toggle {
     min-height: 2.75rem;
-    padding-inline: 0.82rem !important;
-    font-size: 0.53rem;
-    letter-spacing: 0.12em;
+    padding-inline: 0.75rem !important;
+    font-size: 0.5rem;
+    letter-spacing: 0.13em;
   }
 
   /* En las páginas de mundo no se monta `SystemHud`: el control global es la

@@ -92,7 +92,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 30, phase: 272, inclination: 26, size: 2.45 },
+    placement: { orbitRadius: 30, phase: 272, inclination: 26, size: 2.6 },
     sceneName: "scene-cooper-station",
   },
   miller: {
@@ -142,7 +142,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#c58cff",
     secondary: "#72ddff",
     visual: "beacon",
-    placement: { orbitRadius: 30, phase: 180, inclination: 10, size: 2.5 },
+    placement: { orbitRadius: 30, phase: 180, inclination: 10, size: 2.6 },
     sceneName: "scene-ranger",
   },
 };
