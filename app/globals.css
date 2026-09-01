@@ -4747,3 +4747,135 @@ button.hud__readout--action {
     scroll-padding-left: 4.35rem;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WORLD ASSET & MATERIAL PASS — instrumentación exclusiva de la escena 3D
+
+   El mapa 2D conserva su control de activación tal como estaba. Una vez vivo
+   WebGL, la salida se integra como una lectura compacta de estado: dos líneas,
+   sin píldora, fondo ni volumen de botón web.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+html[data-scene-live="true"] .hud__craft {
+  color: color-mix(in srgb, var(--hud-secondary) 92%, white 8%);
+  font-weight: 620;
+  text-shadow: 0 0 1rem rgba(127, 229, 255, 0.12);
+}
+
+html[data-scene-live="true"] .hud__state {
+  color: var(--hud-primary);
+  font-weight: 620;
+  text-shadow: 0 0 1rem rgba(131, 232, 207, 0.1);
+}
+
+html[data-scene-live="true"] .nav-rail__name {
+  color: var(--hud-secondary, #cbd8f0);
+  font-weight: 620;
+}
+
+html[data-scene-live="true"]
+  .nav-rail__item:not([data-target-state="idle"])
+  .nav-rail__name,
+html[data-scene-live="true"] .nav-rail__link:hover .nav-rail__name,
+html[data-scene-live="true"] .nav-rail__link:focus-visible .nav-rail__name {
+  color: var(--hud-primary);
+  text-shadow: 0 0 1rem rgba(127, 229, 255, 0.24);
+}
+
+html[data-scene-live="true"] .hud__controls {
+  bottom: 3.8rem;
+}
+
+html[data-scene-live="true"]
+  :is(.hud__effects-toggle--motion, .scene-toggle--motion) {
+  display: grid;
+  min-width: 4.9rem;
+  min-height: 0;
+  gap: 0.28rem;
+  padding: 0.28rem 0.12rem !important;
+  border: 0 !important;
+  border-radius: 0;
+  background: none !important;
+  box-shadow: none;
+  clip-path: none;
+  color: var(--hud-secondary, #cbd8f0);
+  font-size: 0.48rem;
+  font-weight: 620;
+  line-height: 1;
+  text-align: left;
+  text-decoration: none;
+  backdrop-filter: none;
+}
+
+html[data-scene-live="true"]
+  :is(.hud__effects-toggle--motion, .scene-toggle--motion)::before {
+  display: none;
+}
+
+.hud__motion-label {
+  color: var(--hud-tertiary, #93a4c4);
+  letter-spacing: 0.22em;
+}
+
+.hud__motion-state {
+  color: var(--hud-primary, #f3f7ff);
+  letter-spacing: 0.18em;
+}
+
+.hud__motion-state b {
+  display: inline-block;
+  width: 0.34rem;
+  height: 0.34rem;
+  margin-right: 0.38rem;
+  border: 1px solid
+    color-mix(in srgb, var(--hud-nominal, #83e8cf) 72%, transparent);
+  border-radius: 50%;
+  background: var(--hud-nominal, #83e8cf);
+  box-shadow: 0 0 0.62rem
+    color-mix(in srgb, var(--hud-nominal, #83e8cf) 52%, transparent);
+  vertical-align: -0.01rem;
+}
+
+html[data-scene-live="true"]
+  :is(.hud__effects-toggle--motion, .scene-toggle--motion):hover,
+html[data-scene-live="true"]
+  :is(.hud__effects-toggle--motion, .scene-toggle--motion):focus-visible {
+  border: 0 !important;
+  background:
+    linear-gradient(
+        var(--hud-active, #7fe5ff),
+        var(--hud-active, #7fe5ff)
+      )
+      left top / 0.45rem 1px
+      no-repeat,
+    linear-gradient(
+        var(--hud-active, #7fe5ff),
+        var(--hud-active, #7fe5ff)
+      )
+      left top / 1px 0.45rem
+      no-repeat !important;
+  box-shadow: none;
+  color: var(--hud-primary, #f3f7ff);
+  transform: none;
+}
+
+html[data-scene-live="true"]
+  :is(.hud__effects-toggle--motion, .scene-toggle--motion):focus-visible {
+  outline: 2px solid var(--hud-active, #7fe5ff);
+  outline-offset: 0.2rem;
+}
+
+@media (max-width: 60rem) {
+  html[data-scene-live="true"] .hud__controls {
+    position: fixed;
+    right: 0.85rem;
+    bottom: 4.55rem;
+    display: flex;
+  }
+
+  html[data-scene-live="true"]
+    :is(.hud__effects-toggle--motion, .scene-toggle--motion) {
+    min-height: 2.75rem;
+    padding: 0.46rem 0.18rem !important;
+  }
+}

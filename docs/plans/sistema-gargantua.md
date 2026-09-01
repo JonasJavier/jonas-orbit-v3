@@ -520,8 +520,8 @@ siguen presentes como HTML semántico y metadata, de acuerdo con la regla 7.
   Miller, Edmunds y Cooper forman el nivel planetario; Tesseracto y Ranger siguen
   menores pero localizables.
 - **Endurance** deja de ser un toro rayado y sigue la referencia cinematográfica
-  fijada por la dirección del Hero: doce módulos separados, gran vacío central,
-  un solo brazo radial, hub compacto, full stack y motores legibles.
+  fijada por la dirección del Hero: doce módulos separados, hub central
+  dominante, cuatro brazos de doble larguero, full stack y motores legibles.
 - **Cooper Station** deja de ser un cilindro: la representa un planeta anillado
   inventado con un hábitat orbital pequeño y ordenado.
 - El HUD usa cuatro niveles: PRIMARY (90–100 %), SECONDARY (60–75 %), TERTIARY

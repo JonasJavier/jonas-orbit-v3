@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { worldsData, type WorldId } from "@/content/worlds.data";
@@ -44,7 +46,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
       ).toBeDefined();
       expect(
         endurance.object.getObjectByName(
-          "endurance-single-spoke-connectors-and-engines",
+          "endurance-radial-trusses-connectors-and-engines",
         ),
       ).toBeDefined();
       expect(
@@ -56,7 +58,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
 
       for (const name of [
         "endurance-twelve-module-ring",
-        "endurance-single-spoke-connectors-and-engines",
+        "endurance-radial-trusses-connectors-and-engines",
         "endurance-service-panels",
         "endurance-airlock-lights",
       ]) {
@@ -70,7 +72,8 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(enduranceRoot?.userData.enduranceArchitecture).toEqual({
         modules: 12,
         engineModules: 4,
-        spokes: 1,
+        primaryModules: 4,
+        spokes: 4,
         dockedRangers: 2,
         dockedLanders: 2,
       });
@@ -82,6 +85,9 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(tesseract.object.getObjectByName("tesseract-nested-frames")).toBeInstanceOf(
         THREE.LineSegments,
       );
+      expect(
+        tesseract.object.getObjectByName("tesseract-translucent-strata"),
+      ).toBeDefined();
       expect(tesseract.object.getObjectByName("tesseract-core")).toBeDefined();
 
       expect(ranger.object.getObjectByName("ranger-metallic-hull")).toBeDefined();
@@ -160,11 +166,14 @@ describe("cuerpos del Sistema Gargantúa", () => {
         bodies.miller.radius,
         bodies.edmunds.radius,
       ];
-      const distantObjects = [bodies.tesseract.radius, bodies.ranger.radius];
-
-      expect(secondaryAnchor).toBeGreaterThan(Math.max(...majorWorlds));
-      expect(Math.min(...majorWorlds)).toBeGreaterThan(Math.max(...distantObjects));
-      expect(bodies.tesseract.radius).toBeGreaterThan(bodies.ranger.radius);
+      expect(secondaryAnchor).toBeGreaterThan(
+        Math.max(...majorWorlds, bodies.ranger.radius),
+      );
+      // Ranger deja de ser la mota más pequeña, pero sigue claramente
+      // subordinada a Endurance. El Tesseracto conserva la lectura lejana.
+      expect(bodies.ranger.radius).toBeGreaterThan(4);
+      expect(bodies.ranger.radius).toBeGreaterThan(bodies.tesseract.radius);
+      expect(Math.min(...majorWorlds)).toBeGreaterThan(bodies.tesseract.radius);
     } finally {
       for (const body of Object.values(bodies)) disposeBody(body);
     }
@@ -189,7 +198,18 @@ describe("cuerpos del Sistema Gargantúa", () => {
           root.traverse((node) => {
             const renderable = node as Partial<THREE.Mesh>;
             if (!renderable.geometry) return;
-            batches += 1;
+            const materials = Array.isArray(renderable.material)
+              ? renderable.material
+              : renderable.material
+                ? [renderable.material]
+                : [];
+            for (const material of materials) {
+              const doubleTransparentPass =
+                material.transparent &&
+                material.side === THREE.DoubleSide &&
+                !material.forceSinglePass;
+              batches += doubleTransparentPass ? 2 : 1;
+            }
             vertices += renderable.geometry.getAttribute("position")?.count ?? 0;
           });
         }
@@ -198,9 +218,9 @@ describe("cuerpos del Sistema Gargantúa", () => {
       }
     }
 
-    // Endurance gana una familia material para paneles de servicio y Ranger un
-    // vientre térmico separado: dos draws con lectura real, no greeble suelto.
-    expect(batches).toBeLessThanOrEqual(23);
+    // El Tesseracto gana una única familia translúcida para profundidad real;
+    // sigue siendo un draw fusionado, no una pila de paneles independientes.
+    expect(batches).toBeLessThanOrEqual(24);
     expect(vertices).toBeLessThan(15_000);
   });
 
@@ -249,5 +269,39 @@ describe("cuerpos del Sistema Gargantúa", () => {
     } finally {
       disposeBody(body);
     }
+  });
+
+  /*
+    PRESUPUESTO DE RUIDO DEL SHADER.
+
+    Los seis cuerpos comparten un único programa, así que lo que se paga —en
+    compilación y por píxel— es el número de SITIOS de llamada a fbm, no el de
+    materiales. Cada llamada son cuatro octavas por ocho hash: 32 evaluaciones.
+
+    El techo está medido, no estimado. Con dieciséis sitios, montar la escena en
+    el runtime software que usa CI pasaba de 1,7 s a entre 46 y 60 s con tres
+    workers en paralelo, y A28 llegaba a agotar su timeout de 30 s. En una GPU
+    real no se nota; por eso este test existe: es la única red que atrapa la
+    regresión antes de que salga como un E2E intermitente.
+
+    Si hace falta más detalle, el camino es noise() de una octava —que a alta
+    frecuencia se ve igual— y no una llamada más a fbm.
+  */
+  it("mantiene el presupuesto de ruido del shader de cuerpos", () => {
+    // Vitest corre desde la raíz del repo: en jsdom `import.meta.url` no es
+    // una URL de archivo, así que la ruta se compone desde el cwd.
+    const source = readFileSync(
+      join(process.cwd(), "components/scene/bodies.ts"),
+      "utf8",
+    );
+    const start = source.indexOf("const BODY_FRAGMENT");
+    // El literal de plantilla acaba en su propio backtick de cierre.
+    const shader = source.slice(start, source.indexOf("\n`;", start));
+    const callSites =
+      (shader.match(/fbm\(/g) ?? []).length -
+      // La definición misma no es un sitio de llamada.
+      (shader.match(/float fbm\(/g) ?? []).length;
+
+    expect(callSites).toBeLessThanOrEqual(12);
   });
 });

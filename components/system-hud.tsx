@@ -130,11 +130,13 @@ export function SystemHud({
               sceneUnavailable
                 ? "Animación 3D no disponible"
                 : sceneIsLive
-                  ? "Volver al mapa sin animación"
+                  ? "Reducir movimiento y volver al mapa 2D"
                   : "Activar animación 3D"
             }
             aria-pressed={sceneIsLive && forcedEffects}
-            className="hud__readout hud__readout--action hud__effects-toggle"
+            className={`hud__readout hud__readout--action hud__effects-toggle${
+              sceneIsLive ? " hud__effects-toggle--motion" : ""
+            }`}
             disabled={sceneUnavailable}
             onClick={() => setForcedEffects(!sceneIsLive)}
             type="button"
@@ -142,16 +144,26 @@ export function SystemHud({
             {sceneUnavailable
               ? "3D offline"
               : sceneIsLive
-                ? "Mapa 2D"
+                ? (
+                    <>
+                      <span className="hud__motion-label">Motion</span>
+                      <span className="hud__motion-state">
+                        <b aria-hidden="true" /> Full
+                      </span>
+                    </>
+                  )
                 : "Activar 3D"}
           </button>
         ) : (
           <a
-            aria-label="Reducir efectos 3D"
-            className="hud__readout hud__readout--action"
+            aria-label="Reducir movimiento 3D"
+            className="hud__readout hud__readout--action hud__effects-toggle hud__effects-toggle--motion"
             href="?no3d=1"
           >
-            Reducir efectos
+            <span className="hud__motion-label">Motion</span>
+            <span className="hud__motion-state">
+              <b aria-hidden="true" /> Full
+            </span>
           </a>
         )}
       </div>
