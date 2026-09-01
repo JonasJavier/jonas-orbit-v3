@@ -35,14 +35,42 @@ describe("FlatWorldBody", () => {
       <FlatWorldBody world={endurance as NonNullable<typeof endurance>} />,
     );
 
+    /*
+      La misma arquitectura que el modelo 3D, y por el mismo motivo que allí:
+      cuatro brazos, cuatro grupos de tres módulos —uno principal y dos
+      satélites— y cuatro radiadores. En un equipo con movimiento reducido este
+      dibujo es la ÚNICA Endurance que se ve; si divergiera del modelo, el
+      mismo destino contaría dos cosas distintas según el equipo del visitante.
+    */
     expect(container.querySelectorAll('[data-flat-part="module"]')).toHaveLength(
       12,
     );
-    expect(container.querySelectorAll('[data-flat-part="spoke"]')).toHaveLength(
-      1,
-    );
+    expect(
+      container.querySelectorAll('[data-flat-module="primary"]'),
+    ).toHaveLength(4);
+    expect(container.querySelectorAll('[data-flat-part="arm"]')).toHaveLength(4);
+    expect(
+      container.querySelectorAll('[data-flat-part="radiator"]'),
+    ).toHaveLength(4);
     expect(container.querySelector('[data-flat-part="docked-craft"]')).not.toBeNull();
     expect(container.querySelector('[data-flat-part="engine-bank"]')).not.toBeNull();
+  });
+
+  it("dibuja la Ranger con proa, cabina y toberas, no una mancha", () => {
+    const ranger = worlds.find((world) => world.id === "ranger");
+    expect(ranger).toBeDefined();
+
+    const { container } = render(
+      <FlatWorldBody world={ranger as NonNullable<typeof ranger>} />,
+    );
+
+    // Las cuatro piezas que la hacen reconocible como nave y no como icono.
+    for (const part of ["fuselage", "cockpit", "wing", "engines"]) {
+      expect(
+        container.querySelector(`[data-flat-part="${part}"]`),
+        part,
+      ).not.toBeNull();
+    }
   });
 
   it("es puramente decorativo y no introduce movimiento ni copy duplicado", () => {

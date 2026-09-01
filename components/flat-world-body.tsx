@@ -7,9 +7,21 @@ type FlatWorld = Pick<
   "id" | "visual" | "accent" | "secondary"
 >;
 
-const ENDURANCE_MODULE_ANGLES = [
-  0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330,
-] as const;
+/**
+ * Los cuatro brazos de la Endurance, y sus tres módulos cada uno.
+ *
+ * Espeja la arquitectura del modelo 3D (`enduranceModel`): un módulo principal
+ * en el eje del brazo, dos satélites a 22° y riel desnudo entre grupos. Doce
+ * módulos repartidos cada 30° —que es lo que había aquí— era justo la lectura
+ * de «nube de cubos» que el rediseño retiró.
+ */
+const ENDURANCE_GROUPS = [0, 90, 180, 270] as const;
+const ENDURANCE_SLOT_SPREAD = 22;
+const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
+  { angle: group - ENDURANCE_SLOT_SPREAD, primary: false },
+  { angle: group, primary: true },
+  { angle: group + ENDURANCE_SLOT_SPREAD, primary: false },
+]);
 
 function Tesseract() {
   return (
@@ -127,6 +139,15 @@ function Miller() {
   );
 }
 
+/**
+ * Endurance en `flat`, con la MISMA arquitectura que el modelo 3D.
+ *
+ * No es una ilustración libre: si el frame estático dibujara doce módulos
+ * iguales cada 30° y la escena WebGL cuatro grupos de tres con cuatro brazos,
+ * el mismo destino contaría dos cosas distintas según el equipo del visitante
+ * —y en un equipo con movimiento reducido, ÉSTA es la única versión que se ve.
+ * El orden de lectura es el mismo: núcleo, rieles, brazos, grupos, secundarios.
+ */
 function Endurance() {
   return (
     <svg viewBox="0 0 150 150" focusable="false">
@@ -137,6 +158,11 @@ function Endurance() {
           <stop offset="0.72" stopColor="#777d83" />
           <stop offset="1" stopColor="#272d33" />
         </linearGradient>
+        <linearGradient id="flat-endurance-blanket" x1="0" y1="0" x2="0.7" y2="1">
+          <stop stopColor="#b5bbc0" />
+          <stop offset="0.55" stopColor="#7d858b" />
+          <stop offset="1" stopColor="#2c3238" />
+        </linearGradient>
         <radialGradient id="flat-endurance-hub">
           <stop stopColor="#e9edf0" />
           <stop offset="0.58" stopColor="#70777e" />
@@ -144,42 +170,86 @@ function Endurance() {
         </radialGradient>
       </defs>
       <g transform="rotate(-18 75 75)">
-        <circle cx="75" cy="75" r="54" fill="none" stroke="#77828a" strokeOpacity="0.32" strokeWidth="2.2" />
-        <path
-          data-flat-part="spoke"
-          d="M75 75V28"
-          fill="none"
-          stroke="#d7dcdf"
-          strokeWidth="4.2"
-        />
-        <path d="M72 72V31M78 72V31" fill="none" stroke="#252c31" strokeWidth="1" />
+        {/* Estructura primaria: dos rieles continuos cierran la circunferencia
+            entera, también donde no hay módulos. */}
+        <circle cx="75" cy="75" r="48" fill="none" stroke="#8d99a1" strokeOpacity="0.6" strokeWidth="1.8" />
+        <circle cx="75" cy="75" r="56" fill="none" stroke="#8d99a1" strokeOpacity="0.6" strokeWidth="1.8" />
 
-        {ENDURANCE_MODULE_ANGLES.map((angle) => (
-          <g
-            data-flat-part="module"
-            key={angle}
-            transform={`rotate(${angle} 75 75)`}
-          >
-            <rect x="63" y="12" width="24" height="16" rx="2.5" fill="url(#flat-endurance-hull)" stroke="#f4f1e8" strokeOpacity="0.55" />
-            <path d="M67 15v10M72 14v12M81 14v12" stroke="#333a40" strokeOpacity="0.55" strokeWidth="0.8" />
-            <rect x="72.5" y="12" width="5" height="2.6" rx="0.6" fill="var(--flat-accent)" opacity="0.75" />
+        {ENDURANCE_GROUPS.map((angle) => (
+          <g key={`bay-${angle}`} transform={`rotate(${angle} 75 75)`}>
+            {/* Radiador en el plano del anillo, alineado con el brazo. */}
+            <g data-flat-part="radiator">
+              <rect x="64" y="4" width="22" height="14" rx="1" fill="#161d24" stroke="#5d686f" strokeOpacity="0.8" strokeWidth="0.8" />
+              <path d="M68 5v12M72 5v12M76 5v12M80 5v12" stroke="#3d4750" strokeWidth="0.7" />
+            </g>
+            {/* Brazo: dos cordones, travesaños y diagonales alternas. */}
+            <g data-flat-part="arm" fill="none">
+              <path d="M71 58V27M79 58V27" stroke="#ccd3d7" strokeWidth="2.6" />
+              <path d="M71 55h8M71 47h8M71 39h8M71 31h8" stroke="#78838b" strokeWidth="1.1" />
+              <path d="m71 55 8-8M79 47l-8-8M71 39l8-8" stroke="#78838b" strokeWidth="0.9" />
+            </g>
           </g>
         ))}
 
-        <circle cx="75" cy="75" r="12" fill="url(#flat-endurance-hub)" stroke="#e8ecee" strokeOpacity="0.7" />
-        <circle cx="75" cy="75" r="5" fill="#090d11" stroke="var(--flat-secondary)" strokeOpacity="0.45" />
-        <g data-flat-part="docked-craft" fill="#d9dee0" stroke="#151a1e" strokeWidth="0.8">
-          <path d="m54 72 14-5v8l-14 3-7-3Z" />
-          <path d="m96 78-14 5v-8l14-3 7 3Z" />
-          <rect x="71" y="84" width="8" height="15" rx="2" />
-          <rect x="71" y="51" width="8" height="15" rx="2" />
+        {ENDURANCE_MODULES.map(({ angle, primary }) => (
+          <g
+            data-flat-part="module"
+            data-flat-module={primary ? "primary" : "satellite"}
+            key={angle}
+            transform={`rotate(${angle} 75 75)`}
+          >
+            <rect
+              x={primary ? 62 : 65.5}
+              y={primary ? 14 : 17}
+              width={primary ? 26 : 19}
+              height={primary ? 18 : 14}
+              rx="2.5"
+              fill={primary ? "url(#flat-endurance-hull)" : "url(#flat-endurance-blanket)"}
+              stroke="#f4f1e8"
+              strokeOpacity={primary ? 0.6 : 0.34}
+            />
+            <path
+              d={primary ? "M68 15v16M75 15v16M82 15v16" : "M70 18v12M76 18v12M81 18v12"}
+              stroke="#333a40"
+              strokeOpacity="0.5"
+              strokeWidth="0.8"
+            />
+            {primary ? (
+              <>
+                <rect x="70" y="30" width="10" height="3.2" rx="0.8" fill="var(--flat-accent)" opacity="0.8" />
+                <circle cx="75" cy="38" r="1.5" fill="var(--flat-secondary)" />
+              </>
+            ) : null}
+          </g>
+        ))}
+
+        {/* Naves atracadas: dos Ranger y dos Lander junto a los módulos
+            principales. Van a un lado del brazo, no encima: en planta, una
+            nave centrada sobre el brazo se lee como una pieza más de la
+            celosía y deja de contar la escala, que es lo único que aporta. */}
+        <g data-flat-part="docked-craft" fill="#c8cfd3" stroke="#151a1e" strokeWidth="0.7">
+          {ENDURANCE_GROUPS.map((angle, index) => (
+            <g key={angle} transform={`rotate(${angle} 75 75)`}>
+              {index % 2 === 0 ? (
+                <path d="m92 32-8 6 8 5 8-5Z" />
+              ) : (
+                <rect x="85" y="32" width="13" height="10" rx="2" />
+              )}
+            </g>
+          ))}
         </g>
-        <g data-flat-part="engine-bank" fill="#090d11" stroke="#bfc6ca" strokeWidth="0.7">
-          <circle cx="43.2" cy="31.3" r="2.4" />
-          <circle cx="118.7" cy="43.2" r="2.4" />
-          <circle cx="106.8" cy="118.7" r="2.4" />
-          <circle cx="31.3" cy="106.8" r="2.4" />
+
+        {/* Núcleo: barril axial visto de frente, con su collar de atraque y las
+            cuatro campanas del bloque de popa asomando alrededor. */}
+        <g data-flat-part="engine-bank" fill="#080d11" stroke="#c2c9cd" strokeWidth="0.8">
+          <circle cx="62" cy="62" r="3.4" />
+          <circle cx="88" cy="62" r="3.4" />
+          <circle cx="88" cy="88" r="3.4" />
+          <circle cx="62" cy="88" r="3.4" />
         </g>
+        <circle cx="75" cy="75" r="16" fill="url(#flat-endurance-hub)" stroke="#e8ecee" strokeOpacity="0.72" />
+        <circle cx="75" cy="75" r="9.5" fill="none" stroke="#0d1216" strokeOpacity="0.65" strokeWidth="1.4" />
+        <circle cx="75" cy="75" r="5" fill="#090d11" stroke="var(--flat-secondary)" strokeOpacity="0.5" />
       </g>
     </svg>
   );
@@ -214,15 +284,29 @@ function Edmunds() {
   );
 }
 
+/**
+ * Ranger en `flat`: la misma nave que el modelo 3D, en planta.
+ *
+ * La versión anterior era el lifting body sin proa que la escena ya no usa. Se
+ * dibuja en planta y no en tres cuartos porque en un glifo de 160 px la planta
+ * es la lectura más clara que existe de una nave: flecha, góndolas y cabina de
+ * un vistazo. La identidad —proa facetada, ala en flecha con borde de ataque
+ * marcado, dos góndolas con tobera, deriva en V— es la del modelo.
+ */
 function Ranger() {
   return (
     <svg viewBox="0 0 160 90" focusable="false">
       <defs>
-        <linearGradient id="flat-ranger-hull" x1="0" y1="0" x2="0.9" y2="1">
+        <linearGradient id="flat-ranger-hull" x1="0.1" y1="0" x2="0.9" y2="1">
           <stop stopColor="#ffffff" />
-          <stop offset="0.46" stopColor="#bec4c8" />
-          <stop offset="0.78" stopColor="#5d666d" />
+          <stop offset="0.46" stopColor="#c3c9cd" />
+          <stop offset="0.78" stopColor="#626b72" />
           <stop offset="1" stopColor="#1a2025" />
+        </linearGradient>
+        <linearGradient id="flat-ranger-wing" x1="0.5" y1="0" x2="0.5" y2="1">
+          <stop stopColor="#9aa3aa" />
+          <stop offset="0.6" stopColor="#5e666d" />
+          <stop offset="1" stopColor="#232a30" />
         </linearGradient>
         <linearGradient id="flat-ranger-canopy" x1="0.15" y1="0" x2="0.85" y2="1">
           <stop stopColor="#b9e4ed" />
@@ -230,37 +314,67 @@ function Ranger() {
           <stop offset="1" stopColor="#111b22" />
         </linearGradient>
       </defs>
-      <g data-flat-part="lifting-body" transform="rotate(-5 80 45)">
+      <g transform="rotate(-4 80 45)">
+        {/* Alas en flecha, con el larguero oscuro del borde de ataque. */}
+        <g data-flat-part="wing">
+          <path d="M74 30 13 62l7 9 52 3Z" fill="url(#flat-ranger-wing)" stroke="#dfe6ea" strokeOpacity="0.4" strokeWidth="0.8" />
+          <path d="M86 30l61 32-7 9-52 3Z" fill="url(#flat-ranger-wing)" stroke="#dfe6ea" strokeOpacity="0.4" strokeWidth="0.8" />
+          <path d="M74 30 13 62M86 30l61 32" stroke="#0d1216" strokeOpacity="0.85" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M62 44 32 60M98 44l30 16" stroke="#2b333a" strokeOpacity="0.55" strokeWidth="0.9" />
+          <rect x="12" y="58" width="10" height="6" rx="2" fill="#aab2b8" stroke="#151a1e" strokeWidth="0.6" />
+          <rect x="138" y="58" width="10" height="6" rx="2" fill="#aab2b8" stroke="#151a1e" strokeWidth="0.6" />
+        </g>
+
+        {/* Deriva en V: dos planos inclinados, no dos aletas verticales. */}
+        <g data-flat-part="tail" fill="#767f86" stroke="#161c21" strokeWidth="0.7">
+          <path d="m74 56-12 18 7 2 8-14Z" />
+          <path d="m86 56 12 18-7 2-8-14Z" />
+        </g>
+
+        {/* Góndolas con anillo y tobera oscura. */}
+        <g data-flat-part="engines">
+          <rect x="63" y="52" width="12" height="26" rx="5" fill="url(#flat-ranger-hull)" stroke="#e6ebee" strokeOpacity="0.45" strokeWidth="0.7" />
+          <rect x="85" y="52" width="12" height="26" rx="5" fill="url(#flat-ranger-hull)" stroke="#e6ebee" strokeOpacity="0.45" strokeWidth="0.7" />
+          <path d="M63 62h12M85 62h12" stroke="#39424a" strokeWidth="0.9" />
+          <ellipse cx="69" cy="78" rx="6.4" ry="3" fill="#05080b" stroke="#b7c1c7" strokeWidth="0.8" />
+          <ellipse cx="91" cy="78" rx="6.4" ry="3" fill="#05080b" stroke="#b7c1c7" strokeWidth="0.8" />
+          <ellipse cx="69" cy="78" rx="2.6" ry="1.2" fill="var(--flat-accent)" opacity="0.75" />
+          <ellipse cx="91" cy="78" rx="2.6" ry="1.2" fill="var(--flat-accent)" opacity="0.75" />
+        </g>
+
+        {/* Fuselaje y proa facetada. */}
         <path
-          d="M11 55 50 30 70 23h20l20 7 39 25-48-7-16 15H75L59 48Z"
+          data-flat-part="fuselage"
+          d="M80 5 89 24l2 40-4 12H73l-4-12 2-40Z"
           fill="url(#flat-ranger-hull)"
           stroke="#eef2f3"
-          strokeOpacity="0.74"
-        />
-        <path d="m20 53 39-17 16-6h10l16 6 39 17-39-7-17 10h-8L59 46Z" fill="#d8dde0" fillOpacity="0.44" />
-        <path data-flat-part="heat-shield" d="m45 51 30-10h10l30 10-26 10H71Z" fill="#0a0f14" opacity="0.9" />
-        <path
-          data-flat-part="cockpit"
-          d="m73 31 7-6 7 6-3 13h-8Z"
-          fill="url(#flat-ranger-canopy)"
-          stroke="#d9eef2"
           strokeOpacity="0.72"
         />
+        <path d="M80 5v71" stroke="#2f373d" strokeOpacity="0.45" strokeWidth="0.8" />
+        <path data-flat-part="keel" d="M73 40h14l-1 26H74Z" fill="#0a0f14" opacity="0.55" />
+        <path
+          data-flat-part="cockpit"
+          d="M80 15l6 8-1 12h-10l-1-12Z"
+          fill="url(#flat-ranger-canopy)"
+          stroke="#d9eef2"
+          strokeOpacity="0.75"
+        />
+        <path d="M80 16v19" stroke="#dceff3" strokeOpacity="0.5" strokeWidth="0.7" />
         <path
           data-flat-part="service-panels"
-          d="m46 40 14-5 5 4-14 5Zm49-1 5-4 14 5-5 4Z"
-          fill="#c6743d"
-          fillOpacity="0.88"
+          d="M71 44h6v7h-6zm12 0h6v7h-6z"
+          fill="#a95f31"
+          fillOpacity="0.85"
           stroke="#f0b17c"
-          strokeOpacity="0.5"
+          strokeOpacity="0.45"
           strokeWidth="0.55"
         />
-        <path d="M37 47h20M103 47h20M68 38h24" stroke="#30383e" strokeOpacity="0.62" />
-        <g data-flat-part="engines" fill="#05080b" stroke="#b7c1c7" strokeWidth="0.8">
-          <ellipse cx="68" cy="58" rx="5" ry="2.3" />
-          <ellipse cx="92" cy="58" rx="5" ry="2.3" />
+
+        <g data-flat-part="beacon" fill="var(--flat-accent)">
+          <circle cx="17" cy="61" r="2" />
+          <circle cx="143" cy="61" r="2" />
+          <circle cx="80" cy="7" r="1.6" />
         </g>
-        <circle data-flat-part="beacon" cx="80" cy="24" r="1.8" fill="var(--flat-accent)" />
       </g>
     </svg>
   );

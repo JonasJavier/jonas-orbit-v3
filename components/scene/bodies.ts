@@ -395,18 +395,32 @@ const BODY_FRAGMENT = /* glsl */ `
     float millerWaveField = 0.0;
 
     if (uKind == 0) {
-      /* Miller: mundo oceánico. Dos escalas de oleaje y espuma hacen visible
-         la rotación sin convertir la superficie en una textura terrestre. */
+      /*
+        Miller: mundo oceánico.
+
+        No hacía falta reconstruirlo —se lee de un vistazo y su identidad es
+        clara— pero sí quitarle el azul plano. Lo que cambia es todo de segundo
+        orden: profundidad de agua en tres tramos en vez de uno, nubes
+        ALARGADAS en longitud como las de un planeta que rota deprisa, y una
+        marejada de gradiente analítico que quiebra el terminador. Nada de esto
+        se ve como efecto; se ve como que el océano tiene sitios.
+      */
       millerWeather = fbm(vLocal * 3.4 + vec3(0.0, uTime * 0.02, 0.0));
       float stormBands = 0.5 + 0.5 * sin(vLocal.y * 17.0 + millerWeather * 4.5);
       float ocean = fbm(vLocal * 2.1);
+      /* Muestreo anisótropo: la latitud comprimida alarga las nubes en
+         longitud. Sale de la misma llamada y evita el algodón isótropo. */
+      float cloudField = fbm(
+        vec3(vLocal.x, vLocal.y * 2.6, vLocal.z) * 3.9
+          + vec3(uTime * 0.004, 0.0, 1.7)
+      );
       float cloudCover = smoothstep(
-        0.63,
-        0.82,
-        millerWeather * 0.72 + stormBands * 0.28
+        0.6,
+        0.83,
+        cloudField * 0.62 + millerWeather * 0.2 + stormBands * 0.18
       );
       millerWaveField = 0.5 + 0.5 * sin(
-        vLocal.y * 31.0 + vLocal.x * 7.0 + fbm(vLocal * 7.2) * 5.2
+        vLocal.y * 31.0 + vLocal.x * 7.0 + cloudField * 5.2
       );
       /* Una octava: microoleaje, por debajo del píxel a esta distancia. */
       float microWaves = noise(vLocal * 18.0 + vec3(uTime * 0.012, 0.0, 0.0));
@@ -418,16 +432,45 @@ const BODY_FRAGMENT = /* glsl */ `
         0.93,
         millerWaveField * 0.48 + millerWeather * 0.34 + breakers * 0.18
       );
-      albedo = mix(vec3(0.008, 0.052, 0.15), vec3(0.028, 0.29, 0.41), ocean * 0.86);
-      albedo = mix(albedo, vec3(0.48, 0.68, 0.78), cloudCover * 0.54);
-      albedo = mix(albedo, vec3(0.7, 0.94, 0.97), foam * (1.0 - cloudCover) * 0.24);
-      gloss = mix(0.92, 0.14, cloudCover);
+
+      /*
+        MAREJADA. Dos trenes de onda largos, de gradiente exacto —la derivada
+        de un seno es un coseno, no cuesta una muestra más— que inclinan el
+        término lambert. En un mundo de olas de kilómetro, el terminador no es
+        una curva limpia: es una banda rota. Es el detalle que Miller no tenía.
+      */
+      vec3 swellA = vec3(14.9, -8.3, 11.7);
+      vec3 swellB = vec3(-10.3, 12.9, 16.1);
+      float swellPhaseA = dot(vLocal, swellA) + uTime * 0.05;
+      float swellPhaseB = dot(vLocal, swellB) - uTime * 0.037;
+      vec3 swellSlope = swellA * cos(swellPhaseA) * 0.6
+                      + swellB * cos(swellPhaseB) * 0.4;
+      vec3 oceanUp = normalize(vLocal);
+      vec3 swellTangent = swellSlope - oceanUp * dot(swellSlope, oceanUp);
+      reliefOffset = -dot(swellTangent, normalize(vLightLocal))
+                   * 0.0035 * (1.0 - cloudCover * 0.75);
+
+      /* Tres profundidades: fosa, plataforma y bajío. El agua deja de ser un
+         color y pasa a tener fondo. */
+      albedo = mix(vec3(0.004, 0.03, 0.105), vec3(0.017, 0.2, 0.35), ocean);
+      albedo = mix(
+        albedo,
+        vec3(0.09, 0.47, 0.55),
+        smoothstep(0.52, 0.86, ocean) * 0.72
+      );
+      albedo = mix(albedo, vec3(0.52, 0.71, 0.79), cloudCover * 0.58);
+      albedo = mix(albedo, vec3(0.72, 0.94, 0.97), foam * (1.0 - cloudCover) * 0.26);
+      gloss = mix(0.94, 0.12, cloudCover);
       gloss *= 0.72 + millerWaveField * 0.18 + microWaves * 0.2;
-      specularPower = 38.0;
-      specularStrength = 1.16;
+      /* Reflejo más CERRADO. A 38 el disco dejaba una mancha blanca reventada
+         de un tercio del planeta: eso no es sol sobre el mar, es una fuga de
+         exposición. A 74 el camino de luz se estrecha y aparece lo que
+         importa, el rastro de destellos del oleaje alrededor. */
+      specularPower = 74.0;
+      specularStrength = 1.05;
       /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura. */
       atmosphere = vec3(0.26, 0.54, 0.88);
-      atmosphereWeight = 1.22;
+      atmosphereWeight = 1.3;
     } else if (uKind == 1) {
       /*
         Edmunds: el mundo de la Creatividad, y por tanto el que no puede ser
@@ -472,9 +515,9 @@ const BODY_FRAGMENT = /* glsl */ `
         componente tangencial es la pendiente que ve la luz.
       */
       float highland = smoothstep(0.38, 0.62, continents);
-      vec3 waveA = vec3(8.7, 5.3, -6.1);
-      vec3 waveB = vec3(-4.9, 9.7, 7.1);
-      vec3 waveC = vec3(6.3, -7.9, 10.3);
+      vec3 waveA = vec3(17.3, 10.7, -12.1);
+      vec3 waveB = vec3(-9.7, 19.3, 14.1);
+      vec3 waveC = vec3(12.7, -15.7, 20.5);
       float phaseA = dot(vLocal, waveA);
       float phaseB = dot(vLocal, waveB);
       float phaseC = dot(vLocal, waveC);
@@ -485,9 +528,11 @@ const BODY_FRAGMENT = /* glsl */ `
       vec3 up = normalize(vLocal);
       vec3 tangentSlope = slope - up * dot(slope, up);
       vec3 lightLocal = normalize(vLightLocal);
-      /* Amplitud pequeña a propósito: 0.012 por unidad de gradiente da laderas
-         de unos 20°, que es orografía, no una pelota de golf. */
-      float reliefStrength = 0.05 * (0.35 + highland * 0.9);
+      /* Amplitud pequeña a propósito. Con números de onda del orden de veinte,
+         0.011 por unidad de gradiente da laderas de unos 15°: cordilleras que
+         cruzan el terminador, no una pelota de golf ni un mapa de relieve
+         exagerado. La mitad de la amplitud vive en las tierras altas. */
+      float reliefStrength = 0.011 * (0.35 + highland * 0.9);
       reliefOffset = -dot(tangentSlope, lightLocal) * reliefStrength;
 
       /* Casquetes: no nieve, sales heladas. Rompen la monotonía del cobre y dan
@@ -935,12 +980,12 @@ const BODY_FRAGMENT = /* glsl */ `
        una lámina de luz más ancha sobre el océano. Las nubes ya bajan el brillo,
        así que la lectura sigue siendo agua y no una bola cromada. */
     if (uKind == 0) {
-      float oceanSheen = pow(specBase, 11.0) * gloss * day;
+      float oceanSheen = pow(specBase, 15.0) * gloss * day;
       float oceanGlint = pow(specBase, 62.0)
                        * smoothstep(0.46, 0.9, millerWaveField)
                        * (1.0 - smoothstep(0.64, 0.84, millerWeather))
                        * day;
-      color += mix(key, vec3(0.45, 0.68, 1.0), 0.28) * oceanSheen * 0.31;
+      color += mix(key, vec3(0.45, 0.68, 1.0), 0.28) * oceanSheen * 0.26;
       color += mix(vec3(1.0, 0.88, 0.67), vec3(0.58, 0.8, 1.0), 0.24)
              * oceanGlint * 0.42;
     }
@@ -2585,8 +2630,8 @@ const MODEL_SCALE: Record<WorldStructuralData["visual"], number> = {
     El Tesseracto era el destino más pequeño en pantalla y encima el más
     hundido en profundidad: dos factores multiplicándose en la misma dirección.
     Sube a 1.45 y su capa pasa de -7 a -3 rs; entre las dos, +27 % de tamaño
-    aparente. Sigue siendo el cuerpo más lejano y el segundo más pequeño del
-    cuadro, que es lo que pide la composición.
+    aparente. Sigue siendo el cuerpo más lejano y el más pequeño del cuadro
+    —por poco, y a propósito—, que es lo que pide la composición.
   */
   tesseract: 1.45,
   /*
