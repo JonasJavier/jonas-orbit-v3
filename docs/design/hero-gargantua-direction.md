@@ -473,6 +473,138 @@ en una GPU real no se notaba nada. El detalle de alta frecuencia —microoleaje,
 escarpes, vórtices, grano cepillado— se resuelve con `noise()` de una octava, que
 a esa frecuencia se ve igual. Lo vigila un test en `components/scene/bodies.test.ts`.
 
+## 14 quater. Pase de diseño industrial (2026-09-01)
+
+Manda sobre §14 bis y §14 ter en **modelo de la Endurance, modelo y pose de la
+Ranger, cáscaras del Tesseracto, escala perceptual, capas de profundidad y
+fase de la Ranger**. El resto de las dos secciones sigue vigente.
+
+Origen: revisión de dirección de arte sobre el frame de 2026-08-31. El
+diagnóstico que la abre es el que ordena todo lo demás — «hay una diferencia
+entre *tiene muchas piezas* y *se entiende cómo fue construida esta nave*, y
+ahora estoy más cerca de lo primero».
+
+### Endurance: jerarquía de lectura antes que detalle
+
+Doce módulos iguales repartidos cada 30°, brazos de dos centímetros de canto y
+un hub más pequeño que cualquiera de sus módulos no son una nave: son una nube
+de cubos con complejidad procedural. El modelo se reconstruye alrededor de un
+orden de lectura explícito, y en ese orden:
+
+1. **Núcleo.** Barril axial con collar de atraque a proa y bloque de cuatro
+   campanas a popa. Es la pieza individual más grande y la única que rompe el
+   plano del anillo.
+2. **Estructura primaria.** Dos rieles continuos cierran la circunferencia
+   entera, también donde no hay módulos, más veinticuatro travesaños.
+3. **Cuatro brazos.** Celosía real: dos cordones de 55 mm, cinco travesaños y
+   cuatro diagonales alternas por brazo.
+4. **Cuatro grupos de tres módulos.** Un módulo principal por brazo, dos
+   satélites a 22° y 46° de riel desnudo entre grupos.
+5. **Sistemas secundarios.** Cuatro radiadores en el plano del anillo, paneles
+   de servicio, dos Ranger y dos Lander atracadas alternando cara, y balizas.
+
+Rieles, cordones, horquillas y módulos van en el material de **casco** y no en
+el de estructura: a tamaño de Hero el metal oscuro desaparece contra el fondo y
+lo primero que tiene que verse es la circunferencia. La jerarquía la sostiene el
+VALOR — manta estándar en gris medio, módulos principales en blanco casi puro,
+estructura fina en grafito — y no el número de piezas.
+
+Pose de reposo a **48° de frontal** en vez de 60°: la circunferencia se
+reconoce, los brazos separan sus grupos y el núcleo sigue asomando por delante
+del plano. El blanco de interacción acompaña ese cambio (`hitScaleY` 0.52 →
+0.64).
+
+`assembly.userData.enduranceArchitecture` publica esa arquitectura y un test la
+fija: es el contrato que impide volver a repartir doce módulos iguales.
+
+### Ranger: definición, pose fija y sitio nuevo
+
+- **Modelo.** Fuselaje real con proa facetada de ocho caras, cabina de cristal
+  hundida entre montantes, alas en flecha con larguero oscuro de borde de
+  ataque, dos góndolas con anillo, campana y brasa, deriva en V y contenedores
+  de punta de ala. La textura procedural de la Ranger deja de compartir
+  gramática con la Endurance: junta marcada y remache, no manta acolchada.
+- **Ya no gira.** `SPIN_RATE.beacon = 0`. Una nave con proa, cabina y toberas
+  rotando sobre su eje longitudinal cada seis minutos parece una maqueta colgada
+  de un hilo y convierte su orientación —que es información— en ruido. Le queda
+  la corrección de actitud de menos de un grado, dentro del modelo.
+- **Pose por base ortonormal**, no por tres ángulos de Euler. Se declara dorso y
+  proa: el dorso apunta al punto medio entre cámara y Gargantúa —visible al
+  70 % y con dos tercios de la clave— y la proa señala a la Endurance. Es lo que
+  cumple «iluminación cálida mucho más clara proveniente de Gargantúa» para un
+  cuerpo aerodinámico, que al contrario que la Endurance no tiene doce caras
+  encaradas a la luz.
+- **Fase 105° y radio 24 rs**, antes 180° y 30. Estaba en el borde izquierdo del
+  cuadro, sola, alineada con el centro y en el punto más lejano de su
+  trayectoria. Ahora ocupa el único hueco grande del encuadre —abajo, por
+  delante del plano del disco—, gana un tercio de tamaño aparente sin tocar su
+  escala y cierra el triángulo con Endurance y Edmunds. El mapa `flat` usa la
+  misma fase, así que las dos vistas siguen contando lo mismo.
+- **Contraluz dedicado** en el material: envoltura de la luz en el canto más un
+  término ámbar corto. A 122° entre luz y cámara, la respuesta correcta no es
+  subir el difuso —no existe— sino el filo.
+
+### Tesseracto: tres cáscaras
+
+Era el destino más pequeño en pantalla y el más hundido en profundidad, dos
+factores multiplicándose. Ahora lleva **tres cáscaras concéntricas** en
+progresión geométrica (0.56 / 0.325 / 0.185) y dieciséis tirantes en dos tramos:
+la fuga doble es lo que el ojo lee como profundidad imposible. El pozo interior
+tiene máscara propia y **temperatura de luz más fría**, así que el fondo del
+túnel se distingue del borde a treinta píxeles. La jaula contrarrotante y el
+núcleo siguen igual.
+
+### Cooper: sombra de anillos proyectada
+
+La sombra dejó de ser una franja de latitud pintada alrededor del ecuador. Se
+traza el rayo: la dirección de la luz llega al espacio local del cuerpo desde el
+vertex shader y se corta el plano del anillo. La densidad usa las mismas bandas
+y la misma división que dibuja el anillo, así que la división cruza el planeta.
+Sin shadow map y sin una sola llamada más de ruido. El planeta abre rango tonal
+—cinturón ecuatorial claro, casquetes fríos, óvalos de tormenta alargados por
+muestreo anisótropo— y gana diez grados de inclinación.
+
+### Mundos con relieve iluminado
+
+Miller y Edmunds ganan **sombra propia** sin coste de ruido: sumas de ondas
+direccionales cuyo gradiente es analítico —la derivada de un seno es un coseno—
+desplazan el término lambert punto a punto. El terminador deja de ser una curva
+limpia y se convierte en una banda rota, que es lo que hace que una esfera
+parezca un mundo con sitios. Edmunds además reordena su paleta: dos terrenos con
+umbral duro —cobre alto y basalto de cuenca— en vez de cinco escalas de ruido
+pintando color, más sales secas en los fondos. Miller pasa a tres profundidades
+de agua, nubes alargadas y un reflejo especular mucho más cerrado.
+
+### Escala perceptual y profundidad
+
+| Destino | `MODEL_SCALE` | Capa de profundidad | Tamaño aparente |
+| --- | ---: | ---: | ---: |
+| Endurance | 1.0 | +4 rs | +9 % |
+| Ranger | 1.75 | +5 rs | +22 % |
+| Cooper Station | 1.6 | −1 rs | +22 % |
+| Tesseracto | 1.45 | −3 rs | +27 % |
+| Miller | 1.12 | 0 rs | = |
+| Edmunds | 1.12 | +1 rs | = |
+
+`placement.size` no cambia salvo en la Ranger —que se mueve de fase y radio—,
+así que el mapa `flat` conserva su composición.
+
+La escala perceptual de la Ranger sube a 1.75 porque el modelo nuevo es **más
+compacto** que el anterior: fuselaje de verdad en vez de dos alas anchas. Sin
+esa corrección, un rediseño pensado para hacerla crecer la habría encogido.
+
+El radio publicado de Cooper deja de incluir su hábitat orbital: mide lo que el
+visitante llama «Cooper Station» —planeta y anillos— y no la caja envolvente de
+todo lo que orbita ahí. `modelRadius` acepta poda de subárbol para eso.
+
+### La medida es el tamaño APARENTE
+
+El radio métrico solo miente. El Tesseracto mide 3.99 rs contra los 3.42 de
+Miller y aun así se ve más pequeño, porque vive veinte radios más lejos. La
+jerarquía se comprueba en `bodies.test.ts` sobre radio partido por distancia a
+cámara: Endurance domina por más de 1.5×, el Tesseracto es el más pequeño pero
+tiene suelo, y la Ranger se queda entre los dos.
+
 ## 15. Gate de aprobación visual
 
 Cada iteración se revisa con frame estático, estados y movimiento de puntero:

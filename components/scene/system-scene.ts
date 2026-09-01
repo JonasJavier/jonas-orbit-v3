@@ -971,12 +971,16 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       let hitScaleX = 1;
       let hitScaleY = 1;
       if (body.visual === "ship") {
-        // El anillo se cerró y creció, así que la silueta llena mucho más de su
-        // esfera envolvente que cuando eran dos arcos: el blanco se abre con ella.
-        hitScaleX = 0.8;
-        hitScaleY = 0.52;
+        // La Endurance se muestra ahora a 48° de frontal en vez de a 60°: la
+        // elipse del anillo es bastante menos achatada y el blanco tiene que
+        // seguirla, o el clic falla justo en los grupos de módulos de arriba y
+        // abajo, que es donde el ojo apunta.
+        hitScaleX = 0.82;
+        hitScaleY = 0.64;
       } else if (body.visual === "station") {
-        hitScaleY = 0.65;
+        // El radio ya no incluye el hábitat orbital (ver `modelRadius`), así
+        // que mide anillos: ancho completo y alto el del planeta más el canto.
+        hitScaleY = 0.68;
       }
       projected.push(
         project({
