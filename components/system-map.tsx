@@ -43,18 +43,18 @@ interface InteractionVolume {
 function interactionVolumeFor(world: WorldNavItem): InteractionVolume {
   switch (world.visual) {
     case "black-hole":
-      return { fallbackRadius: 52, scale: 1.1, shape: "sphere" };
+      return { fallbackRadius: 104, scale: 1.1, shape: "sphere" };
     case "ship":
-      return { fallbackRadius: 38, scale: 1.2, shape: "craft" };
+      return { fallbackRadius: 58, scale: 1.2, shape: "craft" };
     case "station":
-      return { fallbackRadius: 34, scale: 1.18, shape: "ringed" };
+      return { fallbackRadius: 54, scale: 1.18, shape: "ringed" };
     case "tesseract":
-      return { fallbackRadius: 25, scale: 1.24, shape: "box" };
+      return { fallbackRadius: 34, scale: 1.24, shape: "box" };
     case "beacon":
-      return { fallbackRadius: 30, scale: 1.2, shape: "craft" };
+      return { fallbackRadius: 48, scale: 1.2, shape: "craft" };
     case "water":
     case "desert":
-      return { fallbackRadius: 28, scale: 1.18, shape: "sphere" };
+      return { fallbackRadius: 36, scale: 1.18, shape: "sphere" };
   }
 }
 
@@ -142,9 +142,11 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                 key={world.id}
                 className="system-map__slot"
                 data-centre={isCentre ? "true" : undefined}
+                data-flat-visual={world.visual}
                 data-flat-side={
                   isCentre ? "centre" : point.x < 50 ? "left" : "right"
                 }
+                data-map-world={world.id}
                 data-target-state={itemState}
                 style={
                   {

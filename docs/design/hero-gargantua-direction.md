@@ -143,7 +143,8 @@ El espacio usa tres capas perceptuales dentro de una implementación batched:
 | **near** | muy baja | motas pequeñas y suaves, movimiento lento | profundidad próxima, nunca nevada |
 
 En WebGL las estrellas pertenecen al fondo procedural del shader; en `flat` se
-dibujan agrupadas en un único canvas 2D. No existen miles de meshes o nodos DOM.
+dibujan agrupadas en un único canvas 2D. El mapa plano añade sólo siete cuerpos
+visuales acotados —Gargantúa y seis destinos 2D—, no miles de meshes o nodos DOM.
 El orden de magnitud siempre es muchas far, algunas mid y casi ninguna near.
 
 La densidad y luminancia se atenúan gradualmente junto al disco para proteger su
@@ -258,7 +259,7 @@ typed arrays:
 No es un glitter brush, una cola de cometa ni un cursor neon. Al parar el puntero
 desaparece rápido y nunca se convierte en otro campo de estrellas permanente.
 
-## 12. Mobile y reduced-motion
+## 12. Mobile, nivel `flat` y reduced-motion
 
 Móvil no es desktop escalado:
 
@@ -269,10 +270,37 @@ Móvil no es desktop escalado:
 - mantiene un starfield estático denso;
 - no monta cursor personalizado ni stardust y no los emula con el dedo.
 
-`prefers-reduced-motion` conserva contenido, estrellas estáticas, estados,
-focus, brackets estáticos y navegación. Desactiva stardust, animación del cursor,
-respiración de cámara, paralaje, deriva del starfield, pulsos y adquisición no
+El nivel `flat` no es un placeholder ni una pantalla de Gargantúa aislada. Debe
+dibujar, desde el primer frame, la Gargantúa 2D y los seis destinos estáticos en
+las mismas posiciones de composición del System Map:
+
+- Tesseracto se reconoce por sus marcos anidados;
+- Cooper por planeta, anillos y hábitat;
+- Miller y Edmunds por sus discos, atmósferas y lenguaje material propio;
+- Endurance por los doce módulos separados y su gran centro vacío;
+- Ranger por su silueta baja y ancha de lifting body.
+
+Estas representaciones son ligeras, no animadas y comparten terminador cálido,
+fill frío y rim contenido. Conservan los proxies, brackets, estados TARGET y los
+siete enlaces reales del raíl. No sustituyen el contenido ni duplican texto
+accesible; son la representación visual estática del mismo mapa.
+
+`prefers-reduced-motion` selecciona `flat` **por defecto** y, antes de cualquier
+acción, conserva contenido, estrellas estáticas, cuerpos 2D, estados, focus,
+brackets estáticos y navegación. Desactiva stardust, cursor animado, movimiento
+local de los cuerpos, paralaje, deriva del starfield, pulsos y adquisición no
 esencial.
+
+La preferencia del sistema es el punto de partida seguro, no una prohibición
+irreversible. En un dispositivo compatible aparece un control visible y
+accesible para `ACTIVAR ANIMACIÓN`; sólo una activación explícita permite
+montar WebGL y comenzar el movimiento. La escena activa ofrece un control
+`MAPA SIN ANIMACIÓN` —o `REDUCIR EFECTOS` fuera del System Map— que devuelve
+inmediatamente a `flat`. La elección se persiste y sigue siendo reversible;
+nunca se inicia animación para ese visitante antes de su opt-in. La activación
+no puede superar una incompatibilidad real de WebGL ni fabricar WebGL2 donde no
+existe. `?no3d=1` preselecciona `flat`, pero el mismo control permite cambiar
+después de opinión.
 
 ## 13. Accesibilidad y rendimiento
 
@@ -345,8 +373,9 @@ raymarch necesita que la cámara se quede quieta para converger.
 - **Sin numeración.** Ni `01…07` en el raíl ni índice en el NAV TARGET. El orden
   narrativo existe en el DOM y en el tabulador; imprimirlo era ruido.
 - **Sin lectura de movimiento.** `MOTION // REDUCED` se retiró del cristal: era
-  telemetría sobre una preferencia que el visitante ya conoce y no podía cambiar
-  desde ahí. El estado sigue en `<html data-reduced-motion>`.
+  telemetría persistente, no una acción. El estado sigue en
+  `<html data-reduced-motion>` y el opt-in vive en un control separado, visible,
+  descriptivo y reversible.
 - **Copy corto.** El reposo usa `SYSTEM MAP / SELECT TARGET`; en móvil desaparece
   hasta que existe un objetivo porque el raíl ya comunica la acción.
 - **Tres niveles opacos.** `--hud-primary` / `--hud-secondary` / `--hud-tertiary`
@@ -372,7 +401,8 @@ Cada iteración se revisa con frame estático, estados y movimiento de puntero:
 5. ¿El HUD despierta y sigue siendo legible, no ruidoso?
 6. ¿Endurance se reconoce como nave y Cooper como mundo memorable?
 7. ¿El cursor y el stardust hacen el espacio reactivo sin parecer un gimmick?
-8. ¿Touch y reduced-motion reciben una experiencia completa y tranquila?
+8. ¿Touch y reduced-motion reciben un System Map 2D completo y tranquilo, con
+   opt-in 3D visible pero sin animación previa al consentimiento?
 9. ¿El frame estático ya se siente luminoso, vasto y premium?
 10. ¿El universo se siente vivo aunque nada recorra una órbita?
 

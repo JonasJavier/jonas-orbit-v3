@@ -123,11 +123,16 @@ Reglas derivadas, todas verificables:
 2. **Transiciones guionadas.** Ir de una pose a otra es una animación acotada en
    el tiempo, interrumpible y con timeout duro. La navegación se compromete
    *aunque la animación no termine*: la animación nunca es dueña del router.
-3. **`prefers-reduced-motion` → corte instantáneo.** Sin excepción.
+3. **`prefers-reduced-motion` → `flat` instantáneo por defecto.** No comienza
+   ninguna transición ni movimiento sin una acción del visitante. En hardware
+   compatible, un opt-in explícito y reversible puede activar 3D + movimiento;
+   al volver a «Mapa sin animación» / «Reducir efectos», el corte a `flat`
+   vuelve a ser instantáneo.
 4. **Único input continuo permitido:** un paralaje acotado (≤ 2°) desde el
    puntero o el giroscopio. Es *aditivo* sobre la pose de destino, no la
-   modifica, y se desactiva con reduced-motion. Si algún día molesta, se quita
-   sin tocar nada más.
+   modifica, y se desactiva mientras reduced-motion siga siendo el modo efectivo;
+   el opt-in 3D lo habilita como parte del movimiento solicitado. Si algún día
+   molesta, se quita sin tocar nada más.
 
 ### Por qué la cámara fija es la decisión de rendimiento más importante del proyecto
 
@@ -190,22 +195,29 @@ canvas ni una textura de la escena.
 
 ## 5. Tres niveles de fidelidad
 
-El gate de capacidad ya especificado en el plan principal elige el nivel; el
-visitante siempre puede sobrescribirlo, y su elección se persiste.
+El gate de capacidad ya especificado en el plan principal elige el nivel. El
+visitante puede sobrescribir una recomendación de calidad o reduced-motion en
+hardware compatible, y su elección se persiste. Sólo la ausencia de WebGL2 es
+irreversible: una preferencia o heurística nunca fabrica esa capacidad.
 
 | Nivel | Cuándo | Qué monta |
 |---|---|---|
-| `flat` | reduced-motion · `?no3d=1` · sin WebGL2 · opt-out · fallo de escena | `StaticBackdrop` + tres capas de estrellas en canvas 2D cuando motion está permitido; reduced-motion conserva la variante estática. Cero Three descargado |
+| `flat` | reduced-motion por defecto · `?no3d=1` · sin WebGL2 · opt-out · fallo de escena | `StaticBackdrop` + tres capas de estrellas agrupadas + Gargantúa y los seis destinos como cuerpos 2D estáticos, con proxies/HUD/raíl íntegros. Cero Three descargado |
 | `orbit` | Por defecto en móvil y equipos modestos | Raymarch acotado, cuerpos compuestos, fondo procedural far/mid/near, luz compartida, sin postprocesado caro, DPR ≤ 1.25 |
 | `deep` | Escritorio capaz, señales verdes | El mismo sistema con más pasos/DPR y detalle material; no suma efectos por principio, DPR ≤ 1.75 |
 
 `lib/starfield.ts` y `components/starfield-2d.tsx` **sobreviven** como el nivel
 `flat`. La preferencia reduced-motion detiene su deriva y conserva las estrellas
-estáticas; no convierte el cielo en un vacío.
+estáticas; el mapa añade Tesseracto, Cooper, Miller, Endurance, Edmunds y Ranger
+como siluetas 2D propias alrededor de Gargantúa. No convierte el cielo en un
+vacío ni reduce los destinos a cruces de calibración.
 
-**Los vetos siguen siendo duros** (regla del plan principal): WebGL2 ausente y
-`prefers-reduced-motion` mandan por encima de cualquier heurística. Señales
-ausentes (`deviceMemory`, `effectiveType`) cuentan como neutrales.
+**La ausencia de WebGL2 sigue siendo un veto duro.** Reduced-motion,
+rasterizador por software, red/memoria modestas y `?no3d=1` recomiendan o piden
+`flat`, pero muestran un opt-in accesible si WebGL2 existe; sólo dejan de ser el
+modo efectivo tras esa acción explícita. «Mapa sin animación» / «Reducir
+efectos» revierte la elección y devuelve el mapa a `flat`. Señales ausentes
+(`deviceMemory`, `effectiveType`) cuentan como neutrales.
 
 **Prohibido sigue prohibido:** ninguna rama de este gate puede depender de
 detectar un auditor. `?no3d=1` es el mismo mecanismo del botón «Reducir
@@ -305,8 +317,8 @@ Reglas duras de la transición:
   la animación termina antes, se espera con un timeout duro y luego se corta.
   Nunca se atrapa al visitante en una animación.
 - **Saltable:** cualquier tecla, clic o gesto la corta.
-- **`flat` y reduced-motion:** navegación normal, sin transición. Un
-  *crossfade* de 120 ms como mucho.
+- **`flat` y reduced-motion antes del opt-in:** navegación normal, sin
+  transición. Un *crossfade* de 120 ms como mucho.
 
 ---
 
@@ -524,7 +536,14 @@ siguen presentes como HTML semántico y metadata, de acuerdo con la regla 7.
   añade sólo velos casi negros de navy/violeta/polvo cálido.
 - Desktop fine-pointer añade retículo mínimo y stardust pooled/batched. Touch no
   monta esa capa; reduced-motion conserva estrellas estáticas y desactiva dust,
-  cursor animado, paralaje y respiración.
+  cursor animado, paralaje y respiración hasta que el visitante activa 3D de
+  forma explícita.
+- El fallback `flat` conserva la composición completa: Gargantúa y seis destinos
+  2D estáticos, cada uno con silueta propia, además de los mismos proxies, estados
+  TARGET y enlaces del raíl. No es una versión vacía del Hero.
+- Cuando reduced-motion provoca `flat`, el botón `ACTIVAR ANIMACIÓN` permanece
+  visible en hardware compatible. Es opt-in, persistente y reversible mediante
+  `MAPA SIN ANIMACIÓN`; nunca comienza movimiento antes de esa acción.
 
 La especificación completa y su gate de revisión visual viven en
 [`../design/hero-gargantua-direction.md`](../design/hero-gargantua-direction.md).
@@ -593,8 +612,11 @@ test G4.
 
 El Hero se validó en navegador con WebGL a 1280×720 y 375×812, además del perfil
 flat/reduced-motion. La evidencia cubre primer frame, bounds de los siete
-proxies, TARGET/HUD, cursor, polvo estelar y navegación. El control visible de
-«Reducir efectos» comparte persistencia con `?no3d=1`. La matriz automatizada
+proxies, TARGET/HUD, cursor, polvo estelar y navegación. La enmienda de producto
+del 2026-08-31 exige además que el frame `flat` muestre Gargantúa y los seis
+destinos 2D, que reduced-motion arranque sin movimiento y que el opt-in 3D sea
+visible y reversible. «Reducir efectos» y `?no3d=1` comparten el destino ligero;
+el control de activación permite cambiar después de opinión. La matriz automatizada
 cubre teclado, fallback, reduced-motion, rutas y ausencia de overflow; la
 precisión de los bounds se conserva como prueba visual/manual porque depende de
 la proyección real. La comprobación en Android físico queda como QA de dispositivo,
@@ -686,7 +708,7 @@ existir.
 |---|---|---|
 | A20 | Hero → caso de estudio ≤ 2 interacciones, **ahora por rutas** | E2E |
 | A21 | Hero → contacto ≤ 3 interacciones, **ahora por rutas** | E2E |
-| A28 | `prefers-reduced-motion`: sin transición, contenido íntegro | E2E |
+| A28 | `prefers-reduced-motion`: arranque `flat` sin transición, Gargantúa + seis destinos 2D y contenido íntegro; opt-in 3D visible/reversible en hardware compatible | E2E |
 | A29 | Viaje completo solo-teclado por las 8 rutas | E2E |
 | A32 | Viewport 375 px en las 8 rutas | E2E |
 

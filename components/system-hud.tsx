@@ -5,7 +5,6 @@ import type { WorldId } from "@/content/worlds.data";
 import {
   setForcedEffects,
   useForcedEffects,
-  useLightEffectsMode,
 } from "@/lib/effects-mode";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { WorldNavigationState } from "@/lib/world-navigation";
@@ -23,7 +22,6 @@ export function SystemHud({
 }) {
   const [sceneLevel, setSceneLevel] = useState<string | null>(null);
   const [sceneReason, setSceneReason] = useState<string | null>(null);
-  const lightEffects = useLightEffectsMode();
   const forcedEffects = useForcedEffects();
   const reducedMotion = usePrefersReducedMotion();
 
@@ -56,6 +54,20 @@ export function SystemHud({
     navigationState === "locked" ? "Target locked" : "Target lock";
   const sceneUnavailable =
     sceneReason === "sin-webgl2" || sceneReason === "escena-fallida";
+  const sceneIsLive = sceneLevel === "deep" || sceneLevel === "orbit";
+  /*
+    El HUD es la única autoridad visual del control en el System Map. El nivel
+    real —no la causa estimada— decide qué acción tiene sentido:
+
+    - `flat`: activar voluntariamente;
+    - escena forzada: volver al mapa quieto;
+    - escena normal: ofrecer el perfil ligero mediante su URL documentada.
+
+    Así una GPU modesta no recibe el absurdo «Reducir efectos» cuando ya está
+    viendo el fallback, y tampoco aparecen dos botones con la misma función.
+  */
+  const usesDirectToggle =
+    sceneLevel === "flat" || forcedEffects || reducedMotion;
 
   return (
     <div className="hud">
@@ -110,36 +122,36 @@ export function SystemHud({
           activar la experiencia completa y el mismo lugar vuelve a reducirla. */}
       <div
         className="hud__controls"
-        data-effects-control={reducedMotion ? "motion-preference" : "standard"}
+        data-effects-control={usesDirectToggle ? "primary-toggle" : "standard"}
       >
-        {reducedMotion ? (
+        {usesDirectToggle ? (
           <button
             aria-label={
-              forcedEffects
-                ? "Volver a reducir movimiento y efectos"
-                : sceneUnavailable
-                  ? "Escena 3D no disponible"
-                  : "Activar escena 3D y movimiento"
+              sceneUnavailable
+                ? "Animación 3D no disponible"
+                : sceneIsLive
+                  ? "Volver al mapa sin animación"
+                  : "Activar animación 3D"
             }
-            aria-pressed={forcedEffects}
+            aria-pressed={sceneIsLive && forcedEffects}
             className="hud__readout hud__readout--action hud__effects-toggle"
-            disabled={!forcedEffects && sceneUnavailable}
-            onClick={() => setForcedEffects(!forcedEffects)}
+            disabled={sceneUnavailable}
+            onClick={() => setForcedEffects(!sceneIsLive)}
             type="button"
           >
-            {forcedEffects
-              ? "Reducir movimiento"
-              : sceneUnavailable
-                ? "3D no disponible"
-                : "Activar 3D + movimiento"}
+            {sceneUnavailable
+              ? "3D no disponible"
+              : sceneIsLive
+                ? "Mapa sin animación"
+                : "Activar animación"}
           </button>
         ) : (
           <a
-            aria-label={lightEffects ? "Activar escena 3D" : "Reducir efectos 3D"}
+            aria-label="Reducir efectos 3D"
             className="hud__readout hud__readout--action"
-            href={lightEffects ? "?no3d=0" : "?no3d=1"}
+            href="?no3d=1"
           >
-            {lightEffects ? "Activar 3D" : "Reducir efectos"}
+            Reducir efectos
           </a>
         )}
       </div>

@@ -712,10 +712,12 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
 
     const effectsToggle = page.getByRole("button", {
-      name: "Activar escena 3D y movimiento",
+      name: "Activar animación 3D",
     });
     await expect(effectsToggle).toBeVisible();
     await expect(effectsToggle).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".hud__effects-toggle")).toHaveCount(1);
+    await expect(page.locator(".scene-toggle")).toHaveCount(0);
 
     await effectsToggle.click();
     await expect(page.locator("html")).toHaveAttribute(
@@ -733,7 +735,7 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     );
 
     const reduceToggle = page.getByRole("button", {
-      name: "Volver a reducir movimiento y efectos",
+      name: "Volver al mapa sin animación",
     });
     await expect(reduceToggle).toHaveAttribute("aria-pressed", "true");
     await reduceToggle.click();

@@ -61,6 +61,27 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     }
   });
 
+  it("pinta seis cuerpos 2D en los mismos slots del fallback", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const bodies = container.querySelectorAll<HTMLElement>("[data-flat-world]");
+
+    expect(bodies).toHaveLength(6);
+    expect(container.querySelector('[data-flat-world="gargantua"]')).toBeNull();
+
+    for (const world of worlds.filter((item) => item.id !== "gargantua")) {
+      const body = container.querySelector<HTMLElement>(
+        `[data-flat-world="${world.id}"]`,
+      );
+      const slot = body?.closest<HTMLElement>(".system-map__slot");
+
+      expect(body, `falta el cuerpo plano de ${world.id}`).not.toBeNull();
+      expect(body).toHaveAttribute("aria-hidden", "true");
+      expect(slot).toHaveAttribute("data-flat-visual", world.visual);
+      expect(slot).toHaveAttribute("data-map-world", world.id);
+      expect(slot?.querySelector(`[data-system-body="${world.id}"]`)).not.toBeNull();
+    }
+  });
+
   it("cada destino se anuncia con su nombre cósmico y su función", () => {
     /*
       El nombre accesible pasó de «Desarrollo» a «Miller Desarrollo».

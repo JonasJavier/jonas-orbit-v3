@@ -73,14 +73,11 @@ function serverCanOverride(): boolean {
 const REASON_COPY: Record<LevelReason, string | null> = {
   ok: null,
   "sin-webgl2": "Escena 3D no disponible en este navegador",
-  // El estado ya vive en `<html data-reduced-motion>` y no se imprime como
-  // telemetría persistente. El control reversible pertenece al HUD, donde se
-  // mantiene visible tanto en `flat` como cuando la escena vuelve a vivir.
-  "movimiento-reducido": null,
-  "perfil-ligero": "Perfil ligero activo · Activar escena 3D",
-  "gpu-por-software": "Sin aceleración por GPU · Activar igualmente",
-  "red-lenta": "Conexión lenta · Activar escena 3D",
-  "memoria-corta": "Memoria justa · Activar igualmente",
+  "movimiento-reducido": "Activar animación 3D",
+  "perfil-ligero": "Activar animación 3D",
+  "gpu-por-software": "Activar animación 3D",
+  "red-lenta": "Activar animación 3D",
+  "memoria-corta": "Activar animación 3D",
 };
 
 interface LabelBinding {
@@ -145,6 +142,11 @@ export function GargantuaSystem({
   const level: EffectsLevel = failed ? "flat" : detected;
 
   const worldId = findWorldRoute(pathname, routes)?.id ?? null;
+  // La portada contiene `SystemHud`, que es la autoridad visual del control.
+  // Las páginas de mundo no montan ese HUD, así que allí esta capa conserva
+  // una salida global. La distinción por segmentos evita confundir la portada
+  // con páginas hermanas como `/es/privacidad`.
+  const isSystemMapRoute = pathname.split("/").filter(Boolean).length === 1;
   const worldIdRef = useRef<WorldId | null>(worldId);
 
   // Publica el nivel y el motivo en el DOM. Es lo que hace auditable el gate, lo
@@ -272,6 +274,11 @@ export function GargantuaSystem({
     // contra una GPU que acaba de tirar el contexto solo gasta batería.
     if (failed) return null;
 
+    // En la portada el mismo control ya vive dentro del HUD. Renderizarlo aquí
+    // también crearía dos acciones competidoras, a veces con mensajes opuestos
+    // cuando el motivo es una heurística de capacidad.
+    if (isSystemMapRoute) return null;
+
     const copy = REASON_COPY[reason];
     if (!copy) return null;
 
@@ -294,12 +301,25 @@ export function GargantuaSystem({
   }
 
   return (
-    <canvas
-      aria-hidden="true"
-      className="system-canvas"
-      data-testid="gargantua-canvas"
-      ref={canvasRef}
-    />
+    <>
+      <canvas
+        aria-hidden="true"
+        className="system-canvas"
+        data-testid="gargantua-canvas"
+        ref={canvasRef}
+      />
+      {!isSystemMapRoute && forced ? (
+        <button
+          aria-label="Volver al mapa sin animación"
+          aria-pressed="true"
+          className="scene-toggle"
+          onClick={() => setForcedEffects(false)}
+          type="button"
+        >
+          Mapa sin animación
+        </button>
+      ) : null}
+    </>
   );
 }
 

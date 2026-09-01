@@ -4386,6 +4386,151 @@ html:not([data-pointer-life="ready"]) :is(.site-stardust, .navigation-cursor) {
   display: none;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   SYSTEM MAP FLAT — atlas 2D completo
+
+   El perfil ligero ya no es un cielo con seis coordenadas invisibles. Los
+   mismos slots que reciben la proyección 3D sostienen ahora seis ilustraciones
+   estáticas; Gargantúa sigue perteneciendo al backdrop. Así posición, target,
+   navegación y semántica no se bifurcan entre dos mapas distintos.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+html:not([data-scene-live="true"]) .system-map__field::before,
+html:not([data-scene-live="true"]) .system-map__field::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  border: 1px solid color-mix(in srgb, var(--hud-tertiary) 12%, transparent);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+html:not([data-scene-live="true"]) .system-map__field::before {
+  width: 80%;
+  height: 72%;
+  border-right-color: color-mix(in srgb, var(--amber) 15%, transparent);
+  border-left-color: color-mix(in srgb, var(--cyan) 14%, transparent);
+  box-shadow: 0 0 3rem rgba(127, 229, 255, 0.025);
+}
+
+html:not([data-scene-live="true"]) .system-map__field::after {
+  width: 54%;
+  height: 49%;
+  border-top-color: color-mix(in srgb, var(--amber) 12%, transparent);
+  opacity: 0.62;
+}
+
+/* En flat el slot es un origen geométrico sin tamaño. Antes medía lo mismo que
+   el rótulo invisible y `translate(-50%)` desplazaba cuerpo, hitbox y brackets
+   media palabra fuera de su coordenada orbital. */
+html:not([data-scene-live="true"]) .system-map__slot {
+  width: 0;
+  height: 0;
+  transform: none;
+  --map-hit-radius-x: var(--map-fallback-radius);
+  --map-hit-radius-y: var(--map-fallback-radius);
+}
+
+html:not([data-scene-live="true"])
+  .system-map__slot[data-flat-visual="station"] {
+  --map-hit-radius-x: clamp(3.4rem, 4.7vw, 5.25rem);
+  --map-hit-radius-y: clamp(2.15rem, 2.85vw, 3.15rem);
+}
+
+html:not([data-scene-live="true"])
+  .system-map__slot[data-flat-visual="ship"] {
+  --map-hit-radius-x: clamp(3.6rem, 4.7vw, 5.4rem);
+  --map-hit-radius-y: clamp(3.6rem, 4.7vw, 5.4rem);
+}
+
+html:not([data-scene-live="true"])
+  .system-map__slot[data-flat-visual="beacon"] {
+  --map-hit-radius-x: clamp(3rem, 3.9vw, 4.5rem);
+  --map-hit-radius-y: clamp(1.7rem, 2.25vw, 2.65rem);
+}
+
+html:not([data-scene-live="true"]) .system-map__body {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  display: block;
+  width: 0;
+  height: 0;
+  padding: 0;
+  transform: none;
+}
+
+html:not([data-scene-live="true"]) .system-map__marker {
+  display: none;
+}
+
+html:not([data-scene-live="true"]) .system-map__label {
+  position: absolute;
+  top: 0;
+  width: max-content;
+}
+
+html:not([data-scene-live="true"])
+  .system-map__slot[data-flat-side="right"]
+  .system-map__label {
+  left: calc(var(--map-hit-radius-x) + 0.85rem);
+  transform: translateY(-50%);
+}
+
+html:not([data-scene-live="true"])
+  .system-map__slot[data-flat-side="left"]
+  .system-map__label {
+  right: calc(var(--map-hit-radius-x) + 0.85rem);
+  text-align: right;
+  transform: translateY(-50%);
+}
+
+html:not([data-scene-live="true"])
+  .system-map__slot[data-flat-side="centre"]
+  .system-map__label {
+  top: calc(var(--map-hit-radius-y) + 1.15rem);
+  left: 0;
+  transform: translateX(-50%);
+}
+
+html:not([data-scene-live="true"]) .system-map__target-brackets {
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: calc(var(--map-hit-radius-x) + var(--map-hit-radius-x) + 0.75rem);
+  height: calc(var(--map-hit-radius-y) + var(--map-hit-radius-y) + 0.75rem);
+}
+
+html:not([data-scene-live="true"]) .system-map__hit-target {
+  z-index: 3;
+}
+
+@media (max-width: 60rem) {
+  /* El raíl continúa siendo el índice táctil, pero el atlas vuelve a existir:
+     los cuerpos son contexto espacial, no siete rótulos intentando caber. */
+  html:not([data-scene-live="true"]) .system-map__field {
+    display: block;
+  }
+
+  html:not([data-scene-live="true"]) .system-map__label {
+    display: none;
+  }
+
+  html:not([data-scene-live="true"]) .system-map__field::before {
+    width: 88%;
+    height: 66%;
+  }
+
+  html:not([data-scene-live="true"]) .system-map__field::after {
+    width: 61%;
+    height: 46%;
+  }
+}
+
 /* ── Consentimiento explícito para movimiento ─────────────────────────────
    `prefers-reduced-motion` mantiene el sistema plano al entrar, pero deja una
    salida deliberada y reversible. Es un <button>, no telemetría decorativa:
@@ -4400,7 +4545,7 @@ button.hud__readout--action {
   font: inherit;
 }
 
-.hud__controls[data-effects-control="motion-preference"] {
+.hud__controls[data-effects-control="primary-toggle"] {
   right: clamp(1rem, 3.4vw, 3.4rem);
   bottom: 4.25rem;
   z-index: 12;
@@ -4445,7 +4590,7 @@ button.hud__readout--action {
 @media (max-width: 60rem) {
   /* La regla responsive general oculta lecturas secundarias del HUD. Este
      control no es una lectura: es la única forma de cambiar la experiencia. */
-  .hud__controls[data-effects-control="motion-preference"] {
+  .hud__controls[data-effects-control="primary-toggle"] {
     position: fixed;
     right: 0.85rem;
     bottom: 4.45rem;
@@ -4457,5 +4602,18 @@ button.hud__readout--action {
     padding-inline: 0.82rem !important;
     font-size: 0.53rem;
     letter-spacing: 0.12em;
+  }
+
+  /* En las páginas de mundo no se monta `SystemHud`: el control global es la
+     única vía de salida y no puede desaparecer por ser pantalla estrecha. */
+  .scene-toggle {
+    display: block;
+  }
+
+  /* El monograma ocupa el primer tramo del borde inferior. Reservarlo evita
+     que TESSERACTO arranque detrás de la N en el primer frame móvil. */
+  .nav-rail {
+    padding-left: 4.35rem;
+    scroll-padding-left: 4.35rem;
   }
 }
