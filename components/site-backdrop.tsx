@@ -249,7 +249,11 @@ export function SiteBackdrop({
       {canvasReady ? (
         <>
           <Starfield2D ref={canvasRef} />
-          <PointerLife disabled={pointerLifeDisabled} scopeKey={pathname} />
+          <PointerLife
+            disabled={pointerLifeDisabled}
+            profile={sceneLive ? "webgl" : "flat"}
+            scopeKey={pathname}
+          />
         </>
       ) : null}
     </>

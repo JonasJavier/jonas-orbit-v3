@@ -205,8 +205,9 @@ personalizado ni stardust en touch-only.
 - Hover/focus revela arcos breves; selected puede estabilizar una trayectoria
   mayor. No aparece una elipse saturada de golpe.
 - El paralaje aditivo no supera 1.5° y se apaga con reduced-motion.
-- El stardust sólo nace durante pointermove fine-pointer, vive 320–680 ms y se
-  dibuja batched desde un pool fijo; no actualiza React por partícula.
+- El stardust sólo nace durante pointermove fine-pointer y se dibuja batched
+  desde un pool fijo; no actualiza React por partícula. WebGL usa el perfil sutil
+  de 390–760 ms; `flat` conserva el perfil 2D aprobado de 520–1020 ms.
 - Tarjetas y páginas fuera del Hero conservan microelevación y zoom máximo de
   1.8 % cuando no interfieren con lectura.
 

@@ -21,16 +21,44 @@
  *    reescritura y cero objetos por frame — el presupuesto de §8 del pivote.
  */
 
-export const STARDUST_POOL_CAPACITY = 420;
+const STARDUST_POOL_CAPACITY = 420;
 export const STARDUST_MIN_LIFETIME_MS = 520;
 export const STARDUST_MAX_LIFETIME_MS = 1_020;
 
-/** Alfa del pico, antes de la envolvente de vida y del centelleo. */
-const PEAK_ALPHA = 0.92;
-/** Separación objetivo entre motas de un mismo tramo, en píxeles CSS. */
-const TRAIL_STEP_PX = 6;
-/** Techo de motas por evento. Acota el coste del peor gesto posible. */
-const MAX_BURST = 14;
+/**
+ * El mapa plano conserva el polvo aprobado. Sólo WebGL usa la pasada sutil:
+ * menos capacidad, brillo, tamaño, vida y partículas grandes.
+ */
+export const STARDUST_PROFILES = {
+  flat: {
+    capacity: STARDUST_POOL_CAPACITY,
+    minLifetimeMs: STARDUST_MIN_LIFETIME_MS,
+    maxLifetimeMs: STARDUST_MAX_LIFETIME_MS,
+    peakAlpha: 0.92,
+    trailStepPx: 6,
+    maxBurst: 14,
+    glowScale: 3.4,
+    sizeBase: 0.72,
+    sizePower: 2.2,
+    sizeRange: 2.5,
+    sizeSpeed: 1.1,
+  },
+  webgl: {
+    capacity: 300,
+    minLifetimeMs: 390,
+    maxLifetimeMs: 760,
+    peakAlpha: 0.68,
+    trailStepPx: 8,
+    maxBurst: 9,
+    glowScale: 3,
+    sizeBase: 0.62,
+    sizePower: 3,
+    sizeRange: 1.8,
+    sizeSpeed: 0.72,
+  },
+} as const;
+
+export type StardustProfile = keyof typeof STARDUST_PROFILES;
 /**
  * Topes del tramo que se siembra hacia atrás. Existen para el caso raro —
  * puntero que vuelve a la ventana tras dos segundos fuera, pestaña que
@@ -39,9 +67,6 @@ const MAX_BURST = 14;
  */
 const TRAIL_MAX_SPAN_MS = 64;
 const TRAIL_MAX_TRAVEL_PX = 150;
-/** Del radio del núcleo al lado del sprite: el halo es 3,4 veces el núcleo. */
-const GLOW_SCALE = 3.4;
-
 interface StardustPool {
   readonly capacity: number;
   readonly active: Uint8Array;
@@ -85,7 +110,8 @@ function clamp(value: number, min: number, max: number) {
 }
 
 /**
- * Siembra el tramo recorrido desde la muestra anterior con 1–14 motas, y
+ * Siembra el tramo recorrido desde la muestra anterior con un techo dependiente
+ * del perfil, y
  * sobrescribe slots antiguos al alcanzar el techo del pool. Nunca asigna arrays
  * ni crea objetos durante `pointermove`.
  *
@@ -102,7 +128,9 @@ export function spawnStardust(
   velocityY: number,
   elapsedMs: number,
   random: () => number = Math.random,
+  profile: StardustProfile = "flat",
 ) {
+  const config = STARDUST_PROFILES[profile];
   const rawSpeed = Math.hypot(velocityX, velocityY);
   const speed = clamp(rawSpeed, 0, 1.5);
   // Umbral de gesto: por debajo, el puntero está quieto y un rastro permanente
@@ -115,7 +143,11 @@ export function spawnStardust(
     TRAIL_MAX_TRAVEL_PX / Math.max(rawSpeed, 1e-4),
   );
   const travel = rawSpeed * span;
-  const count = clamp(1 + Math.floor(travel / TRAIL_STEP_PX), 1, MAX_BURST);
+  const count = clamp(
+    1 + Math.floor(travel / config.trailStepPx),
+    1,
+    config.maxBurst,
+  );
 
   for (let particle = 0; particle < count; particle += 1) {
     const index = pool.cursor;
@@ -142,9 +174,12 @@ export function spawnStardust(
       Math.sin(angle) * drift + clamp(velocityY, -1.5, 1.5) * 0.055;
     pool.age[index] = 0;
     pool.lifetime[index] =
-      STARDUST_MIN_LIFETIME_MS +
-      random() * (STARDUST_MAX_LIFETIME_MS - STARDUST_MIN_LIFETIME_MS);
-    pool.size[index] = 0.72 + Math.pow(random(), 2.2) * (2.5 + speed * 1.1);
+      config.minLifetimeMs +
+      random() * (config.maxLifetimeMs - config.minLifetimeMs);
+    pool.size[index] =
+      config.sizeBase +
+      Math.pow(random(), config.sizePower) *
+        (config.sizeRange + speed * config.sizeSpeed);
     pool.phase[index] = random() * Math.PI * 2;
     // Violet/magenta/pink dominan; el cyan es una señal rara (1/12 aprox.).
     pool.tone[index] = Math.min(3, Math.floor(random() * 3.24));
@@ -242,7 +277,9 @@ export function drawStardust(
   width: number,
   height: number,
   pool: StardustPool,
+  profile: StardustProfile = "flat",
 ) {
+  const config = STARDUST_PROFILES[profile];
   context.clearRect(0, 0, width, height);
   if (pool.activeCount === 0) return;
 
@@ -263,7 +300,7 @@ export function drawStardust(
     const attack = Math.min(1, life / 0.09);
     const twinkle = 0.82 + 0.18 * Math.sin(pool.phase[index] + life * 9.4);
     const alpha = clamp(
-      remaining * remaining * attack * twinkle * PEAK_ALPHA,
+      remaining * remaining * attack * twinkle * config.peakAlpha,
       0,
       1,
     );
@@ -275,7 +312,7 @@ export function drawStardust(
     const tone = PARTICLE_TONES[pool.tone[index] ?? 0] ?? PARTICLE_TONES[0];
 
     if (sprites) {
-      const side = radius * 2 * GLOW_SCALE;
+      const side = radius * 2 * config.glowScale;
       const half = side / 2;
       context.globalAlpha = alpha;
       context.drawImage(

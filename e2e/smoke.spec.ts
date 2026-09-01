@@ -688,6 +688,21 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
   test("parte en plano y permite activar y volver a reducir toda la experiencia", async ({
     page,
   }) => {
+    /*
+      Único test de la suite que monta WebGL a 1280x720 y luego interactúa con
+      el HUD. En CI y en local no hay GPU: Chromium rasteriza el raymarch por
+      software y el bucle cae a ~2 fps, así que cada comprobación de
+      accionabilidad de Playwright —que espera fotogramas— cuesta segundos. Con
+      la suite en paralelo, medido, el test tarda entre 1 y 30 s según la carga
+      de la máquina: con 30 s de margen fallaba de forma intermitente sin que
+      hubiera nada roto. En una GPU real la escena monta en ~0,2 s.
+
+      El techo se sube sólo aquí y sólo por eso. Si este test empieza a tardar
+      de verdad —decenas de segundos de forma estable—, lo que hay que mirar es
+      el coste del shader (ver el presupuesto de fbm en bodies.test.ts), no este
+      número.
+    */
+    test.setTimeout(90_000);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es");
 
@@ -735,7 +750,7 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     );
 
     const reduceToggle = page.getByRole("button", {
-      name: "Volver al mapa sin animación",
+      name: "Reducir movimiento y volver al mapa 2D",
     });
     await expect(reduceToggle).toHaveAttribute("aria-pressed", "true");
     await reduceToggle.click();

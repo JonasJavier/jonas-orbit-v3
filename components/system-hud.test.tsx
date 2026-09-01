@@ -94,9 +94,11 @@ describe("SystemHud — control único y reversible de animación", () => {
     renderHud();
 
     const control = await screen.findByRole("button", {
-      name: "Volver al mapa sin animación",
+      name: "Reducir movimiento y volver al mapa 2D",
     });
     expect(control).toHaveAttribute("aria-pressed", "true");
+    expect(control).toHaveTextContent("Motion");
+    expect(control).toHaveTextContent("Full");
     fireEvent.click(control);
     expect(mode.setForced).toHaveBeenCalledWith(false);
   });
@@ -107,9 +109,11 @@ describe("SystemHud — control único y reversible de animación", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("link", { name: "Reducir efectos 3D" }),
+        screen.getByRole("link", { name: "Reducir movimiento 3D" }),
       ).toHaveAttribute("href", "?no3d=1");
     });
+    expect(screen.getByText("Motion")).toBeVisible();
+    expect(screen.getByText("Full")).toBeVisible();
     expect(screen.queryByRole("button")).toBeNull();
   });
 });

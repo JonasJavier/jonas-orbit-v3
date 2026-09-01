@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createStardustPool,
   spawnStardust,
+  STARDUST_PROFILES,
   STARDUST_MAX_LIFETIME_MS,
   STARDUST_MIN_LIFETIME_MS,
   updateStardust,
@@ -26,7 +27,7 @@ describe("stardust pool", () => {
     expect(pool.x).toHaveLength(8);
   });
 
-  it("responde a la distancia recorrida con 1–14 motas y un techo explícito", () => {
+  it("conserva en flat el rastro aprobado de 1–14 motas", () => {
     const pool = createStardustPool(30);
 
     // Puntero prácticamente quieto: no hay gesto que acompañar.
@@ -35,6 +36,29 @@ describe("stardust pool", () => {
     expect(spawnStardust(pool, 0, 0, 0.03, 0, 16, fixedRandom(0.5))).toBe(1);
     // Barrido violento: el techo, y el tramo sembrado se corta por su tope.
     expect(spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5))).toBe(14);
+  });
+
+  it("aplica sólo en WebGL el perfil sutil de 1–9 motas", () => {
+    const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
+    expect(
+      spawnStardust(
+        pool,
+        0,
+        0,
+        20,
+        0,
+        16,
+        fixedRandom(0.5),
+        "webgl",
+      ),
+    ).toBe(9);
+    expect(pool.capacity).toBe(300);
+    expect(pool.lifetime[0]).toBeGreaterThanOrEqual(
+      STARDUST_PROFILES.webgl.minLifetimeMs,
+    );
+    expect(pool.lifetime[0]).toBeLessThanOrEqual(
+      STARDUST_PROFILES.webgl.maxLifetimeMs,
+    );
   });
 
   it("una pausa larga no dibuja una raya que el gesto nunca recorrió", () => {

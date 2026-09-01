@@ -173,10 +173,10 @@ Permanece mínimo en vacío, responde sobre el proxy y conserva affordance norma
 sobre raíl, botones y campos. Fuera del System Map no sustituye al cursor del
 sistema.
 
-El stardust se dibuja en un único canvas `aria-hidden` con pool circular de 112
-slots en typed arrays. El pointermove no actualiza React ni crea nodos: activa
-1–5 partículas según velocidad, con capacidad fija, vida 320–680 ms, deriva baja
-y fade rápido.
+Con WebGL vivo, el stardust se dibuja en un único canvas `aria-hidden` con pool
+circular de 300 slots en typed arrays. El pointermove no actualiza React ni crea
+nodos: activa 1–9 partículas según distancia, con capacidad fija, vida 390–760
+ms, deriva baja y fade rápido. El fallback `flat` conserva el perfil 2D aprobado.
 Violeta/magenta/pink dominan y cian aparece de forma rara. El RAF se detiene al
 vaciarse el pool y con `document.hidden`.
 

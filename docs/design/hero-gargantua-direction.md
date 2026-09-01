@@ -74,9 +74,10 @@ frame en bloom.
 La petición explícita de 2026-08-31 sustituye la dirección anterior de nave
 «original»: **Endurance debe reconocerse como la Endurance de _Interstellar_**,
 sin reinterpretarla como otra estación radial. La reconstrucción procedural usa
-doce módulos rectangulares independientes con huecos visibles, un gran centro
-vacío, un único brazo radial hacia un hub compacto, cuatro módulos de motor y el
-full stack de dos Ranger y dos Lander.
+doce módulos rectangulares independientes con huecos visibles, un hub central
+dominante y cuatro brazos de doble larguero, cuatro módulos de motor y el full
+stack de dos Ranger y dos Lander. Los módulos se agrupan en cuatro familias
+repetidas cada 90°; el detalle confirma la estructura y no la sustituye.
 
 El casco comparte el lenguaje NASA/ISS de la miniatura: mantas térmicas blanco
 roto y gris, recesos casi negros, paneles de servicio naranja muy localizados y
@@ -246,12 +247,13 @@ adopta estado target; al activar, locked. Sobre raíl y controles conserva una
 afordancia convencional clara. Nunca es un crosshair grande ni sustituye el
 cursor fuera del viewport.
 
-El stardust usa un único canvas 2D decorativo y un pool circular de 112 slots en
-typed arrays:
+Cuando WebGL está vivo, el stardust usa un único canvas 2D decorativo y un pool
+circular de 300 slots en typed arrays. El perfil `flat` conserva el rastro ya
+aprobado (420 slots, 1–14 motas y 520–1020 ms):
 
 - capacidad fija; no hay React state ni objetos DOM por partícula;
-- spawn sólo durante movimiento, de 1–5 motas según velocidad y con techo duro;
-- vida aproximada de 320–680 ms, deriva baja y fade cuadrático;
+- spawn sólo durante movimiento, de 1–9 motas según distancia y con techo duro;
+- vida aproximada de 390–760 ms, deriva baja y fade cuadrático;
 - violeta, magenta y pink dominan; cian es raro;
 - blend aditivo contenido, partículas diminutas y sin línea continua;
 - el RAF sólo vive mientras existen partículas y se pausa con `document.hidden`.
@@ -295,8 +297,9 @@ La preferencia del sistema es el punto de partida seguro, no una prohibición
 irreversible. En un dispositivo compatible aparece un control visible y
 accesible para `ACTIVAR ANIMACIÓN`; sólo una activación explícita permite
 montar WebGL y comenzar el movimiento. La escena activa ofrece un control
-`MAPA SIN ANIMACIÓN` —o `REDUCIR EFECTOS` fuera del System Map— que devuelve
-inmediatamente a `flat`. La elección se persiste y sigue siendo reversible;
+`MOTION / FULL`, un control compacto y accionable que devuelve inmediatamente a
+`flat`. En el mapa 2D el control de activación conserva su copy explícito; no se
+disfraza la entrada a WebGL como telemetría. La elección se persiste y sigue siendo reversible;
 nunca se inicia animación para ese visitante antes de su opt-in. La activación
 no puede superar una incompatibilidad real de WebGL ni fabricar WebGL2 donde no
 existe. `?no3d=1` preselecciona `flat`, pero el mismo control permite cambiar
@@ -336,14 +339,14 @@ manda sobre cualquier descripción anterior de estos siete puntos.
 | Miller | 3.0 | 3.05 | Ajuste fino. |
 | Edmunds | 2.9 | 3.0 | Ajuste fino. |
 
-Invariante que fija `bodies.test.ts`: Endurance > mundos mayores > objetos
-lejanos, y Tesseracto > Ranger. Cambiar una escala sin comprobarlo rompe la
-lectura del sistema aunque la escena siga compilando.
+Este orden sigue vigente en `placement.size` y, por tanto, en el mapa `flat`.
+WebGL lo complementa en §14 ter con escala perceptual y profundidad propias:
+Ranger puede crecer sin tocar aquel layout y permanece subordinada a Endurance.
 
 ### Modelos
 
-- **Endurance.** Doce módulos rectangulares separados, centro abierto, **un solo
-  brazo radial**, hub compacto con dos Ranger y dos Lander, cuatro bloques de
+- **Endurance.** Doce módulos rectangulares separados, centro abierto, **cuatro
+  brazos de doble larguero**, hub compacto con dos Ranger y dos Lander, cuatro bloques de
   motor y doce campanas. Un mapa térmico procedural de 128×128, con costuras,
   manta y máscaras de servicio, aporta lectura material sin descargar imágenes.
   Cuatro familias materiales fusionadas mantienen cuatro draws: manta/panel,
@@ -375,10 +378,9 @@ raymarch necesita que la cámara se quede quieta para converger.
 
 - **Sin numeración.** Ni `01…07` en el raíl ni índice en el NAV TARGET. El orden
   narrativo existe en el DOM y en el tabulador; imprimirlo era ruido.
-- **Sin lectura de movimiento.** `MOTION // REDUCED` se retiró del cristal: era
-  telemetría persistente, no una acción. El estado sigue en
-  `<html data-reduced-motion>` y el opt-in vive en un control separado, visible,
-  descriptivo y reversible.
+- **Movimiento como acción, no telemetría.** `MOTION / FULL` sólo aparece como
+  control accionable dentro de la escena 3D. El mapa `flat` conserva
+  `ACTIVAR 3D`, y `<html data-reduced-motion>` sigue siendo la fuente de estado.
 - **Copy corto.** El reposo usa `SYSTEM MAP / SELECT TARGET`; en móvil desaparece
   hasta que existe un objetivo porque el raíl ya comunica la acción.
 - **Tres niveles opacos.** `--hud-primary` / `--hud-secondary` / `--hud-tertiary`
@@ -392,6 +394,71 @@ Viñeta, reflejo frío del canto superior y marcas de calibración de 1 px. Ni u
 mampara, ni un marco metálico, ni un instrumento con volumen. Criterio de
 aceptación: si al describir la home alguien menciona el visor antes que
 Gargantúa, está mal hecho.
+
+## 14 ter. World Asset & Material Pass (2026-09-01)
+
+Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas
+y el control de entrada al mapa plano permanecen intactos. `placement.size`
+continúa siendo la composición compartida; WebGL normaliza cada asset mediante
+`MODEL_SCALE` porque un anillo, una retícula y un lifting body no ocupan su esfera
+envolvente del mismo modo.
+
+### Assets y escala perceptual
+
+- **Endurance:** hub central de tres diámetros, cuatro brazos de doble larguero
+  con travesaños, doce módulos agrupados en cuatro familias, paneles sólo en los
+  módulos de jerarquía y una única antena. Conserva cuatro familias de material.
+- **Ranger:** lifting body, cockpit, proa, estabilizadores, escudo y motores
+  crecen en geometría; el asset usa `1.22×` y su plano foreground completa un
+  aumento aparente aproximado de `1.6×` sin falsear el mapa 2D.
+- **Cooper:** `1.35×` en WebGL, planeta algo mayor, anillo de doble superficie
+  con cantos físicos y hábitat con dos paneles, antena y dos luces.
+- **Tesseracto:** `1.17×`, dos estratos translúcidos entre cuatro marcos y
+  contrarrotación interna. La transparencia suma profundidad, no glow global.
+- **Miller / Edmunds:** `1.12×` y más contraste material. Miller añade dos
+  escalas de ola, espuma y glints; Edmunds añade escarpes y roughness mineral.
+
+### Profundidad 3D
+
+Los cuerpos conservan su centro proyectado: cada uno se desplaza sobre su propio
+rayo cámara→cuerpo, y la misma traslación se aplica a su trayectoria. El orden es:
+
+| Plano | Destinos | Offset |
+|---|---|---:|
+| foreground cercano | Ranger | +8 rs |
+| foreground | Endurance | +4 rs |
+| midground | Edmunds / Miller | +1 / 0 rs |
+| mid-background | Cooper | −4 rs |
+| lejano | Tesseracto | −7 rs |
+
+La diferencia de perspectiva hace que el paralaje revele esos planos. La cámara
+sigue siendo `f(routeWorldId)` y no recibe ningún controlador nuevo.
+
+### Material, HUD y polvo
+
+La cara noche de los mundos pierde fill y el terminador recibe una penumbra
+cálida común desde Gargantúa. El metal estructural incorpora grano direccional;
+los módulos principales de Endurance usan una máscara de acabado coherente.
+
+En 3D, `ENDURANCE // NAV`, `SYSTEM NOMINAL`, el target y el destino activo ganan
+contraste; ticks y calibración conservan GHOST. El control de salida se muestra
+como `MOTION / ● FULL`, sin caja. Sólo durante WebGL, el stardust baja el pico de
+alfa de `0.92` a `0.68`, reduce tamaño, vida y ráfaga, y mantiene su paleta
+magenta; `flat` conserva exactamente su perfil anterior.
+
+El presupuesto actualizado es ≤ 24 draws reales —incluidos los pases de caras
+transparentes— y < 15 000 vértices para Gargantúa, los seis cuerpos y sus
+trayectorias.
+
+Hay un tercer presupuesto, menos obvio y más caro de romper: **≤ 12 sitios de
+llamada a `fbm` en el fragment de los cuerpos**. Los seis comparten un único
+programa, así que lo que se paga —en compilación y por píxel— es el número de
+llamadas escritas, no el de materiales; cada una son cuatro octavas por ocho
+`hash`. Con dieciséis sitios, montar la escena en el runtime software de CI pasó
+de 1,7 s a 46–60 s con tres workers, hasta agotar el timeout de A28, mientras que
+en una GPU real no se notaba nada. El detalle de alta frecuencia —microoleaje,
+escarpes, vórtices, grano cepillado— se resuelve con `noise()` de una octava, que
+a esa frecuencia se ve igual. Lo vigila un test en `components/scene/bodies.test.ts`.
 
 ## 15. Gate de aprobación visual
 

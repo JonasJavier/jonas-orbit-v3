@@ -5,7 +5,8 @@ import {
   createStardustPool,
   drawStardust,
   spawnStardust,
-  STARDUST_POOL_CAPACITY,
+  STARDUST_PROFILES,
+  type StardustProfile,
   updateStardust,
 } from "@/lib/stardust";
 
@@ -23,9 +24,11 @@ export function getNavigationPointerState(target: EventTarget | null) {
 
 export function PointerLife({
   disabled,
+  profile = "flat",
   scopeKey,
 }: {
   disabled: boolean;
+  profile?: StardustProfile;
   scopeKey: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -53,7 +56,8 @@ export function PointerLife({
     const activeCursor = cursor;
     const activeScope = scope;
     const activeContext = context;
-    const pool = createStardustPool();
+    const config = STARDUST_PROFILES[profile];
+    const pool = createStardustPool(config.capacity);
     let width = 0;
     let height = 0;
     let scopeBounds = activeScope.getBoundingClientRect();
@@ -66,7 +70,8 @@ export function PointerLife({
 
     root.dataset.pointerLife = "ready";
     activeScope.dataset.navigationCursor = "active";
-    activeSurface.dataset.particleCapacity = String(STARDUST_POOL_CAPACITY);
+    activeSurface.dataset.particleCapacity = String(config.capacity);
+    activeSurface.dataset.stardustProfile = profile;
 
     function measure() {
       const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -82,7 +87,7 @@ export function PointerLife({
       const delta = lastFrame ? now - lastFrame : 16.67;
       lastFrame = now;
       updateStardust(pool, delta);
-      drawStardust(activeContext, width, height, pool);
+      drawStardust(activeContext, width, height, pool, profile);
       activeSurface.dataset.activeParticles = String(pool.activeCount);
 
       if (pool.activeCount > 0 && !document.hidden) {
@@ -142,6 +147,8 @@ export function PointerLife({
             // El mismo `elapsed` con el que se midió la velocidad: juntos
             // reconstruyen el tramo exacto que hay que sembrar.
             elapsed,
+            Math.random,
+            profile,
           ) > 0
         ) {
           ensureAnimation();
@@ -191,7 +198,7 @@ export function PointerLife({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [disabled, scopeKey]);
+  }, [disabled, profile, scopeKey]);
 
   return (
     <>

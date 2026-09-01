@@ -4,6 +4,10 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
+import {
+  bodyDepthLayerFor,
+  placeBodyOnDepthLayer,
+} from "@/lib/scene-depth";
 import type { CameraPose } from "@/lib/scene-poses";
 import {
   DISPLAY_FRAGMENT,
@@ -357,6 +361,18 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   const rolledUp = new THREE.Vector3();
   const scratch = new THREE.Vector3();
   const basis = new THREE.Matrix4();
+  // Base de composición sin paralaje. Los cuerpos se colocan una vez sobre
+  // estos rayos; después la cámara sí puede moverse ±1.5° y revelar la
+  // diferencia entre planos en vez de arrastrar el layout con ella.
+  const compositionCameraPosition = new THREE.Vector3();
+  const compositionTarget = new THREE.Vector3();
+  const compositionForward = new THREE.Vector3();
+  const compositionRight = new THREE.Vector3();
+  const compositionUp = new THREE.Vector3();
+  const compositionBaseRight = new THREE.Vector3();
+  const compositionBaseUp = new THREE.Vector3();
+  const compositionBasePosition = new THREE.Vector3();
+  const compositionLayeredPosition = new THREE.Vector3();
 
   /** Ángulo de paralaje ya aplicado a la cámara. */
   let parallaxX = 0;
@@ -370,7 +386,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   let pixelWidth = 1;
   let pixelHeight = 1;
 
-  function composedBodyPosition(
+  function baseBodyPosition(
     body: SceneBody,
     aspect: number,
     cameraRight: THREE.Vector3,
@@ -397,6 +413,31 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       .multiplyScalar(horizontal)
       .addScaledVector(cameraUp, vertical)
       .addScaledVector(cameraForward, depth);
+  }
+
+  function composedBodyPosition(
+    body: SceneBody,
+    aspect: number,
+    cameraRight: THREE.Vector3,
+    cameraUp: THREE.Vector3,
+    cameraForward: THREE.Vector3,
+    referenceCameraPosition: THREE.Vector3,
+    target: THREE.Vector3,
+  ): THREE.Vector3 {
+    baseBodyPosition(
+      body,
+      aspect,
+      cameraRight,
+      cameraUp,
+      cameraForward,
+      target,
+    );
+    return placeBodyOnDepthLayer(
+      target,
+      referenceCameraPosition,
+      bodyDepthLayerFor(body.id),
+      target,
+    );
   }
 
   /**
@@ -507,7 +548,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       // Con las posiciones congeladas el encuadre solo tiene que encajar seis
       // puntos, y eso acerca la cámara de 90 a 73 rs. El disco pasa del 35 % al
       // 42 % del ancho del cuadro sin tocar una sola constante de tamaño.
-      composedBodyPosition(body, aspect, r, u, f, point);
+      baseBodyPosition(body, aspect, r, u, f, point);
       tight = Math.max(tight, distanceFor(point, body.radius));
     }
 
@@ -535,6 +576,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    */
   function applyPose(aspect: number) {
     frameDistance = measureFrameDistance(aspect) * pose.distanceScale;
+    setCompositionFrame(aspect);
 
     // El ancho de la traza orbital se recalcula aquí y no por fotograma: sólo
     // depende de la distancia de encuadre, que es justo lo que se acaba de
@@ -552,6 +594,71 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     }
 
     orientCamera(aspect);
+  }
+
+  /** Fija la composición para la pose pura, antes del paralaje aditivo. */
+  function setCompositionFrame(aspect: number) {
+    const elevation = (pose.elevation * Math.PI) / 180;
+    const azimuth = (pose.azimuth * Math.PI) / 180;
+    compositionCameraPosition
+      .set(
+        Math.cos(elevation) * Math.sin(azimuth),
+        Math.sin(elevation),
+        Math.cos(elevation) * Math.cos(azimuth),
+      )
+      .multiplyScalar(frameDistance);
+
+    compositionForward.copy(compositionCameraPosition).negate().normalize();
+    compositionBaseRight
+      .crossVectors(compositionForward, WORLD_UP)
+      .normalize();
+    const halfWidth =
+      frameDistance * Math.tan((pose.fov * Math.PI) / 360) * aspect;
+    compositionTarget
+      .copy(compositionBaseRight)
+      .multiplyScalar(-halfWidth * pose.targetShiftFraction);
+    compositionForward
+      .copy(compositionTarget)
+      .sub(compositionCameraPosition)
+      .normalize();
+    compositionBaseRight
+      .crossVectors(compositionForward, WORLD_UP)
+      .normalize();
+    compositionBaseUp
+      .crossVectors(compositionBaseRight, compositionForward)
+      .normalize();
+
+    const cos = Math.cos(pose.roll);
+    const sin = Math.sin(pose.roll);
+    compositionRight
+      .copy(compositionBaseRight)
+      .multiplyScalar(cos)
+      .addScaledVector(compositionBaseUp, sin);
+    compositionUp
+      .copy(compositionBaseUp)
+      .multiplyScalar(cos)
+      .addScaledVector(compositionBaseRight, -sin);
+
+    for (const body of bodies) {
+      baseBodyPosition(
+        body,
+        aspect,
+        compositionRight,
+        compositionUp,
+        compositionForward,
+        compositionBasePosition,
+      );
+      placeBodyOnDepthLayer(
+        compositionBasePosition,
+        compositionCameraPosition,
+        bodyDepthLayerFor(body.id),
+        compositionLayeredPosition,
+      );
+      body.orbit.position.subVectors(
+        compositionLayeredPosition,
+        compositionBasePosition,
+      );
+    }
   }
 
   /**
@@ -815,9 +922,10 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       composedBodyPosition(
         body,
         cssWidth / cssHeight,
-        rolledRight,
-        rolledUp,
-        forward,
+        compositionRight,
+        compositionUp,
+        compositionForward,
+        compositionCameraPosition,
         position,
       );
       body.object.position.copy(position);

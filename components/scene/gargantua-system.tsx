@@ -308,15 +308,20 @@ export function GargantuaSystem({
         data-testid="gargantua-canvas"
         ref={canvasRef}
       />
-      {!isSystemMapRoute && forced ? (
+      {!isSystemMapRoute &&
+      forced &&
+      (level === "deep" || level === "orbit") ? (
         <button
-          aria-label="Volver al mapa sin animación"
+          aria-label="Reducir movimiento y volver al mapa 2D"
           aria-pressed="true"
-          className="scene-toggle"
+          className="scene-toggle scene-toggle--motion"
           onClick={() => setForcedEffects(false)}
           type="button"
         >
-          Mapa sin animación
+          <span className="hud__motion-label">Motion</span>
+          <span className="hud__motion-state">
+            <b aria-hidden="true" /> Full
+          </span>
         </button>
       ) : null}
     </>
