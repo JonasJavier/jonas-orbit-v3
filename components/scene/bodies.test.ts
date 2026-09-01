@@ -82,13 +82,48 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(cooper.object.getObjectByName("cooper-rings")).toBeDefined();
       expect(cooper.object.getObjectByName("cooper-orbital-habitat")).toBeDefined();
 
-      expect(tesseract.object.getObjectByName("tesseract-nested-frames")).toBeInstanceOf(
-        THREE.LineSegments,
-      );
+      /*
+        El Tesseracto es estructura sólida, no un wireframe. Es el contrato que
+        se rompió una vez: con LineSegments, una arista medía un píxel a
+        cualquier distancia —sin volumen, sin sombreado y sin nada que ganar al
+        acercar la cámara—, y el objeto se leía como un icono de SVG.
+      */
+      const lattice = tesseract.object.getObjectByName(
+        "tesseract-hypercube-lattice",
+      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+      expect(lattice).toBeInstanceOf(THREE.Mesh);
+      expect(lattice).not.toBeInstanceOf(THREE.LineSegments);
+      expect(lattice.geometry.getIndex()?.count ?? 0).toBeGreaterThan(1_000);
+
+      // Nodos facetados: la máscara los separa de las vigas dentro del mismo draw.
+      const latticeMasks = lattice.geometry.getAttribute("aSurfaceMask");
+      expect(
+        Math.max(...Array.from(latticeMasks.array as ArrayLike<number>)),
+      ).toBe(1);
+
+      const cage = tesseract.object.getObjectByName(
+        "tesseract-inner-cage",
+      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+      expect(cage).toBeInstanceOf(THREE.Mesh);
+      expect(
+        Math.max(
+          ...Array.from(
+            cage.geometry.getAttribute("aSurfaceMask")
+              .array as ArrayLike<number>,
+          ),
+        ),
+      ).toBe(2);
+
+      expect(tesseract.object.getObjectByName("tesseract-core")).toBeDefined();
+      /*
+        Y ya NO hay caja translúcida. En una caja, el término de Fresnel es
+        constante por cara: el volumen se veía como cuatro paneles grises
+        planos, que es justo lo contrario de un cristal. Si vuelve, vuelve sobre
+        una superficie curva.
+      */
       expect(
         tesseract.object.getObjectByName("tesseract-translucent-strata"),
-      ).toBeDefined();
-      expect(tesseract.object.getObjectByName("tesseract-core")).toBeDefined();
+      ).toBeUndefined();
 
       expect(ranger.object.getObjectByName("ranger-metallic-hull")).toBeDefined();
       expect(
@@ -218,10 +253,16 @@ describe("cuerpos del Sistema Gargantúa", () => {
       }
     }
 
-    // El Tesseracto gana una única familia translúcida para profundidad real;
-    // sigue siendo un draw fusionado, no una pila de paneles independientes.
+    /*
+      Los draws siguen siendo el recurso caro y no se mueven: el Tesseracto pasó
+      de dos cáscaras de líneas a dos mallas fusionadas, y el reparto total es el
+      mismo. Los vértices sí suben —de 15 k a 16,3 k— porque su retícula pasó a
+      ser geometría de verdad, con vigas, nodos y tirantes. Es el intercambio
+      correcto: mil vértices no se notan en ninguna GPU de esta década, y son lo
+      que permite que el objeto aguante un acercamiento de cámara.
+    */
     expect(batches).toBeLessThanOrEqual(24);
-    expect(vertices).toBeLessThan(15_000);
+    expect(vertices).toBeLessThan(18_000);
   });
 
   it("anima localmente sin desplazar los destinos y es determinista", () => {
