@@ -6,8 +6,10 @@
 **CONTINUOUS JOURNEY: DEFERRED**
 
 La aprobación procede de revisión visual de los frames estático, Endurance
-activa, Ranger activa, móvil a 390 × 844 y fallback con reduced-motion. Los tests
-son condición necesaria, no la razón principal del dictamen.
+activa, Ranger activa, móvil a 390 × 844 y fallback con reduced-motion. La
+enmienda del mismo día amplía el criterio del fallback: debe mostrar el sistema
+2D completo y ofrecer una activación 3D voluntaria. Los tests son condición
+necesaria, no la razón principal del dictamen.
 
 ## Qué estaba débil
 
@@ -16,7 +18,10 @@ son condición necesaria, no la razón principal del dictamen.
 - Ranger se leía como una mota o un caza genérico.
 - El reparto de vida favorecía a Endurance; varios destinos parecían props.
 - El estado inactivo del HUD repetía copy genérico, especialmente en móvil.
-- Reduced-motion aún podía ser contradicho por una activación 3D persistida.
+- El fallback plano mostraba Gargantúa y el cielo, pero omitía los otros seis
+  destinos como cuerpos visuales.
+- Reduced-motion ocultaba por completo el control de activación; el usuario no
+  podía elegir 3D aunque su hardware fuera compatible.
 
 ## Endurance
 
@@ -49,12 +54,30 @@ anillos/hábitat y terminador compartido.
 Los seis destinos no centrales tienen movimiento local determinista sin cambiar
 su posición. No hay touring ni órbitas continuas. Gargantúa sigue siendo la
 fuente cálida; el fill frío recupera volumen y el terminador/specular hace que la
-rotación afecte la lectura material.
+rotación afecte la lectura material. Esta vida pertenece al modo 3D; `flat`
+permanece deliberadamente estático.
+
+## Fallback plano y activación
+
+El estado `flat` se convierte en un System Map completo, no en una pantalla de
+espera. Conserva el cielo y Gargantúa 2D, y añade seis representaciones estáticas
+con identidad propia: marcos del Tesseracto, Cooper anillado con hábitat, Miller
+oceánico, Endurance modular con centro vacío, Edmunds cobre y la silueta baja de
+Ranger. Comparten la composición, el lenguaje de luz, los proxies, brackets,
+TARGET y el raíl del modo 3D sin cargar Three.js.
+
+`prefers-reduced-motion` entra en ese estado por defecto y no inicia movimiento.
+En hardware compatible aparece `ACTIVAR ANIMACIÓN`; sólo una acción explícita
+monta la escena y habilita su movimiento. `MAPA SIN ANIMACIÓN` devuelve de
+inmediato al mapa estático. El control es visible, accesible, persistente y
+reversible; una ausencia real de WebGL2 sigue sin poder forzarse. `?no3d=1`
+preselecciona el perfil plano, pero no impide cambiar después de opinión.
 
 ## HUD, viewport y navegación
 
 - Sin `01…07` delante de los destinos.
 - Sin `MOTION // REDUCED` persistente.
+- La decisión de animación vive en un control accionable, no en telemetría.
 - `SYSTEM MAP / SELECT TARGET` sustituye frases más largas.
 - En móvil el bloque idle desaparece hasta adquirir un objetivo.
 - Primary, secondary y tertiary son colores opacos con luminancia diferenciada.
@@ -67,15 +90,16 @@ rotación afecte la lectura material.
 - Presupuesto de los cuerpos: como máximo 23 batches y menos de 15 000 vértices.
 - Las piezas de Endurance se fusionan; un invariante impide aceptar mallas vacías.
 - Móvil verificado a 390 × 844 y E2E a 375 × 812, sin overflow vertical.
-- Reduced-motion es un veto duro: no WebGL, no cursor/polvo, sin control que
-  prometa reactivar la escena. El contenido y los siete destinos permanecen.
+- Reduced-motion es el arranque seguro: no WebGL ni cursor/polvo antes del
+  opt-in. Aun así conserva Gargantúa + seis destinos 2D y ofrece activación 3D
+  reversible cuando el dispositivo realmente puede sostenerla.
 
 ## Verificación
 
 - `npm run lint` — verde.
 - `npm run typecheck` — verde.
 - `npm run knip` — verde.
-- `npm run test` — 25 archivos, 152 tests verdes.
+- `npm run test` — 27 archivos, 161 tests verdes.
 - `npx next build --webpack` — build de producción verde. Webpack es necesario
   en esta máquina porque Windows Application Control bloquea el SWC nativo que
   necesita Turbopack.
