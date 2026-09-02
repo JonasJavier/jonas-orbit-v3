@@ -3,6 +3,7 @@ import { join } from "node:path";
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { worldsData, type WorldId } from "@/content/worlds.data";
+import { DISK_OUTER, GARGANTUA_RS } from "./gargantua-shaders";
 import { bodyDepthLayerFor } from "@/lib/scene-depth";
 import { SYSTEM_POSE } from "@/lib/scene-poses";
 import {
@@ -309,6 +310,59 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(size.ranger).toBeLessThan(size.endurance);
     } finally {
       for (const body of Object.values(bodies)) disposeBody(body);
+    }
+  });
+
+  it("Gargantúa domina la primera lectura, y sin pegarse a los destinos", () => {
+    /*
+      La jerarquía del hero se decide con UN número: `rs`.
+
+      Escalar las órbitas no sirve —la distancia de encuadre la fijan los
+      destinos, así que la cámara retrocede en la misma proporción y el
+      resultado en pantalla es idéntico— y acercar la cámara tampoco, por lo
+      mismo. `rs` es el único parámetro que cambia el tamaño RELATIVO entre el
+      agujero negro y el sistema.
+
+      Y tiene un techo DURO, que es lo que comprueba este test.
+
+      El disco llega a 17·rs, así que la órbita más interior fija el máximo de
+      rs. Mientras estuvo en 22 rs el techo era 1.29; con los tres destinos
+      interiores movidos a 25-27 rs sube a ~1.47. La revisión que se descartó
+      usaba 1.48 CON las órbitas antiguas: el disco alcanzaba 25 rs y Endurance
+      y Edmunds quedaban encima. No era cuestión de gusto — era geometría, y
+      este test la deja escrita para que nadie la vuelva a cruzar de memoria.
+
+      El margen es fino a propósito. Dirección pidió «permitir algo más de
+      profundidad y solapamiento sutil», y en proyección hay bastante más aire
+      del que sugiere el cociente crudo: las órbitas están inclinadas y el disco
+      se ve casi de canto, así que el destino más cercano queda a 1.22 veces el
+      semieje de la elipse VISIBLE del disco. Ese número sale de medir la
+      proyección; aquí sólo vive el suelo que no se puede pisar.
+    */
+    expect(GARGANTUA_RS).toBeGreaterThan(1);
+
+    const nearestOrbit = Math.min(
+      ...Object.values(worldsData)
+        .map((world) => world.placement.orbitRadius)
+        .filter((radius) => radius > 0),
+    );
+    expect(nearestOrbit).toBeGreaterThan(DISK_OUTER);
+
+    const endurance = bodyFor("endurance");
+    try {
+      /*
+        El disco contra el ancla secundaria, radio contra radio.
+
+        La comparación es dura con el disco a propósito: `endurance.radius` es
+        su esfera envolvente —incluye las dos Ranger y las dos Lander atracadas—
+        y no la silueta que se ve. Aun así el disco le saca más del doble, que
+        es la diferencia entre «hay varios objetos espaciales» y «estoy frente a
+        un agujero negro». Esa era la primera lectura que había que arreglar.
+      */
+      const enduranceSize = apparentSize("endurance", endurance.radius);
+      expect(DISK_OUTER / FRAME_DISTANCE).toBeGreaterThan(enduranceSize * 2.2);
+    } finally {
+      disposeBody(endurance);
     }
   });
 

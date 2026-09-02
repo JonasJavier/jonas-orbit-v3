@@ -10,8 +10,11 @@ import {
 } from "@/lib/scene-depth";
 import type { CameraPose } from "@/lib/scene-poses";
 import {
+  DISK_INNER,
+  DISK_OUTER,
   DISPLAY_FRAGMENT,
   GARGANTUA_FRAGMENT,
+  GARGANTUA_RS,
   GARGANTUA_VERTEX,
 } from "./gargantua-shaders";
 import {
@@ -86,9 +89,16 @@ export interface SceneOptions {
   onFailure(reason: string): void;
 }
 
-/** Radios del disco, en rs. Deben coincidir con el shader. */
-const DISK_INNER = 1.58;
-const DISK_OUTER = 17;
+/**
+ * Radio del disco que ENCUADRA la cámara, que no es el que se dibuja.
+ *
+ * El encuadre obedece a los DESTINOS. Si tuviera que meter en el cuadro el
+ * disco ya ampliado, retrocedería y le devolvería a Gargantúa el tamaño
+ * aparente que se le acaba de dar — el mismo bucle que hace inútil escalar las
+ * órbitas. Con rs = 1.22 el disco cabe igualmente; la constante existe para que
+ * siga cabiendo la decisión, no el número.
+ */
+const COMPOSITION_DISK_OUTER = 17;
 
 /** Presupuesto por nivel: las dos palancas de un raymarcher son píxeles y pasos. */
 const TIER: Record<QualityTier, { dpr: number; steps: number; stepScale: number }> = {
@@ -245,6 +255,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       uTanHalfFov: { value: Math.tan((pose.fov * Math.PI) / 360) },
       uAspect: { value: 1 },
       uTime: { value: 0 },
+      uRs: { value: GARGANTUA_RS },
+      uPixelScale: { value: 0.002 },
       uDiskInner: { value: DISK_INNER },
       uDiskOuter: { value: DISK_OUTER },
       uSkyRadius: { value: 60 },
@@ -474,9 +486,19 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     const u = u0.clone().multiplyScalar(cosRoll).addScaledVector(r0, -sinRoll);
 
     const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
-    // El corrimiento lateral se come parte del semiancho: hay que pedir más.
+    /*
+      El corrimiento se come parte del cuadro: hay que pedir más.
+
+      Con valor ABSOLUTO. Mientras el corrimiento fue positivo daba igual, pero
+      un corrimiento negativo —mirar al otro lado— entraba aquí como `1 − (−x)`
+      y hacía creer al encuadre que tenía MÁS ancho del que le queda, no menos.
+      El destino del lado corto se habría salido del cuadro.
+    */
     const tanHalfWidth =
-      tanHalfFov * Math.max(aspect, 0.2) * (1 - pose.targetShiftFraction);
+      tanHalfFov *
+      Math.max(aspect, 0.2) *
+      (1 - Math.abs(pose.targetShiftFraction));
+    const tanHalfHeight = tanHalfFov * (1 - Math.abs(pose.targetShiftYFraction));
     const frameMargin = aspect < 0.75 ? PORTRAIT_FRAME_MARGIN : FRAME_MARGIN;
 
     /**
@@ -510,7 +532,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       const depth = p.dot(f);
       const reach = radius + frameMargin;
       return Math.max(
-        (Math.abs(p.dot(u)) + reach) / tanHalfFov - depth,
+        (Math.abs(p.dot(u)) + reach) / tanHalfHeight - depth,
         (Math.abs(p.dot(r)) + reach) / tanHalfWidth - depth,
       );
     }
@@ -524,8 +546,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // demás y de paso deja de suponer nada sobre la elevación de la cámara.
     const framedDiskOuter =
       aspect < PORTRAIT_ASPECT
-        ? DISK_OUTER * PORTRAIT_DISK_FRAME
-        : DISK_OUTER;
+        ? COMPOSITION_DISK_OUTER * PORTRAIT_DISK_FRAME
+        : COMPOSITION_DISK_OUTER;
     for (let i = 0; i < 48; i++) {
       const angle = (i / 48) * Math.PI * 2;
       point.set(
@@ -612,11 +634,19 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     compositionBaseRight
       .crossVectors(compositionForward, WORLD_UP)
       .normalize();
-    const halfWidth =
-      frameDistance * Math.tan((pose.fov * Math.PI) / 360) * aspect;
+    compositionBaseUp
+      .crossVectors(compositionBaseRight, compositionForward)
+      .normalize();
+    const tanHalf = Math.tan((pose.fov * Math.PI) / 360);
+    const halfWidth = frameDistance * tanHalf * aspect;
+    const halfHeight = frameDistance * tanHalf;
     compositionTarget
       .copy(compositionBaseRight)
-      .multiplyScalar(-halfWidth * pose.targetShiftFraction);
+      .multiplyScalar(-halfWidth * pose.targetShiftFraction)
+      .addScaledVector(
+        compositionBaseUp,
+        halfHeight * pose.targetShiftYFraction,
+      );
     compositionForward
       .copy(compositionTarget)
       .sub(compositionCameraPosition)
@@ -718,10 +748,17 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     forward.copy(cameraPosition).negate().normalize();
     right.crossVectors(forward, WORLD_UP).normalize();
 
+    up.crossVectors(right, forward).normalize();
+
     const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
     const halfWidth = frameDistance * tanHalfFov * aspect;
-    // Mirar a la IZQUIERDA del agujero negro lo empuja a la derecha del cuadro.
-    cameraTarget.copy(right).multiplyScalar(-halfWidth * pose.targetShiftFraction);
+    const halfHeight = frameDistance * tanHalfFov;
+    // Mirar a la IZQUIERDA del agujero negro lo empuja a la derecha del cuadro,
+    // y mirar por ENCIMA lo empuja hacia abajo.
+    cameraTarget
+      .copy(right)
+      .multiplyScalar(-halfWidth * pose.targetShiftFraction)
+      .addScaledVector(up, halfHeight * pose.targetShiftYFraction);
 
     // Base definitiva, ya con la mirada corrida.
     forward.copy(cameraTarget).sub(cameraPosition).normalize();
@@ -738,6 +775,12 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     marchMaterial.uniforms.uCamUp.value.copy(rolledUp);
     marchMaterial.uniforms.uCamFwd.value.copy(forward);
     marchMaterial.uniforms.uTanHalfFov.value = tanHalfFov;
+    /* Ángulo por píxel en vertical. Es el antialias del disco: con él y la
+       distancia al punto, el shader calcula la huella del píxel en unidades de
+       mundo y apaga cada campo de ruido antes de que su longitud de onda baje
+       de esa huella. Depende del FOV y de la resolución REAL, así que se
+       escribe aquí y en el resize. */
+    marchMaterial.uniforms.uPixelScale.value = (2 * tanHalfFov) / pixelHeight;
     marchMaterial.uniforms.uAspect.value = aspect;
     marchMaterial.uniforms.uSkyRadius.value = Math.max(60, frameDistance * 1.5);
 
