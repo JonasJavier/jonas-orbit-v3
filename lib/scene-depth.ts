@@ -11,15 +11,27 @@ import type { Vector3 } from "three";
 const BODY_DEPTH_LAYER: Readonly<
   Record<Exclude<WorldId, "gargantua">, number>
 > = {
-  tesseract: -3,
-  "cooper-station": -1,
+  /*
+    Rango ampliado de [-3, +5] a [-6, +7] (2026-09-01).
+
+    Con Gargantúa ocupando casi la mitad del cuadro, los destinos ya no pueden
+    estar todos a la misma profundidad: leídos así se convierten en iconos
+    repartidos alrededor de un centro. Separarlos en el eje de vista es lo que
+    los hace pertenecer a un ESPACIO y no a una circunferencia — el paralaje del
+    puntero los mueve a velocidades distintas y unos pasan por delante de otros.
+
+    No es escala: mover un cuerpo sobre su propio rayo cámara→cuerpo conserva su
+    posición en pantalla y solo cambia su tamaño aparente y su orden en z.
+  */
+  tesseract: -6,
+  "cooper-station": -3,
   miller: 0,
   endurance: 4,
-  edmunds: 1,
+  edmunds: 2,
   // Sigue siendo el cuerpo más adelantado —es la nave pequeña y necesita el
-  // plano cercano—, pero su fase nueva ya la acerca 18 rs por sí sola: con +8
-  // se comía a la Endurance.
-  ranger: 5,
+  // plano cercano—, y ahora que la Endurance está tres radios más lejos puede
+  // avanzar hasta +7 sin comérsela.
+  ranger: 7,
 };
 
 export function bodyDepthLayerFor(id: WorldId): number {

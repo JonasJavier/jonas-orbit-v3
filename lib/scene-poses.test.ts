@@ -56,12 +56,33 @@ describe("G7 · cameraPose = f(ruta)", () => {
     );
   });
 
-  it("Gargantúa manda en el centro del cuadro", () => {
-    // El encuadre pasó por descentrarlo —había que dejar hueco al bloque
-    // editorial del hero— y volvió al centro cuando ese bloque desapareció: la
-    // simetría es lo que hace hipnótico un sistema en órbita. El tope superior
-    // sigue vigilado por si alguien lo vuelve a desplazar sin querer.
-    expect(SYSTEM_POSE.targetShiftFraction).toBeGreaterThanOrEqual(0);
-    expect(SYSTEM_POSE.targetShiftFraction).toBeLessThan(0.45);
+  it("descentra Gargantúa lo justo para que la toma no sea un diagrama", () => {
+    /*
+      El corrimiento existe, y es pequeño en los dos ejes.
+
+      La simetría PERFECTA es lo que hace que la escena se lea como un diagrama
+      científico: el centro geométrico del visor es el único sitio donde un
+      objeto no parece encuadrado por nadie. Pero el tope importa tanto como el
+      suelo — pasado ~0.2 el encuadre tiene que retroceder tanto para compensar
+      el corrimiento que devuelve en tamaño de Gargantúa lo que gana en
+      composición, y los destinos del lado corto se acercan al borde.
+    */
+    expect(Math.abs(SYSTEM_POSE.targetShiftFraction)).toBeGreaterThan(0);
+    expect(Math.abs(SYSTEM_POSE.targetShiftFraction)).toBeLessThanOrEqual(0.2);
+    expect(Math.abs(SYSTEM_POSE.targetShiftYFraction)).toBeLessThanOrEqual(0.2);
+  });
+
+  it("las poses de mundo heredan el descentrado, atenuado", () => {
+    // Si una pose de mundo se quedara sin corrimiento vertical, la transición
+    // de la home a un mundo movería Gargantúa en vertical sin motivo.
+    for (const id of ["miller", "endurance", "ranger"] as const) {
+      const pose = cameraPoseForRoute(id);
+      expect(Math.abs(pose.targetShiftYFraction), id).toBeLessThan(
+        Math.abs(SYSTEM_POSE.targetShiftYFraction),
+      );
+      expect(Math.sign(pose.targetShiftYFraction), id).toBe(
+        Math.sign(SYSTEM_POSE.targetShiftYFraction),
+      );
+    }
   });
 });

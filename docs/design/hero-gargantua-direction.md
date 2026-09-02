@@ -42,6 +42,10 @@ viewport queda muerto por conservar el layout del antiguo copy.
 Gargantúa permanece sin rótulo permanente: escala, sombra y disco ya establecen
 su identidad.
 
+> **Corregido por §14 quinquies (2026-09-01).** La fila 1 se quedaba corta:
+> Gargantúa crece un 39 % de tamaño aparente vía `rs`, hasta el 45.7 % del ancho
+> del viewport. La fila 2 baja un 11 %. El resto de la tabla sigue vigente.
+
 ## 3. El sistema está quieto, no muerto
 
 Las posiciones de los seis cuerpos alrededor de Gargantúa son constantes de
@@ -604,6 +608,192 @@ Miller y aun así se ve más pequeño, porque vive veinte radios más lejos. La
 jerarquía se comprueba en `bodies.test.ts` sobre radio partido por distancia a
 cámara: Endurance domina por más de 1.5×, el Tesseracto es el más pequeño pero
 tiene suelo, y la Ranger se queda entre los dos.
+
+## 14 quinquies. Escala de Gargantúa y peso visual de Endurance (2026-09-01)
+
+Corrección de jerarquía: la escena se leía como «hay varios objetos espaciales»
+y sólo después como «estoy frente a un agujero negro». Gargantúa y Endurance se
+disputaban la primera lectura. Esta sección manda sobre §2 y §4 en escala de
+Gargantúa, encuadre y peso visual de Endurance.
+
+### El único parámetro que mueve la jerarquía es `rs`
+
+Medido, no supuesto. La distancia de encuadre la fijan los DESTINOS, así que:
+
+- **escalar las órbitas no hace nada.** La cámara retrocede en la misma
+  proporción y la imagen resultante es idéntica. Es un zoom.
+- **acercar la cámara tampoco**, por lo mismo: si los destinos tienen que
+  seguir en cuadro, no hay dónde acercarse.
+- **bajar el margen de encuadre sí**, pero ese margen es la separación con el
+  HUD y el raíl: gastarlo mete la Ranger debajo de la barra de navegación.
+
+Queda `rs`, que es lo único que cambia el tamaño RELATIVO entre el agujero negro
+y el sistema sin tocar la distancia de encuadre. Vive en `gargantua-shaders.ts`
+como `GARGANTUA_RS` y el shader lo recibe como uniform: sombra, esfera de
+fotones, lente y disco se derivan todos de él, porque en un agujero negro real
+también se derivan todos de la masa.
+
+### El techo lo pone la órbita más interior
+
+El disco llega a 17·rs, así que el destino más cercano fija el máximo de `rs`.
+Mientras los interiores estuvieron en 22-23.5 rs, ese techo era **1.29**: por
+encima, los destinos caían literalmente dentro del disco. La revisión descartada
+usaba 1.48 con esas órbitas —el disco alcanzaba 25 rs— y por eso Endurance y
+Edmunds aparecían encima de él y el sistema se leía apelotonado.
+
+El techo se levantó moviendo los destinos, no forzando el número: Endurance,
+Edmunds y Miller pasan a 25-27 rs (ver `worlds.data.ts`) y el máximo sube a
+~1.47.
+
+Valor adoptado: **1.40**. En 16:9 el disco visible pasa del 32.9 % del ancho
+—el original— al **45.7 %**, un 39 % más de tamaño aparente. El destino más
+cercano queda a **1.22 veces** el semieje de la elipse visible del disco:
+prácticamente el mismo aire que antes de todo esto, porque las órbitas están
+inclinadas y el disco se ve casi de canto. El solapamiento que queda es el que
+pidió dirección, sutil y en profundidad.
+
+Lo que NO se pagó: la distancia de cámara no cambia. El encuadre lo fijan Cooper
+(30 rs) y el Tesseracto (33 rs), que no se movieron, así que empujar los
+interiores hacia fuera fue gratis — y de paso los cuerpos pasan de ocupar el
+53 % del ancho del cuadro al 59 %, que es la corrección del espacio negativo
+lateral sin añadir un solo objeto.
+
+### La toma está descentrada
+
+`targetShiftFraction = -0.075` y `targetShiftYFraction = 0.025` dejan la sombra
+un 3.6 % del ancho a la izquierda y un 2.7 % del alto por debajo del centro. La
+simetría perfecta es lo que hacía leer «diagrama»: el centro geométrico del
+visor es el único sitio donde un objeto no parece encuadrado por nadie.
+
+El corrimiento vertical es nuevo en el contrato de cámara. Y el encuadre pasa a
+usar el VALOR ABSOLUTO del corrimiento al calcular cuánto cuadro le queda: con
+el corrimiento negativo, la fórmula anterior creía tener más ancho, no menos, y
+habría sacado de cuadro el destino del lado corto.
+
+### Endurance deja de competir
+
+El problema no era el tamaño sino el CONTRASTE: blanca, con mucha geometría por
+unidad de silueta y cerca del centro visual.
+
+- Módulos principales de 0.99 a **0.72** de albedo. A la intensidad de clave de
+  esta órbita, 0.99 satura el canal y la manta deja de tener material: pasa a
+  ser papel recortado.
+- Manta general a 0.47 y grafito a 0.13: el salto de valor sigue existiendo,
+  pero dentro de un rango que no reclama la mirada.
+- El término ambiente plano de la nave baja de 0.048 a 0.018. Era luz que
+  llegaba por igual a todas las caras y le quitaba a Gargantúa el trabajo de
+  explicar los volúmenes.
+- Suelo de relleno nocturno de 0.62: por debajo, los huecos entre módulos caen a
+  negro y la nave se lee como confeti blanco y negro alrededor de un aro.
+- Escala del modelo a 0.94, que con el descentrado queda en **−9 % aparente**.
+
+De paso, el `coldRim` de las naves usaba `smoothstep` con `edge0 > edge1`, que
+es comportamiento indefinido en GLSL ES. Funcionaba por suerte del compilador.
+
+### Fase 2 — luz común (2026-09-01)
+
+Objetivo: que todo pertenezca al mismo espacio físico. El cambio no está en los
+materiales sino en que **todos obedezcan la misma ley de luz**.
+
+- **La clave tiene temperatura.** El ámbar pasa de `1.0, 0.84, 0.62` a
+  `1.0, 0.78, 0.52`. Con el valor anterior la luz llegaba pero era casi blanco
+  cálido, y un casco iluminado por un disco de acreción se parecía demasiado a
+  un casco iluminado en un plató.
+- **El relleno vuelve a ser el cielo, no una segunda lámpara.** Baja de
+  `0.078, 0.101, 0.181` a `0.044, 0.058, 0.115`. Levantaba por igual la cara
+  noche de todos los cuerpos y aplanaba la escena.
+- **Un solo suelo de relleno nocturno, por familia de material.** Antes era una
+  excepción para tres tipos y un valor plano para el resto: los mundos perdían
+  relleno en su cara noche y las naves no. Dos familias obedeciendo a modelos de
+  luz distintos dentro del mismo cuadro es la mitad de por qué parecían
+  renderizadas por separado. Ahora: mundos 0.50, Endurance 0.60 —tiene más caras
+  por unidad de silueta y un suelo bajo le abre agujeros entre módulos—,
+  Ranger 0.44, estructura y Tesseracto 0.40, anillos 0.34.
+- **Contraluz frío común.** La cara opuesta a Gargantúa cae a azul acero casi
+  negro en lugar de a gris plano, y lo reciben todos los cuerpos con la misma
+  fórmula. Antes sólo lo tenían naves y estación, con la suya propia: un mundo y
+  una nave a la misma distancia del disco tenían bordes de temperaturas
+  distintas, y eso los delataba más que ningún material.
+- **El metal refleja oro, no cielo.** El barrido especular ancho de Ranger y
+  Cooper mezclaba un 42 % de azul en la clave: devolvían luz fría mirando a una
+  fuente dorada. Un reflejo que no coincide con su fuente se lee como pegado
+  encima de la escena, y era buena parte de por qué la Ranger parecía un low
+  poly aislado.
+- **Cooper deja de ser planeta + anillos.** El anillo ya proyectaba sobre el
+  planeta; su sombra sube de 0.72 a 0.90 —un descuento del 28 % desaparecía
+  dentro del propio degradado— y aparece la que faltaba, **la del planeta sobre
+  el anillo**, con el mismo trazado de rayo en sentido contrario.
+- **Edmunds, control de frecuencias sin rediseño.** Sus tres escalas finas
+  pintaban color con tanto peso como las dos masas grandes: vetas de 0.42 a
+  0.18, crestas de 0.34 a 0.20, casquetes de 0.55 a 0.34. El rediseño del
+  planeta sigue pendiente de su fase; esto sólo quita el ruido.
+- **Miller deja de ser perfecto.** Especular de 1.05 a 0.82 y atmósfera de 1.30
+  a 1.12. Una superficie perfecta a esa intensidad es lo que hacía que un mundo
+  de agua se leyera como material de videojuego.
+
+### Fase 2.5 — Gargantúa a su nueva escala (2026-09-01)
+
+Al pasar del 33 % al 46 % del ancho, el disco empezó a enseñar defectos que a un
+tercio de pantalla no se percibían: se leía como curvas dibujadas sobre una
+superficie en vez de como material orbitando. Esta fase toca **sólo** el disco y
+la lente; composición, cámara, escala y cuerpos quedan congelados.
+
+**La jerarquía de frecuencias estaba invertida.** El ruido se muestreaba a
+frecuencia fija en unidades de mundo, y a radio r la circunferencia mide 2πr: el
+exterior salía fino y el interior ancho, justo al revés de lo que cuenta un
+disco de acreción. Ahora la frecuencia sube hacia dentro —el material cercano al
+horizonte se lee comprimido y estirado— y la transición se perturba con el campo
+de deformación para que sus isocurvas no sean circunferencias.
+
+**Las corrientes son de cresta, mezcladas con bulto.** El valor absoluto plegado
+del fbm da filamentos que se bifurcan y se cortan solos; mezclado al 45 % con el
+fbm suave, aporta las bifurcaciones sin perder el flujo orbital, que sigue
+mandando. Se añade una segunda escala de deformación de dominio, muy gruesa y
+barata (dos valueNoise), para que el paso de la espiral no sea el mismo en todo
+el contorno.
+
+**Interrupciones con profundidad variable.** El corte de las corrientes sale de
+campos ya calculados, y su PROFUNDIDAD la modula otro: con profundidad fija el
+resultado es un ritmo de «segmento, hueco, segmento» tan reconocible como la
+línea continua que sustituye. Así unos cortes adelgazan y otros interrumpen, y a
+veces dos corrientes vecinas se funden.
+
+**La corona marrón desaparece por fragmentación, no por otro color.** El radio
+donde muere el material varía con el propio campo turbulento —que se muestrea en
+el marco contrarrotado, así que los jirones prolongan la dirección del flujo—.
+El disco se pierde en negro por filamentos y ya no hay una frontera del mismo
+grosor en todo el contorno.
+
+**Asimetría con dirección.** El exponente del beaming sube de 2.4 a 3.1 y el
+suelo baja a 0.16 —no más: por debajo, el lado que se aleja deja de tener
+material y se convierte en un recorte—. La asimetría es además de COLOR: crema
+casi blanco donde el material viene hacia la cámara, cobre donde se va. El tinte
+azulado anterior era correcto en física y equivocado en lectura, porque enfriaba
+justo la zona que tiene que verse incandescente.
+
+**Anillo de fotones: un filo, no un halo.** Término analítico en el parámetro de
+impacto crítico b = (3√3/2)·rs = (√27/2)·rs ≈ 2.598·rs — la convención de este
+shader es rs = 2GM/c², como confirman el horizonte en r = rs, la esfera de
+fotones en 1.5·rs y el término (3/2)·rs·u² de la geodésica. Va fuera del bucle,
+donde `fwidth()` sí es válido, así que su anchura se adapta a la resolución. Dos
+condiciones lo separan de un círculo gráfico: se apaga en los rayos capturados
+—la sombra se queda absolutamente limpia— y su intensidad se multiplica por la
+luminancia ya acumulada, así que hereda el beaming y el lensado y no brilla igual
+en los 360°.
+
+**Antialias por OCTAVA, no por campo.** `fwidth()` dentro del integrador es
+comportamiento indefinido —flujo no uniforme—, así que la huella del píxel se
+calcula analíticamente: ángulo por píxel (del drawing buffer, ya con el DPR)
+por el CAMINO RECORRIDO por el rayo, no por la cuerda cámara-punto, que en un
+espacio curvo subestima justo los rayos que dan media vuelta. El primer intento
+apagaba el campo entero según su frecuencia base y no servía de nada: la que
+aliasea es la última octava, 8.4 veces más arriba. `fbmAA` desvanece cada octava
+hacia su media cuando su longitud de onda cruza la huella. No cuesta ninguna
+evaluación de ruido extra.
+
+**Coste.** El muestreo del disco pasa de 18 a 20 evaluaciones de ruido (+11 %):
+las dos de la deformación gruesa. Todo lo demás —cresta, cortes, calibre,
+jirones, asimetría cromática, anillo— es aritmética sobre campos ya calculados.
 
 ## 15. Gate de aprobación visual
 

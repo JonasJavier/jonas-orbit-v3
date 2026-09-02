@@ -373,11 +373,25 @@ const BODY_FRAGMENT = /* glsl */ `
 
     /* Ámbar del disco para la clave; azul tenue del fondo estelar para el
        relleno, que es lo que impide que la cara noche sea un agujero recortado. */
-    vec3 key = vec3(1.0, 0.84, 0.62) * uLightIntensity;
-    /* Relleno del cielo estelar. Sube con el campo de estrellas: si el fondo
-       tiene más luz, la cara noche recibe más rebote — bajarlo sería pintar
-       cuerpos recortados sobre un cielo que ya no es negro. */
-    vec3 fill = vec3(0.078, 0.101, 0.181);
+    /*
+      LA CLAVE ES GARGANTÚA, y ahora se le nota.
+
+      Con 0.84 / 0.62 el ámbar era casi blanco cálido: la luz llegaba pero no
+      tenía TEMPERATURA, así que un casco iluminado por un disco de acreción se
+      parecía demasiado a un casco iluminado en un plató. A 0.78 / 0.52 la cara
+      que mira al disco queda inequívocamente dorada y la contraria se separa
+      sola, sin subir contraste ni tocar exposición.
+    */
+    vec3 key = vec3(1.0, 0.78, 0.52) * uLightIntensity;
+    /*
+      Y el relleno es el CIELO, no una segunda lámpara.
+
+      Valía 0.078/0.101/0.181 y competía con la clave: levantaba la cara noche
+      de todos los cuerpos por igual y aplanaba la escena. Baja a poco más de la
+      mitad y se enfría. Lo que resuelve la silueta contra el negro no es este
+      término sino el contraluz de más abajo, que sí depende de la orientación.
+    */
+    vec3 fill = vec3(0.044, 0.058, 0.115);
 
     vec3 albedo;
     float gloss = 0.0;
@@ -467,10 +481,17 @@ const BODY_FRAGMENT = /* glsl */ `
          exposición. A 74 el camino de luz se estrecha y aparece lo que
          importa, el rastro de destellos del oleaje alrededor. */
       specularPower = 74.0;
-      specularStrength = 1.05;
-      /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura. */
-      atmosphere = vec3(0.26, 0.54, 0.88);
-      atmosphereWeight = 1.3;
+      /* Y más BAJO: 0.82, no 1.05. El brillo del disco sobre el océano seguía
+         dejando una mancha casi blanca, y una superficie perfecta a esa
+         intensidad es lo que hace que un planeta de agua se lea como material
+         de videojuego. Con 0.82 el reflejo sigue estando —es medio Miller— pero
+         deja ver el agua que hay debajo. */
+      specularStrength = 0.82;
+      /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura.
+         Pesa 1.12 en vez de 1.3: por encima, el halo azul empieza a leerse como
+         un contorno dibujado y desentona con el ámbar del resto del sistema. */
+      atmosphere = vec3(0.24, 0.5, 0.82);
+      atmosphereWeight = 1.12;
     } else if (uKind == 1) {
       /*
         Edmunds: el mundo de la Creatividad, y por tanto el que no puede ser
@@ -543,15 +564,23 @@ const BODY_FRAGMENT = /* glsl */ `
          grande va aquí, entre dos regiones, no repartido en cien grietas. */
       albedo = mix(vec3(0.135, 0.062, 0.042), vec3(0.58, 0.29, 0.135), highland);
       albedo = mix(albedo, vec3(0.86, 0.53, 0.26), terrain * highland * 0.72);
-      albedo = mix(albedo, vec3(0.97, 0.76, 0.53), ridges * highland * 0.34);
+      /* 0.20, no 0.34. No es un rediseño de Edmunds —eso queda para su fase—
+         sino control de frecuencias: las tres escalas finas pintaban COLOR con
+         tanto peso como las dos masas grandes, y a tamaño de Hero eso no se lee
+         como geología sino como ruido procedimental sobre una esfera. Bajan las
+         finas, se quedan las grandes, y el reparto pasa a ser el que pide
+         dirección: primero masa, después estructura, y el grano al final. */
+      albedo = mix(albedo, vec3(0.97, 0.76, 0.53), ridges * highland * 0.2);
       /* Sal seca en el fondo de las cuencas, donde el terreno es bajo. */
-      albedo = mix(albedo, vec3(0.72, 0.63, 0.52), veins * (1.0 - highland) * 0.42);
+      albedo = mix(albedo, vec3(0.72, 0.63, 0.52), veins * (1.0 - highland) * 0.18);
       /* Y el relieve también tiñe: las crestas están más expuestas y pierden
          el óxido; los valles lo acumulan. */
       albedo = mix(albedo, vec3(0.9, 0.66, 0.42), smoothstep(0.3, 0.95, height) * 0.2);
       albedo = mix(albedo, vec3(0.1, 0.04, 0.03), smoothstep(-0.3, -0.95, height) * 0.28);
       albedo = mix(albedo, vec3(0.8, 0.6, 0.44), haze * 0.3);
-      albedo = mix(albedo, vec3(0.88, 0.87, 0.85), polar * 0.55);
+      /* Los casquetes bajan de 0.55 a 0.34: eran el mayor salto de valor del
+         planeta y competían con la propia masa continental. */
+      albedo = mix(albedo, vec3(0.88, 0.87, 0.85), polar * 0.34);
       gloss = 0.045 + haze * 0.04 + polar * 0.2 + veins * 0.05;
       specularPower = 26.0;
       atmosphere = vec3(1.0, 0.63, 0.36);
@@ -736,7 +765,12 @@ const BODY_FRAGMENT = /* glsl */ `
                      * (0.55 + 0.45 * smoothstep(0.16, 0.72, bands));
         }
       }
-      materialOcclusion = 1.0 - ringShadow * 0.72;
+      /* 0.90, no 0.72. La sombra estaba trazada de verdad y aun así se leía
+         como un sombreado suave: a este tamaño, un descuento del 28 % sobre la
+         clave desaparece dentro del propio degradado del planeta. Con 0.90 la
+         banda es casi negra y la división del anillo se ve cruzarla — que es lo
+         único que ata las dos piezas en un mismo objeto. */
+      materialOcclusion = 1.0 - ringShadow * 0.9;
     } else if (uKind == 4) {
       /*
         Endurance: mantas térmicas y panel pintado, no metal cromado.
@@ -761,8 +795,8 @@ const BODY_FRAGMENT = /* glsl */ `
         blanco casi puro para los cuatro módulos principales. Tres valores
         separados hacen el trabajo que doce siluetas iguales no hacían.
       */
-      albedo = mix(vec3(0.22, 0.235, 0.255), vec3(0.63, 0.635, 0.61), blanket);
-      albedo = mix(albedo, vec3(0.86, 0.64, 0.39), warmFoil * 0.34);
+      albedo = mix(vec3(0.13, 0.145, 0.165), vec3(0.47, 0.475, 0.46), blanket);
+      albedo = mix(albedo, vec3(0.68, 0.46, 0.26), warmFoil * 0.26);
       /* La costura pesaba 0.68 y dibujaba una rejilla casi negra sobre cada
          cara: a tamaño de Hero la nave parecía forrada de azulejos. Una manta
          térmica real tiene juntas, pero no son surcos —van cosidas, no
@@ -799,7 +833,13 @@ const BODY_FRAGMENT = /* glsl */ `
       } else if (vSurfaceMask > 0.5) {
         /* Módulos principales: manta más clara y reflectante. La repetición
            cada 90° crea jerarquía sin sumar colores ni paneles aleatorios. */
-        albedo = mix(vec3(0.2, 0.23, 0.25), vec3(0.99, 0.97, 0.92), blanket);
+        /* 0.72, no 0.99. El blanco puro es lo que hacía que el ojo aterrizara
+           aquí antes que en el agujero negro: a la intensidad de clave de esta
+           órbita, 0.99 revienta el canal y la manta deja de tener material —
+           pasa a ser papel recortado. A 0.72 sigue siendo la superficie más
+           clara de la escena y recupera medio tono de rango donde antes había
+           saturación. */
+        albedo = mix(vec3(0.145, 0.165, 0.185), vec3(0.72, 0.7, 0.66), blanket);
         albedo = mix(albedo, vec3(0.13, 0.14, 0.155), seam * 0.3);
         gloss = mix(0.46, 0.2, microRoughness);
         specularPower = 48.0;
@@ -882,6 +922,28 @@ const BODY_FRAGMENT = /* glsl */ `
       emissive = key * abs(ndl) * bandMask * 0.13;
       gloss = 0.34;
       outputAlpha = 0.17 + bandMask * 0.52;
+
+      /*
+        Y EL PLANETA DEVUELVE LA SOMBRA.
+
+        El anillo proyectaba sobre el planeta desde hace dos revisiones, pero el
+        planeta no proyectaba sobre el anillo: el anillo era uniforme en todo su
+        recorrido, sin enterarse de que hay una esfera opaca en su centro. Por
+        eso seguía leyéndose como un elemento gráfico colocado alrededor.
+
+        Mismo trazado de rayo en sentido contrario, y aún más barato: la fuente
+        está en el origen del sistema y el planeta es una esfera de radio 0.69
+        centrada en el origen LOCAL, así que basta medir a qué distancia del
+        centro pasa el rayo que va de este punto hacia la luz.
+      */
+      vec3 ringToLight = normalize(vLightLocal);
+      float alongRay = -dot(vLocal, ringToLight);
+      float missDistance = length(vLocal + ringToLight * alongRay);
+      float planetShadow = alongRay > 0.0
+        ? 1.0 - smoothstep(0.6, 0.78, missDistance)
+        : 0.0;
+      materialOcclusion = 1.0 - planetShadow * 0.88;
+      emissive *= 1.0 - planetShadow * 0.9;
     } else if (uKind == 7) {
       /* Trusses, ejes y hábitat: metal oscuro con grano direccional. El
          contraste ancho sobrevive al tamaño del Hero; no es greeble fino. */
@@ -951,10 +1013,31 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Los mundos pierden más fill en su hemisferio nocturno. El terminador
        gana una línea de penumbra cálida: la dirección hacia Gargantúa se
        entiende antes de analizar conscientemente la luz. */
-    float nightFill = 1.0;
-    if (uKind == 0 || uKind == 1 || uKind == 3) {
-      nightFill = mix(0.5, 1.0, day);
-    }
+    /*
+      REGLA COMÚN DE RELLENO NOCTURNO.
+
+      Antes esto era una excepción para tres tipos y un valor plano para el
+      resto: los mundos perdían relleno en su cara noche y las naves no. Ese
+      detalle es la mitad de por qué parecían renderizados por separado — dos
+      familias de objetos obedeciendo a modelos de luz distintos dentro del
+      mismo cuadro.
+
+      Ahora todos siguen la misma ley y lo único que cambia es el SUELO, por
+      familia de material: cuánto rebote de cielo conserva la cara que no ve a
+      Gargantúa. Los mundos, que tienen aire, conservan más; el metal, menos;
+      los anillos, casi nada, porque son polvo fino y no una superficie.
+
+      Endurance es la excepción alta a propósito: tiene más caras por unidad de
+      silueta que ningún otro cuerpo, y un suelo bajo no le da grafito — le abre
+      agujeros negros entre los módulos y se lee como confeti alrededor de un
+      aro.
+    */
+    float nightFloor = 0.5;
+    if (uKind == 4) nightFloor = 0.6;
+    if (uKind == 5) nightFloor = 0.44;
+    if (uKind == 2 || uKind == 7) nightFloor = 0.4;
+    if (uKind == 6) nightFloor = 0.34;
+    float nightFill = mix(nightFloor, 1.0, day);
     vec3 color = albedo * (
       key * diffuse * materialOcclusion + fill * nightFill
     );
@@ -1000,6 +1083,24 @@ const BODY_FRAGMENT = /* glsl */ `
     color += atmosphere * atmosphereWeight * scatter * uLightIntensity * 0.9;
 
     /*
+      CONTRALUZ FRÍO, y ahora lo reciben todos.
+
+      La segunda mitad de la regla común: la cara que mira a Gargantúa recibe
+      ámbar —eso ya lo hacían la clave y la atmósfera—, y la contraria cae a un
+      azul acero casi negro en lugar de a un gris plano. Es lo que cierra la
+      silueta contra el fondo sin subir el relleno general, que es lo que
+      aplanaba la escena.
+
+      Antes sólo lo tenían las naves y la estación, en su propio bloque y con su
+      propia fórmula. Un mundo y una nave a la misma distancia del disco tenían
+      bordes de temperaturas distintas, y eso —más que ningún material— es lo
+      que los delataba como assets separados.
+    */
+    float backRim = pow(1.0 - max(dot(normal, view), 0.0), 3.0)
+                  * (1.0 - smoothstep(-0.5, 0.22, ndl));
+    color += vec3(0.062, 0.086, 0.152) * backRim * 0.55;
+
+    /*
       Metales: una segunda reflexión, ancha y fría.
 
       El disco es una fuente ENORME, así que un casco metálico no devuelve sólo
@@ -1010,20 +1111,42 @@ const BODY_FRAGMENT = /* glsl */ `
     */
     if (uKind == 4 || uKind == 5 || uKind == 7) {
       float sheen = pow(specBase, 6.0) * gloss * day;
+      /* Rampa invertida escrita al derecho. smoothstep(0.25, -0.55, x) con
+         edge0 > edge1 es comportamiento INDEFINIDO en GLSL ES: funcionaba por
+         suerte del compilador, no por contrato. */
       float coldRim = pow(1.0 - max(dot(normal, view), 0.0), 2.6)
-                    * smoothstep(0.25, -0.55, ndl);
+                    * (1.0 - smoothstep(-0.55, 0.25, ndl));
 
       if (uKind == 4) {
-        /* Endurance no es azul: el fill frío sólo separa su canto. La manta
-           conserva un rebote casi neutro como en la miniatura de producción. */
-        color += albedo * vec3(0.048, 0.046, 0.042);
-        color += mix(key, vec3(0.72, 0.75, 0.80), 0.22) * sheen * 0.24;
-        color += vec3(0.18, 0.22, 0.30) * coldRim * 0.22;
+        /*
+          Que los volúmenes los dibuje GARGANTÚA, no un rebote plano.
+
+          Ese término ambiente valía 0.048 y era luz que llegaba por igual a
+          todas las caras: aplanaba la nave y le quitaba a la clave el trabajo
+          de explicar la forma. A 0.018 sigue impidiendo que el lado oscuro sea
+          un agujero recortado, pero ya no compite con la fuente. Plata cálida
+          hacia el disco, azul acero casi negro en la espalda.
+        */
+        color += albedo * vec3(0.018, 0.018, 0.021);
+        color += mix(key, vec3(0.6, 0.64, 0.71), 0.16) * sheen * 0.2;
+        color += vec3(0.11, 0.15, 0.23) * coldRim * 0.16;
       } else {
-        color += mix(key, vec3(0.62, 0.76, 1.0), 0.42) * sheen * 0.3;
-        /* Contraluz del campo estelar en el canto opuesto: separa el casco del
-           negro por el lado que la clave no toca. */
-        color += vec3(0.30, 0.42, 0.72) * coldRim * 0.34;
+        /*
+          PLATA CÁLIDA, no azul.
+
+          Este barrido llevaba un 42 % de azul cielo mezclado en la clave, así
+          que el metal de la Ranger y de la estación devolvía luz FRÍA mirando a
+          un disco de acreción dorado. Un objeto cuyo reflejo no coincide con su
+          fuente se lee como pegado encima de la escena, y era buena parte de
+          por qué la Ranger parecía un low poly aislado. Con 0.18 el reflejo
+          conserva el oro del disco y sólo se enfría lo justo para que se
+          entienda que es metal y no pintura.
+        */
+        color += mix(key, vec3(0.78, 0.82, 0.9), 0.18) * sheen * 0.28;
+        /* Contraluz del campo estelar en el canto opuesto. Baja de 0.34 a 0.2
+           porque ahora hay un contraluz común para todos los cuerpos: sumados
+           daban un borde azul que se comía la silueta. */
+        color += vec3(0.22, 0.32, 0.58) * coldRim * 0.2;
       }
     }
 
@@ -2625,7 +2748,16 @@ const MODEL_SCALE: Record<WorldStructuralData["visual"], number> = {
   water: 1.12,
   desert: 1.12,
   station: 1.6,
-  ship: 1,
+  /*
+    Segundo ancla, no coprotagonista.
+
+    Endurance no compite con Gargantúa por tamaño —el disco le saca cinco veces
+    el ancho— sino por CONTRASTE: es blanca, tiene mucha geometría por unidad de
+    silueta y cae cerca del centro visual. El grueso de la corrección es tonal
+    (ver el ramo `uKind == 4` del fragment) y esto es solo el ajuste fino: −6 %
+    de escala, que con el descentrado de la toma queda en un −9 % aparente.
+  */
+  ship: 0.9,
   /*
     El Tesseracto era el destino más pequeño en pantalla y encima el más
     hundido en profundidad: dos factores multiplicándose en la misma dirección.

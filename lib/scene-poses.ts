@@ -39,6 +39,11 @@ export interface CameraPose {
    * donde vive el texto.
    */
   targetShiftFraction: number;
+  /**
+   * Corrimiento VERTICAL de la mirada, como fracción del semialto del cuadro.
+   * Positivo mira por encima del origen y, por tanto, baja Gargantúa en pantalla.
+   */
+  targetShiftYFraction: number;
   /** Campo de visión vertical, en grados. */
   fov: number;
   /** Inclinación de la cámara, en radianes. */
@@ -76,15 +81,21 @@ export const SYSTEM_POSE: CameraPose = {
   elevation: 17,
   azimuth: 0,
   /*
-    Cero: Gargantúa en el centro exacto.
+    Descentrado pequeño, en los dos ejes.
 
-    Pasó por 0.26 y 0.12 antes de llegar aquí. El desplazamiento existía para
-    abrir hueco al bloque editorial del hero, y ese bloque ya no existe. Sin él,
-    descentrar solo rompía la simetría de las órbitas — y la simetría es
-    justamente lo que hace hipnótico un sistema: seis cuerpos girando alrededor
-    de un punto fijo, no un montón de objetos a un lado del cuadro.
+    Este número va por su tercera vida. Primero 0.26, para abrir hueco al bloque
+    editorial del hero. Después 0, al desaparecer ese bloque, con el argumento
+    de que la simetría hipnotiza. Y la simetría PERFECTA es justo lo que hace
+    que la escena se lea como un diagrama: el centro geométrico del visor es el
+    único sitio donde un objeto no parece encuadrado por nadie.
+
+    −0.075 deja la sombra a un 3.6 % del ancho a la izquierda y 0.025 la baja un
+    4.4 % del alto. Medido, no estimado. El techo práctico está en ~0.2: pasado
+    ahí el encuadre tiene que retroceder tanto para compensar que devuelve en
+    tamaño de Gargantúa lo que gana en composición.
   */
-  targetShiftFraction: 0,
+  targetShiftFraction: -0.075,
+  targetShiftYFraction: 0.025,
   /*
     Campo de visión: 35°, no 42°.
 
@@ -131,6 +142,7 @@ function worldPose(id: WorldId): CameraPose {
     azimuth: SYSTEM_POSE.azimuth + Math.sin(phase) * 9,
     elevation: SYSTEM_POSE.elevation + placement.inclination * 0.18,
     targetShiftFraction: SYSTEM_POSE.targetShiftFraction * 0.62,
+    targetShiftYFraction: SYSTEM_POSE.targetShiftYFraction * 0.62,
     exposure: 0.72,
     bloom: 0.8,
     opacity: 0.34,

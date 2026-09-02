@@ -75,6 +75,23 @@ export interface WorldStructuralData {
  * el DOM mantiene áreas accesibles de 44 px. Cambiar radio, fase, inclinación o
  * escala altera cámara, proyección, brackets y colisiones de etiquetas, así que
  * estos valores son decisiones de composición, no telemetría decorativa.
+ *
+ * ── Reparto radial (2026-09-01) ─────────────────────────────────────────────
+ *
+ * Los tres destinos interiores —Endurance, Edmunds y Miller— estaban en 22-23.5
+ * rs, y ahí topaban con el disco en cuanto Gargantúa creció. Pasan a 25-27 y eso
+ * compra dos cosas a la vez, no una:
+ *
+ * 1. **Sitio para el disco.** El borde exterior llega a 17·rs; a 25 rs el
+ *    destino más cercano vuelve a estar por fuera con rs = 1.40.
+ * 2. **Espacio negativo lateral.** Los cuerpos pasan de ocupar el 53 % del
+ *    ancho del cuadro al 59 %, y el lado derecho —el más vacío— lo llena Miller
+ *    sin añadir ni un objeto nuevo.
+ *
+ * Y NO cuesta distancia de cámara: el encuadre lo fijan Cooper (30) y el
+ * Tesseracto (33), que no se han movido. Mover los interiores hacia fuera es
+ * gratis mientras no pasen de los exteriores — es la única forma de reencuadrar
+ * el sistema sin que la cámara retroceda y lo anule.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -101,7 +118,10 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    placement: { orbitRadius: 23.5, phase: 337, inclination: 38, size: 3.05 },
+    /* 27, no 23.5. Miller cae en el lado derecho del cuadro, que era el más
+       vacío, y a la vez es uno de los tres destinos que tenían que salir del
+       camino del disco ampliado. Ver la nota de reparto radial más abajo. */
+    placement: { orbitRadius: 27, phase: 337, inclination: 38, size: 3.05 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -110,7 +130,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 22, phase: 45, inclination: 12, size: 5.15 },
+    placement: { orbitRadius: 25, phase: 45, inclination: 12, size: 5.15 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -119,7 +139,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
-    placement: { orbitRadius: 22, phase: 167, inclination: 56, size: 3 },
+    placement: { orbitRadius: 25.5, phase: 167, inclination: 56, size: 3 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
