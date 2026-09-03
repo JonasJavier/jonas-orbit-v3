@@ -69,3 +69,6 @@ crash.log
 /.playwright-cli/
 /output/playwright/
 .gstack/
+
+# capturas de tools/ (ver tools/README.md)
+/.shots/

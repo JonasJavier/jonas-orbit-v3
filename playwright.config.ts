@@ -5,6 +5,26 @@ import { defineConfig, devices } from "@playwright/test";
  * `npm run test:e2e`. En CI el job de e2e construye primero.
  * Chromium por PR; Firefox/WebKit se añaden al job de main (plan de CI).
  */
+
+/**
+ * Puerto propio del servidor de pruebas, y no el 3000.
+ *
+ * `reuseExistingServer` está activo fuera de CI para no reconstruir un servidor
+ * en cada ejecución local, y ahí estaba la trampa: con algo escuchando ya en el
+ * 3000 —un `next dev`, o un `next start` abierto para mirar la escena—
+ * Playwright NO arranca el suyo, se engancha al que hay. Y el que hay no lleva
+ * las variables del bloque `env` de abajo, así que los tests de contacto y
+ * Turnstile fallan contra un servidor que nunca fue configurado para ellos.
+ *
+ * El síntoma es cruel porque no parece un problema de entorno: salen cuarenta
+ * tests en rojo repartidos por toda la suite, como si el cambio que acabas de
+ * hacer hubiera roto media aplicación. Pasó dos veces en una sola sesión.
+ *
+ * Con un puerto propio la reutilización sigue funcionando —entre ejecuciones de
+ * la propia suite, que es para lo que sirve— y deja de existir la colisión.
+ */
+const E2E_PORT = 3210;
+const E2E_ORIGIN = `http://localhost:${E2E_PORT}`;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -16,7 +36,7 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never" }]]
     : "list",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: E2E_ORIGIN,
     trace: "on-first-retry",
   },
   projects: [
@@ -42,10 +62,12 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run start",
-    url: "http://localhost:3000/es",
+    url: `${E2E_ORIGIN}/es`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
+      // next start respeta PORT, así que no hace falta tocar el script de npm.
+      PORT: String(E2E_PORT),
       CONTACT_RUNTIME_ENV: "test",
       CONTACT_DELIVERY_MODE: "test",
       TURNSTILE_SITE_KEY: "1x00000000000000000000AA",

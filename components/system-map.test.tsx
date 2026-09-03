@@ -171,6 +171,20 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     }
   });
 
+  /*
+    Timeout propio, y no por lentitud del código.
+
+    Este test monta el mapa entero y dispara cinco puntos por cada uno de los
+    siete destinos: setenta pares de pointerEnter/pointerLeave con sus
+    aserciones, cada una recorriendo el DOM. En una máquina ociosa tarda ~1 s,
+    muy por debajo de los 5 s por defecto de Vitest. Pero es el test más caro del
+    archivo, así que es el primero que se cae cuando la máquina está cargada
+    —con la suite en paralelo, o con un build compitiendo por CPU— y ahí se
+    convierte en un rojo intermitente que no dice nada sobre el código.
+
+    Quince segundos no esconden una regresión de rendimiento: si este test
+    llegara a tardar de verdad quince segundos, seguiría fallando.
+  */
   it("todo el volumen conceptual —centro y cuatro bordes— adquiere target", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const samplePoints = [
@@ -197,7 +211,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
         expect(proxy).toHaveAttribute("data-target-state", "idle");
       }
     }
-  });
+  }, 15_000);
 
   it("Gargantúa es el nodo central del sistema", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
