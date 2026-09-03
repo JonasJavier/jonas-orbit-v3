@@ -663,13 +663,47 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   laneMask = mix(laneMask, 0.60, soften);
 
   /*
+    COHESIÓN DE LA BANDA PRIMARIA, y el problema que resuelve es de PRODUCTO.
+
+    La densidad se construye multiplicando tres campos independientes, cada uno
+    con su propio suelo: la textura (0.10), las masas macro (0.34) y los carriles
+    de polvo (0.07). Por separado ninguno es agresivo. Pero cuando los tres
+    coinciden en su valle —y con campos independientes eso ocurre— el producto
+    vale 0.10 · 0.34 · 0.07 = 0.0024, el 0.09 % del máximo. Con el camino óptico
+    de esta cámara eso da una opacidad del 0.8 %: transparente. En pantalla no se
+    lee como plasma tenue, se lee como si le hubieran recortado un trozo al
+    disco, y en movimiento algunos fotogramas abren una ventana negra limpia
+    dentro del flujo frontal.
+
+    El arreglo NO es subir la densidad media —eso devuelve la banda uniforme que
+    tanto costó quitar— sino impedir que los tres suelos se multipliquen hasta
+    cero, y sólo donde importa. En la banda primaria los suelos suben y los
+    techos bajan un pelo, así que la MEDIA apenas se mueve (+19 %) mientras el
+    producto de los tres valles sube 8.9 veces: los huecos siguen siendo huecos,
+    pero con filamento residual dentro en vez de fondo.
+
+    Hacia fuera la cohesión cae a 0.35 y el disco exterior conserva su derecho a
+    grandes regiones casi vacías, que es lo que lo hace fragmentario. Ese 0.35 no
+    es cero a propósito: es lo que le da CONTEXTO al streamer exterior de la
+    izquierda. Sobresalir de la elipse es correcto —un disco de acreción no tiene
+    borde duro— pero sin nada tenue alrededor deja de leerse como una corriente
+    que se aleja y pasa a leerse como un trozo suelto.
+  */
+  /* La rampa se estira de (0.28, 0.70) a (0.34, 0.82). No sube el suelo del
+     disco exterior —sigue en 0.35 al final— sino que retrasa su caida, y eso es
+     justo el radio intermedio donde vive el material que une la banda principal
+     con el streamer de la izquierda. Sin ese tramo la hebra nace ya despegada y
+     el ojo la lee como una linea aparte; con el, nace del disco. */
+  float cohesion = mix(1.0, 0.35, smoothstep(0.34, 0.82, t));
+
+  /*
     GROSOR VARIABLE. La ventana que convierte textura en densidad se mueve con
     el campo grueso, así que unos filamentos salen anchos y otros finos. Con una
     ventana fija todos tenían el mismo calibre, y un calibre constante es media
     firma de «procedural».
   */
   float gauge = (wa - 0.5) * 0.17;
-  float density = mix(0.10, 2.55, smoothstep(0.28 + gauge, 0.74 + gauge, fabric));
+  float density = mix(mix(0.10, 0.24, cohesion), 2.48, smoothstep(0.28 + gauge, 0.74 + gauge, fabric));
 
   /*
     MASAS Y HUECOS. El campo macro entra aquí como envolvente multiplicativa.
@@ -681,9 +715,27 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     ésa es la jerarquía que faltaba: primero se ven las masas, después las
     corrientes, y sólo al mirar aparecen los filamentos.
   */
-  float mass = smoothstep(0.24, 0.76, macro);
-  density *= mix(0.34, 1.55, mass);
-  density *= mix(0.07, 1.0, laneMask);
+  /*
+    Y la ventana del macro se ENSANCHA dentro de la banda.
+
+    Con smoothstep(0.24, 0.76) el campo macro se satura: la mayor parte de sus
+    píxeles acaba pegada al suelo o al techo, así que una sola celda macro por
+    debajo de 0.24 apaga de golpe una zona entera del tamaño de un sexto del
+    disco. Eso es exactamente la ventana negra grande del flujo frontal — no la
+    abre la turbulencia, la abre UNA celda. Abriendo la ventana a (0.12, 0.88) la
+    misma celda entra en su valle de forma gradual y deja un degradado en vez de
+    un borde. Fuera de la banda se conserva el contraste original.
+  */
+  /* Y dentro de la banda la ventana se abre casi entera, (0.06, 0.94): con ella
+     el macro deja de ser un interruptor y pasa a ser una rampa, asi que la
+     region oscura de la derecha conserva su valle pero lo recorre con
+     filamentos en vez de con un borde. El suelo sube de 0.55 a 0.66 por lo
+     mismo: no para cerrar el hueco, para que dentro del hueco haya algo. Fuera
+     de la banda se conserva el contraste original y el disco exterior sigue
+     pudiendo vaciarse. */
+  float mass = smoothstep(mix(0.24, 0.06, cohesion), mix(0.76, 0.94, cohesion), macro);
+  density *= mix(mix(0.34, 0.66, cohesion), 1.48, mass);
+  density *= mix(mix(0.07, 0.16, cohesion), 1.0, laneMask);
 
   // Borde interior corto (el material se precipita). La anchura importa más de
   // lo que parece: el anillo de fotones ES la imagen lensada de ese borde, así
@@ -694,15 +746,68 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   /*
     Y EL EXTERIOR SE DESHILACHA, no termina en una corona.
 
-    El radio donde muere el material varía con el campo turbulento, pero ahora
-    pesa sobre todo el MACRO: con streams mandando, el borde se deshilachaba a
-    la escala de los filamentos y el conjunto seguía siendo un anillo de contorno
-    irregular. Con el macro mandando son sectores enteros los que terminan antes
-    o alcanzan mucho más lejos, y el disco se pierde en negro por streamers en
-    vez de por una franja marrón de grosor constante.
+    El radio donde muere el material varía con el campo turbulento y pesa sobre
+    todo el MACRO, así que son sectores enteros los que terminan antes o alcanzan
+    mucho más lejos: el disco se pierde en negro por streamers en vez de por una
+    franja marrón de grosor constante.
+
+    ── EL SIGNO ESTABA AL REVÉS ────────────────────────────────────────────────
+
+    Era t + (shred - 0.5), con shred = streams·0.42 + macro·0.58. Un argumento
+    mayor muere antes, así que la regla que se estaba aplicando era:
+
+        mucho material en la vecindad  →  el disco termina PRONTO
+        vecindad vacía                 →  el disco llega MUY LEJOS
+
+    Justo del revés. Y el defecto que producía es exactamente el que se ve en el
+    borde izquierdo: en un sector donde el macro está en su valle, todo el
+    material de alrededor desaparece —porque el macro también multiplica la
+    densidad— pero el corte radial le regala a ese mismo sector el alcance
+    máximo. Lo que sobrevive es una hebra sola en el radio exterior, y a 9° de
+    elevación una hebra en el radio exterior se proyecta como una línea larga,
+    fina y casi horizontal: la gramática de una órbita, no la de un chorro de
+    plasma. Con la escena llena de trayectorias dibujadas, esa confusión es
+    especialmente cara.
+
+    Invertido, el alcance sigue al material: un sector con masa llega lejos —y
+    llega ANCHO, porque el macro que lo sostiene mide entre 8 y 23 unidades de
+    mundo, así que arrastra vecindad consigo— y un sector vacío se apaga cerca.
+    No cambia la media: el campo es simétrico alrededor de 0.5, sólo cambia QUÉ
+    sectores se quedan largos.
   */
-  float shred = mix(streams * 0.42 + macro * 0.58, 0.5, soften);
-  density *= 1.0 - smoothstep(0.50, 1.06, t + (shred - 0.5) * 0.72);
+  float reach = mix(streams * 0.38 + macro * 0.62, 0.5, soften);
+  /* Y el corte se adelanta de (0.50, 1.06) a (0.43, 0.99). Es la compensacion
+     exacta de invertir el signo: antes alcance y densidad se anulaban —llegaba
+     lejos lo escaso— y ahora se refuerzan —llega lejos lo denso—, asi que a
+     igualdad de corte el disco integra mas material. Medido, unos tres puntos de
+     area en la banda. Adelantar el corte lo devuelve sin tocar la densidad de
+     nada: el disco exterior termina un pelo antes, no mas gordo. */
+  density *= 1.0 - smoothstep(0.43, 0.99, t - (reach - 0.5) * 0.64);
+
+  /*
+    Y una hebra suelta se disipa en vez de seguir kilómetros.
+
+    Invertir el signo evita FABRICAR hebras aisladas, pero no borra las que el
+    ruido produzca por su cuenta. Esto es el criterio que faltaba, escrito tal
+    cual: lejos del centro, el material sólo existe si su VECINDAD existe. mass
+    es la medida de vecindad —viene del campo macro, que es el único que describe
+    la escala de las masas— así que donde la vecindad se ha ido, lo que quede se
+    apaga progresivamente en vez de continuar como una raya de grosor constante.
+
+    Sólo RESTA densidad, y sólo en el tercio exterior: no sube la media de nada,
+    y de hecho compensa un poco la subida de la pasada anterior justo donde esa
+    subida no hacía falta. El deshilachado, el grosor variable y la dirección
+    orbital se conservan enteros — lo que desaparece es la continuidad de lo que
+    ya no tiene con qué continuar.
+  */
+  /* La ventana se corre de (0.48, 0.92) a (0.60, 0.88) y el peso sube a 0.90, y
+     las dos cosas van juntas: empezar mas tarde deja intacto el radio donde la
+     hebra NACE —que es donde hacia falta pegamento, no tijera— y terminar antes
+     y con mas fuerza hace que la PUNTA se disuelva en vez de continuar. Es la
+     forma que se buscaba: nace del disco, se estira, adelgaza y se disipa, en
+     lugar de mantener grosor constante durante muchos radios. */
+  float lonely = smoothstep(0.60, 0.88, t) * (1.0 - mass);
+  density *= 1.0 - lonely * 0.90;
 
   // La caída exponencial por orden entra en la DENSIDAD, no en la emisión: así
   // las imágenes de orden alto pierden a la vez brillo y opacidad, y dejan de
@@ -844,9 +949,14 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     hueco. De ahí salen las zonas quemadas concentradas en lugar de una
     exposición uniforme por todo el disco.
   */
-  float source = mix(0.30, 1.85, fabric)
-               * mix(0.34, 1.0, laneMask)
-               * mix(0.45, 1.40, mass);
+  /* Los suelos suben con la cohesión igual que en la densidad, y por el mismo
+     motivo: subir sólo la opacidad de un hueco no lo saca del negro si lo que
+     hay dentro no emite. Con los dos a la vez, el fondo de un hueco de la banda
+     primaria pasa de 1.4·10⁻⁴ del pico a 3·10⁻³ — sigue siendo oscurísimo, pero
+     ya tiene estructura que mirar en vez de ser fondo. */
+  float source = mix(mix(0.30, 0.42, cohesion), 1.85, fabric)
+               * mix(mix(0.34, 0.48, cohesion), 1.0, laneMask)
+               * mix(mix(0.45, 0.68, cohesion), 1.40, mass);
 
   vec3 emission = tint * heat * boost * source * DISK_GAIN;
 
