@@ -167,6 +167,30 @@ float fbmAA(vec2 p, float cells) {
   return value;
 }
 
+/**
+ * fbmAA de TRES octavas, para los campos de microdetalle.
+ *
+ * La cuarta octava de un campo fino está, por construcción, 8.4 veces por
+ * encima de su base: a la escala a la que se muestrea el grano del disco eso
+ * cae por debajo del píxel en casi todo el cuadro, así que su única
+ * contribución real es centelleo. El corte por huella la apagaba de todos
+ * modos en la mayoría de los píxeles; quitarla del bucle ahorra la evaluación
+ * y de paso elimina el borde de esa transición.
+ */
+float fbmAA3(vec2 p, float cells) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  float scale = 1.0;
+  for (int i = 0; i < 3; i++) {
+    float fade = 1.0 - smoothstep(0.30, 0.95, cells * scale);
+    value += amplitude * mix(0.5, valueNoise(p), fade);
+    p *= 2.03;
+    scale *= 2.03;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
 /** Tres octavas, para los campos que solo aportan forma general: la deformación
  *  de dominio y los carriles de polvo. La cuarta octava ahí no se distingue y el
  *  disco se evalúa dos o tres veces por rayo, así que cada octava se paga. */
@@ -325,17 +349,36 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   float r = length(hit);
   float span = max(uDiskOuter - uDiskInner, 1e-3);
   float t = clamp((r - uDiskInner) / span, 0.0, 1.0);
+  /* Coordenada radial logarítmica. Es la natural de un disco —el material se
+     comprime hacia dentro de forma multiplicativa, no aditiva— y es la que
+     mantiene acotada la cizalla del marco corrotado, ver abajo. */
+  float logR = log(r / uDiskInner);
 
-  // Rotación diferencial kepleriana. El término en log(r) es una preespiral:
-  // sin él el patrón nace isótropo y tarda medio minuto en enrollarse solo.
-  //
-  // El paso de esa espiral ONDULA con el radio. Sin esta ondulación el ángulo de
-  // contrarrotación es una función suave y monótona de r, el ruido isótropo
-  // muestreado en ese marco sale en arcos paralelos y el disco se lee como vetas
-  // de madera. Una sola octava lo rompe.
+  /*
+    MARCO CORROTADO, y aquí estaba el generador de mármol.
+
+    La versión anterior era pitch = 2.35 + 1.7·ruido(r·0.80), con ese pitch
+    multiplicando a log(r). Da igual lo bien que suene «el paso ondula con el
+    radio»: lo que decide la apariencia es la DERIVADA del ángulo respecto al
+    radio, porque es la que dice cuánto se comprime radialmente el ruido que se
+    muestrea en ese marco.
+
+        twist = pitch(r)·log(r/rin)  ⇒  r·dtwist/dr = pitch + logR·dpitch/dlogR
+
+    Con el ruido a frecuencia 0.80 en unidades de MUNDO, dpitch/dlogR llegaba a
+    valer varias decenas en el disco exterior y ese término alcanzaba tres
+    cifras. Una anisotropía de 100:1 aplicada a un fbm isótropo es, literalmente,
+    la receta del mármol y de la veta de madera: era eso, y no el número de
+    octavas, lo que llenaba el disco de vetas finas paralelas.
+
+    Ahora la ondulación se muestrea en logR y con la amplitud acotada, así que
+    r·dtwist/dr se queda en [1.1, 5.1] en todo el disco: la inclinación de las
+    corrientes sigue variando —de unos 42° a unos 11° respecto a la tangente—
+    pero la compresión radial estira el material sin triturarlo.
+  */
   float omega = pow(uDiskInner / r, 1.5);
-  float pitch = 2.35 + 1.7 * (valueNoise(vec2(r * 0.80, 3.7)) - 0.5);
-  float twist = pitch * log(r / uDiskInner) + uTime * omega * 0.30;
+  float pitch = 3.10 + 0.80 * (valueNoise(vec2(logR * 0.50, 3.7)) - 0.5);
+  float twist = pitch * logR + uTime * omega * 0.30;
 
   // Se muestrea el ruido en el plano CARTESIANO contrarrotado, no en (φ, r):
   // así no hay costura en φ = ±π, que es el artefacto clásico de los discos
@@ -352,128 +395,207 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   vec2 shearedFine = vec2(cf * hit.x + sf * hit.z, -sf * hit.x + cf * hit.z);
 
   /*
-    HUELLA DE PÍXEL en unidades de mundo. Con ella se apaga cada campo de ruido
-    ANTES de que su longitud de onda baje del píxel, que es de donde salen el
-    shimmer y el moiré. Subir el DPR resolvería lo mismo pagándolo en GPU.
+    HUELLA DE PÍXEL sobre el PLANO DEL DISCO, no a lo largo del rayo.
+
+    La versión anterior medía travelled · uPixelScale, que es el diámetro del
+    haz de un píxel — correcto para una superficie encarada a la cámara y
+    equivocado para ésta. El disco es un plano y el rayo lo corta oblicuamente:
+    la mancha que el píxel proyecta sobre él es una ELIPSE cuyo eje largo vale
+    el diámetro del haz dividido por |dir.y|. A 17° de elevación eso ya son 3.4
+    veces más de lo que se estaba estimando en la imagen directa, y en los rayos
+    que forman el arco lensado —que cruzan el plano casi rasantes— es un orden
+    de magnitud.
+
+    Ahí estaban las dos mitades del mismo problema: el disco primario aliaseaba
+    porque se filtraba de menos, y la imagen lensada había que APLANARLA a mano
+    (el viejo soften de 0.42 por orden) para que no hirviera. Aplanarla era
+    justo lo que la convertía en una banda de humo pegada encima en vez de en el
+    mismo material doblado.
+
+    Se usa la media geométrica √slant y no el eje largo: es la aproximación
+    isótropa estándar de una huella anisótropa y no borra la estructura radial,
+    que aquí es la que cuenta.
   */
   /*
-    Y la huella se mide sobre el CAMINO RECORRIDO, no sobre la cuerda.
+    Y el exponente es 0.24, no 0.5.
 
-    Un haz de un píxel diverge con el ángulo uPixelScale a lo largo de su
-    trayectoria; en un espacio curvo esa trayectoria es más larga que la línea
-    recta entre cámara y punto, y mucho más en los rayos que dan media vuelta
-    alrededor del agujero — que son justamente los que forman la imagen lensada
-    y los que peor aliasean. Usar la cuerda subestimaría la huella justo donde
-    hace falta. El error es cero en el disco primario, donde ambas coinciden.
+    La media geométrica pura (√slant, exponente 0.5) es lo correcto para UN
+    fotograma. Aquí no hay un fotograma: la cámara es fija y el raymarch se
+    acumula sobre ocho posiciones de Halton (ver TEMPORAL_BLEND en scene.ts), o
+    sea que el muestreo efectivo ya está ocho veces por encima del que ve el
+    filtro. Con 0.5 el disco interior perdía casi todo su microdetalle —el grano
+    quedaba al 10 % de amplitud justo en la zona más brillante, que es la que más
+    se mira— y el resultado era una mancha lisa donde tiene que haber estriado.
+    Con 0.24 la huella crece lo justo para matar el hervor de los arcos rasantes
+    sin borrar el material.
   */
-  float footprint = travelled * uPixelScale;
+  float slant = min(1.0 / max(abs(dir.y), 0.085), 8.0);
+  float footprint = travelled * uPixelScale * pow(slant, 0.24);
 
-  // Deformación de dominio en DOS escalas.
-  //
-  // La fina —dos fbm de tres octavas— es la de siempre: convierte bandas
-  // concéntricas limpias en turbulencia con discontinuidades. La gruesa es
-  // nueva y resuelve otra cosa: el paso de la espiral era el mismo en todo el
-  // contorno, así que a cualquier radio las corrientes tenían la misma
-  // inclinación y el ojo podía seguirlas dando la vuelta entera. Un
-  // desplazamiento de escala muy grande dobla el patrón por ZONAS, y el disco
-  // deja de tener una geometría global que seguir. Cuesta dos valueNoise, no
-  // dos fbm: a esa escala las octavas siguientes no se distinguen.
+  // Deformación de dominio en DOS escalas. La fina —dos fbm de tres octavas—
+  // convierte bandas concéntricas limpias en turbulencia con discontinuidades;
+  // la gruesa dobla el patrón por ZONAS, de modo que el disco no tiene una
+  // geometría global que el ojo pueda seguir dando la vuelta entera.
   float wa = fbm3(sheared * 0.26);
   float wb = fbm3(sheared * 0.26 + 31.7);
-  vec2 coarse = vec2(
-    valueNoise(sheared * 0.052 + 4.1),
-    valueNoise(sheared * 0.052 + 19.3)
-  ) - 0.5;
-  vec2 warped = sheared + (vec2(wa, wb) - 0.5) * 2.8 + coarse * 11.0;
 
   /*
-    JERARQUÍA DE FRECUENCIA POR RADIO, y estaba invertida.
+    JERARQUÍA RADIAL, y ahora manda sobre TODAS las escalas.
 
-    El ruido se muestreaba a frecuencia fija en unidades de MUNDO. A radio r la
-    circunferencia mide 2πr, así que una frecuencia fija da más estructura
-    angular cuanto más lejos: el exterior salía fino y el interior ancho, justo
-    al revés de lo que cuenta un disco de acreción. Ahí estaba buena parte de la
-    lectura de «anillos pintados».
+    La corrección anterior se quedó a medio camino: el ruido pasó de frecuencia
+    fija a compress entre 1.95 y 0.58, un factor 3.4 sobre un rango de radios de
+    10.8. En unidades ANGULARES —que son las que ve el ojo— eso deja al exterior
+    con 3.2 veces MÁS detalle que al interior, exactamente lo contrario de lo que
+    cuenta un disco de acreción y buena parte de la lectura de «vetas».
 
-    Ahora la frecuencia sube hacia dentro: el material cercano al horizonte se
-    lee comprimido y estirado —que es lo que transmite velocidad— y el exterior
-    se abre en corrientes anchas y lentas.
+    Con 2.60 → 0.44 el factor es 5.9 sobre 10.8: la frecuencia angular queda casi
+    plana y la radial cae hacia fuera. El exterior se abre en corrientes anchas y
+    lentas; el interior queda comprimido.
+
+    Se calcula aquí arriba porque también escala el campo macro, y ése era el
+    fallo del primer intento: con el macro a frecuencia fija en unidades de
+    mundo, su longitud de onda era varias veces el radio interior y TODO el disco
+    interno —justo la zona más brillante, la que más se mira— caía dentro de una
+    sola celda. Por eso el núcleo salía liso: no era el antialias, era que ahí no
+    había campo que variase.
   */
-  /* Y la transición NO puede ser una función limpia del radio: sus isocurvas
-     serían circunferencias y volveríamos a tener zonas concéntricas, que es la
-     lectura que se está intentando quitar. Perturbarla con el campo de
-     deformación ya calculado hace que la frontera entre «fino» y «ancho»
-     serpentee, y el cambio se percibe sin poder señalar dónde ocurre. */
-  float compress = mix(1.95, 0.58, smoothstep(0.02, 0.80, t + (wa - 0.5) * 0.24));
-  float streamFreq = 0.70 * compress;
+  float compress = mix(2.60, 0.44, smoothstep(0.02, 0.82, t + (wa - 0.5) * 0.22));
+  float streamFreq = 0.62 * compress;
 
   /*
-    Y las corrientes son de cresta, no de bulto.
+    CAMPO MACRO. Es la pieza que faltaba, y la que decide la lectura.
 
-    fbm da manchas suaves; su valor absoluto plegado —ruido «ridged»— da
-    filamentos con cresta afilada que se BIFURCAN y se cortan solos donde el
-    campo cruza el pliegue. Es el mismo coste y es la diferencia entre curvas
-    dibujadas sobre una superficie y material fluyendo.
+    Todo lo que había —deformación, corrientes, grano, carriles, cortes— vivía
+    entre λ ≈ 6 y λ ≈ 0.27 en unidades de mundo, sobre un disco de 48 de
+    diámetro. Ni un solo campo describía la escala de las MASAS, y por eso el
+    resultado era densidad procedural uniforme: mucha estructura pequeña
+    repartida por igual, ningún sitio donde el material se acumule y ninguno
+    donde falte.
+
+    Éste va a un sexto de la frecuencia de las corrientes, y con ellas: λ ≈ 4 en
+    el borde interior y λ ≈ 23 en el exterior, o sea masas que ocupan siempre una
+    fracción parecida del contorno a cualquier radio. Como se muestrea en el
+    marco corrotado nacen ya estiradas a lo largo de la dirección orbital: son
+    corrientes anchas que se funden y se bifurcan, no manchas.
+
+    Sale casi por el precio de nada: sus dos primeras evaluaciones son las mismas
+    que antes se gastaban sólo en desplazar el dominio.
   */
-  float streamsRaw = fbmAA(warped * streamFreq, footprint * streamFreq);
+  vec2 macroP = sheared * (0.105 * compress);
+  float m1 = valueNoise(macroP + 4.1);
+  float m2 = valueNoise(macroP + 19.3);
+  vec2 coarse = vec2(m1, m2) - 0.5;
+  float macro = m1 * 0.62 + valueNoise(macroP * 2.35 + 12.7) * 0.38;
+
+  /*
+    Deformación de dominio, fina y gruesa. La amplitud de la gruesa va como
+    1/compress a propósito: así el desplazamiento vale siempre la misma fracción
+    de la longitud de onda del campo que lo genera, y su jacobiano —o sea la
+    frecuencia extra que introduce— se queda constante en todo el disco en vez de
+    dispararse hacia dentro, que es donde menos píxeles hay para resolverla.
+  */
+  vec2 warped = sheared
+              + (vec2(wa, wb) - 0.5) * 2.6
+              + coarse * (2.5 / compress);
+
+  /*
+    LA DEFORMACIÓN DE DOMINIO MULTIPLICA LA FRECUENCIA REAL, y el corte por
+    huella no lo sabía.
+
+    fbmAA recibe cuántas celdas de la octava base caben en un píxel, y se le
+    pasaba la frecuencia NOMINAL. Pero el campo no se muestrea en sheared, se
+    muestrea en warped, y el jacobiano de esa deformación vale del orden de 1.6
+    (1.55 del término fino más 0.39 del grueso, sumados sobre la identidad). O
+    sea que la frecuencia que llega a la pantalla es bastante más alta que la que
+    se estaba filtrando, y de ahí salía el hervor residual al bajar el DPR. La
+    constante es una estimación del jacobiano, no un fudge: cambia si cambian las
+    dos amplitudes de arriba.
+  */
+  const float WARP_GAIN = 1.05;
+
+  /*
+    Y las corrientes son de cresta, no de bulto: el valor absoluto plegado del
+    fbm —ruido «ridged»— da filamentos que se BIFURCAN y se cortan solos donde
+    el campo cruza el pliegue. Pesa menos que antes (0.38 en vez de 0.45) porque
+    la cresta es un multiplicador de alta frecuencia, y era parte de lo que subía
+    todos los detalles al mismo nivel de importancia.
+  */
+  float streamsRaw = fbmAA(warped * streamFreq, footprint * streamFreq * WARP_GAIN);
   float ridged = 1.0 - abs(streamsRaw * 2.0 - 1.0);
-  /* MEZCLA, no sustitución. Sólo cresta convierte el disco en filigrana y se
-     pierde el flujo; el bulto suave conserva la corriente y la cresta le pone
-     las bifurcaciones encima. El orbital sigue mandando. */
-  float streams = mix(streamsRaw, ridged, 0.45);
+  float streams = mix(streamsRaw, ridged, 0.38);
 
-  float grainFreq = 2.55 * mix(1.45, 0.68, t);
-  float grain = fbmAA(
-    shearedFine * grainFreq + (wa - 0.5) * 1.6,
-    footprint * grainFreq
+  /*
+    MICROFILAMENTOS: sólo dentro, y con peso decreciente.
+
+    El grano tenía peso fijo 0.38 en todo el disco y cuatro octavas. Sumado a
+    unas corrientes ya trituradas por la cizalla, daba un espectro casi plano
+    —cientos de líneas de importancia visual idéntica, que es la definición del
+    defecto—. Ahora se desvanece hacia fuera: el disco exterior se queda con las
+    corrientes anchas y el material comprimido de dentro conserva los estriados
+    finos que transmiten velocidad.
+  */
+  float fine = mix(1.0, 0.30, smoothstep(0.12, 0.72, t));
+  float grainFreq = 3.0 * mix(1.70, 0.50, t);
+  float grain = fbmAA3(
+    shearedFine * grainFreq + (wa - 0.5) * 1.4,
+    footprint * grainFreq * WARP_GAIN
   );
 
-  float fabric = clamp(streams * 0.62 + grain * 0.38, 0.0, 1.0);
+  float fabric = clamp(mix(streams, mix(streams, grain, 0.42), fine), 0.0, 1.0);
 
   /*
     INTERRUPCIONES. Ninguna corriente da la vuelta entera.
 
-    Sale de campos ya calculados, así que es gratis: donde la deformación gruesa
-    y la fina coinciden en valle, el material se adelgaza hasta casi desaparecer
-    y la corriente se corta. El ojo pierde el hilo, que es exactamente lo que se
-    busca — la estructura dominante sigue la dirección orbital, pero no hay una
-    sola línea que se pueda seguir de un extremo al otro.
+    Sale de campos ya calculados, así que es gratis. El término grueso pasa de
+    la deformación al campo macro: los cortes dejan de estar repartidos con la
+    misma frecuencia por todas partes y se agrupan en sectores, que es como se
+    interrumpe un flujo de verdad.
   */
-  float breakField = wb * 0.44 + (coarse.x + 0.5) * 0.34 + grain * 0.22;
+  float breakField = wb * 0.50 + macro * 0.22 + grain * 0.28;
   float breaks = smoothstep(0.22, 0.70, breakField);
-  /*
-    Y la PROFUNDIDAD del corte también varía.
-
-    Con una profundidad fija el resultado es un ritmo de «segmento, hueco,
-    segmento, hueco» tan reconocible como la línea continua que sustituye —sólo
-    que troceada. Modulándola con otro campo, unos cortes apenas adelgazan la
-    corriente y otros la interrumpen del todo, y a veces dos corrientes vecinas
-    se funden porque ninguna de las dos se corta ahí.
-  */
-  float breakDepth = mix(0.80, 0.30, smoothstep(0.34, 0.86, wa));
+  // Y la PROFUNDIDAD del corte también varía: con una profundidad fija el
+  // resultado es un ritmo de «segmento, hueco» tan reconocible como la línea
+  // continua que sustituye.
+  float breakDepth = mix(0.86, 0.42, smoothstep(0.34, 0.86, wa));
   fabric *= mix(breakDepth, 1.0, breaks);
 
-  // Los carriles de polvo son la diferencia entre "humo naranja" y "material con
-  // estructura": van a escala mayor que los filamentos y ABSORBEN, no solo
-  // oscurecen. Mezclar el campo de deformación dentro de ellos los desalinea de
-  // los filamentos, que es lo que los hace irregulares.
-  float lanes = fbm3(warped * 0.20 + 11.3) * 0.62 + wb * 0.38;
-  float laneMask = smoothstep(0.26, 0.68, lanes);
+  // Los carriles de polvo van a escala mayor que los filamentos y ABSORBEN, no
+  // solo oscurecen. Bajan de 0.20 a 0.145 para quedar del tamaño de las masas
+  // macro y no del de las corrientes: un carril tan fino como el material que
+  // cruza no se lee como polvo por delante, se lee como una raya más.
+  /*
+    Y ABSORBEN DE VERDAD. En la referencia el disco primario no es plasma luminoso
+    con vetas: es una banda de polvo OSCURA atravesada por material caliente, y
+    los carriles negros que la cortan son el rasgo que más dice «materia en caída»
+    y menos dice «textura procedural». La ventana se estrecha —era
+    smoothstep(0.26, 0.68), tan suave que sólo teñía— para que haya carril y
+    no-carril en vez de un degradado continuo.
+  */
+  float lanes = fbm3(warped * 0.145 + 11.3) * 0.58 + macro * 0.42;
+  float laneMask = smoothstep(0.31, 0.63, lanes);
 
-  // Las imágenes de orden superior pierden CONTRASTE, no geometría ni brillo.
-  //
-  // El arco inferior es la imagen lensada de la cara lejana, y ahí el lente
-  // comprime decenas de radios del disco en unos pocos píxeles: los carriles de
-  // polvo, que arriba se leen como material, abajo se apilan en líneas
-  // concéntricas muy definidas y parece que hay un segundo disco entero debajo.
-  // Aplanar la textura hacia su media conserva el arco y el anillo de fotones
-  // exactamente donde están, y les quita la estratificación. Es además lo
-  // honesto: a esa compresión, un píxel promedia mucho más disco del que puede
-  // resolver.
-  /* 0.42 por orden, con techo 0.62 en vez de 0.7: las imágenes lensadas pierden
-     contraste y detalle fino de forma progresiva, pero no llegan a ser una
-     banda lisa. Tienen que reconocerse como el MISMO material deformado. */
-  float soften = clamp(order * 0.42, 0.0, 0.62);
+  /*
+    LAS IMÁGENES LENSADAS SON EL MISMO MATERIAL, y el soften de antes era
+    quien las convertía en otra cosa.
+
+    Valía 0.42 por orden con techo 0.62: la gran imagen de arriba llegaba
+    aplanada un 42 % hacia un gris uniforme y el arco de abajo un 62 %. El
+    resultado es exactamente el defecto que se ve — un óvalo de humo liso
+    envolviendo la sombra, que el ojo lee como una capa añadida encima y no como
+    el disco doblado por el espacio-tiempo.
+
+    Existía por una razón real: a esa compresión un píxel promedia decenas de
+    radios de disco y sin filtrar hierve. Pero eso es un problema de HUELLA, y la
+    huella ahora se mide bien (√slant, arriba) — en los rayos rasantes que forman
+    los arcos vale un orden de magnitud más que en la imagen directa, así que el
+    filtrado sale del mismo mecanismo que filtra todo lo demás.
+
+    Queda un residuo pequeño, 0.12 por orden con techo 0.24, por lo único que la
+    huella no captura: la magnificación diverge cerca de la curva crítica y ahí
+    ninguna estimación local basta. Con eso, las imágenes lensadas conservan
+    textura, dirección orbital, cortes, masas y asimetría Doppler.
+  */
+  float soften = clamp(order * 0.12, 0.0, 0.24);
   fabric = mix(fabric, 0.52, soften);
   laneMask = mix(laneMask, 0.60, soften);
 
@@ -481,77 +603,76 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     GROSOR VARIABLE. La ventana que convierte textura en densidad se mueve con
     el campo grueso, así que unos filamentos salen anchos y otros finos. Con una
     ventana fija todos tenían el mismo calibre, y un calibre constante es media
-    firma de «procedural»: en un fluido real el grosor de una corriente depende
-    de cuánto material arrastra.
-  */
-  /*
-    Y la ventana se ESTRECHA: 0.20-0.80 en vez de 0.16-0.90.
-
-    Al mezclar cresta con bulto e interrumpir las corrientes, el campo perdió
-    recorrido y quedó apretado alrededor de su media. Con la ventana ancha eso
-    se traduce en mucha densidad intermedia repartida por todas partes, que es
-    exactamente la lectura de humo o nebulosa. Estrechándola vuelve a haber
-    filamento y hueco: material rápido, no niebla.
+    firma de «procedural».
   */
   float gauge = (wa - 0.5) * 0.17;
-  float density = mix(0.08, 1.85, smoothstep(0.20 + gauge, 0.80 + gauge, fabric));
-  density *= mix(0.05, 1.0, laneMask);
+  float density = mix(0.10, 2.55, smoothstep(0.28 + gauge, 0.74 + gauge, fabric));
+
+  /*
+    MASAS Y HUECOS. El campo macro entra aquí como envolvente multiplicativa.
+
+    Es lo que rompe la densidad uniforme: sectores enteros del disco quedan a una
+    sexta parte de la densidad —huecos por los que se ve el negro y el material
+    de detrás— y otros la multiplican por más de uno y medio. La turbulencia
+    sigue estando en todas partes, pero ya no importa lo mismo en todas partes, y
+    ésa es la jerarquía que faltaba: primero se ven las masas, después las
+    corrientes, y sólo al mirar aparecen los filamentos.
+  */
+  float mass = smoothstep(0.24, 0.76, macro);
+  density *= mix(0.34, 1.55, mass);
+  density *= mix(0.07, 1.0, laneMask);
 
   // Borde interior corto (el material se precipita). La anchura importa más de
   // lo que parece: el anillo de fotones ES la imagen lensada de ese borde, así
   // que un corte a navaja se proyecta como un círculo perfecto de anchura
-  // constante y se lee como un contorno dibujado encima. Con 0.08 el borde
-  // sigue siendo nítido pero el anillo hereda la irregularidad del material.
+  // constante y se lee como un contorno dibujado encima.
   density *= smoothstep(0.0, 0.08, t);
 
   /*
     Y EL EXTERIOR SE DESHILACHA, no termina en una corona.
 
-    El corte anterior era un smoothstep limpio sobre el radio: el disco acababa
-    en una frontera del mismo grosor en todo el contorno y, con el tinte oscuro
-    de esa zona, el conjunto se leía como una franja marrón pegada alrededor del
-    disco brillante — textura, no material.
-
-    Ahora el radio donde muere el material varía con el propio campo turbulento.
-    Unas corrientes llegan mucho más lejos que otras, el borde deja de existir
-    como línea y el disco se pierde en negro por filamentos. Se aplana con
-    soften igual que la textura: en la imagen lensada, un borde deshilachado
-    comprimido en pocos píxeles vuelve a ser ruido.
+    El radio donde muere el material varía con el campo turbulento, pero ahora
+    pesa sobre todo el MACRO: con streams mandando, el borde se deshilachaba a
+    la escala de los filamentos y el conjunto seguía siendo un anillo de contorno
+    irregular. Con el macro mandando son sectores enteros los que terminan antes
+    o alcanzan mucho más lejos, y el disco se pierde en negro por streamers en
+    vez de por una franja marrón de grosor constante.
   */
-  /* Pesa más streams que wb a propósito: streams se muestrea en el marco
-     contrarrotado, así que los jirones del borde PROLONGAN la dirección del
-     flujo en vez de ser una nube alrededor del disco. */
-  float shred = mix(streams * 0.62 + wb * 0.38, 0.5, soften);
-  density *= 1.0 - smoothstep(0.44, 1.0, t + (shred - 0.5) * 0.5);
+  float shred = mix(streams * 0.42 + macro * 0.58, 0.5, soften);
+  density *= 1.0 - smoothstep(0.50, 1.06, t + (shred - 0.5) * 0.72);
 
   // Camino óptico: un rayo rasante atraviesa mucho más material que uno
-  // perpendicular. Es un cociente, no una textura, y es lo que hace que el
-  // disco se lea VOLUMÉTRICO de canto y translúcido de plano.
+  // perpendicular. Es un cociente, no una textura, y es lo que hace que el disco
+  // se lea VOLUMÉTRICO de canto y translúcido de plano.
   float grazing = 1.0 / max(abs(dir.y), 0.05);
   alpha = 1.0 - exp(-density * grazing * 0.40);
 
-  // Rampa: white-hot → warm white → pale gold → amber → dark rust. Cuatro
-  // tramos en vez de dos; con dos, todo el medio caía en un beige plano. Los
-  // cortes están corridos hacia fuera respecto al primer intento: con la rampa
-  // apretada contra el borde interior, el pálido dorado ocupaba un anillo
-  // estrecho y el resto del disco se veía marrón.
+  /*
+    RAMPA TÉRMICA: blanco incandescente → crema → oro cálido → ámbar → cobre →
+    naranja quemado.
+
+    La anterior estaba desaturada de origen —el tramo medio era (1.00, 0.84,
+    0.58) y el siguiente (0.94, 0.59, 0.28)— y ACES le quita saturación otra vez
+    a todo lo que se acerca al blanco. Encadenando las dos pérdidas, el disco
+    entero salía beige y gris: ni oro ni ámbar en ninguna parte, y eso lo alejaba
+    de la referencia más que ninguna otra cosa.
+
+    Los colores de aquí son los que hay que ver DESPUÉS del tone mapping, así que
+    entran bastante más saturados de lo que se quiere ver. No hay azul en ningún
+    tramo: el corrimiento al azul del lado que se acerca es real en física pero
+    enfría justo la zona que tiene que leerse incandescente.
+  */
   vec3 tint = mix(
-    vec3(1.00, 0.985, 0.96),
-    vec3(1.00, 0.95, 0.84),
-    smoothstep(0.00, 0.10, t)
+    vec3(1.00, 0.99, 0.96),
+    vec3(1.00, 0.88, 0.62),
+    smoothstep(0.00, 0.07, t)
   );
-  // Los dos tramos centrales conservan calor antes de ACES, que dessatura con
-  // fuerza todo lo que se acerca al blanco. La rampa evita amarillo puro: el
-  // recorrido visible es crema, oro pálido y ámbar contenido.
-  tint = mix(tint, vec3(1.00, 0.84, 0.58), smoothstep(0.08, 0.30, t));
-  tint = mix(tint, vec3(0.94, 0.59, 0.28), smoothstep(0.28, 0.66, t));
-  /* El cobre entra más tarde y llega menos lejos: ya no tiene que describir una
-     corona entera, sólo los filamentos que sobreviven ahí fuera. */
-  tint = mix(tint, vec3(0.60, 0.30, 0.14), smoothstep(0.66, 1.00, t));
+  tint = mix(tint, vec3(1.00, 0.70, 0.31), smoothstep(0.05, 0.22, t));
+  tint = mix(tint, vec3(0.97, 0.42, 0.10), smoothstep(0.20, 0.52, t));
+  tint = mix(tint, vec3(0.58, 0.22, 0.05), smoothstep(0.52, 1.00, t));
   // El polvo enfría el color, pero el grueso del oscurecimiento lo hacen la
-  // opacidad y la función fuente. Multiplicarlo tres veces (aquí, en la densidad
-  // y en la fuente) fue lo que dejó el disco apagado.
-  tint *= mix(0.68, 1.0, laneMask);
+  // opacidad y la función fuente.
+  tint *= mix(0.52, 1.0, laneMask);
 
   // Corrimiento al rojo gravitacional (siempre) y beaming relativista (según el
   // interruptor). El material orbita a v = √(rs / 2(r − rs)) medido por un
@@ -565,73 +686,72 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   float g = gravity * mix(1.0, beaming, uDoppler);
 
   /*
-    ASIMETRÍA. El exponente físico del beaming bolométrico es 4; aquí 3.1.
+    ASIMETRÍA. El exponente físico del beaming bolométrico es 4; aquí 3.4.
 
-    Con 4 la asimetría es tan violenta que medio disco desaparece —por eso la
-    película lo atenuó—, pero 2.4 se quedaba corto en la otra dirección: el
-    disco salía casi simétrico y eso es lo que delataba una textura procedural
-    girada. A 3.1, con el suelo bajado a 0.11, un lateral es inequívocamente más
-    caliente que el opuesto y Gargantúa gana DIRECCIÓN.
+    Sube de 3.1 y el techo pasa de 4.4 a 6.6. La referencia tiene una asimetría
+    brutal y el lado que se acerca llega a quemarse; lo que no puede pasar es que
+    el otro lado se convierta en un recorte negro, y de eso se encarga el suelo.
+    Baja a 0.13 —el lado que se aleja pierde más brillo— pero el material que hay
+    ahí conserva estructura: densidad, masas y carriles son multiplicativos y
+    sobreviven a cualquier nivel de exposición.
   */
-  /* El suelo se queda en 0.16 y no más abajo: por debajo, el lado que se aleja
-     deja de tener MATERIAL —se convierte en un recorte oscuro— y la asimetría
-     pasa de dar dirección a comerse media superficie. Ahí sigue habiendo
-     estructura que ver, sólo que en ámbar quemado. */
-  float boost = clamp(pow(g, 3.1), 0.16, 4.4);
+  float boost = clamp(pow(g, 3.3), 0.24, 6.6);
 
   /*
-    Y la asimetría también es de COLOR, no sólo de brillo.
-
-    Antes el único desplazamiento cromático era un tinte azulado sobre el lado
-    que se acerca: correcto en física —es corrimiento al azul— y equivocado en
-    lectura, porque enfriaba justo la zona que tiene que verse incandescente. El
-    recorrido que se busca es el de la película: crema casi blanco donde el
-    material viene hacia la cámara, cobre profundo donde se va.
-
-    Escalado por uDoppler para que el interruptor siga apagando el efecto
-    entero: sin él, con el beaming desactivado g cae por debajo de 1 en todo el
-    disco y el conjunto se iría a cobre.
+    Y la asimetría también es de COLOR. El recorrido buscado es continuo —crema,
+    oro cálido, ámbar, cobre, ámbar quemado— y no un corte entre un lado blanco y
+    otro marrón. Por eso el empuje hacia el cobre pesa menos que el empuje hacia
+    el crema: al lado que se aleja lo oscurece sobre todo boost, no el tinte.
+    Escalado por uDoppler para que el interruptor apague el efecto entero.
   */
-  /* El recorrido buscado es continuo —crema, oro cálido, ámbar, cobre, ámbar
-     quemado— y no un corte entre un lado blanco y otro marrón. Por eso el
-     empuje hacia el cobre pesa menos que el empuje hacia el crema: el lado que
-     se aleja lo oscurece sobre todo boost, no el tinte. */
   float doppler = clamp((g - 1.0) * 1.15, -1.0, 1.0);
-  tint = mix(tint, vec3(1.00, 0.97, 0.90), max(doppler, 0.0) * 0.58 * uDoppler);
-  tint = mix(tint, vec3(0.66, 0.34, 0.15), max(-doppler, 0.0) * 0.42 * uDoppler);
+  tint = mix(tint, vec3(1.00, 0.98, 0.93), max(doppler, 0.0) * 0.34 * uDoppler);
+  tint = mix(tint, vec3(0.62, 0.29, 0.10), max(-doppler, 0.0) * 0.46 * uDoppler);
 
-  // Perfil radial. Exponente 1.15, no el bolométrico: con el perfil físico el
-  // borde interior está 40 veces por encima del exterior y el tone mapping no
-  // tiene sitio para los dos — el disco exterior se apaga a marrón y el ojo lee
-  // el conjunto como un núcleo brillante con una cola muerta. Sigue cayendo
-  // hacia fuera; cae menos. Es la palanca que más "enciende" el disco entero
-  // sin tocar ni la exposición ni el pico.
-  /* Sube de 1.15 a 1.32. Con el borde exterior ya deshilachado, que el material
-     lejano caiga más deprisa no deja una cola marrón muerta: deja filamentos
-     tenues perdiéndose en negro, que es lo que se busca. Y refuerza la lectura
-     de energía creciente hacia el horizonte. */
-  float heat = pow(uDiskInner / r, 1.2);
+  /*
+    PERFIL RADIAL: exponente 1.62, ni el bolométrico ni el 1.15 de antes.
 
-  // La función fuente lleva la MISMA textura que la opacidad, y aquí está la
-  // clave del punto quemado. Cuando el camino óptico satura (alpha → 1) la
-  // densidad deja de importar: con una fuente uniforme, toda la banda brillante
-  // colapsa a un blanco plano y desaparecen filamentos y polvo justo donde más
-  // se miran. Modulando también la emisión, la estructura sobrevive DENTRO del
-  // blanco. Físicamente es lo correcto además: los grumos densos están más
-  // calientes, no solo más opacos.
-  // Rango más ancho que antes: la vida se nota más en la SEPARACIÓN entre grumo
-  // y hueco que en el nivel medio. Los grumos llegan más arriba y los carriles
-  // caen más abajo, y el rodillo se encarga de que lo de arriba no se queme.
-  float source = mix(0.42, 1.62, fabric) * mix(0.40, 1.0, laneMask);
+    El bolométrico deja el borde interior 40 veces por encima del exterior y el
+    tone mapping no tiene sitio para los dos: el disco exterior se apaga a marrón
+    y el conjunto se lee como un núcleo brillante con una cola muerta. Pero 1.15
+    se pasaba al otro lado — con la energía casi igualada en todo el radio, los
+    brazos exteriores competían en brillo con el material interior y el resultado
+    era una espiral plana, o sea una galaxia.
+
+    A 1.62 el exterior queda al 2.2 % del interior en vez de al 5.3 %: el ojo ve
+    primero un plano de plasma incandescente pegado a la sombra y unos streamers
+    de cobre perdiéndose fuera, que es la jerarquía de energía de la referencia —
+    allí lo blanco vive junto al horizonte y dentro de las imágenes lensadas, y
+    todo el disco primario lejano es una banda oscura de óxido. El exterior no
+    desaparece: deja de mandar.
+  */
+  float heat = pow(uDiskInner / r, 1.62);
+
+  /*
+    FUNCIÓN FUENTE: la misma textura que la opacidad, MÁS las masas macro.
+
+    Cuando el camino óptico satura (alpha → 1) la densidad deja de importar: con
+    una fuente uniforme, toda la banda brillante colapsa a un blanco plano. Al
+    modular también la emisión, la estructura sobrevive DENTRO del blanco, y
+    físicamente es lo correcto — los grumos densos están más calientes.
+
+    El factor macro es lo que produce las grandes diferencias de energía que
+    faltaban: una masa densa no sólo tapa más, además emite tres veces más que un
+    hueco. De ahí salen las zonas quemadas concentradas en lugar de una
+    exposición uniforme por todo el disco.
+  */
+  float source = mix(0.30, 1.85, fabric)
+               * mix(0.34, 1.0, laneMask)
+               * mix(0.45, 1.40, mass);
 
   vec3 emission = tint * heat * boost * source * DISK_GAIN;
 
-  // Rodillo de altas luces, ANTES del bloom y del tone mapping. ACES aplana
-  // todo lo que pase de ~3, así que un disco que llega a 28 entrega su mitad
-  // brillante como una mancha sin gradiente. Esto comprime la meseta dejando
-  // que el núcleo siga clipando: el pico se mantiene incandescente y el resto
-  // recupera pendiente donde dibujar la textura. Se usa el canal máximo y no la
-  // luminancia para no desplazar el tono al comprimir.
+  // Rodillo de altas luces, ANTES del bloom y del tone mapping. ACES aplana todo
+  // lo que pase de ~3, así que un disco que llega a 28 entrega su mitad brillante
+  // como una mancha sin gradiente. Esto comprime la meseta dejando que el núcleo
+  // siga clipando: el pico se mantiene incandescente y el resto recupera
+  // pendiente donde dibujar la textura. Se usa el canal máximo y no la luminancia
+  // para no desplazar el tono al comprimir.
   float peak = max(max(emission.r, emission.g), emission.b);
   float rolled = peak / (1.0 + peak / HIGHLIGHT_KNEE);
   return emission * (rolled / max(peak, 1e-4));
@@ -656,9 +776,6 @@ void main() {
   // recto — sin casos especiales ni divisiones peligrosas.
   vec3 angular = cross(pos, dir);
   float h2 = dot(angular, angular);
-  /* Parámetro de impacto del rayo: la distancia a la que pasaría del centro si
-     el espacio fuese plano. Lo usa el anillo de fotones, al final. */
-  float impact = sqrt(h2);
 
   vec3 color = vec3(0.0);
   float transmit = 1.0;
@@ -752,58 +869,28 @@ void main() {
   }
 
   /*
-    EL ANILLO DE FOTONES ES UN FILO, no un halo.
+    NO HAY TERMINO DE ANILLO DE FOTONES, y quitarlo es el arreglo.
 
-    La integración ya lo produce —es el apilamiento de las imágenes de orden
-    superior— pero después de la compresión de altas luces y de ACES su último
-    subpíxel se pierde, y lo que queda alrededor de la sombra es un borde grueso
-    y difuso. Este término lo recupera: una sola línea en el parámetro de
-    impacto crítico, b = √27/2 · rs, que sale de la misma métrica que todo lo
-    demás y no es un adorno colocado a ojo.
+    Había una línea analítica en el parámetro de impacto crítico, b = √27/2·rs,
+    que existía para «recuperar el filo» que la compresión de altas luces y ACES
+    se comían. La intención era buena y el número es correcto —la convención de
+    unidades del integrador es rs = 2GM/c², con horizonte en r = rs, esfera de
+    fotones en 1.5·rs y el término (3/2)·rs·u² en la geodésica, así que b crítico
+    = 3√3·GM/c² = (√27/2)·rs ≈ 2.598·rs— pero el resultado era indefendible:
 
-    Aquí fwidth() SÍ es legítimo: estamos fuera del bucle, en flujo uniforme.
-    Y es justo lo que hace falta — la anchura del filo se adapta a la
-    resolución, así que no se convierte en escalera al bajar el DPR ni en un
-    círculo de varios píxeles al subirlo. Se apaga en los rayos que no vieron
-    disco, para que no dibuje un contorno sobre el cielo vacío.
+    b es constante sobre una circunferencia EXACTA de la pantalla, y una
+    circunferencia exacta de un píxel de ancho es un círculo dibujado encima. Da
+    igual con qué se module: mientras el material lensado rodee la sombra por los
+    cuatro costados, la modulación por luminancia deja el trazo completo. Era el
+    elemento más gráfico del cuadro y el que primero delataba el render.
+
+    El filo lo dibuja quien tiene que dibujarlo: el apilamiento de imágenes de
+    orden superior que produce la propia integración. Ese apilamiento hereda
+    textura, cortes, masas y asimetría del material —ahora de verdad, con soften
+    casi a cero— así que el borde de la sombra sale irregular, más brillante
+    donde el material se acerca y apagado donde se aleja, que es como se ve en la
+    referencia. Menos código y mejor modelo.
   */
-  /*
-    Convención de unidades, explícita porque aquí es fácil equivocarse:
-    uRs es el radio de SCHWARZSCHILD, rs = 2GM/c². Lo confirma el resto del
-    integrador — horizonte en r = rs, esfera de fotones en 1.5·rs, y el término
-    de la geodésica (3/2)·rs·u². Con esa convención el parámetro de impacto
-    crítico es b = 3√3·GM/c² = (3√3/2)·rs = (√27/2)·rs ≈ 2.598·rs.
-  */
-  float criticalImpact = 0.5 * sqrt(27.0) * uRs;
-  float ringWidth = max(fwidth(impact), 0.0016 * uRs);
-  float photonRing = 1.0 - smoothstep(
-    ringWidth * 0.6,
-    ringWidth * 1.9,
-    abs(impact - criticalImpact)
-  );
-
-  /*
-    Dos condiciones para que no se lea como un círculo dibujado encima.
-
-    La primera es que NO entre en la sombra. La mitad interior del filo cae por
-    dentro de b crítico, y ahí el rayo está capturado: dejarlo pintar convertiría
-    el borde del agujero en un halo. Excluir los rayos capturados deja el anillo
-    estrictamente por fuera y la masa central absolutamente limpia, que es
-    justo su valor — el negro tiene que ser negro.
-
-    La segunda es que herede la escena en vez de superponerse a ella. Su
-    intensidad se modula con la luminancia ya acumulada en ese píxel, que lleva
-    dentro el beaming y el lensado: el anillo brilla donde el borde interior
-    lensado brilla y se apaga donde ese material está en sombra. No hace falta
-    que sea igual de visible en los 360°; un anillo uniforme sería exactamente
-    el gráfico que no queremos.
-  */
-  float ringLuma = dot(color, vec3(0.2126, 0.7152, 0.0722));
-  color += vec3(1.0, 0.95, 0.86)
-         * photonRing
-         * (captured ? 0.0 : 1.0)
-         * smoothstep(0.2, 1.2, hits)
-         * (0.35 + 2.4 * ringLuma);
 
 #ifdef DEBUG_RAYS
   // Clasificación del rayo, no imagen: rojo = agotó pasos · verde = cruces del
