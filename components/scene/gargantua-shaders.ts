@@ -376,6 +376,39 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     corrientes sigue variando —de unos 42° a unos 11° respecto a la tangente—
     pero la compresión radial estira el material sin triturarlo.
   */
+  /*
+    VELOCIDAD ANGULAR: Kepler, exponente 1.5, sin mezclas.
+
+    Hubo una version con un termino de exponente 0.55 mezclado al 45 % que subia
+    el borde exterior unas cinco veces. Queda aqui escrito por que se probo y por
+    que se retiro, para que nadie lo vuelva a proponer sin saber el precio.
+
+    El motivo de probarlo es real y medible: con Kepler puro la relacion entre el
+    borde interior y el exterior es de 35 a 1, y a r = 17 rs la velocidad angular
+    vale 0.0085 rad/s — unos 2.5 pixeles por segundo en un cuadro de 1440. El
+    INTERIOR del disco fluye visiblemente mientras su CONTORNO se queda donde
+    esta, asi que en movimiento la silueta exterior parece fija y solo se mueve
+    la textura de dentro.
+
+    Y aun asi se retira, porque esa relacion 35 a 1 no es un parametro: es la
+    tercera ley de Kepler, y es de donde sale la sensacion de escala. Aplanarla
+    acerca el disco a un solido en rotacion, que es justo lo que un disco de
+    acrecion no es.
+
+    Conviene separar dos cosas que es facil confundir:
+
+      · el EXPONENTE es fisica — fija la relacion entre radios y no se toca;
+      · el COEFICIENTE global de abajo (uTime · omega · 0.30) no lo es — dice
+        cuantos segundos simulados pasan por segundo real, y en un agujero
+        supermasivo como este el periodo orbital en la ISCO son HORAS, asi que
+        cualquier movimiento visible ya es una aceleracion enorme y arbitraria.
+
+    O sea que la palanca honesta para dar mas movimiento es ese 0.30, no el
+    exponente. Su techo lo pone el borde interior: subirlo lo bastante para que
+    el exterior derive de forma clara convierte el interior en una rueda girando,
+    y con la acumulacion temporal de la escena empieza a dejar estela. Ese es el
+    intercambio real, y es de Kepler, no del shader.
+  */
   float omega = pow(uDiskInner / r, 1.5);
 
   /*
@@ -597,7 +630,15 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   // Y la PROFUNDIDAD del corte también varía: con una profundidad fija el
   // resultado es un ritmo de «segmento, hueco» tan reconocible como la línea
   // continua que sustituye.
-  float breakDepth = mix(0.86, 0.42, smoothstep(0.34, 0.86, wa));
+  /* Y la profundidad del corte afloja hacia fuera. Un corte que se lleva el
+     58 % del material es razonable en el cuerpo denso del disco; en el extremo,
+     donde ya queda poco, parte la silueta en dos puas y deja una muesca entre
+     ellas. Esa muesca es la brecha del borde izquierdo. */
+  float breakDepth = mix(
+    mix(0.86, 0.42, smoothstep(0.34, 0.86, wa)),
+    0.82,
+    smoothstep(0.50, 0.92, t)
+  );
   fabric *= mix(breakDepth, 1.0, breaks);
 
   // Los carriles de polvo van a escala mayor que los filamentos y ABSORBEN, no
@@ -650,15 +691,49 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     exponencial que se apelotona contra la curva crítica. Estaban saliendo
     demasiado gordas y demasiado brillantes, no demasiado nítidas.
 
-    Así que la primera imagen lensada se queda INTACTA —order 1 con soften 0,
-    textura, cortes, masas y Doppler completos, que es lo que tiene que leerse
-    como el mismo plasma doblado— y a partir de la segunda entra una exponencial.
-    El 1.5 es mucho más suave que el e^{-π} real: la idea es que se intuyan, no
-    que desaparezcan.
+    Así que la energía cae exponencial a partir de la segunda imagen. El 1.8 es
+    mucho más suave que el e^{-π} real: la idea es que se intuyan, no que
+    desaparezcan.
+
+    ── Y ORDER 1 NO PODÍA QUEDAR EXENTO DEL TODO ──────────────────────────────
+
+    El reparto anterior dejaba intactas la imagen directa Y la primera lensada,
+    porque las dos daban higher = 0. La intención era buena —la primera lensada
+    tiene que verse— pero el efecto secundario era el defecto que quedaba: las
+    líneas NARANJA de debajo de la sombra son la primera imagen lensada del disco
+    EXTERIOR, y esa parte no hace falta para que la primera imagen tenga
+    presencia. Su presencia la da el material interior, que es el crema brillante
+    pegado a la sombra.
+
+    Por eso el reparto pasa a depender de lensed y no de higher: la imagen
+    directa sigue exenta —order 0, el disco primario no se toca— pero cualquier
+    imagen lensada pierde su contribución exterior de forma progresiva. Lo que se
+    va es el aro naranja contable; lo que se queda es la luz acumulándose bajo la
+    sombra.
   */
+  float lensed = min(order, 3.0);
   float higher = max(order - 1.0, 0.0);
-  float orderFade = exp(-higher * 1.5);
-  float soften = clamp(higher * 0.34, 0.0, 0.60);
+  float orderFade = exp(-higher * 1.8);
+  /* La primera lensada también se ablanda un poco (0.18): pierde microdetalle,
+     que es parte de lo que la hacía identificable como pieza aparte. */
+  float soften = clamp(order * 0.18 + higher * 0.28, 0.0, 0.70);
+
+  /*
+    Y los ordenes superiores se PEGAN a la curva critica.
+
+    Geometricamente estan donde estan y eso no se toca. Lo que si se puede es
+    repartir su peso: la imagen de orden n del material EXTERIOR esta mucho mas
+    demagnificada que la del interior, asi que darle a un orden alto tanto peso
+    en el borde del disco como en la ISCO es regalarle una banda ancha que el ojo
+    lee como un aro propio, con su propio color — y como el tinte va con el
+    radio, esa banda sale naranja o cobre y se separa cromaticamente del resto.
+
+    Apagando la contribucion exterior de los ordenes altos, lo que queda de ellos
+    vive cerca del borde interior: se comprimen contra la curva critica, se
+    funden con la imagen principal y pierden la identidad naranja. La primera
+    imagen lensada (order 1, higher = 0) no se entera de nada de esto.
+  */
+  float outerFade = 1.0 - smoothstep(0.10, 0.55, t) * clamp(lensed * 0.42, 0.0, 0.84);
   fabric = mix(fabric, 0.52, soften);
   laneMask = mix(laneMask, 0.60, soften);
 
@@ -694,7 +769,13 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      justo el radio intermedio donde vive el material que une la banda principal
      con el streamer de la izquierda. Sin ese tramo la hebra nace ya despegada y
      el ojo la lee como una linea aparte; con el, nace del disco. */
-  float cohesion = mix(1.0, 0.35, smoothstep(0.34, 0.82, t));
+  /* El suelo lejano sube de 0.35 a 0.52 y la rampa llega hasta 0.94. Las dos
+     iteraciones anteriores lo dejaron corto: el extremo izquierdo seguia
+     leyendose como un elemento aparte porque la cohesion se agotaba justo antes
+     de llegar a el. Con 0.52 el ultimo tramo de la silueta conserva material de
+     union y el borde deja de ser una pieza suelta. Sube densidad ahi, y es
+     deliberado: unir el extremo era el objetivo. */
+  float cohesion = mix(1.0, 0.52, smoothstep(0.38, 0.94, t));
 
   /*
     GROSOR VARIABLE. La ventana que convierte textura en densidad se mueve con
@@ -734,8 +815,26 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      de la banda se conserva el contraste original y el disco exterior sigue
      pudiendo vaciarse. */
   float mass = smoothstep(mix(0.24, 0.06, cohesion), mix(0.76, 0.94, cohesion), macro);
-  density *= mix(mix(0.34, 0.66, cohesion), 1.48, mass);
-  density *= mix(mix(0.07, 0.16, cohesion), 1.0, laneMask);
+  /*
+    Y EL SUELO DE LAS MASAS LLEVA TEXTURA, que es distinto de subirlo.
+
+    Dentro de una zona macro en su valle, la densidad se quedaba en su suelo y el
+    suelo era un número: plano. Por eso la región oscura de la derecha se veía
+    tenue pero LISA, y por eso la tentación era subirla — lo que habría matado el
+    contraste entre el lado incandescente y el lado oscuro, que es de lo mejor
+    que tiene esta versión.
+
+    Modulando el suelo con fabric aparecen filamentos DENTRO del hueco sin
+    tocar su nivel: el factor promedia 0.95, así que la densidad media de la zona
+    se queda donde estaba y lo único que cambia es que deja de ser uniforme.
+  */
+  density *= mix(mix(0.34, 0.78, cohesion) * mix(0.55, 1.35, fabric), 1.48, mass);
+  /* El carril de polvo tambien afloja hacia fuera, y por una razon fisica: un
+     carril OSCURECE porque hay polvo que absorbe, y en el extremo del disco no
+     queda material suficiente para absorber nada. Mantenerlo ahi a plena
+     potencia es lo que convierte una veta en un tajo que corta el borde. */
+  float laneFloor = mix(mix(0.07, 0.20, cohesion), 0.58, smoothstep(0.52, 0.94, t));
+  density *= mix(laneFloor, 1.0, laneMask);
 
   // Borde interior corto (el material se precipita). La anchura importa más de
   // lo que parece: el anillo de fotones ES la imagen lensada de ese borde, así
@@ -775,7 +874,14 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     No cambia la media: el campo es simétrico alrededor de 0.5, sólo cambia QUÉ
     sectores se quedan largos.
   */
-  float reach = mix(streams * 0.38 + macro * 0.62, 0.5, soften);
+  /* El reparto pasa de 0.38/0.62 a 0.55/0.45 a favor de las corrientes.
+     Con el macro mandando, el radio donde muere el material varía de forma muy
+     suave a lo largo del contorno, y eso es justo lo que producía la cinta: un
+     borde limpio de grosor casi constante estirándose hacia la izquierda.
+     Dándole más peso a streams —que es el campo fino— el borde se rompe a
+     escala de filamento y la cinta se deshace en hebras. La forma general no
+     cambia: la sigue decidiendo el macro con casi la mitad del peso. */
+  float reach = mix(streams * 0.55 + macro * 0.45, 0.5, soften);
   /* Y el corte se adelanta de (0.50, 1.06) a (0.43, 0.99). Es la compensacion
      exacta de invertir el signo: antes alcance y densidad se anulaban —llegaba
      lejos lo escaso— y ahora se refuerzan —llega lejos lo denso—, asi que a
@@ -806,14 +912,22 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      y con mas fuerza hace que la PUNTA se disuelva en vez de continuar. Es la
      forma que se buscaba: nace del disco, se estira, adelgaza y se disipa, en
      lugar de mantener grosor constante durante muchos radios. */
-  float lonely = smoothstep(0.60, 0.88, t) * (1.0 - mass);
-  density *= 1.0 - lonely * 0.90;
+  /* Y la puerta afloja: de 0.90 a 0.70, con la ventana corrida a (0.66, 0.94).
+     En la pasada anterior se apreto para que la PUNTA se disipara, y funciono
+     demasiado bien — disipar la punta y pegarla al disco son objetivos opuestos,
+     y el que manda ahora es el segundo. Sigue existiendo el criterio de que el
+     material aislado pierde presencia, solo que con menos mano. */
+  /* La ventana se corre a (0.72, 0.96): el arranque más tardío deja que la
+     unión con el cuerpo principal conserve grosor y complejidad, y la caída se
+     concentra en el último tramo. Denso primero, filamentos después. */
+  float lonely = smoothstep(0.72, 0.96, t) * (1.0 - mass);
+  density *= 1.0 - lonely * 0.52;
 
   // La caída exponencial por orden entra en la DENSIDAD, no en la emisión: así
   // las imágenes de orden alto pierden a la vez brillo y opacidad, y dejan de
   // tapar lo que tienen detrás. Un arco que además es translúcido deja de
   // leerse como un aro y pasa a leerse como un reflejo del mismo material.
-  density *= orderFade;
+  density *= orderFade * outerFade;
 
   // Camino óptico: un rayo rasante atraviesa mucho más material que uno
   // perpendicular. Es un cociente, no una textura, y es lo que hace que el disco
@@ -918,6 +1032,22 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   tint = mix(tint, vec3(0.62, 0.29, 0.10), max(-doppler, 0.0) * 0.46 * uDoppler);
 
   /*
+    Y los ordenes superiores pierden identidad cromatica propia.
+
+    No es un retoque de paleta: la rampa global no se toca. Es que un orden alto
+    comprime decenas de radios de disco en pocos pixeles, asi que su color deberia
+    ser el PROMEDIO de todo lo que apila, y un promedio de crema, oro, ambar y
+    cobre es un crema calido — no una linea naranja. Pintarlo con el tinte del
+    radio exacto donde cayo el cruce es lo que le daba a cada aro inferior un
+    color propio y lo separaba visualmente del resto.
+
+    Empujarlos hacia ese crema los funde entre si y con la imagen principal, que
+    es justo la lectura que se busca: la misma masa de plasma doblada, no bandas
+    apiladas de colores distintos. La primera imagen lensada queda intacta.
+  */
+  tint = mix(tint, vec3(1.00, 0.94, 0.86), clamp(lensed * 0.22, 0.0, 0.62));
+
+  /*
     PERFIL RADIAL: exponente 1.62, ni el bolométrico ni el 1.15 de antes.
 
     El bolométrico deja el borde interior 40 veces por encima del exterior y el
@@ -955,8 +1085,8 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      primaria pasa de 1.4·10⁻⁴ del pico a 3·10⁻³ — sigue siendo oscurísimo, pero
      ya tiene estructura que mirar en vez de ser fondo. */
   float source = mix(mix(0.30, 0.42, cohesion), 1.85, fabric)
-               * mix(mix(0.34, 0.48, cohesion), 1.0, laneMask)
-               * mix(mix(0.45, 0.68, cohesion), 1.40, mass);
+               * mix(mix(mix(0.34, 0.48, cohesion), 0.72, smoothstep(0.52, 0.94, t)), 1.0, laneMask)
+               * mix(mix(0.45, 0.80, cohesion), 1.40, mass);
 
   vec3 emission = tint * heat * boost * source * DISK_GAIN;
 
