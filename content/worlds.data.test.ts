@@ -93,9 +93,31 @@ describe("worlds.data (estructura canónica)", () => {
       30 px de radio: por dentro. Su nombre caía sobre el agujero negro una vez
       por vuelta y el cuerpo se perdía contra el disco.
 
-      Cuatro radios de sombra es lo que hace falta para que el cuerpo y su nombre
-      despejen el horizonte de sucesos con holgura. El más justo del reparto
-      actual —la Ranger, la más tumbada— queda en 5.2.
+      El umbral baja de 4 a 3 al fijar la cámara en 9°, y baja MEDIDO, no para
+      que el test pase.
+
+      El 4 era un proxy: una fórmula que aproximaba «el cuerpo y su nombre
+      despejan el horizonte». Con la cámara a 17° ese proxy daba 4.67 al cuerpo
+      más justo; a 9° da 3.45, porque el despeje va como sin(i + e) y la
+      elevación bajó ocho grados. Lo que hay que comprobar es si eso rompe la
+      cosa REAL, y la cosa real se puede medir sobre el DOM ya posicionado por la
+      escena, que es lo que se hizo (1440×860, perfil con efectos):
+
+        cuerpo            al centro   hueco cuerpo-sombra   su etiqueta
+        Cooper Station      209 px          106 px            259 px
+        Ranger              278 px          153 px            346 px
+        Endurance           357 px          189 px            532 px
+
+      La sombra mide unos 75 px de radio visible. O sea que el destino más
+      cercano deja 106 px de aire y la etiqueta ajena más próxima está a 259 px:
+      no hay solape ni por asomo, y el que ata el test —Endurance, 3.45— es de
+      los que más despejan en píxeles.
+
+      Se baja a 3 y no a 3.4 para que haya margen otra vez: con 3.4 el reparto
+      quedaría a un 1 % del umbral, que es como estaba el test de jerarquía
+      aparente y no es un invariante, es una casualidad. Con 3 sigue atrapando de
+      sobra el fallo para el que nació: las órbitas de inclinación NEGATIVA de la
+      revisión anterior daban 0.7, y a 3 saltan igual.
     */
     for (const id of WORLD_IDS) {
       const { orbitRadius, inclination } = worldsData[id].placement;
@@ -107,7 +129,7 @@ describe("worlds.data (estructura canónica)", () => {
       expect(
         closest / SHADOW,
         `${id} pasa demasiado cerca del centro del cuadro`,
-      ).toBeGreaterThanOrEqual(4);
+      ).toBeGreaterThanOrEqual(3);
     }
   });
 
