@@ -15,7 +15,17 @@
  */
 import { readFileSync } from "node:fs";
 
-const FILES = ["components/scene/gargantua-shaders.ts"];
+/*
+  `bodies.ts` entró en la lista después de que el pase visual del Tesseracto
+  metiera dos backticks en sus comentarios GLSL en la misma sesión. El guardián
+  daba verde las dos veces porque sólo miraba el archivo de Gargantúa, y el
+  error salía luego como un TS1005 apuntando a una línea de prosa — que es
+  exactamente el despiste que este script existe para evitar.
+*/
+const FILES = [
+  "components/scene/gargantua-shaders.ts",
+  "components/scene/bodies.ts",
+];
 const OPEN = /\/\* glsl \*\/ `/;
 
 let failed = false;

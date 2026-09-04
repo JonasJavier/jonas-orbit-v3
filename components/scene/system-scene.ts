@@ -9,6 +9,7 @@ import {
   placeBodyOnDepthLayer,
 } from "@/lib/scene-depth";
 import type { CameraPose } from "@/lib/scene-poses";
+import { readVisualBench } from "@/lib/visual-bench";
 import {
   DISK_INNER,
   DISK_OUTER,
@@ -302,6 +303,17 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   const centreIds: WorldId[] = [];
   const centreRadii = new Map<WorldId, number>();
 
+  /*
+    Banco de pruebas visual. En producción es {1, 1} para todo el mundo y no hay
+    forma de que deje de serlo sin escribir la clave a mano: ver la nota de
+    lib/visual-bench.ts sobre por qué esto NO es sniffing del auditor.
+
+    Se lee UNA vez, al montar la escena. No es reactivo a propósito — lo usa
+    `tools/shot.mjs` para capturar el mismo cuadro con y sin glow, y una captura
+    no cambia de opinión a mitad.
+  */
+  const bench = readVisualBench();
+
   for (const input of options.bodies) {
     const body = createBody(input);
     if (body) {
@@ -312,6 +324,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
           | null
           | undefined;
         if (surface?.isTexture) surface.anisotropy = anisotropy;
+        if (material.uniforms.uEmission) {
+          material.uniforms.uEmission.value = bench.emission;
+        }
       }
       bodies.push(body);
       bodyScene.add(body.object);
@@ -798,7 +813,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     bodyCamera.updateMatrixWorld();
 
     renderer.toneMappingExposure = BASE_EXPOSURE * pose.exposure;
-    bloomPass.strength = BLOOM[tier].strength * pose.bloom;
+    bloomPass.strength = BLOOM[tier].strength * pose.bloom * bench.bloom;
 
     measureCentreLabelDrop();
   }

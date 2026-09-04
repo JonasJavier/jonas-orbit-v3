@@ -56,6 +56,48 @@ describe("FlatWorldBody", () => {
     expect(container.querySelector('[data-flat-part="engine-bank"]')).not.toBeNull();
   });
 
+  it("mantiene la megaestructura habitada de Cooper en el frame estático", () => {
+    const cooper = worlds.find((world) => world.id === "cooper-station");
+    expect(cooper).toBeDefined();
+
+    const { container } = render(
+      <FlatWorldBody world={cooper as NonNullable<typeof cooper>} />,
+    );
+
+    /*
+      La misma arquitectura que el modelo 3D, y por el mismo motivo que en la
+      Endurance: arco abierto, módulos en serie, espina, montantes, alas
+      solares, mástil con baliza y microventanas cálidas. En un equipo con
+      movimiento reducido este dibujo es la ÚNICA Cooper que se ve.
+    */
+    for (const part of [
+      "arc",
+      "module",
+      "spine",
+      "struts",
+      "panels",
+      "mast",
+      "windows",
+      "beacon",
+    ]) {
+      expect(
+        container.querySelector(`[data-flat-part="${part}"]`),
+        part,
+      ).not.toBeNull();
+    }
+    /*
+      Lo retirado NO vuelve: ni el planeta con anillos —que se leía como mundo
+      y no como lugar habitado— ni el cilindro provisional que ya prohibía la
+      dirección.
+    */
+    for (const retired of ["planet", "rear-ring", "front-ring", "habitat"]) {
+      expect(
+        container.querySelector(`[data-flat-part="${retired}"]`),
+        retired,
+      ).toBeNull();
+    }
+  });
+
   it("dibuja la Ranger con proa, cabina y toberas, no una mancha", () => {
     const ranger = worlds.find((world) => world.id === "ranger");
     expect(ranger).toBeDefined();
@@ -71,6 +113,38 @@ describe("FlatWorldBody", () => {
         part,
       ).not.toBeNull();
     }
+  });
+
+  it("dibuja el Tesseracto como marcos oscuros abiertos hacia un vacío", () => {
+    const tesseract = worlds.find((world) => world.id === "tesseract");
+    expect(tesseract).toBeDefined();
+
+    const { container } = render(
+      <FlatWorldBody world={tesseract as NonNullable<typeof tesseract>} />,
+    );
+
+    /*
+      La misma arquitectura imposible del modelo 3D: boca exterior, marcos
+      interiores y vacío central. En un equipo con movimiento reducido este
+      dibujo es el ÚNICO Tesseracto que se ve; si mostrara marcos cerrados con
+      núcleo brillante, el mismo destino contaría dos cosas distintas.
+    */
+    expect(
+      container.querySelector('[data-flat-part="outer-frame"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelectorAll('[data-flat-part="inner-frame"]').length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(container.querySelector('[data-flat-part="core"]')).not.toBeNull();
+    /*
+      Nada de frío dentro del dibujo: el cuerpo es grafito + tungsteno y no
+      usa el secundario cian de su ficha. (El envoltorio sí publica la variable
+      —la comprueba el test genérico—; lo que no puede aparecer es dentro del
+      svg.)
+    */
+    expect(container.querySelector("svg")?.innerHTML).not.toContain(
+      "flat-secondary",
+    );
   });
 
   it("es puramente decorativo y no introduce movimiento ni copy duplicado", () => {

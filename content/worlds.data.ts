@@ -88,10 +88,14 @@ export interface WorldStructuralData {
  *    ancho del cuadro al 59 %, y el lado derecho —el más vacío— lo llena Miller
  *    sin añadir ni un objeto nuevo.
  *
- * Y NO cuesta distancia de cámara: el encuadre lo fijan Cooper (30) y el
- * Tesseracto (33), que no se han movido. Mover los interiores hacia fuera es
- * gratis mientras no pasen de los exteriores — es la única forma de reencuadrar
- * el sistema sin que la cámara retroceda y lo anule.
+ * Y NO cuesta distancia de cámara: el encuadre lo fijan los dos exteriores, que
+ * siguen en 30 y 33 rs. Mover los interiores hacia fuera es gratis mientras no
+ * pasen de los exteriores — es la única forma de reencuadrar el sistema sin que
+ * la cámara retroceda y lo anule.
+ *
+ * Qué cuerpo ocupa cada una de esas dos trayectorias exteriores cambió el
+ * 2026-09-03 (ver el intercambio Tesseracto ↔ Cooper Station más abajo); los
+ * radios, que son lo que encuadra, no.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -100,7 +104,39 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 33, phase: 233, inclination: 20, size: 2.7 },
+    /*
+      ── POSITION LOCK — TESSERACTO + COOPER STATION (2026-09-03) ────────────
+      Los dos intercambian sector. El Tesseracto sube a superior-centro y Cooper
+      Station baja a superior-izquierda; ninguno cambia de tamaño aparente al
+      hacerlo (119.2 rs de cámara contra los 119.5 de antes, y 116.5 contra
+      116.9 los de Cooper), así que esto es composición pura y no una subida
+      encubierta de jerarquía.
+
+      ── Por qué el Tesseracto no puede quedarse arriba a la izquierda ───────
+      Es la forma más compacta y abstracta del sistema, la de menos peso visual
+      por unidad de superficie. En el sector superior-izquierdo —lejos del
+      centro, contra el campo de estrellas y sin nada grande al lado— se leía
+      como un icono suelto en una esquina, no como un destino. Arriba en el
+      centro entra en relación directa con Gargantúa: espacio imposible sobre
+      fenómeno físico, que es exactamente lo que representa (Sobre mí, el origen
+      conceptual del viaje).
+
+      ── Y por qué 285 y no 272, que es la fase que deja libre Cooper ────────
+      A 272 el cuerpo cae en Δx = −16 px del centro de la sombra: justo encima
+      del agujero negro, alineado al píxel. Eso no se lee como composición, se
+      lee como una interfaz —dos elementos centrados uno sobre otro— y mata la
+      profundidad que se estaba buscando. 285 lo corre a Δx = +66 px (4.6 % del
+      ancho): suficiente para que la relación sea deliberada y no accidental,
+      y demasiado poco para leerse como que se ha ido a un lado.
+
+      El lado es el derecho porque Cooper aterriza a la izquierda, y Cooper es
+      un cuerpo grande y claro: el sector superior-izquierdo ya tiene peso. Con
+      el Tesseracto a la derecha del eje, la banda superior se reparte 338 px /
+      264 px entre sus tres cuerpos —desigual, que es lo que se quiere— y de
+      paso aparece una contradiagonal con la Ranger, que está abajo y a la
+      izquierda del centro.
+    */
+    placement: { orbitRadius: 30, phase: 285, inclination: 26, size: 2.7 },
     sceneName: "scene-tesseract",
   },
   "cooper-station": {
@@ -109,7 +145,13 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#7fe5ff",
     secondary: "#a9b5ff",
     visual: "station",
-    placement: { orbitRadius: 30, phase: 272, inclination: 26, size: 2.6 },
+    /* La otra mitad del intercambio: la trayectoria exacta que dejó libre el
+       Tesseracto. Desde F1.3 Cooper es una megaestructura habitada —arco
+       abierto horizontal, módulos en serie y vacío central— y aguanta el sector
+       superior-izquierdo sin perderse en el starfield, que es justo lo que al
+       Tesseracto le pasaba ahí. Números intactos: el rediseño conserva el radio
+       publicado para no mover el encuadre. */
+    placement: { orbitRadius: 33, phase: 233, inclination: 20, size: 2.6 },
     sceneName: "scene-cooper-station",
   },
   miller: {

@@ -27,6 +27,18 @@ cuerpos orbitando continuamente, Cooper como cilindro, Endurance como toro o el
 copy personal como bloque visible está obsoleto. El viaje continuo y
 `SYSTEM MAP ↑` siguen diferidos en `docs/design/continuous-journey-phase.md`.
 
+**Lenguaje visual de los mundos (2026-09-03):**
+`docs/design/world-visual-language.md` manda sobre los tres anteriores en
+**material, iluminación y criterio de aceptación de los seis destinos**. No toca
+composición, cámara, HUD ni interacción, que siguen perteneciendo a la dirección
+artística del hero. Congela el modelo de luz común —la misma luz toca materiales
+diferentes— y define el bloom-off test: un cuerpo que pierde su identidad al
+apagar el glow no está terminado. Gargantúa queda **congelada** durante la fase.
+Ya cerrados dentro de ella: `POSITION LOCK — TESSERACTO + COOPER STATION`, el
+`Rediseño imposible` del Tesseracto y la arquitectura de Cooper Station, con su
+criterio de salida verificado en el documento. De esos cuerpos sólo se admiten
+ya correcciones objetivas.
+
 ## Comandos
 
 - `npm run check` — lint + typecheck + knip + test + build (lo que corre CI).
