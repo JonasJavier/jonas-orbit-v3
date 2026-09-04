@@ -271,6 +271,77 @@ capturas completa, sin glow y de `/sobre-mi` conservan silueta, vacío y
 recursividad. Los presupuestos siguen en tres draws y sin nuevas llamadas a
 `fbm`.
 
+### Acabado de profundidad, luz y fallback (2026-09-04)
+
+Continuación autorizada por el dueño para terminar el Tesseracto. Esta
+descripción sustituye la de siete marcos del rediseño anterior: la lectura
+vigente tiene **cuatro capas principales**, caja exterior y tres marcos
+recursivos. Un marco trasero abierto, girado contra el interior, y tres
+tirantes añaden profundidad sin aumentar la silueta. El fondo y la caja se
+mantienen fijos; sólo los grupos interiores tienen deriva.
+
+El material separa fondo oscuro, caja de grafito y tres escalones de calor.
+La reflexión, el filo y el tungsteno aumentan hacia dentro. La respiración
+emisiva comparte el multiplicador del banco visual, por lo que desaparece
+completamente al apagar los emisivos. Cabeceo menor de 1.5° y variación de
+escala interior menor del 4 % refuerzan la profundidad sin giro del conjunto.
+
+El fallback SVG conserva escorzo, marco trasero, arista interrumpida, tres
+marcos interiores y nodo huérfano. Sus filos son finos y el centro está
+realmente sin relleno: se retiran el disco negro y la mancha luminosa que
+tapaban el cielo. El estado de selección conserva el halo cálido; la regla
+general del mapa ya no lo sustituye por cian.
+
+**Verificación de cierre:**
+
+| Prueba | Resultado |
+|---|---|
+| Hero a 1440×860 | Centro (735.2, 231.5), radio 55.4 px; posición y jerarquía conservadas |
+| Label-off y bloom-off | Fondo, volumen, marcos y hueco distinguibles sin rótulos, bloom ni emisivos |
+| Thumbnail | Estructura reconocible en el hero reducido a 400 px de ancho |
+| Motion | Dos capturas separadas por una espera de 7 s muestran cambio interior; test de 120 s mantiene cáscara y radio fijos y acota los diez canales |
+| Fallback | Revisado a 1440×860 y 375×812, con movimiento reducido y selección cálida |
+| Ruta | `/es/sobre-mi` conserva contenido y escena sin errores de consola |
+| Suite | `npm run check`: 29 archivos, 178 tests; lint, tipos, Knip y build correctos |
+| Navegador | `npm run test:e2e -- --workers=4`: 58 pruebas correctas en Chromium escritorio y móvil |
+| Bundle | Chunk de escena y Three: 193.3 KiB gzip; sigue diferido y no se solicita en `flat` |
+
+Sin dependencias ni texturas nuevas. El Tesseracto sigue usando tres draws y
+un material opaco; pasan los presupuestos de geometría y ruido existentes.
+Evidencia local en `output/playwright/tesseract-*`, incluyendo hero completo,
+detalle, movimiento, bloom-off, thumbnail, fallback y la ruta de Historia.
+
+### Revisión de espalda con referencia del dueño (2026-09-04)
+
+El dueño señala que el costado izquierdo parece incompleto y aporta una
+referencia de arquitectura metálica recursiva. Esta revisión sustituye la
+descripción del marco trasero independiente del acabado anterior.
+
+La espalda ahora tiene **cuatro lados completos**, comparte orientación y
+esquinas con el frente y se conecta mediante **cuatro tirantes**. Dos paneles
+laterales muestran espesor y superficie metálica sin ocupar el centro. El
+frente conserva su arista desplazada. La respuesta del material trasero sube
+lo necesario para que la espalda sea visible con la iluminación común.
+
+Se añade un cuarto marco interior: 0.68 → 0.50 → 0.345 → 0.225. El último
+comparte material y movimiento con el grupo profundo, sin un draw adicional.
+El shader filtra el bisel según la huella del píxel y usa su cobertura media
+cuando la cara deja de resolverse. Esto reduce los destellos discontinuos de
+las vigas pequeñas. La referencia se adapta en volumen, recursividad y luz;
+su densidad de detalle no se copia a una figura de unos 110 px de diámetro.
+
+El SVG incorpora la misma espalda completa, dos laterales y cuatro marcos
+interiores. Se conserva el hueco transparente y el estado de selección cálido.
+
+**Verificación:** hero completo, detalle, bloom-off y thumbnail; escritorio y
+móvil con reduced-motion; raycast por el centro del túnel en ambos sentidos
+y a cuatro instantes; deriva acotada durante 120 s. `npm run check` pasa con
+179 tests y las 58 pruebas E2E de Chromium escritorio/móvil pasan. Se mantienen
+tres draws del Tesseracto, un material y los presupuestos de geometría y ruido.
+La escala compensa la profundidad adicional para conservar aproximadamente
+55 px de radio, con centro (735.2, 231.5). No cambian cámara, posición, Gargantúa
+ni otros destinos. Capturas de esta revisión: `output/playwright/tesseract-rear-*`.
+
 ## 8. Herramientas
 | script | para qué |
 |---|---|

@@ -133,9 +133,17 @@ describe("FlatWorldBody", () => {
       container.querySelector('[data-flat-part="outer-frame"]'),
     ).not.toBeNull();
     expect(
-      container.querySelectorAll('[data-flat-part="inner-frame"]').length,
-    ).toBeGreaterThanOrEqual(2);
-    expect(container.querySelector('[data-flat-part="core"]')).not.toBeNull();
+      container.querySelector('[data-flat-part="rear-frame"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelectorAll('[data-flat-part="inner-frame"]'),
+    ).toHaveLength(4);
+    expect(
+      container.querySelectorAll('[data-flat-part="side-panel"]'),
+    ).toHaveLength(2);
+    // El hueco deja pasar el cielo; no es un disco negro que lo tapa.
+    expect(container.querySelector('[data-flat-part="core"]')).toBeNull();
+    expect(container.querySelector('circle[cx="60"][cy="62"]')).toBeNull();
     /*
       Nada de frío dentro del dibujo: el cuerpo es grafito + tungsteno y no
       usa el secundario cian de su ficha. (El envoltorio sí publica la variable

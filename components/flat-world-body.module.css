@@ -45,8 +45,29 @@
   overflow: visible;
 }
 
+/*
+  El Tesseracto es el único cuerpo que no paga el halo frío.
+
+  El envoltorio pinta detrás de cada dibujo un resplandor y dos sombras con
+  `--flat-secondary`, que en casi todos es el cian de navegación. Aquí eso
+  contradecía el cuerpo entero: la escena lo construye en grafito y tungsteno y
+  no usa ni una vez el secundario, y aun así el fallback salía envuelto en una
+  bruma azul que le lavaba el grafito y le robaba el ámbar del centro.
+
+  La sombra usa `--flat-accent` y sigue las vigas. El resplandor circular de
+  fondo se retira para que el cielo siga siendo visible a través del centro.
+*/
 .tesseract {
   --flat-size: clamp(4.7rem, 5.75vw, 6.9rem);
+
+  filter:
+    drop-shadow(0 0 0.34rem color-mix(in srgb, var(--flat-accent) 18%, transparent))
+    drop-shadow(0 0 1.5rem rgba(0, 0, 0, 0.9));
+}
+
+.tesseract::before {
+  /* El halo sigue las vigas; ninguna mancha rellena el vacío central. */
+  content: none;
 }
 
 .station {
@@ -83,6 +104,13 @@
     drop-shadow(0 0 1.1rem color-mix(in srgb, var(--flat-secondary) 24%, transparent))
     drop-shadow(0 0 1.8rem rgba(0, 0, 0, 0.82));
   opacity: 1;
+}
+
+/* Después del estado común para conservar el tungsteno también al enfocar. */
+:global(.system-map__slot:not([data-target-state="idle"])) .tesseract {
+  filter:
+    drop-shadow(0 0 0.34rem color-mix(in srgb, var(--flat-accent) 52%, transparent))
+    drop-shadow(0 0 1.6rem rgba(0, 0, 0, 0.86));
 }
 
 @media (max-width: 60rem) {
