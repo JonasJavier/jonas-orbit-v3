@@ -630,7 +630,14 @@ const BODY_FRAGMENT = /* glsl */ `
         píxeles y vuelve a ser una línea; para que no encienda la barra entera,
         lo que baja es su fuerza, no su ancho.
       */
-      float chamfer = smoothstep(0.29, 0.5, across);
+      // El filo integra la huella del píxel: no desaparece entre muestras
+      // cuando una cara oblicua queda por debajo del píxel en el hero.
+      float faceFootprint = fwidth(vUv.x);
+      float pixelAcross = min(faceFootprint * 0.5, 0.25);
+      float chamfer = smoothstep(0.29 - pixelAcross, 0.5 + pixelAcross, across);
+      // Al no resolverse el ancho de una cara, usamos la cobertura media del
+      // bisel (21 %). Así el especular no convierte vigas finas en cuentas.
+      chamfer = mix(chamfer, 0.21, smoothstep(0.16, 0.48, faceFootprint));
       /*
         Grano de laminación, de frecuencia MUY baja: menos de un ciclo de lado a
         lado de la barra. A tamaño de Hero una barra mide siete píxeles, y a esa
@@ -751,13 +758,37 @@ const BODY_FRAGMENT = /* glsl */ `
       materialOcclusion = 1.0 - cavity * 0.86;
 
       /*
+        DOS COSAS QUE SÓLO EXISTEN EN ESTE CUERPO, y las dos van aquí porque las
+        usan los tres escalones de dentro.
+
+        ── El sesgo hacia el vacío ─────────────────────────────────────────────
+        La cavidad ya sabe qué caras miran al eje. Reutilizarlo para el calor hace
+        que el tungsteno se encienda POR DENTRO de cada marco y se apague por
+        fuera: el brillo deja de ser un color de la pieza y pasa a ser lo que se
+        ve al asomarse. Es la diferencia entre un marco pintado de ámbar y un
+        marco con algo encendido detrás.
+
+        ── La respiración ──────────────────────────────────────────────────────
+        Tres senos de periodo distinto —19, 14 y 11 segundos— y AMPLITUD
+        CRECIENTE hacia adentro: la caja no respira, el primer marco apenas, el
+        del fondo es el que late. Va en el shader y no en el modelo a propósito:
+        es luz, no geometría, así que no toca la silueta, no puede desalinear
+        una pieza y no cuesta ni una matriz. Y como pasa por el escalado global
+        de emisivos, el banco de bloom-off la apaga con todo lo demás.
+      */
+      float inward = 0.55 + 0.9 * cavity;
+      float breath2 = 0.86 + 0.14 * sin(uTime * 0.33);
+      float breath3 = 0.80 + 0.20 * sin(uTime * 0.45 + 1.7);
+      float breath4 = 0.70 + 0.30 * sin(uTime * 0.57 + 3.1);
+
+      /*
         LA JERARQUÍA LUMINOSA, que es la mitad del diseño de este cuerpo.
 
-        La dirección la pidió en una escala: caja 0 %, marco 2 ~10 %, marco 3
-        ~20 %, marco 4 ~40 %. No son valores literales de un uniform, es el
-        orden: la luz sube hacia adentro y por eso el ojo entra. Al revés —o
-        plano, que era el fallo de la versión anterior— la estructura entera se
-        enciende a la vez y vuelve a salir un wireframe grueso.
+        La dirección la pidió en una escala: caja ~10, marco 2 ~18, marco 3 ~28,
+        marco 4 ~40 y el filo del vacío ~55. No son valores literales de un
+        uniform, es el orden: la luz sube hacia adentro y por eso el ojo entra.
+        Al revés —o plano, que era el fallo de la versión anterior— la estructura
+        entera se enciende a la vez y vuelve a salir un wireframe grueso.
 
         Cada escalón sube TRES cosas juntas: el grafito se aclara y se
         entibia, el filo devuelve más, y el tungsteno emite más. Con una sola de
@@ -773,24 +804,41 @@ const BODY_FRAGMENT = /* glsl */ `
         brilla, y al acercar la cámara sigue siendo un degradado y no un borde
         duro.
       */
-      if (vSurfaceMask > 3.5) {
+      if (vSurfaceMask > 4.5) {
+        /*
+          EL FONDO: marco trasero y tirantes de fuga.
+
+          Es la única máscara que ROMPE el orden de brillo, y a propósito: 0 a 4
+          suben hacia adentro, y ésta se sale de la escala por abajo. Lo que
+          está detrás tiene que llegar MÁS APAGADO que la caja de delante o no
+          se lee como fondo, se lee como calco. Grafito casi negro, sin cobre en
+          el albedo, sin emisivo y con el filo apenas encendido: sólo lo justo
+          para que sus esquinas se despeguen del cielo cuando asoman por los
+          lados.
+        */
+        albedo = mix(vec3(0.025, 0.026, 0.029), vec3(0.07, 0.069, 0.066), grain * 0.5);
+        albedo *= 0.6 + 0.5 * across;
+        gloss = mix(0.05, 0.5, chamfer);
+        specularPower = mix(72.0, 26.0, chamfer);
+        specularStrength = 0.05 + chamfer * 0.48;
+      } else if (vSurfaceMask > 3.5) {
         /*
           MARCO 4 — el fondo del recorrido. Es el más pequeño y el más caliente:
           la única luz fuerte del cuerpo, y está al final. Desde el Hero se lee
           como una brasa dentro del vacío; al acercar la cámara se descubre que
           lo que brilla es una ranura embutida en una viga, no un núcleo.
         */
-        albedo = mix(vec3(0.032, 0.026, 0.02), vec3(0.084, 0.068, 0.048), grain * 0.5);
+        albedo = mix(vec3(0.038, 0.03, 0.022), vec3(0.1, 0.08, 0.055), grain * 0.5);
         albedo *= 0.4 + 0.85 * across;
-        albedo = mix(albedo, vec3(0.62, 0.44, 0.25), chamfer * 0.26);
-        gloss = mix(0.09, 0.64, chamfer);
-        specularPower = mix(58.0, 21.0, chamfer);
-        specularStrength = 0.15 + chamfer * 0.95;
+        albedo = mix(albedo, vec3(0.72, 0.5, 0.28), chamfer * 0.3);
+        gloss = mix(0.1, 0.72, chamfer);
+        specularPower = mix(54.0, 19.0, chamfer);
+        specularStrength = 0.18 + chamfer * 1.25;
 
         float glow = 1.0 - smoothstep(0.1, 0.42, across);
         float run = smoothstep(0.12, 0.3, along) * (1.0 - smoothstep(0.7, 0.9, along));
-        albedo = mix(albedo, vec3(0.02, 0.014, 0.01), glow * 0.5);
-        emissive = vec3(1.0, 0.52, 0.2) * glow * run * 0.56;
+        albedo = mix(albedo, vec3(0.024, 0.016, 0.011), glow * 0.5);
+        emissive = vec3(1.0, 0.52, 0.2) * glow * run * inward * breath4 * 0.62;
       } else if (vSurfaceMask > 2.5) {
         /*
           MARCO 3 y la viga imposible. Escalón intermedio: grafito ya tibio y
@@ -798,33 +846,34 @@ const BODY_FRAGMENT = /* glsl */ `
           este acabado a propósito — así sus dos tramos se reconocen como LA
           MISMA pieza, que es lo que hace que la discontinuidad duela.
         */
-        albedo = mix(vec3(0.026, 0.023, 0.02), vec3(0.068, 0.06, 0.05), grain * 0.5);
+        albedo = mix(vec3(0.03, 0.026, 0.021), vec3(0.08, 0.07, 0.056), grain * 0.5);
         albedo *= 0.45 + 0.8 * across;
-        albedo = mix(albedo, vec3(0.56, 0.44, 0.29), chamfer * 0.22);
-        gloss = mix(0.075, 0.58, chamfer);
-        specularPower = mix(60.0, 22.0, chamfer);
-        specularStrength = 0.12 + chamfer * 0.72;
+        albedo = mix(albedo, vec3(0.62, 0.48, 0.31), chamfer * 0.26);
+        gloss = mix(0.08, 0.66, chamfer);
+        specularPower = mix(56.0, 20.0, chamfer);
+        specularStrength = 0.14 + chamfer * 0.98;
 
         float glow = 1.0 - smoothstep(0.1, 0.4, across);
         float run = smoothstep(0.16, 0.34, along) * (1.0 - smoothstep(0.66, 0.86, along));
-        albedo = mix(albedo, vec3(0.018, 0.014, 0.011), glow * 0.5);
-        emissive = vec3(1.0, 0.55, 0.23) * glow * run * 0.26;
+        albedo = mix(albedo, vec3(0.02, 0.016, 0.012), glow * 0.5);
+        emissive = vec3(1.0, 0.55, 0.23) * glow * run * inward * breath3 * 0.3;
       } else if (vSurfaceMask > 1.5) {
         /*
           MARCO 2 — el primer paso hacia dentro. Apenas se separa de la caja:
           un grafito un punto más claro y una costura ámbar corta. Si aquí ya
           hubiera brasa, el recorrido se acabaría en el primer escalón.
         */
-        albedo = mix(vec3(0.02, 0.02, 0.022), vec3(0.052, 0.052, 0.056), grain * 0.5);
+        albedo = mix(vec3(0.023, 0.022, 0.023), vec3(0.06, 0.058, 0.058), grain * 0.5);
         albedo *= 0.5 + 0.72 * across;
-        gloss = mix(0.06, 0.5, chamfer);
-        specularPower = mix(64.0, 24.0, chamfer);
-        specularStrength = 0.09 + chamfer * 0.56;
+        albedo = mix(albedo, vec3(0.5, 0.44, 0.34), chamfer * 0.16);
+        gloss = mix(0.065, 0.58, chamfer);
+        specularPower = mix(60.0, 22.0, chamfer);
+        specularStrength = 0.1 + chamfer * 0.74;
 
         float glow = 1.0 - smoothstep(0.12, 0.4, across);
         float run = smoothstep(0.22, 0.4, along) * (1.0 - smoothstep(0.6, 0.8, along));
-        albedo = mix(albedo, vec3(0.014, 0.014, 0.016), glow * 0.5);
-        emissive = vec3(1.0, 0.58, 0.26) * glow * run * 0.1;
+        albedo = mix(albedo, vec3(0.016, 0.016, 0.018), glow * 0.5);
+        emissive = vec3(1.0, 0.58, 0.26) * glow * run * inward * breath2 * 0.15;
       } else if (vSurfaceMask > 0.5) {
         /*
           Nodos. Acero pulido y facetado: las piezas que devuelven un destello
@@ -833,10 +882,10 @@ const BODY_FRAGMENT = /* glsl */ `
           por lo demás no emite nada: la dirección pide la caja casi a oscuras y
           la luz concentrada dentro.
         */
-        albedo = vec3(0.052, 0.056, 0.066);
-        gloss = 0.92;
-        specularPower = 34.0;
-        specularStrength = 1.1;
+        albedo = vec3(0.06, 0.064, 0.074);
+        gloss = 0.95;
+        specularPower = 30.0;
+        specularStrength = 1.35;
       }
     } else if (uKind == 3) {
       /*
@@ -1312,7 +1361,18 @@ const BODY_FRAGMENT = /* glsl */ `
                   * (0.04 + gloss * 0.96)
                   * day
                   * materialOcclusion;
-      color += mix(key, vec3(0.9, 0.86, 0.78), 0.2) * sweep * 0.16;
+      /*
+        Y el barrido TAMBIÉN escalona. Con un solo factor para todo el cuerpo,
+        la caja devolvía tanta reflexión ancha como los marcos de dentro y la
+        jerarquía se aplanaba justo en el término que más superficie toca. La
+        capa de fondo casi no participa, la caja poco, y los tres marcos
+        interiores el doble: la separación entre fuera y dentro deja de
+        depender sólo del emisivo.
+      */
+      float sweepGain = vSurfaceMask > 4.5
+        ? 0.14
+        : (vSurfaceMask > 1.5 ? 0.32 : 0.15);
+      color += mix(key, vec3(0.92, 0.88, 0.8), 0.2) * sweep * sweepGain;
     }
 
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
@@ -1326,8 +1386,27 @@ const BODY_FRAGMENT = /* glsl */ `
       devolvía el marco beige. A 0.06 el cuerpo se sigue separando del negro
       pero el filo lo dibuja el material, no el contorno.
     */
-    color += key * warmRim * (uKind == 2 ? 0.035 : 0.18);
-    color += materialFill * fresnel * 0.32;
+    /*
+      Y el filo del Tesseracto se reparte igual que el barrido. El tercio del
+      rim común valía cuando todo el cuerpo era una sola familia de material;
+      con cinco, un valor único volvía a igualar el fondo con el centro. El
+      marco trasero casi no lo paga —tiene que quedarse en penumbra—, la caja
+      paga poco, y los marcos interiores el triple: es lo que les da el canto
+      encendido que los separa entre sí a 55 px.
+    */
+    float tesseractRim = vSurfaceMask > 4.5
+      ? 0.075
+      : (vSurfaceMask > 1.5 ? 0.115 : 0.045);
+    color += key * warmRim * (uKind == 2 ? tesseractRim : 0.18);
+    /*
+      Y el relleno de canto tampoco es igual para todos dentro del Tesseracto.
+      Este término levanta el borde de CUALQUIER pieza mire donde mire, así que
+      es el que más trabajaba en contra del marco trasero: por muy negro que sea
+      su albedo, un canto levantado por igual lo devolvía al mismo plano que la
+      caja de delante y el fondo dejaba de leerse como fondo.
+    */
+    float fillRim = uKind == 2 && vSurfaceMask > 4.5 ? 0.26 : 0.32;
+    color += materialFill * fresnel * fillRim;
     color += emissive;
 
     /*
@@ -2693,26 +2772,9 @@ function boxPoint(x: number, y: number, z: number): THREE.Vector3 {
 }
 
 /**
- * Los tres marcos de la recursión, de fuera hacia dentro.
- *
- * La progresión es geométrica (0.585 → 0.415 → 0.285, o sea ~0.71 por paso) y
- * eso NO es un detalle: una serie con razón constante es lo que el ojo
- * reconoce como «lo mismo, más adentro» en vez de como tres piezas distintas.
- * La dirección lo pidió literalmente —marco, otro espacio dentro, otro dentro,
- * vacío— y una razón constante es su forma numérica.
- *
- * Lo que rompe el túnel son los otros campos: cada marco gira en sentido
- * contrario al anterior (`twist`), se inclina fuera de su plano (`tilt`), se
- * sale unas centésimas del eje (`shift`) y reparte anchos distintos entre sus
- * cuatro barras (`widths`). Sin eso saldría un túnel cuadrado, que es
- * exactamente lo que la dirección prohíbe.
- *
- * Los giros son PEQUEÑOS —de 4 a 6°, unos 10° entre marcos consecutivos— y ésa
- * es la mitad difícil del ajuste. Con 7, −9 y 6 grados la diferencia entre
- * marcos llegaba a 16° y, sumada a los 21° que el conjunto ya gira contra la
- * caja, el interior dejaba de leerse como una serie: parecían dos cuadrados
- * girados sin relación. La rareza tiene que notarse y no puede tapar la
- * recursión, que es literalmente lo que pidió dirección.
+ * Cuatro marcos en progresión geométrica: 0.68 → 0.50 → 0.345 → 0.225.
+ * El último añade profundidad a tamaño de hero sin tapar el hueco. Sus giros,
+ * inclinaciones y desplazamientos alternos desencajan el túnel de la caja.
  */
 interface TesseractRing {
   halfX: number;
@@ -2760,7 +2822,26 @@ const TESSERACT_RINGS = [
     tilt: [-0.035, 0.06],
     widths: [1.04, 0.97, 1.06, 0.95],
   },
+  {
+    halfX: 0.225,
+    halfZ: 0.205,
+    y: -0.66,
+    twist: (-3 * Math.PI) / 180,
+    width: 0.052,
+    depth: 0.055,
+    shift: [-0.006, 0.014],
+    tilt: [0.025, -0.025],
+    widths: [1.02, 0.97, 1.03, 0.98],
+  },
 ] as const satisfies readonly TesseractRing[];
+
+/**
+ * La espalda pertenece a la misma caja que el frente. Sus cuatro lados y
+ * cuatro tirantes cierran el volumen; la arista imposible sigue en el frente.
+ * El desfase en profundidad se ve por los laterales, no por otro rectángulo
+ * girado que compita con la recursión.
+ */
+const TESSERACT_BACK_Y = -0.38;
 
 /**
  * Las cuatro esquinas de un marco, con su giro, inclinación y desplazamiento.
@@ -2785,60 +2866,19 @@ function ringCorners(ring: TesseractRing): THREE.Vector3[] {
 }
 
 /**
- * Tesseracto: un cubo imposible que por dentro no termina.
+ * Tesseracto: arquitectura de grafito con un túnel que se repliega hacia dentro.
  *
- * ── De dónde viene ──────────────────────────────────────────────────────────
+ * El frente interrumpido, la espalda completa y cuatro tirantes comparten
+ * esquinas. Dos paneles laterales dan espesor visible sin tapar el túnel.
+ * La referencia del dueño pide volumen construido y profundidad: la espalda
+ * ya no es un rectángulo independiente tan oscuro que parezca inexistente.
  *
- * Primero fue un wireframe brillante («demo de Three.js»); después dos placas
- * torsionadas, que se dejaban entender; después siete marcos en caída con cinco
- * pórticos y cinco extensiones. Esa última fallaba por acumulación: a 55 px de
- * radio, diecisiete elementos independientes no suman arquitectura recursiva,
- * suman LÍNEAS CRUZADAS. Y las extensiones largas repartidas en cinco
- * direcciones convertían la silueta en una estrella o una antena.
+ * Cuatro marcos interiores disminuyen de tamaño y alternan orientación; el
+ * calor aumenta hacia el fondo. La cáscara permanece fija, y sólo los dos
+ * grupos interiores derivan. Se conservan la arista desplazada, el puente
+ * inconcluso y el nodo huérfano como contradicciones legibles.
  *
- * ── La regla de esta versión ────────────────────────────────────────────────
- *
- * **Menos piezas, más profundidad.** Cuatro capas y sólo cuatro:
- *
- *   1.   una CAJA exterior de vigas gruesas, que da la silueta y el volumen;
- *   2-4. tres MARCOS en progresión geométrica cayendo hacia dentro;
- *
- * y en el centro, vacío de verdad por el que pasan las estrellas.
- *
- * La complejidad va DENTRO. Fuera hay una caja de siete aristas —marco de
- * delante y techo—, un panel de suelo al fondo que le da cara y masa, y dos
- * espolones cortos que mueren dentro de la esfera de sus propias esquinas, así
- * que no tocan la silueta ni el radio publicado.
- *
- * ── Las dos contradicciones ─────────────────────────────────────────────────
- *
- * Dos fuertes y legibles, no veinte pequeñas. Una para cada distancia:
- *
- * · **La arista partida**, que es la del Hero. Uno de los cuatro lados del
- *   marco de delante se interrumpe a media altura y continúa desplazado hacia
- *   dentro y a otra profundidad: la arista se mete detrás del cuerpo y sale por
- *   donde no debía. Cambia la SILUETA, así que se lee a 55 px.
- * · **El puente que no llega**, que es la de cerca. Baja del tercer marco hacia
- *   el cuarto, se para al 58 % del camino y termina en un nodo facetado
- *   flotando en el aire. Un destello sin soporte, justo donde la barra debería
- *   continuar.
- *
- * Y un tercer detalle silencioso: la caja está girada contra el eje de la
- * recursión, así que el espacio de dentro no está alineado con lo que lo
- * contiene.
- *
- * Hubo una tercera, una viga que cruzaba el cuerpo entera y reaparecía
- * desplazada al otro lado. Se retiró: a tamaño de Hero sus dos tramos no se
- * leían como una viga rota sino como dos palos sueltos junto al cuerpo, y el
- * precio —silueta sucia— era mayor que lo que aportaba.
- *
- * ── Luz ─────────────────────────────────────────────────────────────────────
- *
- * La jerarquía luminosa lleva el ojo hacia adentro y es la mitad del diseño:
- * la caja no emite nada —sólo devuelve algún filo metálico—, y las ranuras de
- * tungsteno suben marco a marco hasta el fondo. Fuera oscuro, dentro brasa.
- *
- * Tres draws con un solo material opaco y sin texturas.
+ * Tres draws, un material opaco, sin texturas ni cambios de cámara o posición.
  */
 function tesseractModel(input: SceneBodyInput): BodyModel {
   /*
@@ -2849,7 +2889,7 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   const structure = bodyMaterial(input, KIND.tesseract);
   const root = new THREE.Object3D();
 
-  const [ring2, ring3, ring4] = TESSERACT_RINGS;
+  const [ring2, ring3, ring4, ring5] = TESSERACT_RINGS;
   const [corners2, corners3, corners4] = TESSERACT_RINGS.map(ringCorners);
 
   /** Una pieza de la caja, llevada del espacio de la caja al del túnel. */
@@ -2885,57 +2925,36 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   */
   const shell = mergedMesh(
     [
-      /*
-        La caja, incompleta a propósito — y la incompletitud está ELEGIDA, no
-        repartida al azar.
-
-        Quedan SIETE aristas de las doce, y las siete están elegidas — con la
-        proyección medida, no a ojo (ver más abajo):
-
-        · el marco de delante entero —cuatro lados, uno de ellos partido—, que
-          es lo que sostiene la silueta y por tanto lo último que se toca;
-        · los dos montantes del lado por el que la caja fuga en pantalla y la
-          arista del fondo que los une: un TECHO POCO PROFUNDO hacia arriba y a
-          la izquierda.
-
-        Elegir el lado NO es indiferente, y costó dos capturas. La caja fuga
-        hacia arriba-izquierda, así que un techo montado sobre cualquier otra
-        arista se dibuja POR ENCIMA del interior en vez de por fuera: era el haz
-        de barras paralelas que salía a la derecha. Montado sobre la arista
-        superior, la fuga cae fuera del marco y se lee como espesor.
-
-        Marco más techo es exactamente el dibujo que pidió dirección para la
-        silueta: un rectángulo con su fuga, ancho, alto y fondo de un vistazo.
-        Todo lo demás sobra, y sobra por una razón medida en captura: una caja
-        completa proyecta las aristas de su cara trasera POR DENTRO de la
-        delantera, justo encima de donde vive la recursión. Con doce aristas los
-        tres marcos interiores competían con cuatro líneas que no eran suyas y
-        el centro se volvía un enredo; con nueve seguía habiendo un haz de
-        barras paralelas a la derecha. Con siete, el interior queda limpio para
-        lo que tiene que verse — y la caja no cierra, que es lo que se buscaba.
-
-        La PROFUNDIDAD de la caja también bajó, de 0.72 a 0.46, y por lo mismo:
-        cuanto más honda, más lejos cae el techo de su marco y más se parecen
-        las dos aristas largas a dos barras sueltas. Poco fondo se lee como
-        espesor —que es lo que tiene que parecer— y deja el sitio hacia atrás
-        para la recursión, que sí lo usa: los dos marcos más hondos salen por
-        detrás de la caja. Lo de dentro es más profundo que lo de fuera, y eso
-        también es parte del truco.
-      */
+      // Frente: tres lados continuos y el cuarto interrumpido más abajo.
       ...boxFrame(TESSERACT_BOX_HALF, TESSERACT_BOX_SECTION, [
-        true,
-        false,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        false,
+        true, false, false, false,
+        false, false, false, false,
+        true, false, true, false,
       ]).map(tilted),
+      // Marco posterior completo. Deja un hueco central y conserva las cuatro
+      // esquinas que permiten leer una espalda, también en la zona izquierda.
+      ...apertureFrame(1.02, 0.95, 0.135, 0.135).map((part) =>
+        surfaceMasked(tilted(placed(part, [0, TESSERACT_BACK_Y, 0])), 5),
+      ),
+      // Cada esquina delantera llega a su esquina posterior correspondiente.
+      ...BOX_QUADRANTS.map(([x, z]) => surfaceMasked(
+        strut(
+          boxPoint(x * 1.02, 0.23, z * 0.95),
+          boxPoint(x * 1.02, TESSERACT_BACK_Y, z * 0.95),
+          0.115,
+        ),
+        5,
+      )),
+      // Dos caras de metal dan espesor y superficie donde leer la luz. Son
+      // laterales de la caja: ninguna placa ocupa el hueco del túnel.
+      surfaceMasked(tilted(placed(
+        new THREE.BoxGeometry(1.86, 0.61, 0.045),
+        [0, -0.075, -0.95],
+      )), 5),
+      surfaceMasked(tilted(placed(
+        new THREE.BoxGeometry(0.045, 0.45, 1.62),
+        [-1.02, -0.095, 0.08],
+      )), 5),
       /*
         LA ARISTA PARTIDA, y va en el MARCO DE DELANTE a propósito.
 
@@ -3053,11 +3072,11 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   root.add(mid);
 
   /*
-    EL FONDO: la cuarta capa, donde vive el calor del objeto.
+    EL FONDO: los dos últimos marcos comparten la deriva y el tungsteno.
 
-    Es el marco más pequeño y el más caliente: sus ranuras de tungsteno son la
-    única luz fuerte del cuerpo y están al final del recorrido, que es lo que
-    lleva el ojo hacia adentro. Dentro de él no hay nada — ni núcleo, ni
+    Son los marcos más pequeños y calientes: sus ranuras de tungsteno son la
+    luz fuerte del cuerpo y están al final del recorrido, que es lo que
+    lleva el ojo hacia adentro. Dentro del último no hay nada — ni núcleo, ni
     reactor, ni velo. El cilindro central queda libre en toda la altura y por
     ahí pasan las estrellas.
   */
@@ -3065,6 +3084,7 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   const deepMesh = mergedMesh(
     [
       ...ringAt(ring4).map((part) => surfaceMasked(part, 4)),
+      ...ringAt(ring5).map((part) => surfaceMasked(part, 4)),
       strut(corners3[0], corners4[0], 0.048),
       /*
         EL PUENTE QUE NO LLEGA. Se detiene al 58 % del camino y en su extremo
@@ -3094,7 +3114,7 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
      capas, cuánto puente, cuánta contradicción y que el centro esté vacío— sin
      acoplarse a cada coordenada artística. */
   root.userData.tesseractArchitecture = {
-    /* La caja más los tres marcos: cuatro capas y ni una más. */
+    /* Caja más cuatro marcos interiores; la espalda pertenece a la caja. */
     visualLayers: 1 + TESSERACT_RINGS.length,
     recursiveRings: TESSERACT_RINGS.length,
     structuralBridges: 3,
@@ -3102,6 +3122,10 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
     interruptedBeams: 2,
     /* Marcos 2, 3 y 4: tres escalones de tungsteno, de fuera hacia dentro. */
     emissiveTiers: 3,
+    /* Frente, interior y FONDO. Sin esto el cuerpo se leía sólo por delante. */
+    rearFrame: true,
+    depthRails: 4,
+    sidePanels: 2,
     centralVoid: true,
     closedOuterCube: false,
   };
@@ -3110,27 +3134,55 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
     root,
     materials: [structure],
     /*
-      DERIVA AMBIENTAL, no animación.
+      DERIVA AMBIENTAL, no animación — y el reparto ES la decisión.
 
-      El cuerpo no gira sobre su eje —`SPIN_RATE.tesseract` es cero— y en reposo
-      tiene que funcionar prácticamente quieto: la identidad sale de la
-      geometría, no de hacerla girar como un salvapantallas. Lo que queda son
-      dos oscilaciones de ±3° y centésimas de unidad con periodos
-      inconmensurables (11.3, 9.4, 13.7 y 8.2 s): los marcos medios avanzan
-      mientras el fondo retrocede, así que las relaciones entre piezas se
-      rehacen sin que ninguna configuración dure — y sin que la caja se mueva ni
-      un grado.
+      El cuerpo no gira sobre su eje: `SPIN_RATE.tesseract` es cero, y sigue
+      siéndolo. Un giro continuo del conjunto convierte cualquier objeto en un
+      salvapantallas, y además afirma que tiene un eje, un dentro y un fuera
+      estables, que es justo lo que este diseño niega.
+
+      Lo que sí tiene es un gradiente de vida hacia adentro, que es el mismo
+      gradiente que la luz:
+
+        caja y marco trasero  quietos, ni un grado — son la silueta
+        marcos medios         ±3° de guiñada, cabeceo subgrado, ±1.8 % de escala
+        marco del fondo       ±3° al revés, ±3.5 % de escala, más cabeceo
+        filo del vacío        el pulso de emisión, que va en el shader
+
+      Los canales combinan nueve periodos (11.3, 9.4, 21.3, 23.1, 13.7, 8.2,
+      15.1, 19.7 y 17.6 s), así que ninguna configuración se
+      repite en la escala en que alguien mira el hero y no aparece ningún
+      compás. Los marcos medios avanzan mientras el fondo retrocede: lo que
+      cambia no es la posición de cada pieza sino la RELACIÓN entre ellas, que
+      es lo que hace que el espacio de dentro parezca inestable con
+      desplazamientos de dos píxeles.
+
+      La ESCALA es el recurso que sustituye a lo que aquí no se puede hacer.
+      Mover una pieza hacia el fondo no se ve —el eje del túnel apunta a la
+      cámara, así que una unidad de profundidad son nueve centésimas en
+      pantalla—, pero respirar de tamaño produce exactamente la lectura que se
+      buscaba: el interior acercándose y alejándose. Cuesta un `setScalar`.
     */
     animate(seconds) {
       const wave = (period: number, phase = 0) =>
         Math.sin((seconds * Math.PI * 2) / period + phase);
 
-      mid.rotation.set(0, -0.1 + wave(11.3) * 0.055, 0);
+      mid.rotation.set(
+        wave(21.3, 0.6) * 0.014,
+        -0.1 + wave(11.3) * 0.055,
+        wave(23.1, 2.2) * 0.011,
+      );
       mid.position.set(0, wave(9.4, 1) * 0.018, 0);
+      mid.scale.setScalar(1 + wave(23.1) * 0.018);
 
       // El fondo va en contra: cuando los medios avanzan, retrocede.
-      deep.rotation.set(0, 0.06 + wave(13.7, Math.PI) * 0.04, 0);
-      deep.position.set(0, wave(8.2) * 0.012, 0);
+      deep.rotation.set(
+        wave(15.1, 2.4) * 0.022,
+        0.06 + wave(13.7, Math.PI) * 0.055,
+        wave(19.7, 1.1) * 0.018,
+      );
+      deep.position.set(0, wave(8.2) * 0.017, 0);
+      deep.scale.setScalar(1 + wave(17.6, 0.4) * 0.035);
     },
   };
 }
@@ -3656,7 +3708,7 @@ const MODEL_SCALE: Record<WorldStructuralData["visual"], number> = {
     diferencia entre agrandar un objeto y hacerlo legible; la dirección pidió
     resolverlo por lo segundo.
   */
-  tesseract: 1.153,
+  tesseract: 1.138,
   /*
     La Ranger nueva es MÁS COMPACTA que la anterior —fuselaje de verdad en vez
     de dos alas anchas— así que su esfera envolvente cayó de 4.04 a 2.70 rs con

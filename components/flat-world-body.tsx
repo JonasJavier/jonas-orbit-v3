@@ -24,62 +24,127 @@ const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
 ]);
 
 /**
- * Tesseracto en `flat`: la misma arquitectura imposible del modelo 3D.
- *
- * Una caja de vigas gruesas con su techo en fuga, y dentro tres marcos
- * anidados que caen hacia un vacío. La luz sube hacia adentro —la caja no
- * emite, el último marco es la brasa— y una arista del marco de delante se
- * parte y continúa desplazada, que es la contradicción que también se ve en la
- * escena. Grafito y tungsteno; nada de cian: este cuerpo no usa el secundario
- * frío de su ficha.
+ * Esquema estático del Tesseracto: conserva el escorzo del hero, la espalda
+ * completa, dos laterales, cuatro marcos interiores y el vacío central.
+ * Grafito con filos cálidos; el estado de selección tampoco introduce cian.
  */
 function Tesseract() {
   return (
     <svg viewBox="0 0 120 120" focusable="false">
-      <circle cx="60" cy="60" r="20" fill="var(--flat-accent)" opacity="0.06" />
+      <defs>
+        <linearGradient id="flat-tesseract-side" x1="0" y1="0" x2="1" y2="0">
+          <stop stopColor="#171b20" />
+          <stop offset="0.62" stopColor="#38372f" />
+          <stop offset="1" stopColor="#20232a" />
+        </linearGradient>
+      </defs>
       <g fill="none" strokeLinecap="butt" strokeLinejoin="miter">
-        {/* El techo, que se va hacia atrás: es lo que da fondo a la caja. */}
-        <path d="M30 24 44 10M96 34 108 21" stroke="#22262b" strokeWidth="4.5" />
-        <path d="M44 10 108 21" stroke="#22262b" strokeWidth="4.5" />
-        {/* Marco exterior: tres lados enteros. */}
+        {/* Espalda completa: comparte esquinas y fuga con la caja delantera. */}
+        <path
+          data-flat-part="rear-frame"
+          d="M35.5 19.1 17.3 72 68.5 78.3 86.7 25.4Z"
+          stroke="#393a36"
+          strokeWidth="3.6"
+        />
+        {/* Laterales con superficie; el centro sigue abierto al cielo. */}
+        <path
+          data-flat-part="side-panel"
+          d="M35.5 19.1 17.3 72 25.3 85.3 43.5 32.4Z"
+          fill="url(#flat-tesseract-side)"
+        />
+        <path
+          data-flat-part="side-panel"
+          d="M17.3 72 68.5 78.3 76.5 91.6 25.3 85.3Z"
+          fill="#22262b"
+        />
+        <path
+          d="M43.5 32.4 35.5 19.1M25.3 85.3 17.3 72M76.5 91.6 68.5 78.3M94.7 38.7 86.7 25.4"
+          stroke="#44423a"
+          strokeWidth="3.2"
+        />
+        <path
+          d="M17.3 72 35.5 19.1 86.7 25.4"
+          stroke="#938571"
+          strokeWidth="0.9"
+          opacity="0.66"
+        />
+        {/* Dos espolones cortos y asimétricos. */}
+        <path d="M92 55 107 52" stroke="#242a31" strokeWidth="3.4" />
+        <path d="M33 74 19 79.5" stroke="#242a31" strokeWidth="3" />
+        {/* Marco exterior: izquierda, abajo y derecha de una pieza. */}
         <path
           data-flat-part="outer-frame"
-          d="M30 24 96 34 84 100 18 90Z"
-          stroke="#33383e"
-          strokeWidth="6"
+          d="M43.5 32.4 25.3 85.3 76.5 91.6 94.7 38.7"
+          stroke="#2a3038"
+          strokeWidth="4.6"
         />
-        {/* La arista partida: se interrumpe y sigue desplazada hacia dentro. */}
-        <path d="M30 24 56 28" stroke="#33383e" strokeWidth="6" />
-        <path d="M66 34 92 38" stroke="#33383e" strokeWidth="6" />
-        {/* Segundo marco: girado unos grados contra la caja, apenas cálido. */}
+        {/* Su cuarto lado, PARTIDO: se interrumpe y sigue fuera de eje. */}
+        <path d="M94.7 38.7 68 35.4" stroke="#2a3038" strokeWidth="4.6" />
+        <path d="M60 28.6 44.2 26.4" stroke="#2a3038" strokeWidth="4.6" />
+        {/*
+          EL FILO, que es lo que en la escena dibuja la figura.
+
+          Sobre un cielo azul oscuro, un grafito de valor 0.17 contra un fondo de
+          0.11 no separa nada: la primera versión de este dibujo salía toda de
+          losas grises indistinguibles. En 3D eso lo resuelve el chaflán —sólo se
+          enciende el canto cuya cara mira al disco— y aquí se resuelve igual:
+          una línea clara y fina sobre los DOS lados que en la escena miran a
+          Gargantúa, arriba y a la derecha. Ni contorno completo ni relleno: el
+          mismo recurso, traducido.
+        */}
+        <path
+          d="M94.7 38.7 76.5 91.6M94.7 38.7 68 35.4M60 28.6 44.2 26.4"
+          stroke="#8e949b"
+          strokeWidth="1.1"
+          opacity="0.75"
+        />
+        <path
+          d="M86.7 25.4 35.5 19.1"
+          stroke="#6d737a"
+          strokeWidth="0.9"
+          opacity="0.6"
+        />
+        {/* Marco 2: girado contra la caja, todavía casi frío. */}
         <path
           data-flat-part="inner-frame"
-          d="M39 38 87 45 79 89 31 82Z"
-          stroke="#3b3a36"
-          strokeWidth="4"
-        />
-        {/* Tercer marco: más adentro y ya tibio. */}
-        <path
-          data-flat-part="inner-frame"
-          d="M46 48 79 53 74 82 41 77Z"
-          stroke="var(--flat-accent)"
+          d="M86.6 69.3 69.5 35.9 33.4 54.7 50.5 88Z"
+          stroke="#4a4338"
           strokeWidth="3.4"
-          opacity="0.42"
         />
-        {/* Cuarto marco: el escalón caliente, alrededor del vacío. */}
+        <path
+          d="M86.6 69.3 69.5 35.9"
+          stroke="var(--flat-accent)"
+          strokeWidth="1.1"
+          opacity="0.4"
+        />
+        {/* Marco 3: ya tibio. */}
         <path
           data-flat-part="inner-frame"
-          d="M53 57 72 60 69 75 50 72Z"
+          d="M78.3 70.6 70.2 44.5 41.7 53.4 49.8 79.5Z"
           stroke="var(--flat-accent)"
-          strokeWidth="2.8"
-          opacity="0.85"
+          strokeWidth="3"
+          opacity="0.62"
         />
-        {/* El puente que no llega, y su nodo huérfano flotando. */}
-        <path d="M46 48 51 55" stroke="#3b3a36" strokeWidth="2.4" />
+        {/* Marco 4: la brasa, alrededor del vacío. */}
+        <path
+          data-flat-part="inner-frame"
+          d="M73.4 65.8 65.1 49.1 46.6 58.2 54.9 74.9Z"
+          stroke="var(--flat-accent)"
+          strokeWidth="2.6"
+        />
+        {/* Último escalón: refuerza la profundidad sin rellenar el hueco. */}
+        <path
+          data-flat-part="inner-frame"
+          d="M69.1 63.3 62.2 53.1 50.9 60.8 57.8 70.9Z"
+          stroke="var(--flat-accent)"
+          strokeWidth="1.9"
+        />
+        {/* El puente que no llega: se para a medio camino. */}
+        <path d="M41.7 53.4 47.5 56.3" stroke="#4a4338" strokeWidth="2.2" />
       </g>
-      {/* Vacío central: oscuro de verdad, por donde pasa el fondo. */}
-      <circle data-flat-part="core" cx="60.5" cy="66" r="7" fill="#04060a" />
-      <circle cx="51" cy="55" r="1.4" fill="var(--flat-accent)" opacity="0.9" />
+      {/* El centro queda sin relleno: el cielo atraviesa los marcos. */}
+      {/* Y el nodo huérfano del puente, flotando donde la barra debería seguir. */}
+      <circle cx="47.5" cy="56.3" r="1.5" fill="var(--flat-accent)" opacity="0.9" />
     </svg>
   );
 }

@@ -280,10 +280,16 @@ describe("cuerpos del Sistema Gargantúa", () => {
         toda la estructura encendida a la vez, o sea un wireframe grueso.
 
         Cáscara exterior: caja, panel y espolones (máscara 0), que no emiten
-        nada, más los nodos de acero pulido (máscara 1), que son el único
-        destello de fuera.
+        nada; los nodos de acero pulido (1), que son el único destello de fuera;
+        y el marco TRASERO con sus tirantes de fuga (5).
+
+        La 5 rompe el orden de brillo a propósito y por eso se comprueba aquí:
+        de 0 a 4 la escala sube hacia adentro, y el fondo se sale de ella por
+        abajo. Si alguien la reasigna a un valor intermedio, el marco trasero
+        pasa a estar tan iluminado como la caja de delante y deja de leerse
+        como fondo — que era justo el problema que vino a resolver.
       */
-      expect(maskOf("tesseract-shell")).toBe(1);
+      expect(maskOf("tesseract-shell")).toBe(5);
       // Marcos medios: el segundo (2) y el tercero (3) de la recursión, con sus
       // puentes en la máscara neutra.
       expect(maskOf("tesseract-mid-frames")).toBe(3);
@@ -294,18 +300,18 @@ describe("cuerpos del Sistema Gargantúa", () => {
       const architecture = tesseract.object.children[0].userData
         .tesseractArchitecture as Record<string, unknown>;
       expect(architecture).toMatchObject({
-        /*
-          CUATRO CAPAS Y NI UNA MÁS. La versión anterior tenía siete marcos,
-          cinco pórticos y cinco extensiones: diecisiete elementos que a 55 px
-          no sumaban recursión sino líneas cruzadas. Este número es el que
-          protege la decisión.
-        */
-        visualLayers: 4,
-        recursiveRings: 3,
+        // La referencia añade un escalón interior; la espalda y los laterales
+        // completan la caja sin convertirse en más capas de la recursión.
+        visualLayers: 5,
+        recursiveRings: 4,
         structuralBridges: 3,
         shellExtensions: 2,
         interruptedBeams: 2,
         emissiveTiers: 3,
+        // Frente, interior y FONDO: sin esto el cuerpo se leía sólo por delante.
+        rearFrame: true,
+        depthRails: 4,
+        sidePanels: 2,
         centralVoid: true,
         closedOuterCube: false,
       });
@@ -658,16 +664,28 @@ describe("cuerpos del Sistema Gargantúa", () => {
       const deep = body.object.getObjectByName("tesseract-deep-frames");
       if (!shell || !mid || !deep) throw new Error("faltan piezas");
 
+      body.object.updateMatrixWorld(true);
       const restPose = model.quaternion.clone();
       const shellPose = shell.matrixWorld.clone();
+      const midGroup = mid.parent;
+      const deepGroup = deep.parent;
+      if (!midGroup || !deepGroup) throw new Error("faltan grupos");
+
+      const interiorPose = () => ({
+        midYaw: midGroup.rotation.y,
+        midLift: midGroup.position.y,
+        deepYaw: deepGroup.rotation.y,
+        deepLift: deepGroup.position.y,
+        midPitch: midGroup.rotation.x,
+        midRoll: midGroup.rotation.z,
+        midScale: midGroup.scale.x,
+        deepPitch: deepGroup.rotation.x,
+        deepRoll: deepGroup.rotation.z,
+        deepScale: deepGroup.scale.x,
+      });
 
       // Muestreo de dos minutos: cubre varias vueltas del periodo más corto.
-      const poses: {
-        midYaw: number;
-        midLift: number;
-        deepYaw: number;
-        deepLift: number;
-      }[] = [];
+      const poses: ReturnType<typeof interiorPose>[] = [];
       for (let seconds = 0; seconds <= 120; seconds += 0.5) {
         body.spinAt(seconds);
         // El cuerpo entero no gira, y su cáscara tampoco se entera del tiempo.
@@ -675,24 +693,17 @@ describe("cuerpos del Sistema Gargantúa", () => {
         shell.updateMatrixWorld(true);
         expect(shell.matrixWorld.equals(shellPose), `t=${seconds}`).toBe(true);
 
-        const midGroup = mid.parent;
-        const deepGroup = deep.parent;
-        if (!midGroup || !deepGroup) throw new Error("faltan grupos");
-        poses.push({
-          midYaw: midGroup.rotation.y,
-          midLift: midGroup.position.y,
-          deepYaw: deepGroup.rotation.y,
-          deepLift: deepGroup.position.y,
-        });
+        // La respiración no puede ensanchar el blanco de clic ni la silueta.
+        expect(measuredRadius(body.object), `radio t=${seconds}`).toBeLessThanOrEqual(
+          body.radius + 0.00001,
+        );
+        poses.push(interiorPose());
       }
 
       // Determinista: el mismo instante da la misma pose, siempre.
       const at37 = { ...poses[74] };
       body.spinAt(37);
-      expect(mid.parent?.rotation.y).toBeCloseTo(at37.midYaw, 10);
-      expect(mid.parent?.position.y).toBeCloseTo(at37.midLift, 10);
-      expect(deep.parent?.rotation.y).toBeCloseTo(at37.deepYaw, 10);
-      expect(deep.parent?.position.y).toBeCloseTo(at37.deepLift, 10);
+      expect(interiorPose()).toEqual(at37);
 
       /*
         Y OSCILA. Cada canal vuelve a cruzar su punto de partida —hacia arriba y
@@ -704,6 +715,12 @@ describe("cuerpos del Sistema Gargantúa", () => {
         "midLift",
         "deepYaw",
         "deepLift",
+        "midPitch",
+        "midRoll",
+        "midScale",
+        "deepPitch",
+        "deepRoll",
+        "deepScale",
       ] as const) {
         const values = poses.map((pose) => pose[channel]);
         const mid = (Math.max(...values) + Math.min(...values)) / 2;
@@ -735,6 +752,37 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(deepYawSwing).toBeLessThan(0.15);
       expect(deepLiftSwing).toBeGreaterThan(0.01);
       expect(deepLiftSwing).toBeLessThan(0.04);
+      for (const pose of poses) {
+        for (const tilt of [pose.midPitch, pose.midRoll, pose.deepPitch, pose.deepRoll]) {
+          expect(Math.abs(tilt)).toBeLessThan(0.026); // Cabeceo menor de 1.5°.
+        }
+        expect(Math.abs(pose.midScale - 1)).toBeLessThan(0.02);
+        expect(Math.abs(pose.deepScale - 1)).toBeLessThan(0.04);
+      }
+    } finally {
+      disposeBody(body);
+    }
+  });
+
+  it("deja atravesar el túnel al completar la espalda y sus laterales", () => {
+    const body = bodyFor("tesseract");
+    const raycaster = new THREE.Raycaster();
+    try {
+      const model = body.object.children[0];
+      for (const seconds of [0, 7, 37, 120]) {
+        body.spinAt(seconds);
+        body.object.updateMatrixWorld(true);
+        // Ambos sentidos: una placa con el dorso oculto tampoco puede tapar
+        // el centro. La espalda rodea un vacío, no es una tapa negra.
+        for (const side of [-1, 1]) {
+          raycaster.set(
+            model.localToWorld(new THREE.Vector3(0, side * 3, 0)),
+            new THREE.Vector3(0, -side, 0).transformDirection(model.matrixWorld),
+          );
+          expect(raycaster.intersectObject(body.object, true), `t=${seconds}, lado=${side}`)
+            .toHaveLength(0);
+        }
+      }
     } finally {
       disposeBody(body);
     }
