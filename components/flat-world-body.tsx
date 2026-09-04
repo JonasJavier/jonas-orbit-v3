@@ -23,90 +23,153 @@ const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
   { angle: group + ENDURANCE_SLOT_SPREAD, primary: false },
 ]);
 
+/**
+ * Tesseracto en `flat`: la misma arquitectura imposible del modelo 3D.
+ *
+ * Una caja de vigas gruesas con su techo en fuga, y dentro tres marcos
+ * anidados que caen hacia un vacío. La luz sube hacia adentro —la caja no
+ * emite, el último marco es la brasa— y una arista del marco de delante se
+ * parte y continúa desplazada, que es la contradicción que también se ve en la
+ * escena. Grafito y tungsteno; nada de cian: este cuerpo no usa el secundario
+ * frío de su ficha.
+ */
 function Tesseract() {
   return (
     <svg viewBox="0 0 120 120" focusable="false">
-      <defs>
-        <radialGradient id="flat-tesseract-core">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="0.28" stopColor="var(--flat-accent)" stopOpacity="0.72" />
-          <stop offset="1" stopColor="var(--flat-secondary)" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="flat-tesseract-edge" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="var(--flat-secondary)" stopOpacity="0.35" />
-          <stop offset="0.48" stopColor="#ffffff" stopOpacity="0.9" />
-          <stop offset="1" stopColor="var(--flat-accent)" stopOpacity="0.42" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="60" r="34" fill="url(#flat-tesseract-core)" opacity="0.3" />
-      <g
-        fill="none"
-        stroke="url(#flat-tesseract-edge)"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path data-flat-part="outer-frame" d="M60 8 107 36 99 94 41 111 8 68 24 20Z" />
-        <path d="m60 8-7 39 46 47M107 36 72 54 41 111M8 68l45-21 19 7 27 40M24 20l29 27" opacity="0.72" />
-        <path d="m60 28 30 18-5 37-37 11-21-28 10-31Z" strokeWidth="1.4" />
-        <path d="m60 28-5 25 30 30M90 46 67 58 48 94M27 66l28-13 12 5 18 25M37 35l18 18" opacity="0.86" />
-        <path d="m60 45 16 10-3 20-20 6-12-15 6-17Z" strokeWidth="1.2" />
+      <circle cx="60" cy="60" r="20" fill="var(--flat-accent)" opacity="0.06" />
+      <g fill="none" strokeLinecap="butt" strokeLinejoin="miter">
+        {/* El techo, que se va hacia atrás: es lo que da fondo a la caja. */}
+        <path d="M30 24 44 10M96 34 108 21" stroke="#22262b" strokeWidth="4.5" />
+        <path d="M44 10 108 21" stroke="#22262b" strokeWidth="4.5" />
+        {/* Marco exterior: tres lados enteros. */}
+        <path
+          data-flat-part="outer-frame"
+          d="M30 24 96 34 84 100 18 90Z"
+          stroke="#33383e"
+          strokeWidth="6"
+        />
+        {/* La arista partida: se interrumpe y sigue desplazada hacia dentro. */}
+        <path d="M30 24 56 28" stroke="#33383e" strokeWidth="6" />
+        <path d="M66 34 92 38" stroke="#33383e" strokeWidth="6" />
+        {/* Segundo marco: girado unos grados contra la caja, apenas cálido. */}
+        <path
+          data-flat-part="inner-frame"
+          d="M39 38 87 45 79 89 31 82Z"
+          stroke="#3b3a36"
+          strokeWidth="4"
+        />
+        {/* Tercer marco: más adentro y ya tibio. */}
+        <path
+          data-flat-part="inner-frame"
+          d="M46 48 79 53 74 82 41 77Z"
+          stroke="var(--flat-accent)"
+          strokeWidth="3.4"
+          opacity="0.42"
+        />
+        {/* Cuarto marco: el escalón caliente, alrededor del vacío. */}
+        <path
+          data-flat-part="inner-frame"
+          d="M53 57 72 60 69 75 50 72Z"
+          stroke="var(--flat-accent)"
+          strokeWidth="2.8"
+          opacity="0.85"
+        />
+        {/* El puente que no llega, y su nodo huérfano flotando. */}
+        <path d="M46 48 51 55" stroke="#3b3a36" strokeWidth="2.4" />
       </g>
-      <circle data-flat-part="core" cx="59" cy="62" r="10" fill="url(#flat-tesseract-core)" />
-      <circle cx="59" cy="62" r="1.6" fill="#fff" />
+      {/* Vacío central: oscuro de verdad, por donde pasa el fondo. */}
+      <circle data-flat-part="core" cx="60.5" cy="66" r="7" fill="#04060a" />
+      <circle cx="51" cy="55" r="1.4" fill="var(--flat-accent)" opacity="0.9" />
     </svg>
   );
 }
 
+/**
+ * Cooper Station en `flat`: la misma megaestructura que el modelo 3D.
+ *
+ * Como la Endurance, no es una ilustración libre: arco abierto con el hueco
+ * abajo, módulos en serie sobre el arco, espina con montantes, dos alas
+ * solares, mástil y microventanas cálidas. En un equipo con movimiento
+ * reducido este dibujo es la ÚNICA Cooper que se ve; si mostrara el planeta
+ * retirado, el mismo destino contaría dos cosas distintas según el equipo.
+ */
 function CooperStation() {
   return (
     <svg viewBox="0 0 180 110" focusable="false">
       <defs>
-        <radialGradient id="flat-cooper-planet" cx="34%" cy="27%" r="72%">
-          <stop offset="0" stopColor="#dcecff" />
-          <stop offset="0.28" stopColor="var(--flat-secondary)" />
-          <stop offset="0.68" stopColor="#30415d" />
-          <stop offset="1" stopColor="#070b14" />
-        </radialGradient>
-        <linearGradient id="flat-cooper-ring" x1="0" y1="0" x2="1" y2="0">
-          <stop stopColor="var(--flat-secondary)" stopOpacity="0" />
-          <stop offset="0.2" stopColor="#d9e8f5" stopOpacity="0.56" />
-          <stop offset="0.54" stopColor="var(--flat-accent)" stopOpacity="0.8" />
-          <stop offset="0.86" stopColor="#f1f6ff" stopOpacity="0.44" />
-          <stop offset="1" stopColor="var(--flat-secondary)" stopOpacity="0" />
+        <linearGradient id="flat-cooper-hull" x1="0" y1="0" x2="0" y2="1">
+          <stop stopColor="#f2f4f3" />
+          <stop offset="0.55" stopColor="#b9c0c2" />
+          <stop offset="1" stopColor="#4c565c" />
         </linearGradient>
-        <clipPath id="flat-cooper-disc">
-          <circle cx="88" cy="55" r="29" />
-        </clipPath>
+        <linearGradient id="flat-cooper-panel" x1="0" y1="0" x2="1" y2="0">
+          <stop stopColor="#101c2a" />
+          <stop offset="0.5" stopColor="#2c4258" />
+          <stop offset="1" stopColor="#0d1723" />
+        </linearGradient>
       </defs>
 
+      {/* Arco secundario trasero: profundidad sin peso. */}
       <path
-        data-flat-part="rear-ring"
-        d="M13 65C42 30 130 22 167 45"
+        d="M58 32A20 15 0 0 1 86 22"
         fill="none"
-        stroke="url(#flat-cooper-ring)"
-        strokeWidth="5"
+        stroke="var(--flat-secondary)"
+        strokeOpacity="0.55"
+        strokeWidth="2.4"
       />
-      <path d="M17 69C54 38 130 31 165 47" fill="none" stroke="#dce9f4" strokeOpacity="0.2" />
-      <circle data-flat-part="planet" cx="88" cy="55" r="29" fill="url(#flat-cooper-planet)" />
-      <g clipPath="url(#flat-cooper-disc)" fill="none" stroke="#b7d8ed" strokeOpacity="0.17">
-        <path d="M55 43c15 7 37 8 67-2" />
-        <path d="M53 51c20 8 45 8 70-2" />
-        <path d="M55 63c17 5 39 5 64-2" />
-      </g>
-      <path
-        data-flat-part="front-ring"
-        d="M13 65C51 91 137 84 167 45"
-        fill="none"
-        stroke="url(#flat-cooper-ring)"
-        strokeWidth="5"
-      />
-      <path d="M18 67C55 86 133 78 163 47" fill="none" stroke="#fff" strokeOpacity="0.32" />
 
-      <g data-flat-part="habitat" transform="translate(145 49) rotate(-10)">
-        <ellipse cx="0" cy="0" rx="8" ry="3.5" fill="#080c13" stroke="var(--flat-accent)" strokeWidth="1" />
-        <path d="M-6 0H6M0-7V7" stroke="#dcebf7" strokeOpacity="0.8" />
-        <circle cx="0" cy="0" r="1.7" fill="#fff" />
+      {/* Gran arco: 220° abiertos con el hueco abajo a la derecha. */}
+      <path
+        data-flat-part="arc"
+        d="M120.3 72.5A34 34 0 1 0 56.4 74.8"
+        fill="none"
+        stroke="url(#flat-cooper-hull)"
+        strokeWidth="4.6"
+        strokeLinecap="round"
+      />
+      {/* Módulos en serie: el ritmo que vende la escala. */}
+      <path
+        data-flat-part="module"
+        d="M120.3 72.5A34 34 0 1 0 56.4 74.8"
+        fill="none"
+        stroke="#e8ebe9"
+        strokeWidth="8"
+        strokeDasharray="10 8.6"
+        strokeDashoffset="-4"
+        opacity="0.92"
+      />
+      {/* Microventanas cálidas sobre el arco. */}
+      <path
+        data-flat-part="windows"
+        d="M120.3 72.5A34 34 0 1 0 56.4 74.8"
+        fill="none"
+        stroke="#ffc27a"
+        strokeWidth="1.6"
+        strokeDasharray="1.6 17"
+        strokeDashoffset="-9"
+      />
+
+      {/* Montantes de la espina al arco. */}
+      <g data-flat-part="struts" stroke="#8d99a1" strokeWidth="1.6" opacity="0.85">
+        <path d="M100 73V31M88 73V29M76 73V31M64 74V38" fill="none" />
       </g>
+
+      {/* Espina y regla clara. */}
+      <g data-flat-part="spine">
+        <path d="M120 73 57 75" stroke="#222b32" strokeWidth="3.4" />
+        <path d="M119 71.4 58 73.2" stroke="#dfe4e2" strokeWidth="1" opacity="0.8" />
+      </g>
+
+      {/* Alas solares. */}
+      <g data-flat-part="panels">
+        <rect x="124" y="69" width="24" height="8" rx="1.5" fill="url(#flat-cooper-panel)" stroke="var(--flat-secondary)" strokeOpacity="0.5" />
+        <rect x="32" y="70" width="24" height="8" rx="1.5" fill="url(#flat-cooper-panel)" stroke="var(--flat-secondary)" strokeOpacity="0.5" />
+      </g>
+
+      {/* Hub, mástil y baliza. */}
+      <circle cx="88" cy="73.6" r="4" fill="url(#flat-cooper-hull)" stroke="#e8ecee" strokeOpacity="0.6" />
+      <path data-flat-part="mast" d="M88 70V46" stroke="#aeb7bc" strokeWidth="1.5" />
+      <circle data-flat-part="beacon" cx="88" cy="44" r="2" fill="#ffc27a" />
     </svg>
   );
 }

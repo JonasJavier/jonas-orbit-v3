@@ -795,6 +795,19 @@ evaluación de ruido extra.
 las dos de la deformación gruesa. Todo lo demás —cresta, cortes, calibre,
 jirones, asimetría cromática, anillo— es aritmética sobre campos ya calculados.
 
+## 14 sexies. Cooper deja de ser planeta (F1.3, 2026-09-04)
+
+Enmienda a §4 «Cooper Station — Formación»: el planeta anillado con hábitat
+pequeño se leía como mundo memorable, no como lugar habitado. La silueta la
+pone a partir de aquí la megaestructura —arco abierto de 220° con el hueco
+abajo a la derecha, siete módulos en serie, espina con montantes, dos alas
+solares, mástil, arco secundario trasero y 35 microventanas cálidas— con
+cerámica más blanca que la manta de Endurance para apartarla de la lectura de
+nave. Todo lo demás de §4 sigue vigente: conocimiento, orden, calma y
+civilización aspiracional, nunca cilindro provisional. Composición, cámara,
+tamaños y mapa `flat` cuentan lo mismo; el detalle vive en
+`docs/design/world-visual-language.md` §9.
+
 ## 15. Gate de aprobación visual
 
 Cada iteración se revisa con frame estático, estados y movimiento de puntero:

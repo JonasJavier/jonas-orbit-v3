@@ -29,23 +29,36 @@ function bodyFor(id: Exclude<WorldId, "gargantua">): SceneBody {
 /**
  * Réplica independiente del cálculo de radio, incluida la poda de subárboles.
  *
- * Poda igual que producción —el hábitat de Cooper está marcado y no cuenta—
- * porque lo que este test comprueba es que `body.radius` describa la silueta
- * publicada, no que las dos implementaciones sean el mismo código.
+ * Poda igual que producción —hoy ningún cuerpo la usa, pero el mecanismo queda
+ * para futuros detalles lejanos— porque lo que este test comprueba es que
+ * `body.radius` describa la silueta publicada, no que las dos implementaciones
+ * sean el mismo código.
+ *
+ * Mide el VÉRTICE MÁS LEJANO, que es lo que dice el contrato de `modelRadius`.
+ * Antes replicaba su implementación —centro de la esfera envolvente más su
+ * radio—, y esa cota sólo coincide con la silueta cuando la geometría es
+ * compacta. Con la estructura de placas del Tesseracto se separaban un 20 %, y
+ * el test daba verde porque estaba comprobando el mismo error dos veces.
  */
 function measuredRadius(root: THREE.Object3D): number {
-  const sphere = new THREE.Sphere();
+  const vertex = new THREE.Vector3();
   let radius = 0;
   root.updateMatrixWorld(true);
 
   const visit = (node: THREE.Object3D) => {
     if (node.userData.excludeFromRadius) return;
-    const geometry = (node as Partial<THREE.Mesh>).geometry;
-    if (geometry) {
-      geometry.computeBoundingSphere();
-      if (geometry.boundingSphere) {
-        sphere.copy(geometry.boundingSphere).applyMatrix4(node.matrixWorld);
-        radius = Math.max(radius, sphere.center.length() + sphere.radius);
+    const position = (node as Partial<THREE.Mesh>).geometry?.getAttribute(
+      "position",
+    );
+    if (position) {
+      for (let index = 0; index < position.count; index++) {
+        radius = Math.max(
+          radius,
+          vertex
+            .fromBufferAttribute(position as THREE.BufferAttribute, index)
+            .applyMatrix4(node.matrixWorld)
+            .length(),
+        );
       }
     }
     for (const child of node.children) visit(child);
@@ -147,69 +160,210 @@ describe("cuerpos del Sistema Gargantúa", () => {
         dockedLanders: 2,
       });
 
-      expect(cooper.object.getObjectByName("cooper-planet")).toBeDefined();
-      expect(cooper.object.getObjectByName("cooper-rings")).toBeDefined();
-      expect(cooper.object.getObjectByName("cooper-orbital-habitat")).toBeDefined();
+      /*
+        COOPER ES UNA MEGAESTRUCTURA HABITADA (F1.3), y su contrato de lectura
+        son cinco piezas con papeles distintos: casco de cerámica y aluminio
+        (arco, módulos, espina clara, paneles, arco secundario), celosía oscura
+        (espina, montantes, mástil), microventanas cálidas y tenues, balizas
+        que pinchan el bloom y el ascensor que recorre la espina. Si alguien
+        vuelve al planeta con mota —o a otra nave más—, este objeto deja de
+        cuadrar antes de que nadie mire una captura.
+      */
+      for (const name of [
+        "cooper-station-hull",
+        "cooper-station-truss",
+        "cooper-station-windows",
+        "cooper-station-beacons",
+        "cooper-station-elevator",
+      ]) {
+        const mesh = cooper.object.getObjectByName(name) as THREE.Mesh;
+        expect(mesh.geometry.getAttribute("position").count, name).toBeGreaterThan(0);
+      }
 
       /*
-        El Tesseracto es estructura sólida, no un wireframe. Es el contrato que
-        se rompió una vez: con LineSegments, una arista medía un píxel a
-        cualquier distancia —sin volumen, sin sombreado y sin nada que ganar al
-        acercar la cámara—, y el objeto se leía como un icono de SVG.
+        Lo retirado NO vuelve: el planeta se leía como mundo y no como lugar
+        habitado, los anillos eran el resto de esa lectura y el hábitat pequeño
+        era otra nave más.
       */
-      const lattice = tesseract.object.getObjectByName(
-        "tesseract-hypercube-lattice",
-      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-      expect(lattice).toBeInstanceOf(THREE.Mesh);
-      expect(lattice).not.toBeInstanceOf(THREE.LineSegments);
-      expect(lattice.geometry.getIndex()?.count ?? 0).toBeGreaterThan(1_000);
+      for (const retired of [
+        "cooper-planet",
+        "cooper-rings",
+        "cooper-orbital-habitat",
+        "cooper-habitat-light",
+      ]) {
+        expect(cooper.object.getObjectByName(retired), retired).toBeUndefined();
+      }
 
-      // Nodos facetados: la máscara los separa de las vigas dentro del mismo draw.
-      const latticeMasks = lattice.geometry.getAttribute("aSurfaceMask");
-      expect(
-        Math.max(...Array.from(latticeMasks.array as ArrayLike<number>)),
-      ).toBe(1);
+      const cooperAssembly = cooper.object.getObjectByName(
+        "cooper-station-assembly",
+      );
+      expect(cooperAssembly?.userData.cooperStationArchitecture).toEqual({
+        modules: 7,
+        windows: 38,
+        panels: 2,
+        arcs: 2,
+        struts: 6,
+      });
 
-      /*
-        Tres cáscaras, no dos: la del pozo lleva su propia máscara para que el
-        shader la pinte más fría. Es lo que produce la profundidad interna.
-      */
-      const well = tesseract.object.getObjectByName(
-        "tesseract-inner-well",
+      /* Cuatro acabados en el mismo draw: cerámica, aluminio, receso y solar. */
+      const cooperHull = cooper.object.getObjectByName(
+        "cooper-station-hull",
       ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-      expect(well).toBeInstanceOf(THREE.Mesh);
+      const cooperMasks = cooperHull.geometry.getAttribute("aSurfaceMask");
+      expect(cooperMasks, "Cooper no publicó acabados").toBeDefined();
       expect(
-        Math.max(
-          ...Array.from(
-            well.geometry.getAttribute("aSurfaceMask")
-              .array as ArrayLike<number>,
-          ),
-        ),
+        Math.max(...Array.from(cooperMasks.array as ArrayLike<number>)),
+        "Cooper no diferencia sus cuatro acabados",
       ).toBe(3);
 
-      const cage = tesseract.object.getObjectByName(
-        "tesseract-inner-cage",
+      /*
+        Microventanas CÁLIDAS y tenues; balizas aparte y brillantes. Las dos
+        van al shader emisivo con su propia intensidad: a 2.75 el ámbar clipea
+        a blanco y la ventana se convierte en un glint genérico, así que las
+        ventanas van a 1.15 y sólo las balizas pinchan el bloom.
+      */
+      const cooperWindows = cooper.object.getObjectByName(
+        "cooper-station-windows",
       ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-      expect(cage).toBeInstanceOf(THREE.Mesh);
+      expect(cooperWindows.material.uniforms.uKind.value).toBe(11);
       expect(
-        Math.max(
+        (cooperWindows.material.uniforms.uAccent.value as THREE.Color).getHexString(),
+        "las ventanas de Cooper no son cálidas",
+      ).toBe("ffc27a");
+      const cooperBeacons = cooper.object.getObjectByName(
+        "cooper-station-beacons",
+      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+      expect(cooperBeacons.material.uniforms.uKind.value).toBe(8);
+      expect(
+        (cooperBeacons.material.uniforms.uAccent.value as THREE.Color).getHexString(),
+      ).toBe("fff1d6");
+
+      /*
+        EL TESSERACTO ES ARQUITECTURA IMPOSIBLE, y su contrato de lectura son
+        tres piezas con papeles distintos: la cáscara (la caja de siete aristas
+        con su arista partida, el panel de suelo, dos espolones y los nodos),
+        los marcos medios (las capas 2 y 3 de la recursión con sus puentes) y el
+        fondo (la capa 4, la más caliente, con el puente que no llega y su nodo
+        huérfano).
+
+        Todo opaco y fusionado en tres draws con un solo material: el calor
+        sale del shader, no de un segundo material ni de una transparencia. Se
+        rompió una vez con LineSegments —una arista mide un píxel a cualquier
+        distancia, sin volumen y sin sombreado— y otra con un velo translúcido
+        que se llevaba la mirada por delante de la estructura. Lo que se
+        comprueba aquí es que no hay ni una cosa ni la otra.
+      */
+      const maskOf = (name: string) => {
+        const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
+          THREE.BufferGeometry,
+          THREE.ShaderMaterial
+        >;
+        expect(mesh, name).toBeInstanceOf(THREE.Mesh);
+        expect(mesh, name).not.toBeInstanceOf(THREE.LineSegments);
+        expect(
+          mesh.geometry.getIndex()?.count ?? 0,
+          `${name} no tiene caras`,
+        ).toBeGreaterThan(0);
+        return Math.max(
           ...Array.from(
-            cage.geometry.getAttribute("aSurfaceMask")
+            mesh.geometry.getAttribute("aSurfaceMask")
               .array as ArrayLike<number>,
           ),
-        ),
-      ).toBe(2);
+        );
+      };
 
-      expect(tesseract.object.getObjectByName("tesseract-core")).toBeDefined();
       /*
-        Y ya NO hay caja translúcida. En una caja, el término de Fresnel es
-        constante por cara: el volumen se veía como cuatro paneles grises
-        planos, que es justo lo contrario de un cristal. Si vuelve, vuelve sobre
-        una superficie curva.
+        LAS MÁSCARAS SON LA JERARQUÍA LUMINOSA, y por eso se comprueban: la
+        dirección pidió que la luz subiera hacia adentro —caja apagada, marco 2
+        apenas, marco 3 medio, marco 4 la brasa— y eso vive entero en el número
+        que lleva cada pieza. Aplanarlo devuelve el objeto al fallo de siempre:
+        toda la estructura encendida a la vez, o sea un wireframe grueso.
+
+        Cáscara exterior: caja, panel y espolones (máscara 0), que no emiten
+        nada, más los nodos de acero pulido (máscara 1), que son el único
+        destello de fuera.
       */
+      expect(maskOf("tesseract-shell")).toBe(1);
+      // Marcos medios: el segundo (2) y el tercero (3) de la recursión, con sus
+      // puentes en la máscara neutra.
+      expect(maskOf("tesseract-mid-frames")).toBe(3);
+      // Fondo: el cuarto marco es el escalón más caliente (4), y el nodo
+      // huérfano del puente que no llega va en la de acero (1).
+      expect(maskOf("tesseract-deep-frames")).toBe(4);
+
+      const architecture = tesseract.object.children[0].userData
+        .tesseractArchitecture as Record<string, unknown>;
+      expect(architecture).toMatchObject({
+        /*
+          CUATRO CAPAS Y NI UNA MÁS. La versión anterior tenía siete marcos,
+          cinco pórticos y cinco extensiones: diecisiete elementos que a 55 px
+          no sumaban recursión sino líneas cruzadas. Este número es el que
+          protege la decisión.
+        */
+        visualLayers: 4,
+        recursiveRings: 3,
+        structuralBridges: 3,
+        shellExtensions: 2,
+        interruptedBeams: 2,
+        emissiveTiers: 3,
+        centralVoid: true,
+        closedOuterCube: false,
+      });
+
+      /*
+        Un solo material opaco para todo el cuerpo. El calor sale del shader
+        con la máscara de superficie: ni segundo material, ni transparencias,
+        ni velo que se lleve la mirada.
+      */
+      const tesseractParts = [
+        "tesseract-shell",
+        "tesseract-mid-frames",
+        "tesseract-deep-frames",
+      ].map((name) => {
+        const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
+          THREE.BufferGeometry,
+          THREE.ShaderMaterial
+        >;
+        expect(mesh, name).toBeInstanceOf(THREE.Mesh);
+        return mesh;
+      });
       expect(
-        tesseract.object.getObjectByName("tesseract-translucent-strata"),
-      ).toBeUndefined();
+        new Set(tesseractParts.map((mesh) => mesh.material)).size,
+        "el Tesseracto usa más de un material",
+      ).toBe(1);
+      for (const mesh of tesseractParts) {
+        expect(mesh.material.transparent).toBe(false);
+      }
+
+      /*
+        Lo retirado NO vuelve, y cada nombre es una lección distinta:
+
+        · la retícula de cubos concéntricos se leía como «demo de Three.js»
+          —doce aristas encendidas por igual y ninguna cara que la luz pudiera
+          explicar—;
+        · el marco interior cerrado devolvía la serie «marco dentro de marco
+          dentro de marco», que el ojo completa solo y resuelve en dos segundos;
+        · el núcleo emisivo se leía como reactor y explicaba el objeto justo
+          donde no hay que explicarlo;
+        · el velo translúcido se llevaba la mirada por delante de la
+          estructura, que es exactamente lo que hacía el núcleo que sustituyó;
+        · las dos placas torsionadas se dejaban entender: marco exterior,
+          marco interior, centro. Interesante, y todavía no imposible.
+      */
+      for (const retired of [
+        "tesseract-hypercube-lattice",
+        "tesseract-inner-well",
+        "tesseract-inner-cage",
+        "tesseract-translucent-strata",
+        "tesseract-inner-frame",
+        "tesseract-core",
+        "tesseract-outer-shell",
+        "tesseract-fold-fragments",
+        "tesseract-fold-blades",
+        "tesseract-veil",
+      ]) {
+        expect(tesseract.object.getObjectByName(retired), retired).toBeUndefined();
+      }
 
       expect(ranger.object.getObjectByName("ranger-metallic-hull")).toBeDefined();
       expect(
@@ -311,14 +465,18 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(size.endurance).toBeGreaterThan(Math.max(...others) * 1.4);
 
       /*
-        El Tesseracto es el destino más lejano y el más pequeño del cuadro. Lo
-        segundo es dirección de arte: misterioso y remoto. Pero tiene un SUELO,
-        porque un destino que no se ve es un enlace que no existe, y con la
-        composición anterior estaba por debajo de él.
+        El Tesseracto sigue siendo lejano y secundario, y su radio publicado no
+        se mueve de donde lo dejó el rediseño anterior: ~55 px. Su caja aparente
+        puede superar ligeramente a Miller porque casi toda esa caja es vacío —
+        la esfera envolvente la fija una esquina de la caja de vigas, no una
+        masa—. La ventana es lo que impide las dos salidas fáciles: volverlo una
+        mota, o hacerlo crecer para tapar una geometría ilegible. La legibilidad
+        se resolvió por forma (menos piezas, vigas más gruesas, vacío mayor),
+        que es lo que pidió dirección.
       */
-      expect(Math.min(...ids.map((id) => size[id]))).toBe(size.tesseract);
-      expect(size.tesseract).toBeGreaterThan(0.036);
-      expect(size.tesseract).toBeGreaterThan(size.miller * 0.9);
+      expect(Math.min(...ids.map((id) => size[id]))).toBe(size.miller);
+      expect(size.tesseract).toBeGreaterThan(size.miller);
+      expect(size.tesseract).toBeLessThan(size.miller * 1.15);
 
       // La Ranger es una nave, no una mota: por debajo de este margen deja de
       // poder enseñar proa, cabina y toberas, que es lo que la hace una nave.
@@ -422,35 +580,28 @@ describe("cuerpos del Sistema Gargantúa", () => {
     }
 
     /*
-      Los draws siguen siendo el recurso caro y apenas se mueven: 24 con el
-      reparto anterior, 25 desde que el Tesseracto separó su pozo interior en
-      una malla propia —lo necesita para llevar máscara y temperatura distintas.
-      Veintiséis es el techo, y con él caben dos familias más antes de tener que
-      volver a mirar esto.
+      Los draws siguen siendo el recurso caro y apenas se mueven: 25 medidos,
+      con Cooper como megaestructura de cinco piezas —casco, celosía, ventanas
+      tenues, balizas y ascensor—, uno más que el planeta con anillos y a cambio
+      de que cada luz tenga su intensidad. Veintiséis es el techo, y con él cabe
+      una familia más antes de tener que volver a mirar esto.
 
-      Los vértices sí suben de verdad: de 16,3 k a 21,3 k. Casi todo es la
-      Endurance, que pasó de doce cápsulas sueltas a núcleo, dos rieles
-      continuos, cuatro celosías, doce módulos en cuatro grupos y sus sistemas
-      —10,3 k ella sola—, y el resto lo reparten la tercera cáscara del
-      Tesseracto y el fuselaje real de la Ranger. Es el intercambio correcto:
-      cinco mil vértices no los nota ninguna GPU de esta década y son
-      literalmente la diferencia entre «tiene muchas piezas» y «se entiende cómo
-      está construida». El techo queda en 24 k, que deja margen sin permitir que
-      esto se convierta en un kitbash.
+      Los vértices sí suben de verdad, y esta vez los pone Cooper: 20,8 k en
+      total, con la Endurance en 10,3 k y la estación en 4,6 k —arco, siete
+      módulos, espina, paneles y treinta y cinco microventanas—. Es el
+      intercambio correcto: cinco mil vértices no los nota ninguna GPU de esta
+      década y son literalmente la diferencia entre «otra nave más» y «lugar
+      habitado». El techo queda en 24 k, que deja margen sin permitir que esto
+      se convierta en un kitbash.
     */
     expect(batches).toBeLessThanOrEqual(26);
     expect(vertices).toBeLessThan(24_000);
   });
 
   it("anima localmente sin desplazar los destinos y es determinista", () => {
-    // La Ranger va aparte: es la única que NO gira sobre su eje.
-    const spinning = [
-      "tesseract",
-      "cooper-station",
-      "miller",
-      "endurance",
-      "edmunds",
-    ] as const;
+    // La Cooper, la Ranger y el Tesseracto van aparte: son los tres que NO
+    // giran sobre su eje, cada uno por su motivo. Ver sus tests dedicados.
+    const spinning = ["miller", "endurance", "edmunds"] as const;
 
     for (const id of spinning) {
       const body = bodyFor(id);
@@ -469,6 +620,123 @@ describe("cuerpos del Sistema Gargantúa", () => {
       } finally {
         disposeBody(body);
       }
+    }
+  });
+
+  /*
+    EL TESSERACTO TAMPOCO GIRA, y en reposo funciona prácticamente quieto.
+
+    La Ranger no gira porque apuntar significa algo. El Tesseracto no gira
+    porque no debe tener un eje: un objeto que rota afirma que tiene un dentro,
+    un fuera y una orientación estables, y su diseño existe para negar las tres
+    cosas. Y por decisión expresa del rediseño imposible (2026-09-04), la
+    identidad sale de la geometría, no de hacerla girar como un salvapantallas:
+    en reposo el objeto se lee estando quieto.
+
+    Lo que queda es deriva ambiental: los marcos medios y el fondo oscilan ±3°
+    en sentidos opuestos, con periodos inconmensurables entre sí. Las
+    relaciones entre piezas se rehacen sin que ninguna configuración dure — y
+    sin que la cáscara se mueva ni un grado.
+
+    Este test comprueba las cuatro condiciones, porque las cuatro son fáciles
+    de romper sin darse cuenta al tocar una amplitud:
+
+      1. la cáscara exterior no se mueve NUNCA;
+      2. el cuerpo entero no gira;
+      3. el interior sí deriva, y de forma determinista;
+      4. la deriva OSCILA — a lo largo de dos minutos las piezas vuelven a
+         pasar por donde estaban, así que no hay deriva direccional ni
+         rotación disfrazada — y es MÍNIMA: por encima de estos valores el
+         reposo dejaría de leerse quieto.
+  */
+  it("mantiene el Tesseracto prácticamente quieto, con deriva interior mínima", () => {
+    const body = bodyFor("tesseract");
+    try {
+      const model = body.object.children[0];
+      const shell = body.object.getObjectByName("tesseract-shell");
+      const mid = body.object.getObjectByName("tesseract-mid-frames");
+      const deep = body.object.getObjectByName("tesseract-deep-frames");
+      if (!shell || !mid || !deep) throw new Error("faltan piezas");
+
+      const restPose = model.quaternion.clone();
+      const shellPose = shell.matrixWorld.clone();
+
+      // Muestreo de dos minutos: cubre varias vueltas del periodo más corto.
+      const poses: {
+        midYaw: number;
+        midLift: number;
+        deepYaw: number;
+        deepLift: number;
+      }[] = [];
+      for (let seconds = 0; seconds <= 120; seconds += 0.5) {
+        body.spinAt(seconds);
+        // El cuerpo entero no gira, y su cáscara tampoco se entera del tiempo.
+        expect(model.quaternion.equals(restPose), `t=${seconds}`).toBe(true);
+        shell.updateMatrixWorld(true);
+        expect(shell.matrixWorld.equals(shellPose), `t=${seconds}`).toBe(true);
+
+        const midGroup = mid.parent;
+        const deepGroup = deep.parent;
+        if (!midGroup || !deepGroup) throw new Error("faltan grupos");
+        poses.push({
+          midYaw: midGroup.rotation.y,
+          midLift: midGroup.position.y,
+          deepYaw: deepGroup.rotation.y,
+          deepLift: deepGroup.position.y,
+        });
+      }
+
+      // Determinista: el mismo instante da la misma pose, siempre.
+      const at37 = { ...poses[74] };
+      body.spinAt(37);
+      expect(mid.parent?.rotation.y).toBeCloseTo(at37.midYaw, 10);
+      expect(mid.parent?.position.y).toBeCloseTo(at37.midLift, 10);
+      expect(deep.parent?.rotation.y).toBeCloseTo(at37.deepYaw, 10);
+      expect(deep.parent?.position.y).toBeCloseTo(at37.deepLift, 10);
+
+      /*
+        Y OSCILA. Cada canal vuelve a cruzar su punto de partida —hacia arriba y
+        hacia abajo— varias veces en dos minutos. Una rotación disfrazada de
+        oscilación tendría cero cruces en un sentido; una deriva, ninguno.
+      */
+      for (const channel of [
+        "midYaw",
+        "midLift",
+        "deepYaw",
+        "deepLift",
+      ] as const) {
+        const values = poses.map((pose) => pose[channel]);
+        const mid = (Math.max(...values) + Math.min(...values)) / 2;
+        let crossings = 0;
+        for (let i = 1; i < values.length; i++) {
+          if (values[i - 1] < mid !== values[i] < mid) crossings++;
+        }
+        expect(crossings, `${channel} no oscila`).toBeGreaterThanOrEqual(8);
+      }
+
+      /*
+        Y es MÍNIMA. El recorrido total de cada canal cabe en ±3° de giro y
+        centésimas de unidad de desplazamiento: en reposo el objeto se lee
+        quieto y la geometría —no el movimiento— sostiene la identidad. Por
+        debajo del mínimo el canal estaría muerto y no pagaría su código; por
+        encima, el reposo dejaría de ser reposo.
+      */
+      const swing = (values: number[]) =>
+        Math.max(...values) - Math.min(...values);
+      const midYawSwing = swing(poses.map((pose) => pose.midYaw));
+      const midLiftSwing = swing(poses.map((pose) => pose.midLift));
+      const deepYawSwing = swing(poses.map((pose) => pose.deepYaw));
+      const deepLiftSwing = swing(poses.map((pose) => pose.deepLift));
+      expect(midYawSwing).toBeGreaterThan(0.05);
+      expect(midYawSwing).toBeLessThan(0.2);
+      expect(midLiftSwing).toBeGreaterThan(0.015);
+      expect(midLiftSwing).toBeLessThan(0.06);
+      expect(deepYawSwing).toBeGreaterThan(0.03);
+      expect(deepYawSwing).toBeLessThan(0.15);
+      expect(deepLiftSwing).toBeGreaterThan(0.01);
+      expect(deepLiftSwing).toBeLessThan(0.04);
+    } finally {
+      disposeBody(body);
     }
   });
 
@@ -499,6 +767,53 @@ describe("cuerpos del Sistema Gargantúa", () => {
       for (const angle of [euler.x, euler.y, euler.z]) {
         expect(Math.abs(angle)).toBeLessThan(0.026);
       }
+    } finally {
+      disposeBody(body);
+    }
+  });
+
+  /*
+    COOPER TAMPOCO GIRA, y por el mismo motivo que la Ranger.
+
+    Una megaestructura con apertura, collares de atraque y paneles afirma una
+    orientación: el hueco mira abajo a la derecha. Rotando sobre su eje, la
+    apertura dejaría de significar nada y la estación parecería una maqueta
+    colgada de un hilo. Lo que le queda vive DENTRO: vaivén subgrado y el
+    ascensor recorriendo la espina, que es escala habitada y no astronómica.
+  */
+  it("mantiene la estación sin giro propio, pero habitada", () => {
+    const body = bodyFor("cooper-station");
+    try {
+      const model = body.object.children[0];
+      const assembly = body.object.getObjectByName("cooper-station-assembly");
+      const pod = body.object.getObjectByName("cooper-station-elevator");
+      if (!assembly || !pod) throw new Error("faltan piezas");
+      const restPose = model.quaternion.clone();
+
+      body.spinAt(37);
+      // El cuerpo entero no gira...
+      expect(model.quaternion.equals(restPose)).toBe(true);
+      // ...pero el interior vive, y de forma determinista.
+      const first = {
+        x: assembly.rotation.x,
+        y: assembly.rotation.y,
+        pod: pod.position.x,
+      };
+      body.spinAt(37);
+      expect(assembly.rotation.x).toBeCloseTo(first.x, 10);
+      expect(assembly.rotation.y).toBeCloseTo(first.y, 10);
+      expect(pod.position.x).toBeCloseTo(first.pod, 10);
+      // El vaivén se mantiene por debajo del grado y cuarto: mantenimiento de
+      // actitud, no bamboleo.
+      for (const angle of [assembly.rotation.x, assembly.rotation.y]) {
+        expect(Math.abs(angle)).toBeLessThan(0.022);
+      }
+      // Y el ascensor recorre la espina de verdad: a un cuarto de su periodo
+      // está a más de medio metro local del punto de partida.
+      body.spinAt(0);
+      const atRest = pod.position.x;
+      body.spinAt(Math.PI / (2 * 0.05));
+      expect(Math.abs(pod.position.x - atRest)).toBeGreaterThan(0.4);
     } finally {
       disposeBody(body);
     }
