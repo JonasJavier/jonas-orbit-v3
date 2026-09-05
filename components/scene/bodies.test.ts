@@ -796,4 +796,64 @@ describe("cuerpos del Sistema Gargantúa", () => {
 
     expect(callSites).toBeLessThanOrEqual(12);
   });
+
+  /*
+    LA RANGER TIENE QUE ESTAR ILUMINADA, y hasta hoy no lo estaba.
+
+    Es el cuerpo más sensible del sistema a su propia actitud: es aerodinámico,
+    así que casi toda su superficie mira al mismo sitio, y basta con inclinarlo
+    un poco para que pase de encarar la luz a darle la espalda. La Endurance,
+    con doce módulos, siempre tiene caras encaradas; la Ranger no.
+
+    Su actitud se escribió como una constante calculada A MANO contra la
+    posición que ocupaba entonces. La recomposición de seis destinos la movió,
+    nadie rehízo el cálculo, y el dorso quedó en n·l = −0.09: de espaldas a la
+    única fuente del sistema. El síntoma en pantalla era una nave azul oscura y
+    plana, y lo engañoso es que parecía un problema de material — con el casco
+    forzado a blanco puro se veía exactamente igual de oscura.
+
+    Este test mide la geometría de luz contra la posición REAL, así que la
+    próxima recomposición que vuelva a dejarla a oscuras falla aquí y no tres
+    semanas después en una captura.
+
+    Los suelos son flojos a propósito: en este sitio la luz y la cámara están a
+    153°, así que ninguna actitud puede tener las dos cosas y lo que se fija es
+    el compromiso, no un número bonito. El dorso va en la bisectriz, que es su
+    óptimo: reparte n·l y n·v a partes iguales. Si alguien quiere más área vista
+    tendrá que pagarlo en luz, y este test dice cuánto.
+  */
+  it("mantiene la Ranger encarada a la luz y a la cámara a la vez", () => {
+    const camera = new THREE.Vector3(
+      Math.cos(THREE.MathUtils.degToRad(SYSTEM_POSE.elevation)) *
+        Math.sin(THREE.MathUtils.degToRad(SYSTEM_POSE.azimuth)),
+      Math.sin(THREE.MathUtils.degToRad(SYSTEM_POSE.elevation)),
+      Math.cos(THREE.MathUtils.degToRad(SYSTEM_POSE.elevation)) *
+        Math.cos(THREE.MathUtils.degToRad(SYSTEM_POSE.azimuth)),
+    ).multiplyScalar(FRAME_DISTANCE);
+
+    const position = new THREE.Vector3();
+    placeBodyOnDepthLayer(
+      orbitalPosition(worldsData.ranger.placement, 0, new THREE.Vector3()),
+      camera,
+      bodyDepthLayerFor("ranger"),
+      position,
+    );
+
+    const body = bodyFor("ranger");
+    try {
+      // Gargantúa está en el origen: la luz llega desde ahí, siempre.
+      const toLight = position.clone().negate().normalize();
+      const toCamera = camera.clone().sub(position).normalize();
+      const back = new THREE.Vector3(0, 1, 0).applyEuler(body.object.rotation);
+
+      /* El terminador satura a partir de 0.34 y arranca en −0.08: por debajo de
+         0.15 el dorso entra en penumbra y la nave vuelve a ser una silueta. */
+      expect(back.dot(toLight)).toBeGreaterThan(0.15);
+      /* Y por debajo de 0.15 de cámara se vería de canto: nave iluminada que no
+         se puede leer, que es el otro extremo del mismo error. */
+      expect(back.dot(toCamera)).toBeGreaterThan(0.15);
+    } finally {
+      disposeBody(body);
+    }
+  });
 });
