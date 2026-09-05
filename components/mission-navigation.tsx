@@ -3,14 +3,14 @@ import type { WorldId } from "@/content/worlds.data";
 import type { WorldNavItem } from "@/lib/worlds";
 
 /**
- * Navegación entre los 7 mundos.
+ * Navegación entre los 6 mundos.
  *
  * Server component sin una línea de JavaScript: el mundo activo llega por
  * props desde la ruta, no de un store del cliente. En F1A esto leía el progreso
  * de scroll con Zustand y centraba el elemento activo con un efecto; con rutas
  * reales, `aria-current` lo dice mejor y gratis.
  *
- * `<Link>` prefetchea las 8 rutas estáticas, que es lo que §7 del pivote exige
+ * `<Link>` prefetchea las 7 rutas estáticas, que es lo que §7 del pivote exige
  * para que la transición de viaje de G3 sea sensación de viaje y no una espera
  * disfrazada.
  */

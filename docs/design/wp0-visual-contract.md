@@ -1,5 +1,8 @@
 # WP0 — contrato visual de Jonás Orbit
 
+> **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
+
+
 Estado histórico: **aprobado para implementación F1A** · 2026-08-03.
 
 Vigencia actual: contrato base. La dirección específica del Hero / System Map
@@ -81,12 +84,11 @@ párrafo depende del color para comunicar significado.
 - Radio: 8 px controles, 14 px tarjetas, 22 px escenas principales.
 - Bordes de un píxel forman la retícula de misión.
 
-## Arquetipos de los siete mundos
+## Arquetipos de los seis mundos
 
 | Mundo | Forma visual | Función |
 | --- | --- | --- |
 | Tesseracto | Marcos dimensionales anidados y núcleo interior | Historia y visión |
-| Cooper Station | Planeta anillado inventado + hábitat orbital pequeño | Formación modular |
 | Miller | Esfera oceánica estratificada | Ingeniería full-stack |
 | Endurance | Nave radial: hub, radios, módulos y anillo parcial | Archivo de proyectos |
 | Edmunds | Mundo cálido con terreno, atmósfera y bruma | Creatividad visual |
@@ -98,14 +100,14 @@ de assets cinematográficos. Gargantúa aporta la fuente cálida compartida y un
 luz ambiente fría recupera volumen en todos los cuerpos.
 
 La escala no es uniforme: Gargantúa domina, Endurance es la segunda ancla,
-Miller/Edmunds/Cooper forman el nivel planetario y Tesseracto/Ranger siguen
+Miller/Edmunds forman el nivel planetario y Tesseracto/Ranger siguen
 menores. Los siete se perciben como destinos sin tener que buscarlos.
 
 ## Componentes
 
 ### Navegación
 
-- En la home, un raíl tipográfico expone siete enlaces reales en orden 01→07.
+- En la home, un raíl tipográfico expone seis enlaces reales en orden 01→06.
 - El raíl es el único recorrido de teclado; los rótulos junto a cuerpos son ecos
   visuales y no duplican el árbol de accesibilidad.
 - Hover, focus y selección alimentan un único TARGET y los brackets del mismo
@@ -123,8 +125,8 @@ menores. Los siete se perciben como destinos sin tener que buscarlos.
 - La marca visible se limita a `JONAS ORBIT` dentro del HUD.
 - Nombre completo, rol, CTAs y CV permanecen en el HTML semántico servido sin
   JavaScript; el canvas sigue siendo una capa decorativa `aria-hidden`.
-- Gargantúa domina, Endurance es la segunda ancla y Cooper aporta una silueta
-  planetaria memorable.
+- Gargantúa domina y Endurance es la segunda ancla. Miller y Edmunds tienen
+  distinta altura y profundidad. El vacío superior izquierdo se conserva.
 
 ### Campo de estrellas
 
@@ -141,10 +143,10 @@ menores. Los siete se perciben como destinos sin tener que buscarlos.
 
 - La navegación no usa R3F ni raycasting. Cada cuerpo publica centro y radio a
   un proxy DOM dedicado, separado de su rótulo.
-- El proxy cubre 110–135 % de la silueta compuesta y al menos 44 px; Cooper
-  incluye sus anillos y Endurance sus módulos exteriores.
+- El proxy cubre 110–135 % de la silueta compuesta y al menos 44 px; Endurance
+  incluye sus módulos exteriores.
 - Los proxies son `aria-hidden` y no tabulables. El raíl conserva los únicos
-  siete enlaces accesibles.
+  seis enlaces accesibles.
 - `?debugHitboxes=1` sólo en desarrollo visualiza bounds sin alterarlos.
 - Desktop fine-pointer usa cursor de navegación mínimo y un canvas de stardust
   con pool fijo/typed arrays. Touch no monta ninguno de los dos.

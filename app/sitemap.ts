@@ -12,9 +12,8 @@ import { getWorlds } from "@/lib/worlds";
  * `noindex` y fuera del sitemap porque es una confirmación privada, no una
  * página de aterrizaje.
  *
- * El pivote lo lleva de 6 a 12 URLs: los siete mundos dejaron de ser anclas de
- * un único documento y pasaron a ser páginas indexables por derecho propio
- * (§2). Esa ganancia de SEO es la contrapartida del cambio de arquitectura.
+ * Doce URLs indexables: home, seis destinos, cuatro casos y privacidad.
+ * Las rutas se derivan del catálogo vigente; no se conservan destinos retirados.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

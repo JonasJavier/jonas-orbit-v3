@@ -417,7 +417,7 @@ html[data-starfield="ready"] .space-backdrop__stars {
 }
 
 /*
-  Página de mundo. Antes era una sección dentro de un scroll de siete; ahora es
+  Página de mundo. Antes era una sección dentro de un scroll de seis; ahora es
   una ruta con su propio h1, así que se lleva puesto el ancho de contenido y el
   padding que antes ponían `__inner` y `__content`. El carril "0X / 07"
   desapareció con el recorrido lineal: el orden ahora lo dan la cabecera y los
@@ -548,7 +548,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.world-glyph[data-visual="station"] .world-glyph__body,
 .world-glyph[data-visual="ship"] .world-glyph__body {
   width: 58%;
   height: 58%;
@@ -557,11 +556,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   box-shadow: 0 0 2rem color-mix(in srgb, var(--world-accent) 23%, transparent), inset 0 0 1.4rem rgba(0,0,0,.8);
 }
 
-.world-glyph[data-visual="station"] .world-glyph__body {
-  height: 33%;
-  border-width: 0.45rem;
-  transform: translate(-50%, -50%) rotate(-24deg);
-}
 
 .world-glyph[data-visual="water"] .world-glyph__body {
   background:
@@ -2291,14 +2285,14 @@ html[data-starfield="ready"] .space-backdrop__stars {
 /* ══════════════════════════════════════════════════════════════════════════
    Sistema Gargantúa — la capa de destinos sobre la escena
    ──────────────────────────────────────────────────────────────────────────
-   Los siete nodos son enlaces del HTML servido. Su posición sale de dos sitios
+   Los seis nodos son enlaces del HTML servido. Su posición sale de dos sitios
    distintos según haya escena o no, y ESE es todo el mecanismo:
 
    · Sin escena (`flat`, sin JS, reduced-motion): las coordenadas vienen del
      servidor en % dentro del cuadro, calculadas por lib/system-map.ts desde los
      mismos datos orbitales. Se aplican con left/top y no cuestan nada.
    · Con escena: el bucle de render escribe --map-x/--map-y en PÍXELES y aquí se
-     aplican con transform. Nunca con left/top: mover siete elementos por frame
+     aplican con transform. Nunca con left/top: mover seis elementos por frame
      con propiedades de layout obligaría a recalcularlo sesenta veces por segundo.
 
    Al enfocar un destino solo aparece un dato más — el nombre cósmico del
@@ -2355,7 +2349,7 @@ html[data-scene-live="true"] .system-map__slot{
   /*
     Puesta en marcha escalonada.
 
-    Los siete destinos no aparecen a la vez: se encienden en orden narrativo, uno
+    Los seis destinos no aparecen a la vez: se encienden en orden narrativo, uno
     cada 110 ms, después de que la escena haya entregado su primer fotograma. Es
     la diferencia entre que la interfaz «esté» y que la interfaz ARRANQUE, y
     cuesta una animación de opacidad que el compositor resuelve solo.
@@ -2370,7 +2364,7 @@ html[data-scene-live="true"] .system-map__slot{
 /*
   Con movimiento reducido la regla global deja la animación en 0.01 ms, pero NO
   toca el retardo — y con `fill-mode: both` el retardo mantiene el estado
-  inicial. O sea: el destino número siete se quedaría invisible 690 ms para
+  inicial. O sea: el destino número seis se quedaría invisible 690 ms para
   justo quien ha pedido que no haya movimiento. El escalonado se cancela entero.
 */
 @media (prefers-reduced-motion: reduce) {
@@ -2422,7 +2416,7 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   ── El enlace es una caja de pulsación invisible ──────────────────────────────
 
   Lo que había aquí era una píldora: borde de color, fondo negro al 72 %,
-  `backdrop-filter: blur(3px)` y un salto de 2 px al apuntar. Siete de esas
+  `backdrop-filter: blur(3px)` y un salto de 2 px al apuntar. Seis de esas
   flotando sobre un agujero negro convertían la escena en el fondo de un menú, y
   el desenfoque de fondo además obliga al compositor a releer el búfer justo
   encima de la zona más cara del cuadro.
@@ -2494,7 +2488,7 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   resto del sistema, no una capa de interfaz por encima.
 
   El marcador se queda para el nivel `flat`: ahí no hay cuerpo detrás y sin él
-  los siete destinos serían siete palabras flotando en el vacío.
+  los seis destinos serían seis palabras flotando en el vacío.
 */
 html[data-scene-live="true"] .system-map__marker{
   display: none;
@@ -2503,7 +2497,7 @@ html[data-scene-live="true"] .system-map__marker{
 /*
   Discretas a propósito.
 
-  Iban en tipografía de display a 0.92rem y pesaban demasiado: siete rótulos
+  Iban en tipografía de display a 0.92rem y pesaban demasiado: seis rótulos
   gordos flotando sobre la escena la convertían en el fondo de un menú. Aquí el
   nombre solo tiene que identificar el destino — el protagonista es el sistema.
   Mono, pequeña y espaciada: se lee como una lectura de instrumento y no compite.
@@ -2550,7 +2544,7 @@ html[data-scene-live="true"] .system-map__marker{
   apuntarlo — y el detalle completo vive en el NAV TARGET del HUD, que es donde
   el ojo ya está buscando información.
 
-  Siete bloques de dos líneas permanentes eran lo último que seguía haciendo que
+  Seis bloques de dos líneas permanentes eran lo último que seguía haciendo que
   el sistema pareciera un diagrama anotado. `max-height` en vez de `display`
   para que la aparición sea una transición y no un salto que descoloque la caja.
 */
@@ -3027,7 +3021,7 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   }
 
   /*
-    En un móvil, siete etiquetas ancladas sobre la escena se pisan y ninguna se
+    En un móvil, seis etiquetas ancladas sobre la escena se pisan y ninguna se
     puede pulsar con el pulgar. Los destinos pasan a ser una lista compacta al
     pie y la escena se queda de fondo — que sigue siendo lo que impresiona.
   */
@@ -3150,7 +3144,7 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 /*
   La navegación de mundos deja de ser un carril con scroll horizontal: sin el
   efecto que centraba el elemento activo (murió con el store de scroll), en un
-  móvil el destino actual podía quedar fuera de la vista. Envuelta, los siete
+  móvil el destino actual podía quedar fuera de la vista. Envuelta, los seis
   destinos se ven siempre y no hace falta JavaScript para nada.
 */
 @media (max-width: 54rem) {
@@ -3347,12 +3341,12 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   El raíl de destinos — los siete enlaces REALES
+   El raíl de destinos — los seis enlaces REALES
    ══════════════════════════════════════════════════════════════════════════ */
 
 .nav-rail {
   /* El raíl vive dentro de `.system-map`, que renuncia al puntero para no
-     robarle el ratón a la escena. Aquí hay que devolvérselo: sin esto los siete
+     robarle el ratón a la escena. Aquí hay que devolvérselo: sin esto los seis
      destinos se ven, se tabulan… y no se pueden pulsar. */
   pointer-events: auto;
   position: fixed;
@@ -3385,7 +3379,7 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   transition: color 200ms var(--ease-orbit);
 }
 
-/* La función sólo aparece en el destino apuntado: siete descriptores
+/* La función sólo aparece en el destino apuntado: seis descriptores
    permanentes convertían el raíl en una barra de menú. */
 .nav-rail__role {
   grid-column: 2;
@@ -3434,25 +3428,25 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
    ══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 60rem) {
-  /* Los ecos anclados a los cuerpos desaparecen: siete rótulos flotando sobre
+  /* Los ecos anclados a los cuerpos desaparecen: seis rótulos flotando sobre
      un sistema de 375 px se pisan entre ellos y ninguno se puede pulsar con el
      pulgar. El raíl los sustituye, y además con blancos de 44 px. */
   .system-map__field {
     display: none;
   }
 
-  /* El raíl pasa a ser el selector: ancho completo y desplazable en horizontal.
-     Siete entradas no caben de otra forma sin encogerlas hasta lo ilegible. */
+  /* Seis destinos caben en dos filas táctiles: todos visibles desde el inicio. */
   .nav-rail {
     right: 0;
     bottom: 0;
     left: 0;
     gap: 0;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
     padding: 0.5rem 0.9rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(to top, rgba(2, 4, 9, 0.92), transparent);
     scrollbar-width: none;
-    scroll-snap-type: x proximity;
   }
 
   .nav-rail::-webkit-scrollbar {
@@ -3461,7 +3455,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 
   .nav-rail__item {
     flex: 0 0 auto;
-    scroll-snap-align: center;
   }
 
   .nav-rail__link {
@@ -4045,7 +4038,7 @@ html[data-scene-live="true"] .hud__glass::after {
   .hud__target {
     top: auto;
     right: auto;
-    bottom: 5.25rem;
+    bottom: calc(7.65rem + env(safe-area-inset-bottom, 0px));
     left: 1rem;
     width: min(15rem, 66vw);
   }
@@ -4189,9 +4182,6 @@ html[data-scene-live="true"] .hud__glass::after {
   border-radius: 30%;
 }
 
-.system-map__hit-target[data-hit-shape="ringed"] {
-  border-radius: 42%;
-}
 
 .system-map__body {
   pointer-events: none;
@@ -4209,12 +4199,6 @@ html[data-scene-live="true"] .system-map__body {
   box-shadow:
     inset 0 0 1rem rgba(255, 80, 145, 0.1),
     0 0 0.75rem rgba(255, 80, 145, 0.16);
-}
-
-.system-map[data-debug-hitboxes="true"]
-  .system-map__hit-target[data-hit-shape="ringed"] {
-  border-color: rgba(127, 229, 255, 0.92);
-  background: rgba(127, 229, 255, 0.1);
 }
 
 .hud__bracket {
@@ -4535,11 +4519,6 @@ html:not([data-scene-live="true"]) .system-map__slot {
   --map-hit-radius-y: var(--map-fallback-radius);
 }
 
-html:not([data-scene-live="true"])
-  .system-map__slot[data-flat-visual="station"] {
-  --map-hit-radius-x: clamp(3.4rem, 4.7vw, 5.25rem);
-  --map-hit-radius-y: clamp(2.15rem, 2.85vw, 3.15rem);
-}
 
 html:not([data-scene-live="true"])
   .system-map__slot[data-flat-visual="ship"] {
@@ -4549,8 +4528,8 @@ html:not([data-scene-live="true"])
 
 html:not([data-scene-live="true"])
   .system-map__slot[data-flat-visual="beacon"] {
-  --map-hit-radius-x: clamp(3rem, 3.9vw, 4.5rem);
-  --map-hit-radius-y: clamp(1.7rem, 2.25vw, 2.65rem);
+  --map-hit-radius-x: clamp(2.5rem, 3.2vw, 3.7rem);
+  --map-hit-radius-y: clamp(1.4rem, 1.86vw, 2.2rem);
 }
 
 html:not([data-scene-live="true"]) .system-map__body {
@@ -4612,7 +4591,7 @@ html:not([data-scene-live="true"]) .system-map__hit-target {
 
 @media (max-width: 60rem) {
   /* El raíl continúa siendo el índice táctil, pero el atlas vuelve a existir:
-     los cuerpos son contexto espacial, no siete rótulos intentando caber. */
+     los cuerpos son contexto espacial, no seis rótulos intentando caber. */
   html:not([data-scene-live="true"]) .system-map__field {
     display: block;
   }
@@ -4723,7 +4702,7 @@ button.hud__readout--action {
   .hud__controls[data-effects-control="primary-toggle"] {
     position: fixed;
     right: 0.85rem;
-    bottom: 4.45rem;
+    bottom: calc(7.25rem + env(safe-area-inset-bottom, 0px));
     display: flex;
   }
 
@@ -4740,11 +4719,9 @@ button.hud__readout--action {
     display: block;
   }
 
-  /* El monograma ocupa el primer tramo del borde inferior. Reservarlo evita
-     que TESSERACTO arranque detrás de la N en el primer frame móvil. */
-  .nav-rail {
-    padding-left: 4.35rem;
-    scroll-padding-left: 4.35rem;
+  .nav-rail__link {
+    justify-content: center;
+    padding-inline: 0.35rem;
   }
 }
 
@@ -4869,7 +4846,7 @@ html[data-scene-live="true"]
   html[data-scene-live="true"] .hud__controls {
     position: fixed;
     right: 0.85rem;
-    bottom: 4.55rem;
+    bottom: calc(7.25rem + env(safe-area-inset-bottom, 0px));
     display: flex;
   }
 

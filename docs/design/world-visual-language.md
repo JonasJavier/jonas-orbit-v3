@@ -1,23 +1,26 @@
 # Lenguaje visual común de los mundos — F1.0
 
+> **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
+
+
 **Estado:** contrato congelado el 2026-09-03, al abrir la fase *World Visual
 Pass*. Manda sobre `docs/design/hero-gargantua-direction.md` en **material,
-iluminación y criterio de aceptación de los seis destinos**. No toca
+iluminación y criterio de aceptación de los cinco cuerpos secundarios**. No toca
 composición, cámara, HUD ni interacción, que siguen perteneciendo a ese
 documento; ni el disco de Gargantúa, que queda **congelado durante toda la
 fase**.
 
 ## 1. Qué problema resuelve este documento
 
-Gargantúa es un fenómeno: complejo, orgánico y memorable. Los seis destinos son
+Gargantúa es un fenómeno: complejo, orgánico y memorable. Los cinco cuerpos secundarios son
 buenos objetos 3D colocados a su alrededor, y esa diferencia se nota. La fase
-los lleva a *seis destinos con identidad propia, reconocibles y claramente del
+los lleva a *cinco destinos con identidad propia, reconocibles y claramente del
 mismo universo visual* — sin acercarlos a la complejidad del agujero negro,
 que destruiría la jerarquía.
 
-El riesgo real de una pasada mundo a mundo es acabar con **seis shaders
+El riesgo real de una pasada mundo a mundo es acabar con **cinco materiales
 diseñados por separado**. Lo que sigue es lo que no se rediseña: el entorno
-físico y artístico al que los seis responden.
+físico y artístico al que los cinco responden.
 
 ## 2. Jerarquía visual objetivo
 
@@ -26,7 +29,6 @@ físico y artístico al que los seis responden.
 | Gargantúa | 10 / 10 |
 | Endurance | 8.5 / 10 |
 | Tesseracto | 8 – 8.5 / 10 |
-| Cooper Station | 7.5 – 8 / 10 |
 | Miller | 7 – 7.5 / 10 |
 | Edmunds | 7 – 7.5 / 10 |
 | Ranger | 6.5 – 7 / 10 |
@@ -68,7 +70,6 @@ lo fija el suelo nocturno:
 | Endurance | 0.60 | mucha cara por unidad de silueta; con menos se abren agujeros negros entre módulos |
 | Ranger | 0.44 | chapa, no manta |
 | Tesseracto y estructura | 0.40 | metal oscuro |
-| Cerámica de Cooper | 0.50 | casco claro: devuelve más cielo que el grafito, como haría de verdad |
 
 > **Principio:** la misma luz toca materiales diferentes.
 
@@ -132,27 +133,9 @@ Un cuerpo sale de la fase cuando pasa las cuatro pruebas:
 
 ## 7. F1.1 — Tesseracto
 
-### POSITION LOCK — TESSERACTO + COOPER STATION (2026-09-03)
+### Composición vigente
 
-Los dos intercambian sector. Medido con `tools/composition.mjs` a 1440×860:
-
-| destino | antes | después | radio |
-|---|---|---|---:|
-| Tesseracto | (402, 324) sup-izq | **(735, 232) sup-centro** | 46 px |
-| Cooper Station | (652, 239) sup-centro | **(399, 323) sup-izq** | 64 px |
-
-El intercambio no cambia el tamaño aparente de ninguno de los dos: la cámara
-queda a 119.2 rs del Tesseracto contra los 119.5 de antes, y a 116.5 de Cooper
-contra 116.9. Es composición, no jerarquía.
-
-La fase del Tesseracto es 285° y no los 272° que deja libre Cooper: a 272° caía
-en Δx = −16 px del centro de la sombra, o sea alineado al píxel sobre el agujero
-negro, que se lee como interfaz y no como composición. A 285° queda en Δx = +66
-px. La banda superior se reparte 336 / 273 px entre sus tres cuerpos —desigual, a
-propósito— y aparece una contradiagonal con la Ranger.
-
-A partir de aquí los dos cuerpos no se mueven durante el desarrollo visual de la
-fase salvo corrección objetiva.
+El bloqueo de posición anterior queda sustituido por `sistema-seis-destinos.md`. Se conserva el diseño del Tesseracto y se permite el ajuste compositivo de su posición.
 
 ### TESSERACT VISUAL FREEZE (2026-09-03)
 
@@ -352,49 +335,3 @@ ni otros destinos. Capturas de esta revisión: `output/playwright/tesseract-rear
 Las tres leen la escena real. Ninguna reimplementa su matemática: una copia de
 la proyección se desincronizaría el día que alguien tocara la pose, y entonces
 mentiría en silencio.
-
-## 9. F1.3 — Cooper Station: de planeta a megaestructura (2026-09-04)
-
-**Decisión.** El planeta anillado con hábitat pequeño se leía como mundo, no
-como lugar habitado —y el destino representa Formación—. La silueta la pone a
-partir de aquí la arquitectura: gran arco abierto de 220° con el hueco abajo a
-la derecha, siete módulos habitables en serie sobre el arco, espina oscura con
-cuatro montantes, dos alas solares, mástil con baliza, fragmento de arco en un
-plano trasero y 35 microventanas cálidas. Endurance es máquina (manta gris,
-grafito); Cooper es lugar (cerámica clara, aluminio, luz cálida diminuta).
-
-**Composición intacta.** Misma trayectoria (33 rs, fase 233°), mismo sector,
-mismo tamaño aparente: el radio publicado pasa de 5.40 a 5.33 rs escalados
-(−1.1 %) y `composition.mjs` sigue dando (399, 323) r63. El mapa `flat` cuenta
-lo mismo en SVG. La cámara, el encuadre y el POSITION LOCK no se tocan.
-
-Las decisiones que la sostienen:
-
-- **Apertura, no rueda.** El arco no cierra: una rueda cerrada sería otra
-  Endurance. El vacío central es la pieza más grande del cuerpo.
-- **Repetición como escala.** Siete módulos de tamaños distintos alternando
-  cara, con cinco ventanas cada uno: unidades pequeñas en serie que el cerebro
-  lee como enorme. Nada de miles de edificios.
-- **Blanco con motivo.** Cerámica hasta 0.78 —más blanca que la manta principal
-  de Endurance (0.72)— compensada por órbita más lejana y plano más al fondo:
-  la misma clave le devuelve menos y nunca es el elemento más luminoso.
-- **Dos luces, dos trabajos.** Balizas a 2.75 para pinchar el bloom; ventanas
-  a 1.15 para conservar el ámbar sin clipear (`uKind == 11`, mismo programa, sin
-  un `fbm` más). La rama de anillos (`uKind == 6`) se retira con el planeta.
-- **No gira.** La orientación del arco es información, como la proa de la
-  Ranger: quedan vaivén subgrado y el ascensor recorriendo la espina, dentro
-  del modelo y deterministas.
-
-**Criterio de salida, verificado** (capturas `cooper-f13c*`, 1440×860):
-
-| prueba | resultado |
-|---|---|
-| Label-off | estructura habitada abierta; no planeta, no nave |
-| Bloom-off | misma silueta, volumen y material con `--sin-glow` |
-| Thumbnail | arco blanco distinguible a 400 px de ancho de hero |
-| Jerarquía | 7.5–8/10 intacta; Endurance sigue dominando por >1.4× |
-| Composición | (399, 323) r63, sin tangencias nuevas |
-
-**Presupuestos.** 25 draws (+1 por separar ventanas de balizas), 20.8 k
-vértices (Cooper 4.6 k), −1 sitio de `fbm`. Test de arquitectura
-(`cooperStationArchitecture`) y glifo `flat` con las mismas piezas.

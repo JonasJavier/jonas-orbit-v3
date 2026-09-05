@@ -7,7 +7,7 @@ import { buildWorldMetadata } from "@/lib/world-metadata";
 import { BESPOKE_WORLD_IDS, getWorldBySlug, getWorlds } from "@/lib/worlds";
 
 /**
- * Los 5 mundos que son solo prosa.
+ * Los 4 mundos que son solo prosa.
  *
  * Endurance (`/es/proyectos`) y Ranger (`/es/contacto`) tienen carpeta propia
  * porque montan el índice de proyectos y el formulario; sus segmentos estáticos

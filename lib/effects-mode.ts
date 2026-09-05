@@ -16,7 +16,7 @@ import { useEffect, useSyncExternalStore } from "react";
  * ── Por qué se persiste (cambio de G1) ──────────────────────────────────────
  *
  * En F1A toda la navegación ocurría dentro de la misma URL, así que el
- * parámetro sobrevivía solo. Con 8 rutas reales, el primer enlace lo borraría y
+ * parámetro sobrevivía solo. Con 7 rutas reales, el primer enlace lo borraría y
  * el visitante que pidió menos efectos los recuperaría sin haberlo pedido. §5
  * del pivote ya exigía que "su elección se persiste": la URL es la ENTRADA a la
  * preferencia, el almacenamiento es su memoria.

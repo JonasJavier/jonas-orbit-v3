@@ -33,11 +33,11 @@ describe("getWorld / getWorlds (composición id + locale)", () => {
     expect(() => getWorld("miller", "en")).toThrow(/miller.*en/);
   });
 
-  it("devuelve los 7 mundos en orden narrativo", () => {
+  it("devuelve los 6 mundos en orden narrativo", () => {
     const worlds = getWorlds("es");
-    expect(worlds.map((w) => w.order)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(worlds.map((w) => w.order)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(worlds[0].id).toBe("tesseract");
-    expect(worlds[6].id).toBe("ranger");
+    expect(worlds[5].id).toBe("ranger");
   });
 
   it("los slugs de ruta son únicos dentro del idioma", () => {
@@ -45,25 +45,13 @@ describe("getWorld / getWorlds (composición id + locale)", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it("Marketing Digital aparece como carrera completada (corrección de v2)", () => {
-    const cooper = getWorld("cooper-station", "es");
-    // Objetivo específico: el fact de Marketing Digital, no un regex sobre todo
-    // el JSON (que rompería ante cualquier sinónimo editorial).
-    const marketing = cooper.prose.facts.find(
-      (fact) => fact.label === "Marketing Digital",
-    );
-    expect(marketing?.value).toMatch(/completada/i);
-    // Y en ningún punto se describe como carrera en curso.
-    const text = JSON.stringify(cooper.prose);
-    expect(text).not.toMatch(/actualmente estudio|carrera en curso/i);
-  });
 });
 
 /**
  * G1 (matriz del pivote): cada WorldId resuelve a su ruta y viceversa; una ruta
  * desconocida no resuelve a ningún mundo.
  *
- * Cubre el riesgo de "mundo inalcanzable o duplicado": con 8 rutas reales, un
+ * Cubre el riesgo de "mundo inalcanzable o duplicado": con 7 rutas reales, un
  * slug repetido o colisionando con una carpeta estática deja un mundo sin
  * página y nadie se entera hasta producción.
  */
@@ -81,6 +69,7 @@ describe("G1 · contrato de rutas WorldId ↔ slug", () => {
     it(`[${locale}] una ruta desconocida no resuelve a ningún mundo`, () => {
       expect(getWorldBySlug("agujero-de-gusano", locale)).toBeUndefined();
       expect(getWorldBySlug("", locale)).toBeUndefined();
+      expect(getWorldBySlug("formacion", locale)).toBeUndefined();
     });
 
     it(`[${locale}] ningún slug secuestra un segmento reservado`, () => {
@@ -102,18 +91,18 @@ describe("G1 · contrato de rutas WorldId ↔ slug", () => {
 
   it("los destinos de navegación llevan href resuelto y orden narrativo", () => {
     const items = getWorldNavItems("es");
-    expect(items).toHaveLength(7);
-    expect(items.map((item) => item.order)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(items).toHaveLength(6);
+    expect(items.map((item) => item.order)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(items[0].href).toBe("/es/sobre-mi");
-    expect(items[6].href).toBe("/es/contacto");
-    // Nada de prosa larga en la proyección: cruza a las 12 rutas.
+    expect(items[5].href).toBe("/es/contacto");
+    // Nada de prosa larga en la proyección: cruza a todas las rutas.
     expect(Object.keys(items[0])).not.toContain("prose");
   });
 
   it("los vecinos recorren la secuencia completa sin salirse por los extremos", () => {
     const first = getWorldNeighbours(getWorld("tesseract", "es"), "es");
     expect(first.previous).toBeUndefined();
-    expect(first.next?.id).toBe("cooper-station");
+    expect(first.next?.id).toBe("miller");
 
     const last = getWorldNeighbours(getWorld("ranger", "es"), "es");
     expect(last.previous?.id).toBe("gargantua");

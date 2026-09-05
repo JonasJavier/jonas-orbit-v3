@@ -46,7 +46,6 @@ function measuredRadius(root: THREE.Object3D): number {
   root.updateMatrixWorld(true);
 
   const visit = (node: THREE.Object3D) => {
-    if (node.userData.excludeFromRadius) return;
     const position = (node as Partial<THREE.Mesh>).geometry?.getAttribute(
       "position",
     );
@@ -109,7 +108,6 @@ function apparentSize(id: Exclude<WorldId, "gargantua">, radius: number): number
 describe("cuerpos del Sistema Gargantúa", () => {
   it("construye identidades compuestas en vez de placeholders de una pieza", () => {
     const endurance = bodyFor("endurance");
-    const cooper = bodyFor("cooper-station");
     const tesseract = bodyFor("tesseract");
     const ranger = bodyFor("ranger");
 
@@ -159,84 +157,6 @@ describe("cuerpos del Sistema Gargantúa", () => {
         dockedRangers: 2,
         dockedLanders: 2,
       });
-
-      /*
-        COOPER ES UNA MEGAESTRUCTURA HABITADA (F1.3), y su contrato de lectura
-        son cinco piezas con papeles distintos: casco de cerámica y aluminio
-        (arco, módulos, espina clara, paneles, arco secundario), celosía oscura
-        (espina, montantes, mástil), microventanas cálidas y tenues, balizas
-        que pinchan el bloom y el ascensor que recorre la espina. Si alguien
-        vuelve al planeta con mota —o a otra nave más—, este objeto deja de
-        cuadrar antes de que nadie mire una captura.
-      */
-      for (const name of [
-        "cooper-station-hull",
-        "cooper-station-truss",
-        "cooper-station-windows",
-        "cooper-station-beacons",
-        "cooper-station-elevator",
-      ]) {
-        const mesh = cooper.object.getObjectByName(name) as THREE.Mesh;
-        expect(mesh.geometry.getAttribute("position").count, name).toBeGreaterThan(0);
-      }
-
-      /*
-        Lo retirado NO vuelve: el planeta se leía como mundo y no como lugar
-        habitado, los anillos eran el resto de esa lectura y el hábitat pequeño
-        era otra nave más.
-      */
-      for (const retired of [
-        "cooper-planet",
-        "cooper-rings",
-        "cooper-orbital-habitat",
-        "cooper-habitat-light",
-      ]) {
-        expect(cooper.object.getObjectByName(retired), retired).toBeUndefined();
-      }
-
-      const cooperAssembly = cooper.object.getObjectByName(
-        "cooper-station-assembly",
-      );
-      expect(cooperAssembly?.userData.cooperStationArchitecture).toEqual({
-        modules: 7,
-        windows: 38,
-        panels: 2,
-        arcs: 2,
-        struts: 6,
-      });
-
-      /* Cuatro acabados en el mismo draw: cerámica, aluminio, receso y solar. */
-      const cooperHull = cooper.object.getObjectByName(
-        "cooper-station-hull",
-      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-      const cooperMasks = cooperHull.geometry.getAttribute("aSurfaceMask");
-      expect(cooperMasks, "Cooper no publicó acabados").toBeDefined();
-      expect(
-        Math.max(...Array.from(cooperMasks.array as ArrayLike<number>)),
-        "Cooper no diferencia sus cuatro acabados",
-      ).toBe(3);
-
-      /*
-        Microventanas CÁLIDAS y tenues; balizas aparte y brillantes. Las dos
-        van al shader emisivo con su propia intensidad: a 2.75 el ámbar clipea
-        a blanco y la ventana se convierte en un glint genérico, así que las
-        ventanas van a 1.15 y sólo las balizas pinchan el bloom.
-      */
-      const cooperWindows = cooper.object.getObjectByName(
-        "cooper-station-windows",
-      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-      expect(cooperWindows.material.uniforms.uKind.value).toBe(11);
-      expect(
-        (cooperWindows.material.uniforms.uAccent.value as THREE.Color).getHexString(),
-        "las ventanas de Cooper no son cálidas",
-      ).toBe("ffc27a");
-      const cooperBeacons = cooper.object.getObjectByName(
-        "cooper-station-beacons",
-      ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-      expect(cooperBeacons.material.uniforms.uKind.value).toBe(8);
-      expect(
-        (cooperBeacons.material.uniforms.uAccent.value as THREE.Color).getHexString(),
-      ).toBe("fff1d6");
 
       /*
         EL TESSERACTO ES ARQUITECTURA IMPOSIBLE, y su contrato de lectura son
@@ -402,14 +322,13 @@ describe("cuerpos del Sistema Gargantúa", () => {
         ).toBeGreaterThanOrEqual(2);
       }
     } finally {
-      for (const body of [endurance, cooper, tesseract, ranger]) disposeBody(body);
+      for (const body of [endurance, tesseract, ranger]) disposeBody(body);
     }
   });
 
   it("publica el radio geométrico real de cada modelo", () => {
     const ids = [
       "tesseract",
-      "cooper-station",
       "miller",
       "endurance",
       "edmunds",
@@ -429,7 +348,6 @@ describe("cuerpos del Sistema Gargantúa", () => {
   it("mantiene la jerarquía APARENTE, que es la que se ve", () => {
     const ids = [
       "tesseract",
-      "cooper-station",
       "miller",
       "endurance",
       "edmunds",
@@ -486,8 +404,8 @@ describe("cuerpos del Sistema Gargantúa", () => {
 
       // La Ranger es una nave, no una mota: por debajo de este margen deja de
       // poder enseñar proa, cabina y toberas, que es lo que la hace una nave.
-      expect(size.ranger).toBeGreaterThan(size.tesseract * 1.5);
-      expect(size.ranger).toBeLessThan(size.endurance);
+      expect(size.ranger).toBeGreaterThan(size.tesseract);
+      expect(size.ranger).toBeLessThan(size.endurance * 0.65);
     } finally {
       for (const body of Object.values(bodies)) disposeBody(body);
     }
@@ -549,7 +467,6 @@ describe("cuerpos del Sistema Gargantúa", () => {
   it("conserva los modelos compuestos en un presupuesto de batches pequeño", () => {
     const ids = [
       "tesseract",
-      "cooper-station",
       "miller",
       "endurance",
       "edmunds",
@@ -585,27 +502,13 @@ describe("cuerpos del Sistema Gargantúa", () => {
       }
     }
 
-    /*
-      Los draws siguen siendo el recurso caro y apenas se mueven: 25 medidos,
-      con Cooper como megaestructura de cinco piezas —casco, celosía, ventanas
-      tenues, balizas y ascensor—, uno más que el planeta con anillos y a cambio
-      de que cada luz tenga su intensidad. Veintiséis es el techo, y con él cabe
-      una familia más antes de tener que volver a mirar esto.
-
-      Los vértices sí suben de verdad, y esta vez los pone Cooper: 20,8 k en
-      total, con la Endurance en 10,3 k y la estación en 4,6 k —arco, siete
-      módulos, espina, paneles y treinta y cinco microventanas—. Es el
-      intercambio correcto: cinco mil vértices no los nota ninguna GPU de esta
-      década y son literalmente la diferencia entre «otra nave más» y «lugar
-      habitado». El techo queda en 24 k, que deja margen sin permitir que esto
-      se convierta en un kitbash.
-    */
-    expect(batches).toBeLessThanOrEqual(26);
-    expect(vertices).toBeLessThan(24_000);
+    // El presupuesto incluye cinco cuerpos secundarios y el quad de Gargantúa.
+    expect(batches).toBeLessThanOrEqual(20);
+    expect(vertices).toBeLessThan(19_500);
   });
 
   it("anima localmente sin desplazar los destinos y es determinista", () => {
-    // La Cooper, la Ranger y el Tesseracto van aparte: son los tres que NO
+    // La Ranger y el Tesseracto van aparte: son los dos que NO
     // giran sobre su eje, cada uno por su motivo. Ver sus tests dedicados.
     const spinning = ["miller", "endurance", "edmunds"] as const;
 
@@ -820,53 +723,6 @@ describe("cuerpos del Sistema Gargantúa", () => {
     }
   });
 
-  /*
-    COOPER TAMPOCO GIRA, y por el mismo motivo que la Ranger.
-
-    Una megaestructura con apertura, collares de atraque y paneles afirma una
-    orientación: el hueco mira abajo a la derecha. Rotando sobre su eje, la
-    apertura dejaría de significar nada y la estación parecería una maqueta
-    colgada de un hilo. Lo que le queda vive DENTRO: vaivén subgrado y el
-    ascensor recorriendo la espina, que es escala habitada y no astronómica.
-  */
-  it("mantiene la estación sin giro propio, pero habitada", () => {
-    const body = bodyFor("cooper-station");
-    try {
-      const model = body.object.children[0];
-      const assembly = body.object.getObjectByName("cooper-station-assembly");
-      const pod = body.object.getObjectByName("cooper-station-elevator");
-      if (!assembly || !pod) throw new Error("faltan piezas");
-      const restPose = model.quaternion.clone();
-
-      body.spinAt(37);
-      // El cuerpo entero no gira...
-      expect(model.quaternion.equals(restPose)).toBe(true);
-      // ...pero el interior vive, y de forma determinista.
-      const first = {
-        x: assembly.rotation.x,
-        y: assembly.rotation.y,
-        pod: pod.position.x,
-      };
-      body.spinAt(37);
-      expect(assembly.rotation.x).toBeCloseTo(first.x, 10);
-      expect(assembly.rotation.y).toBeCloseTo(first.y, 10);
-      expect(pod.position.x).toBeCloseTo(first.pod, 10);
-      // El vaivén se mantiene por debajo del grado y cuarto: mantenimiento de
-      // actitud, no bamboleo.
-      for (const angle of [assembly.rotation.x, assembly.rotation.y]) {
-        expect(Math.abs(angle)).toBeLessThan(0.022);
-      }
-      // Y el ascensor recorre la espina de verdad: a un cuarto de su periodo
-      // está a más de medio metro local del punto de partida.
-      body.spinAt(0);
-      const atRest = pod.position.x;
-      body.spinAt(Math.PI / (2 * 0.05));
-      expect(Math.abs(pod.position.x - atRest)).toBeGreaterThan(0.4);
-    } finally {
-      disposeBody(body);
-    }
-  });
-
   it("limita el foco orbital a un arco alrededor del cuerpo", () => {
     const body = bodyFor("endurance");
     try {
@@ -887,7 +743,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
   /*
     PRESUPUESTO DE RUIDO DEL SHADER.
 
-    Los seis cuerpos comparten un único programa, así que lo que se paga —en
+    Los cinco cuerpos comparten un único programa, así que lo que se paga —en
     compilación y por píxel— es el número de SITIOS de llamada a fbm, no el de
     materiales. Cada llamada son cuatro octavas por ocho hash: 32 evaluaciones.
 

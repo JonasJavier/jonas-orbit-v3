@@ -9,10 +9,9 @@ import { expect, test, type Page } from "@playwright/test";
  * A32 se conservan como escenarios pero ahora se recorren por rutas.
  */
 
-/** Los 7 mundos en orden narrativo, con su ruta ES y su etiqueta de navegación. */
+/** Los 6 mundos en orden narrativo, con su ruta ES y su etiqueta de navegación. */
 const WORLDS = [
   { slug: "sobre-mi", label: "Historia", title: "Mi historia" },
-  { slug: "formacion", label: "Formación", title: "Formación y trayectoria" },
   { slug: "desarrollo", label: "Desarrollo", title: "Desarrollo full-stack" },
   { slug: "proyectos", label: "Proyectos", title: "Proyectos y sistemas" },
   { slug: "creatividad", label: "Creatividad", title: "Creatividad visual" },
@@ -20,7 +19,7 @@ const WORLDS = [
   { slug: "contacto", label: "Contacto", title: "Contacto" },
 ] as const;
 
-/** Las 8 rutas indexables de ES: la home más los 7 destinos. */
+/** Las 7 rutas indexables de ES: la home más los 6 destinos. */
 const ROUTES = ["/es", ...WORLDS.map((world) => `/es/${world.slug}`)];
 
 function heroLink(page: Page, name: string) {
@@ -80,7 +79,7 @@ function missionNav(page: Page) {
   return page.getByRole("navigation", { name: "Navegación de mundos" });
 }
 
-test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
+test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   test("A19 · / redirige a /es con un único salto correcto", async ({
     page,
   }) => {
@@ -139,13 +138,13 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
       ),
     ).toHaveAttribute("data-target-state", "target");
 
-    const cooper = map.getByRole("link", {
-      name: /Cooper Station Formación/i,
+    const miller = map.getByRole("link", {
+      name: /Miller Desarrollo/i,
     });
-    await cooper.focus();
-    await expect(cooper).toBeFocused();
-    await expect(cooper).toHaveAttribute("data-target-state", "target");
-    await expect(target).toContainText(/Cooper Station/i);
+    await miller.focus();
+    await expect(miller).toBeFocused();
+    await expect(miller).toHaveAttribute("data-target-state", "target");
+    await expect(target).toContainText(/Miller/i);
   });
 
   test("G1 · cada mundo responde 200 en su ruta y una desconocida da 404", async ({
@@ -164,7 +163,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     expect(unknown?.status()).toBe(404);
   });
 
-  test("G2 · las 8 rutas publican title, description, canonical y OG propios", async ({
+  test("G2 · las 7 rutas publican title, description, canonical y OG propios", async ({
     page,
   }) => {
     const seen = { title: new Set<string>(), canonical: new Set<string>() };
@@ -242,7 +241,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
       await expect(link).toHaveAttribute("aria-current", "page");
     }
 
-    // La home no tiene cabecera: repetir ahí los siete destinos que YA son el
+    // La home no tiene cabecera: repetir ahí los seis destinos que YA son el
     // mapa era decir dos veces lo mismo y enmarcar el espacio con muebles de
     // página web. El shell completo vive en las páginas de mundo.
     await page.goto("/es");
@@ -259,7 +258,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     await expect(neighbours.getByRole("link")).toHaveCount(2);
     await expect(neighbours.getByRole("link").first()).toHaveAttribute(
       "href",
-      "/es/formacion",
+      "/es/sobre-mi",
     );
 
     await page.goto("/es/sobre-mi");
@@ -388,7 +387,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     );
   });
 
-  test("A29 · se recorren las 8 rutas y se escribe en el formulario solo con teclado", async ({
+  test("A29 · se recorren las 7 rutas y se escribe en el formulario solo con teclado", async ({
     page,
   }) => {
     await page.goto("/es");
@@ -465,7 +464,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
     ).toBeVisible();
   });
 
-  test("A32 · ninguna de las 8 rutas desborda en 375px", async ({ page }) => {
+  test("A32 · ninguna de las 7 rutas desborda en 375px", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
 
     for (const path of [
@@ -497,7 +496,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 8 rutas", () => {
 test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("perfil semántico, HUD mínimo y siete enlaces reales a los mundos", async ({
+  test("perfil semántico, HUD mínimo y seis enlaces reales a los mundos", async ({
     page,
   }) => {
     await page.goto("/es");
@@ -520,9 +519,9 @@ test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
     ).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
 
     const map = page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" });
-    await expect(map.getByRole("link")).toHaveCount(7);
+    await expect(map.getByRole("link")).toHaveCount(6);
     for (const world of WORLDS) {
-      // Se cuenta en el RAÍL, que es donde viven los siete enlaces reales. El
+      // Se cuenta en el RAÍL, que es donde viven los seis enlaces reales. El
       // mapa dibuja además un eco visual anclado a cada cuerpo — también un
       // <a href> para que pulsar un planeta funcione sin JavaScript, pero
       // `aria-hidden` y fuera del orden de tabulación, así que no duplica
@@ -537,7 +536,7 @@ test.describe("G3 · el HTML de /es sirve el contenido sin JavaScript", () => {
     await expect(page.getByTestId("starfield-2d")).toHaveCount(0);
   });
 
-  test("los siete mundos se leen enteros sin JavaScript", async ({ page }) => {
+  test("los seis mundos se leen enteros sin JavaScript", async ({ page }) => {
     for (const world of WORLDS) {
       // `domcontentloaded`, no `load`: lo que se comprueba es el HTML que sirve
       // el servidor. Esperar a `load` es esperar a las imágenes de /es/proyectos,
@@ -582,7 +581,7 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
     await expect(page.locator(".hud__system")).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
-    ).toHaveCount(7);
+    ).toHaveCount(6);
     await expect(heroLink(page, "CV")).toHaveAttribute(
       "href",
       "/cv/jonas-javier-cv-es.pdf",
@@ -603,7 +602,7 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
   test("la elección sobrevive a una navegación de ruta real", async ({
     page,
   }) => {
-    // Con 8 rutas el parámetro ya no viaja solo: el primer enlace lo borra.
+    // Con 7 rutas el parámetro ya no viaja solo: el primer enlace lo borra.
     // Lo que persiste es la ELECCIÓN, no la URL (§5 del pivote).
     await page.goto("/es?no3d=1");
     await expect(page.locator("html")).toHaveAttribute(
@@ -656,7 +655,7 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     await expect(page.locator(".hud__system")).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Destinos del Sistema Gargantúa" }).getByRole("link"),
-    ).toHaveCount(7);
+    ).toHaveCount(6);
     await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
       timeout: 3_000,
     });
@@ -772,7 +771,7 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     await expect(effectsToggle).toBeVisible();
 
     // La escena imperativa retira --map-x/y al desmontarse. El mapa plano debe
-    // conservar su propio par de coordenadas o los siete destinos colapsan en
+    // conservar su propio par de coordenadas o los seis destinos colapsan en
     // una esquina hasta la siguiente recarga completa.
     await expect
       .poll(async () => {
@@ -824,7 +823,7 @@ test.describe("G4 · sin escena no se descarga three.js", () => {
     expect(sceneChunks, `chunks de escena cargados: ${sceneChunks}`).toEqual([]);
   });
 
-  test("sin escena, los siete destinos siguen siendo navegables", async ({
+  test("sin escena, los seis destinos siguen siendo navegables", async ({
     page,
   }) => {
     await page.goto("/es?no3d=1");
@@ -832,7 +831,7 @@ test.describe("G4 · sin escena no se descarga three.js", () => {
     const map = page.getByRole("navigation", {
       name: "Destinos del Sistema Gargantúa",
     });
-    await expect(map.getByRole("link")).toHaveCount(7);
+    await expect(map.getByRole("link")).toHaveCount(6);
 
     // Y llevan a alguna parte: es la diferencia entre degradar y romperse.
     await map.getByRole("link", { name: /Laboratorio/ }).click();
@@ -852,4 +851,49 @@ test.describe("G4 · sin escena no se descarga three.js", () => {
     );
     expect(overflow).toBe(0);
   });
+});
+
+
+test("seis destinos: la ruta retirada no tiene enlaces, sitemap ni OG", async ({ page, request }) => {
+  await page.goto("/es?no3d=1");
+  const rail = page.locator(".nav-rail");
+  await expect(rail.locator("a")).toHaveCount(6);
+  expect(await rail.locator("a").evaluateAll((links) => links.map((link) => link.getAttribute("data-rail-world")))).toEqual([
+    "tesseract", "miller", "endurance", "edmunds", "gargantua", "ranger",
+  ]);
+  await expect(page.locator('a[href*="formacion"], [data-world="cooper-station"]')).toHaveCount(0);
+  const sitemap = await request.get("/sitemap.xml");
+  expect(sitemap.status()).toBe(200);
+  const xml = await sitemap.text();
+  expect(xml).not.toMatch(/formacion|cooper/i);
+  for (const world of WORLDS) expect(xml).toContain(`/es/${world.slug}</loc>`);
+  for (const path of ["/es/formacion", "/es/cooper-station", "/es/formacion/opengraph-image"]) {
+    expect((await request.get(path)).status(), path).toBe(404);
+  }
+});
+
+
+test("375 px: los seis destinos caben en el raíl y conservan su blanco táctil", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/es?no3d=1");
+  const links = page.locator(".nav-rail a");
+  await expect(links).toHaveCount(6);
+  const boxes = await links.evaluateAll((nodes) => nodes.map((node) => {
+    const { x, y, width, height } = node.getBoundingClientRect();
+    return { x, y, width, height };
+  }));
+  for (const box of boxes) {
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(box.y + box.height).toBeLessThanOrEqual(812);
+  }
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], b = boxes[j];
+      expect(a.x + a.width <= b.x + 1 || b.x + b.width <= a.x + 1 ||
+        a.y + a.height <= b.y + 1 || b.y + b.height <= a.y + 1).toBe(true);
+    }
+  }
 });

@@ -47,7 +47,7 @@ export function getWorld(id: WorldId, locale: Locale): World {
   return { id, ...worldsData[id], prose };
 }
 
-/** Los 7 mundos de un idioma, en orden narrativo. */
+/** Los 6 mundos de un idioma, en orden narrativo. */
 export function getWorlds(locale: Locale): World[] {
   return WORLD_IDS.map((id) => getWorld(id, locale)).sort(
     (a, b) => a.order - b.order,
@@ -87,7 +87,7 @@ export function getWorldNeighbours(world: World, locale: Locale) {
  * Proyección mínima de un mundo para navegación y para el mapa del sistema.
  *
  * Lleva `href` ya resuelto y NADA de prosa larga: es lo que cruza a los
- * componentes de shell, que se renderizan en las 12 rutas.
+ * componentes de shell, que se renderizan en todas las rutas.
  */
 export interface WorldNavItem {
   id: WorldId;
@@ -119,7 +119,7 @@ function toWorldNavItem(world: World, locale: Locale): WorldNavItem {
   };
 }
 
-/** Los 7 mundos como destinos navegables, en orden narrativo. */
+/** Los 6 mundos como destinos navegables, en orden narrativo. */
 export function getWorldNavItems(locale: Locale): WorldNavItem[] {
   return getWorlds(locale).map((world) => toWorldNavItem(world, locale));
 }

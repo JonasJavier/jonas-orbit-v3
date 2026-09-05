@@ -363,7 +363,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     trozos y vuelven al acercarse otra vez.
 
     El raymarch no escribe profundidad (`depthWrite: false`), así que limpiarla
-    aquí no le quita nada: sólo garantiza que los seis cuerpos se ordenan entre
+    aquí no le quita nada: sólo garantiza que los cinco cuerpos se ordenan entre
     ellos y con nadie más.
   */
   bodyPass.clearDepth = true;
@@ -578,11 +578,11 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       //
       // Antes se recorrían 48 fases de cada órbita: había que garantizar que
       // ningún destino saliera de cuadro en ningún momento de su vuelta, y eso
-      // obligaba a encuadrar la unión de las seis elipses enteras. El precio lo
+      // obligaba a encuadrar la unión de las cinco elipses enteras. El precio lo
       // pagaba Gargantúa — la cámara se iba a 90 rs para dejar sitio a
       // posiciones que ningún visitante llegaba a ver.
       //
-      // Con las posiciones congeladas el encuadre solo tiene que encajar seis
+      // Con las posiciones congeladas el encuadre solo tiene que encajar cinco
       // puntos, y eso acerca la cámara de 90 a 73 rs. El disco pasa del 35 % al
       // 42 % del ancho del cuadro sin tocar una sola constante de tamaño.
       baseBodyPosition(body, aspect, r, u, f, point);
@@ -604,7 +604,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   /**
    * Encuadre y orientación, separados a propósito.
    *
-   * `measureFrameDistance` recorre el disco y los seis cuerpos en sus posiciones
+   * `measureFrameDistance` recorre el disco y los cinco cuerpos en sus posiciones
    * congeladas. Eso está bien al redimensionar o al cambiar de ruta, pero el
    * paralaje suavizado mueve la cámara en CADA fotograma y
    * ahí ese coste no pinta nada — la distancia de encuadre no depende del
@@ -886,7 +886,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    * Los umbrales eran 0.56 y 0.68 del ancho: dos números heredados de cuando
    * Gargantúa vivía en el tercio derecho del cuadro. Al centrarlo, nadie los
    * revisó, y quedaron los dos a la derecha del centro. El resultado era que
-   * TODA la mitad izquierda del sistema —tres de los seis destinos— colgaba su
+   * TODA la mitad izquierda del sistema —tres de los cinco destinos— colgaba su
    * nombre hacia la derecha, o sea hacia dentro, amontonando texto justo encima
    * del agujero negro. Y un cuerpo que cruzara la banda 0.56–0.68 hacía saltar
    * su nombre el ancho entero de la palabra de un lado al otro.
@@ -929,7 +929,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // Antes llevaba un mínimo de 22 px para garantizar el blanco de clic, y eso
     // mezclaba dos cosas que no son la misma: cuánto MIDE el cuerpo y cuánto
     // hay que poder PULSAR. Con cuerpos pequeños el suelo ganaba siempre, así
-    // que los siete marcadores salían del mismo tamaño y el anillo flotaba
+    // que los seis marcadores salían del mismo tamaño y el anillo flotaba
     // alrededor de un punto. El tamaño del blanco lo resuelve el CSS con
     // relleno; aquí se dice la verdad sobre el cuerpo.
     const distance = cameraPosition.distanceTo(body.position);
@@ -967,7 +967,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         POSICIÓN CONGELADA.
 
         Los cuerpos ya no recorren su órbita. No es una limitación técnica: es
-        dirección de arte. Seis objetos deslizándose sin parar sobre seis elipses
+        dirección de arte. Cinco objetos deslizándose sin parar sobre cinco elipses
         concéntricas se leen como un diagrama animado, y además obligaban a
         encuadrar la unión de todas las trayectorias — lo que dejaba a Gargantúa
         pequeño. Un sistema real a esta escala tampoco se mueve de forma
@@ -999,8 +999,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         Lo que cambia respecto de la versión anterior es el RECORRIDO, no la
         forma. Con exponente 0.45 sobre el cinturón de entonces, la iluminación
         iba de 1.46 a 1.14: un 28 % de diferencia entre el cuerpo más interior y
-        el más exterior, que en pantalla es ninguna. Seis cuerpos igual de
-        iluminados se leen como seis calcomanías pegadas al mismo cristal — era
+        el más exterior, que en pantalla es ninguna. Cinco cuerpos igual de
+        iluminados se leen como cinco calcomanías pegadas al mismo cristal — era
         la mitad de por qué el sistema no tenía profundidad.
 
         Ahora el recorrido es de 1.55 a 1.08, un factor 1.43. El interior está
@@ -1035,10 +1035,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         // abajo, que es donde el ojo apunta.
         hitScaleX = 0.82;
         hitScaleY = 0.64;
-      } else if (body.visual === "station") {
-        // El radio ya no incluye el hábitat orbital (ver `modelRadius`), así
-        // que mide anillos: ancho completo y alto el del planeta más el canto.
-        hitScaleY = 0.68;
+
       }
       projected.push(
         project({

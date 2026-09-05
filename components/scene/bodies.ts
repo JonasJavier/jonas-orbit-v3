@@ -35,7 +35,7 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
  * motivo era bueno (a veinte píxeles un cilindro sin textura es un rectángulo
  * gris) pero el resultado en pantalla no: con el núcleo cayendo como
  * `(1-d)^12`, lo que quedaba era una chincheta de seis píxeles dentro de un
- * anillo de interfaz vacío. Cuatro de los siete destinos no tenían cuerpo.
+ * anillo de interfaz vacío. Cuatro de los seis destinos no tenían cuerpo.
  *
  * El problema real no era la geometría, era usar una silueta genérica y cubrirla
  * con un halo. Los modelos construidos se leen por estructura; sólo sus balizas
@@ -105,7 +105,6 @@ const KIND: Record<WorldStructuralData["visual"], number> = {
   water: 0,
   desert: 1,
   tesseract: 2,
-  station: 3,
   ship: 4,
   beacon: 5,
   // Gargantúa no tiene malla: la dibuja el raymarch.
@@ -250,8 +249,8 @@ const BODY_VERTEX = /* glsl */ `
       Se calcula aquí y no en el fragmento porque three sólo inyecta
       modelMatrix en el vertex shader. Como la matriz es rotación por escala
       uniforme, los productos escalares con sus columnas deshacen la rotación,
-      y basta normalizar al otro lado. Lo usa la sombra de los anillos de
-      Cooper, que necesita cortar el plano del anillo.
+      y basta normalizar al otro lado. Lo usan el oleaje y el relieve
+      de los planetas para orientar su iluminación.
     */
     vec3 toLightW = normalize(-world.xyz);
     vLightLocal = vec3(
@@ -887,61 +886,6 @@ const BODY_FRAGMENT = /* glsl */ `
         specularPower = 30.0;
         specularStrength = 1.35;
       }
-    } else if (uKind == 3) {
-      /*
-        Cooper Station: cerámica habitada — un LUGAR, no una nave (F1.3).
-
-        El planeta anillado deja paso a la megaestructura: gran arco abierto,
-        módulos repetidos, espina, paneles y vacío en el centro. Endurance es
-        máquina (manta térmica gris, grafito); Cooper es arquitectura (cerámica
-        clara, aluminio, microventanas cálidas). La diferencia la sostienen el
-        VALOR y el acabado, no el número de piezas.
-
-        Sin una sola llamada a fbm: juntas de panel anchas —sobreviven al tamaño
-        de Hero sin moiré— y grano de una octava. La misma luz toca este material
-        y el de todos los demás; el suelo nocturno es el común de la familia.
-      */
-      float joints = panels(vLocal * 1.15, 1.35);
-      /* Una octava: grano de cerámica y aluminio, por debajo del píxel lejano. */
-      float ceramicGrain = noise(vLocal * 9.0);
-      if (vSurfaceMask > 2.5) {
-        /*
-          Panel solar. Azul acero oscuro con largueros en el sentido largo: sin
-          esa dirección, un plano oscuro a 60 px se funde con el fondo y la
-          estación pierde sus alas.
-        */
-        float ribs = smoothstep(0.3, 0.5, abs(fract(vUv.x * 14.0) - 0.5));
-        albedo = mix(vec3(0.05, 0.08, 0.13), vec3(0.16, 0.22, 0.32), ribs);
-        gloss = 0.55 + ribs * 0.25;
-        specularPower = 52.0;
-        specularStrength = 0.8;
-      } else if (vSurfaceMask > 1.5) {
-        /* Receso y grafito: las juntas oscuras entre cerámica. */
-        albedo = mix(vec3(0.05, 0.06, 0.075), vec3(0.14, 0.155, 0.175), joints * 0.5);
-        albedo *= 0.85 + ceramicGrain * 0.2;
-        gloss = 0.4;
-        specularPower = 46.0;
-      } else if (vSurfaceMask > 0.5) {
-        /* Aluminio satinado: arco, espina secundaria, conectores, remates. */
-        albedo = mix(vec3(0.3, 0.32, 0.345), vec3(0.55, 0.56, 0.56), joints);
-        albedo *= 0.88 + ceramicGrain * 0.18;
-        gloss = 0.5;
-        specularPower = 55.0;
-        specularStrength = 0.85;
-      } else {
-        /*
-          Cerámica espacial clara. Llega a 0.78 donde la junta la enciende: más
-          blanca que la manta principal de Endurance (0.72), que es lo que aparta
-          a Cooper de la lectura de nave sin llegar al papel recortado —está una
-          órbita más lejos y un plano más al fondo, así que la misma clave le
-          devuelve menos.
-        */
-        albedo = mix(vec3(0.6, 0.61, 0.6), vec3(0.78, 0.77, 0.74), joints);
-        albedo *= 0.92 + ceramicGrain * 0.12;
-        gloss = 0.32;
-        specularPower = 40.0;
-        specularStrength = 0.6;
-      }
     } else if (uKind == 4) {
       /*
         Endurance: mantas térmicas y panel pintado, no metal cromado.
@@ -1086,19 +1030,10 @@ const BODY_FRAGMENT = /* glsl */ `
       gloss = 0.24;
       specularPower = 30.0;
       specularStrength = 0.62;
-    } else if (uKind == 8 || uKind == 11) {
-      /*
-        Luces de navegación y microventanas: geometría, no halo global.
-
-        Dos intensidades, un solo shader. Las BALIZAS (8) van a 2.75: tienen que
-        pinchar el bloom y leerse a distancia. Las VENTANAS de Cooper (11) van a
-        1.15 a propósito —a 2.75 el ámbar clipea a blanco y una ventana cálida
-        de un píxel se convierte en un glint genérico; a 1.15 conserva el tono
-        y el cerebro lee «hay personas ahí» en vez de «hay un led».
-      */
+    } else if (uKind == 8) {
       float pulse = 0.94 + 0.06 * sin(uTime * 0.55);
       albedo = vec3(0.0);
-      float glow = uKind == 8 ? (2.75 + uFocus * 0.55) : 1.15;
+      float glow = 2.75 + uFocus * 0.55;
       emissive = uAccent * glow * pulse;
       gloss = 0.0;
     }
@@ -1129,7 +1064,7 @@ const BODY_FRAGMENT = /* glsl */ `
       materiales diferentes: es la regla del contrato visual, y no admite una
       excepción para el cuerpo que más falta le hace.
     */
-    if (uKind == 8 || uKind == 11) {
+    if (uKind == 8) {
       gl_FragColor = vec4(emissive + uNavigation * uFocus * 0.75, 1.0);
       return;
     }
@@ -1177,8 +1112,6 @@ const BODY_FRAGMENT = /* glsl */ `
       Ahora todos siguen la misma ley y lo único que cambia es el SUELO, por
       familia de material: cuánto rebote de cielo conserva la cara que no ve a
       Gargantúa. Los mundos, que tienen aire, conservan más; el metal, menos.
-      La cerámica clara de Cooper conserva el suelo común: devuelve más cielo
-      que el grafito del Tesseracto, como haría un casco claro de verdad.
 
       Endurance es la excepción alta a propósito: tiene más caras por unidad de
       silueta que ningún otro cuerpo, y un suelo bajo no le da grafito — le abre
@@ -1198,7 +1131,7 @@ const BODY_FRAGMENT = /* glsl */ `
       key * diffuse * materialOcclusion + materialFill * nightFill
     );
     float terminatorBand = exp(-abs(shadedNdl - 0.055) * 15.0) * (1.0 - day * 0.34);
-    if (uKind == 0 || uKind == 1 || uKind == 3) {
+    if (uKind == 0 || uKind == 1) {
       color += albedo * key * terminatorBand * 0.09;
     }
 
@@ -1430,10 +1363,6 @@ const NAVIGATION_COLOUR = "#7fe5ff";
 const STRUCTURE_KIND = 7;
 const EMISSIVE_KIND = 8;
 const ENDURANCE_SERVICE_KIND = 9;
-/* Microventanas de Cooper: mismo shader que las balizas, un grado menos de
-   insolencia. Ver la rama `uKind == 11` del fragment. */
-const COOPER_WINDOW_KIND = 11;
-
 interface MaterialOptions {
   accent?: string;
   secondary?: string;
@@ -2194,328 +2123,6 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       // hace que las mantas crucen el terminador sin que la nave derive de sitio.
       assembly.rotation.x = Math.sin(seconds * 0.071) * 0.007;
       assembly.rotation.y = Math.sin(seconds * 0.049) * 0.009;
-    },
-  };
-}
-
-/**
- * Cooper Station: megaestructura habitada — un LUGAR, no una nave (F1.3).
- *
- * ── Qué deja atrás ────────────────────────────────────────────────────
- *
- * El planeta anillado con hábitat pequeño contaba «mundo memorable», pero sin
- * rótulo se leía planeta, no lugar habitado. El cilindro provisional ya lo
- * prohibía la dirección; esta fase retira también el planeta: la silueta la
- * pone la arquitectura.
- *
- * ── El orden de lectura ───────────────────────────────────────────────
- *
- * 1. **Gran arco.** 220° abiertos con el hueco hacia abajo y algo a la
- *    derecha: curva, arquitectura y vacío enorme en una sola línea. No
- *    cierra —una rueda cerrada sería otra Endurance.
- * 2. **Módulos repetidos.** Siete secciones habitables de tamaños distintos
- *    sobre el arco, alternando cara. La REPETICIÓN es el truco de escala:
- *    unidades pequeñas en serie hacen que el cerebro lea enorme sin contar
- *    edificios. Lo mismo hacen las tres microventanas por módulo.
- * 3. **Espina y montantes.** Una cuerda oscura une las puntas del arco con
- *    cuatro montantes; el contraste claro/oscuro dibuja la estructura.
- * 4. **Paneles, mástil y arco secundario.** Dos alas solares, un mástil con
- *    baliza y un fragmento de arco en un plano trasero: piezas de tamaño
- *    conocido y paralaje interno.
- * 5. **Microventanas cálidas.** Una tira diminuta por módulo: hay personas
- *    ahí sin dibujar ni una.
- *
- * Cinco draws —cerámica/aluminio, estructura, ventanas tenues, balizas y
- * ascensor—, uno más que el planeta con anillos y a cambio de que las ventanas
- * conserven su tono cálido sin clipear. El radio publicado vuelve a medir la
- * silueta entera: ya no hay hábitat lejano que podar, así que el encuadre no
- * se entera del cambio.
- */
-function cooperModel(input: SceneBodyInput): BodyModel {
-  const hull = bodyMaterial(input, KIND.station);
-  const structure = bodyMaterial(input, STRUCTURE_KIND);
-  const windows = bodyMaterial(input, COOPER_WINDOW_KIND, { accent: "#ffc27a" });
-  const beacons = bodyMaterial(input, EMISSIVE_KIND, { accent: "#fff1d6" });
-  const root = new THREE.Object3D();
-  const assembly = new THREE.Object3D();
-  assembly.name = "cooper-station-assembly";
-  root.add(assembly);
-
-  /* Acabados dentro del mismo draw, como la Endurance: la máscara viaja por
-     vértice y el arco entero sale en una sola malla. */
-  const CERAMIC = 0;
-  const ALUMINUM = 1;
-  const RECESS = 2;
-  const SOLAR = 3;
-
-  /* El hueco mira abajo y un poco a la derecha: apertura deliberada, no diana. */
-  const ARC_R = 0.92;
-  const ARC_START = (-18 * Math.PI) / 180;
-  const ARC_SWEEP = (220 * Math.PI) / 180;
-
-  const hullParts: THREE.BufferGeometry[] = [];
-  const structureParts: THREE.BufferGeometry[] = [];
-  const windowParts: THREE.BufferGeometry[] = [];
-  const beaconParts: THREE.BufferGeometry[] = [];
-
-  /* ── 1. Gran arco ──────────────────────────────────────────────────── */
-  hullParts.push(
-    surfaceMasked(
-      placed(
-        new THREE.TorusGeometry(ARC_R, 0.05, 8, 72, ARC_SWEEP),
-        [0, 0, 0],
-        [0, 0, ARC_START],
-      ),
-      ALUMINUM,
-    ),
-  );
-
-  /* Puntas del arco: collar de atraque en cada extremo, que es donde una
-     estación abierta recibe visitas. */
-  const arcEnd = (angle: number): VectorTuple => [
-    Math.cos(angle) * ARC_R,
-    Math.sin(angle) * ARC_R,
-    0,
-  ];
-  for (const angle of [ARC_START, ARC_START + ARC_SWEEP]) {
-    const [tipX, tipY] = arcEnd(angle);
-    hullParts.push(
-      surfaceMasked(
-        placed(
-          new THREE.CylinderGeometry(0.055, 0.07, 0.1, 10),
-          [tipX, tipY, 0],
-          [0, 0, angle - Math.PI / 2],
-        ),
-        RECESS,
-      ),
-    );
-    beaconParts.push(
-      placed(new THREE.SphereGeometry(0.02, 7, 5), [tipX, tipY, 0.06]),
-    );
-  }
-
-  /* ── 2. Módulos habitables ─────────────────────────────────────────── */
-  const MODULE_LENGTHS = [0.16, 0.2, 0.14, 0.22, 0.15, 0.19, 0.13];
-  const MODULE_COUNT = MODULE_LENGTHS.length;
-  let windowCount = 0;
-  for (let index = 0; index < MODULE_COUNT; index++) {
-    const length = MODULE_LENGTHS[index];
-    const progress = index / (MODULE_COUNT - 1);
-    const angle = ARC_START + 0.14 + progress * (ARC_SWEEP - 0.28);
-    const tilt = angle + Math.PI / 2;
-    /* Alternan cara externa e interna del arco: la silueta deja de ser una
-       cuenta regular sin perder el ritmo que vende la escala. */
-    const radius = ARC_R + (index % 2 === 0 ? 0.045 : -0.03);
-    const cx = Math.cos(angle) * radius;
-    const cy = Math.sin(angle) * radius;
-    const cos = Math.cos(tilt);
-    const sin = Math.sin(tilt);
-    hullParts.push(
-      surfaceMasked(
-        placed(roundedBox(length, 0.11, 0.13, 0.02), [cx, cy, 0], [0, 0, tilt]),
-        index % 2 === 0 ? CERAMIC : ALUMINUM,
-      ),
-    );
-    /* Cuello al arco: el módulo está montado, no flotando. */
-    structureParts.push(
-      placed(
-        new THREE.BoxGeometry(0.05, 0.09, 0.06),
-        [
-          (Math.cos(angle) * (ARC_R + radius)) / 2,
-          (Math.sin(angle) * (ARC_R + radius)) / 2,
-          0,
-        ],
-        [0, 0, angle - Math.PI / 2],
-      ),
-    );
-    /* Cinco microventanas por módulo, en la cara que mira a cámara (+Z): la
-       tira cálida que dice «hay personas ahí». Siguen siendo micro —cada una
-       cubre poco más de un píxel a tamaño de Hero—, pero cinco en serie por
-       módulo dan el parpadeo cálido que tres aisladas no llegaban a sumar. */
-    for (const slot of [-0.36, -0.18, 0, 0.18, 0.36]) {
-      const along = slot * length;
-      windowParts.push(
-        placed(
-          new THREE.BoxGeometry(0.032, 0.014, 0.008),
-          [cx + along * cos, cy + along * sin, 0.069],
-          [0, 0, tilt],
-        ),
-      );
-      windowCount++;
-    }
-  }
-
-  /* ── 3. Espina ─────────────────────────────────────────────────────── */
-  const [tipAx, tipAy] = arcEnd(ARC_START);
-  const [tipBx, tipBy] = arcEnd(ARC_START + ARC_SWEEP);
-  const spineLength = Math.hypot(tipBx - tipAx, tipBy - tipAy);
-  const spineAngle = Math.atan2(tipBy - tipAy, tipBx - tipAx);
-  const spineMid: VectorTuple = [(tipAx + tipBx) / 2, (tipAy + tipBy) / 2, 0];
-  structureParts.push(
-    placed(
-      new THREE.BoxGeometry(spineLength, 0.055, 0.055),
-      spineMid,
-      [0, 0, spineAngle],
-    ),
-  );
-  /* Regla clara sobre la espina oscura: el contraste dibuja la línea. */
-  hullParts.push(
-    surfaceMasked(
-      placed(
-        new THREE.BoxGeometry(spineLength * 0.96, 0.02, 0.02),
-        [spineMid[0], spineMid[1] + 0.038, 0],
-        [0, 0, spineAngle],
-      ),
-      CERAMIC,
-    ),
-  );
-
-  /* Cuatro montantes de la espina al arco: la celosía que los une en una sola
-     estructura. Caen sobre el arco por construcción —el círculo superior a esa
-     x está dentro del barrido del arco. */
-  for (const fraction of [0.18, 0.39, 0.61, 0.82]) {
-    const baseX = tipAx + (tipBx - tipAx) * fraction;
-    const baseY = tipAy + (tipBy - tipAy) * fraction;
-    structureParts.push(
-      strut(
-        new THREE.Vector3(baseX, baseY, 0),
-        new THREE.Vector3(
-          baseX,
-          Math.sqrt(Math.max(ARC_R * ARC_R - baseX * baseX, 0.01)),
-          0,
-        ),
-        0.032,
-      ),
-    );
-  }
-
-  /* Hub central con mástil: la aguja que confirma la escala contra el vacío. */
-  hullParts.push(
-    surfaceMasked(
-      placed(
-        new THREE.CylinderGeometry(0.07, 0.085, 0.14, 12),
-        [spineMid[0], spineMid[1], 0],
-        [Math.PI / 2, 0, 0],
-      ),
-      ALUMINUM,
-    ),
-    surfaceMasked(
-      placed(
-        new THREE.TorusGeometry(0.085, 0.016, 6, 20),
-        [spineMid[0], spineMid[1], 0.05],
-      ),
-      CERAMIC,
-    ),
-  );
-  structureParts.push(
-    placed(
-      new THREE.CylinderGeometry(0.013, 0.013, 0.95, 7),
-      [spineMid[0], spineMid[1] + 0.475, 0],
-    ),
-  );
-  beaconParts.push(
-    placed(
-      new THREE.SphereGeometry(0.022, 7, 5),
-      [spineMid[0], spineMid[1] + 0.96, 0],
-    ),
-  );
-
-  /* ── 4. Alas solares ───────────────────────────────────────────────── */
-  for (const side of [-1, 1]) {
-    hullParts.push(
-      surfaceMasked(
-        placed(
-          new THREE.BoxGeometry(0.58, 0.018, 0.26),
-          [spineMid[0] + side * 0.93, spineMid[1] - 0.02, 0],
-          [0, 0, spineAngle],
-        ),
-        SOLAR,
-      ),
-    );
-    structureParts.push(
-      placed(
-        new THREE.BoxGeometry(0.2, 0.03, 0.03),
-        [spineMid[0] + side * 0.55, spineMid[1], 0],
-        [0, 0, spineAngle],
-      ),
-    );
-  }
-
-  /* ── 5. Arco secundario ──────────────────────────────────────────────
-     Un fragmento en un plano trasero: la pieza que da paralaje interno y rompe
-     la simetría que le quedaba al conjunto. Los conectores caen sobre el arco
-     principal por construcción —misma dirección radial, mismo radio. */
-  const SECONDARY_CENTRE: VectorTuple = [-0.28, 0.42, -0.17];
-  const SECONDARY_R = 0.5;
-  hullParts.push(
-    surfaceMasked(
-      placed(
-        new THREE.TorusGeometry(SECONDARY_R, 0.032, 6, 36, 1.15),
-        SECONDARY_CENTRE,
-        [0, 0, 0.55],
-      ),
-      ALUMINUM,
-    ),
-  );
-  for (const angle of [0.7, 1.5]) {
-    const foot = new THREE.Vector3(
-      SECONDARY_CENTRE[0] + Math.cos(angle) * SECONDARY_R,
-      SECONDARY_CENTRE[1] + Math.sin(angle) * SECONDARY_R,
-      SECONDARY_CENTRE[2],
-    );
-    const outward = foot.clone().setZ(0).normalize();
-    structureParts.push(
-      strut(
-        foot,
-        new THREE.Vector3(outward.x * ARC_R, outward.y * ARC_R, -0.02),
-        0.026,
-      ),
-    );
-  }
-
-  const hullMesh = mergedMesh(hullParts, hull);
-  hullMesh.name = "cooper-station-hull";
-  assembly.add(hullMesh);
-  const structureMesh = mergedMesh(structureParts, structure);
-  structureMesh.name = "cooper-station-truss";
-  assembly.add(structureMesh);
-  const windowMesh = mergedMesh(windowParts, windows);
-  windowMesh.name = "cooper-station-windows";
-  windowMesh.renderOrder = 2;
-  assembly.add(windowMesh);
-  const beaconMesh = mergedMesh(beaconParts, beacons);
-  beaconMesh.name = "cooper-station-beacons";
-  beaconMesh.renderOrder = 2;
-  assembly.add(beaconMesh);
-
-  /* El ascensor recorre la espina: la única traslación que queda en la escena.
-     Un objeto artificial moviéndose entre módulos es escala habitada, no
-     escala astronómica —el mismo motivo por el que el hábitat antiguo recorría
-     su órbita—, y los cuerpos siguen congelados en su trayectoria. */
-  const podMesh = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.06), hull);
-  podMesh.name = "cooper-station-elevator";
-  podMesh.position.set(spineMid[0], spineMid[1] + 0.07, 0.02);
-  assembly.add(podMesh);
-
-  assembly.userData.cooperStationArchitecture = {
-    modules: MODULE_COUNT,
-    /* 35 ventanas en módulos más 3 balizas: dos puntas y mástil. */
-    windows: windowCount + 3,
-    panels: 2,
-    arcs: 2,
-    struts: 6,
-  };
-
-  return {
-    root,
-    materials: [hull, structure, windows, beacons],
-    animate(seconds) {
-      /* Vaivén de actitud subgrado más ascensor en la espina. La silueta no se
-         mueve de sitio: la orientación del arco ES información —si girara, la
-         apertura dejaría de significar nada— así que no hay giro propio. */
-      assembly.rotation.x = Math.sin(seconds * 0.063) * 0.008;
-      assembly.rotation.y = Math.sin(seconds * 0.047) * 0.01;
-      podMesh.position.x = spineMid[0] + Math.sin(seconds * 0.05) * 0.55;
     },
   };
 }
@@ -3468,8 +3075,6 @@ function bodyModel(input: SceneBodyInput): BodyModel {
       return simpleWorld(input, KIND.desert);
     case "tesseract":
       return tesseractModel(input);
-    case "station":
-      return cooperModel(input);
     case "ship":
       return enduranceModel(input);
     case "beacon":
@@ -3481,12 +3086,6 @@ function bodyModel(input: SceneBodyInput): BodyModel {
 
 /**
  * Radio real desde el origen, ya con transforms y escala del modelo aplicados.
- *
- * Una pieza puede EXCLUIRSE. El mecanismo queda para futuros detalles lejanos:
- * antes lo usaba el hábitat orbital de Cooper, que vivía a dos radios de su
- * mundo y arrastraba el blanco de clic y el rótulo hasta una mota que nadie
- * veía. Desde F1.3 la estación ES la silueta —arco, espina y paneles— y el
- * radio la mide entera, que es lo que conserva el encuadre sin tocarlo.
  *
  * ── Por qué se mide por VÉRTICES y no por esfera envolvente ─────────────────
  *
@@ -3517,7 +3116,6 @@ function modelRadius(root: THREE.Object3D): number {
   // Recursión propia y no `traverse`: hay que poder podar un SUBÁRBOL entero,
   // y el callback de traverse no puede detener el descenso a los hijos.
   const visit = (node: THREE.Object3D) => {
-    if (node.userData.excludeFromRadius) return;
     const position = (node as Partial<THREE.Mesh>).geometry?.getAttribute(
       "position",
     );
@@ -3589,10 +3187,6 @@ function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Eu
     asomando por delante del plano.
   */
   if (visual === "ship") return target.set(0.3, 0.2, -0.08);
-  // Cooper es un arco abierto en el plano XY mirando a +Z: se presenta de
-  // frente con una ligera oblicuidad para que el arco secundario trasero dé
-  // paralaje interno. La apertura queda abajo a la derecha.
-  if (visual === "station") return target.set(0.38, 0.28, -0.12);
   /*
     Tesseracto. Ésta es TODA su orientación —no gira sobre su eje— así que hace
     bastante más trabajo que la de cualquier otro cuerpo.
@@ -3631,16 +3225,6 @@ function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Eu
 const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
   water: 0.05,
   desert: 0.042,
-  /*
-    CERO, como la Ranger y por el mismo motivo desde el lado contrario.
-
-    La estación tiene apertura, proa de visita y babor: una megaestructura con
-    el hueco hacia abajo que rota sobre su eje afirma que su orientación no
-    significa nada, y además convierte la apertura —que es información— en
-    ruido. Le quedan el vaivén subgrado y el ascensor de la espina, dentro del
-    modelo. Ver `cooperModel`.
-  */
-  station: 0,
   ship: 0.016,
   /*
     CERO, y por el mismo motivo que la Ranger aunque desde el lado contrario.
@@ -3681,7 +3265,6 @@ const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
 const MODEL_SCALE: Record<WorldStructuralData["visual"], number> = {
   water: 1.12,
   desert: 1.12,
-  station: 1.6,
   /*
     Segundo ancla, no coprotagonista.
 

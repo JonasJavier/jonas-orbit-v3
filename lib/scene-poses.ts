@@ -22,7 +22,7 @@ export interface CameraPose {
    * Multiplicador sobre la distancia de encuadre.
    *
    * No es una distancia absoluta a propósito. La escena CALCULA cada vez la
-   * distancia mínima a la que las siete órbitas caben enteras en el viewport
+   * distancia mínima a la que las cinco trayectorias caben enteras en el viewport
    * actual, y esto la multiplica. Con un número fijo, un móvil en vertical
    * dejaría medio sistema fuera de cuadro — y un destino fuera de cuadro es un
    * enlace que no existe.

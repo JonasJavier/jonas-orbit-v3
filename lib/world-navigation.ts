@@ -10,7 +10,7 @@ import type { WorldId } from "@/content/worlds.data";
  * ── Por qué existe ──────────────────────────────────────────────────────────
  *
  * Hoy cada mundo es una ruta. En la fase del viaje continuo
- * (`docs/design/continuous-journey-phase.md`) los siete pasarán a ser anclas de
+ * (`docs/design/continuous-journey-phase.md`) los seis pasarán a ser anclas de
  * un único documento y el scroll será la fuente de verdad de la cámara.
  *
  * Ese cambio no puede obligar a rehacer el Hero. Así que el Hero **no sabe cómo
@@ -20,7 +20,7 @@ import type { WorldId } from "@/content/worlds.data";
  *
  * ── Y por qué NO sustituye a los enlaces ────────────────────────────────────
  *
- * Los siete destinos siguen siendo `<a href>` reales en el HTML servido. Esto
+ * Los seis destinos siguen siendo `<a href>` reales en el HTML servido. Esto
  * es una mejora progresiva encima, no un reemplazo: sin JavaScript la
  * navegación funciona igual, que es lo que exige la regla 7 del repositorio.
  */

@@ -21,7 +21,7 @@ import { FlatWorldBody } from "./flat-world-body";
 import { NavRail } from "./nav-rail";
 import { SystemHud } from "./system-hud";
 
-type HitboxShape = "box" | "craft" | "ringed" | "sphere";
+type HitboxShape = "box" | "craft" | "sphere";
 
 interface InteractionVolume {
   /** Radio de respaldo para el mapa plano, antes de recibir `--map-radius`. */
@@ -46,8 +46,6 @@ function interactionVolumeFor(world: WorldNavItem): InteractionVolume {
       return { fallbackRadius: 104, scale: 1.1, shape: "sphere" };
     case "ship":
       return { fallbackRadius: 58, scale: 1.2, shape: "craft" };
-    case "station":
-      return { fallbackRadius: 54, scale: 1.18, shape: "ringed" };
     case "tesseract":
       return { fallbackRadius: 34, scale: 1.24, shape: "box" };
     case "beacon":
@@ -61,9 +59,9 @@ function interactionVolumeFor(world: WorldNavItem): InteractionVolume {
 /**
  * Interfaz única del System Map.
  *
- * El raíl conserva los siete enlaces accesibles. Los proxies sobre los cuerpos
+ * El raíl conserva los seis enlaces accesibles. Los proxies sobre los cuerpos
  * son enlaces reales retirados del árbol accesible: aportan puntero y mejora
- * progresiva sin duplicar las siete paradas de teclado. Ambos comparten un solo
+ * progresiva sin duplicar las seis paradas de teclado. Ambos comparten un solo
  * estado y la misma costura de navegación. El canvas nunca crea UI.
  */
 export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
@@ -127,7 +125,7 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
       >
         {/*
           Eco visual. El contenedor completo se retira del árbol accesible:
-          teclado y lectores recorren únicamente el raíl, en orden 01→07.
+          teclado y lectores recorren únicamente el raíl, en orden 01→06.
         */}
         <ol className="system-map__field" aria-hidden="true">
           {worlds.map((world) => {

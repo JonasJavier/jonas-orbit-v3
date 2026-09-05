@@ -24,7 +24,6 @@ const BODY_DEPTH_LAYER: Readonly<
     posición en pantalla y solo cambia su tamaño aparente y su orden en z.
   */
   tesseract: -6,
-  "cooper-station": -3,
   miller: 0,
   endurance: 4,
   edmunds: 2,

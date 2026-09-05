@@ -9,7 +9,7 @@ import type { WorldRoute } from "@/lib/world-route";
  * Layout de idioma: lo único que NO depende de la ruta concreta.
  *
  * Monta el fondo y la escena UNA vez, y ambos sobreviven a la navegación entre
- * las 12 rutas. Es el requisito de §4: si el canvas se montara en las páginas,
+ * todas las rutas. Es el requisito de §4: si el canvas se montara en las páginas,
  * cada navegación recrearía el contexto WebGL, la transición de viaje sería un
  * parpadeo negro y G3 sería imposible de construir.
  *

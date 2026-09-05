@@ -2,7 +2,7 @@
  * Proyección del Sistema Gargantúa al plano de la pantalla — versión `flat`.
  *
  * Es la que se usa cuando NO hay escena 3D: reduced-motion, `?no3d=1`, sin
- * WebGL2 o equipo que no llega. Coloca los siete destinos sobre una elipse
+ * WebGL2 o equipo que no llega. Coloca los seis destinos sobre una elipse
  * achatada usando la MISMA estructura orbital que la escena real
  * (`content/worlds.data.ts`), así que el mapa plano y el sistema 3D no pueden
  * divergir: si un cuerpo cambia de sitio, cambia en los dos.
@@ -14,9 +14,13 @@
 
 import { WORLD_IDS, worldsData, type WorldStructuralData } from "@/content/worlds.data";
 
-/** Semiejes de la elipse, en porcentaje del cuadro del mapa. */
-export const MAP_RADIUS_X = 40;
-export const MAP_RADIUS_Y = 36;
+/**
+ * Extensión del atlas en porcentaje. El catálogo de seis destinos normaliza
+ * contra 30 rs: estos márgenes conservan aire en los bordes, también a 375 px,
+ * sin reservar una trayectoria para un cuerpo que ya no existe.
+ */
+export const MAP_RADIUS_X = 36.5;
+export const MAP_RADIUS_Y = 32.75;
 
 /** El radio orbital más lejano del sistema: normaliza el resto a 0-1. */
 const MAX_ORBIT = Math.max(

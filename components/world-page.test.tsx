@@ -42,7 +42,7 @@ describe("WorldPage", () => {
     const neighbours = screen.getByRole("navigation", {
       name: "Destinos contiguos",
     });
-    expect(neighbours).toHaveTextContent("Formación");
+    expect(neighbours).toHaveTextContent("Mi historia");
     expect(neighbours).toHaveTextContent("Proyectos");
   });
 

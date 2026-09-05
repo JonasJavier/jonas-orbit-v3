@@ -39,7 +39,7 @@ describe("projectPlacement (proyección del sistema)", () => {
     expect(down.y).toBeCloseTo(50 + MAP_RADIUS_Y);
   });
 
-  it("los 7 cuerpos caen dentro del cuadro", () => {
+  it("los 6 cuerpos caen dentro del cuadro", () => {
     // Un cuerpo proyectado fuera del 0-100 sería un destino recortado por el
     // borde del mapa: visible en el DOM, inalcanzable con el ratón.
     for (const id of WORLD_IDS) {
