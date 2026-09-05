@@ -1114,9 +1114,9 @@ const BODY_FRAGMENT = /* glsl */ `
       float warmFoil = surface.g;
       float seam = surface.b;
       float microRoughness = surface.a;
-      albedo = mix(vec3(0.185, 0.21, 0.245), vec3(0.83, 0.85, 0.86), blanket);
+      albedo = mix(vec3(0.425, 0.432, 0.438), vec3(0.9, 0.9, 0.895), blanket);
       albedo = mix(albedo, vec3(0.74, 0.61, 0.43), warmFoil * 0.22);
-      albedo = mix(albedo, vec3(0.06, 0.075, 0.095), seam * 0.55);
+      albedo = mix(albedo, vec3(0.098, 0.101, 0.108), seam * 0.62);
       gloss = mix(0.74, 0.26, microRoughness);
       specularPower = 62.0;
       specularStrength = 1.05;
@@ -1134,8 +1134,8 @@ const BODY_FRAGMENT = /* glsl */ `
           Las líneas de cuerda van con la envergadura, como los largueros.
         */
         float chordwise = smoothstep(0.42, 0.5, abs(fract(vUv.y * 4.0) - 0.5));
-        albedo = mix(vec3(0.115, 0.135, 0.165), vec3(0.46, 0.49, 0.52), 0.3 + smoothPlate * 0.45);
-        albedo = mix(albedo, vec3(0.05, 0.062, 0.078), chordwise * 0.45);
+        albedo = mix(vec3(0.362, 0.368, 0.372), vec3(0.8, 0.802, 0.798), 0.3 + smoothPlate * 0.45);
+        albedo = mix(albedo, vec3(0.112, 0.118, 0.126), chordwise * 0.5);
         gloss = mix(0.5, 0.2, microRoughness);
         specularPower = 46.0;
         specularStrength = 0.82;
@@ -3337,8 +3337,8 @@ function modelRadius(root: THREE.Object3D): number {
  * contra la cámara quedaba en penumbra entera, porque la única fuente del
  * sistema le llega por detrás.
  *
- * El dorso apunta al punto medio entre la cámara y Gargantúa: se ve al 70 % de
- * su área y recibe dos tercios de la luz de clave. Ése es el compromiso —ni
+ * El dorso apunta al punto medio entre la cámara y Gargantúa: se ve a dos
+ * tercios de su área y recibe luz de clave de verdad. Ése es el compromiso —ni
  * planta iluminada de canto ni tres cuartos a oscuras—, y es lo que cumple la
  * dirección de arte de que Gargantúa la ilumine de verdad.
  *
@@ -3346,11 +3346,32 @@ function modelRadius(root: THREE.Object3D): number {
  * Endurance. La nave pequeña señalando a la nave grande cuenta un viaje sin
  * que nada se mueva.
  *
+ * ── Corrección 2026-09-05 ───────────────────────────────────────────────────
+ *
+ * El dorso valía (0.337, 0.918, 0.229) y ese vector describía el compromiso de
+ * arriba en la composición ANTERIOR. La recomposición de seis destinos movió la
+ * nave y nadie rehízo el cálculo, así que el «punto medio» dejó de serlo:
+ * medido contra la posición real, el dorso daba **n·l = −0.24** —o sea, de
+ * espaldas a la única luz del sistema— con n·v = 0.996. La nave se veía
+ * completamente de plano y completamente en penumbra, y por eso ningún cambio
+ * de material se notaba: lo que se veía no era su chapa, era el relleno frío.
+ *
+ * El vector nuevo es el anterior inclinado un 45 % hacia la luz. Contra la
+ * posición real da **n·l = 0.51** (el terminador satura a partir de 0.34, así
+ * que el dorso queda enteramente en el día) y **n·v = 0.67**, que sigue siendo
+ * dos tercios de área vista. Luz y cámara están a 107° en este sitio, así que
+ * ninguna actitud las contenta a las dos: esto es el óptimo del compromiso, no
+ * una preferencia.
+ *
+ * `ranger-probe` en la suite fija la lectura: si una recomposición vuelve a
+ * mover la nave y el dorso baja del suelo de luz, el test lo dice en vez de
+ * salir en una captura tres semanas después.
+ *
  * Se calcula una vez al cargar el módulo; el cuerpo ya no gira, así que esta
  * pose es toda su orientación.
  */
 const RANGER_ATTITUDE = (() => {
-  const top = new THREE.Vector3(0.337, 0.918, 0.229).normalize();
+  const top = new THREE.Vector3(0.299, 0.949, -0.095).normalize();
   const nose = new THREE.Vector3(0.855, -0.185, -0.489)
     .projectOnPlane(top)
     .normalize();
