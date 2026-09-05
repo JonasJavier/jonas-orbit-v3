@@ -718,7 +718,7 @@ const BODY_FRAGMENT = /* glsl */ `
         al especular orientado: la cara se queda en grafito salvo que su normal
         mire al disco.
       */
-      albedo = mix(albedo, vec3(0.46, 0.38, 0.28), chamfer * 0.12);
+      albedo = mix(albedo, vec3(0.31, 0.33, 0.35), chamfer * 0.10);
       gloss = mix(0.035, 0.72, chamfer);
       specularPower = mix(68.0, 18.0, chamfer);
       /*
@@ -754,7 +754,10 @@ const BODY_FRAGMENT = /* glsl */ `
         profundidad del túnel.
       */
       float cavity = clamp(-dot(normalize(vNormalL), normalize(vLocal)), 0.0, 1.0);
-      materialOcclusion = 1.0 - cavity * 0.86;
+      // El interior recoge más rebote del mismo disco. Conserva sus escalones
+      // de material incluso con emisión y bloom a cero.
+      float innerFrame = step(1.5, vSurfaceMask) * (1.0 - step(4.5, vSurfaceMask));
+      materialOcclusion = 1.0 - cavity * mix(0.86, 0.60, innerFrame);
 
       /*
         DOS COSAS QUE SÓLO EXISTEN EN ESTE CUERPO, y las dos van aquí porque las
@@ -768,17 +771,18 @@ const BODY_FRAGMENT = /* glsl */ `
         marco con algo encendido detrás.
 
         ── La respiración ──────────────────────────────────────────────────────
-        Tres senos de periodo distinto —19, 14 y 11 segundos— y AMPLITUD
-        CRECIENTE hacia adentro: la caja no respira, el primer marco apenas, el
-        del fondo es el que late. Va en el shader y no en el modelo a propósito:
+        El mismo pulso llega con retraso a cada profundidad: la caja no
+        respira, el primer marco apenas, el del fondo es el que late.
+        Va en el shader y no en el modelo a propósito:
         es luz, no geometría, así que no toca la silueta, no puede desalinear
         una pieza y no cuesta ni una matriz. Y como pasa por el escalado global
         de emisivos, el banco de bloom-off la apaga con todo lo demás.
       */
       float inward = 0.55 + 0.9 * cavity;
-      float breath2 = 0.86 + 0.14 * sin(uTime * 0.33);
-      float breath3 = 0.80 + 0.20 * sin(uTime * 0.45 + 1.7);
-      float breath4 = 0.70 + 0.30 * sin(uTime * 0.57 + 3.1);
+      // El calor cruza las capas con retraso: no se enciende toda la caja a la vez.
+      float breath2 = 0.83 + 0.17 * sin(uTime * 0.72 + along * 2.0);
+      float breath3 = 0.76 + 0.24 * sin(uTime * 0.72 - 1.4 + along * 2.0);
+      float breath4 = 0.73 + 0.27 * sin(uTime * 0.72 - 2.8 + along * 2.0);
 
       /*
         LA JERARQUÍA LUMINOSA, que es la mitad del diseño de este cuerpo.
@@ -835,9 +839,9 @@ const BODY_FRAGMENT = /* glsl */ `
           como una brasa dentro del vacío; al acercar la cámara se descubre que
           lo que brilla es una ranura embutida en una viga, no un núcleo.
         */
-        albedo = mix(vec3(0.038, 0.03, 0.022), vec3(0.1, 0.08, 0.055), grain * 0.5);
+        albedo = mix(vec3(0.045, 0.042, 0.035), vec3(0.14, 0.125, 0.095), grain * 0.5);
         albedo *= 0.4 + 0.85 * across;
-        albedo = mix(albedo, vec3(0.72, 0.5, 0.28), chamfer * 0.36);
+        albedo = mix(albedo, vec3(0.76, 0.65, 0.46), chamfer * 0.36);
         gloss = mix(0.1, 0.72, chamfer);
         specularPower = mix(54.0, 19.0, chamfer);
         specularStrength = 0.18 + chamfer * 1.25;
@@ -845,7 +849,10 @@ const BODY_FRAGMENT = /* glsl */ `
         float glow = 1.0 - smoothstep(0.1, 0.42, across);
         float run = smoothstep(0.12, 0.3, along) * (1.0 - smoothstep(0.7, 0.9, along));
         albedo = mix(albedo, vec3(0.024, 0.016, 0.011), glow * 0.5);
-        emissive = vec3(1.0, 0.52, 0.2) * glow * run * inward * breath4 * 0.95;
+        float threshold = step(4.1, vSurfaceMask);
+        float depthHeat = mix(0.58, 0.84, threshold);
+        float depthBreath = mix(breath4, 0.78 + 0.22 * sin(uTime * 0.72 - 4.1 + along * 2.0), threshold);
+        emissive = vec3(1.0, 0.67, 0.33) * glow * run * inward * depthBreath * depthHeat;
       } else if (vSurfaceMask > 2.5) {
         /*
           MARCO 3 y la viga imposible. Escalón intermedio: grafito ya tibio y
@@ -855,7 +862,7 @@ const BODY_FRAGMENT = /* glsl */ `
         */
         albedo = mix(vec3(0.03, 0.026, 0.021), vec3(0.08, 0.07, 0.056), grain * 0.5);
         albedo *= 0.45 + 0.8 * across;
-        albedo = mix(albedo, vec3(0.62, 0.48, 0.31), chamfer * 0.29);
+        albedo = mix(albedo, vec3(0.64, 0.56, 0.42), chamfer * 0.29);
         gloss = mix(0.08, 0.66, chamfer);
         specularPower = mix(56.0, 20.0, chamfer);
         specularStrength = 0.14 + chamfer * 0.98;
@@ -2426,7 +2433,7 @@ const TESSERACT_RINGS = [
     halfX: 0.68,
     halfZ: 0.625,
     y: 0.1,
-    twist: (6 * Math.PI) / 180,
+    twist: (10 * Math.PI) / 180,
     width: 0.092,
     depth: 0.09,
     shift: [0.025, -0.018],
@@ -2436,8 +2443,8 @@ const TESSERACT_RINGS = [
   {
     halfX: 0.5,
     halfZ: 0.455,
-    y: -0.16,
-    twist: (-4 * Math.PI) / 180,
+    y: -0.25,
+    twist: (-8 * Math.PI) / 180,
     width: 0.08,
     depth: 0.078,
     shift: [-0.032, 0.024],
@@ -2447,8 +2454,8 @@ const TESSERACT_RINGS = [
   {
     halfX: 0.345,
     halfZ: 0.31,
-    y: -0.42,
-    twist: (5 * Math.PI) / 180,
+    y: -0.55,
+    twist: (13 * Math.PI) / 180,
     width: 0.07,
     depth: 0.068,
     shift: [0.022, 0.028],
@@ -2458,8 +2465,8 @@ const TESSERACT_RINGS = [
   {
     halfX: 0.225,
     halfZ: 0.205,
-    y: -0.66,
-    twist: (-3 * Math.PI) / 180,
+    y: -0.86,
+    twist: (-7 * Math.PI) / 180,
     width: 0.052,
     depth: 0.055,
     shift: [-0.006, 0.014],
@@ -2507,11 +2514,11 @@ function ringCorners(ring: TesseractRing): THREE.Vector3[] {
  * ya no es un rectángulo independiente tan oscuro que parezca inexistente.
  *
  * Cuatro marcos interiores disminuyen de tamaño y alternan orientación; el
- * calor aumenta hacia el fondo. La cáscara permanece fija, y sólo los dos
+ * calor aumenta hacia el fondo. La cáscara permanece fija, y sólo los tres
  * grupos interiores derivan. Se conservan la arista desplazada, el puente
  * inconcluso y el nodo huérfano como contradicciones legibles.
  *
- * Tres draws, un material opaco, sin texturas ni cambios de cámara o posición.
+ * Cuatro draws, un material opaco, sin texturas ni cambios de cámara o posición.
  */
 function tesseractModel(input: SceneBodyInput): BodyModel {
   /*
@@ -2553,7 +2560,7 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
 
   /*
     LA CÁSCARA NO SE MUEVE. Es arquitectura, y la arquitectura no tiembla: todo
-    el movimiento del cuerpo vive en los dos grupos interiores. Eso también
+    el movimiento del cuerpo vive en los tres grupos interiores. Eso también
     garantiza que la deriva ambiental no pueda destruir la silueta.
   */
   const shell = mergedMesh(
@@ -2705,7 +2712,7 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   root.add(mid);
 
   /*
-    EL FONDO: los dos últimos marcos comparten la deriva y el tungsteno.
+    EL FONDO: penúltimo marco y puentes. El umbral final deriva por separado.
 
     Son los marcos más pequeños y calientes: sus ranuras de tungsteno son la
     luz fuerte del cuerpo y están al final del recorrido, que es lo que
@@ -2717,7 +2724,6 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   const deepMesh = mergedMesh(
     [
       ...ringAt(ring4).map((part) => surfaceMasked(part, 4)),
-      ...ringAt(ring5).map((part) => surfaceMasked(part, 4)),
       strut(corners3[0], corners4[0], 0.048),
       /*
         EL PUENTE QUE NO LLEGA. Se detiene al 58 % del camino y en su extremo
@@ -2743,6 +2749,18 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   deep.add(deepMesh);
   root.add(deep);
 
+  // El último umbral tiene su propio ritmo. Su pivote vive en el centro del
+  // marco para que inclinarlo no lo haga barrer y taponar el agujero del túnel.
+  const threshold = new THREE.Object3D();
+  const thresholdMesh = mergedMesh(
+    ringAt({ ...ring5, y: 0 }).map((part) => surfaceMasked(part, 4.25)),
+    structure,
+  );
+  thresholdMesh.name = "tesseract-threshold";
+  threshold.add(thresholdMesh);
+  threshold.position.y = ring5.y;
+  root.add(threshold);
+
   /* Contrato semántico de la geometría. Los tests fijan la lectura —cuántas
      capas, cuánto puente, cuánta contradicción y que el centro esté vacío— sin
      acoplarse a cada coordenada artística. */
@@ -2753,8 +2771,8 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
     structuralBridges: 3,
     shellExtensions: 2,
     interruptedBeams: 2,
-    /* Marcos 2, 3 y 4: tres escalones de tungsteno, de fuera hacia dentro. */
-    emissiveTiers: 3,
+    /* Cada marco interior lleva su propio escalón hacia el vacío. */
+    emissiveTiers: 4,
     /* Frente, interior y FONDO. Sin esto el cuerpo se leía sólo por delante. */
     rearFrame: true,
     depthRails: 4,
@@ -2766,56 +2784,40 @@ function tesseractModel(input: SceneBodyInput): BodyModel {
   return {
     root,
     materials: [structure],
-    /*
-      DERIVA AMBIENTAL, no animación — y el reparto ES la decisión.
-
-      El cuerpo no gira sobre su eje: `SPIN_RATE.tesseract` es cero, y sigue
-      siéndolo. Un giro continuo del conjunto convierte cualquier objeto en un
-      salvapantallas, y además afirma que tiene un eje, un dentro y un fuera
-      estables, que es justo lo que este diseño niega.
-
-      Lo que sí tiene es un gradiente de vida hacia adentro, que es el mismo
-      gradiente que la luz:
-
-        caja y marco trasero  quietos, ni un grado — son la silueta
-        marcos medios         ±3° de guiñada, cabeceo subgrado, ±1.8 % de escala
-        marco del fondo       ±3° al revés, ±3.5 % de escala, más cabeceo
-        filo del vacío        el pulso de emisión, que va en el shader
-
-      Los canales combinan nueve periodos (11.3, 9.4, 21.3, 23.1, 13.7, 8.2,
-      15.1, 19.7 y 17.6 s), así que ninguna configuración se
-      repite en la escala en que alguien mira el hero y no aparece ningún
-      compás. Los marcos medios avanzan mientras el fondo retrocede: lo que
-      cambia no es la posición de cada pieza sino la RELACIÓN entre ellas, que
-      es lo que hace que el espacio de dentro parezca inestable con
-      desplazamientos de dos píxeles.
-
-      La ESCALA es el recurso que sustituye a lo que aquí no se puede hacer.
-      Mover una pieza hacia el fondo no se ve —el eje del túnel apunta a la
-      cámara, así que una unidad de profundidad son nueve centésimas en
-      pantalla—, pero respirar de tamaño produce exactamente la lectura que se
-      buscaba: el interior acercándose y alejándose. Cuesta un `setScalar`.
-    */
+    /* La cáscara fija ancla tres ritmos interiores. La contracción desigual
+       cambia las proporciones y las oclusiones, de forma visible en pocos
+       segundos a tamaño de hero. Todo oscila: no hay vueltas completas,
+       acumulación por fotograma ni desplazamiento del destino. */
     animate(seconds) {
       const wave = (period: number, phase = 0) =>
         Math.sin((seconds * Math.PI * 2) / period + phase);
 
       mid.rotation.set(
-        wave(21.3, 0.6) * 0.014,
-        -0.1 + wave(11.3) * 0.055,
-        wave(23.1, 2.2) * 0.011,
+        wave(12.7, 0.6) * 0.035,
+        0.02 + wave(10.7) * 0.12,
+        wave(14.3, 2.2) * 0.028,
       );
-      mid.position.set(0, wave(9.4, 1) * 0.018, 0);
-      mid.scale.setScalar(1 + wave(23.1) * 0.018);
+      mid.position.set(wave(13.9) * 0.018, wave(9.4, 1) * 0.035, wave(11.9, 1.1) * 0.016);
+      const middleFold = wave(10.7, 0.7);
+      mid.scale.set(1 + middleFold * 0.045, 1, 1 - middleFold * 0.035);
 
       // El fondo va en contra: cuando los medios avanzan, retrocede.
       deep.rotation.set(
-        wave(15.1, 2.4) * 0.022,
-        0.06 + wave(13.7, Math.PI) * 0.055,
-        wave(19.7, 1.1) * 0.018,
+        wave(11.1, 2.4) * 0.055,
+        -0.05 + wave(8.9, Math.PI) * 0.19,
+        wave(13.7, 1.1) * 0.045,
       );
-      deep.position.set(0, wave(8.2) * 0.017, 0);
-      deep.scale.setScalar(1 + wave(17.6, 0.4) * 0.035);
+      deep.position.set(wave(12.3, 2) * 0.028, wave(8.2) * 0.045, wave(10.1) * 0.024);
+      const deepFold = wave(8.9, 2.3);
+      deep.scale.set(1 + deepFold * 0.075, 1, 1 - deepFold * 0.055);
+
+      threshold.rotation.set(
+        wave(9.7, 0.7) * 0.06,
+        0.04 + wave(7.3, 2.1) * 0.24,
+        wave(11.3, 2) * 0.05,
+      );
+      threshold.position.set(wave(9.1, 1.7) * 0.018, ring5.y + wave(7.9) * 0.04, wave(10.9) * 0.016);
+      threshold.scale.setScalar(1 + wave(7.3, 2.8) * 0.085);
     },
   };
 }
