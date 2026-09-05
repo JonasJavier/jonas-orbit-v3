@@ -73,6 +73,37 @@ export interface WorldStructuralData {
  * el DOM mantiene áreas accesibles de 44 px. Cambiar radio, fase, inclinación o
  * escala altera cámara, proyección, brackets y colisiones de etiquetas, así que
  * estos valores son decisiones de composición, no telemetría decorativa.
+ *
+ * ── Recomposición de los seis destinos (2026-09-04) ─────────────────────────
+ *
+ * Al retirar Cooper Station el cuadrante superior izquierdo se quedó sin nada:
+ * medido sobre 1440×860, ningún cuerpo caía en x < 48 % con y < 50 %, y la masa
+ * se repartía 34/66 entre izquierda y derecha. Con la mitad del cuadro vacía y
+ * la otra mitad cargada, el sistema dejaba de leerse como un sistema.
+ *
+ * El arreglo NO es repartir los cinco cuerpos por igual. Es mover DOS —Miller
+ * al hueco, Tesseracto a la derecha del eje— y afinar los otros tres:
+ *
+ * 1. **Miller cruza al superior izquierdo** (fase 337 → 235). Es el destino
+ *    adecuado para esa esquina y el Tesseracto no lo era: un planeta con albedo
+ *    y terminador se sostiene contra el campo de estrellas, mientras que una
+ *    estructura de marcos oscuros ahí se lee como un icono suelto — que es
+ *    exactamente lo que ya había pasado antes del intercambio con Cooper.
+ * 2. **El Tesseracto se corre a la derecha del eje** (fase 279 → 298). Con
+ *    Miller arriba a la izquierda, dejarlo centrado los habría convertido en
+ *    dos objetos colgados de la misma banda superior; a 298 abre la diagonal
+ *    Miller → Tesseracto → Endurance y sigue sin tocar el disco.
+ * 3. **Endurance baja y se abre** (fase 45 → 42, inclinación 12 → 16): separa
+ *    su silueta de la cola derecha del disco, que era donde se ensuciaba.
+ * 4. **La Ranger sube y se centra** (fase 109 → 99, inclinación 23 → 16): se
+ *    despega del borde inferior y del raíl sin dejar de ser el plano cercano.
+ * 5. **Edmunds no se toca.** Ya era el ancla inferior izquierda.
+ *
+ * Y hay un efecto de segundo orden que importa tanto como las posiciones: el
+ * encuadre se mide contra la envolvente de los cuerpos, así que recogerlos
+ * ACERCA la cámara. Gargantúa pasa de 42 a 46 px de radio de sombra a 1440 px
+ * sin tocar su `size` ni la pose — el sistema llena más cuadro porque ocupa
+ * mejor el que tiene, no porque nada haya crecido.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -81,7 +112,11 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    placement: { orbitRadius: 30, phase: 279, inclination: 26, size: 2.7 },
+    /* Sigue siendo el cuerpo más exterior (30 rs) y el más lejano en el eje de
+       vista (capa −6 en `scene-depth.ts`): pequeño para su tamaño real, que es
+       lo que lo mantiene anómalo. La fase 298 lo deja a la derecha del eje de
+       la sombra y por encima del disco, sin tocarlo. */
+    placement: { orbitRadius: 30, phase: 298, inclination: 26, size: 2.7 },
     sceneName: "scene-tesseract",
   },
   miller: {
@@ -90,8 +125,15 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    // Miller queda alto y distante; Edmunds ocupa el plano inferior izquierdo.
-    placement: { orbitRadius: 27, phase: 337, inclination: 38, size: 3.05 },
+    /* El cuerpo que ocupa el hueco. Fase 235 y radio 28 lo llevan al superior
+       izquierdo; la inclinación 58 es la que lo SUBE —la altura sale de
+       −r·sen(fase)·sen(inclinación)— sin acercarlo al centro del cuadro. No
+       sube más porque la altura es cara: el encuadre mide la envolvente de los
+       cuerpos, y a 70° Gargantúa perdía un 11 % de radio de sombra para dejar
+       sitio a un planeta pequeño. Lo que hacía falta —que el Tesseracto no se
+       vea mayor que él— se compra por profundidad, no por altura: ver la capa
+       de Miller en `lib/scene-depth.ts`. */
+    placement: { orbitRadius: 28, phase: 235, inclination: 58, size: 3.05 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -100,7 +142,11 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f0bc72",
     secondary: "#7fe5ff",
     visual: "ship",
-    placement: { orbitRadius: 25, phase: 45, inclination: 12, size: 5.15 },
+    /* La pieza artificial grande, en el hemisferio derecho. Los tres grados y
+       los cuatro de inclinación que se le quitaron a la composición anterior no
+       la mueven de sitio: la bajan lo justo para que la cola derecha del disco
+       pase por detrás y su silueta se recorte limpia contra el fondo. */
+    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 5.15 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -109,6 +155,9 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#ff9b6b",
     secondary: "#f5cf83",
     visual: "desert",
+    /* Sin tocar. Es el ancla inferior izquierda y el contrapeso cálido de
+       Miller: mismo lado del cuadro, mitad opuesta, más cerca de la cámara
+       (capa +2) y por tanto más grande. Dos planetas, dos profundidades. */
     placement: { orbitRadius: 25.5, phase: 167, inclination: 56, size: 3 },
     sceneName: "scene-edmunds",
   },
@@ -133,18 +182,18 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     secondary: "#72ddff",
     visual: "beacon",
     /*
-      Estaba en el extremo izquierdo del cuadro (fase 180, radio 30): pegada al
-      borde, sola, alineada con el centro y en el punto de la trayectoria MÁS
-      lejano a la cámara. Tres problemas de una vez —composición desequilibrada,
-      cuerpo pequeño y el único hueco grande del encuadre sin ocupar.
+      El detalle de escala humana, y el cuerpo más cercano a la cámara (capa +7)
+      — por eso una nave de 2 rs se dibuja más grande que un planeta de 3.
 
-      Fase 109 con radio 24 la lleva al vacío de abajo, por delante del plano
-      del disco: conserva el plano cercano con una escala menor y apunta
-      hacia Gargantúa en diagonal y cierra el triángulo con Endurance y Edmunds.
-      El mapa plano usa esta misma fase, así que las dos vistas siguen contando
-      lo mismo.
+      Vive en el vacío de abajo, por delante del plano del disco. La fase 99 y
+      la inclinación 16 la separan del borde inferior y del raíl: a 109/23
+      quedaba a un 84 % del alto, con los rótulos de destinos justo debajo. El
+      tamaño baja de 2.6 a 2.0 porque con seis cuerpos, y sin Cooper llenando el
+      cuadro, a 2.6 dejaba de ser un detalle y empezaba a ser un sexto
+      protagonista. El mapa plano usa esta misma fase: las dos vistas cuentan lo
+      mismo.
     */
-    placement: { orbitRadius: 24, phase: 109, inclination: 23, size: 2.15 },
+    placement: { orbitRadius: 24, phase: 99, inclination: 16, size: 2 },
     sceneName: "scene-ranger",
   },
 };
