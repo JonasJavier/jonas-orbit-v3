@@ -36,6 +36,12 @@ diferentes— y define el bloom-off test: un cuerpo que pierde su identidad al
 apagar el glow no está terminado. Gargantúa queda **congelada** durante la fase.
 El `Rediseño imposible` del Tesseracto conserva su geometría y material.
 
+**Revisión de Edmunds (2026-09-05):** la sección `Mundo habitable` de
+`docs/design/world-visual-language.md` sustituye su material y su paleta por
+petición del dueño: mundo terrestre cálido con jerarquía de tres escalas, nubes
+y atmósfera fina, distinto de Miller. Posición, tamaño, órbita y el resto de los
+cuerpos siguen intactos. Cuatro sitios de FBM, uno menos que antes.
+
 **Revisión del Tesseracto (2026-09-05):** la sección `Umbral vivo` de
 `docs/design/world-visual-language.md` sustituye sus límites anteriores de
 deriva mínima y acabado por petición del dueño. Tres grupos interiores se

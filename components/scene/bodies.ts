@@ -408,6 +408,9 @@ const BODY_FRAGMENT = /* glsl */ `
        vez evita repetir dos FBM completos después de resolver el material. */
     float millerWeather = 0.0;
     float millerWaveField = 0.0;
+    /* Y Edmunds su capa de nubes: es lo único de su superficie que responde a
+       la luz como algo distinto de roca seca. Mismo motivo, mismo sitio. */
+    float edmundsCloud = 0.0;
 
     if (uKind == 0) {
       /*
@@ -495,39 +498,55 @@ const BODY_FRAGMENT = /* glsl */ `
       atmosphereWeight = 1.12;
     } else if (uKind == 1) {
       /*
-        Edmunds: el mundo de la Creatividad, y por tanto el que no puede ser
-        «un planeta marrón genérico».
+        Edmunds: el mundo de la Creatividad — el destino habitable del sistema.
 
         ── Qué fallaba ─────────────────────────────────────────────────────
-        Tenía cinco escalas de ruido y todas pintaban COLOR. El resultado era
-        una red de grietas naranjas de frecuencia uniforme cubriendo el disco
-        entero: se leía como una textura de lava aplicada a una bola, no como
-        un paisaje. Y sin sombra propia, la esfera no tenía volumen más allá
-        del terminador.
+        La versión anterior ya tenía masa y relieve, pero seguía leyéndose como
+        «esfera con ruido procedural»: cobre y basalto en la misma familia
+        cálida que Gargantúa, depósitos minerales que a tamaño de Hero salían
+        como SALPICADURAS repartidas por el disco, ninguna atmósfera perceptible
+        y una cara noche lavada a gris azulado sin información. Cumplía su papel
+        compositivo abajo a la izquierda y no contaba nada.
 
         ── Qué lo cambia ───────────────────────────────────────────────────
-        1. **Topografía iluminada.** Tres ondas direccionales de gradiente
-           analítico inclinan el término lambert: las laderas encaradas a
-           Gargantúa se encienden y las opuestas caen. Es sombra propia de
-           verdad, y no cuesta ni una muestra de ruido.
-        2. **Dos terrenos, no cinco.** Tierras altas de cobre y cuencas de
-           basalto oscuro, separadas por un umbral duro. El contraste grande
-           va entre regiones; el detalle fino sólo las texturiza por dentro.
-        3. **Sales y polvo.** Depósitos claros en las cuencas y una capa de
-           polvo alta que lava el color hacia el limbo. Es lo que le da el
-           aire cálido y habitable que pide su nombre.
+        1. **Jerarquía estricta de tres escalas.** Una macroforma decide qué es
+           tierra y qué es cuenca; una escala media —deformada por la macro, así
+           que sus costas SIGUEN al continente en vez de cruzarlo— pone regiones;
+           el grano fino sólo remata y nunca pinta contraste. El salpicado de
+           alta frecuencia que pintaba color ha desaparecido.
+        2. **Paleta propia, fuera de la familia de Gargantúa.** Caliza, arena y
+           marfil arriba; umber cálido en las cuencas; un acento salvia apagado
+           en la franja costera. Ni azul (Miller), ni ámbar (el disco), ni el
+           blanco-metal de la Endurance.
+        3. **Aire.** Nubes crema alargadas en longitud, un velo alto que lava el
+           color hacia el limbo y un filo de atmósfera fino. Es lo que separa el
+           planeta del fondo y le da escala; el halo y el crepúsculo van en el
+           bloque uKind == 1 de más abajo, con la luz ya resuelta.
+
+        Cuatro sitios de FBM, uno menos que antes: el grano fino pasa a una
+        octava —a frecuencia 15 las siguientes caen por debajo del píxel— y el
+        sitio liberado paga las nubes. El presupuesto del shader se mide en
+        sitios de llamada, no en cuerpos.
       */
-      float continents = fbm(vLocal * 1.75 + vec3(4.2, 1.1, 7.3));
-      float terrain = fbm(vLocal * 5.4 + continents * 1.3);
-      float ridges = 1.0 - abs(fbm(vLocal * 9.2) * 2.0 - 1.0);
-      float haze = smoothstep(
-        0.52,
-        0.8,
-        fbm(vLocal * 2.65 + vec3(uTime * 0.0025, 8.0, 2.0))
+      /* MACRO: dos masas y su mar. Es la única escala que decide geografía. */
+      float continents = fbm(vLocal * 1.62 + vec3(4.2, 1.1, 7.3));
+      /* MEDIA: deformada por la macro. Sin ese warp, las regiones cruzan la
+         costa y el planeta vuelve a ser ruido sobre una bola. */
+      float terrain = fbm(vLocal * 4.6 + continents * 1.9);
+      /* NUBES: latitud comprimida ×3.1, así que salen alargadas en longitud
+         —como en un mundo que rota— y no como algodón isótropo. */
+      float cloudField = fbm(
+        vec3(vLocal.x, vLocal.y * 3.1, vLocal.z) * 3.05
+          + vec3(uTime * 0.0032, 0.0, 4.1)
       );
-      /* Depósitos minerales: la escala fina y de alto contraste. Es la que
-         impide que el planeta se lea como una textura uniforme al girar. */
-      float veins = smoothstep(0.52, 0.74, fbm(vLocal * 13.5 + continents));
+      /* VELO ALTO: la bruma que lava el color hacia el limbo. */
+      float veil = smoothstep(
+        0.46,
+        0.82,
+        fbm(vLocal * 2.15 + vec3(uTime * 0.0018, 8.0, 2.0))
+      );
+      /* GRANO: una octava. Modula, no pinta. */
+      float grain = noise(vLocal * 15.5);
 
       /*
         Relieve. Tres ondas de números de onda primos entre sí, así que el
@@ -535,11 +554,16 @@ const BODY_FRAGMENT = /* glsl */ `
         alta y se apaga en las cuencas, que es donde el terreno real es plano.
         El gradiente es la derivada exacta —la misma onda en coseno— y su
         componente tangencial es la pendiente que ve la luz.
+
+        Los números de onda bajan a ~0.73 de los anteriores: a veinte, las
+        cordilleras salían del tamaño del grano y el planeta tendía a pelota de
+        golf. Más largas, se leen como CADENAS que cruzan una región — que es
+        justo la lectura de geografía que faltaba.
       */
-      float highland = smoothstep(0.38, 0.62, continents);
-      vec3 waveA = vec3(17.3, 10.7, -12.1);
-      vec3 waveB = vec3(-9.7, 19.3, 14.1);
-      vec3 waveC = vec3(12.7, -15.7, 20.5);
+      float land = smoothstep(0.44, 0.57, continents);
+      vec3 waveA = vec3(12.7, 7.9, -8.9);
+      vec3 waveB = vec3(-7.1, 14.3, 10.4);
+      vec3 waveC = vec3(9.4, -11.6, 15.1);
       float phaseA = dot(vLocal, waveA);
       float phaseB = dot(vLocal, waveB);
       float phaseC = dot(vLocal, waveC);
@@ -550,42 +574,143 @@ const BODY_FRAGMENT = /* glsl */ `
       vec3 up = normalize(vLocal);
       vec3 tangentSlope = slope - up * dot(slope, up);
       vec3 lightLocal = normalize(vLightLocal);
-      /* Amplitud pequeña a propósito. Con números de onda del orden de veinte,
-         0.011 por unidad de gradiente da laderas de unos 15°: cordilleras que
-         cruzan el terminador, no una pelota de golf ni un mapa de relieve
-         exagerado. La mitad de la amplitud vive en las tierras altas. */
-      float reliefStrength = 0.011 * (0.35 + highland * 0.9);
+      /* Amplitud pequeña a propósito: laderas de unos 15°, cordilleras que
+         cruzan el terminador y no un mapa de relieve exagerado. Casi toda la
+         amplitud vive en tierra; el fondo de cuenca es plano. */
+      float reliefStrength = 0.0125 * (0.22 + land * 1.05);
       reliefOffset = -dot(tangentSlope, lightLocal) * reliefStrength;
 
-      /* Casquetes: no nieve, sales heladas. Rompen la monotonía del cobre y dan
-         un eje visible — sin polos, una esfera girando no tiene norte. */
-      float polar = smoothstep(0.62, 0.93, abs(vLocal.y));
+      /* Casquetes: no nieve, sales heladas. Dan un eje visible — sin polos, una
+         esfera girando no tiene norte. */
+      float polar = smoothstep(0.66, 0.95, abs(vLocal.y));
 
-      /* Cuenca de basalto oscuro y tierra alta de cobre: el salto de valor
-         grande va aquí, entre dos regiones, no repartido en cien grietas. */
-      albedo = mix(vec3(0.135, 0.062, 0.042), vec3(0.58, 0.29, 0.135), highland);
-      albedo = mix(albedo, vec3(0.86, 0.53, 0.26), terrain * highland * 0.72);
-      /* 0.20, no 0.34. No es un rediseño de Edmunds —eso queda para su fase—
-         sino control de frecuencias: las tres escalas finas pintaban COLOR con
-         tanto peso como las dos masas grandes, y a tamaño de Hero eso no se lee
-         como geología sino como ruido procedimental sobre una esfera. Bajan las
-         finas, se quedan las grandes, y el reparto pasa a ser el que pide
-         dirección: primero masa, después estructura, y el grano al final. */
-      albedo = mix(albedo, vec3(0.97, 0.76, 0.53), ridges * highland * 0.2);
-      /* Sal seca en el fondo de las cuencas, donde el terreno es bajo. */
-      albedo = mix(albedo, vec3(0.72, 0.63, 0.52), veins * (1.0 - highland) * 0.18);
-      /* Y el relieve también tiñe: las crestas están más expuestas y pierden
-         el óxido; los valles lo acumulan. */
-      albedo = mix(albedo, vec3(0.9, 0.66, 0.42), smoothstep(0.3, 0.95, height) * 0.2);
-      albedo = mix(albedo, vec3(0.1, 0.04, 0.03), smoothstep(-0.3, -0.95, height) * 0.28);
-      albedo = mix(albedo, vec3(0.8, 0.6, 0.44), haze * 0.3);
-      /* Los casquetes bajan de 0.55 a 0.34: eran el mayor salto de valor del
-         planeta y competían con la propia masa continental. */
-      albedo = mix(albedo, vec3(0.88, 0.87, 0.85), polar * 0.34);
-      gloss = 0.045 + haze * 0.04 + polar * 0.2 + veins * 0.05;
-      specularPower = 26.0;
-      atmosphere = vec3(1.0, 0.63, 0.36);
-      atmosphereWeight = 1.18;
+      /*
+        LA COSTA es donde el umbral se cruza, y por eso land * (1 - land):
+        vale uno justo en el borde del continente y cero en tierra firme y en
+        mar abierto. Es el único sitio donde entra el acento salvia — un mundo
+        habitable enseña su clorofila donde hay agua, no repartida por el disco.
+      */
+      float coast = land * (1.0 - land) * 4.0;
+
+      /*
+        LA PALETA ES ÓXIDO DE HIERRO, no caliza. (Corrección de dirección del
+        dueño, 2026-09-05, sobre esta misma revisión.)
+
+        Dos versiones anteriores fallaron por el mismo lado. La primera puso la
+        tierra en 0.60 buscando caliza y salió una luna gris: con la clave ámbar
+        encima, un albedo alto lava el color, comprime el contraste contra el
+        hemisferio diurno y multiplica el relleno azul del cielo en la cara
+        noche. La segunda subió el croma pero mantuvo la familia beige-salvia
+        dominando la superficie, y el planeta seguía leyéndose lavado.
+
+        El problema nunca fue la jerarquía de escalas —esa se queda entera— sino
+        QUÉ familia manda en cada masa. Se invierte el reparto: rust /
+        reddish-brown / terracota es la voz principal, ocre y arena la segunda,
+        y el olivo queda como acento.
+
+        Referencia perceptual del dueño para la captura final: #351C18 umber,
+        #54251C pardo rojizo, #873A25 rust, #B9623D terracota, #B97835 cobre,
+        #C9974C ocre cálido, #CDB17A arena, #687056 olivo apagado. Los vec3 de
+        aquí no son esos hex —el shader trabaja antes del tono y de la clave
+        ámbar— pero SÍ conservan sus proporciones de canal, que es lo que decide
+        el tono: la versión gris tenía G/R = 0.72 y B/R = 0.41; la terracota de
+        aquí va a 0.45 y 0.26.
+
+        Y el rojo vive en REGIONES, nunca en salpicaduras: cada mezcla de abajo
+        cuelga de la macroforma o de la escala media. Ninguna del grano.
+      */
+      /* Cuenca profunda: deep umber. No baja a negro — en sombra tiene que
+         quedar información, no un agujero. */
+      albedo = vec3(0.118, 0.052, 0.038);
+      /* Cuencas medias erosionadas: pardo rojizo. */
+      albedo = mix(albedo, vec3(0.232, 0.098, 0.066), smoothstep(0.18, 0.62, terrain));
+      /* REGIÓN A — la masa continental, y la voz principal del planeta. */
+      albedo = mix(albedo, vec3(0.552, 0.248, 0.142), land);
+      /*
+        REGIÓN B — la franja mineral de óxido, y la única pieza nueva de esta
+        pasada. Sale de una BANDA en el espacio de la macroforma, no de otra
+        octava de ruido: continents entre 0.50 y 0.88 es una región geológica
+        grande y contigua, así que el rust aparece como provincia y no como
+        moteado. Cuesta dos smoothstep y ningún sitio de FBM.
+      */
+      float rustBelt = smoothstep(0.5, 0.62, continents)
+                     * (1.0 - smoothstep(0.72, 0.88, continents));
+      albedo = mix(albedo, vec3(0.392, 0.136, 0.078), rustBelt * 0.76);
+      /* Cobre en el terreno medio: la transición entre la terracota y el ocre,
+         que es lo que impide que las dos masas se toquen con un borde duro. */
+      albedo = mix(
+        albedo,
+        vec3(0.578, 0.318, 0.132),
+        land * smoothstep(0.3, 0.58, terrain) * 0.5
+      );
+      /*
+        REGIÓN C — altiplanos de ocre y arena. Siguen siendo el valor más claro
+        del suelo y por eso se ganan en dos condiciones —tierra Y terreno alto—,
+        pero cubren bastante menos que en la versión beige: el umbral sube de
+        0.44 a 0.52 y el peso baja de 0.9 a 0.56. Eran ellos los que lavaban el
+        planeta, y su luminancia también es menor: en 0.79 competían de tono con
+        el disco de Gargantúa.
+      */
+      albedo = mix(
+        albedo,
+        vec3(0.642, 0.438, 0.208),
+        land * smoothstep(0.56, 0.86, terrain) * 0.46
+      );
+      /* REGIÓN D — olivo apagado de costa. ACENTO, no familia: se ve porque
+         ahora lo rodea óxido, no caliza. */
+      albedo = mix(albedo, vec3(0.232, 0.258, 0.162), coast * 0.5);
+      /* El relieve tiñe: las crestas están expuestas y se aclaran hacia arena;
+         los valles acumulan umber. Es la escala media haciendo de escala media
+         — y la cresta se queda en arena, no en marfil, para no volver a lavar. */
+      albedo = mix(albedo, vec3(0.702, 0.508, 0.268), smoothstep(0.4, 0.95, height) * land * 0.18);
+      albedo = mix(albedo, vec3(0.082, 0.036, 0.026), smoothstep(-0.3, -0.95, height) * 0.3);
+      /* Grano: ±6 % multiplicativo. No introduce color ni contraste propio. */
+      albedo *= 0.94 + grain * 0.12;
+      /*
+        SATURACIÓN, un solo mando y aplicado SÓLO al suelo.
+
+        Extrapolar desde la luma (t > 1 en el mix) sube el croma sin tocar el
+        valor, así que la jerarquía de masas que acabamos de construir no se
+        mueve: la cuenca sigue siendo la cuenca y el altiplano el altiplano.
+        Va antes de nubes y casquetes a propósito — el vapor de agua y el hielo
+        no tienen color propio, y saturarlos los volvería de plástico.
+      */
+      float groundLuma = dot(albedo, vec3(0.2126, 0.7152, 0.0722));
+      albedo = max(mix(vec3(groundLuma), albedo, 1.36), vec3(0.0));
+      /*
+        Velo alto: lava, no tapa — y ahora lava MUCHO menos. Pesaba 0.13 con un
+        beige claro y era el segundo responsable de apagar el color cerca del
+        limbo, justo donde el planeta necesita conservar identidad. Baja a 0.07
+        y su color entra en la familia del cobre.
+      */
+      albedo = mix(albedo, vec3(0.612, 0.42, 0.222), veil * 0.07);
+      /*
+        NUBES. Bandas, no una capa: un planeta encapotado pierde la superficie
+        que acabamos de construir, y la dirección pide leer superficie + aire.
+        Crema —no blanco puro—, que es lo que las mantiene fuera de la familia
+        blanco-metal de la Endurance. El umbral sube de 0.545 a 0.575 y la mezcla
+        baja de 0.6 a 0.46: se conservan los cúmulos fuertes y desaparece el velo
+        continuo que neutralizaba el óxido. La lectura tiene que ser SUPERFICIE +
+        NUBES, no crema con huecos de superficie.
+      */
+      edmundsCloud = smoothstep(0.575, 0.735, cloudField + veil * 0.07);
+      albedo = mix(albedo, vec3(0.862, 0.792, 0.632), edmundsCloud * 0.46);
+      /* Casquetes: sal helada, y también entran en la familia cálida. Bajan de
+         0.24 a 0.17 por el mismo motivo que los altiplanos. */
+      albedo = mix(albedo, vec3(0.79, 0.742, 0.648), polar * 0.17);
+      /* Brillo SELECTIVO: la roca seca no brilla. Responden las nubes, el hielo
+         de los casquetes y, muy poco, el velo alto. */
+      gloss = 0.03 + edmundsCloud * 0.24 + polar * 0.16 + veil * 0.05;
+      specularPower = 40.0;
+      specularStrength = 0.5;
+      /*
+        Atmósfera fina. Antes ámbar puro a 1.18: un halo ancho de la misma
+        familia que el disco, que además lavaba el limbo de milky. Ahora es
+        crema con caída salvia y pesa 0.66; el filo estrecho —el que de verdad
+        vende el aire— se añade aparte, con exponente alto, en uKind == 1.
+      */
+      atmosphere = vec3(0.855, 0.735, 0.535);
+      atmosphereWeight = 0.3;
     } else if (uKind == 2) {
       /*
         Tesseracto: grafito casi negro, metal frío y filos blanco-crema.
@@ -1145,9 +1270,14 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 color = albedo * (
       key * diffuse * materialOcclusion + materialFill * nightFill
     );
-    float terminatorBand = exp(-abs(shadedNdl - 0.055) * 15.0) * (1.0 - day * 0.34);
+    /* Edmunds tiene aire de sobra para ensanchar su amanecer: la banda cae a
+       10.5 en vez de 15 y pesa algo más. Es la mitad de «suavizar el
+       terminador»; la otra mitad es el crepúsculo de su propio bloque. */
+    float bandFalloff = uKind == 1 ? 10.5 : 15.0;
+    float terminatorBand = exp(-abs(shadedNdl - 0.055) * bandFalloff)
+                         * (1.0 - day * 0.34);
     if (uKind == 0 || uKind == 1) {
-      color += albedo * key * terminatorBand * 0.09;
+      color += albedo * key * terminatorBand * (uKind == 1 ? 0.135 : 0.09);
     }
 
     /* Especular del disco: una banda estrecha, no un punto de estudio.
@@ -1175,6 +1305,36 @@ const BODY_FRAGMENT = /* glsl */ `
       color += mix(key, vec3(0.45, 0.68, 1.0), 0.28) * oceanSheen * 0.26;
       color += mix(vec3(1.0, 0.88, 0.67), vec3(0.58, 0.8, 1.0), 0.24)
              * oceanGlint * 0.42;
+    }
+
+    /*
+      EDMUNDS TIENE AIRE, y aquí es donde se nota. Tres términos, todos
+      derivados de la MISMA luz del disco: ninguno es una lámpara nueva.
+
+      1. **El filo.** Exponente 7 contra el 2.2 del halo común: eso es una
+         LÍNEA de atmósfera en el limbo, no un resplandor alrededor del
+         planeta. Pesa en el lado iluminado y se apaga cruzando el terminador,
+         que es donde la luz atraviesa más aire y donde deja de haber luz que
+         atravesar. Sin esto, la esfera se pega al fondo negro y pierde escala.
+      2. **El crepúsculo.** La atmósfera dobla el ámbar más allá del
+         terminador. Va multiplicado por el albedo a propósito, y por eso pesa
+         tanto: es lo único que pone GEOGRAFÍA dentro de la penumbra. El
+         contraluz frío común —ley compartida, y se queda— cubre casi un tercio
+         del disco con un azul plano; sobre un mundo cálido eso se leía como un
+         velo lechoso. La respuesta no es quitar luz sino dar detalle: dentro
+         del mismo azul aparecen las cuencas y los altiplanos, y el velo pasa a
+         leerse como noche vista a través de aire.
+      3. **El brillo de las nubes.** Lo único de este mundo que responde como
+         algo que no sea roca seca. Acotado a edmundsCloud, así que la esfera
+         no se vuelve una bola brillante.
+    */
+    if (uKind == 1) {
+      float limbArc = pow(1.0 - max(dot(normal, view), 0.0), 7.0);
+      color += mix(vec3(1.0, 0.87, 0.63), vec3(0.66, 0.74, 0.62), 0.18)
+             * limbArc * smoothstep(-0.2, 0.55, ndl) * uLightIntensity * 1.85;
+      color += albedo * key
+             * smoothstep(-0.62, 0.18, shadedNdl) * (1.0 - day) * 0.46;
+      color += key * pow(specBase, 46.0) * edmundsCloud * day * 0.55;
     }
 
     /*
