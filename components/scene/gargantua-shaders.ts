@@ -440,22 +440,6 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   float wind = WIND_MEAN * logR
              + (WIND_SWING / WIND_FREQ)
                * (sin(logR * WIND_FREQ + 1.3) - sin(1.3));
-  float twist = wind + pitchNoise * logR + uTime * omega * 0.30;
-
-  // Se muestrea el ruido en el plano CARTESIANO contrarrotado, no en (φ, r):
-  // así no hay costura en φ = ±π, que es el artefacto clásico de los discos
-  // procedurales, y la cizalla estira los filamentos sola.
-  float c = cos(twist);
-  float s = sin(twist);
-  vec2 sheared = vec2(c * hit.x + s * hit.z, -s * hit.x + c * hit.z);
-
-  // Las octavas finas se enrollan más despacio que las gruesas. Es lo que evita
-  // que a los pocos minutos la escala pequeña esté infinitamente devanada y
-  // empiece a aliasear.
-  float cf = cos(twist * 0.45);
-  float sf = sin(twist * 0.45);
-  vec2 shearedFine = vec2(cf * hit.x + sf * hit.z, -sf * hit.x + cf * hit.z);
-
   /*
     HUELLA DE PÍXEL sobre el PLANO DEL DISCO, no a lo largo del rayo.
 
@@ -494,167 +478,351 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   float slant = min(1.0 / max(abs(dir.y), 0.085), 8.0);
   float footprint = travelled * uPixelScale * pow(slant, 0.24);
 
-  // Deformación de dominio en DOS escalas. La fina —dos fbm de tres octavas—
-  // convierte bandas concéntricas limpias en turbulencia con discontinuidades;
-  // la gruesa dobla el patrón por ZONAS, de modo que el disco no tiene una
-  // geometría global que el ojo pueda seguir dando la vuelta entera.
-  float wa = fbm3(sheared * 0.26);
-  float wb = fbm3(sheared * 0.26 + 31.7);
+  /*
+    ÉPOCAS CRUZADAS: el disco AVANZA, pero no ENVEJECE.
+
+    ── El fallo que esto sustituye ────────────────────────────────────────────
+
+    La versión anterior era: twist += uTime · omega · 0.30, con uTime corriendo
+    desde el montaje y sin techo. Como omega depende del radio, ese término no
+    es un giro del plano: es una CIZALLA, y su magnitud
+
+        q = r · ∂twist/∂r = 1.5 · uTime · spin = 0.45 · uTime · omega
+
+    crece linealmente con el tiempo y sin límite. En el borde interior omega
+    vale 1, así que a los 16 segundos q ya iguala TODO el presupuesto de cizalla
+    de diseño (WIND_SWING), al minuto lo cuadruplica y al cuarto de hora lo
+    multiplica por sesenta. El ruido, isótropo en el marco corrotado, acaba
+    estirado en tangencial hasta volverse anillos concéntricos con una
+    separación radial muy por debajo del píxel — y como el corte por huella no
+    conocía ese factor, entraban sin filtrar. Eso, promediado por la acumulación
+    temporal, es lo que se veía como «historial apilado»: bandas duras, anillo
+    de fotones sobreacumulado y centro lavado.
+
+    El comentario de las octavas finas de más abajo intentaba prevenirlo
+    enrollándolas a 0.45. Eso divide la bomba por 2.2; no la desactiva.
+
+    ── Por qué no se arregla bajando el 0.30 ──────────────────────────────────
+
+    Porque el problema no es la velocidad, es que la deformación se INTEGRA.
+    Bajar el coeficiente a la mitad solo tarda el doble en llegar al mismo sitio.
+    Y no hay una fase continua que lo evite: si el enrollado avanza a un ritmo
+    que varía 35 a 1 entre el borde interior y el exterior, la diferencia entre
+    los dos crece sin cota por definición. Acotarla exige romper la continuidad
+    en algún punto, y la única forma de romperla sin que se vea es tener DOS
+    copias desfasadas y cruzarlas.
+
+    ── El reloj ───────────────────────────────────────────────────────────────
+
+    Dos épocas desfasadas media vuelta sobre un diente de sierra de periodo
+    EPOCH. La edad de cada una vive en [-EPOCH/2, +EPOCH/2] por construcción, así
+    que su cizalla está acotada y NUNCA vuelve a crecer:
+
+        |q| ≤ 1.5 · (EPOCH/2) · spin = 0.225 · EPOCH · omega
+
+    Y el peso es triangular, suavizado: vale 1 en edad cero y 0 justo en el
+    extremo de la edad. Eso es lo que hace que el reciclado sea invisible — la
+    copia que más deformada está es exactamente la que no se ve. El peor caso
+    VISIBLE no es el extremo sino el cruce, donde las dos van a |edad| = EPOCH/4
+    con peso 0.5:
+
+        q(cruce) = 0.1125 · EPOCH · omega
+
+    Con EPOCH = 40 eso son 4.5 en el borde interior y 1.6 a dos radios internos,
+    del orden del presupuesto de diseño en casi todo el disco.
+
+    El suavizado del peso importa y no es adorno. El triángulo crudo tiene la
+    derivada rota en la cresta y en el cero, y esa rotura se lee como un tirón
+    en el movimiento. smoothstep la quita, y además conserva la partición de la
+    unidad —smoothstep(x) + smoothstep(1-x) = 1 exactamente—, así que las dos
+    copias siempre suman uno y el brillo no puede respirar con el ciclo.
+
+    ── Dónde se cruzan ────────────────────────────────────────────────────────
+
+    En el CAMPO, no en la radiancia. Se mezclan fabric, carriles y macro —que
+    son densidad y material— y sobre el resultado corre UNA sola vez la
+    respuesta no lineal de temperatura y emisión. Cruzar dos radiancias ya
+    formadas haría respirar la luminancia con el ciclo y empujaría píxeles por
+    encima del umbral del bloom cada media época.
+
+    ── Y de propina, la precisión ─────────────────────────────────────────────
+
+    twist deja de crecer sin techo, así que cos(twist) y sin(twist) trabajan
+    siempre sobre un argumento pequeño. La deriva de precisión a las horas de
+    sesión desaparece por construcción, no por suerte.
+
+    EPOCH es una perilla ARTÍSTICA, no de seguridad: cuánto llega a enrollarse
+    el disco antes de reciclar. Quien sostiene la corrección es el AA de abajo,
+    que ahora conoce la cizalla. Subir EPOCH da un disco más devanado, no un
+    disco roto.
+  */
+  const float EPOCH = 20.0;
+  /*
+    Exponente del filtro sobre la cizalla. Ver la nota larga en streamsRaw: es
+    el mismo compromiso que pow(slant, 0.24), medido con tools/stability.mjs.
+  */
+  const float AA_SHEAR = 0.5;
+
+  float spin = omega * 0.30;
+  float windStatic = wind + pitchNoise * logR;
+  float cycle = uTime / EPOCH;
 
   /*
-    JERARQUÍA RADIAL, y ahora manda sobre TODAS las escalas.
-
-    La corrección anterior se quedó a medio camino: el ruido pasó de frecuencia
-    fija a compress entre 1.95 y 0.58, un factor 3.4 sobre un rango de radios de
-    10.8. En unidades ANGULARES —que son las que ve el ojo— eso deja al exterior
-    con 3.2 veces MÁS detalle que al interior, exactamente lo contrario de lo que
-    cuenta un disco de acreción y buena parte de la lectura de «vetas».
-
-    Con 2.60 → 0.44 el factor es 5.9 sobre 10.8: la frecuencia angular queda casi
-    plana y la radial cae hacia fuera. El exterior se abre en corrientes anchas y
-    lentas; el interior queda comprimido.
-
-    Se calcula aquí arriba porque también escala el campo macro, y ése era el
-    fallo del primer intento: con el macro a frecuencia fija en unidades de
-    mundo, su longitud de onda era varias veces el radio interior y TODO el disco
-    interno —justo la zona más brillante, la que más se mira— caía dentro de una
-    sola celda. Por eso el núcleo salía liso: no era el antialias, era que ahí no
-    había campo que variase.
-  */
-  float compress = mix(2.60, 0.44, smoothstep(0.02, 0.82, t + (wa - 0.5) * 0.22));
-  float streamFreq = 0.62 * compress;
-
-  /*
-    CAMPO MACRO. Es la pieza que faltaba, y la que decide la lectura.
-
-    Todo lo que había —deformación, corrientes, grano, carriles, cortes— vivía
-    entre λ ≈ 6 y λ ≈ 0.27 en unidades de mundo, sobre un disco de 48 de
-    diámetro. Ni un solo campo describía la escala de las MASAS, y por eso el
-    resultado era densidad procedural uniforme: mucha estructura pequeña
-    repartida por igual, ningún sitio donde el material se acumule y ninguno
-    donde falte.
-
-    Éste va a un sexto de la frecuencia de las corrientes, y con ellas: λ ≈ 4 en
-    el borde interior y λ ≈ 23 en el exterior, o sea masas que ocupan siempre una
-    fracción parecida del contorno a cualquier radio. Como se muestrea en el
-    marco corrotado nacen ya estiradas a lo largo de la dirección orbital: son
-    corrientes anchas que se funden y se bifurcan, no manchas.
-
-    Sale casi por el precio de nada: sus dos primeras evaluaciones son las mismas
-    que antes se gastaban sólo en desplazar el dominio.
+    Los CINCO campos que cruzan la costura. Son los que el resto de diskSample
+    consume aguas abajo, y los cinco son densidad o material — nunca radiancia.
+    Esa es la costura: se mezclan aquí y la respuesta no lineal de temperatura y
+    emisión corre UNA sola vez sobre el resultado.
   */
   /*
-    Y el macro se muestrea en el marco POCO enrollado (shearedFine, 0.45 × twist),
-    no en el completo.
-
-    Es la otra mitad del remolino. Las corrientes finas pueden —y deben— ir muy
-    cizalladas: eso es lo que las hace parecer material rápido. Pero una MASA de
-    un cuarto de disco cizallada igual se convierte en un brazo espiral, que es
-    justo la forma que el ojo reconoce como galaxia. Sampleándola en el marco que
-    ya existe para las octavas finas, su enrollado cae a 0.45 × 0.43 = 0.19
-    vueltas: las masas salen como bandas tangenciales largas en vez de como
-    brazos que caen hacia el centro. Cuesta cero — ese marco ya estaba calculado.
+    El peso de la época 0 sale FUERA del bucle: la época 1 es su complemento
+    exacto, así que calcularlo dos veces sería calcular lo mismo dos veces.
   */
-  vec2 macroP = shearedFine * (0.105 * compress);
-  float m1 = valueNoise(macroP + 4.1);
-  float m2 = valueNoise(macroP + 19.3);
-  vec2 coarse = vec2(m1, m2) - 0.5;
-  float macro = m1 * 0.62 + valueNoise(macroP * 2.35 + 12.7) * 0.38;
+  float w0 = smoothstep(0.0, 1.0, 1.0 - 2.0 * abs(fract(cycle) - 0.5));
+
+  float fabricSum = 0.0;
+  float laneSum = 0.0;
+  float macroSum = 0.0;
+  float streamSum = 0.0;
+  float waSum = 0.0;
+
+  for (int k = 0; k < 2; k++) {
+    float ph = fract(cycle + float(k) * 0.5);
+    float age = (ph - 0.5) * EPOCH;
+    float weight = k == 0 ? w0 : 1.0 - w0;
+
+    float twist = windStatic + age * spin;
+
+    // Cizalla tangencial de ESTA época, y su elongación de huella. Cada copia
+    // tiene la suya: filtrar las dos por el máximo acotado borraría de más justo
+    // en la que está en edad cero, que es la que más pesa.
+    float q = 1.5 * age * spin;
+    float stretch = sqrt(1.0 + q * q);
+    // El marco fino va a 0.45 × twist, así que su cizalla es 0.45 × q.
+    float stretchFine = sqrt(1.0 + 0.2025 * q * q);
+
+    // Se muestrea el ruido en el plano CARTESIANO contrarrotado, no en (φ, r):
+    // así no hay costura en φ = ±π, que es el artefacto clásico de los discos
+    // procedurales, y la cizalla estira los filamentos sola.
+    float c = cos(twist);
+    float s = sin(twist);
+    vec2 sheared = vec2(c * hit.x + s * hit.z, -s * hit.x + c * hit.z);
+
+    // Las octavas finas se enrollan más despacio que las gruesas: mantiene la
+    // escala pequeña por debajo de la gruesa dentro de la época.
+    float cf = cos(twist * 0.45);
+    float sf = sin(twist * 0.45);
+    vec2 shearedFine = vec2(cf * hit.x + sf * hit.z, -sf * hit.x + cf * hit.z);
+
+
+    // Deformación de dominio en DOS escalas. La fina —dos fbm de tres octavas—
+    // convierte bandas concéntricas limpias en turbulencia con discontinuidades;
+    // la gruesa dobla el patrón por ZONAS, de modo que el disco no tiene una
+    // geometría global que el ojo pueda seguir dando la vuelta entera.
+    float wa = fbm3(sheared * 0.26);
+    float wb = fbm3(sheared * 0.26 + 31.7);
+
+    /*
+      JERARQUÍA RADIAL, y ahora manda sobre TODAS las escalas.
+
+      La corrección anterior se quedó a medio camino: el ruido pasó de frecuencia
+      fija a compress entre 1.95 y 0.58, un factor 3.4 sobre un rango de radios de
+      10.8. En unidades ANGULARES —que son las que ve el ojo— eso deja al exterior
+      con 3.2 veces MÁS detalle que al interior, exactamente lo contrario de lo que
+      cuenta un disco de acreción y buena parte de la lectura de «vetas».
+
+      Con 2.60 → 0.44 el factor es 5.9 sobre 10.8: la frecuencia angular queda casi
+      plana y la radial cae hacia fuera. El exterior se abre en corrientes anchas y
+      lentas; el interior queda comprimido.
+
+      Se calcula aquí arriba porque también escala el campo macro, y ése era el
+      fallo del primer intento: con el macro a frecuencia fija en unidades de
+      mundo, su longitud de onda era varias veces el radio interior y TODO el disco
+      interno —justo la zona más brillante, la que más se mira— caía dentro de una
+      sola celda. Por eso el núcleo salía liso: no era el antialias, era que ahí no
+      había campo que variase.
+    */
+    float compress = mix(2.60, 0.44, smoothstep(0.02, 0.82, t + (wa - 0.5) * 0.22));
+    float streamFreq = 0.62 * compress;
+
+    /*
+      CAMPO MACRO. Es la pieza que faltaba, y la que decide la lectura.
+
+      Todo lo que había —deformación, corrientes, grano, carriles, cortes— vivía
+      entre λ ≈ 6 y λ ≈ 0.27 en unidades de mundo, sobre un disco de 48 de
+      diámetro. Ni un solo campo describía la escala de las MASAS, y por eso el
+      resultado era densidad procedural uniforme: mucha estructura pequeña
+      repartida por igual, ningún sitio donde el material se acumule y ninguno
+      donde falte.
+
+      Éste va a un sexto de la frecuencia de las corrientes, y con ellas: λ ≈ 4 en
+      el borde interior y λ ≈ 23 en el exterior, o sea masas que ocupan siempre una
+      fracción parecida del contorno a cualquier radio. Como se muestrea en el
+      marco corrotado nacen ya estiradas a lo largo de la dirección orbital: son
+      corrientes anchas que se funden y se bifurcan, no manchas.
+
+      Sale casi por el precio de nada: sus dos primeras evaluaciones son las mismas
+      que antes se gastaban sólo en desplazar el dominio.
+    */
+    /*
+      Y el macro se muestrea en el marco POCO enrollado (shearedFine, 0.45 × twist),
+      no en el completo.
+
+      Es la otra mitad del remolino. Las corrientes finas pueden —y deben— ir muy
+      cizalladas: eso es lo que las hace parecer material rápido. Pero una MASA de
+      un cuarto de disco cizallada igual se convierte en un brazo espiral, que es
+      justo la forma que el ojo reconoce como galaxia. Sampleándola en el marco que
+      ya existe para las octavas finas, su enrollado cae a 0.45 × 0.43 = 0.19
+      vueltas: las masas salen como bandas tangenciales largas en vez de como
+      brazos que caen hacia el centro. Cuesta cero — ese marco ya estaba calculado.
+    */
+    vec2 macroP = shearedFine * (0.105 * compress);
+    float m1 = valueNoise(macroP + 4.1);
+    float m2 = valueNoise(macroP + 19.3);
+    vec2 coarse = vec2(m1, m2) - 0.5;
+    float macro = m1 * 0.62 + valueNoise(macroP * 2.35 + 12.7) * 0.38;
+
+    /*
+      Deformación de dominio, fina y gruesa. La amplitud de la gruesa va como
+      1/compress a propósito: así el desplazamiento vale siempre la misma fracción
+      de la longitud de onda del campo que lo genera, y su jacobiano —o sea la
+      frecuencia extra que introduce— se queda constante en todo el disco en vez de
+      dispararse hacia dentro, que es donde menos píxeles hay para resolverla.
+    */
+    vec2 warped = sheared
+                + (vec2(wa, wb) - 0.5) * 2.6
+                + coarse * (2.5 / compress);
+
+    /*
+      LA DEFORMACIÓN DE DOMINIO MULTIPLICA LA FRECUENCIA REAL, y el corte por
+      huella no lo sabía.
+
+      fbmAA recibe cuántas celdas de la octava base caben en un píxel, y se le
+      pasaba la frecuencia NOMINAL. Pero el campo no se muestrea en sheared, se
+      muestrea en warped, y el jacobiano de esa deformación vale del orden de 1.6
+      (1.55 del término fino más 0.39 del grueso, sumados sobre la identidad). O
+      sea que la frecuencia que llega a la pantalla es bastante más alta que la que
+      se estaba filtrando, y de ahí salía el hervor residual al bajar el DPR. La
+      constante es una estimación del jacobiano, no un fudge: cambia si cambian las
+      dos amplitudes de arriba.
+    */
+    const float WARP_GAIN = 1.05;
+
+    /*
+      Y las corrientes son de cresta, no de bulto: el valor absoluto plegado del
+      fbm —ruido «ridged»— da filamentos que se BIFURCAN y se cortan solos donde
+      el campo cruza el pliegue. Pesa menos que antes (0.38 en vez de 0.45) porque
+      la cresta es un multiplicador de alta frecuencia, y era parte de lo que subía
+      todos los detalles al mismo nivel de importancia.
+    */
+    /*
+      Y AQUI ENTRA LA CIZALLA DE LA EPOCA, que es la mitad que faltaba.
+
+      WARP_GAIN estima el jacobiano de la deformacion de dominio y nada mas. Pero
+      el campo no se muestrea en el plano: se muestrea en un marco CONTRARROTADO
+      por radio, y eso es una cizalla cuyo valor singular mayor vale stretch. La
+      frecuencia que llega a la pantalla es esa cizalla por la nominal, y el filtro
+      no lo sabia -- de ahi el aliasing que apilaba bandas concentricas.
+
+      Va con EXPONENTE y no crudo. stretch es el eje LARGO de una huella
+      anisotropa, y filtrar por el eje largo borra tambien la direccion corta: es
+      exactamente el error que se corrigio arriba usando pow(slant, 0.24) en vez
+      de raiz de slant. Aqui el exponente es mas alto que el de slant porque esta
+      cizalla es la que de verdad rompia la imagen, no una geometria de vista fija.
+    */
+    float streamsRaw = fbmAA(
+      warped * streamFreq,
+      footprint * streamFreq * WARP_GAIN * pow(stretch, AA_SHEAR)
+    );
+    float ridged = 1.0 - abs(streamsRaw * 2.0 - 1.0);
+    float streams = mix(streamsRaw, ridged, 0.38);
+
+    /*
+      MICROFILAMENTOS: sólo dentro, y con peso decreciente.
+
+      El grano tenía peso fijo 0.38 en todo el disco y cuatro octavas. Sumado a
+      unas corrientes ya trituradas por la cizalla, daba un espectro casi plano
+      —cientos de líneas de importancia visual idéntica, que es la definición del
+      defecto—. Ahora se desvanece hacia fuera: el disco exterior se queda con las
+      corrientes anchas y el material comprimido de dentro conserva los estriados
+      finos que transmiten velocidad.
+    */
+    float fine = mix(1.0, 0.30, smoothstep(0.12, 0.72, t));
+    float grainFreq = 3.0 * mix(1.70, 0.50, t);
+    float grain = fbmAA3(
+      shearedFine * grainFreq + (wa - 0.5) * 1.4,
+      footprint * grainFreq * WARP_GAIN * pow(stretchFine, AA_SHEAR)
+    );
+
+    float fabric = clamp(mix(streams, mix(streams, grain, 0.42), fine), 0.0, 1.0);
+
+    /*
+      INTERRUPCIONES. Ninguna corriente da la vuelta entera.
+
+      Sale de campos ya calculados, así que es gratis. El término grueso pasa de
+      la deformación al campo macro: los cortes dejan de estar repartidos con la
+      misma frecuencia por todas partes y se agrupan en sectores, que es como se
+      interrumpe un flujo de verdad.
+    */
+    float breakField = wb * 0.50 + macro * 0.22 + grain * 0.28;
+    float breaks = smoothstep(0.22, 0.70, breakField);
+    // Y la PROFUNDIDAD del corte también varía: con una profundidad fija el
+    // resultado es un ritmo de «segmento, hueco» tan reconocible como la línea
+    // continua que sustituye.
+    /* Y la profundidad del corte afloja hacia fuera. Un corte que se lleva el
+       58 % del material es razonable en el cuerpo denso del disco; en el extremo,
+       donde ya queda poco, parte la silueta en dos puas y deja una muesca entre
+       ellas. Esa muesca es la brecha del borde izquierdo. */
+    float breakDepth = mix(
+      mix(0.86, 0.42, smoothstep(0.34, 0.86, wa)),
+      0.82,
+      smoothstep(0.50, 0.92, t)
+    );
+    fabric *= mix(breakDepth, 1.0, breaks);
+
+    // Los carriles de polvo van a escala mayor que los filamentos y ABSORBEN, no
+    // solo oscurecen. Bajan de 0.20 a 0.145 para quedar del tamaño de las masas
+    // macro y no del de las corrientes: un carril tan fino como el material que
+    // cruza no se lee como polvo por delante, se lee como una raya más.
+    /*
+      Y ABSORBEN DE VERDAD. En la referencia el disco primario no es plasma luminoso
+      con vetas: es una banda de polvo OSCURA atravesada por material caliente, y
+      los carriles negros que la cortan son el rasgo que más dice «materia en caída»
+      y menos dice «textura procedural». La ventana se estrecha —era
+      smoothstep(0.26, 0.68), tan suave que sólo teñía— para que haya carril y
+      no-carril en vez de un degradado continuo.
+    */
+    float lanes = fbm3(warped * 0.145 + 11.3) * 0.58 + macro * 0.42;
+    fabricSum += fabric * weight;
+    laneSum += lanes * weight;
+    macroSum += macro * weight;
+    streamSum += streams * weight;
+    waSum += wa * weight;
+  }
 
   /*
-    Deformación de dominio, fina y gruesa. La amplitud de la gruesa va como
-    1/compress a propósito: así el desplazamiento vale siempre la misma fracción
-    de la longitud de onda del campo que lo genera, y su jacobiano —o sea la
-    frecuencia extra que introduce— se queda constante en todo el disco en vez de
-    dispararse hacia dentro, que es donde menos píxeles hay para resolverla.
+    Los pesos suman exactamente uno, así que la mezcla ya está hecha; lo que
+    queda es leerla. No hace falta normalizar.
+
+    Aquí se probó una mezcla que preserva la varianza —dividir la desviación por
+    sqrt(w^2+(1-w)^2)— porque cruzar dos campos decorrelacionados al 50/50 se
+    lleva media varianza y las ventanas smoothstep de abajo traducen eso a un
+    desplazamiento de media. Se retiró MEDIDA: subió la ondulación del ciclo de
+    6.1 % a 7.4 %. El motivo es que la varianza no es el término dominante — el
+    perfil medido no es simétrico respecto al cruce, así que lo que manda no es
+    el peso sino que las dos copias son realizaciones DISTINTAS del campo y su
+    brillo medio no coincide. Una corrección que amplifica desviaciones amplifica
+    también ésa. La palanca contra esa diferencia es EPOCH, no la normalización.
   */
-  vec2 warped = sheared
-              + (vec2(wa, wb) - 0.5) * 2.6
-              + coarse * (2.5 / compress);
+  float fabric = fabricSum;
+  float macro = macroSum;
+  float streams = streamSum;
+  float wa = waSum;
 
-  /*
-    LA DEFORMACIÓN DE DOMINIO MULTIPLICA LA FRECUENCIA REAL, y el corte por
-    huella no lo sabía.
+  // La ventana de los carriles se aplica DESPUÉS de mezclar: cruzar dos máscaras
+  // ya recortadas es cruzar dos respuestas no lineales, que es justo lo que la
+  // costura existe para evitar.
+  float laneMask = smoothstep(0.31, 0.63, laneSum);
 
-    fbmAA recibe cuántas celdas de la octava base caben en un píxel, y se le
-    pasaba la frecuencia NOMINAL. Pero el campo no se muestrea en sheared, se
-    muestrea en warped, y el jacobiano de esa deformación vale del orden de 1.6
-    (1.55 del término fino más 0.39 del grueso, sumados sobre la identidad). O
-    sea que la frecuencia que llega a la pantalla es bastante más alta que la que
-    se estaba filtrando, y de ahí salía el hervor residual al bajar el DPR. La
-    constante es una estimación del jacobiano, no un fudge: cambia si cambian las
-    dos amplitudes de arriba.
-  */
-  const float WARP_GAIN = 1.05;
-
-  /*
-    Y las corrientes son de cresta, no de bulto: el valor absoluto plegado del
-    fbm —ruido «ridged»— da filamentos que se BIFURCAN y se cortan solos donde
-    el campo cruza el pliegue. Pesa menos que antes (0.38 en vez de 0.45) porque
-    la cresta es un multiplicador de alta frecuencia, y era parte de lo que subía
-    todos los detalles al mismo nivel de importancia.
-  */
-  float streamsRaw = fbmAA(warped * streamFreq, footprint * streamFreq * WARP_GAIN);
-  float ridged = 1.0 - abs(streamsRaw * 2.0 - 1.0);
-  float streams = mix(streamsRaw, ridged, 0.38);
-
-  /*
-    MICROFILAMENTOS: sólo dentro, y con peso decreciente.
-
-    El grano tenía peso fijo 0.38 en todo el disco y cuatro octavas. Sumado a
-    unas corrientes ya trituradas por la cizalla, daba un espectro casi plano
-    —cientos de líneas de importancia visual idéntica, que es la definición del
-    defecto—. Ahora se desvanece hacia fuera: el disco exterior se queda con las
-    corrientes anchas y el material comprimido de dentro conserva los estriados
-    finos que transmiten velocidad.
-  */
-  float fine = mix(1.0, 0.30, smoothstep(0.12, 0.72, t));
-  float grainFreq = 3.0 * mix(1.70, 0.50, t);
-  float grain = fbmAA3(
-    shearedFine * grainFreq + (wa - 0.5) * 1.4,
-    footprint * grainFreq * WARP_GAIN
-  );
-
-  float fabric = clamp(mix(streams, mix(streams, grain, 0.42), fine), 0.0, 1.0);
-
-  /*
-    INTERRUPCIONES. Ninguna corriente da la vuelta entera.
-
-    Sale de campos ya calculados, así que es gratis. El término grueso pasa de
-    la deformación al campo macro: los cortes dejan de estar repartidos con la
-    misma frecuencia por todas partes y se agrupan en sectores, que es como se
-    interrumpe un flujo de verdad.
-  */
-  float breakField = wb * 0.50 + macro * 0.22 + grain * 0.28;
-  float breaks = smoothstep(0.22, 0.70, breakField);
-  // Y la PROFUNDIDAD del corte también varía: con una profundidad fija el
-  // resultado es un ritmo de «segmento, hueco» tan reconocible como la línea
-  // continua que sustituye.
-  /* Y la profundidad del corte afloja hacia fuera. Un corte que se lleva el
-     58 % del material es razonable en el cuerpo denso del disco; en el extremo,
-     donde ya queda poco, parte la silueta en dos puas y deja una muesca entre
-     ellas. Esa muesca es la brecha del borde izquierdo. */
-  float breakDepth = mix(
-    mix(0.86, 0.42, smoothstep(0.34, 0.86, wa)),
-    0.82,
-    smoothstep(0.50, 0.92, t)
-  );
-  fabric *= mix(breakDepth, 1.0, breaks);
-
-  // Los carriles de polvo van a escala mayor que los filamentos y ABSORBEN, no
-  // solo oscurecen. Bajan de 0.20 a 0.145 para quedar del tamaño de las masas
-  // macro y no del de las corrientes: un carril tan fino como el material que
-  // cruza no se lee como polvo por delante, se lee como una raya más.
-  /*
-    Y ABSORBEN DE VERDAD. En la referencia el disco primario no es plasma luminoso
-    con vetas: es una banda de polvo OSCURA atravesada por material caliente, y
-    los carriles negros que la cortan son el rasgo que más dice «materia en caída»
-    y menos dice «textura procedural». La ventana se estrecha —era
-    smoothstep(0.26, 0.68), tan suave que sólo teñía— para que haya carril y
-    no-carril en vez de un degradado continuo.
-  */
-  float lanes = fbm3(warped * 0.145 + 11.3) * 0.58 + macro * 0.42;
-  float laneMask = smoothstep(0.31, 0.63, lanes);
 
   /*
     LAS IMÁGENES LENSADAS SON EL MISMO MATERIAL, y el soften de antes era

@@ -253,8 +253,9 @@ circular de 340 slots en typed arrays. El perfil `flat` conserva el rastro ya
 aprobado (420 slots, 1–14 motas y 520–1020 ms):
 
 - capacidad fija; no hay React state ni objetos DOM por partícula;
-- spawn sólo durante movimiento, de 1–12 motas según distancia y con techo duro;
-- vida aproximada de 470–900 ms, deriva baja y fade en potencia ≥ 1;
+- spawn sólo durante movimiento, de 1–12 motas de cuerpo según distancia y con
+  techo duro, más 0,75 motas finas por cada una de cuerpo;
+- vida aproximada de 560–1000 ms, deriva baja y fade en potencia ≥ 1;
 - violeta, magenta y pink dominan; cian es raro;
 - blend aditivo contenido, partículas diminutas y sin línea continua;
 - el RAF sólo vive mientras existen partículas y se pausa con `document.hidden`.
@@ -305,16 +306,49 @@ un blend aditivo sobre casi-blanco no suma nada. El polvo existía en el pool y
 no en la pantalla.
 
 Sube pico de alfa (0,68 → 0,88), capacidad (300 → 340), ráfaga (9 → 12), tamaño
-y vida, y baja el paso de siembra (8 → 6,5 px). El parámetro decisivo es otro:
-la **curva de apagado** pasa de cuadrática a potencia 1,55. El apagado
-cuadrático gastaba la mitad del brillo en el primer tercio de vida, así que la
-mota nacía, se apagaba casi entera y arrastraba un rabo invisible; con 1,55 la
-caída sigue siendo caída y la mota se lee durante el tramo en que el ojo la
-sigue.
+y vida (390–760 → 560–1000 ms), y baja el paso de siembra (8 → 6,5 px). El
+parámetro decisivo es otro: la **curva de apagado** pasa de cuadrática a
+potencia 1,2 (en dos pases). El apagado cuadrático gastaba la mitad del brillo en
+el primer tercio de vida, así que la mota nacía, se apagaba casi entera y
+arrastraba un rabo invisible; con 1,2 la caída sigue siendo caída y la mota se
+lee durante el tramo en que el ojo la sigue.
 
-Los tres topes que impiden que esto derive en cola de cometa quedan fijados en
-test: alfa, ráfaga y vida máxima de `webgl` se mantienen POR DEBAJO de `flat`, y
-ningún perfil admite exponente de apagado menor que 1. `flat` no se toca.
+**La vida no es la permanencia.** El segundo pase se pidió como «que se quede un
+poco más antes de deshacerse» y se atacó primero por `maxLifetimeMs`: medido a
+500 ms de soltar el gesto, 900 ms y 1000 ms de vida dan la misma pantalla. Los
+milisegundos extra caen enteros por debajo del umbral visible. Quien manda sobre
+la permanencia percibida es el exponente, porque sube el brillo de todo el tramo
+medio de la vida a la vez; la vida sólo fija el techo. Cualquier petición futura
+de «que dure más» se resuelve ahí, no en los milisegundos.
+
+Los topes que impiden que esto derive en cola de cometa quedan fijados en test:
+alfa, ráfaga y vida máxima de `webgl` no superan a `flat`, y ningún perfil
+admite exponente de apagado menor que 1. `flat` no se toca.
+
+Aviso para el siguiente pase: tras la subida de vida, `webgl` queda a 20 ms del
+techo de `flat`. Alfa conserva margen; la vida no. Si vuelve a pedirse más
+permanencia, lo que hay que reabrir es el techo de 1020 ms del efecto —una
+decisión de dirección— y no seguir arañando este número.
+
+### 11 quater. Dos calibres de mota (2026-09-05)
+
+Por petición del dueño: «aparte de las partículas que están, necesito más
+finas». Se añade una segunda clase POR ENCIMA de la anterior —0,75 motas finas
+por cada mota de cuerpo, al 38 % de su tamaño—, no en su lugar: el rastro
+aprobado no pierde ni una mota. La fina se despega más de la línea y deriva algo
+más rápido, para que no se lea como un engrosamiento de la gruesa.
+
+Lleva **sprite propio**, y eso no es un detalle de implementación. El sprite de
+cuerpo reparte la energía en un halo ancho; dibujado a dos píxeles, ese halo
+ocupa medio píxel de gradiente y devuelve gris sucio en vez de un grano. El
+sprite fino concentra la energía en el núcleo, que es lo único que sobrevive al
+reescalado. Capacidad del pool: 340 → 520.
+
+Con esto `maxBurst` deja de significar «motas por evento»: WebGL siembra 21
+frente a las 14 de `flat`. Lo que el tope acota son las motas de CUERPO, que son
+las que aportan masa luminosa. El tope de ráfaga sólo protege algo acompañado
+del de calibre — si `fineSizeScale` se acercara a 1, «fina» sería una segunda
+capa de cuerpo por la puerta de atrás. Ambos quedan fijados en test.
 
 ## 12. Mobile, nivel `flat` y reduced-motion
 

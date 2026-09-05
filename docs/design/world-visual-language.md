@@ -465,7 +465,99 @@ tests del modelo no juzgan material: la aprobación es visual y es del dueño.
 posición —1–2 % hacia dentro o algo más arriba—, se hace y se documenta el valor
 exacto; esta revisión no lo ha tocado.
 
-## 9. Herramientas
+## 9. F1.3 — Miller
+
+### Océano global — revisión del dueño (2026-09-05)
+
+El dueño lee el Miller anterior como «esfera azul luminosa»: silueta buena y
+color que lo separa de Edmunds, pero a medio camino entre planeta de hielo y
+gigante gaseoso. Esta revisión sustituye su material, su paleta, su modelo de
+reflejo y su tratamiento de atmósfera. **No cambia posición, tamaño, órbita,
+inclinación, cámara ni ningún otro cuerpo**, y no añade lunas ni anillos.
+
+**Dirección.** Más agua que nubes. Un océano continuo, frío y austero, con una
+lámina de luz encima —no un punto— y el aire justo para tener volumen. Un sitio
+silencioso, inundado y peligroso; no un planeta azul bonito.
+
+**Diagnóstico, en cuatro puntos.**
+
+1. **Un foco frontal.** Una mancha blanca lechosa, redonda y centrada. No venía
+   del especular estrecho sino de una lámina isótropa de exponente 15 encima —
+   un lóbulo tan ancho que cubría un tercio del disco con luz plana.
+2. **Nubes y espuma repartidas.** Motitas claras por todo el globo. A tamaño de
+   Hero eso no es meteorología, es textura de planeta.
+3. **Un halo isótropo.** La atmósfera pesaba 1.12 y rodeaba el cuerpo por igual,
+   también donde no llega luz.
+4. **Ninguna relación visible con Gargantúa.** La luz llegaba, pero nada en el
+   cuerpo decía de dónde.
+
+**Superficie: patrones largos, no grano.** Una macroforma decide dónde el agua
+tiene fondo; unas vetas de bajío *deformadas por la macro* —el mismo warp que
+ordenó la geografía de Edmunds— siguen la cuenca en vez de cruzarla; y una banda
+direccional larga las peina, porque un océano visto desde órbita tiene
+corrientes. Desaparecen las bandas de tormenta, las rompientes y la espuma: lo
+que se quita no se sustituye por más ruido.
+
+**Paleta: azul grisáceo, no cyan de piscina.**
+
+| Región | vec3 | Papel |
+|---|---|---|
+| Fosa | `0.006, 0.024, 0.078` | azul casi negro; el agua tiene fondo |
+| Océano medio | `0.022, 0.094, 0.226` | la voz principal |
+| Bajío | `0.072, 0.212, 0.408` | plataforma, no hielo |
+| Veta somera | `0.126, 0.298, 0.472` | acento direccional, no continente |
+| Nube | `0.418, 0.512, 0.616` | vapor frío; ni blanco ni cálido |
+
+Los tres tramos de profundidad se conservan —son lo que da fondo al agua— pero
+pierden croma. El bajío era `0.09, 0.47, 0.55`: un turquesa que a tamaño de Hero
+se leía como hielo iluminado. **El canal azul sube mucho a propósito**: la clave
+del disco es ámbar (`1.0, 0.78, 0.52`), así que multiplica R por 1.21 y B por
+0.63. Una paleta escrita «en azul» sale verde menta en pantalla, y ése fue el
+primer intento de esta revisión.
+
+**Reflejo: tres anchos del MISMO lóbulo.** El reflejo sobre agua no es un disco,
+es una lámina estirada en la dirección del plano luz-vista y rota por el oleaje.
+Se escribe como una gaussiana anisótropa sobre las dos componentes tangenciales
+—asiento ancho y tenue, lámina, destello picado por el oleaje— y el núcleo
+isótropo compartido baja de 74 / 0.82 a **320 / 0.12**: cuatro píxeles de corazón
+caliente dentro del camino de luz, en vez de catorce de mancha.
+
+Dos trampas costaron una captura cada una y quedan documentadas en el shader:
+
+- **El eje transversal sale de la luz y la vista, no de la normal.** Escrito como
+  `cross(normal, toLight)`, el reparto entre componentes se divide por el seno
+  del ángulo normal-luz, que vale cero en el punto sublunar —a unos veinte grados
+  del pico, o sea dentro del cuerpo—. El reflejo salía como un **rombo de aristas
+  rectas**. El plano luz-vista no se degrada en ningún punto del cuerpo.
+- **El rombo no era teselado.** Se probó subiendo la esfera de 40×26 a 120×78 y
+  la figura salió idéntica. El teselado vuelve a 40×26; el presupuesto de
+  vértices del §4 sigue intacto.
+
+**Aire.** El halo común baja de 1.12 a 0.30 —el mismo orden que Edmunds— y el
+aire que de verdad se ve pasa a ser un filo de exponente 8 en el limbo, sólo del
+lado que mira a Gargantúa, con microvariación de la propia bruma para que no sea
+un contorno dibujado con compás. Encima, un rebote ámbar del disco en el filo más
+encarado: un toque, no un borde naranja.
+
+**Romper la perfección.** Un hemisferio catorce puntos de luminancia más profundo
+que el otro, sobre una dirección fija y sin ruido nuevo; y la marejada que
+quiebra el terminador sube de 0.0035 a 0.0052 y deja de descontar tanta nube. Lo
+justo para que deje de parecer una bola de catálogo.
+
+**Presupuesto.** Tres sitios de FBM y una octava suelta: exactamente los de la
+versión anterior. Sin geometría, draws, materiales ni texturas nuevas.
+
+**Jerarquía, medida.** Luma media dentro del disco de Miller: **102.2 → 70.5**;
+máxima **234 → 192**, o sea deja de saturar. Con Edmunds en 85.9 y la Endurance
+en 29.7 sobre la misma captura, Miller cae en su casilla del §2 y ya no es el
+cuerpo más luminoso del cuadro.
+
+**Validación.** `npm run check` en verde (187 tests, build). Capturas con el
+prefijo `output/playwright/miller-oceano-`: hero completo a 1440×860, close-up
+comparativo antes/después y bloom-off. Los tests del modelo no juzgan material:
+la aprobación es visual y es del dueño.
+
+## 10. Herramientas
 | script | para qué |
 |---|---|
 | `tools/shot.mjs` | captura del hero, con `--sin-glow` y `--sin-rotulos` |

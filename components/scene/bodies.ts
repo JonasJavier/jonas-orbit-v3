@@ -404,58 +404,123 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 atmosphere = vec3(0.0);
     float atmosphereWeight = 0.0;
     float outputAlpha = 1.0;
-    /* Miller reutiliza estos campos en su reflexión extensa. Declararlos una
-       vez evita repetir dos FBM completos después de resolver el material. */
+    /* Miller reutiliza estos campos en su lámina de luz y en su filo de aire.
+       Declararlos una vez evita repetir dos FBM completos después de resolver
+       el material. millerGlitterMask viaja ya resuelta —oleaje por micro-
+       oleaje, descontada la nube— porque quien la usa está veinte líneas más
+       abajo y no tiene acceso a ninguno de sus tres ingredientes. */
     float millerWeather = 0.0;
-    float millerWaveField = 0.0;
+    float millerGlitterMask = 0.0;
+    /* Y sus corrientes zonales, que además de pintar tienen que ROMPER el
+       reflejo extendido: una lámina de agua sin bandas se lee como gas. */
+    float millerBands = 0.0;
     /* Y Edmunds su capa de nubes: es lo único de su superficie que responde a
        la luz como algo distinto de roca seca. Mismo motivo, mismo sitio. */
     float edmundsCloud = 0.0;
 
     if (uKind == 0) {
       /*
-        Miller: mundo oceánico.
+        Miller: océano global bajo una luz brutal.
 
-        No hacía falta reconstruirlo —se lee de un vistazo y su identidad es
-        clara— pero sí quitarle el azul plano. Lo que cambia es todo de segundo
-        orden: profundidad de agua en tres tramos en vez de uno, nubes
-        ALARGADAS en longitud como las de un planeta que rota deprisa, y una
-        marejada de gradiente analítico que quiebra el terminador. Nada de esto
-        se ve como efecto; se ve como que el océano tiene sitios.
+        ── Qué fallaba ─────────────────────────────────────────────────────
+        La versión anterior se leía «bonita» y genérica: esfera azul luminosa a
+        medio camino entre planeta helado y gigante gaseoso. Cuatro cosas la
+        delataban, y ninguna era la silueta.
+
+        1. **Un foco frontal.** Una mancha blanca lechosa, redonda y centrada
+           que hacía de Miller una canica de cristal. No venía del especular
+           estrecho sino de una lámina de exponente 15 encima: un lóbulo tan
+           ancho que cubría un tercio del disco con luz plana.
+        2. **Nubes y espuma repartidas.** Motitas claras por todo el globo. A
+           tamaño de Hero eso no es meteorología, es textura de planeta.
+        3. **Un halo isótropo.** La atmósfera pesaba 1.12 y rodeaba el cuerpo
+           por igual, también donde no llega luz. Ayudaba a que se viera lindo;
+           no a que se viera creíble.
+        4. **Ninguna relación visible con Gargantúa.** La luz llegaba, pero
+           nada en el cuerpo decía DE DÓNDE.
+
+        ── La dirección ────────────────────────────────────────────────────
+        Más agua que nubes. Un océano continuo, frío y austero, con una lámina
+        de luz encima —no un punto— y el aire justo para tener volumen. Un
+        sitio silencioso, inundado y peligroso; no un planeta azul bonito.
+
+        Tres sitios de FBM y una octava suelta, exactamente el presupuesto
+        anterior: la cuenca, las vetas de bajío y la bruma. Lo que desaparece
+        —bandas de tormenta, rompientes, espuma— no se sustituye por más ruido
+        sino por menos.
       */
-      millerWeather = fbm(vLocal * 3.4 + vec3(0.0, uTime * 0.02, 0.0));
-      float stormBands = 0.5 + 0.5 * sin(vLocal.y * 17.0 + millerWeather * 4.5);
-      float ocean = fbm(vLocal * 2.1);
-      /* Muestreo anisótropo: la latitud comprimida alarga las nubes en
-         longitud. Sale de la misma llamada y evita el algodón isótropo. */
-      float cloudField = fbm(
-        vec3(vLocal.x, vLocal.y * 2.6, vLocal.z) * 3.9
-          + vec3(uTime * 0.004, 0.0, 1.7)
+      /* MACRO: la cuenca. Es la única escala que decide dónde el agua tiene
+         fondo, y la que hace que el planeta tenga sitios y no manchas. */
+      float basin = fbm(vLocal * 1.72 + vec3(2.7, 0.0, 5.1));
+      /* VETAS DE BAJÍO. Anisótropa —latitud comprimida ×2.8— y DEFORMADA por la
+         macro: sin ese warp las vetas cruzan la cuenca y vuelven a ser ruido
+         sobre una bola. Es el mismo truco que ordenó la geografía de Edmunds. */
+      float shoal = fbm(
+        vec3(vLocal.x, vLocal.y * 2.8, vLocal.z) * 3.05 + basin * 2.4
       );
-      float cloudCover = smoothstep(
-        0.6,
-        0.83,
-        cloudField * 0.62 + millerWeather * 0.2 + stormBands * 0.18
+      /* Y una banda direccional larga que las peina. Un océano visto desde
+         órbita tiene corrientes, que son PATRONES LARGOS; el detalle repartido
+         al azar es justo lo que se estaba quitando. */
+      float current = 0.5 + 0.5 * sin(
+        dot(vLocal, vec3(5.3, 2.1, -3.9)) + shoal * 4.6
       );
-      millerWaveField = 0.5 + 0.5 * sin(
-        vLocal.y * 31.0 + vLocal.x * 7.0 + cloudField * 5.2
+      /*
+        CORRIENTES ZONALES, y son lo primero que se decide.
+
+        Aquí estaba el fallo que sobrevivió a tres pases. Las masas claras del
+        cuerpo salían de mezclar tres campos de pesos parecidos —macro, vetas y
+        corriente— y eso, por construcción, no puede dar otra cosa que una nube
+        isótropa: manchas blandas que el ojo lee como vapor, hielo o gas. Se ve
+        en un segundo pintando la máscara de bajío en un canal.
+
+        Ahora la voz que manda es una banda LATITUDINAL: sigue la curvatura del
+        cuerpo, no el ruido, y sobre la cara visible caen dos o tres. La macro y
+        las vetas siguen ahí, pero como perturbación, para que las bandas no
+        sean rayas de pijama. Cuesta cero sitios de FBM.
+      */
+      float bandPhase = vLocal.y * 6.6 + basin * 0.8 - shoal * 0.4;
+      millerBands = 0.5 + 0.5 * sin(bandPhase);
+      float shallow = smoothstep(
+        0.5,
+        0.86,
+        millerBands * 0.5 + basin * 0.32 + shoal * 0.18
+      );
+      /*
+        BRUMA, no capa de nubes. Alargada en longitud y con el umbral alto: lo
+        que queda son unas pocas bandas finas, no algodón repartido. Miller es
+        agua; la nube es lo que deja ver el agua, no lo que la tapa.
+      */
+      millerWeather = fbm(
+        vec3(vLocal.x, vLocal.y * 3.4, vLocal.z) * 2.85
+          + vec3(uTime * 0.004, 0.0, 3.3)
+      );
+      float cloudCover = smoothstep(0.66, 0.9, millerWeather + current * 0.06);
+      /* Oleaje de superficie: no pinta color, sólo rompe la lámina de luz. */
+      float waveField = 0.5 + 0.5 * sin(
+        vLocal.y * 27.0 + vLocal.x * 6.0 + shoal * 4.8
       );
       /* Una octava: microoleaje, por debajo del píxel a esta distancia. */
       float microWaves = noise(vLocal * 18.0 + vec3(uTime * 0.012, 0.0, 0.0));
-      float breakers = 0.5 + 0.5 * sin(
-        vLocal.z * 49.0 - vLocal.x * 13.0 + microWaves * 7.0
-      );
-      float foam = smoothstep(
-        0.72,
-        0.93,
-        millerWaveField * 0.48 + millerWeather * 0.34 + breakers * 0.18
-      );
 
       /*
         MAREJADA. Dos trenes de onda largos, de gradiente exacto —la derivada
         de un seno es un coseno, no cuesta una muestra más— que inclinan el
         término lambert. En un mundo de olas de kilómetro, el terminador no es
-        una curva limpia: es una banda rota. Es el detalle que Miller no tenía.
+        una curva limpia: es una banda rota.
+
+        Y AQUÍ ESTABAN LAS MANCHAS NEBULOSAS. Se veían como nube, hielo o gas y
+        se buscaron tres veces en la paleta y en la capa de nubes; no estaban
+        ahí. Dos trenes cruzados de amplitud parecida producen un patrón de
+        BATIDO —elipses grandes de interferencia, del tamaño de una cuarta parte
+        del cuerpo— que a esta distancia no se lee como oleaje sino como manchas
+        blandas sin dirección. Se ve de un vistazo pintando reliefOffset en un
+        canal.
+
+        La respuesta no es quitarla: rompe el terminador y eso hace falta. Es
+        bajarla de 0.0052 a 0.0018 y dejar que la escala grande la mande. El
+        relieve del cuerpo pasa a estar gobernado por bandas largas con
+        dirección, y la marejada vuelve a ser lo que decía ser: el borde
+        irregular de la media luna.
       */
       vec3 swellA = vec3(14.9, -8.3, 11.7);
       vec3 swellB = vec3(-10.3, 12.9, 16.1);
@@ -466,36 +531,135 @@ const BODY_FRAGMENT = /* glsl */ `
       vec3 oceanUp = normalize(vLocal);
       vec3 swellTangent = swellSlope - oceanUp * dot(swellSlope, oceanUp);
       reliefOffset = -dot(swellTangent, normalize(vLightLocal))
-                   * 0.0035 * (1.0 - cloudCover * 0.75);
+                   * 0.0018 * (1.0 - cloudCover * 0.55);
 
-      /* Tres profundidades: fosa, plataforma y bajío. El agua deja de ser un
-         color y pasa a tener fondo. */
-      albedo = mix(vec3(0.004, 0.03, 0.105), vec3(0.017, 0.2, 0.35), ocean);
+      /*
+        PALETA: azul grisáceo, no cyan de piscina.
+
+        Los tres tramos de profundidad se conservan —son lo que da fondo al
+        agua— pero bajan croma y suben contraste entre sí. El bajío era
+        (0.09, 0.47, 0.55): un turquesa eléctrico que a tamaño de Hero se leía
+        como hielo iluminado. Pierde un quinto de saturación y algo de valor, y
+        la lectura pasa de «bola azul brillante» a «océano con plataforma».
+      */
+      albedo = mix(vec3(0.006, 0.024, 0.078), vec3(0.022, 0.094, 0.226), basin);
+      /* Las bandas se pintan POCO a propósito: el dueño las pidió «muy
+         sutiles», y una banda de color fuerte vuelve a leerse como nube. Lo que
+         las hace visibles es la inclinación de la lámina, no el pigmento. */
+      albedo = mix(albedo, vec3(0.062, 0.19, 0.376), shallow * 0.55);
+      /* El acento somero es una VETA, no un continente: sale del cruce de la
+         corriente con el bajío, así que sigue una dirección. */
       albedo = mix(
         albedo,
-        vec3(0.09, 0.47, 0.55),
-        smoothstep(0.52, 0.86, ocean) * 0.72
+        vec3(0.126, 0.298, 0.472),
+        shallow * smoothstep(0.62, 0.94, current) * 0.42
       );
-      albedo = mix(albedo, vec3(0.52, 0.71, 0.79), cloudCover * 0.58);
-      albedo = mix(albedo, vec3(0.72, 0.94, 0.97), foam * (1.0 - cloudCover) * 0.26);
-      gloss = mix(0.94, 0.12, cloudCover);
-      gloss *= 0.72 + millerWaveField * 0.18 + microWaves * 0.2;
-      /* Reflejo más CERRADO. A 38 el disco dejaba una mancha blanca reventada
-         de un tercio del planeta: eso no es sol sobre el mar, es una fuga de
-         exposición. A 74 el camino de luz se estrecha y aparece lo que
-         importa, el rastro de destellos del oleaje alrededor. */
-      specularPower = 74.0;
-      /* Y más BAJO: 0.82, no 1.05. El brillo del disco sobre el océano seguía
-         dejando una mancha casi blanca, y una superficie perfecta a esa
-         intensidad es lo que hace que un planeta de agua se lea como material
-         de videojuego. Con 0.82 el reflejo sigue estando —es medio Miller— pero
-         deja ver el agua que hay debajo. */
-      specularStrength = 0.82;
-      /* Un mundo de agua tiene aire, y ese filo azul es la mitad de la lectura.
-         Pesa 1.12 en vez de 1.3: por encima, el halo azul empieza a leerse como
-         un contorno dibujado y desentona con el ámbar del resto del sistema. */
-      atmosphere = vec3(0.24, 0.5, 0.82);
-      atmosphereWeight = 1.12;
+      /*
+        CORRIENTES ZONALES: lo que hace que el cerebro diga AGUA.
+
+        Las masas grandes ya estaban bien, pero eran blandas: nubosas por
+        dentro, y una mancha suave azul claro se puede leer como nube, hielo o
+        gas. Lo que faltaba era DIRECCIÓN a escala del planeta.
+
+        Tres bandas largas siguiendo la curvatura —van con la latitud del
+        cuerpo, no con el ruido— y perturbadas por la macroforma para que no
+        sean rayas de pijama. No es textura de oleaje: a 47 px de radio unas
+        olitas son grano y desaparecen. Es la variación grande de la lámina
+        oceánica: dónde el agua devuelve luz y dónde la traga. Y por eso el
+        término principal que modulan no es el color sino el BRILLO, aquí y en
+        el reflejo extendido de más abajo.
+
+        Cuesta cero sitios de FBM: la perturbación sale de basin y de shoal,
+        que ya estaban calculados.
+      */
+      /*
+        Y LAS BANDAS INCLINAN LA LÁMINA, que es lo que las hace agua.
+
+        Pintarlas en el albedo no bastaba: a esta distancia un ±17 % de color
+        sobre un cuerpo oscuro son seis niveles de gris y el ojo los lee como
+        más nube. Lo que se ve en un océano de verdad no es que el agua cambie
+        de color por franjas — es que la lámina está inclinada por franjas y
+        devuelve la luz de otra manera.
+
+        Mismo truco de gradiente analítico que la marejada, una escala por
+        encima: la derivada de la fase respecto de la posición es la constante
+        de la banda por el coseno, así que no cuesta una muestra más. El efecto
+        aparece fuerte cerca del terminador —donde una inclinación pequeña
+        decide entre luz y sombra— y suave en pleno día, que es exactamente
+        cómo se comporta un mar iluminado de refilón.
+      */
+      vec3 bandSlope = vec3(0.0, 6.6, 0.0) * cos(bandPhase);
+      vec3 bandTangent = bandSlope - oceanUp * dot(bandSlope, oceanUp);
+      reliefOffset += -dot(bandTangent, normalize(vLightLocal)) * 0.023;
+      /*
+        MICROCONTRASTE, un realce local del 7 %.
+
+        A tamaño de Hero el planeta corría el riesgo de leerse como una bola
+        azul ligeramente desenfocada: masas correctas, ningún filo. Esto es un
+        unsharp barato sobre la escala MEDIA —la que ya decide regiones— y no
+        sobre el grano: multiplica por la desviación de shoal respecto de su
+        media, así que aclara lo que ya era claro y hunde lo que ya era oscuro
+        sin inventar estructura nueva ni tocar la jerarquía de masas.
+      */
+      albedo *= 1.0 + (shoal - 0.47) * 0.7;
+      albedo *= 0.94 + millerBands * 0.12;
+      /*
+        Un hemisferio algo más profundo que el otro. Catorce puntos de
+        luminancia sobre una dirección fija, sin ruido nuevo: lo justo para que
+        el brillo no esté repartido con simetría de render.
+      */
+      float hemisphere = smoothstep(
+        -0.55, 0.72, dot(oceanUp, vec3(0.38, 0.46, -0.80))
+      );
+      albedo *= mix(0.84, 1.06, hemisphere);
+      /* Nube fría y apagada. Ni blanca ni cálida: es vapor sobre agua helada. */
+      albedo = mix(albedo, vec3(0.398, 0.486, 0.588), cloudCover * 0.3);
+      /*
+        BRILLO. El agua es la superficie más reflectiva del sistema, y por eso
+        el mando no es «cuánto» sino «con qué forma». Aquí sólo queda el suelo;
+        la forma la ponen el lóbulo anisótropo y el destello del oleaje, más
+        abajo, ya con la luz resuelta.
+      */
+      gloss = mix(0.92, 0.08, cloudCover);
+      gloss *= 0.62 + waveField * 0.22 + microWaves * 0.2;
+      /* Y las bandas mandan sobre el brillo más que sobre el color: es la
+         diferencia entre pintar rayas y tener corrientes. */
+      gloss *= 0.6 + millerBands * 0.72;
+      /* La máscara del destello viaja resuelta: quien la usa está veinte líneas
+         más abajo y no tiene acceso al oleaje ni a la nube. */
+      millerGlitterMask = smoothstep(0.30, 0.88, waveField * 0.58 + microWaves * 0.42)
+                        * (1.0 - cloudCover * 0.82);
+      /*
+        EL NÚCLEO ISÓTROPO CASI DESAPARECE, y ésta es la línea que quita la
+        mancha blanca.
+
+        Valía 74 de exponente y 0.82 de peso, y ahí estaba el foco de plató:
+        con exponente 74 el lóbulo cae a 1/e a ocho grados de normal, que sobre
+        un cuerpo de 47 px de radio son catorce píxeles de diámetro —un tercio
+        del planeta— saturados a blanco. Bajarle el peso no arreglaba la FORMA:
+        un disco redondo y liso encima de un océano sigue siendo una canica.
+
+        A 320 y 0.12 lo que queda es el corazón caliente del reflejo, cuatro
+        píxeles, dentro de la lámina anisótropa que sí tiene dirección. Aquí es
+        donde el cuerpo deja de parecer iluminado de frente.
+      */
+      specularPower = 320.0;
+      specularStrength = 0.12;
+      /*
+        ATMÓSFERA FINA, y esto es la mitad del arreglo.
+
+        Pesaba 1.12 y era un halo isótropo: rodeaba el cuerpo por igual, cara
+        noche incluida, y lo dejaba flotando dentro de un aro azul de interfaz.
+        Baja a 0.3 —el mismo orden que Edmunds— y el aire que de verdad se ve
+        pasa a ser el filo direccional del bloque uKind == 0 de más abajo. El
+        color pierde algo de croma para no volver a competir con el ámbar.
+      */
+      atmosphere = vec3(0.196, 0.436, 0.756);
+      /* 0.20, no 0.30. El halo COMÚN desborda hasta ndl = −0.45, así que buena
+         parte de la línea pálida que rodeaba el limbo por abajo salía de aquí
+         y no del filo propio. Lo que se le quita se le devuelve al filo
+         direccional, que sí sabe dónde está Gargantúa. */
+      atmosphereWeight = 0.16;
     } else if (uKind == 1) {
       /*
         Edmunds: el mundo de la Creatividad — el destino habitable del sistema.
@@ -1293,18 +1457,96 @@ const BODY_FRAGMENT = /* glsl */ `
       color += vec3(0.018, 0.1, 0.16) * fresnel * 0.72;
     }
 
-    /* Miller refleja una fuente EXTENSA: además del filo especular estrecho hay
-       una lámina de luz más ancha sobre el océano. Las nubes ya bajan el brillo,
-       así que la lectura sigue siendo agua y no una bola cromada. */
+    /*
+      MILLER: LÁMINA DE LUZ Y AIRE DIRECCIONAL.
+
+      Aquí estaba el fallo número uno del cuerpo. La versión anterior sumaba
+      encima del especular estrecho un lóbulo de exponente 15: angularmente
+      enorme, redondo y centrado, o sea exactamente un foco de plató sobre una
+      canica. Un reflejo sobre agua no es eso. Es una lámina ESTIRADA en la
+      dirección del plano luz-vista y ROTA por el oleaje.
+
+      1. **La lámina.** Un lóbulo ELÍPTICO, ancho en el plano luz-vista y
+         estrecho a lo ancho. Se escribe como una gaussiana sobre las dos
+         componentes tangenciales del half-vector y no como una potencia sobre
+         un vector deformado: deformar y volver a normalizar da isolíneas con
+         esquinas, y en pantalla eso sale como una cometa —una figura
+         geométrica— en vez de como un reflejo. La gaussiana no tiene esquinas.
+
+         El eje transversal sale de la LUZ Y LA VISTA, no de la normal, y esa
+         distinción costó una captura. Con el eje escrito como
+         cross(normal, toLight) el reparto entre las dos componentes se divide
+         por el seno del ángulo normal-luz, que vale cero en el punto sublunar:
+         a unos veinte grados del pico —o sea a veinte píxeles, dentro del
+         cuerpo— la componente transversal se disparaba, el max() de la
+         longitudinal recortaba, y el reflejo salía como un ROMBO de aristas
+         rectas. Una figura geométrica en mitad de un océano. El plano
+         luz-vista no se degrada en ningún punto del cuerpo, y con él las tres
+         direcciones forman una base ortonormal de verdad: el reparto es exacto
+         y el lóbulo, una elipse limpia en todo el disco.
+      2. **El destello.** El mismo lóbulo con exponente alto, picado por la
+         máscara de oleaje que traía el material. Es lo que convierte la lámina
+         en un rastro de chispas y no en una chapa: el detalle que dice AGUA.
+      3. **El filo de aire.** Exponente 8 contra el 2.2 del halo común: una
+         línea en el limbo, no un resplandor alrededor. Y sólo del lado que
+         mira a Gargantúa, con microvariación de la propia bruma para que no
+         sea un contorno dibujado con compás.
+      4. **El rebote cálido.** Un toque de ámbar del disco en el filo más
+         encarado, muy por debajo del cyan. No es un borde naranja: es la
+         respuesta a «la luz no parece venir de ella con suficiente intención».
+         Del lado contrario ya no hay nada que lo compense, y ahí es donde el
+         contraluz frío común cierra la silueta.
+    */
     if (uKind == 0) {
-      float oceanSheen = pow(specBase, 15.0) * gloss * day;
-      float oceanGlint = pow(specBase, 62.0)
-                       * smoothstep(0.46, 0.9, millerWaveField)
-                       * (1.0 - smoothstep(0.64, 0.84, millerWeather))
-                       * day;
-      color += mix(key, vec3(0.45, 0.68, 1.0), 0.28) * oceanSheen * 0.26;
-      color += mix(vec3(1.0, 0.88, 0.67), vec3(0.58, 0.8, 1.0), 0.24)
+      vec3 acrossRaw = cross(toLight, view);
+      float acrossLen = length(acrossRaw);
+      vec3 acrossDir = acrossLen > 1e-4 ? acrossRaw / acrossLen : vec3(0.0);
+      /* Descomposición de la normal en la base del reflejo sin una sola raíz
+         extra: halfVec y acrossDir son ortogonales y unitarios, así que lo que
+         no cae en ninguno de los dos es la componente longitudinal. */
+      float acrossOff = dot(normal, acrossDir);
+      float acrossOff2 = acrossOff * acrossOff;
+      float alongOff2 = max(1.0 - specBase * specBase - acrossOff2, 0.0);
+      /* Tres anchos del MISMO lóbulo, no tres efectos. El asiento es lo que
+         impide que el camino de luz se lea como un arañazo pegado encima: una
+         banda ancha y muy tenue, anisótropa también, que dice que ahí abajo
+         sigue habiendo agua. Es el término que en la versión anterior valía
+         0.26 con lóbulo isótropo, y por eso salía mancha. */
+      float oceanSeat = exp(-(alongOff2 * 2.6 + acrossOff2 * 24.0)) * gloss * day;
+      float oceanSheet = exp(-(alongOff2 * 11.0 + acrossOff2 * 210.0))
+                       * gloss * day;
+      float oceanGlint = exp(-(alongOff2 * 48.0 + acrossOff2 * 420.0))
+                       * millerGlitterMask * day;
+      /* El asiento va PICADO POR LAS BANDAS. Una lámina de reflejo continua
+         sobre todo el hemisferio es exactamente lo que hace que un océano se
+         lea como gas: sin corrientes que la corten, no hay superficie. */
+      color += mix(key, vec3(0.34, 0.56, 0.88), 0.46)
+             * oceanSeat * (0.3 + millerBands * 1.2) * 0.08;
+      color += mix(key, vec3(0.42, 0.62, 0.92), 0.34) * oceanSheet * 0.30;
+      color += mix(vec3(1.0, 0.92, 0.78), vec3(0.66, 0.86, 1.0), 0.3)
              * oceanGlint * 0.42;
+
+      /*
+        EL FILO SE VUELVE ASIMÉTRICO, y ése es el punto tres.
+
+        Encendía desde ndl = −0.06: o sea prácticamente todo el hemisferio
+        visible que no fuera noche cerrada, y sumado al desborde del halo común
+        eso dibujaba una línea pálida casi uniforme por todo el borde inferior.
+        Un contorno de recorte, no atmósfera.
+
+        Ahora la puerta abre en 0.10 y cierra en 0.80, así que el filo NACE
+        donde el cuerpo empieza a mirar a Gargantúa y se apaga progresivamente
+        dando la vuelta al limbo. Y encima cambia de color con la misma rampa:
+        cyan pálido en los flancos, blanco cálido en el punto más encarado. El
+        borde ya no dice sólo que hay aire — dice de dónde viene la luz.
+      */
+      float airEdge = pow(1.0 - max(dot(normal, view), 0.0), 8.0)
+                    * (0.82 + millerWeather * 0.36);
+      float airLit = smoothstep(0.22, 0.86, ndl);
+      float airFacing = smoothstep(0.46, 0.99, ndl);
+      color += mix(vec3(0.3, 0.6, 1.0), vec3(0.88, 0.95, 1.0), airFacing)
+             * airEdge * airLit * uLightIntensity * 1.62;
+      color += key * airEdge * airFacing * 0.54;
     }
 
     /*
