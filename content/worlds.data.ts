@@ -78,21 +78,30 @@ export interface WorldStructuralData {
  *
  * Al retirar Cooper Station el cuadrante superior izquierdo se quedó sin nada:
  * medido sobre 1440×860, ningún cuerpo caía en x < 48 % con y < 50 %, y la masa
- * se repartía 34/66 entre izquierda y derecha. Con la mitad del cuadro vacía y
- * la otra mitad cargada, el sistema dejaba de leerse como un sistema.
+ * se repartía 34/66 entre izquierda y derecha.
  *
- * El arreglo NO es repartir los cinco cuerpos por igual. Es mover DOS —Miller
- * al hueco, Tesseracto a la derecha del eje— y afinar los otros tres:
+ * El primer arreglo fue mandar a Miller a ese hueco, y dirección lo rechazó con
+ * un argumento que conviene dejar escrito porque contradice el diagnóstico:
  *
- * 1. **Miller cruza al superior izquierdo** (fase 337 → 235). Es el destino
- *    adecuado para esa esquina y el Tesseracto no lo era: un planeta con albedo
- *    y terminador se sostiene contra el campo de estrellas, mientras que una
- *    estructura de marcos oscuros ahí se lee como un icono suelto — que es
- *    exactamente lo que ya había pasado antes del intercambio con Cooper.
+ *   **Un cuadrante vacío no es un error.** Es lo que hace respirar a una escena
+ *   espacial. Lo que sí era un error es que Miller, aislado contra negro en una
+ *   esquina, se convertía en lo SEGUNDO que se mira después del agujero negro —
+ *   una jerarquía que no le toca— y que junto a Edmunds volvía a formar la
+ *   distribución periférica de la que se venía huyendo.
+ *
+ * Así que Miller no vuelve a donde estaba, pero tampoco se queda en la esquina:
+ * entra al tercio superior izquierdo, dentro del campo visual de Gargantúa. El
+ * hueco de la esquina se conserva a propósito. Los cambios, entonces:
+ *
+ * 1. **Miller entra al tercio, no a la esquina** (fase 337 → 245, radio 27 →
+ *    26, inclinación 38 → 34). Pasa de 25.6 % / 17.4 % del cuadro a 33.2 % /
+ *    27.8 %: sigue arriba y a la izquierda, pero pertenece al sistema en vez de
+ *    estar anclado al borde del visor.
  * 2. **El Tesseracto se corre a la derecha del eje** (fase 279 → 298). Con
  *    Miller arriba a la izquierda, dejarlo centrado los habría convertido en
  *    dos objetos colgados de la misma banda superior; a 298 abre la diagonal
- *    Miller → Tesseracto → Endurance y sigue sin tocar el disco.
+ *    Miller → Tesseracto → Endurance y sigue sin tocar el disco. Su ORIENTACIÓN
+ *    sí cambia mucho, y eso vive en `TESSERACT_BOX_TILT`.
  * 3. **Endurance baja y se abre** (fase 45 → 42, inclinación 12 → 16): separa
  *    su silueta de la cola derecha del disco, que era donde se ensuciaba.
  * 4. **La Ranger sube y se centra** (fase 109 → 99, inclinación 23 → 16): se
@@ -104,6 +113,9 @@ export interface WorldStructuralData {
  * ACERCA la cámara. Gargantúa pasa de 42 a 46 px de radio de sombra a 1440 px
  * sin tocar su `size` ni la pose — el sistema llena más cuadro porque ocupa
  * mejor el que tiene, no porque nada haya crecido.
+ *
+ * El orden de lectura que persigue todo esto: Gargantúa, la Endurance, el
+ * Tesseracto, Miller y Edmunds, y por último la Ranger.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -125,15 +137,21 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    /* El cuerpo que ocupa el hueco. Fase 235 y radio 28 lo llevan al superior
-       izquierdo; la inclinación 58 es la que lo SUBE —la altura sale de
-       −r·sen(fase)·sen(inclinación)— sin acercarlo al centro del cuadro. No
-       sube más porque la altura es cara: el encuadre mide la envolvente de los
-       cuerpos, y a 70° Gargantúa perdía un 11 % de radio de sombra para dejar
-       sitio a un planeta pequeño. Lo que hacía falta —que el Tesseracto no se
-       vea mayor que él— se compra por profundidad, no por altura: ver la capa
-       de Miller en `lib/scene-depth.ts`. */
-    placement: { orbitRadius: 28, phase: 235, inclination: 58, size: 3.05 },
+    /* El tercio superior izquierdo, no la esquina. Fase 245 e inclinación 34 lo
+       colocan en 33.2 % / 27.8 % del cuadro: dentro del campo de Gargantúa, con
+       el vacío de la esquina intacto por encima.
+
+       Los tres números están atados entre sí y no se tocan por separado. La
+       altura sale de −r·sen(fase)·sen(inclinación) y la profundidad de
+       r·sen(fase)·cos(inclinación), así que acercarlo al centro del cuadro lo
+       MANDA HACIA ATRÁS: es geometría, no una elección. Aquí queda a 94 rs de
+       la cámara de referencia —el segundo cuerpo más lejano, por detrás sólo
+       del Tesseracto—, y esa distancia es justo lo que le quita el peso visual
+       que dirección no le quería dar.
+
+       El radio no baja de 24: por debajo entraría en el disco de acreción
+       (`DISK_OUTER`, 23.8 rs) y lo comprueba `worlds.data.test.ts`. */
+    placement: { orbitRadius: 26, phase: 245, inclination: 34, size: 3.05 },
     sceneName: "scene-miller",
   },
   endurance: {

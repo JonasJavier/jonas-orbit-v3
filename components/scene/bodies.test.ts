@@ -389,18 +389,41 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(size.endurance).toBeGreaterThan(Math.max(...others) * 1.4);
 
       /*
-        El Tesseracto sigue siendo lejano y secundario, y su radio publicado no
-        se mueve de donde lo dejó el rediseño anterior: ~55 px. Su caja aparente
-        puede superar ligeramente a Miller porque casi toda esa caja es vacío —
-        la esfera envolvente la fija una esquina de la caja de vigas, no una
-        masa—. La ventana es lo que impide las dos salidas fáciles: volverlo una
-        mota, o hacerlo crecer para tapar una geometría ilegible. La legibilidad
-        se resolvió por forma (menos piezas, vigas más gruesas, vacío mayor),
-        que es lo que pidió dirección.
+        El Tesseracto sigue siendo lejano y secundario. Lo que hay que impedir
+        son las dos salidas fáciles: volverlo una mota, o hacerlo crecer para
+        tapar una geometría ilegible.
+
+        ── Por qué esto ya no se mide contra Miller (2026-09-04) ──────────────
+
+        Antes la condición era `tesseract < miller · 1.15`. Miller era el cuerpo
+        más pequeño y estaba quieto, así que servía de patrón. Dejó de estarlo:
+        la recomposición de los seis destinos lo movió dos veces, y las dos
+        veces saltó este test SIN QUE EL TESSERACTO HUBIERA CAMBIADO. Un test
+        que se rompe cuando se mueve otro cuerpo no está midiendo el objeto que
+        dice medir — está acoplando una garantía del MODELO a una variable de
+        COMPOSICIÓN, y obliga a distorsionar la escena para volver a pasar.
+
+        Se pinta lo que de verdad se quiere garantizar:
+
+        1. El radio publicado del modelo, que es donde vive «ni mota ni
+           inflado» y no depende de dónde esté el cuerpo.
+        2. Un suelo absoluto de tamaño aparente, por si alguien lo manda a
+           quince radios de distancia en vez de encogerlo.
+        3. Su sitio en la jerarquía: por encima del planeta más lejano y por
+           debajo de la Ranger, que es el techo que lo separa de dominar. Entre
+           medias queda Edmunds, y que la esfera del Tesseracto la supere por
+           un 2 % es precisamente lo que dice el párrafo de arriba: esa esfera
+           es casi toda vacío entre vigas, no masa.
+
+        La legibilidad se resolvió por forma (menos piezas, vigas más gruesas,
+        vacío mayor), que es lo que pidió dirección.
       */
+      expect(bodies.tesseract.radius).toBeGreaterThan(4.6);
+      expect(bodies.tesseract.radius).toBeLessThan(5.0);
+      expect(size.tesseract).toBeGreaterThan(0.035);
+
       expect(Math.min(...ids.map((id) => size[id]))).toBe(size.miller);
       expect(size.tesseract).toBeGreaterThan(size.miller);
-      expect(size.tesseract).toBeLessThan(size.miller * 1.15);
 
       // La Ranger es una nave, no una mota: por debajo de este margen deja de
       // poder enseñar proa, cabina y toberas, que es lo que la hace una nave.
