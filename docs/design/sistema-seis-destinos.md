@@ -99,6 +99,19 @@ columna «con 7 destinos» es el estado previo a la retirada de Cooper Station:
 | Edmunds | 25.5 / 167 / 56 / 3 | 25.5 / 167 / 56 / 3 | +2 (sin cambio) |
 | Ranger | 24 / 105 / 23 / 2.6 | 24 / 97 / 14 / 2.0 | +7 (sin cambio) |
 
+Esta tabla quedó superada el 2026-09-05 en dos pasadas, ambas en §14 de
+[`hero-gargantua-direction.md`](hero-gargantua-direction.md):
+
+- **§14 quáter** (autoridad de Gargantúa) cambia la columna de TAMAÑO, que pasa
+  a 2.71 / 2.81 / 4.64 / 2.76 / 1.93 para las mismas cinco filas.
+- **§14 quinquies** (respiración) cambia radio, fase e inclinación de los dos
+  cuerpos de arriba: Tesseracto a 32 / 300 / 30 y Miller a 28 / 240 / 37.
+
+Endurance, Edmunds y la Ranger conservan intactos radio, fase e inclinación, y
+las seis profundidades de `scene-depth.ts` no se tocan. El razonamiento de esta
+sección —por qué Miller no vuelve a la esquina, por qué el hueco se conserva—
+sigue vigente y es lo que acota ambas pasadas.
+
 Orientación del Tesseracto en `components/scene/bodies.ts`:
 
 | | Antes | 3.ª pasada | Ahora |

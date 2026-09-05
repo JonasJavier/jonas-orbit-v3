@@ -48,6 +48,18 @@ deriva mínima y acabado por petición del dueño. Tres grupos interiores se
 reconfiguran de forma perceptible; cáscara, posición, tamaño y cámara siguen
 fijos. El Tesseracto usa cuatro draws con un material compartido.
 
+**Pase de autoridad de Gargantúa (2026-09-05):** la sección `14 quáter` de
+`docs/design/hero-gargantua-direction.md` sustituye la escala de los cinco
+destinos secundarios por petición del dueño — Endurance −10 %, Miller y Edmunds
+−8 %, Tesseracto −5.6 %, Ranger −3.5 %. Gargantúa no se toca. Posición, fase,
+inclinación, cámara, material y HUD siguen intactos.
+
+**Pase de respiración (2026-09-05):** la sección `14 quinquies` de
+`docs/design/hero-gargantua-direction.md` mueve Miller (26/242/31 → 28/240/37) y
+el Tesseracto (30/298/26 → 32/300/30) para despegarlos del arco brillante de
+Gargantúa. No cambia tamaño, cámara ni los otros tres cuerpos. Sustituye radio,
+fase e inclinación de esos dos en `docs/design/sistema-seis-destinos.md`.
+
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station
