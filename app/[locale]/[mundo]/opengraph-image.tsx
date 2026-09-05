@@ -25,6 +25,9 @@ export default async function WorldOgImage({
 }) {
   const { locale, mundo } = await params;
   const world = getWorldBySlug(mundo, locale as Locale);
-  if (!world) return new Response(null, { status: 404 });
+  // Cuerpo no vacío a propósito: una respuesta de 404 con `null` hace que el
+  // caché de prerender de Next calcule tamaño 0 y registre un error por cada
+  // petición a un destino retirado. El texto no lo lee nadie; evita el ruido.
+  if (!world) return new Response("Not found", { status: 404 });
   return renderWorldOgImage(world);
 }
