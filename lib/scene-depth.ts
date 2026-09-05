@@ -24,7 +24,25 @@ const BODY_DEPTH_LAYER: Readonly<
     posición en pantalla y solo cambia su tamaño aparente y su orden en z.
   */
   tesseract: -6,
-  miller: 0,
+  /*
+    Miller sube de 0 a +5 (2026-09-04), y no es un ajuste de gusto.
+
+    Al cruzar al superior izquierdo su fase lo hunde 12 rs por detrás del plano
+    del origen: queda a 89 rs de la cámara de referencia contra los 78 de
+    Edmunds. A esa distancia el Tesseracto —cuya esfera envolvente es casi toda
+    vacío entre vigas— se veía un 17.6 % mayor que él, y el planeta que tiene
+    que sostener esa esquina pasaba a ser el cuerpo más diminuto del cuadro.
+
+    Deslizarlo 5 rs sobre su propio rayo lo deja en 84 y devuelve la jerarquía
+    (el test de `bodies.test.ts` pide < 1.15×) SIN moverlo un píxel en pantalla
+    y SIN tocar el encuadre, que se mide con la posición base. La alternativa
+    —subirlo por inclinación— costaba un 11 % del radio de sombra de Gargantúa,
+    porque la altura sí entra en la envolvente que encuadra la cámara.
+
+    Sigue siendo el segundo cuerpo más lejano, por detrás sólo del Tesseracto:
+    84 contra 76 de Edmunds, 60 de Endurance y 49 de la Ranger.
+  */
+  miller: 5,
   endurance: 4,
   edmunds: 2,
   // Sigue siendo el cuerpo más adelantado —es la nave pequeña y necesita el
