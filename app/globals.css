@@ -4356,6 +4356,24 @@ html[data-pointer-life="ready"] .site-stardust {
   opacity: 1;
 }
 
+/*
+  Retículo de navegación.
+
+  Es instrumentación de cabina, no un puntero decorado: anillo exterior, núcleo
+  concéntrico con chispa y dos marcas laterales que no llegan a tocar el anillo.
+  Ese aire entre marca y anillo es la mitad del efecto — pegadas se leen como
+  una cruz, separadas se leen como calibración.
+
+  El reparto de capas existe porque el retículo tiene que hacer dos cosas a la
+  vez que un solo elemento no puede: posicionarse (`translate` desde el puntero)
+  y girar (barrido sobre objetivo). La caja lleva la posición y las marcas;
+  `::before` es el anillo y gira libre; `::after` es el núcleo. La caja NUNCA
+  rota, así que las marcas se mantienen horizontales mientras el anillo barre.
+
+  El ancho de la caja es el vano completo marca-a-marca, no el diámetro del
+  anillo: al crecer la caja las marcas se separan solas, que es exactamente lo
+  que tiene que pasar al adquirir objetivo.
+*/
 .navigation-cursor {
   --navigation-cursor-x: -4rem;
   --navigation-cursor-y: -4rem;
@@ -4363,17 +4381,13 @@ html[data-pointer-life="ready"] .site-stardust {
   top: 0;
   left: 0;
   z-index: 8;
-  width: 1.12rem;
-  height: 1.12rem;
-  color: color-mix(in srgb, var(--ink) 76%, transparent);
+  width: 2.2rem;
+  height: 2.2rem;
+  color: color-mix(in srgb, var(--ink) 78%, transparent);
   background:
-    linear-gradient(currentColor, currentColor) center top / 1px 0.24rem
+    linear-gradient(currentColor, currentColor) left center / 0.3rem 1px
       no-repeat,
-    linear-gradient(currentColor, currentColor) center bottom / 1px 0.24rem
-      no-repeat,
-    linear-gradient(currentColor, currentColor) left center / 0.24rem 1px
-      no-repeat,
-    linear-gradient(currentColor, currentColor) right center / 0.24rem 1px
+    linear-gradient(currentColor, currentColor) right center / 0.3rem 1px
       no-repeat;
   opacity: 0;
   pointer-events: none;
@@ -4384,47 +4398,134 @@ html[data-pointer-life="ready"] .site-stardust {
     )
     translate3d(-50%, -50%, 0);
   transition:
-    width 150ms var(--ease-orbit),
-    height 150ms var(--ease-orbit),
+    width 170ms var(--ease-orbit),
+    height 170ms var(--ease-orbit),
+    background-size 170ms var(--ease-orbit),
     color 150ms ease,
     opacity 100ms ease;
   will-change: transform;
 }
 
+.navigation-cursor::before,
 .navigation-cursor::after {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0.15rem;
-  height: 0.15rem;
   content: "";
   border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 0.42rem currentColor;
   transform: translate(-50%, -50%);
 }
 
+/* Anillo exterior. En espacio es un círculo cerrado. */
+.navigation-cursor::before {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid currentColor;
+  opacity: 0.72;
+  transition:
+    width 170ms var(--ease-orbit),
+    height 170ms var(--ease-orbit),
+    border-color 170ms ease,
+    box-shadow 170ms ease,
+    opacity 170ms ease;
+}
+
+/* Núcleo: anillo pequeño con la chispa dentro. El halo es lo que lo sostiene
+   sobre el disco de Gargantúa, donde una línea de 1 px se pierde entera. */
+.navigation-cursor::after {
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid currentColor;
+  background: radial-gradient(
+    circle at center,
+    currentColor 0 1.1px,
+    transparent 1.2px
+  );
+  box-shadow: 0 0 0.22rem color-mix(in srgb, currentColor 45%, transparent);
+  transition:
+    width 170ms var(--ease-orbit),
+    height 170ms var(--ease-orbit);
+}
+
 .navigation-cursor[data-state="space"] {
-  opacity: 0.76;
+  opacity: 0.8;
 }
 
+/*
+  Sobre un proxy el anillo se abre: los bordes laterales se vuelven
+  transparentes y el círculo pasa a ser dos arcos que barren.
+
+  Las marcas laterales son las que sostienen la lectura mientras eso pasa. Los
+  huecos entre arcos giran —a los 0,9 s están arriba y abajo, no a los lados—,
+  así que el eje horizontal del retículo no puede depender del anillo. Las
+  marcas no rotan nunca: son el único elemento fijo, y por eso el retículo
+  conserva centro y orientación en cualquier fotograma del barrido.
+*/
 .navigation-cursor[data-state="target"] {
-  width: 1.72rem;
-  height: 1.72rem;
+  width: 3rem;
+  height: 3rem;
   color: var(--hud-active, var(--cyan));
-  opacity: 0.98;
+  background-size:
+    0.44rem 1px,
+    0.44rem 1px;
+  opacity: 1;
 }
 
+.navigation-cursor[data-state="target"]::before {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-color: transparent;
+  border-top-color: currentColor;
+  border-bottom-color: currentColor;
+  box-shadow: 0 0 0.42rem -0.18rem currentColor;
+  opacity: 1;
+  animation: navigation-cursor-scan 3.6s linear infinite;
+}
+
+/* Al activar, el anillo se cierra sobre el objetivo y las marcas se quedan
+   fuera: el gesto de agarre, no un tercer tamaño intermedio. */
 .navigation-cursor[data-state="locked"] {
-  width: 1.46rem;
-  height: 1.46rem;
+  width: 2.6rem;
+  height: 2.6rem;
   color: var(--ink);
   opacity: 1;
+}
+
+.navigation-cursor[data-state="locked"]::before {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-color: currentColor;
+  box-shadow: 0 0 0.38rem -0.16rem currentColor;
+  opacity: 1;
+  animation: none;
+}
+
+.navigation-cursor[data-state="locked"]::after {
+  width: 0.3rem;
+  height: 0.3rem;
 }
 
 .navigation-cursor[data-state="hidden"],
 .navigation-cursor[data-state="control"] {
   opacity: 0;
+}
+
+@keyframes navigation-cursor-scan {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* El retículo sigue vivo tras una activación explícita; el barrido continuo
+     no. Es el único movimiento perpetuo de esta capa. */
+  .navigation-cursor[data-state="target"]::before {
+    animation: none;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {

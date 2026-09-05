@@ -60,6 +60,15 @@ el Tesseracto (30/298/26 → 32/300/30) para despegarlos del arco brillante de
 Gargantúa. No cambia tamaño, cámara ni los otros tres cuerpos. Sustituye radio,
 fase e inclinación de esos dos en `docs/design/sistema-seis-destinos.md`.
 
+**Pase de puntero (2026-09-05):** las secciones `11 bis` y `11 ter` de
+`docs/design/hero-gargantua-direction.md` sustituyen la figura del retículo y la
+presencia del stardust en WebGL por petición del dueño. El retículo pasa de cruz
+de cuatro trazos a anillo + núcleo + marcas laterales, con `target` abriendo el
+anillo en arcos que barren. El stardust de WebGL sube alfa, capacidad, ráfaga,
+tamaño y vida, y alarga la curva de apagado. No cambian el ámbito de la capa
+—desktop fine-pointer dentro del System Map—, los cuatro estados, ni el perfil
+`flat`, que sigue congelado.
+
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station
