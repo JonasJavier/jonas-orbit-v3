@@ -418,8 +418,13 @@ describe("cuerpos del Sistema Gargantúa", () => {
         La legibilidad se resolvió por forma (menos piezas, vigas más gruesas,
         vacío mayor), que es lo que pidió dirección.
       */
-      expect(bodies.tesseract.radius).toBeGreaterThan(4.6);
-      expect(bodies.tesseract.radius).toBeLessThan(5.0);
+      /* La banda subió de [4.6, 5.0] a [4.8, 5.3] el 2026-09-04: dirección pidió
+         entre un 5 y un 8 % más de presencia para el Tesseracto —es «Sobre mí»
+         y llegaba modesto al lado de la Endurance— y `size` pasó de 2.7 a 2.87,
+         un 6.3 %. Sigue siendo una banda, no un número: lo que se prohíbe es
+         que crezca sin que nadie lo decida. */
+      expect(bodies.tesseract.radius).toBeGreaterThan(4.8);
+      expect(bodies.tesseract.radius).toBeLessThan(5.3);
       expect(size.tesseract).toBeGreaterThan(0.035);
 
       expect(Math.min(...ids.map((id) => size[id]))).toBe(size.miller);
