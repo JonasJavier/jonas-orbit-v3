@@ -249,18 +249,72 @@ afordancia convencional clara. Nunca es un crosshair grande ni sustituye el
 cursor fuera del viewport.
 
 Cuando WebGL está vivo, el stardust usa un único canvas 2D decorativo y un pool
-circular de 300 slots en typed arrays. El perfil `flat` conserva el rastro ya
+circular de 340 slots en typed arrays. El perfil `flat` conserva el rastro ya
 aprobado (420 slots, 1–14 motas y 520–1020 ms):
 
 - capacidad fija; no hay React state ni objetos DOM por partícula;
-- spawn sólo durante movimiento, de 1–9 motas según distancia y con techo duro;
-- vida aproximada de 390–760 ms, deriva baja y fade cuadrático;
+- spawn sólo durante movimiento, de 1–12 motas según distancia y con techo duro;
+- vida aproximada de 470–900 ms, deriva baja y fade en potencia ≥ 1;
 - violeta, magenta y pink dominan; cian es raro;
 - blend aditivo contenido, partículas diminutas y sin línea continua;
 - el RAF sólo vive mientras existen partículas y se pausa con `document.hidden`.
 
 No es un glitter brush, una cola de cometa ni un cursor neon. Al parar el puntero
 desaparece rápido y nunca se convierte en otro campo de estrellas permanente.
+
+### 11 bis. Retículo de instrumentación (2026-09-05)
+
+Sustituye la figura del retículo, no su contrato: sigue viviendo sólo en desktop
+fine-pointer dentro del System Map, sigue cediendo el puntero nativo a raíl y
+controles, y sigue teniendo los mismos cuatro estados.
+
+Lo que cambia es qué se dibuja. La cruz de cuatro trazos con punto central era
+legible sobre el cielo del perfil plano y desaparecía sobre el disco: cuatro
+líneas de 1 px sin anillo que las agrupe no forman figura, y sin figura no hay
+nada que el ojo pueda seguir. La forma nueva es de cabina:
+
+- **anillo exterior** que agrupa el conjunto y da la silueta;
+- **núcleo concéntrico** —anillo pequeño con chispa dentro— que marca el punto
+  exacto y aporta el único halo del retículo;
+- **dos marcas laterales** separadas del anillo por aire. El aire es la mitad
+  del efecto: pegadas al anillo se leen como cruz, separadas como calibración.
+
+Los estados dejan de ser tres tamaños de la misma cruz y pasan a ser tres
+figuras distintas:
+
+- `space` — anillo cerrado, marcas cerca, presencia baja;
+- `target` — el anillo se ABRE: los bordes laterales se vuelven transparentes y
+  el círculo pasa a dos arcos que barren en 3,6 s. Los huecos giran con ellos,
+  así que la lectura horizontal la sostienen las marcas laterales, que no rotan
+  nunca. Acento del destino activo;
+- `locked` — el anillo se CIERRA sobre el objetivo mientras las marcas se quedan
+  fuera. Es un gesto de agarre, no un tamaño intermedio;
+- `control` — oculto, cursor nativo.
+
+Sigue vigente «nunca es un crosshair grande»: el vano marca-a-marca es 2,2 rem
+en reposo y 3 rem sobre objetivo. El barrido es el único movimiento perpetuo de
+la capa y se apaga bajo `prefers-reduced-motion` aunque el resto siga vivo tras
+una activación explícita.
+
+### 11 ter. Presencia del stardust en WebGL (2026-09-05)
+
+Por petición del dueño. La pasada de WebGL se diseñó como una atenuación de
+`flat` bajo el supuesto de un fondo oscuro, y ese supuesto no se cumple: el
+disco de Gargantúa ocupa el centro del encuadre con naranjas casi saturados, y
+un blend aditivo sobre casi-blanco no suma nada. El polvo existía en el pool y
+no en la pantalla.
+
+Sube pico de alfa (0,68 → 0,88), capacidad (300 → 340), ráfaga (9 → 12), tamaño
+y vida, y baja el paso de siembra (8 → 6,5 px). El parámetro decisivo es otro:
+la **curva de apagado** pasa de cuadrática a potencia 1,55. El apagado
+cuadrático gastaba la mitad del brillo en el primer tercio de vida, así que la
+mota nacía, se apagaba casi entera y arrastraba un rabo invisible; con 1,55 la
+caída sigue siendo caída y la mota se lee durante el tramo en que el ojo la
+sigue.
+
+Los tres topes que impiden que esto derive en cola de cometa quedan fijados en
+test: alfa, ráfaga y vida máxima de `webgl` se mantienen POR DEBAJO de `flat`, y
+ningún perfil admite exponente de apagado menor que 1. `flat` no se toca.
 
 ## 12. Mobile, nivel `flat` y reduced-motion
 
@@ -529,9 +583,10 @@ los módulos principales de Endurance usan una máscara de acabado coherente.
 
 En 3D, `ENDURANCE // NAV`, `SYSTEM NOMINAL`, el target y el destino activo ganan
 contraste; ticks y calibración conservan GHOST. El control de salida se muestra
-como `MOTION / ● FULL`, sin caja. Sólo durante WebGL, el stardust baja el pico de
-alfa de `0.92` a `0.68`, reduce tamaño, vida y ráfaga, y mantiene su paleta
-magenta; `flat` conserva exactamente su perfil anterior.
+como `MOTION / ● FULL`, sin caja. Sólo durante WebGL, el stardust usa su propio
+perfil —pico de alfa `0.88`, ráfaga y vida por debajo de `flat`, caída de alfa
+más larga— y mantiene su paleta magenta; `flat` conserva exactamente su perfil
+anterior. Los números vigentes están en §11 ter.
 
 El presupuesto actualizado es ≤ 24 draws reales —incluidos los pases de caras
 transparentes; hoy son 23— y < 18 000 vértices para Gargantúa, los seis cuerpos y

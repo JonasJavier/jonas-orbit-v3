@@ -38,7 +38,7 @@ describe("stardust pool", () => {
     expect(spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5))).toBe(14);
   });
 
-  it("aplica sólo en WebGL el perfil sutil de 1–9 motas", () => {
+  it("aplica en WebGL su propio perfil de 1–12 motas", () => {
     const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
     expect(
       spawnStardust(
@@ -51,14 +51,35 @@ describe("stardust pool", () => {
         fixedRandom(0.5),
         "webgl",
       ),
-    ).toBe(9);
-    expect(pool.capacity).toBe(300);
+    ).toBe(12);
+    expect(pool.capacity).toBe(340);
     expect(pool.lifetime[0]).toBeGreaterThanOrEqual(
       STARDUST_PROFILES.webgl.minLifetimeMs,
     );
     expect(pool.lifetime[0]).toBeLessThanOrEqual(
       STARDUST_PROFILES.webgl.maxLifetimeMs,
     );
+  });
+
+  it("no deja que el pase de WebGL se acerque al rastro continuo de flat", () => {
+    // El perfil subió porque sobre el disco de Gargantúa no se veía, no para
+    // convertirse en una cola de cometa. Estos tres topes son la frontera: si
+    // alguno cae, el polvo dejó de ser polvo.
+    const webgl = STARDUST_PROFILES.webgl;
+    expect(webgl.peakAlpha).toBeLessThan(STARDUST_PROFILES.flat.peakAlpha);
+    expect(webgl.maxBurst).toBeLessThan(STARDUST_PROFILES.flat.maxBurst);
+    expect(webgl.maxLifetimeMs).toBeLessThan(
+      STARDUST_PROFILES.flat.maxLifetimeMs,
+    );
+  });
+
+  it("la caída del alfa nunca crece con la edad de la mota", () => {
+    // `fadePower` es el único parámetro que puede convertir el rastro en una
+    // mancha permanente: por debajo de 1 la curva se vuelve cóncava y la mota
+    // se pasa media vida a brillo casi pleno.
+    for (const profile of Object.values(STARDUST_PROFILES)) {
+      expect(profile.fadePower).toBeGreaterThanOrEqual(1);
+    }
   });
 
   it("una pausa larga no dibuja una raya que el gesto nunca recorrió", () => {

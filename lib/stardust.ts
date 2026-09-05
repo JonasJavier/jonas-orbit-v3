@@ -26,8 +26,21 @@ export const STARDUST_MIN_LIFETIME_MS = 520;
 export const STARDUST_MAX_LIFETIME_MS = 1_020;
 
 /**
- * El mapa plano conserva el polvo aprobado. Sólo WebGL usa la pasada sutil:
- * menos capacidad, brillo, tamaño, vida y partículas grandes.
+ * El mapa plano conserva el polvo aprobado. WebGL usa su propia pasada.
+ *
+ * La pasada de WebGL nació como una versión atenuada de `flat` —menos alfa,
+ * tamaño, vida y ráfaga— y sobre el cielo negro del perfil plano eso habría
+ * bastado. Pero la escena real no es negra: el disco de Gargantúa ocupa el
+ * centro del encuadre con naranjas casi saturados, y un blend aditivo sobre
+ * casi-blanco no suma nada. El resultado era polvo que existía en el pool y no
+ * en la pantalla.
+ *
+ * `fadePower` es el que decide cuánto DURA visible una mota, y por eso está
+ * separado del resto. El apagado cuadrático (`remaining²`) gasta la mitad del
+ * brillo en el primer tercio de vida: la mota nace, se apaga casi entera y
+ * arrastra un rabo invisible durante el resto. Con exponente 1.55 la caída
+ * sigue siendo caída —no hay meseta, no hay rastro permanente— pero la mota se
+ * lee durante el tramo en que el ojo la está siguiendo.
  */
 export const STARDUST_PROFILES = {
   flat: {
@@ -42,19 +55,21 @@ export const STARDUST_PROFILES = {
     sizePower: 2.2,
     sizeRange: 2.5,
     sizeSpeed: 1.1,
+    fadePower: 2,
   },
   webgl: {
-    capacity: 300,
-    minLifetimeMs: 390,
-    maxLifetimeMs: 760,
-    peakAlpha: 0.68,
-    trailStepPx: 8,
-    maxBurst: 9,
-    glowScale: 3,
-    sizeBase: 0.62,
-    sizePower: 3,
-    sizeRange: 1.8,
-    sizeSpeed: 0.72,
+    capacity: 340,
+    minLifetimeMs: 470,
+    maxLifetimeMs: 900,
+    peakAlpha: 0.88,
+    trailStepPx: 6.5,
+    maxBurst: 12,
+    glowScale: 3.3,
+    sizeBase: 0.74,
+    sizePower: 2.3,
+    sizeRange: 2.3,
+    sizeSpeed: 0.95,
+    fadePower: 1.55,
   },
 } as const;
 
@@ -299,11 +314,11 @@ export function drawStardust(
     // todo su brillo justo bajo el cursor y el efecto se lee como parpadeo.
     const attack = Math.min(1, life / 0.09);
     const twinkle = 0.82 + 0.18 * Math.sin(pool.phase[index] + life * 9.4);
-    const alpha = clamp(
-      remaining * remaining * attack * twinkle * config.peakAlpha,
-      0,
-      1,
-    );
+    const fade =
+      config.fadePower === 2
+        ? remaining * remaining
+        : Math.pow(remaining, config.fadePower);
+    const alpha = clamp(fade * attack * twinkle * config.peakAlpha, 0, 1);
     if (alpha <= 0.004) continue;
 
     // La mota se expande al morir: es lo que convierte la desaparición en una
