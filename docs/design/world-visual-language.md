@@ -363,7 +363,109 @@ La revisión se entrega para valoración visual del dueño; las pruebas técnica
 no constituyen su aprobación artística. La evidencia de esta pasada usa el
 prefijo `output/playwright/tesseract-anomaly-final-`.
 
-## 8. Herramientas
+## 8. F1.2 — Edmunds
+
+### Mundo habitable — revisión del dueño (2026-09-05)
+
+El dueño lee el Edmunds anterior como «esfera con ruido procedural»: silueta
+correcta y buen peso compositivo abajo a la izquierda, pero sin identidad. Esta
+revisión sustituye su material, su paleta y su tratamiento de atmósfera. **No
+cambia posición, tamaño, órbita, cámara ni ningún otro cuerpo**, y no añade
+lunas, anillos ni satélites.
+
+**Diagnóstico.** El cobre y el basalto lo dejaban en la misma familia cálida que
+Gargantúa; los depósitos minerales de alta frecuencia salían como salpicaduras
+repartidas por el disco; no había atmósfera perceptible; y la cara noche se
+lavaba a gris azulado sin información.
+
+**Dirección.** Mundo terrestre cálido, sobrio y habitable — orgánico y algo
+misterioso, claramente distinto de Miller (frío, azul, oceánico) y fuera del
+blanco-metal de la Endurance.
+
+**Superficie, en tres escalas con papeles separados.** Una macroforma decide
+tierra y cuenca; una escala media *deformada por la macro* —así sus costas
+siguen al continente en vez de cruzarlo— pone regiones y altiplanos; el grano
+fino sólo modula (±6 % multiplicativo) y no pinta color. El relieve sigue siendo
+analítico: tres ondas direccionales cuyo gradiente es la misma onda en coseno,
+con números de onda bajados a ~0.73 de los anteriores para que las cordilleras
+se lean como cadenas y no como grano.
+
+**Paleta: óxido de hierro (corrección de dirección del dueño, 2026-09-05).**
+Dos entregas anteriores fallaron por el mismo lado. La primera buscó marfil y
+caliza y salió una luna gris; la segunda subió el croma pero dejó la familia
+beige-salvia mandando en la superficie, y el planeta seguía leyéndose lavado. El
+fallo nunca estuvo en la jerarquía de escalas —esa se conserva entera— sino en
+**qué familia domina cada masa**. El reparto se invierte:
+
+| Región | vec3 | Papel |
+|---|---|---|
+| Cuenca profunda | `0.118, 0.052, 0.038` | deep umber; no baja a negro |
+| Cuenca media erosionada | `0.232, 0.098, 0.066` | pardo rojizo |
+| **A — masa continental** | `0.552, 0.248, 0.142` | terracota; la voz principal |
+| **B — franja mineral** | `0.392, 0.136, 0.078` | rust; provincia, no moteado |
+| Transición | `0.578, 0.318, 0.132` | cobre entre A y C |
+| **C — altiplanos** | `0.642, 0.438, 0.208` | ocre y arena; segunda voz |
+| **D — costa** | `0.232, 0.258, 0.162` | olivo apagado; acento |
+| Crestas / valles | `0.702, 0.508, 0.268` / `0.082, 0.036, 0.026` | relieve |
+| Nubes | `0.862, 0.792, 0.632` | crema, nunca blanco puro |
+
+La **región B es la única pieza nueva**: sale de una banda en el espacio de la
+macroforma —`smoothstep(0.5, 0.62, continents) * (1 - smoothstep(0.72, 0.88,
+continents))`— y no de otra octava de ruido. Eso es lo que la hace provincia
+geológica contigua en vez de salpicaduras, que es el fallo al que el dueño pidió
+expresamente no volver. Cuesta dos `smoothstep` y ningún sitio de FBM.
+
+Los vec3 no son los hex de referencia del dueño (#873A25 rust, #B9623D
+terracota, #C9974C ocre, #687056 olivo…) porque el shader trabaja antes del tono
+y de la clave ámbar, pero **conservan sus proporciones de canal**, que es lo que
+decide el tono: la versión gris tenía G/R = 0.72 y B/R = 0.41; la terracota va a
+0.45 y 0.26.
+
+Lo que lavaba el planeta eran los altiplanos y el velo: el altiplano baja de
+peso 0.9 a 0.46 y sube su umbral de 0.44 a 0.56; el velo alto pasa de 0.13 a
+0.07 y entra en la familia del cobre; las nubes bajan de 0.6 a 0.46 con el
+umbral en 0.575, conservando cúmulos fuertes y perdiendo el velo continuo. La
+lectura tiene que ser SUPERFICIE + NUBES, no crema con huecos.
+
+**Saturación: un solo mando.** El croma sube extrapolando desde la luma
+—`mix(vec3(luma), albedo, 1.36)`, con `max` para no producir negativos—
+aplicado **sólo al suelo**, antes de nubes y casquetes: el vapor de agua y el
+hielo no tienen color propio y saturarlos los volvería de plástico. Extrapolar
+desde la luma sube el croma sin tocar el valor, así que la jerarquía de masas no
+se mueve. Es el mando que hay que tocar si el dueño pide más o menos color; no
+repartir saturación por cada `mix`. Por encima de ~1.4 los pigmentos minerales
+se van a rojo de coche y el planeta deja de leerse como tierra.
+
+**Distinción con Gargantúa.** Comparten temperatura, no material: el disco es
+emisivo, dorado y luminoso; Edmunds es mate, mineral y oscuro. La separación se
+sostiene por luminancia y saturación, no bajándole el rojo a Edmunds. El ocre de
+los altiplanos fue el único punto donde se acercaban, y por eso perdió
+luminancia (`0.688 → 0.642`) y superficie.
+
+**Aire.** Tres términos, todos derivados de la misma luz del disco. Un filo de
+limbo con exponente 7 —una línea, no un halo—, más pesado en el lado iluminado;
+un crepúsculo que multiplica el albedo y mete geografía dentro de la penumbra;
+y brillo especular acotado a la capa de nubes. El halo común baja de 1.18 a
+0.30: era ámbar puro y ancho, de la familia del disco, y lavaba el limbo.
+
+**Terminador.** La banda de penumbra cae a 10.5 en vez de 15 y pesa 0.135 en vez
+de 0.09. El contraluz frío común se queda —es ley compartida— y lo que lo saca
+de «velo lechoso» es el crepúsculo, que devuelve detalle dentro del mismo azul.
+
+**Presupuesto.** Cuatro sitios de FBM, **uno menos** que la versión anterior: el
+grano fino pasa a una octava. Sin geometría, draws, materiales ni texturas
+nuevas. El coste del shader se mide en sitios de llamada, no en cuerpos.
+
+**Validación.** `npm run check` en verde (177 tests, build) y `npm run test:e2e`
+con 62 pasados. Capturas con el prefijo `output/playwright/edmunds-oxido2-`: hero completo a 1440×860, close-up
+comparativo antes/después, bloom-off y recorte de Miller para contrastar. Los
+tests del modelo no juzgan material: la aprobación es visual y es del dueño.
+
+**Pendiente de valoración del dueño.** Si tras verlo pide microajuste de
+posición —1–2 % hacia dentro o algo más arriba—, se hace y se documenta el valor
+exacto; esta revisión no lo ha tocado.
+
+## 9. Herramientas
 | script | para qué |
 |---|---|
 | `tools/shot.mjs` | captura del hero, con `--sin-glow` y `--sin-rotulos` |
