@@ -2345,31 +2345,46 @@ function boxFrame(
  * enseña tres caras. De paso, el desencaje ES la primera rareza del objeto: el
  * espacio de dentro no está alineado con la caja que lo contiene.
  *
- * ── Y por qué 39° y no 25° ──────────────────────────────────────────────────
+ * ── Cuánto de torcida: 15° de yaw y 9° de pitch (2026-09-04) ────────────────
  *
- * A 25° la caja llegaba CASI DE FRENTE. Su cara trasera caía a once píxeles de
- * la delantera, así que cada arista salía duplicada en pantalla: un haz de
- * barras paralelas en vez de un volumen. A 39° la fuga mide diecisiete
- * píxeles, el techo se abre y las dos caras dejan de confundirse. Es también lo
- * que pidió dirección de forma explícita — ni casi frontal, ni de canto.
+ * Hubo una versión a 39° que buscaba fuga: con la cara trasera a diecisiete
+ * píxeles de la delantera, el volumen se leía sin discusión. El problema es que
+ * a esos grados la caja llegaba a 33° del eje de vista y tapaba lo que este
+ * objeto tiene que enseñar. Dirección lo dijo así:
+ *
+ *   Está enseñando demasiado el lateral. La silueta es menos reconocible, el
+ *   vacío central no se lee, las capas interiores se amontonan y parece un
+ *   objeto que pasa por ahí en vez de un destino.
+ *
+ * Y el objeto se rediseñó justo para que se leyeran el marco exterior, los
+ * marcos interiores y la progresión hacia el vacío. De canto se esconde
+ * exactamente aquello que lo caracteriza.
+ *
+ * Los números de ahora dejan la cara a 15° de yaw y 9° de pitch —17.5° del eje
+ * de vista, contra los 33.2° de antes— con las aristas a 10° de la escuadra.
+ * Frontal para entender la estructura de un vistazo; torcida para conservar
+ * volumen. Completamente frontal sería el otro error: un icono plano.
+ *
+ * No son tres números sueltos: se resolvieron invirtiendo la cadena
+ * `orientación de reposo → roll → inclinación` contra la dirección real de la
+ * cámara al cuerpo. Cambiar la fase del Tesseracto obliga a rehacer ese cálculo.
  */
 const TESSERACT_BOX_HALF: VectorTuple = [1.02, 0.23, 0.95];
 const TESSERACT_BOX_SECTION = 0.155;
-const TESSERACT_BOX_TILT: VectorTuple = [0.6, 0.44, 0.16];
+const TESSERACT_BOX_TILT: VectorTuple = [0.251, 0.045, 0.353];
 /*
   Y un giro final SOBRE EL EJE DEL TÚNEL, que es casi el eje de vista: o sea, un
   giro en el plano de la pantalla. Va aparte y va el último porque hace un
   trabajo distinto del de la inclinación, y mezclarlos en un Euler los vuelve
   imposibles de ajustar por separado.
 
-  Lo que corrige es un fallo de la primera captura: con la caja a 25° salía un
-  ROMBO —cuatro esquinas arriba, abajo y a los lados— y un rombo perfecto se lee
-  como una figura plana girada, no como un volumen. Con el giro las aristas
-  vuelven a caer cerca de la horizontal y la vertical, y entonces la caja se lee
-  como caja. Los grados que sobran de la horizontal son los que evitan lo
-  contrario: una caja perfectamente a escuadra parece un icono.
+  Es el mando de la ESCUADRA. Con la caja de canto hacía falta mucho (0.55 rad)
+  para sacarla del rombo; ahora que llega casi de frente, el mismo giro la
+  volvería a ladear, así que baja a −0.09 y las aristas quedan a 10° de la
+  horizontal. Diez, y no cero, por lo de siempre: una caja perfectamente a
+  escuadra deja de parecer una caja y parece un icono.
 */
-const TESSERACT_BOX_ROLL = 0.55;
+const TESSERACT_BOX_ROLL = -0.09;
 
 /** Un punto del espacio de la caja, llevado al espacio del túnel. */
 function boxPoint(x: number, y: number, z: number): THREE.Vector3 {
