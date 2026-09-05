@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { worldsData, type WorldId } from "@/content/worlds.data";
 import { DISK_OUTER, GARGANTUA_RS } from "./gargantua-shaders";
-import { bodyDepthLayerFor } from "@/lib/scene-depth";
+import { bodyDepthLayerFor, placeBodyOnDepthLayer } from "@/lib/scene-depth";
 import { SYSTEM_POSE } from "@/lib/scene-poses";
 import {
   createBody,
@@ -160,13 +160,13 @@ describe("cuerpos del Sistema Gargantúa", () => {
 
       /*
         EL TESSERACTO ES ARQUITECTURA IMPOSIBLE, y su contrato de lectura son
-        tres piezas con papeles distintos: la cáscara (la caja de siete aristas
+        cuatro piezas con papeles distintos: la cáscara (la caja de siete aristas
         con su arista partida, el panel de suelo, dos espolones y los nodos),
         los marcos medios (las capas 2 y 3 de la recursión con sus puentes) y el
-        fondo (la capa 4, la más caliente, con el puente que no llega y su nodo
-        huérfano).
+        fondo (con el puente que no llega y su nodo huérfano) y el último umbral,
+        que puede variar su orientación sin arrastrar los marcos anteriores.
 
-        Todo opaco y fusionado en tres draws con un solo material: el calor
+        Todo opaco y fusionado en cuatro draws con un solo material: el calor
         sale del shader, no de un segundo material ni de una transparencia. Se
         rompió una vez con LineSegments —una arista mide un píxel a cualquier
         distancia, sin volumen y sin sombreado— y otra con un velo translúcido
@@ -216,6 +216,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
       // Fondo: el cuarto marco es el escalón más caliente (4), y el nodo
       // huérfano del puente que no llega va en la de acero (1).
       expect(maskOf("tesseract-deep-frames")).toBe(4);
+      expect(maskOf("tesseract-threshold")).toBe(4.25);
 
       const architecture = tesseract.object.children[0].userData
         .tesseractArchitecture as Record<string, unknown>;
@@ -227,7 +228,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
         structuralBridges: 3,
         shellExtensions: 2,
         interruptedBeams: 2,
-        emissiveTiers: 3,
+        emissiveTiers: 4,
         // Frente, interior y FONDO: sin esto el cuerpo se leía sólo por delante.
         rearFrame: true,
         depthRails: 4,
@@ -245,6 +246,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
         "tesseract-shell",
         "tesseract-mid-frames",
         "tesseract-deep-frames",
+        "tesseract-threshold",
       ].map((name) => {
         const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
           THREE.BufferGeometry,
@@ -561,146 +563,139 @@ describe("cuerpos del Sistema Gargantúa", () => {
   });
 
   /*
-    EL TESSERACTO TAMPOCO GIRA, y en reposo funciona prácticamente quieto.
-
-    La Ranger no gira porque apuntar significa algo. El Tesseracto no gira
-    porque no debe tener un eje: un objeto que rota afirma que tiene un dentro,
-    un fuera y una orientación estables, y su diseño existe para negar las tres
-    cosas. Y por decisión expresa del rediseño imposible (2026-09-04), la
-    identidad sale de la geometría, no de hacerla girar como un salvapantallas:
-    en reposo el objeto se lee estando quieto.
-
-    Lo que queda es deriva ambiental: los marcos medios y el fondo oscilan ±3°
-    en sentidos opuestos, con periodos inconmensurables entre sí. Las
-    relaciones entre piezas se rehacen sin que ninguna configuración dure — y
-    sin que la cáscara se mueva ni un grado.
-
-    Este test comprueba las cuatro condiciones, porque las cuatro son fáciles
-    de romper sin darse cuenta al tocar una amplitud:
-
-      1. la cáscara exterior no se mueve NUNCA;
-      2. el cuerpo entero no gira;
-      3. el interior sí deriva, y de forma determinista;
-      4. la deriva OSCILA — a lo largo de dos minutos las piezas vuelven a
-         pasar por donde estaban, así que no hay deriva direccional ni
-         rotación disfrazada — y es MÍNIMA: por encima de estos valores el
-         reposo dejaría de leerse quieto.
+    El dueño pidió movimiento interior perceptible (2026-09-05). La cáscara
+    sigue inmóvil; lo que cambia es la relación entre tres estratos internos.
+    Las garantías son de comportamiento: amplitud acotada, retorno, mismo
+    instante/misma pose y ninguna expansión fuera del radio de interacción.
   */
-  it("mantiene el Tesseracto prácticamente quieto, con deriva interior mínima", () => {
+  it("reconfigura el interior del Tesseracto con cáscara y radio estables", () => {
     const body = bodyFor("tesseract");
     try {
       const model = body.object.children[0];
       const shell = body.object.getObjectByName("tesseract-shell");
-      const mid = body.object.getObjectByName("tesseract-mid-frames");
-      const deep = body.object.getObjectByName("tesseract-deep-frames");
-      if (!shell || !mid || !deep) throw new Error("faltan piezas");
+      const names = ["tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"];
+      const groups = names.map((name) => {
+        const group = body.object.getObjectByName(name)?.parent;
+        if (!group) throw new Error(`falta ${name}`);
+        return group;
+      });
+      if (!shell) throw new Error("falta la cáscara");
 
       body.object.updateMatrixWorld(true);
       const restPose = model.quaternion.clone();
       const shellPose = shell.matrixWorld.clone();
-      const midGroup = mid.parent;
-      const deepGroup = deep.parent;
-      if (!midGroup || !deepGroup) throw new Error("faltan grupos");
-
-      const interiorPose = () => ({
-        midYaw: midGroup.rotation.y,
-        midLift: midGroup.position.y,
-        deepYaw: deepGroup.rotation.y,
-        deepLift: deepGroup.position.y,
-        midPitch: midGroup.rotation.x,
-        midRoll: midGroup.rotation.z,
-        midScale: midGroup.scale.x,
-        deepPitch: deepGroup.rotation.x,
-        deepRoll: deepGroup.rotation.z,
-        deepScale: deepGroup.scale.x,
-      });
-
-      // Muestreo de dos minutos: cubre varias vueltas del periodo más corto.
+      const destination = body.object.position.clone();
+      const interiorPose = () => groups.map((group) => ({
+        rotation: [group.rotation.x, group.rotation.y, group.rotation.z],
+        position: group.position.toArray(),
+        scale: group.scale.toArray(),
+      }));
       const poses: ReturnType<typeof interiorPose>[] = [];
       for (let seconds = 0; seconds <= 120; seconds += 0.5) {
         body.spinAt(seconds);
-        // El cuerpo entero no gira, y su cáscara tampoco se entera del tiempo.
-        expect(model.quaternion.equals(restPose), `t=${seconds}`).toBe(true);
+        expect(body.object.position, `destino t=${seconds}`).toEqual(destination);
+        expect(model.quaternion.equals(restPose), `giro propio t=${seconds}`).toBe(true);
         shell.updateMatrixWorld(true);
-        expect(shell.matrixWorld.equals(shellPose), `t=${seconds}`).toBe(true);
-
-        // La respiración no puede ensanchar el blanco de clic ni la silueta.
-        expect(measuredRadius(body.object), `radio t=${seconds}`).toBeLessThanOrEqual(
-          body.radius + 0.00001,
-        );
+        expect(shell.matrixWorld.equals(shellPose), `cáscara t=${seconds}`).toBe(true);
+        expect(measuredRadius(body.object), `radio t=${seconds}`).toBeLessThanOrEqual(body.radius + 0.00001);
         poses.push(interiorPose());
       }
 
-      // Determinista: el mismo instante da la misma pose, siempre.
-      const at37 = { ...poses[74] };
       body.spinAt(37);
-      expect(interiorPose()).toEqual(at37);
-
-      /*
-        Y OSCILA. Cada canal vuelve a cruzar su punto de partida —hacia arriba y
-        hacia abajo— varias veces en dos minutos. Una rotación disfrazada de
-        oscilación tendría cero cruces en un sentido; una deriva, ninguno.
-      */
-      for (const channel of [
-        "midYaw",
-        "midLift",
-        "deepYaw",
-        "deepLift",
-        "midPitch",
-        "midRoll",
-        "midScale",
-        "deepPitch",
-        "deepRoll",
-        "deepScale",
-      ] as const) {
-        const values = poses.map((pose) => pose[channel]);
-        const mid = (Math.max(...values) + Math.min(...values)) / 2;
-        let crossings = 0;
-        for (let i = 1; i < values.length; i++) {
-          if (values[i - 1] < mid !== values[i] < mid) crossings++;
+      expect(interiorPose()).toEqual(poses[74]);
+      const swing = (values: number[]) => Math.max(...values) - Math.min(...values);
+      for (let group = 0; group < groups.length; group++) {
+        const samples = poses.map((pose) => pose[group]);
+        const yaws = samples.map((pose) => pose.rotation[1]);
+        const midpoint = (Math.min(...yaws) + Math.max(...yaws)) / 2;
+        let reversals = 0;
+        for (let index = 1; index < yaws.length; index++) {
+          if ((yaws[index - 1] < midpoint) !== (yaws[index] < midpoint)) reversals++;
         }
-        expect(crossings, `${channel} no oscila`).toBeGreaterThanOrEqual(8);
-      }
-
-      /*
-        Y es MÍNIMA. El recorrido total de cada canal cabe en ±3° de giro y
-        centésimas de unidad de desplazamiento: en reposo el objeto se lee
-        quieto y la geometría —no el movimiento— sostiene la identidad. Por
-        debajo del mínimo el canal estaría muerto y no pagaría su código; por
-        encima, el reposo dejaría de ser reposo.
-      */
-      const swing = (values: number[]) =>
-        Math.max(...values) - Math.min(...values);
-      const midYawSwing = swing(poses.map((pose) => pose.midYaw));
-      const midLiftSwing = swing(poses.map((pose) => pose.midLift));
-      const deepYawSwing = swing(poses.map((pose) => pose.deepYaw));
-      const deepLiftSwing = swing(poses.map((pose) => pose.deepLift));
-      expect(midYawSwing).toBeGreaterThan(0.05);
-      expect(midYawSwing).toBeLessThan(0.2);
-      expect(midLiftSwing).toBeGreaterThan(0.015);
-      expect(midLiftSwing).toBeLessThan(0.06);
-      expect(deepYawSwing).toBeGreaterThan(0.03);
-      expect(deepYawSwing).toBeLessThan(0.15);
-      expect(deepLiftSwing).toBeGreaterThan(0.01);
-      expect(deepLiftSwing).toBeLessThan(0.04);
-      for (const pose of poses) {
-        for (const tilt of [pose.midPitch, pose.midRoll, pose.deepPitch, pose.deepRoll]) {
-          expect(Math.abs(tilt)).toBeLessThan(0.026); // Cabeceo menor de 1.5°.
+        // Varias idas y vueltas: no puede convertirse en una rotación continua.
+        expect(reversals, names[group]).toBeGreaterThanOrEqual(8);
+        expect(swing(yaws), names[group]).toBeGreaterThan(0.2);
+        expect(swing(yaws), names[group]).toBeLessThan(0.55);
+        for (let axis = 0; axis < 3; axis++) {
+          expect(swing(samples.map((pose) => pose.position[axis])), names[group]).toBeLessThan(0.11);
         }
-        expect(Math.abs(pose.midScale - 1)).toBeLessThan(0.02);
-        expect(Math.abs(pose.deepScale - 1)).toBeLessThan(0.04);
+        for (const pose of samples) {
+          expect(Math.abs(pose.rotation[0]), names[group]).toBeLessThan(0.08);
+          expect(Math.abs(pose.rotation[2]), names[group]).toBeLessThan(0.08);
+          for (const scale of pose.scale) expect(Math.abs(scale - 1), names[group]).toBeLessThan(0.1);
+        }
       }
     } finally {
       disposeBody(body);
     }
   });
 
+  it("mueve geometría interior visible a escala hero en tres a siete segundos", () => {
+    const body = bodyFor("tesseract");
+    try {
+      // Vista de referencia independiente del renderer: la misma pose canónica
+      // y distancia representativa que el test de jerarquía, en un hero 1440×860.
+      // Se miden píxeles CSS de vértices reales, sin usar emisión ni un glow que
+      // pudiera hacer pasar una estructura inmóvil por una animación visible.
+      const width = 1440;
+      const height = 860;
+      const camera = new THREE.PerspectiveCamera(SYSTEM_POSE.fov, width / height, 0.1, 400);
+      const elevation = THREE.MathUtils.degToRad(SYSTEM_POSE.elevation);
+      const azimuth = THREE.MathUtils.degToRad(SYSTEM_POSE.azimuth);
+      camera.position.set(
+        Math.cos(elevation) * Math.sin(azimuth),
+        Math.sin(elevation),
+        Math.cos(elevation) * Math.cos(azimuth),
+      ).multiplyScalar(FRAME_DISTANCE);
+      camera.lookAt(0, 0, 0);
+      camera.rotateZ(SYSTEM_POSE.roll);
+      camera.updateMatrixWorld(true);
+      const position = orbitalPosition(worldsData.tesseract.placement, 0, new THREE.Vector3());
+      placeBodyOnDepthLayer(position, camera.position, bodyDepthLayerFor("tesseract"), body.object.position);
+      const names = ["tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"];
+      const meshes = names.map((name) => {
+        const mesh = body.object.getObjectByName(name);
+        if (!(mesh instanceof THREE.Mesh)) throw new Error(`falta ${name}`);
+        return mesh;
+      });
+      const projectedAt = (seconds: number) => {
+        body.spinAt(seconds);
+        body.object.updateMatrixWorld(true);
+        return meshes.map((mesh) => {
+          const points: THREE.Vector2[] = [];
+          const vertices = mesh.geometry.getAttribute("position");
+          for (let index = 0; index < vertices.count; index++) {
+            const point = new THREE.Vector3().fromBufferAttribute(vertices, index).applyMatrix4(mesh.matrixWorld).project(camera);
+            points.push(new THREE.Vector2(point.x * width / 2, point.y * height / 2));
+          }
+          return points;
+        });
+      };
+      for (const start of [0, 7, 14, 21]) {
+        const before = projectedAt(start);
+        const travel = names.map(() => 0);
+        for (const after of [projectedAt(start + 3), projectedAt(start + 7)]) {
+          for (let group = 0; group < meshes.length; group++) {
+            const distances = before[group].map((point, vertex) => point.distanceTo(after[group][vertex])).sort((a, b) => a - b);
+            // El percentil 75 exige que se mueva una parte sustancial del marco,
+            // no sólo un vértice aislado o una punta fuera del campo visible.
+            travel[group] = Math.max(travel[group], distances[Math.floor(distances.length * 0.75)]);
+          }
+        }
+        for (let group = 0; group < meshes.length; group++) {
+          expect(travel[group], `${names[group]} a partir de ${start}s`).toBeGreaterThan(1);
+        }
+      }
+    } finally {
+      disposeBody(body);
+    }
+  });
   it("deja atravesar el túnel al completar la espalda y sus laterales", () => {
     const body = bodyFor("tesseract");
     const raycaster = new THREE.Raycaster();
     try {
       const model = body.object.children[0];
-      for (const seconds of [0, 7, 37, 120]) {
+      for (let seconds = 0; seconds <= 120; seconds += 1) {
         body.spinAt(seconds);
         body.object.updateMatrixWorld(true);
         // Ambos sentidos: una placa con el dorso oculto tampoco puede tapar

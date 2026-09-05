@@ -325,6 +325,44 @@ La escala compensa la profundidad adicional para conservar aproximadamente
 55 px de radio, con centro (735.2, 231.5). No cambian cámara, posición, Gargantúa
 ni otros destinos. Capturas de esta revisión: `output/playwright/tesseract-rear-*`.
 
+### Umbral vivo — revisión del dueño (2026-09-05)
+
+El dueño pide una animación perceptible y un interior menos mecánico, usando
+su referencia de arquitectura recursiva como guía. Esta revisión sustituye los
+límites anteriores de deriva mínima y el acabado del Tesseracto. La caja,
+espalda, posición, escala y orientación de la composición de seis destinos se
+conservan; Gargantúa y el contrato de cámara siguen intactos.
+
+Los cuatro marcos interiores tienen giros alternos y una caída en profundidad
+menos uniforme. Tres grupos animados cambian su relación con periodos distintos:
+los dos marcos medios se contraen de forma desigual en sus ejes; el penúltimo
+deriva en sentido opuesto; el último umbral tiene un pivote propio y otro ritmo.
+Las oscilaciones de giro son de ±6.9°, ±10.9° y ±13.8°, con escalas acotadas por
+debajo del 9 %. La cáscara permanece inmóvil. El movimiento depende del tiempo
+de escena existente, sin otro bucle ni acumulación por fotograma.
+
+El exterior conserva grafito con reflejos de Gargantúa. El interior devuelve
+más luz del mismo disco incluso con emisión apagada; los biseles profundos
+pasan a oro suave. Un pulso cálido recorre los cuatro estratos con retraso,
+concentrado en las caras internas. El último marco tiene su propio escalón de
+calor. El centro es un hueco real: ninguna esfera, plano o velo lo rellena.
+
+El umbral independiente añade un draw: **cuatro draws del Tesseracto**, un
+material opaco compartido, sin texturas ni geometría adicional. El conjunto de
+cuerpos, órbitas y quad ocupa **19 de 20 draws y 16 610 de 19 500 vértices**.
+
+Pruebas del modelo: cáscara, destino y radio estables durante 120 s; pose
+determinista; oscilación acotada; túnel atravesable en ambos sentidos cada
+segundo de esos 120 s. Una prueba proyecta los vértices reales con la pose de
+referencia del hero y exige desplazamiento superior a un píxel CSS del
+percentil 75 de cada grupo interior en ventanas de 3–7 s desde cuatro fases.
+Esta prueba mide movimiento geométrico; las capturas siguen siendo necesarias
+para juzgar contraste, oclusión e identidad.
+
+La revisión se entrega para valoración visual del dueño; las pruebas técnicas
+no constituyen su aprobación artística. La evidencia de esta pasada usa el
+prefijo `output/playwright/tesseract-anomaly-final-`.
+
 ## 8. Herramientas
 | script | para qué |
 |---|---|

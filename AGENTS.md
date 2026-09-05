@@ -36,6 +36,12 @@ diferentes— y define el bloom-off test: un cuerpo que pierde su identidad al
 apagar el glow no está terminado. Gargantúa queda **congelada** durante la fase.
 El `Rediseño imposible` del Tesseracto conserva su geometría y material.
 
+**Revisión del Tesseracto (2026-09-05):** la sección `Umbral vivo` de
+`docs/design/world-visual-language.md` sustituye sus límites anteriores de
+deriva mínima y acabado por petición del dueño. Tres grupos interiores se
+reconfiguran de forma perceptible; cáscara, posición, tamaño y cámara siguen
+fijos. El Tesseracto usa cuatro draws con un material compartido.
+
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station
