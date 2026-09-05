@@ -124,6 +124,84 @@ export interface WorldStructuralData {
  *
  * El orden de lectura que persigue todo esto: Gargantúa, la Endurance, el
  * Tesseracto, Miller y Edmunds, y por último la Ranger.
+ *
+ * ── Pase de autoridad de Gargantúa (2026-09-05) ─────────────────────────────
+ *
+ * El orden de lectura de arriba se cumplía, pero el primer golpe de vista no
+ * era «ese monstruo gravitacional» sino «un sistema de objetos». La diferencia
+ * es real y no se arregla moviendo nada: los cinco destinos sumaban demasiada
+ * área para el cuadro que dejaban.
+ *
+ * Así que se encogen, y NO todos igual — reducirlos por parejo habría
+ * conservado exactamente el problema a otra escala. El reparto va por cuánto
+ * compite cada uno con el centro:
+ *
+ *   · **Endurance −10 %** (5.15 → 4.64). El único que competía de verdad, y no
+ *     sólo por tamaño: es blanca, tiene mucha geometría por unidad de silueta y
+ *     cae cerca del centro visual. Su silueta también deja de rozar la cola
+ *     derecha del disco.
+ *   · **Miller −8 %** (3.05 → 2.81) y **Edmunds −8 %** (3.0 → 2.76). Los dos se
+ *     leían como protagonistas individuales; a este tamaño pasan a pertenecer al
+ *     sistema. Mantienen entre sí la misma relación de dos profundidades.
+ *   · **Tesseracto −5.6 %** (2.87 → 2.71). Apenas: su lectura depende de la
+ *     silueta y por debajo de esto se vuelve irrelevante. Conserva la ventaja
+ *     relativa sobre la Endurance que le dio la recomposición.
+ *   · **Ranger −3.5 %** (2.0 → 1.93). Casi nada, y por una razón: ya funcionaba
+ *     como acento pequeño. Encogerla más la convierte en una miga.
+ *
+ * Gargantúa no se toca, y aun así CRECE: el encuadre se mide contra la
+ * envolvente de los cuerpos, así que al encogerlos la cámara se acerca. La
+ * sombra pasa de 45.9 a 46.7 px de radio a 1440×860. Medido con
+ * `tools/composition.mjs`, el radio de cada destino en proporción a esa sombra:
+ *
+ *   Endurance 3.16 → 2.86 · Tesseracto 1.41 → 1.33 · Edmunds 1.30 → 1.19 ·
+ *   Ranger 1.63 → 1.59 · Miller 1.11 → 1.02
+ *
+ * El criterio de aceptación fue el del dueño: si al mirar se ve primero
+ * Gargantúa, luego el sistema entero y por último los objetos, el ajuste
+ * acertó; si en su lugar aparece vacío y los cuerpos se leen tímidos, se pasó.
+ * Ésa es también la señal de cuándo parar si algún día alguien quiere seguir
+ * bajando.
+ *
+ * ── Pase de respiración (2026-09-05) ────────────────────────────────────────
+ *
+ * Encoger resolvió la jerarquía y dejó al descubierto un problema distinto:
+ * Miller se leía PEGADO a Gargantúa. La medición desmintió la explicación
+ * obvia — no era la distancia. Con 234 px de separación estaba igual de lejos
+ * que el Tesseracto, que se lee suelto.
+ *
+ * Lo que decide si dos cosas se leen separadas no es cuánto hay entre ellas,
+ * es si ese hueco llega a NEGRO. Recorriendo el segmento que une cada cuerpo
+ * con Gargantúa sobre el render de verdad, el punto más oscuro marcaba:
+ *
+ *   Miller 22.4 · Ranger 17.5 · Tesseracto 6.0 · Edmunds 3.5 · Endurance 1.9
+ *
+ * Miller era el único que nunca tocaba fondo, porque caía justo encima del arco
+ * superior lensado —la parte más brillante del cuadro— y el halo subía a su
+ * encuentro. Con la banda oscura en 19 px, el ojo lo agrupaba con el disco.
+ *
+ * Así que los dos cuerpos de arriba se mueven, y sólo ellos:
+ *
+ *   · **Miller 26/242/31 → 28/240/37.** Sale de encima del arco. El valle baja
+ *     a 11.7, la banda oscura sube de 19 a 30 px y su despeje contra la zona
+ *     brillante pasa de 26 a 67 px.
+ *   · **Tesseracto 30/298/26 → 32/300/30.** El mismo problema en grado mucho
+ *     menor —oscuro y de poca masa—, así que el movimiento también es menor:
+ *     despeje de 48 a 93 px. Su radio de órbita sube A LA VEZ que el de Miller
+ *     para seguir siendo el cuerpo más exterior, que es parte de su identidad.
+ *
+ * Dos cosas que este pase NO gasta. La primera, Gargantúa: la cámara se queda
+ * clavada en 75.8 rs y la sombra en 46.7 px, porque ninguno de estos dos fija
+ * el encuadre —lo fijan los que tocan los bordes del cuadro—. La segunda,
+ * tamaño: 47.5 px de Miller y 61.9 → 61.6 del Tesseracto, prácticamente
+ * idénticos. Se mueven, no encogen; el pase de autoridad de arriba sigue
+ * intacto.
+ *
+ * Y las guardas de composición que ya estaban decididas se respetan todas:
+ * Miller no vuelve a la esquina que dirección rechazó (estaba en 25.6 % / 17.4 %
+ * del cuadro; queda en 29.7 % / 25.6 %), sigue cinco puntos por debajo del
+ * Tesseracto en vez de formar con él una línea superior, y el vacío de la
+ * esquina superior izquierda sigue ahí a propósito.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -132,11 +210,24 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    /* Sigue siendo el cuerpo más exterior (30 rs) y el más lejano en el eje de
+    /* Sigue siendo el cuerpo más exterior (32 rs) y el más lejano en el eje de
        vista (capa −6 en `scene-depth.ts`): pequeño para su tamaño real, que es
-       lo que lo mantiene anómalo. La fase 298 lo deja a la derecha del eje de
-       la sombra y por encima del disco, sin tocarlo. */
-    placement: { orbitRadius: 30, phase: 298, inclination: 26, size: 2.87 },
+       lo que lo mantiene anómalo. La fase 300 lo deja a la derecha del eje de
+       la sombra y por encima del disco, sin tocarlo.
+
+       30/298/26 → 32/300/30 (2026-09-05, pase de respiración). El mismo
+       problema que Miller pero en grado mucho menor —es oscuro y de poca masa,
+       así que la cercanía no molestaba igual—, y por eso el movimiento es
+       menor: sube de 24.7 % a 20.6 % del alto y su despeje contra la zona
+       brillante pasa de 48 a 93 px. Su tamaño aparente no se mueve (61.9 →
+       61.6 px) y su órbita sigue siendo la más exterior, que es parte de su
+       identidad: el radio sube A LA VEZ que el de Miller justamente para no
+       perderla.
+
+       `size` 2.87 → 2.71 en el pase de autoridad: el recorte más leve de los
+       cinco cuerpos que se tocan, porque éste se reconoce por silueta y encoge
+       mal. Sigue por encima de donde estaba antes de la recomposición (2.7). */
+    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.71 },
     sceneName: "scene-tesseract",
   },
   miller: {
@@ -145,22 +236,45 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    /* El tercio superior izquierdo, no la esquina. Fase 242 e inclinación 31 lo
-       colocan en 32.2 % / 30.3 % del cuadro: dentro del campo de Gargantúa, con
-       el vacío de la esquina intacto por encima y sin compartir altura con el
-       Tesseracto, que está cinco puntos más arriba.
+    /* El tercio superior izquierdo, no la esquina: 29.7 % / 25.6 % del cuadro,
+       dentro del campo de Gargantúa, con el vacío de la esquina intacto por
+       encima y cinco puntos por debajo del Tesseracto.
 
        Los tres números están atados entre sí y no se tocan por separado. La
        altura sale de −r·sen(fase)·sen(inclinación) y la profundidad de
        r·sen(fase)·cos(inclinación), así que acercarlo al centro del cuadro lo
-       MANDA HACIA ATRÁS: es geometría, no una elección. Aquí queda a 94 rs de
-       la cámara de referencia —el segundo cuerpo más lejano, por detrás sólo
-       del Tesseracto—, y esa distancia es justo lo que le quita el peso visual
-       que dirección no le quería dar.
+       MANDA HACIA ATRÁS: es geometría, no una elección. Es también el cuerpo
+       más lejano después del Tesseracto, y esa distancia es justo lo que le
+       quita el peso visual que dirección no le quería dar.
 
        El radio no baja de 24: por debajo entraría en el disco de acreción
-       (`DISK_OUTER`, 23.8 rs) y lo comprueba `worlds.data.test.ts`. */
-    placement: { orbitRadius: 26, phase: 242, inclination: 31, size: 3.05 },
+       (`DISK_OUTER`, 23.8 rs) y lo comprueba `worlds.data.test.ts`.
+
+       `size` 3.05 → 2.81 en el pase de autoridad. A su tamaño anterior seguía
+       leyéndose como un protagonista individual pese a la distancia; ahora la
+       distancia y el tamaño dicen lo mismo.
+
+       ── 26/242/31 → 28/240/37 (2026-09-05, pase de respiración) ────────────
+
+       Era el cuerpo que se leía PEGADO a Gargantúa, y el diagnóstico correcto
+       no era la distancia: a 234 px de separación estaba igual de lejos que el
+       Tesseracto, que se leía suelto. Lo que fallaba es que caía justo encima
+       del arco superior lensado, la parte más brillante del cuadro, y entre los
+       dos nunca llegaba a haber negro — el punto más oscuro del segmento que
+       los une marcaba 22.4 de luma contra 6.0 del Tesseracto y 1.9 de la
+       Endurance. Un cuerpo cuyo «hueco» no llega a negro se agrupa con lo que
+       tiene al lado, mida lo que mida.
+
+       Los tres grados de más de inclinación y los dos radios lo sacan de encima
+       del arco: el valle cae a 11.7 y la banda oscura pasa de 19 a 30 px. Medido
+       sobre el render, no estimado.
+
+       Y no cuesta NADA de Gargantúa —la cámara se queda en 75.8 rs— porque
+       Miller no es el cuerpo que fija el encuadre; los que lo fijan son los que
+       tocan los bordes del cuadro. Su tamaño aparente tampoco cambia: 47.5 px
+       antes y después, porque los 2 rs de órbita extra se compensan con la
+       inclinación. Se mueve, no encoge. */
+    placement: { orbitRadius: 28, phase: 240, inclination: 37, size: 2.81 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -172,8 +286,15 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     /* La pieza artificial grande, en el hemisferio derecho. Los tres grados y
        los cuatro de inclinación que se le quitaron a la composición anterior no
        la mueven de sitio: la bajan lo justo para que la cola derecha del disco
-       pase por detrás y su silueta se recorte limpia contra el fondo. */
-    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 5.15 },
+       pase por detrás y su silueta se recorte limpia contra el fondo.
+
+       `size` 5.15 → 4.64 en el pase de autoridad, el recorte mayor de los cinco
+       (−10 %). Era el único cuerpo que competía de verdad con Gargantúa, y por
+       más motivos que el tamaño: masa blanca, mucho detalle por unidad de
+       silueta y el sitio más cercano al centro visual. Sigue siendo el segundo
+       ancla —le saca un 40 % largo al siguiente, y eso lo vigila
+       `bodies.test.ts`—, sólo que ahora a distancia del centro. */
+    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 4.64 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -184,8 +305,12 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     visual: "desert",
     /* Sin tocar. Es el ancla inferior izquierda y el contrapeso cálido de
        Miller: mismo lado del cuadro, mitad opuesta, más cerca de la cámara
-       (capa +2) y por tanto más grande. Dos planetas, dos profundidades. */
-    placement: { orbitRadius: 25.5, phase: 167, inclination: 56, size: 3 },
+       (capa +2) y por tanto más grande. Dos planetas, dos profundidades.
+
+       Lo único que cambia es `size`, 3.0 → 2.76: el mismo −8 % que Miller, para
+       que la relación entre los dos planetas se conserve exacta mientras ambos
+       ceden peso al centro. */
+    placement: { orbitRadius: 25.5, phase: 167, inclination: 56, size: 2.76 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -219,12 +344,14 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
       vuelve a estar dentro de la escena. Por debajo de 14° de inclinación no se
       baja: el margen contra la sombra cae a 3.6 veces su radio y el suelo del
       test está en 3. El
-      tamaño baja de 2.6 a 2.0 porque con seis cuerpos, y sin Cooper llenando el
+      tamaño bajó de 2.6 a 2.0 porque con seis cuerpos, y sin Cooper llenando el
       cuadro, a 2.6 dejaba de ser un detalle y empezaba a ser un sexto
-      protagonista. El mapa plano usa esta misma fase: las dos vistas cuentan lo
-      mismo.
+      protagonista. El pase de autoridad de Gargantúa le quita otro 3.5 % (2.0 →
+      1.93) y ni uno más: éste ya era el acento pequeño de la escena, y lo que
+      hay por debajo no es «más discreta» sino una miga. El mapa plano usa esta
+      misma fase: las dos vistas cuentan lo mismo.
     */
-    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 2 },
+    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 1.93 },
     sceneName: "scene-ranger",
   },
 };

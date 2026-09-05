@@ -342,6 +342,123 @@ Este orden sigue vigente en `placement.size` y, por tanto, en el mapa `flat`.
 WebGL lo complementa en §14 ter con escala perceptual y profundidad propias:
 Ranger puede crecer sin tocar aquel layout y permanece subordinada a Endurance.
 
+Los VALORES de esta tabla los sustituye el pase de autoridad de §14 quáter; el
+orden que fija, no.
+
+## 14 quáter. Pase de autoridad de Gargantúa (2026-09-05)
+
+Ajuste de escala sobre la dirección aprobada. Manda sobre la tabla de §14 bis y
+sobre la columna de `size` de [`sistema-seis-destinos.md`](sistema-seis-destinos.md);
+no toca posición, fase, inclinación, cámara, material ni HUD.
+
+El diagnóstico del dueño: el orden de lectura declarado se cumplía, pero lo
+primero que se percibía era *el sistema de objetos*, no *el monstruo
+gravitacional*. Gargantúa ya dominaba; podía dominar más sin romper el balance.
+
+**Los cinco destinos encogen, y no todos igual.** Reducirlos por parejo habría
+conservado el problema a otra escala, así que el recorte va por cuánto compite
+cada cuerpo con el centro:
+
+| Destino | `size` antes | `size` ahora | Δ | Motivo |
+| --- | --- | --- | --- | --- |
+| Endurance | 5.15 | 4.64 | −10 % | El único que competía de verdad, y no sólo por tamaño: masa blanca, mucho detalle por unidad de silueta y el sitio más cercano al centro visual. De paso su silueta deja de rozar la cola derecha del disco. |
+| Miller | 3.05 | 2.81 | −8 % | Se leía como protagonista individual pese a estar lejos. |
+| Edmunds | 3.0 | 2.76 | −8 % | Mismo recorte que Miller, para que la relación entre los dos planetas —dos profundidades— se conserve exacta. |
+| Tesseracto | 2.87 | 2.71 | −5.6 % | Apenas: su lectura depende de la silueta y encoge mal. Sigue por encima del 2.7 previo a la recomposición. |
+| Ranger | 2.0 | 1.93 | −3.5 % | Casi nada. Ya era el acento pequeño; por debajo de esto deja de ser una nave. |
+
+**Gargantúa no se toca y aun así crece.** El encuadre se mide contra la
+envolvente de los cuerpos, así que encogerlos ACERCA la cámara: la sombra pasa
+de 45.9 a 46.7 px de radio a 1440×860 sin tocar una sola constante suya. Radio
+de cada destino en proporción a esa sombra, medido con `tools/composition.mjs`:
+
+| Destino | antes | ahora |
+| --- | --- | --- |
+| Endurance | 3.16× | 2.86× |
+| Ranger | 1.63× | 1.59× |
+| Tesseracto | 1.41× | 1.33× |
+| Edmunds | 1.30× | 1.19× |
+| Miller | 1.11× | 1.02× |
+
+**Criterio de aceptación**, y también la señal de cuándo parar si alguien quiere
+seguir bajando:
+
+1. Acierto si se ve primero Gargantúa, luego el sistema entero y por último los
+   objetos.
+2. Se pasó si aparece demasiado vacío y los cuerpos se leen tímidos o lejanos.
+
+La banda de guardia del radio del Tesseracto en `bodies.test.ts` baja de
+[4.8, 5.3] a [4.55, 5.05] para acompañar este recorte. Sigue siendo una banda:
+lo que prohíbe es que ese cuerpo cambie de tamaño sin que nadie lo decida.
+
+## 14 quinquies. Pase de respiración (2026-09-05)
+
+Continuación del anterior, el mismo día. Manda sobre la posición de Miller y del
+Tesseracto; no toca tamaño, cámara, material ni HUD, y deja los otros tres
+cuerpos exactamente donde estaban.
+
+### El diagnóstico, que no era el obvio
+
+Con la jerarquía ya resuelta, el dueño señaló que **Miller se leía pegado a
+Gargantúa**. La explicación natural —está demasiado cerca— resultó ser falsa: a
+234 px de separación estaba igual de lejos que el Tesseracto, que se lee suelto.
+
+Lo que decide si dos cosas se leen separadas no es cuánto hay entre ellas, sino
+si ese hueco **llega a negro**. Recorriendo sobre el render real el segmento que
+une cada cuerpo con Gargantúa, el punto más oscuro del camino marca:
+
+| Cuerpo | valle (luma) | banda oscura | separación |
+| --- | --- | --- | --- |
+| Miller | **22.4** | 19 px | 234 px |
+| Ranger | 17.5 | 24 px | 174 px |
+| Tesseracto | 6.0 | 44 px | 226 px |
+| Edmunds | 3.5 | 55 px | 424 px |
+| Endurance | 1.9 | 66 px | 309 px |
+
+Miller era el único que nunca tocaba fondo, y la causa es de composición, no de
+distancia: caía justo encima del **arco superior lensado**, la parte más
+brillante del cuadro, con el halo subiendo a su encuentro. Con 19 px de banda
+oscura el ojo lo agrupaba con el disco — exactamente lo que reportó el dueño.
+
+### El movimiento
+
+| Cuerpo | antes | ahora | Despeje a la zona brillante | Posición |
+| --- | --- | --- | --- | --- |
+| Miller | 26 / 242 / 31 | 28 / 240 / 37 | 26 → **67 px** | 32.0 / 30.0 → 29.7 / 25.6 |
+| Tesseracto | 30 / 298 / 26 | 32 / 300 / 30 | 48 → **93 px** | 57.9 / 24.7 → 59.4 / 20.6 |
+
+(radio de órbita / fase / inclinación; posición en % de ancho y alto a 1440×860)
+
+Sobre el render, el valle de Miller baja de 22.4 a **11.7** y su banda oscura
+sube de 19 a **30 px**. El del Tesseracto baja de 6.0 a 4.1 con 79 px de banda.
+
+El Tesseracto se mueve mucho menos a propósito: el dueño lo describió como
+*"oscuro y menos masivo, no molesta tanto"*, y la medición le daba la razón.
+Su radio de órbita sube **a la vez** que el de Miller para conservar su identidad
+de cuerpo más exterior del sistema.
+
+### Lo que este pase no gasta
+
+- **Gargantúa.** La cámara se queda clavada en 75.8 rs y la sombra en 46.7 px.
+  Ninguno de estos dos cuerpos fija el encuadre — lo fijan los que tocan los
+  bordes del cuadro—, así que moverlos sale gratis. Esto NO es general: subir a
+  Miller por inclinación sí costaba un 11 % del radio de sombra en la
+  composición anterior.
+- **Tamaño.** Miller mide 47.5 px antes y después; el Tesseracto 61.9 → 61.6.
+  Se mueven, no encogen: §14 quáter queda intacto.
+
+### Guardas respetadas
+
+Todas vienen de decisiones ya tomadas y ninguna se reabre:
+
+1. Miller **no** vuelve a la esquina que dirección rechazó — aquélla estaba en
+   25.6 % / 17.4 %; ésta queda en 29.7 % / 25.6 %.
+2. Sigue **cinco puntos por debajo** del Tesseracto, sin formar con él la línea
+   superior que ya se rechazó una vez.
+3. El vacío de la esquina superior izquierda sigue ahí, a propósito.
+4. La órbita de Miller sigue por dentro de la del Tesseracto, y ninguna entra en
+   el disco de acreción.
+
 ### Modelos
 
 ### Movimiento
