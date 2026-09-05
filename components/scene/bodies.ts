@@ -793,6 +793,14 @@ const BODY_FRAGMENT = /* glsl */ `
         entibia, el filo devuelve más, y el tungsteno emite más. Con una sola de
         las tres el escalón no se ve a 55 px.
 
+        La rampa se abrió el 2026-09-04 (0.15/0.30/0.62 → 0.12/0.36/0.95 de
+        emisivo, y el filo cálido con ella). Con la caja casi de frente el
+        recorrido hacia dentro pasó a ser LA lectura del objeto, y con los
+        escalones anteriores los tres marcos llegaban demasiado parecidos: el
+        ojo veía cuadrados concéntricos en vez de viajar. Ahora el primero es
+        más sobrio que antes y el fondo bastante más caliente — la diferencia
+        entre marcar la profundidad y describirla.
+
         ── Por qué el tungsteno es un DEGRADADO ANCHO y no una ranura ────────
         Iba como ranura de 0.05 de ancho, que es el 10 % de la cara de la barra.
         A tamaño de Hero una barra interior mide tres píxeles, así que la ranura
@@ -829,7 +837,7 @@ const BODY_FRAGMENT = /* glsl */ `
         */
         albedo = mix(vec3(0.038, 0.03, 0.022), vec3(0.1, 0.08, 0.055), grain * 0.5);
         albedo *= 0.4 + 0.85 * across;
-        albedo = mix(albedo, vec3(0.72, 0.5, 0.28), chamfer * 0.3);
+        albedo = mix(albedo, vec3(0.72, 0.5, 0.28), chamfer * 0.36);
         gloss = mix(0.1, 0.72, chamfer);
         specularPower = mix(54.0, 19.0, chamfer);
         specularStrength = 0.18 + chamfer * 1.25;
@@ -837,7 +845,7 @@ const BODY_FRAGMENT = /* glsl */ `
         float glow = 1.0 - smoothstep(0.1, 0.42, across);
         float run = smoothstep(0.12, 0.3, along) * (1.0 - smoothstep(0.7, 0.9, along));
         albedo = mix(albedo, vec3(0.024, 0.016, 0.011), glow * 0.5);
-        emissive = vec3(1.0, 0.52, 0.2) * glow * run * inward * breath4 * 0.62;
+        emissive = vec3(1.0, 0.52, 0.2) * glow * run * inward * breath4 * 0.95;
       } else if (vSurfaceMask > 2.5) {
         /*
           MARCO 3 y la viga imposible. Escalón intermedio: grafito ya tibio y
@@ -847,7 +855,7 @@ const BODY_FRAGMENT = /* glsl */ `
         */
         albedo = mix(vec3(0.03, 0.026, 0.021), vec3(0.08, 0.07, 0.056), grain * 0.5);
         albedo *= 0.45 + 0.8 * across;
-        albedo = mix(albedo, vec3(0.62, 0.48, 0.31), chamfer * 0.26);
+        albedo = mix(albedo, vec3(0.62, 0.48, 0.31), chamfer * 0.29);
         gloss = mix(0.08, 0.66, chamfer);
         specularPower = mix(56.0, 20.0, chamfer);
         specularStrength = 0.14 + chamfer * 0.98;
@@ -855,7 +863,7 @@ const BODY_FRAGMENT = /* glsl */ `
         float glow = 1.0 - smoothstep(0.1, 0.4, across);
         float run = smoothstep(0.16, 0.34, along) * (1.0 - smoothstep(0.66, 0.86, along));
         albedo = mix(albedo, vec3(0.02, 0.016, 0.012), glow * 0.5);
-        emissive = vec3(1.0, 0.55, 0.23) * glow * run * inward * breath3 * 0.3;
+        emissive = vec3(1.0, 0.55, 0.23) * glow * run * inward * breath3 * 0.36;
       } else if (vSurfaceMask > 1.5) {
         /*
           MARCO 2 — el primer paso hacia dentro. Apenas se separa de la caja:
@@ -864,7 +872,7 @@ const BODY_FRAGMENT = /* glsl */ `
         */
         albedo = mix(vec3(0.023, 0.022, 0.023), vec3(0.06, 0.058, 0.058), grain * 0.5);
         albedo *= 0.5 + 0.72 * across;
-        albedo = mix(albedo, vec3(0.5, 0.44, 0.34), chamfer * 0.16);
+        albedo = mix(albedo, vec3(0.5, 0.44, 0.34), chamfer * 0.14);
         gloss = mix(0.065, 0.58, chamfer);
         specularPower = mix(60.0, 22.0, chamfer);
         specularStrength = 0.1 + chamfer * 0.74;
@@ -872,7 +880,7 @@ const BODY_FRAGMENT = /* glsl */ `
         float glow = 1.0 - smoothstep(0.12, 0.4, across);
         float run = smoothstep(0.22, 0.4, along) * (1.0 - smoothstep(0.6, 0.8, along));
         albedo = mix(albedo, vec3(0.016, 0.016, 0.018), glow * 0.5);
-        emissive = vec3(1.0, 0.58, 0.26) * glow * run * inward * breath2 * 0.15;
+        emissive = vec3(1.0, 0.58, 0.26) * glow * run * inward * breath2 * 0.12;
       } else if (vSurfaceMask > 0.5) {
         /*
           Nodos. Acero pulido y facetado: las piezas que devuelven un destello
@@ -2360,10 +2368,13 @@ function boxFrame(
  * marcos interiores y la progresión hacia el vacío. De canto se esconde
  * exactamente aquello que lo caracteriza.
  *
- * Los números de ahora dejan la cara a 15° de yaw y 9° de pitch —17.5° del eje
- * de vista, contra los 33.2° de antes— con las aristas a 10° de la escuadra.
- * Frontal para entender la estructura de un vistazo; torcida para conservar
- * volumen. Completamente frontal sería el otro error: un icono plano.
+ * La primera corrección se fue a 17.5° y ahí apareció el otro extremo: a esa
+ * escala el objeto empezaba a leerse como un SÍMBOLO de cuadrados concéntricos
+ * en vez de como un objeto dimensional. Tres grados y medio bastan para
+ * devolver la fuga sin volver a esconder el interior, así que la cara queda a
+ * 20.9° del eje de vista —yaw 18.8°, pitch 10.0°— con las aristas a 10° de la
+ * escuadra. Frontal para entender la estructura de un vistazo; torcida para
+ * conservar volumen. Ni 33°, que lo escondía, ni 17°, que lo aplanaba.
  *
  * No son tres números sueltos: se resolvieron invirtiendo la cadena
  * `orientación de reposo → roll → inclinación` contra la dirección real de la
@@ -2371,7 +2382,7 @@ function boxFrame(
  */
 const TESSERACT_BOX_HALF: VectorTuple = [1.02, 0.23, 0.95];
 const TESSERACT_BOX_SECTION = 0.155;
-const TESSERACT_BOX_TILT: VectorTuple = [0.251, 0.045, 0.353];
+const TESSERACT_BOX_TILT: VectorTuple = [0.251, 0.053, 0.417];
 /*
   Y un giro final SOBRE EL EJE DEL TÚNEL, que es casi el eje de vista: o sea, un
   giro en el plano de la pantalla. Va aparte y va el último porque hace un

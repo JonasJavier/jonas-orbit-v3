@@ -93,19 +93,27 @@ export interface WorldStructuralData {
  * entra al tercio superior izquierdo, dentro del campo visual de Gargantúa. El
  * hueco de la esquina se conserva a propósito. Los cambios, entonces:
  *
- * 1. **Miller entra al tercio, no a la esquina** (fase 337 → 245, radio 27 →
- *    26, inclinación 38 → 34). Pasa de 25.6 % / 17.4 % del cuadro a 33.2 % /
- *    27.8 %: sigue arriba y a la izquierda, pero pertenece al sistema en vez de
- *    estar anclado al borde del visor.
+ * 1. **Miller entra al tercio, no a la esquina** (fase 337 → 242, radio 27 →
+ *    26, inclinación 38 → 31). Pasa de 25.6 % / 17.4 % del cuadro a 32.2 % /
+ *    30.3 %: sigue arriba y a la izquierda, pero pertenece al sistema en vez de
+ *    estar anclado al borde del visor. Los tres grados finales de fase y los
+ *    tres de inclinación son de la tercera pasada: a 33.2 / 27.8 quedaba a la
+ *    misma altura que el Tesseracto y los dos formaban una línea superior.
+ *    Entre él y el brazo izquierdo del disco queda una franja de negro que los
+ *    separa; ésa es la distancia que no hay que cerrar.
  * 2. **El Tesseracto se corre a la derecha del eje** (fase 279 → 298). Con
  *    Miller arriba a la izquierda, dejarlo centrado los habría convertido en
  *    dos objetos colgados de la misma banda superior; a 298 abre la diagonal
  *    Miller → Tesseracto → Endurance y sigue sin tocar el disco. Su ORIENTACIÓN
- *    sí cambia mucho, y eso vive en `TESSERACT_BOX_TILT`.
+ *    sí cambia mucho, y eso vive en `TESSERACT_BOX_TILT`. El `size` sube de 2.7
+ *    a 2.87 —un 6.3 %— porque siendo «Sobre mí» llegaba modesto al lado de la
+ *    Endurance; sigue muy por debajo de Gargantúa.
  * 3. **Endurance baja y se abre** (fase 45 → 42, inclinación 12 → 16): separa
  *    su silueta de la cola derecha del disco, que era donde se ensuciaba.
- * 4. **La Ranger sube y se centra** (fase 109 → 99, inclinación 23 → 16): se
+ * 4. **La Ranger sube y se centra** (fase 109 → 97, inclinación 23 → 14): se
  *    despega del borde inferior y del raíl sin dejar de ser el plano cercano.
+ *    A 82 % del alto empezaba a leerse como parte del pie de página; a 79.8 %
+ *    vuelve a estar dentro de la escena. El tamaño no se toca: 2.0.
  * 5. **Edmunds no se toca.** Ya era el ancla inferior izquierda.
  *
  * Y hay un efecto de segundo orden que importa tanto como las posiciones: el
@@ -128,7 +136,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        vista (capa −6 en `scene-depth.ts`): pequeño para su tamaño real, que es
        lo que lo mantiene anómalo. La fase 298 lo deja a la derecha del eje de
        la sombra y por encima del disco, sin tocarlo. */
-    placement: { orbitRadius: 30, phase: 298, inclination: 26, size: 2.7 },
+    placement: { orbitRadius: 30, phase: 298, inclination: 26, size: 2.87 },
     sceneName: "scene-tesseract",
   },
   miller: {
@@ -137,9 +145,10 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    /* El tercio superior izquierdo, no la esquina. Fase 245 e inclinación 34 lo
-       colocan en 33.2 % / 27.8 % del cuadro: dentro del campo de Gargantúa, con
-       el vacío de la esquina intacto por encima.
+    /* El tercio superior izquierdo, no la esquina. Fase 242 e inclinación 31 lo
+       colocan en 32.2 % / 30.3 % del cuadro: dentro del campo de Gargantúa, con
+       el vacío de la esquina intacto por encima y sin compartir altura con el
+       Tesseracto, que está cinco puntos más arriba.
 
        Los tres números están atados entre sí y no se tocan por separado. La
        altura sale de −r·sen(fase)·sen(inclinación) y la profundidad de
@@ -151,7 +160,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
 
        El radio no baja de 24: por debajo entraría en el disco de acreción
        (`DISK_OUTER`, 23.8 rs) y lo comprueba `worlds.data.test.ts`. */
-    placement: { orbitRadius: 26, phase: 245, inclination: 34, size: 3.05 },
+    placement: { orbitRadius: 26, phase: 242, inclination: 31, size: 3.05 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -203,15 +212,19 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
       El detalle de escala humana, y el cuerpo más cercano a la cámara (capa +7)
       — por eso una nave de 2 rs se dibuja más grande que un planeta de 3.
 
-      Vive en el vacío de abajo, por delante del plano del disco. La fase 99 y
-      la inclinación 16 la separan del borde inferior y del raíl: a 109/23
-      quedaba a un 84 % del alto, con los rótulos de destinos justo debajo. El
+      Vive en el vacío de abajo, por delante del plano del disco. La fase 97 y
+      la inclinación 14 la separan del borde inferior y del raíl: a 109/23
+      quedaba a un 84 % del alto —con los rótulos de destinos justo debajo, y
+      leyéndose como un elemento del pie— y a 99/16 todavía a un 82 %. A 79.8 %
+      vuelve a estar dentro de la escena. Por debajo de 14° de inclinación no se
+      baja: el margen contra la sombra cae a 3.6 veces su radio y el suelo del
+      test está en 3. El
       tamaño baja de 2.6 a 2.0 porque con seis cuerpos, y sin Cooper llenando el
       cuadro, a 2.6 dejaba de ser un detalle y empezaba a ser un sexto
       protagonista. El mapa plano usa esta misma fase: las dos vistas cuentan lo
       mismo.
     */
-    placement: { orbitRadius: 24, phase: 99, inclination: 16, size: 2 },
+    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 2 },
     sceneName: "scene-ranger",
   },
 };
