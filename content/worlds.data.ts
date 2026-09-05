@@ -1,5 +1,5 @@
 /**
- * Datos estructurales de los 7 mundos — EXCLUSIVAMENTE neutrales al idioma.
+ * Datos estructurales de los 6 mundos — EXCLUSIVAMENTE neutrales al idioma.
  *
  * La identidad canónica es WorldId: tipada, inmutable e independiente de las
  * URLs. La prosa localizada vive en content/{locale}/worlds/*.mdx y se une a
@@ -11,7 +11,6 @@
  */
 export const WORLD_IDS = [
   "tesseract",
-  "cooper-station",
   "miller",
   "endurance",
   "edmunds",
@@ -23,7 +22,6 @@ export type WorldId = (typeof WORLD_IDS)[number];
 
 type WorldVisual =
   | "tesseract"
-  | "station"
   | "water"
   | "ship"
   | "desert"
@@ -51,7 +49,7 @@ interface WorldPlacement {
 }
 
 export interface WorldStructuralData {
-  /** Orden narrativo del viaje (1-7, único). */
+  /** Orden narrativo del viaje (1-6, único). */
   order: number;
   /** Nombre cósmico propio (idéntico en todos los idiomas). */
   cosmicName: string;
@@ -75,27 +73,6 @@ export interface WorldStructuralData {
  * el DOM mantiene áreas accesibles de 44 px. Cambiar radio, fase, inclinación o
  * escala altera cámara, proyección, brackets y colisiones de etiquetas, así que
  * estos valores son decisiones de composición, no telemetría decorativa.
- *
- * ── Reparto radial (2026-09-01) ─────────────────────────────────────────────
- *
- * Los tres destinos interiores —Endurance, Edmunds y Miller— estaban en 22-23.5
- * rs, y ahí topaban con el disco en cuanto Gargantúa creció. Pasan a 25-27 y eso
- * compra dos cosas a la vez, no una:
- *
- * 1. **Sitio para el disco.** El borde exterior llega a 17·rs; a 25 rs el
- *    destino más cercano vuelve a estar por fuera con rs = 1.40.
- * 2. **Espacio negativo lateral.** Los cuerpos pasan de ocupar el 53 % del
- *    ancho del cuadro al 59 %, y el lado derecho —el más vacío— lo llena Miller
- *    sin añadir ni un objeto nuevo.
- *
- * Y NO cuesta distancia de cámara: el encuadre lo fijan los dos exteriores, que
- * siguen en 30 y 33 rs. Mover los interiores hacia fuera es gratis mientras no
- * pasen de los exteriores — es la única forma de reencuadrar el sistema sin que
- * la cámara retroceda y lo anule.
- *
- * Qué cuerpo ocupa cada una de esas dos trayectorias exteriores cambió el
- * 2026-09-03 (ver el intercambio Tesseracto ↔ Cooper Station más abajo); los
- * radios, que son lo que encuadra, no.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -104,70 +81,21 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     accent: "#f2c879",
     secondary: "#73d7ff",
     visual: "tesseract",
-    /*
-      ── POSITION LOCK — TESSERACTO + COOPER STATION (2026-09-03) ────────────
-      Los dos intercambian sector. El Tesseracto sube a superior-centro y Cooper
-      Station baja a superior-izquierda; ninguno cambia de tamaño aparente al
-      hacerlo (119.2 rs de cámara contra los 119.5 de antes, y 116.5 contra
-      116.9 los de Cooper), así que esto es composición pura y no una subida
-      encubierta de jerarquía.
-
-      ── Por qué el Tesseracto no puede quedarse arriba a la izquierda ───────
-      Es la forma más compacta y abstracta del sistema, la de menos peso visual
-      por unidad de superficie. En el sector superior-izquierdo —lejos del
-      centro, contra el campo de estrellas y sin nada grande al lado— se leía
-      como un icono suelto en una esquina, no como un destino. Arriba en el
-      centro entra en relación directa con Gargantúa: espacio imposible sobre
-      fenómeno físico, que es exactamente lo que representa (Sobre mí, el origen
-      conceptual del viaje).
-
-      ── Y por qué 285 y no 272, que es la fase que deja libre Cooper ────────
-      A 272 el cuerpo cae en Δx = −16 px del centro de la sombra: justo encima
-      del agujero negro, alineado al píxel. Eso no se lee como composición, se
-      lee como una interfaz —dos elementos centrados uno sobre otro— y mata la
-      profundidad que se estaba buscando. 285 lo corre a Δx = +66 px (4.6 % del
-      ancho): suficiente para que la relación sea deliberada y no accidental,
-      y demasiado poco para leerse como que se ha ido a un lado.
-
-      El lado es el derecho porque Cooper aterriza a la izquierda, y Cooper es
-      un cuerpo grande y claro: el sector superior-izquierdo ya tiene peso. Con
-      el Tesseracto a la derecha del eje, la banda superior se reparte 338 px /
-      264 px entre sus tres cuerpos —desigual, que es lo que se quiere— y de
-      paso aparece una contradiagonal con la Ranger, que está abajo y a la
-      izquierda del centro.
-    */
-    placement: { orbitRadius: 30, phase: 285, inclination: 26, size: 2.7 },
+    placement: { orbitRadius: 30, phase: 279, inclination: 26, size: 2.7 },
     sceneName: "scene-tesseract",
   },
-  "cooper-station": {
-    order: 2,
-    cosmicName: "Cooper Station",
-    accent: "#7fe5ff",
-    secondary: "#a9b5ff",
-    visual: "station",
-    /* La otra mitad del intercambio: la trayectoria exacta que dejó libre el
-       Tesseracto. Desde F1.3 Cooper es una megaestructura habitada —arco
-       abierto horizontal, módulos en serie y vacío central— y aguanta el sector
-       superior-izquierdo sin perderse en el starfield, que es justo lo que al
-       Tesseracto le pasaba ahí. Números intactos: el rediseño conserva el radio
-       publicado para no mover el encuadre. */
-    placement: { orbitRadius: 33, phase: 233, inclination: 20, size: 2.6 },
-    sceneName: "scene-cooper-station",
-  },
   miller: {
-    order: 3,
+    order: 2,
     cosmicName: "Miller",
     accent: "#55d9ff",
     secondary: "#5e7dff",
     visual: "water",
-    /* 27, no 23.5. Miller cae en el lado derecho del cuadro, que era el más
-       vacío, y a la vez es uno de los tres destinos que tenían que salir del
-       camino del disco ampliado. Ver la nota de reparto radial más abajo. */
+    // Miller queda alto y distante; Edmunds ocupa el plano inferior izquierdo.
     placement: { orbitRadius: 27, phase: 337, inclination: 38, size: 3.05 },
     sceneName: "scene-miller",
   },
   endurance: {
-    order: 4,
+    order: 3,
     cosmicName: "Endurance",
     accent: "#f0bc72",
     secondary: "#7fe5ff",
@@ -176,7 +104,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     sceneName: "scene-endurance",
   },
   edmunds: {
-    order: 5,
+    order: 4,
     cosmicName: "Edmunds",
     accent: "#ff9b6b",
     secondary: "#f5cf83",
@@ -185,7 +113,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     sceneName: "scene-edmunds",
   },
   gargantua: {
-    order: 6,
+    order: 5,
     cosmicName: "Gargantúa",
     accent: "#ffb45c",
     secondary: "#d8e6ff",
@@ -199,7 +127,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     sceneName: "scene-gargantua",
   },
   ranger: {
-    order: 7,
+    order: 6,
     cosmicName: "Ranger",
     accent: "#c58cff",
     secondary: "#72ddff",
@@ -210,13 +138,13 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
       lejano a la cámara. Tres problemas de una vez —composición desequilibrada,
       cuerpo pequeño y el único hueco grande del encuadre sin ocupar.
 
-      Fase 105 con radio 24 la lleva al vacío de abajo, por delante del plano
-      del disco: gana un tercio de tamaño aparente sin tocar su escala, apunta
+      Fase 109 con radio 24 la lleva al vacío de abajo, por delante del plano
+      del disco: conserva el plano cercano con una escala menor y apunta
       hacia Gargantúa en diagonal y cierra el triángulo con Endurance y Edmunds.
       El mapa plano usa esta misma fase, así que las dos vistas siguen contando
       lo mismo.
     */
-    placement: { orbitRadius: 24, phase: 105, inclination: 23, size: 2.6 },
+    placement: { orbitRadius: 24, phase: 109, inclination: 23, size: 2.15 },
     sceneName: "scene-ranger",
   },
 };

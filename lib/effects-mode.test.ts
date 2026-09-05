@@ -41,7 +41,7 @@ describe("isLightEffectsMode — override explícito del perfil ligero", () => {
 });
 
 /**
- * Con 8 rutas reales el parámetro ya no sobrevive solo: el primer enlace lo
+ * Con 7 rutas reales el parámetro ya no sobrevive solo: el primer enlace lo
  * borra. Sin persistencia, quien pidió menos efectos los recuperaría sin
  * pedirlo — que es exactamente lo que §5 del pivote prohíbe.
  */

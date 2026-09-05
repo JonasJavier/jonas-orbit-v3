@@ -23,7 +23,7 @@ function prose(
   return { id, slug, locale };
 }
 
-/** Set completo de prosa para un idioma (los 7 mundos, slug = id). */
+/** Set completo de prosa para un idioma (los 6 mundos, slug = id). */
 function fullLocale(locale: string): WorldProseLike[] {
   return WORLD_IDS.map((id) => prose(id, locale));
 }

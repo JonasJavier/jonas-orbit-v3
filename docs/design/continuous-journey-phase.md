@@ -1,5 +1,8 @@
 # Fase futura — Viaje continuo (DIFERIDA, no implementada)
 
+> **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
+
+
 **Estado: DIFERIDA.** No se ha implementado nada de este documento. Se empieza
 como tarea propia, y sólo después de que el Hero / System Map esté aprobado.
 
@@ -13,7 +16,6 @@ convierten en **un único documento narrativo por idioma**, recorrido con scroll
 ```
 /es              SYSTEM MAP / HERO
 /es#tesseract    Historia
-/es#cooper       Formación
 /es#miller       Desarrollo
 /es#endurance    Proyectos
 /es#edmunds      Creatividad
@@ -97,7 +99,7 @@ brackets y TARGET no cambian.
 
 ## 8. Criterios de aceptación de ESA fase
 
-Viaje continuo · siete mundos anclados · scroll como fuente primaria · cámara y
+Viaje continuo · seis mundos anclados · scroll como fuente primaria · cámara y
 HUD sincronizados con el progreso · seleccionar un planeta desplaza al destino ·
 los casos conservan ruta propia · `SYSTEM MAP ↑` devuelve al hero · scroll natural
 sin secuestro · teclado · paridad con movimiento reducido · comportamiento móvil

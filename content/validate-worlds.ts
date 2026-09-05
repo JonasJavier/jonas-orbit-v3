@@ -63,7 +63,7 @@ export function validateWorldProse(
     if (missing.length > 0) {
       throw new Error(
         `[content] El idioma publicado "${locale}" no tiene prosa para: ${missing.join(", ")}. ` +
-          `Un idioma publicado exige los 7 mundos completos.`,
+          `Un idioma publicado exige los ${worldIds.length} mundos completos.`,
       );
     }
   }

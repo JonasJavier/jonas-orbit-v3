@@ -6,7 +6,7 @@ import { FlatWorldBody } from "./flat-world-body";
 const worlds = getWorldNavItems("es");
 
 describe("FlatWorldBody", () => {
-  it("dibuja los seis destinos periféricos y deja Gargantúa al backdrop", () => {
+  it("dibuja los cinco destinos periféricos y deja Gargantúa al backdrop", () => {
     for (const world of worlds) {
       const { container, unmount } = render(<FlatWorldBody world={world} />);
       const body = container.querySelector(`[data-flat-world="${world.id}"]`);
@@ -54,48 +54,6 @@ describe("FlatWorldBody", () => {
     ).toHaveLength(4);
     expect(container.querySelector('[data-flat-part="docked-craft"]')).not.toBeNull();
     expect(container.querySelector('[data-flat-part="engine-bank"]')).not.toBeNull();
-  });
-
-  it("mantiene la megaestructura habitada de Cooper en el frame estático", () => {
-    const cooper = worlds.find((world) => world.id === "cooper-station");
-    expect(cooper).toBeDefined();
-
-    const { container } = render(
-      <FlatWorldBody world={cooper as NonNullable<typeof cooper>} />,
-    );
-
-    /*
-      La misma arquitectura que el modelo 3D, y por el mismo motivo que en la
-      Endurance: arco abierto, módulos en serie, espina, montantes, alas
-      solares, mástil con baliza y microventanas cálidas. En un equipo con
-      movimiento reducido este dibujo es la ÚNICA Cooper que se ve.
-    */
-    for (const part of [
-      "arc",
-      "module",
-      "spine",
-      "struts",
-      "panels",
-      "mast",
-      "windows",
-      "beacon",
-    ]) {
-      expect(
-        container.querySelector(`[data-flat-part="${part}"]`),
-        part,
-      ).not.toBeNull();
-    }
-    /*
-      Lo retirado NO vuelve: ni el planeta con anillos —que se leía como mundo
-      y no como lugar habitado— ni el cilindro provisional que ya prohibía la
-      dirección.
-    */
-    for (const retired of ["planet", "rear-ring", "front-ring", "habitat"]) {
-      expect(
-        container.querySelector(`[data-flat-part="${retired}"]`),
-        retired,
-      ).toBeNull();
-    }
   });
 
   it("dibuja la Ranger con proa, cabina y toberas, no una mancha", () => {

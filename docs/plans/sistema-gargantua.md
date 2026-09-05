@@ -1,5 +1,8 @@
 # Diseño: Sistema Gargantúa — la home deja de ser un scroll y pasa a ser un lugar
 
+> **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](../design/sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
+
+
 Generado 2026-08-06 · Decisión del dueño (Jonás) en sesión
 Estado: **APROBADO — sustituye la arquitectura de navegación de F1A**
 Documento canónico de alcance/fases/contenido: [`jonas-orbit-v3-mission-endurance.md`](jonas-orbit-v3-mission-endurance.md)
@@ -37,12 +40,8 @@ un **sistema** — el agujero negro supermasivo Gargantúa, su disco de acreció
 tres planetas candidatos en órbita (Miller, Mann, Edmunds). La galaxia entera
 nunca se muestra.
 
-Usar el nombre correcto no es purismo: **desbloquea la idea futura**. El agujero
-de gusano de la película está junto a Saturno y Cooper Station orbita Saturno al
-final. Esa referencia registra un posible cruce al Sistema Solar como G4, pero no
-dicta la representación del Hero actual: Cooper Station se lee hoy como un
-«Cooper system» inventado —planeta anillado + hábitat pequeño— dentro del mapa.
-El cruce y cualquier reinterpretación narrativa no se construyen ahora.
+El nombre describe el sistema observado. Cualquier cruce futuro al Sistema
+Solar queda diferido y requiere su propia aprobación.
 
 Por eso el nombre interno de la escena es **Sistema Gargantúa**, no «galaxia».
 
@@ -50,7 +49,7 @@ Por eso el nombre interno de la escena es **Sistema Gargantúa**, no «galaxia»
 
 | Antes (F1A construida) | Ahora |
 |---|---|
-| Una página narrativa por idioma; los 7 mundos son secciones con ancla | 8 rutas reales: la home-escena + 7 páginas de mundo |
+| Una página narrativa por idioma; los 6 mundos son secciones con ancla | 7 rutas reales: la home-escena + 7 páginas de mundo |
 | El scroll es la única fuente de verdad de la cámara | **No hay controlador de cámara.** La pose es función pura de la ruta |
 | El fondo es una capa decorativa detrás del texto | El **System Map es la home**; HUD y raíl son su interfaz visible, mientras la identidad profesional permanece en HTML semántico |
 
@@ -65,7 +64,6 @@ slugs localizados con significado (tensión T1, ya resuelta a favor del slug ES)
 |---|---|---|
 | — | `/es` | **System Map / Sistema Gargantúa** (escena + HUD/raíl; fallback semántico sin bloque personal visible) |
 | `tesseract` | `/es/sobre-mi` | Historia y perfil |
-| `cooper-station` | `/es/formacion` | Formación, CS50x/CS50W, Marketing Digital |
 | `miller` | `/es/desarrollo` | Desarrollo: stack, forma de trabajar |
 | `endurance` | `/es/proyectos` | Índice de proyectos |
 | `edmunds` | `/es/creatividad` | Fotografía y diseño |
@@ -82,10 +80,10 @@ que el pivote va a favor del código, no en contra:
 
 ### Ganancia colateral: SEO
 
-Ocho páginas indexables con `title`, `description`, canonical y OG propios, en
+Siete páginas indexables con `title`, `description`, canonical y OG propios, en
 lugar de una sola página con siete anclas que Google trata como un único
 documento. Esto era una debilidad silenciosa de la arquitectura anterior. El
-`sitemap.ts` pasa de 6 a 12 URLs.
+`sitemap.ts` contiene doce URLs: home, seis destinos, cuatro casos y privacidad.
 
 ### Coste real
 
@@ -148,7 +146,7 @@ Con un punto de vista conocido de antemano se puede acotar casi todo:
 - Los cuerpos compuestos usan volúmenes conocidos y una iluminación compartida;
   no necesitan LOD complejo ni cámara libre.
 - La interacción no hace raycast: la proyección publica centro y radio compuesto
-  a siete proxies DOM acotados.
+  a seis proxies DOM acotados.
 
 Un motor con cámara libre gasta la mayor parte de su presupuesto en ser correcto
 desde cualquier ángulo. Nosotros solo tenemos que ser correctos desde ocho.
@@ -178,7 +176,7 @@ Consecuencias:
 ### Regla no negociable: la escena nunca es el contenido
 
 > El HTML servido de `/es` contiene, sin JavaScript, el nombre de Jonás, su rol,
-> los dos CTAs, el enlace al CV y enlaces `<a href>` reales a los siete mundos.
+> los dos CTAs, el enlace al CV y enlaces `<a href>` reales a los seis mundos.
 > La identidad, el rol, las acciones y el CV son fallback semántico: no forman un
 > bloque personal visible dentro del Hero. Los destinos sí se presentan en el
 > raíl de navegación.
@@ -208,7 +206,7 @@ irreversible: una preferencia o heurística nunca fabrica esa capacidad.
 
 `lib/starfield.ts` y `components/starfield-2d.tsx` **sobreviven** como el nivel
 `flat`. La preferencia reduced-motion detiene su deriva y conserva las estrellas
-estáticas; el mapa añade Tesseracto, Cooper, Miller, Endurance, Edmunds y Ranger
+estáticas; el mapa añade Tesseracto, Miller, Endurance, Edmunds y Ranger
 como siluetas 2D propias alrededor de Gargantúa. No convierte el cielo en un
 vacío ni reduce los destinos a cruces de calibración.
 
@@ -310,7 +308,7 @@ Dos intensidades de la misma familia visual:
 Reglas duras de la transición:
 
 - **Nunca bloquea la primera pintura.** No existe en la carga inicial.
-- **La ruta se prefetchea antes de empezar.** Las 8 rutas son estáticas, así que
+- **La ruta se prefetchea antes de empezar.** Las 7 rutas son estáticas, así que
   la navegación es instantánea; la animación existe para dar sensación de viaje,
   no para tapar una espera.
 - **El router manda.** Si la navegación termina antes, la animación se acorta. Si
@@ -418,7 +416,7 @@ registrar el veredicto aquí. `app/spike/` se borra al cerrar G0.
 
 ### G1 — Migración de rutas · *sin nada de 3D* — **COMPLETADA 2026-08-07**
 
-Los 7 mundos pasan de secciones a rutas. Nivel `flat` únicamente.
+Los 6 mundos pasan de secciones a rutas. Nivel `flat` únicamente.
 
 - Mover la prosa de cada mundo a su página, con metadata/OG propios.
 - Home nueva: hero + selector de mundos como enlaces reales, sobre el backdrop
@@ -453,7 +451,7 @@ Decisiones tomadas al ejecutar, todas dentro de lo que §14 dejaba abierto:
    en el plano del disco.** La estructura se decidió una vez y sobrevive al
    cambio de capa visual.
 3. **Gargantúa es el centro del mapa** (`radius: 0`) y enlaza al laboratorio.
-4. **`?no3d=1` pasa a persistirse.** Con 8 rutas reales el parámetro moría en el
+4. **`?no3d=1` pasa a persistirse.** Con 7 rutas reales el parámetro moría en el
    primer enlace; §5 ya pedía que la elección se persistiera. La URL es la
    entrada; el almacenamiento, la memoria.
 5. **La navegación de mundos conserva un carril horizontal táctil en móvil.**
@@ -463,12 +461,12 @@ Decisiones tomadas al ejecutar, todas dentro de lo que §14 dejaba abierto:
 
 #### El DOM del mapa es un contrato con G2
 
-El raíl de `SystemMap` contiene siete `<a href>` reales, ordenados 01→07 y con
+El raíl de `SystemMap` contiene seis `<a href>` reales, ordenados 01→06 y con
 nombre accesible. Cada cuerpo dispone además de un proxy DOM visual,
 `aria-hidden` y no tabulable, separado del rótulo. No hay R3F ni raycasting: la
 escena publica `--map-x`, `--map-y` y el radio compuesto `--map-radius`; el proxy
 se centra ahí, cubre 110–135 % de la silueta y garantiza 44 px. Así anillos de
-Cooper y estructura completa de Endurance responden sin anunciar catorce
+la estructura completa de Endurance responden sin anunciar catorce
 destinos. Raíl y proxies consumen el mismo `WorldId`, estado TARGET y
 `navigateToWorld(worldId)`. `?debugHitboxes=1` sólo en desarrollo visualiza los
 bounds sin modificar su tamaño.
@@ -517,28 +515,26 @@ siguen presentes como HTML semántico y metadata, de acuerdo con la regla 7.
 
 - **Gargantúa** sigue siendo el foco dominante y la fuente cálida compartida.
 - La escala aumenta por jerarquía, no uniformemente: Endurance es segunda ancla;
-  Miller, Edmunds y Cooper forman el nivel planetario; Tesseracto y Ranger siguen
+  Miller y Edmunds forman el nivel planetario; Tesseracto y Ranger siguen
   menores pero localizables.
 - **Endurance** deja de ser un toro rayado y sigue la referencia cinematográfica
   fijada por la dirección del Hero: doce módulos separados, hub central
   dominante, cuatro brazos de doble larguero, full stack y motores legibles.
-- **Cooper Station** deja de ser un cilindro: la representa un planeta anillado
-  inventado con un hábitat orbital pequeño y ordenado.
 - El HUD usa cuatro niveles: PRIMARY (90–100 %), SECONDARY (60–75 %), TERTIARY
   (35–50 %) y GHOST (15–25 %). `JONAS ORBIT` y el objetivo son PRIMARY; el idle
   conserva calma sin ocultar información útil.
 - TARGET no es una tarjeta: nombre grande, regla fina, índice, función y acción.
   Hover, focus y selected activan cuatro brackets pequeños y una trayectoria que
   empieza como arco tenue.
-- El raíl inferior es tipográfico, contiene los siete enlaces reales y expresa
-  inactivo, hover/focus y selected sin siete botones rectangulares.
+- El raíl inferior es tipográfico, contiene los seis enlaces reales y expresa
+  inactivo, hover/focus y selected sin seis botones rectangulares.
 - El starfield usa capas far/mid/near batched, reduce densidad junto al disco y
   añade sólo velos casi negros de navy/violeta/polvo cálido.
 - Desktop fine-pointer añade retículo mínimo y stardust pooled/batched. Touch no
   monta esa capa; reduced-motion conserva estrellas estáticas y desactiva dust,
   cursor animado, paralaje y respiración hasta que el visitante activa 3D de
   forma explícita.
-- El fallback `flat` conserva la composición completa: Gargantúa y seis destinos
+- El fallback `flat` conserva la composición completa: Gargantúa y cinco destinos
   2D estáticos, cada uno con silueta propia, además de los mismos proxies, estados
   TARGET y enlaces del raíl. No es una versión vacía del Hero.
 - Cuando reduced-motion provoca `flat`, el botón `ACTIVAR ANIMACIÓN` permanece
@@ -643,10 +639,8 @@ presupuesto.
 
 ### G4 — El otro lado del agujero de gusano · *futuro, requiere aprobación*
 
-Cruce al Sistema Solar. La representación actual de Cooper —planeta anillado
-inventado + hábitat orbital— pertenece al System Map y no anticipa este cruce.
-G4 podrá reinterpretar la ubicación narrativa de Cooper Station y el Tesseracto,
-pero no se planifica en detalle hasta cerrar G3 y obtener aprobación propia.
+Cruce al Sistema Solar, fuera del alcance actual. No se planifica en detalle
+hasta cerrar G3 y obtener aprobación propia; no autoriza ampliar el catálogo.
 
 ---
 
@@ -709,19 +703,19 @@ existir.
 |---|---|---|
 | A20 | Hero → caso de estudio ≤ 2 interacciones, **ahora por rutas** | E2E |
 | A21 | Hero → contacto ≤ 3 interacciones, **ahora por rutas** | E2E |
-| A28 | `prefers-reduced-motion`: arranque `flat` sin transición, Gargantúa + seis destinos 2D y contenido íntegro; opt-in 3D visible/reversible en hardware compatible | E2E |
-| A29 | Viaje completo solo-teclado por las 8 rutas | E2E |
-| A32 | Viewport 375 px en las 8 rutas | E2E |
+| A28 | `prefers-reduced-motion`: arranque `flat` sin transición, Gargantúa + cinco destinos 2D y contenido íntegro; opt-in 3D visible/reversible en hardware compatible | E2E |
+| A29 | Viaje completo solo-teclado por las 7 rutas | E2E |
+| A32 | Viewport 375 px en las 7 rutas | E2E |
 
 ### Nuevos
 
 | ID | Escenario | Riesgo cubierto | Fase | Nivel |
 |---|---|---|---|---|
 | G1 | Cada `WorldId` resuelve a su ruta y viceversa; ruta desconocida → 404 | Mundo inalcanzable o duplicado | G1 | Unit |
-| G2 | Las 8 rutas tienen `title`, `description`, canonical y OG propios y distintos | Compartir roto, SEO canibalizado | G1 | E2E |
-| G3 | El HTML servido de `/es` contiene nombre, rol, 2 CTAs, CV y 7 enlaces `<a href>` **sin JS**; la identidad profesional no forma un bloque visible del Hero | La escena se convierte en el contenido o reaparece el copy retirado | G1 | E2E |
+| G2 | Las 7 rutas tienen `title`, `description`, canonical y OG propios y distintos | Compartir roto, SEO canibalizado | G1 | E2E |
+| G3 | El HTML servido de `/es` contiene nombre, rol, 2 CTAs, CV y 6 enlaces `<a href>` **sin JS**; la identidad profesional no forma un bloque visible del Hero | La escena se convierte en el contenido o reaparece el copy retirado | G1 | E2E |
 | G4 | Nivel `flat`: cero three.js en la red | Presupuesto roto para quien no puede pagarlo | G2 | E2E |
-| G5 | Los 7 proxies DOM cubren centro y bordes percibidos (incluidos rings/craft bounds) y los 7 enlaces del raíl cubren teclado; hover/focus/selected sincronizan TARGET, brackets y marcador | Hitbox parcial, navegación duplicada o estado incomprensible | G2 | E2E + validación manual con `?debugHitboxes=1` |
+| G5 | Los 6 proxies DOM cubren centro y bordes percibidos (incluidos rings/craft bounds) y los 6 enlaces del raíl cubren teclado; hover/focus/selected sincronizan TARGET, brackets y marcador | Hitbox parcial, navegación duplicada o estado incomprensible | G2 | E2E + validación manual con `?debugHitboxes=1` |
 | G6 | Seleccionar un cuerpo cambia la ruta; el canvas **no** se remonta | Parpadeo negro, contexto WebGL recreado | G2 | E2E |
 | G7 | `cameraPose` es función pura de la ruta: misma ruta → misma pose, sin estado residual | Deriva de cámara, dos controladores | G2 | Unit |
 | G8 | Ningún listener de rueda, drag o scroll escribe en la cámara | Regresión al doble controlador | G2 | Unit |

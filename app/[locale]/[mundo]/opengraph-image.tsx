@@ -25,6 +25,6 @@ export default async function WorldOgImage({
 }) {
   const { locale, mundo } = await params;
   const world = getWorldBySlug(mundo, locale as Locale);
-  if (!world) throw new Error(`Sin mundo para la tarjeta OG de "${mundo}".`);
+  if (!world) return new Response(null, { status: 404 });
   return renderWorldOgImage(world);
 }

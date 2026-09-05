@@ -210,7 +210,7 @@ export function GargantuaSystem({
 
   /**
    * Enlaza los nodos del HTML con la escena. Se rehace en cada navegación
-   * porque el marcado cambia: la home trae los siete destinos y una página de
+   * porque el marcado cambia: la home trae los seis destinos y una página de
    * mundo no trae ninguno.
    */
   useEffect(() => {
@@ -331,13 +331,13 @@ export function GargantuaSystem({
 /**
  * Une la escena con el HTML servido.
  *
- * Los siete enlaces accesibles YA existen en el raíl: esto no los crea. Sólo
+ * Los seis enlaces accesibles YA existen en el raíl: esto no los crea. Sólo
  * escribe posición y radio compuesto sobre el ancla de cada cuerpo. El proxy
  * visual es un enlace separado, `aria-hidden` y fuera de tabulación; así el área
  * de puntero puede cubrir la silueta completa sin duplicar navegación accesible.
  * Por eso la escena puede fallar entera y los destinos siguen navegables.
  *
- * Se escribe `transform` vía variables CSS, nunca `left`/`top`: mover siete
+ * Se escribe `transform` vía variables CSS, nunca `left`/`top`: mover seis
  * elementos por frame con propiedades de layout obligaría al navegador a
  * recalcularlo sesenta veces por segundo.
  */
@@ -619,7 +619,7 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
       // El interruptor se acciona con la PRIMERA proyección, no al decidir el
       // nivel. Entre las dos cosas hay una carga dinámica de varios cientos de
       // milisegundos, y durante ese hueco el CSS de la escena leería las
-      // coordenadas en % del servidor como si fueran píxeles: los siete
+      // coordenadas en % del servidor como si fueran píxeles: los seis
       // destinos amontonados en una esquina hasta que llegara el primer frame.
       if (!sceneLivePublished) {
         document.documentElement.dataset.sceneLive = "true";

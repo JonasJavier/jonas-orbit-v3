@@ -9,7 +9,7 @@ import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
 const HOME_TITLE =
   "Jonás Javier Encarnación — Desarrollador full-stack y creador visual";
 const HOME_DESCRIPTION =
-  "Sistema Gargantúa: siete destinos que recorren el trabajo de Jonás Javier Encarnación — desarrollo full-stack, proyectos, formación, creatividad visual y contacto directo. No separo creatividad y tecnología: las mantengo en la misma órbita.";
+  "Sistema Gargantúa: seis destinos que recorren el trabajo de Jonás Javier Encarnación — desarrollo full-stack, proyectos, creatividad visual y contacto directo. No separo creatividad y tecnología: las mantengo en la misma órbita.";
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.map((locale) => ({ locale }));
@@ -53,7 +53,7 @@ export async function generateMetadata({
  *
  * Server component puro, cero JavaScript propio. El HTML servido ya trae la
  * identidad y los accesos contractuales como respaldo semántico, además de los
- * siete enlaces a los mundos. Visualmente, el sistema y su navegación son el
+ * seis enlaces a los mundos. Visualmente, el sistema y su navegación son el
  * Hero: no hay un bloque de presentación personal sobre la escena.
  */
 export default async function SystemPage({
@@ -71,7 +71,7 @@ export default async function SystemPage({
   return (
     // Sin cabecera y sin pie, a propósito.
     //
-    // La barra de navegación repetía exactamente los siete destinos que ya son
+    // La barra de navegación repetía exactamente los seis destinos que ya son
     // el mapa: en una home que ES un lugar, eso es decir dos veces lo mismo y
     // enmarcar el espacio con muebles de página web. Las páginas de mundo sí
     // conservan el shell completo, porque ahí sí eres un visitante leyendo un

@@ -1,5 +1,8 @@
 # Endurance Navigation Interface — HUD e interacción del System Map
 
+> **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
+
+
 **Fase:** Hero / System Map life pass. Continuous Journey permanece
 **DEFERRED**; ver [`continuous-journey-phase.md`](continuous-journey-phase.md).
 
@@ -28,7 +31,7 @@ vidrio, radares, gauges ni telemetría inventada.
 │                         GARGANTÚA                                     │
 │                    universo y destinos                               │
 │                                                                       │
-│ 01 TESS  02 COOPER  03 MILLER  04 ENDURANCE  …  07 RANGER           │
+│ 01 TESS  02 MILLER  03 ENDURANCE  …  06 RANGER                     │
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -126,11 +129,11 @@ despierte sin añadir información permanente.
 
 ## 6. Raíl de destinos
 
-El raíl contiene los únicos siete enlaces accesibles, en orden narrativo 01→07:
+El raíl contiene los únicos seis enlaces accesibles, en orden narrativo 01→06:
 
 ```text
 01        02        03        04
-TESS      COOPER    MILLER    ENDURANCE
+TESS      MILLER    ENDURANCE EDMUNDS
 ```
 
 No hay cajas por destino. Índice, nombre, tick y espacio construyen el control.
@@ -151,17 +154,17 @@ percibida.
 Cada cuerpo tiene ahora un `.system-map__hit-target` DOM separado del texto:
 
 - recibe el centro proyectado y `--map-radius` del modelo compuesto;
-- amplía su silueta 110–135 % según sphere, ringed, craft o box;
-- incluye anillos de Cooper y bounds completos de Endurance;
+- amplía su silueta 110–135 % según sphere, craft o box;
+- incluye los bounds completos de Endurance;
 - garantiza un mínimo táctil de 44 px;
 - gestiona pointer enter/leave y click;
-- está `aria-hidden` y `tabIndex=-1`, por lo que no duplica los siete enlaces;
+- está `aria-hidden` y `tabIndex=-1`, por lo que no duplica los seis enlaces;
 - usa la misma máquina `idle → target → locked` y `navigateToWorld` que el raíl.
 
 La etiqueta visual es hermana del proxy y tiene `pointer-events: none`.
 `/es?debugHitboxes=1` muestra los bounds sólo en `next dev`, sin cambiar tamaño
 o comportamiento. La validación manual recorre centro, izquierda, derecha,
-arriba y abajo de cada silueta; en Cooper prueba los anillos y en Endurance los
+arriba y abajo de cada silueta; en Endurance prueba los
 módulos exteriores.
 
 ## 8. Cursor de navegación y stardust
@@ -216,7 +219,7 @@ paralaje, pulsos, adquisición y deriva del campo de estrellas.
 ## 11. Rendimiento y accesibilidad
 
 Canvas 3D, starfield, stardust, brackets y cursor son decorativos y
-`aria-hidden`. El HTML y los siete enlaces del raíl siguen siendo el producto.
+`aria-hidden`. El HTML y los seis enlaces del raíl siguen siendo el producto.
 Starfield y stardust se agrupan; el pool tiene techo fijo; el RAF de puntero sólo
 vive con partículas activas. No se usan miles de nodos, meshes o setState por
 movimiento.

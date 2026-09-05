@@ -37,14 +37,14 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(container).not.toHaveTextContent(/ingeniería y diseño orbitan juntos/i);
   });
 
-  it("sirve los 7 destinos como enlaces reales", () => {
+  it("sirve los 6 destinos como enlaces reales", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
 
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const links = within(map).getAllByRole("link");
-    expect(links).toHaveLength(7);
+    expect(links).toHaveLength(6);
     expect(container.querySelectorAll(".system-map__hit-target")).toHaveLength(
-      7,
+      6,
     );
 
     for (const world of worlds) {
@@ -61,11 +61,11 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     }
   });
 
-  it("pinta seis cuerpos 2D en los mismos slots del fallback", () => {
+  it("pinta cinco cuerpos 2D en los mismos slots del fallback", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const bodies = container.querySelectorAll<HTMLElement>("[data-flat-world]");
 
-    expect(bodies).toHaveLength(6);
+    expect(bodies).toHaveLength(5);
     expect(container.querySelector('[data-flat-world="gargantua"]')).toBeNull();
 
     for (const world of worlds.filter((item) => item.id !== "gargantua")) {
@@ -155,10 +155,10 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     }
 
     const slots = container.querySelectorAll<HTMLElement>(".system-map__slot");
-    expect(slots).toHaveLength(7);
+    expect(slots).toHaveLength(6);
     // Sin escena, la posición la trae el servidor en %. Conserva además un par
     // estable que el teardown de WebGL nunca toca: es lo que permite volver a
-    // flat sin recargar ni amontonar los siete destinos en la esquina 0,0.
+    // flat sin recargar ni amontonar los seis destinos en la esquina 0,0.
     for (const slot of slots) {
       expect(slot.style.getPropertyValue("--map-x")).toMatch(/%$/);
       expect(slot.style.getPropertyValue("--map-y")).toMatch(/%$/);
@@ -175,7 +175,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     Timeout propio, y no por lentitud del código.
 
     Este test monta el mapa entero y dispara cinco puntos por cada uno de los
-    siete destinos: setenta pares de pointerEnter/pointerLeave con sus
+    seis destinos: setenta pares de pointerEnter/pointerLeave con sus
     aserciones, cada una recorriendo el DOM. En una máquina ociosa tarda ~1 s,
     muy por debajo de los 5 s por defecto de Vitest. Pero es el test más caro del
     archivo, así que es el primero que se cae cuando la máquina está cargada
@@ -258,26 +258,26 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("focus de teclado produce el mismo TARGET sin depender de glow", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
-    const cooper = screen.getByRole("link", {
-      name: /^Cooper Station Formación$/i,
+    const miller = screen.getByRole("link", {
+      name: /^Miller Desarrollo$/i,
     });
 
-    fireEvent.focus(cooper);
+    fireEvent.focus(miller);
 
-    expect(cooper).toHaveAttribute("data-active", "true");
-    expect(cooper).toHaveAttribute("data-target-state", "target");
+    expect(miller).toHaveAttribute("data-active", "true");
+    expect(miller).toHaveAttribute("data-target-state", "target");
     expect(container.querySelector(".hud__target")).toHaveTextContent(
-      /Cooper Station/i,
+      /Miller/i,
     );
     expect(
       container.querySelector(
-        '[data-system-body="cooper-station"][data-target-state="target"]',
+        '[data-system-body="miller"][data-target-state="target"]',
       ),
     ).not.toBeNull();
 
-    fireEvent.blur(cooper);
-    expect(cooper).not.toHaveAttribute("data-active");
-    expect(cooper).toHaveAttribute("data-target-state", "idle");
+    fireEvent.blur(miller);
+    expect(miller).not.toHaveAttribute("data-active");
+    expect(miller).toHaveAttribute("data-target-state", "idle");
   });
 
   it("clic principal bloquea el destino y navega por la abstracción", () => {
@@ -322,21 +322,21 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("el proxy visual comparte lock y respeta clicks modificados", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
-    const cooperProxy = container.querySelector<HTMLElement>(
-      '[data-hitbox-proxy="cooper-station"]',
+    const millerProxy = container.querySelector<HTMLElement>(
+      '[data-hitbox-proxy="miller"]',
     );
-    expect(cooperProxy).not.toBeNull();
+    expect(millerProxy).not.toBeNull();
 
     document.addEventListener("click", (event) => event.preventDefault(), {
       once: true,
     });
-    fireEvent.click(cooperProxy as HTMLElement, { button: 0, metaKey: true });
+    fireEvent.click(millerProxy as HTMLElement, { button: 0, metaKey: true });
     expect(routerPush).not.toHaveBeenCalled();
-    expect(cooperProxy).toHaveAttribute("data-target-state", "idle");
+    expect(millerProxy).toHaveAttribute("data-target-state", "idle");
 
-    fireEvent.click(cooperProxy as HTMLElement, { button: 0 });
-    expect(routerPush).toHaveBeenCalledWith("/es/formacion");
-    expect(cooperProxy).toHaveAttribute("data-target-state", "locked");
+    fireEvent.click(millerProxy as HTMLElement, { button: 0 });
+    expect(routerPush).toHaveBeenCalledWith("/es/desarrollo");
+    expect(millerProxy).toHaveAttribute("data-target-state", "locked");
     expect(container.querySelector(".hud__target")).toHaveTextContent(
       /Target locked/i,
     );

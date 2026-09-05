@@ -23,21 +23,24 @@ etiquetas y estados**. Sus cambios centrales: **el sistema está quieto** — lo
 cuerpos no recorren su órbita — y el Hero **no muestra un bloque personal**. La
 identidad profesional, rol, CTAs y CV siguen en el HTML semántico y metadata; la
 marca visible del HUD es `JONAS ORBIT`. Cualquier texto anterior que describa
-cuerpos orbitando continuamente, Cooper como cilindro, Endurance como toro o el
+cuerpos orbitando continuamente, Endurance como toro o el
 copy personal como bloque visible está obsoleto. El viaje continuo y
 `SYSTEM MAP ↑` siguen diferidos en `docs/design/continuous-journey-phase.md`.
 
 **Lenguaje visual de los mundos (2026-09-03):**
 `docs/design/world-visual-language.md` manda sobre los tres anteriores en
-**material, iluminación y criterio de aceptación de los seis destinos**. No toca
+**material, iluminación y criterio de aceptación de los cinco cuerpos secundarios**. No toca
 composición, cámara, HUD ni interacción, que siguen perteneciendo a la dirección
 artística del hero. Congela el modelo de luz común —la misma luz toca materiales
 diferentes— y define el bloom-off test: un cuerpo que pierde su identidad al
 apagar el glow no está terminado. Gargantúa queda **congelada** durante la fase.
-Ya cerrados dentro de ella: `POSITION LOCK — TESSERACTO + COOPER STATION`, el
-`Rediseño imposible` del Tesseracto y la arquitectura de Cooper Station, con su
-criterio de salida verificado en el documento. De esos cuerpos sólo se admiten
-ya correcciones objetivas.
+El `Rediseño imposible` del Tesseracto conserva su geometría y material.
+
+**Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
+manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
+(Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station
+ni su ruta de Formación. No se reasigna contenido. La composición nueva necesita
+revisión visual del dueño; se conserva el contrato de cámara y Gargantúa.
 
 ## Comandos
 
@@ -85,7 +88,7 @@ se lee como verde. Redirige a un archivo y consulta `$?`.
    con reduced-motion. Las transiciones son guionadas, interrumpibles y con
    timeout duro: **la animación nunca es dueña del router**.
 7. **La escena nunca es el contenido.** El HTML servido de cada ruta contiene el
-   texto real sin JavaScript — en `/es`: nombre, rol, dos CTAs, CV y siete
+   texto real sin JavaScript — en `/es`: nombre, rol, dos CTAs, CV y seis
    enlaces `<a href>` a los mundos. Nombre, rol, CTAs y CV forman el fallback
    semántico, pero **no** un bloque personal visible dentro del Hero; el raíl sí
    presenta los destinos. El canvas es `aria-hidden`, va detrás y nunca es

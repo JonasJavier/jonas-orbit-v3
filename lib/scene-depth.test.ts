@@ -13,9 +13,9 @@ describe("capas de profundidad del System Map 3D", () => {
       bodyDepthLayerFor("edmunds"),
     );
     expect(bodyDepthLayerFor("edmunds")).toBeGreaterThan(
-      bodyDepthLayerFor("cooper-station"),
+      bodyDepthLayerFor("miller"),
     );
-    expect(bodyDepthLayerFor("cooper-station")).toBeGreaterThan(
+    expect(bodyDepthLayerFor("miller")).toBeGreaterThan(
       bodyDepthLayerFor("tesseract"),
     );
   });

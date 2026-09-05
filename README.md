@@ -43,17 +43,17 @@ npm run deploy     # build OpenNext + deploy a Cloudflare
   `content/{locale}/worlds/*.mdx`. `getWorld(id, locale)` compone ambos lados.
   La paridad de contenido rompe el build solo para idiomas publicados
   (`content/site.data.ts`).
-- **Rutas:** una página narrativa por idioma (`/es`) con los 7 mundos como
-  secciones ancladas; casos de estudio en rutas propias. `/` → `/es` por
+- **Rutas:** System Map en `/es` y seis destinos con rutas propias;
+  casos de estudio en rutas propias. `/` → `/es` por
   redirect estático (sin proxy hasta F2A).
-- **Los 7 mundos:** Tesseracto (historia) · Cooper Station (formación) ·
+- **Los 6 destinos:** Tesseracto (historia) ·
   Miller (desarrollo) · Endurance (proyectos) · Edmunds (creatividad) ·
   Gargantúa (laboratorio) · Ranger (contacto).
 
 ## Estructura
 
 ```
-app/[locale]/        página narrativa (ES publicado; EN llega en F2A)
+app/[locale]/        System Map y rutas de destino (ES publicado; EN llega en F2A)
 components/          componentes de presentación
 content/             worlds.data.ts (estructura) + {es,en}/worlds/*.mdx (prosa)
 lib/                 getWorld / getWorlds

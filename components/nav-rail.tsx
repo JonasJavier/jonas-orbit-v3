@@ -10,7 +10,7 @@ import type {
 } from "@/lib/world-navigation";
 
 /**
- * El raíl de destinos: los siete enlaces REALES del sistema.
+ * El raíl de destinos: los seis enlaces REALES del sistema.
  *
  * ── Por qué es cliente y no un fragmento del mapa ───────────────────────────
  *
@@ -72,8 +72,8 @@ export function NavRail({
               <span className="nav-rail__active-marker" aria-hidden="true" />
               {/* Sin numeración. El orden narrativo sigue existiendo —lo fija
                   `worlds.data.ts` y lo recorre el tabulador— pero pintarlo delante
-                  de cada destino no orientaba a nadie: siete pares de dígitos
-                  compitiendo con siete nombres son catorce cosas que leer para
+                  de cada destino no orientaba a nadie: seis pares de dígitos
+                  compitiendo con seis nombres son doce cosas que leer para
                   elegir una. El nombre es el destino; el número era ruido. */}
               <span className="nav-rail__name">{world.cosmicName}</span>{" "}
               <span className="nav-rail__role">{world.shortLabel}</span>

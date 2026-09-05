@@ -1,5 +1,8 @@
 # Hero / System Map — dirección artística vigente
 
+> **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
+
+
 **Estado:** candidato aprobado tras el pase de calidad de 2026-08-31. Esta
 especificación guía implementación y revisión visual; compilar o pasar tests no
 constituye por sí solo aprobación artística.
@@ -31,7 +34,6 @@ escala, profundidad y relaciones de primer plano; no llena el vacío con UI.
 |---|---|---:|---|
 | 1 | **Gargantúa** | +10–20 % si el encuadre lo permite | foco dominante y fuente de energía |
 | 2 | **Endurance** | +25–45 % | segunda ancla; nave radial reconocible |
-| 3 | **Miller, Edmunds y Cooper** | +25–40 % según silueta | destinos planetarios inmediatos |
 | 4 | **Tesseracto y Ranger** | +15–25 % | destinos menores pero localizables |
 
 Estos porcentajes son calibración visual, no un multiplicador uniforme ni una
@@ -90,17 +92,6 @@ No hay toro continuo, rueda de radios ni kitbash ruidoso. Su escala de primer
 plano la convierte en segunda ancla y su silueta completa entra en el volumen
 interactivo.
 
-### Cooper Station — Formación
-
-Cooper es un **planeta anillado inventado con un hábitat orbital pequeño**. El
-planeta aporta la silueta; la estación justifica el nombre sin dominarla.
-
-La atmósfera es fría y desaturada, los anillos son finos y muestran profundidad
-y sombra, y Gargantúa añade el borde cálido común. El hábitat puede tener anillo,
-eje, antenas y pocos módulos iluminados. Debe comunicar conocimiento, orden,
-calma y civilización aspiracional; nunca un cilindro provisional. Planeta y
-anillos forman un único volumen percibido para hit testing.
-
 ### Tesseracto — Historia
 
 La proyección canónica del hipercubo, construida como arquitectura: cubo
@@ -154,8 +145,8 @@ El espacio usa tres capas perceptuales dentro de una implementación batched:
 | **near** | muy baja | motas pequeñas y suaves, movimiento lento | profundidad próxima, nunca nevada |
 
 En WebGL las estrellas pertenecen al fondo procedural del shader; en `flat` se
-dibujan agrupadas en un único canvas 2D. El mapa plano añade sólo siete cuerpos
-visuales acotados —Gargantúa y seis destinos 2D—, no miles de meshes o nodos DOM.
+dibujan agrupadas en un único canvas 2D. El mapa plano añade sólo seis cuerpos
+visuales acotados —Gargantúa y cinco destinos 2D—, no miles de meshes o nodos DOM.
 El orden de magnitud siempre es muchas far, algunas mid y casi ninguna near.
 
 La densidad y luminancia se atenúan gradualmente junto al disco para proteger su
@@ -220,23 +211,23 @@ silueta visible.
 Cada destino usa ahora un proxy DOM dedicado:
 
 - comparte el centro proyectado `--map-x` / `--map-y`;
-- consume el radio compuesto real `--map-radius`, incluidos anillos de Cooper y
+- consume el radio compuesto real `--map-radius`, incluidos
   estructura extrema de Endurance;
 - mide 110–135 % de la silueta según el arquetipo;
 - conserva mínimo táctil de 44 px y fallback por mundo;
 - etiqueta y proxy son hermanos: el texto nunca intercepta el puntero;
 - queda `aria-hidden` y fuera de tabulación; el raíl sigue siendo el único
-  recorrido accesible de siete enlaces;
+  recorrido accesible de seis enlaces;
 - hover, leave y click alimentan el mismo TARGET y `navigateToWorld` que el raíl.
 
 `/es?debugHitboxes=1` publica bounds translúcidos únicamente en desarrollo. El
 modo no altera su tamaño, estado ni navegación y nunca aparece por defecto o en
 producción. La prueba manual cruza centro, cuatro bordes y partes extremas de los
-siete destinos; JSDOM sólo valida el contrato DOM, no geometría visual real.
+seis destinos; JSDOM sólo valida el contrato DOM, no geometría visual real.
 
 ## 10. Raíl y costura de navegación
 
-El raíl inferior es selector de misión y único recorrido accesible 01→07. Su
+El raíl inferior es selector de misión y único recorrido accesible 01→06. Su
 gramática es índice, nombre, tick y espacio; no siete botones rectangulares.
 
 - inactivo: TERTIARY, apagado pero legible;
@@ -283,18 +274,17 @@ Móvil no es desktop escalado:
 - no monta cursor personalizado ni stardust y no los emula con el dedo.
 
 El nivel `flat` no es un placeholder ni una pantalla de Gargantúa aislada. Debe
-dibujar, desde el primer frame, la Gargantúa 2D y los seis destinos estáticos en
+dibujar, desde el primer frame, la Gargantúa 2D y los cinco destinos estáticos en
 las mismas posiciones de composición del System Map:
 
 - Tesseracto se reconoce por sus marcos anidados;
-- Cooper por planeta, anillos y hábitat;
 - Miller y Edmunds por sus discos, atmósferas y lenguaje material propio;
 - Endurance por los doce módulos separados y su gran centro vacío;
 - Ranger por su silueta baja y ancha de lifting body.
 
 Estas representaciones son ligeras, no animadas y comparten terminador cálido,
 fill frío y rim contenido. Conservan los proxies, brackets, estados TARGET y los
-siete enlaces reales del raíl. No sustituyen el contenido ni duplican texto
+seis enlaces reales del raíl. No sustituyen el contenido ni duplican texto
 accesible; son la representación visual estática del mismo mapa.
 
 `prefers-reduced-motion` selecciona `flat` **por defecto** y, antes de cualquier
@@ -317,7 +307,7 @@ después de opinión.
 
 ## 13. Accesibilidad y rendimiento
 
-Los siete mundos se alcanzan por teclado mediante el raíl y el foco no depende
+Los seis mundos se alcanzan por teclado mediante el raíl y el foco no depende
 de glow o color. El canvas y las capas de partículas son `aria-hidden`, están
 detrás del HTML y nunca son contenido ni candidato a LCP.
 
@@ -345,7 +335,6 @@ manda sobre cualquier descripción anterior de estos siete puntos.
 | Endurance | 4.7 | 5.15 | Segundo ancla: sostiene la mirada y permite contar los doce módulos. |
 | Ranger | 1.5 | 2.6 | Deja de ser una mota y conserva una silueta de lifting body legible. |
 | Tesseracto | 2.05 | 2.7 | Conserva la jerarquía por encima de la Ranger tras su crecimiento. |
-| Cooper Station | 2.16 | 2.6 | El sistema de anillos necesita superficie para leerse. |
 | Miller | 3.0 | 3.05 | Ajuste fino. |
 | Edmunds | 2.9 | 3.0 | Ajuste fino. |
 
@@ -354,22 +343,6 @@ WebGL lo complementa en §14 ter con escala perceptual y profundidad propias:
 Ranger puede crecer sin tocar aquel layout y permanece subordinada a Endurance.
 
 ### Modelos
-
-- **Endurance.** Doce módulos rectangulares separados, centro abierto, **cuatro
-  brazos de doble larguero**, hub compacto con dos Ranger y dos Lander, cuatro bloques de
-  motor y doce campanas. Un mapa térmico procedural de 128×128, con costuras,
-  manta y máscaras de servicio, aporta lectura material sin descargar imágenes.
-  Cuatro familias materiales fusionadas mantienen cuatro draws: manta/panel,
-  estructura, servicio y balizas.
-- **Ranger.** Lifting body bajo y ancho con planta de manta, cabina integrada,
-  cristal frío, paneles de servicio cobre, vientre oscuro de escudo térmico y
-  toberas gemelas. Su mapa procedural comparte el mismo presupuesto sin red. Se
-  reconoce como la lanzadera de la película, no como un caza con alas añadidas.
-- **Cooper.** Un solo anillo con **división abierta por el shader** (`discard`),
-  no dos mallas.
-- **Tesseracto.** Vigas reales de sección cuadrada con nodos facetados, no
-  `LineSegments`. El espacio imposible sale de la topología del hipercubo, no de
-  cruzar aristas al azar.
 
 ### Movimiento
 
@@ -416,23 +389,6 @@ envolvente del mismo modo.
 
 ### Assets y escala perceptual
 
-- **Endurance:** hub central de tres diámetros, cuatro brazos de doble larguero
-  con travesaños, doce módulos agrupados en cuatro familias, paneles sólo en los
-  módulos de jerarquía y una única antena. Conserva cuatro familias de material.
-- **Ranger:** lifting body, cockpit, proa, estabilizadores, escudo y motores
-  crecen en geometría; el asset usa `1.22×` y su plano foreground completa un
-  aumento aparente aproximado de `1.6×` sin falsear el mapa 2D.
-- **Cooper:** `1.35×` en WebGL, planeta algo mayor, anillo de doble superficie
-  con cantos físicos y hábitat con dos paneles, antena y dos luces.
-- **Tesseracto:** `1.22×` y geometría sólida —vigas, tirantes y dieciséis nodos—
-  en lugar de aristas de un píxel. Su detalle (chaflán, acoplamientos y canal de
-  luz embutido) es procedural sobre las UV de viga, así que no tiene resolución:
-  es la única pieza del sistema preparada para un acercamiento de cámara. La caja
-  translúcida se retiró: en una caja el Fresnel es constante por cara y el
-  «cristal» se veía como cuatro paneles grises planos.
-- **Miller / Edmunds:** `1.12×` y más contraste material. Miller añade dos
-  escalas de ola, espuma y glints; Edmunds añade escarpes y roughness mineral.
-
 ### Profundidad 3D
 
 Los cuerpos conservan su centro proyectado: cada uno se desplaza sobre su propio
@@ -443,7 +399,6 @@ rayo cámara→cuerpo, y la misma traslación se aplica a su trayectoria. El ord
 | foreground cercano | Ranger | +8 rs |
 | foreground | Endurance | +4 rs |
 | midground | Edmunds / Miller | +1 / 0 rs |
-| mid-background | Cooper | −4 rs |
 | lejano | Tesseracto | −7 rs |
 
 La diferencia de perspectiva hace que el paralaje revele esos planos. La cámara
@@ -558,16 +513,6 @@ tiene máscara propia y **temperatura de luz más fría**, así que el fondo del
 túnel se distingue del borde a treinta píxeles. La jaula contrarrotante y el
 núcleo siguen igual.
 
-### Cooper: sombra de anillos proyectada
-
-La sombra dejó de ser una franja de latitud pintada alrededor del ecuador. Se
-traza el rayo: la dirección de la luz llega al espacio local del cuerpo desde el
-vertex shader y se corta el plano del anillo. La densidad usa las mismas bandas
-y la misma división que dibuja el anillo, así que la división cruza el planeta.
-Sin shadow map y sin una sola llamada más de ruido. El planeta abre rango tonal
-—cinturón ecuatorial claro, casquetes fríos, óvalos de tormenta alargados por
-muestreo anisótropo— y gana diez grados de inclinación.
-
 ### Mundos con relieve iluminado
 
 Miller y Edmunds ganan **sombra propia** sin coste de ruido: sumas de ondas
@@ -585,7 +530,6 @@ de agua, nubes alargadas y un reflejo especular mucho más cerrado.
 | --- | ---: | ---: | ---: |
 | Endurance | 1.0 | +4 rs | +9 % |
 | Ranger | 1.75 | +5 rs | +22 % |
-| Cooper Station | 1.6 | −1 rs | +22 % |
 | Tesseracto | 1.45 | −3 rs | +27 % |
 | Miller | 1.12 | 0 rs | = |
 | Edmunds | 1.12 | +1 rs | = |
@@ -596,10 +540,6 @@ así que el mapa `flat` conserva su composición.
 La escala perceptual de la Ranger sube a 1.75 porque el modelo nuevo es **más
 compacto** que el anterior: fuselaje de verdad en vez de dos alas anchas. Sin
 esa corrección, un rediseño pensado para hacerla crecer la habría encogido.
-
-El radio publicado de Cooper deja de incluir su hábitat orbital: mide lo que el
-visitante llama «Cooper Station» —planeta y anillos— y no la caja envolvente de
-todo lo que orbita ahí. `modelRadius` acepta poda de subárbol para eso.
 
 ### La medida es el tamaño APARENTE
 
@@ -652,12 +592,6 @@ prácticamente el mismo aire que antes de todo esto, porque las órbitas están
 inclinadas y el disco se ve casi de canto. El solapamiento que queda es el que
 pidió dirección, sutil y en profundidad.
 
-Lo que NO se pagó: la distancia de cámara no cambia. El encuadre lo fijan Cooper
-(30 rs) y el Tesseracto (33 rs), que no se movieron, así que empujar los
-interiores hacia fuera fue gratis — y de paso los cuerpos pasan de ocupar el
-53 % del ancho del cuadro al 59 %, que es la corrección del espacio negativo
-lateral sin añadir un solo objeto.
-
 ### La toma está descentrada
 
 `targetShiftFraction = -0.075` y `targetShiftYFraction = 0.025` dejan la sombra
@@ -694,42 +628,6 @@ es comportamiento indefinido en GLSL ES. Funcionaba por suerte del compilador.
 
 Objetivo: que todo pertenezca al mismo espacio físico. El cambio no está en los
 materiales sino en que **todos obedezcan la misma ley de luz**.
-
-- **La clave tiene temperatura.** El ámbar pasa de `1.0, 0.84, 0.62` a
-  `1.0, 0.78, 0.52`. Con el valor anterior la luz llegaba pero era casi blanco
-  cálido, y un casco iluminado por un disco de acreción se parecía demasiado a
-  un casco iluminado en un plató.
-- **El relleno vuelve a ser el cielo, no una segunda lámpara.** Baja de
-  `0.078, 0.101, 0.181` a `0.044, 0.058, 0.115`. Levantaba por igual la cara
-  noche de todos los cuerpos y aplanaba la escena.
-- **Un solo suelo de relleno nocturno, por familia de material.** Antes era una
-  excepción para tres tipos y un valor plano para el resto: los mundos perdían
-  relleno en su cara noche y las naves no. Dos familias obedeciendo a modelos de
-  luz distintos dentro del mismo cuadro es la mitad de por qué parecían
-  renderizadas por separado. Ahora: mundos 0.50, Endurance 0.60 —tiene más caras
-  por unidad de silueta y un suelo bajo le abre agujeros entre módulos—,
-  Ranger 0.44, estructura y Tesseracto 0.40, anillos 0.34.
-- **Contraluz frío común.** La cara opuesta a Gargantúa cae a azul acero casi
-  negro en lugar de a gris plano, y lo reciben todos los cuerpos con la misma
-  fórmula. Antes sólo lo tenían naves y estación, con la suya propia: un mundo y
-  una nave a la misma distancia del disco tenían bordes de temperaturas
-  distintas, y eso los delataba más que ningún material.
-- **El metal refleja oro, no cielo.** El barrido especular ancho de Ranger y
-  Cooper mezclaba un 42 % de azul en la clave: devolvían luz fría mirando a una
-  fuente dorada. Un reflejo que no coincide con su fuente se lee como pegado
-  encima de la escena, y era buena parte de por qué la Ranger parecía un low
-  poly aislado.
-- **Cooper deja de ser planeta + anillos.** El anillo ya proyectaba sobre el
-  planeta; su sombra sube de 0.72 a 0.90 —un descuento del 28 % desaparecía
-  dentro del propio degradado— y aparece la que faltaba, **la del planeta sobre
-  el anillo**, con el mismo trazado de rayo en sentido contrario.
-- **Edmunds, control de frecuencias sin rediseño.** Sus tres escalas finas
-  pintaban color con tanto peso como las dos masas grandes: vetas de 0.42 a
-  0.18, crestas de 0.34 a 0.20, casquetes de 0.55 a 0.34. El rediseño del
-  planeta sigue pendiente de su fase; esto sólo quita el ruido.
-- **Miller deja de ser perfecto.** Especular de 1.05 a 0.82 y atmósfera de 1.30
-  a 1.12. Una superficie perfecta a esa intensidad es lo que hacía que un mundo
-  de agua se leyera como material de videojuego.
 
 ### Fase 2.5 — Gargantúa a su nueva escala (2026-09-01)
 
@@ -795,19 +693,6 @@ evaluación de ruido extra.
 las dos de la deformación gruesa. Todo lo demás —cresta, cortes, calibre,
 jirones, asimetría cromática, anillo— es aritmética sobre campos ya calculados.
 
-## 14 sexies. Cooper deja de ser planeta (F1.3, 2026-09-04)
-
-Enmienda a §4 «Cooper Station — Formación»: el planeta anillado con hábitat
-pequeño se leía como mundo memorable, no como lugar habitado. La silueta la
-pone a partir de aquí la megaestructura —arco abierto de 220° con el hueco
-abajo a la derecha, siete módulos en serie, espina con montantes, dos alas
-solares, mástil, arco secundario trasero y 35 microventanas cálidas— con
-cerámica más blanca que la manta de Endurance para apartarla de la lectura de
-nave. Todo lo demás de §4 sigue vigente: conocimiento, orden, calma y
-civilización aspiracional, nunca cilindro provisional. Composición, cámara,
-tamaños y mapa `flat` cuentan lo mismo; el detalle vive en
-`docs/design/world-visual-language.md` §9.
-
 ## 15. Gate de aprobación visual
 
 Cada iteración se revisa con frame estático, estados y movimiento de puntero:
@@ -815,9 +700,9 @@ Cada iteración se revisa con frame estático, estados y movimiento de puntero:
 1. ¿Los mundos parecen destinos y no iconos?
 2. ¿Gargantúa ilumina el sistema y sigue dominando?
 3. ¿El cielo se siente profundo sin parecer nieve?
-4. ¿Centro y bordes de los siete destinos activan hover?
+4. ¿Centro y bordes de los seis destinos activan hover?
 5. ¿El HUD despierta y sigue siendo legible, no ruidoso?
-6. ¿Endurance se reconoce como nave y Cooper como mundo memorable?
+6. ¿Endurance se reconoce como nave y los dos planetas conservan profundidad distinta?
 7. ¿El cursor y el stardust hacen el espacio reactivo sin parecer un gimmick?
 8. ¿Touch y reduced-motion reciben un System Map 2D completo y tranquilo, con
    opt-in 3D visible pero sin animación previa al consentimiento?

@@ -8,7 +8,7 @@
  * Dos cambios respecto de F1A:
  *
  * 1. **Vive en el layout, no en la home.** Sobrevive a la navegación entre las
- *    12 rutas sin remontarse. Es el mismo hueco donde G2 colgará el canvas
+ *    todas las rutas sin remontarse. Es el mismo hueco donde G2 colgará el canvas
  *    persistente de la escena (§4), y por eso se estrena ya.
  * 2. **Lo mueve el tiempo, no el scroll.** FAR es estático; MID/NEAR usan una
  *    onda triangular lentísima y paralaje acotado sólo en puntero fino.

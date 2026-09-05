@@ -149,96 +149,6 @@ function Tesseract() {
   );
 }
 
-/**
- * Cooper Station en `flat`: la misma megaestructura que el modelo 3D.
- *
- * Como la Endurance, no es una ilustración libre: arco abierto con el hueco
- * abajo, módulos en serie sobre el arco, espina con montantes, dos alas
- * solares, mástil y microventanas cálidas. En un equipo con movimiento
- * reducido este dibujo es la ÚNICA Cooper que se ve; si mostrara el planeta
- * retirado, el mismo destino contaría dos cosas distintas según el equipo.
- */
-function CooperStation() {
-  return (
-    <svg viewBox="0 0 180 110" focusable="false">
-      <defs>
-        <linearGradient id="flat-cooper-hull" x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#f2f4f3" />
-          <stop offset="0.55" stopColor="#b9c0c2" />
-          <stop offset="1" stopColor="#4c565c" />
-        </linearGradient>
-        <linearGradient id="flat-cooper-panel" x1="0" y1="0" x2="1" y2="0">
-          <stop stopColor="#101c2a" />
-          <stop offset="0.5" stopColor="#2c4258" />
-          <stop offset="1" stopColor="#0d1723" />
-        </linearGradient>
-      </defs>
-
-      {/* Arco secundario trasero: profundidad sin peso. */}
-      <path
-        d="M58 32A20 15 0 0 1 86 22"
-        fill="none"
-        stroke="var(--flat-secondary)"
-        strokeOpacity="0.55"
-        strokeWidth="2.4"
-      />
-
-      {/* Gran arco: 220° abiertos con el hueco abajo a la derecha. */}
-      <path
-        data-flat-part="arc"
-        d="M120.3 72.5A34 34 0 1 0 56.4 74.8"
-        fill="none"
-        stroke="url(#flat-cooper-hull)"
-        strokeWidth="4.6"
-        strokeLinecap="round"
-      />
-      {/* Módulos en serie: el ritmo que vende la escala. */}
-      <path
-        data-flat-part="module"
-        d="M120.3 72.5A34 34 0 1 0 56.4 74.8"
-        fill="none"
-        stroke="#e8ebe9"
-        strokeWidth="8"
-        strokeDasharray="10 8.6"
-        strokeDashoffset="-4"
-        opacity="0.92"
-      />
-      {/* Microventanas cálidas sobre el arco. */}
-      <path
-        data-flat-part="windows"
-        d="M120.3 72.5A34 34 0 1 0 56.4 74.8"
-        fill="none"
-        stroke="#ffc27a"
-        strokeWidth="1.6"
-        strokeDasharray="1.6 17"
-        strokeDashoffset="-9"
-      />
-
-      {/* Montantes de la espina al arco. */}
-      <g data-flat-part="struts" stroke="#8d99a1" strokeWidth="1.6" opacity="0.85">
-        <path d="M100 73V31M88 73V29M76 73V31M64 74V38" fill="none" />
-      </g>
-
-      {/* Espina y regla clara. */}
-      <g data-flat-part="spine">
-        <path d="M120 73 57 75" stroke="#222b32" strokeWidth="3.4" />
-        <path d="M119 71.4 58 73.2" stroke="#dfe4e2" strokeWidth="1" opacity="0.8" />
-      </g>
-
-      {/* Alas solares. */}
-      <g data-flat-part="panels">
-        <rect x="124" y="69" width="24" height="8" rx="1.5" fill="url(#flat-cooper-panel)" stroke="var(--flat-secondary)" strokeOpacity="0.5" />
-        <rect x="32" y="70" width="24" height="8" rx="1.5" fill="url(#flat-cooper-panel)" stroke="var(--flat-secondary)" strokeOpacity="0.5" />
-      </g>
-
-      {/* Hub, mástil y baliza. */}
-      <circle cx="88" cy="73.6" r="4" fill="url(#flat-cooper-hull)" stroke="#e8ecee" strokeOpacity="0.6" />
-      <path data-flat-part="mast" d="M88 70V46" stroke="#aeb7bc" strokeWidth="1.5" />
-      <circle data-flat-part="beacon" cx="88" cy="44" r="2" fill="#ffc27a" />
-    </svg>
-  );
-}
-
 function Miller() {
   return (
     <svg viewBox="0 0 120 120" focusable="false">
@@ -510,7 +420,6 @@ function Ranger() {
 
 const DRAWINGS: Partial<Record<WorldNavItem["visual"], () => ReactNode>> = {
   tesseract: Tesseract,
-  station: CooperStation,
   water: Miller,
   ship: Endurance,
   desert: Edmunds,

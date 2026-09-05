@@ -70,12 +70,6 @@
   content: none;
 }
 
-.station {
-  --flat-size: clamp(7.5rem, 9.7vw, 11rem);
-
-  aspect-ratio: 18 / 11;
-}
-
 .water,
 .desert {
   --flat-size: clamp(5.15rem, 6.7vw, 7.9rem);
@@ -86,7 +80,7 @@
 }
 
 .beacon {
-  --flat-size: clamp(6.7rem, 8.45vw, 9.7rem);
+  --flat-size: clamp(5.55rem, 7vw, 8rem);
 
   aspect-ratio: 16 / 9;
 }
@@ -118,9 +112,7 @@
     width: min(var(--flat-size), 21vw);
   }
 
-  .station,
-  .ship,
-  .beacon {
+  .ship {
     width: min(var(--flat-size), 28vw);
   }
 }
