@@ -33,28 +33,69 @@ describe("banco de pruebas visual", () => {
 
   it("apaga los dos canales cuando se piden los dos", () => {
     expect(parseVisualBench('{"bloom":0,"emision":0}')).toEqual({
+      ...FULL_VISUAL_BENCH,
       bloom: 0,
       emission: 0,
     });
   });
 
   it("acepta cada canal por separado y conserva el otro en producción", () => {
-    expect(parseVisualBench('{"bloom":0}')).toEqual({ bloom: 0, emission: 1 });
+    expect(parseVisualBench('{"bloom":0}')).toEqual({
+      ...FULL_VISUAL_BENCH,
+      bloom: 0,
+    });
     expect(parseVisualBench('{"emision":0.25}')).toEqual({
-      bloom: 1,
+      ...FULL_VISUAL_BENCH,
       emission: 0.25,
     });
   });
 
   it("recorta a [0,1] y descarta lo que no sea un número finito", () => {
     expect(parseVisualBench('{"bloom":9,"emision":-3}')).toEqual({
+      ...FULL_VISUAL_BENCH,
       bloom: 1,
       emission: 0,
     });
     // Un canal ilegible no arrastra al otro: cada uno cae a producción solo.
     expect(parseVisualBench('{"bloom":"0","emision":0.5}')).toEqual({
-      bloom: 1,
+      ...FULL_VISUAL_BENCH,
       emission: 0.5,
     });
+  });
+});
+
+/*
+  El reloj y la acumulación son los dos mandos que hacen auditable el
+  envejecimiento del disco. Se prueban aparte de los factores porque su regla de
+  rango es OTRA: el reloj no se recorta a [0,1] —seis horas son 21600 segundos—
+  y la acumulación es un booleano, no un multiplicador. Confundir las dos reglas
+  fue justo lo que estuvo a punto de dejar el reloj clavado en 1 segundo.
+*/
+describe("reloj clavado y acumulación", () => {
+  it("deja el reloj corriendo y la acumulación puesta cuando no se piden", () => {
+    expect(parseVisualBench("{}")).toEqual(FULL_VISUAL_BENCH);
+    expect(parseVisualBench('{"bloom":0}').clock).toBeNull();
+    expect(parseVisualBench('{"bloom":0}').accumulate).toBe(true);
+  });
+
+  it("acepta el rango entero de instantes de la matriz de aceptación", () => {
+    for (const segundos of [0, 60, 180, 900, 3600, 21600]) {
+      expect(parseVisualBench(`{"reloj":${segundos}}`).clock).toBe(segundos);
+    }
+  });
+
+  it("rechaza relojes que no son un instante", () => {
+    for (const roto of ['"600"', "-1", "null", "true"]) {
+      expect(parseVisualBench(`{"reloj":${roto}}`).clock, roto).toBeNull();
+    }
+  });
+
+  it("solo un false literal apaga la acumulación", () => {
+    expect(parseVisualBench('{"acumular":false}').accumulate).toBe(false);
+    for (const otro of ['"false"', "0", "null", "true"]) {
+      expect(parseVisualBench(`{"acumular":${otro}}`).accumulate, otro).toBe(
+        true,
+      );
+    }
   });
 });

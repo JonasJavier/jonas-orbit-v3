@@ -42,6 +42,13 @@ petición del dueño: mundo terrestre cálido con jerarquía de tres escalas, nu
 y atmósfera fina, distinto de Miller. Posición, tamaño, órbita y el resto de los
 cuerpos siguen intactos. Cuatro sitios de FBM, uno menos que antes.
 
+**Revisión de Miller (2026-09-05):** la sección `Océano global` de
+`docs/design/world-visual-language.md` sustituye su material, su paleta, su
+modelo de reflejo y su atmósfera por petición del dueño: océano continuo azul
+grisáceo, lámina de luz anisótropa en vez de foco isótropo, y filo de aire
+direccional hacia Gargantúa. Posición, tamaño, órbita, inclinación, cámara y el
+resto de los cuerpos siguen intactos. Tres sitios de FBM, los mismos que antes.
+
 **Revisión del Tesseracto (2026-09-05):** la sección `Umbral vivo` de
 `docs/design/world-visual-language.md` sustituye sus límites anteriores de
 deriva mínima y acabado por petición del dueño. Tres grupos interiores se
@@ -67,7 +74,9 @@ de cuatro trazos a anillo + núcleo + marcas laterales, con `target` abriendo el
 anillo en arcos que barren. El stardust de WebGL sube alfa, capacidad, ráfaga,
 tamaño y vida, y alarga la curva de apagado. No cambian el ámbito de la capa
 —desktop fine-pointer dentro del System Map—, los cuatro estados, ni el perfil
-`flat`, que sigue congelado.
+`flat`, que sigue congelado. Un segundo pase (mismo día) alarga la permanencia
+—exponente de apagado a 1,2— y añade un **segundo calibre**: motas finas con
+sprite propio sembradas encima de las de cuerpo, no en su lugar.
 
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos

@@ -38,9 +38,27 @@ export const STARDUST_MAX_LIFETIME_MS = 1_020;
  * `fadePower` es el que decide cuánto DURA visible una mota, y por eso está
  * separado del resto. El apagado cuadrático (`remaining²`) gasta la mitad del
  * brillo en el primer tercio de vida: la mota nace, se apaga casi entera y
- * arrastra un rabo invisible durante el resto. Con exponente 1.55 la caída
- * sigue siendo caída —no hay meseta, no hay rastro permanente— pero la mota se
- * lee durante el tramo en que el ojo la está siguiendo.
+ * arrastra un rabo invisible durante el resto.
+ *
+ * Es también el único parámetro que mueve la permanencia PERCIBIDA. Subir
+ * `maxLifetimeMs` alarga la vida en el pool y no se ve: la mota ya estaba por
+ * debajo del umbral visible mucho antes de morir, así que los milisegundos
+ * extra son todos invisibles. Medido a 500 ms de soltar el gesto, 900 ms y
+ * 1000 ms de vida dan la misma pantalla. Lo que alarga el rastro es bajar el
+ * exponente, que sube el brillo de todo el tramo medio de la vida a la vez.
+ *
+ * Con 1.2 la caída sigue siendo caída —no hay meseta, no hay rastro
+ * permanente— y la mota se lee durante el tramo en que el ojo la está
+ * siguiendo.
+ *
+ * `fineShare` añade una SEGUNDA clase de mota por encima de la anterior, no en
+ * su lugar: por cada mota de cuerpo se siembran `fineShare` motas finas, con
+ * una fracción del tamaño y su propio sprite. Sin ese sprite propio la idea no
+ * funciona — el sprite de cuerpo tiene un halo ancho y una difusión larga, y
+ * dibujado a dos píxeles no da una mota fina, da una mancha tenue. El sprite
+ * fino concentra la energía en el núcleo justo para que a ese tamaño siga
+ * leyéndose como un grano y no como suciedad. `flat` lleva `fineShare: 0` y
+ * queda idéntico byte a byte.
  */
 export const STARDUST_PROFILES = {
   flat: {
@@ -56,11 +74,14 @@ export const STARDUST_PROFILES = {
     sizeRange: 2.5,
     sizeSpeed: 1.1,
     fadePower: 2,
+    fineShare: 0,
+    fineSizeScale: 1,
+    fineGlowScale: 3.4,
   },
   webgl: {
-    capacity: 340,
-    minLifetimeMs: 470,
-    maxLifetimeMs: 900,
+    capacity: 520,
+    minLifetimeMs: 560,
+    maxLifetimeMs: 1_000,
     peakAlpha: 0.88,
     trailStepPx: 6.5,
     maxBurst: 12,
@@ -69,7 +90,10 @@ export const STARDUST_PROFILES = {
     sizePower: 2.3,
     sizeRange: 2.3,
     sizeSpeed: 0.95,
-    fadePower: 1.55,
+    fadePower: 1.2,
+    fineShare: 0.75,
+    fineSizeScale: 0.38,
+    fineGlowScale: 2.1,
   },
 } as const;
 
@@ -95,6 +119,8 @@ interface StardustPool {
   /** Desfase del centelleo. Sin él las 256 motas parpadean a la vez. */
   readonly phase: Float32Array;
   readonly tone: Uint8Array;
+  /** 1 = mota fina: otro sprite y otra escala de dibujo. */
+  readonly fine: Uint8Array;
   cursor: number;
   activeCount: number;
 }
@@ -115,6 +141,7 @@ export function createStardustPool(
     size: new Float32Array(safeCapacity),
     phase: new Float32Array(safeCapacity),
     tone: new Uint8Array(safeCapacity),
+    fine: new Uint8Array(safeCapacity),
     cursor: 0,
     activeCount: 0,
   };
@@ -163,20 +190,34 @@ export function spawnStardust(
     1,
     config.maxBurst,
   );
+  // Las finas van ENCIMA de las de cuerpo, no en su lugar: el rastro que ya
+  // estaba aprobado no pierde ni una mota, y el grano fino se suma. Cada grupo
+  // se reparte por su cuenta a lo largo del tramo, así que las finas no caen
+  // encima de las gruesas formando parejas.
+  const fineCount = Math.round(count * config.fineShare);
+  const total = count + fineCount;
 
-  for (let particle = 0; particle < count; particle += 1) {
+  for (let particle = 0; particle < total; particle += 1) {
+    const isFine = particle >= count;
+    const groupIndex = isFine ? particle - count : particle;
+    const groupSize = isFine ? fineCount : count;
     const index = pool.cursor;
     const wasActive = pool.active[index] === 1;
     const angle = random() * Math.PI * 2;
-    const drift = 0.008 + random() * 0.03;
+    // La fina se despega más de la línea y deriva algo más rápido. Pegada al
+    // mismo eje que la gruesa sólo la engrosaría; separada es lo que convierte
+    // el rastro en polvo levantado con dos calibres.
+    const drift = (0.008 + random() * 0.03) * (isFine ? 1.5 : 1);
     // Dispersión y tamaño siguen una ley de potencias, no un uniforme: la
     // mayoría de las motas caen pegadas a la línea y son diminutas, y unas
     // pocas se salen y brillan. Con distribución uniforme salían todas iguales
     // y el rastro se leía como un collar de cuentas, que es justo lo contrario
     // de polvo.
-    const spread = 0.5 + Math.pow(random(), 1.6) * (3.2 + speed * 2.4);
+    const spread =
+      (0.5 + Math.pow(random(), 1.6) * (3.2 + speed * 2.4)) *
+      (isFine ? 1.45 : 1);
     // Reparto a lo largo del tramo recién recorrido, no en un punto.
-    const back = ((particle + random()) / count) * span;
+    const back = ((groupIndex + random()) / groupSize) * span;
 
     pool.active[index] = 1;
     pool.x[index] = pointerX - velocityX * back + Math.cos(angle) * spread;
@@ -192,18 +233,20 @@ export function spawnStardust(
       config.minLifetimeMs +
       random() * (config.maxLifetimeMs - config.minLifetimeMs);
     pool.size[index] =
-      config.sizeBase +
-      Math.pow(random(), config.sizePower) *
-        (config.sizeRange + speed * config.sizeSpeed);
+      (config.sizeBase +
+        Math.pow(random(), config.sizePower) *
+          (config.sizeRange + speed * config.sizeSpeed)) *
+      (isFine ? config.fineSizeScale : 1);
     pool.phase[index] = random() * Math.PI * 2;
     // Violet/magenta/pink dominan; el cyan es una señal rara (1/12 aprox.).
     pool.tone[index] = Math.min(3, Math.floor(random() * 3.24));
+    pool.fine[index] = isFine ? 1 : 0;
 
     if (!wasActive) pool.activeCount += 1;
     pool.cursor = (index + 1) % pool.capacity;
   }
 
-  return count;
+  return total;
 }
 
 export function updateStardust(pool: StardustPool, deltaMs: number) {
@@ -244,23 +287,51 @@ const PARTICLE_TONES = [
  * a nivel de módulo porque el contenido no depende del pool ni del viewport.
  */
 const SPRITE_SIDE = 64;
-let spriteCache: readonly HTMLCanvasElement[] | null = null;
+
+/**
+ * Dos juegos de sprites, uno por calibre.
+ *
+ * El de cuerpo reparte la energía en un halo ancho: es lo que da el resplandor.
+ * El fino la concentra en el núcleo, y no es una preferencia estética sino
+ * aritmética de escala — una mota fina se dibuja a dos o tres píxeles, y a ese
+ * tamaño el halo ancho ocupa medio píxel de gradiente y devuelve un gris sucio
+ * en lugar de un grano. Con la caída corta el núcleo sobrevive al reescalado y
+ * la mota se sigue leyendo como polvo.
+ */
+const SPRITE_STOPS = {
+  body: [
+    // Núcleo casi blanco: es lo que hace que se lea como una chispa y no como
+    // una mancha de color. El tono aparece en el halo, que es lo que se ve.
+    [0, "rgba(255, 255, 255, 0.98)"],
+    [0.12, "0.92"],
+    [0.3, "0.44"],
+    [0.58, "0.13"],
+    [1, "0"],
+  ],
+  fine: [
+    [0, "rgba(255, 255, 255, 1)"],
+    [0.26, "0.88"],
+    [0.52, "0.3"],
+    [1, "0"],
+  ],
+} as const;
+
+let spriteCache: {
+  readonly body: readonly HTMLCanvasElement[];
+  readonly fine: readonly HTMLCanvasElement[];
+} | null = null;
 let spriteCacheFailed = false;
 
-function buildSprites(): readonly HTMLCanvasElement[] | null {
-  if (spriteCache) return spriteCache;
-  if (spriteCacheFailed || typeof document === "undefined") return null;
-
+function buildSpriteSet(
+  kind: keyof typeof SPRITE_STOPS,
+): readonly HTMLCanvasElement[] | null {
   const sprites: HTMLCanvasElement[] = [];
   for (const tone of PARTICLE_TONES) {
     const canvas = document.createElement("canvas");
     canvas.width = SPRITE_SIDE;
     canvas.height = SPRITE_SIDE;
     const context = canvas.getContext("2d");
-    if (!context) {
-      spriteCacheFailed = true;
-      return null;
-    }
+    if (!context) return null;
 
     const centre = SPRITE_SIDE / 2;
     const gradient = context.createRadialGradient(
@@ -271,19 +342,32 @@ function buildSprites(): readonly HTMLCanvasElement[] | null {
       centre,
       centre,
     );
-    // Núcleo casi blanco: es lo que hace que se lea como una chispa y no como
-    // una mancha de color. El tono aparece en el halo, que es lo que se ve.
-    gradient.addColorStop(0, "rgba(255, 255, 255, 0.98)");
-    gradient.addColorStop(0.12, `rgba(${tone}, 0.92)`);
-    gradient.addColorStop(0.3, `rgba(${tone}, 0.44)`);
-    gradient.addColorStop(0.58, `rgba(${tone}, 0.13)`);
-    gradient.addColorStop(1, `rgba(${tone}, 0)`);
+    for (const [offset, value] of SPRITE_STOPS[kind]) {
+      gradient.addColorStop(
+        offset,
+        value.startsWith("rgba") ? value : `rgba(${tone}, ${value})`,
+      );
+    }
     context.fillStyle = gradient;
     context.fillRect(0, 0, SPRITE_SIDE, SPRITE_SIDE);
     sprites.push(canvas);
   }
 
-  spriteCache = sprites;
+  return sprites;
+}
+
+function buildSprites() {
+  if (spriteCache) return spriteCache;
+  if (spriteCacheFailed || typeof document === "undefined") return null;
+
+  const body = buildSpriteSet("body");
+  const fine = body ? buildSpriteSet("fine") : null;
+  if (!body || !fine) {
+    spriteCacheFailed = true;
+    return null;
+  }
+
+  spriteCache = { body, fine };
   return spriteCache;
 }
 
@@ -327,11 +411,14 @@ export function drawStardust(
     const tone = PARTICLE_TONES[pool.tone[index] ?? 0] ?? PARTICLE_TONES[0];
 
     if (sprites) {
-      const side = radius * 2 * config.glowScale;
+      const isFine = pool.fine[index] === 1;
+      const set = isFine ? sprites.fine : sprites.body;
+      const side =
+        radius * 2 * (isFine ? config.fineGlowScale : config.glowScale);
       const half = side / 2;
       context.globalAlpha = alpha;
       context.drawImage(
-        sprites[pool.tone[index] ?? 0] ?? sprites[0],
+        set[pool.tone[index] ?? 0] ?? set[0],
         pool.x[index] - half,
         pool.y[index] - half,
         side,

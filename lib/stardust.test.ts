@@ -38,8 +38,9 @@ describe("stardust pool", () => {
     expect(spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5))).toBe(14);
   });
 
-  it("aplica en WebGL su propio perfil de 1–12 motas", () => {
+  it("aplica en WebGL su propio perfil de 1–12 motas de cuerpo más finas", () => {
     const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
+    // 12 de cuerpo + round(12 × 0.75) = 9 finas.
     expect(
       spawnStardust(
         pool,
@@ -51,8 +52,8 @@ describe("stardust pool", () => {
         fixedRandom(0.5),
         "webgl",
       ),
-    ).toBe(12);
-    expect(pool.capacity).toBe(340);
+    ).toBe(21);
+    expect(pool.capacity).toBe(520);
     expect(pool.lifetime[0]).toBeGreaterThanOrEqual(
       STARDUST_PROFILES.webgl.minLifetimeMs,
     );
@@ -63,14 +64,76 @@ describe("stardust pool", () => {
 
   it("no deja que el pase de WebGL se acerque al rastro continuo de flat", () => {
     // El perfil subió porque sobre el disco de Gargantúa no se veía, no para
-    // convertirse en una cola de cometa. Estos tres topes son la frontera: si
-    // alguno cae, el polvo dejó de ser polvo.
+    // convertirse en una cola de cometa.
+    //
+    // Ojo con leer `maxBurst` como «motas por evento»: desde el calibre fino ya
+    // no lo es. WebGL siembra 21 por evento contra las 14 de `flat`. Lo que el
+    // tope sigue acotando —y es lo que importa— son las motas de CUERPO, que
+    // son las que aportan masa luminosa; las finas son grano de dos píxeles y
+    // no engordan la línea.
+    //
+    // Por eso el tope de ráfaga sólo significa algo acompañado del de calibre:
+    // si `fineSizeScale` se acercara a 1, «fina» pasaría a ser una segunda capa
+    // de cuerpo por la puerta de atrás y este tope dejaría de proteger nada.
     const webgl = STARDUST_PROFILES.webgl;
     expect(webgl.peakAlpha).toBeLessThan(STARDUST_PROFILES.flat.peakAlpha);
     expect(webgl.maxBurst).toBeLessThan(STARDUST_PROFILES.flat.maxBurst);
-    expect(webgl.maxLifetimeMs).toBeLessThan(
+    expect(webgl.fineSizeScale).toBeLessThan(0.5);
+    // La vida, en cambio, está ya a 20 ms del techo de `flat` tras el segundo
+    // pase: la asersión se conserva porque `flat` es el límite acordado del
+    // efecto, pero como guard no queda nada que ceder. Si hace falta más
+    // permanencia, lo que hay que revisar es ese techo, no este número.
+    expect(webgl.maxLifetimeMs).toBeLessThanOrEqual(
       STARDUST_PROFILES.flat.maxLifetimeMs,
     );
+  });
+
+  it("la mota fina se suma a la de cuerpo, no la sustituye", () => {
+    // La petición fue «aparte de las partículas que están»: el rastro aprobado
+    // no pierde ninguna mota y el grano fino se añade encima.
+    const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
+    const total = spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5), "webgl");
+
+    let body = 0;
+    let fine = 0;
+    for (let index = 0; index < pool.capacity; index += 1) {
+      if (pool.active[index] === 0) continue;
+      if (pool.fine[index] === 1) fine += 1;
+      else body += 1;
+    }
+
+    expect(body).toBe(STARDUST_PROFILES.webgl.maxBurst);
+    expect(fine).toBe(total - body);
+    expect(fine).toBeGreaterThan(0);
+  });
+
+  it("la mota fina es realmente más fina que la de cuerpo", () => {
+    // Con el mismo `random` fijo las dos clases sólo se diferencian por la
+    // escala, así que el cociente tiene que ser exactamente `fineSizeScale`.
+    const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
+    spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5), "webgl");
+
+    let body = 0;
+    let fine = 0;
+    for (let index = 0; index < pool.capacity; index += 1) {
+      if (pool.active[index] === 0) continue;
+      if (pool.fine[index] === 1) fine = pool.size[index];
+      else body = pool.size[index];
+    }
+
+    expect(fine).toBeLessThan(body);
+    expect(fine / body).toBeCloseTo(STARDUST_PROFILES.webgl.fineSizeScale, 5);
+  });
+
+  it("el perfil flat no siembra ninguna mota fina", () => {
+    // `flat` es el rastro congelado: el calibre nuevo no puede filtrarse ahí.
+    const pool = createStardustPool(40);
+    spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5), "flat");
+
+    expect(STARDUST_PROFILES.flat.fineShare).toBe(0);
+    for (let index = 0; index < pool.capacity; index += 1) {
+      expect(pool.fine[index]).toBe(0);
+    }
   });
 
   it("la caída del alfa nunca crece con la edad de la mota", () => {

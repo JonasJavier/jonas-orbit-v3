@@ -23,6 +23,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `crop.mjs` | recorta y amplía una zona de una captura |
 | `stability.mjs` | mide si el disco avanza o hierve entre fotogramas |
 | `disk-metrics.mjs` | área oscura e histograma de la banda del disco |
+| `epoch-ripple.mjs` | ondulación de luminancia a lo largo de un ciclo de épocas del disco |
 | `glsl-check.mjs` | falla si hay backticks dentro de los shaders |
 
 ## Las dos pruebas del contrato visual
@@ -38,6 +39,48 @@ node tools/shot.mjs mundo --sin-glow --sin-rotulos
 `lib/visual-bench.ts`): si un objeto pierde su identidad ahí, su diseño no está
 terminado. `--sin-rotulos` oculta el raíl y los nombres, que es la única forma de
 comprobar si un cuerpo se reconoce sin que se lo digan.
+
+## El disco ENVEJECE, y por eso `shot.mjs` sabe clavar el reloj
+
+El disco de Gargantúa avanza con el tiempo, así que su aspecto es función de
+cuánto lleva la pestaña abierta. Ahí se escondió durante meses el peor defecto
+que ha tenido la escena: el enrollado crecía sin cota y a los quince minutos el
+disco era un montón de bandas concéntricas aliaseadas. Una suite que solo mira
+el primer cuadro no lo ve NUNCA.
+
+```bash
+node tools/shot.mjs t30 http://localhost:3100/es 16000 --reloj=1800
+node tools/shot.mjs t30-plano http://localhost:3100/es 16000 --reloj=1800 --sin-acumular
+```
+
+`--reloj=<segundos>` clava el reloj de la escena, así que «a la media hora» es
+una captura de dieciséis segundos. `--sin-acumular` apaga la acumulación
+temporal: sin eso es imposible distinguir lo que dibuja el shader en UN cuadro
+de lo que deposita encima el promediado de ocho muestras — y confundir las dos
+cosas fue exactamente el diagnóstico equivocado que costó la primera tarde.
+
+La matriz que se le pide a un cambio del disco es `--reloj` en 0, 60, 180, 600 y
+1800, con acumulación encendida y apagada, más valores largos (3600, 21600) como
+comprobación de estabilidad matemática. El criterio no es que una captura salga
+bonita: es que el histograma de `disk-metrics.mjs` no se mueva entre ellas.
+
+## El relevo de épocas no puede notarse: `epoch-ripple.mjs`
+
+Como el enrollado está acotado por un cruce de dos copias del campo (ver la nota
+larga de `gargantua-shaders.ts`), hay un ciclo de periodo EPOCH/2 y el relevo
+entre copias tiene que ser invisible. `epoch-ripple.mjs` mide la excursión de
+luminancia a lo largo de ese ciclo:
+
+```bash
+node tools/epoch-ripple.mjs ciclo-0 ciclo-1 ciclo-2 ciclo-3 ciclo-4
+```
+
+Da dos cifras y las dos importan. La ONDULACIÓN es cuánto se mueve el brillo
+dentro del ciclo; el CIERRE es cuánto se diferencian la primera y la última fase,
+que son la misma configuración media época después. Un cierre fuera del ruido de
+captura significa deriva, que es peor que la ondulación. Y el ruido de captura
+hay que medirlo repitiendo la MISMA fase dos veces: bajo SwiftShader sale del
+orden de 0.15 %, y una ondulación de ese tamaño no existe.
 
 ## `composition.mjs` LEE la escena, no la reimplementa
 

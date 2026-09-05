@@ -34,14 +34,55 @@ export interface VisualBench {
   bloom: number;
   /** Multiplicador de lo que emite luz propia en los cuerpos. 1 es producción. */
   emission: number;
+  /**
+   * Reloj del raymarch clavado en un instante, en segundos. `null` es
+   * producción: el reloj corre solo.
+   *
+   * Existe porque el disco de Gargantúa envejece — su enrollado depende del
+   * tiempo transcurrido — y el defecto que eso produce tarda MINUTOS en
+   * aparecer. Una suite que solo mira el primer cuadro no lo ve nunca: ese es
+   * exactamente el agujero por el que se coló el enrollado infinito. Con el
+   * reloj clavado, «cómo se ve Gargantúa a las seis horas» es una captura de
+   * quince segundos en vez de una espera de seis horas.
+   */
+  clock: number | null;
+  /**
+   * Acumulación temporal del raymarch. `true` es producción.
+   *
+   * Apagarla separa lo que hace el shader en UN cuadro de lo que hace el
+   * promediado de ocho muestras encima. Sin esa separación es imposible saber
+   * si una banda del disco la dibuja el material o la deposita el acumulador.
+   */
+  accumulate: boolean;
 }
 
 /** Lo que ve todo el mundo salvo quien escriba la clave a mano. */
-export const FULL_VISUAL_BENCH: VisualBench = { bloom: 1, emission: 1 };
+export const FULL_VISUAL_BENCH: VisualBench = {
+  bloom: 1,
+  emission: 1,
+  clock: null,
+  accumulate: true,
+};
 
 function factor(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return Math.min(1, Math.max(0, value));
+}
+
+/**
+ * El reloj NO se clampa a [0, 1] como los factores: es un instante en segundos
+ * y su rango útil llega a las seis horas. Solo se rechaza lo que no es un
+ * número finito no negativo.
+ */
+function clock(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (value < 0) return null;
+  return value;
+}
+
+/** Solo un `false` literal apaga la acumulación. Cualquier otra cosa: producción. */
+function flag(value: unknown): boolean {
+  return value === false ? false : true;
 }
 
 /**
@@ -65,6 +106,8 @@ export function parseVisualBench(raw: string | null): VisualBench {
   return {
     bloom: factor(source.bloom) ?? FULL_VISUAL_BENCH.bloom,
     emission: factor(source.emision) ?? FULL_VISUAL_BENCH.emission,
+    clock: clock(source.reloj),
+    accumulate: flag(source.acumular),
   };
 }
 

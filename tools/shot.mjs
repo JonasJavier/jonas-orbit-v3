@@ -20,6 +20,13 @@
  *   npm run build && npx next start -p 3100
  *   node tools/shot.mjs <nombre> [url] [espera_ms] [--sin-glow] [--sin-rotulos]
  *
+ * `--reloj=<segundos>` clava el reloj de la escena en un instante. Existe porque
+ * el disco de Gargantúa ENVEJECE —su enrollado depende del tiempo transcurrido—
+ * y su fallo tardaba minutos en salir, así que una captura del arranque no dice
+ * nada sobre las seis horas. Con esto, «a las seis horas» son quince segundos.
+ * `--sin-acumular` apaga la acumulación temporal, para separar lo que dibuja el
+ * shader en UN cuadro de lo que deposita el promediado de ocho muestras encima.
+ *
  * `--sin-glow` es el bloom-off test del contrato visual: apaga el bloom y los
  * emisivos de los cuerpos para juzgar silueta, volumen y material sin que el
  * halo tape una geometría floja (ver lib/visual-bench.ts). `--sin-rotulos`
@@ -41,6 +48,13 @@ const name = positional[0] ?? "shot";
 const url = positional[1] ?? "http://localhost:3100/es";
 const settle = Number(positional[2] ?? 15000);
 const withoutGlow = flags.has("--sin-glow");
+const withoutAccumulation = flags.has("--sin-acumular");
+const clockFlag = [...flags].find((f) => f.startsWith("--reloj="));
+const clock = clockFlag ? Number(clockFlag.slice("--reloj=".length)) : null;
+if (clockFlag && !Number.isFinite(clock)) {
+  console.error(`reloj ilegible: ${clockFlag}`);
+  process.exit(1);
+}
 const withoutLabels = flags.has("--sin-rotulos");
 const dir = resolve(process.env.SHOTS_DIR ?? ".shots");
 mkdirSync(dir, { recursive: true });
@@ -56,18 +70,22 @@ const context = await browser.newContext({
 const page = await context.newPage();
 page.on("pageerror", (e) => console.error("[page error]", e.message));
 await page.addInitScript(
-  ({ glow }) => {
+  ({ glow, reloj, acumular }) => {
     localStorage.setItem("jonas-orbit:efectos-forzados", "true");
     // La escena lee el banco UNA vez al montarse, así que tiene que estar
     // escrito antes de que corra un solo script de la página.
+    const banco = {};
     if (!glow) {
-      localStorage.setItem(
-        "jonas-orbit:banco-visual",
-        JSON.stringify({ bloom: 0, emision: 0 }),
-      );
+      banco.bloom = 0;
+      banco.emision = 0;
+    }
+    if (reloj !== null) banco.reloj = reloj;
+    if (!acumular) banco.acumular = false;
+    if (Object.keys(banco).length) {
+      localStorage.setItem("jonas-orbit:banco-visual", JSON.stringify(banco));
     }
   },
-  { glow: !withoutGlow },
+  { glow: !withoutGlow, reloj: clock, acumular: !withoutAccumulation },
 );
 await page.goto(url, { waitUntil: "load", timeout: 120000 });
 if (withoutLabels) {

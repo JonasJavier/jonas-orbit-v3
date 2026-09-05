@@ -272,8 +272,23 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   });
   marchScene.add(new THREE.Mesh(quadGeometry, marchMaterial));
 
+  /*
+    Banco de pruebas visual. En producción es el banco completo para todo el
+    mundo y no hay forma de que deje de serlo sin escribir la clave a mano: ver
+    la nota de lib/visual-bench.ts sobre por qué esto NO es sniffing del
+    auditor.
+
+    Se lee UNA vez, al montar la escena. No es reactivo a propósito — lo usa
+    `tools/shot.mjs` para capturar el mismo cuadro con y sin glow, y una captura
+    no cambia de opinión a mitad.
+
+    Se lee AQUÍ ARRIBA, antes que nada, porque ahora también decide si hay
+    acumulación temporal, y eso se resuelve al construir la cadena de post.
+  */
+  const bench = readVisualBench();
+
   // === Acumulación temporal ================================================
-  const canAccumulate = canFloat;
+  const canAccumulate = canFloat && bench.accumulate;
   const targetOptions: THREE.RenderTargetOptions = {
     type: THREE.HalfFloatType,
     depthBuffer: false,
@@ -302,17 +317,6 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   /** Gargantúa no tiene malla pero sí blanco de clic: se proyecta el origen. */
   const centreIds: WorldId[] = [];
   const centreRadii = new Map<WorldId, number>();
-
-  /*
-    Banco de pruebas visual. En producción es {1, 1} para todo el mundo y no hay
-    forma de que deje de serlo sin escribir la clave a mano: ver la nota de
-    lib/visual-bench.ts sobre por qué esto NO es sniffing del auditor.
-
-    Se lee UNA vez, al montar la escena. No es reactivo a propósito — lo usa
-    `tools/shot.mjs` para capturar el mismo cuadro con y sin glow, y una captura
-    no cambia de opinión a mitad.
-  */
-  const bench = readVisualBench();
 
   for (const input of options.bodies) {
     const body = createBody(input);
@@ -1110,8 +1114,17 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       lastFrozenDraw = now;
     }
 
-    marchMaterial.uniforms.uTime.value = elapsed;
-    updateBodies(elapsed);
+    /*
+      El reloj de la escena, que en producción es SIEMPRE `elapsed`.
+
+      Clavarlo es lo que permite auditar el envejecimiento del disco: su
+      enrollado depende del tiempo transcurrido y su fallo tardaba minutos en
+      aparecer, así que una suite que solo mira el arranque no lo veía. Con el
+      reloj fijo, «a las seis horas» es una captura, no una espera.
+    */
+    const clock = bench.clock ?? elapsed;
+    marchMaterial.uniforms.uTime.value = clock;
+    updateBodies(clock);
 
     try {
       if (canAccumulate) {
