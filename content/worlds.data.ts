@@ -235,6 +235,28 @@ export interface WorldStructuralData {
  * apenas se mueven. Que un recorte de este tamaño no roce ningún test es la
  * comprobación de que es un ajuste fino y no una decisión de composición
  * disfrazada.
+ *
+ * ── Tercer recorte, y por qué esta vez NO son los cinco (2026-09-06) ────────
+ *
+ * Los dos anteriores movían a los cinco destinos a la vez para conservar sus
+ * relaciones intactas. Éste toca tres y deja fuera a Miller y a Edmunds, y esa
+ * asimetría es la decisión, no un descuido:
+ *
+ *   · **Endurance −3.5 %** (4.547 → 4.388) · **Tesseracto −1.5 %** (2.669 →
+ *     2.629) · **Ranger −0.5 %** (1.92 → 1.9104)
+ *
+ * Los dos planetas se quedan donde están porque son el contrapeso del cuadro
+ * —Miller arriba a la izquierda, Edmunds abajo— y encogerlos otra vez con la
+ * Endurance cediendo el triple habría movido la composición, no la escala. Lo
+ * que este pase reparte es el peso de las tres piezas que quedaban por encima
+ * de su sitio: la nave grande, la estructura anómala y el acento pequeño.
+ *
+ * Radios publicados: Endurance 6.496 → 6.269, Tesseracto 4.723 → 4.652, Ranger
+ * 2.577 → 2.564. La guarda que más aprieta vuelve a ser la ventaja aparente de
+ * la Endurance, 2.014 → 1.954 contra el suelo de 1.4, y la banda del Tesseracto
+ * queda en 4.652 con 0.10 rs por encima de su mínimo — el margen más fino de
+ * todo el bloque, y el motivo de que su recorte se quedara en el borde bajo de
+ * la horquilla que pidió el dueño en vez de en el alto.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -262,8 +284,11 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        mal. Sigue por encima de donde estaba antes de la recomposición (2.7).
        El segundo recorte le quita un 1.5 % más (2.71 → 2.669): su radio
        publicado baja de 4.796 a 4.723 rs y sigue dentro de la banda [4.55,
-       5.05] que fija `bodies.test.ts`, con 0.17 rs de margen por abajo. */
-    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.669 },
+       5.05] que fija `bodies.test.ts`, con 0.17 rs de margen por abajo. El
+       tercero repite exactamente ese 1.5 % (2.669 → 2.629) y el radio queda en
+       4.652: cien milésimas de rs por encima del suelo de la banda, que sigue
+       siendo el margen más apretado de los tres cuerpos que se tocan. */
+    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.629 },
     sceneName: "scene-tesseract",
   },
   miller: {
@@ -336,8 +361,16 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        El segundo recorte le quita un 2 % más (4.64 → 4.547), el mayor de los
        cinco por el mismo motivo que entonces: es el único que puede competir.
        Su ventaja sobre el resto pasa de 2.045 a 2.014 veces, muy por encima
-       del 1.4 que exige la suite. */
-    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 4.547 },
+       del 1.4 que exige la suite.
+
+       Y el tercero un 3.5 % (4.547 → 4.388, radio publicado 6.496 → 6.269).
+       Es el recorte grande de esa pasada —los otros dos cuerpos ceden diez
+       veces menos— y va aquí por tercera vez consecutiva por la misma razón de
+       siempre: la envolvente de esta nave incluye las dos Ranger y las dos
+       Lander atracadas, así que cada punto que cede se lo devuelve al centro
+       más que ningún otro. Su ventaja aparente baja de 2.014 a 1.954, todavía
+       medio cuerpo por encima del 1.4 de la suite. */
+    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 4.388 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -394,10 +427,12 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
       1.93) y ni uno más: éste ya era el acento pequeño de la escena, y lo que
       hay por debajo no es «más discreta» sino una miga. El segundo recorte le
       quita medio punto (1.93 → 1.92), el menor de los cinco y por la misma
-      razón. El mapa plano usa esta misma fase: las dos vistas cuentan lo
-      mismo.
+      razón, y el tercero repite ese medio punto exacto (1.92 → 1.9104, radio
+      publicado 2.577 → 2.564): tres pasadas seguidas cediendo el mínimo, que
+      es lo que significa que este cuerpo ya está en su suelo. El mapa plano usa
+      esta misma fase: las dos vistas cuentan lo mismo.
     */
-    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 1.92 },
+    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 1.9104 },
     sceneName: "scene-ranger",
   },
 };

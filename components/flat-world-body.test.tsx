@@ -95,7 +95,7 @@ describe("FlatWorldBody", () => {
     ).not.toBeNull();
     expect(
       container.querySelectorAll('[data-flat-part="inner-frame"]'),
-    ).toHaveLength(4);
+    ).toHaveLength(7);
     expect(
       container.querySelectorAll('[data-flat-part="side-panel"]'),
     ).toHaveLength(2);

@@ -38,9 +38,9 @@ describe("stardust pool", () => {
     expect(spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5))).toBe(14);
   });
 
-  it("aplica en WebGL su propio perfil de 1–12 motas de cuerpo más finas", () => {
+  it("aplica en WebGL su propio perfil de 1–4 motas de cuerpo más finas", () => {
     const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
-    // 12 de cuerpo + round(12 × 0.75) = 9 finas.
+    // 4 de cuerpo + round(4 × 0.34) = 1 fina.
     expect(
       spawnStardust(
         pool,
@@ -52,8 +52,8 @@ describe("stardust pool", () => {
         fixedRandom(0.5),
         "webgl",
       ),
-    ).toBe(21);
-    expect(pool.capacity).toBe(520);
+    ).toBe(5);
+    expect(pool.capacity).toBe(300);
     expect(pool.lifetime[0]).toBeGreaterThanOrEqual(
       STARDUST_PROFILES.webgl.minLifetimeMs,
     );
@@ -62,30 +62,90 @@ describe("stardust pool", () => {
     );
   });
 
-  it("no deja que el pase de WebGL se acerque al rastro continuo de flat", () => {
-    // El perfil subió porque sobre el disco de Gargantúa no se veía, no para
-    // convertirse en una cola de cometa.
-    //
-    // Ojo con leer `maxBurst` como «motas por evento»: desde el calibre fino ya
-    // no lo es. WebGL siembra 21 por evento contra las 14 de `flat`. Lo que el
-    // tope sigue acotando —y es lo que importa— son las motas de CUERPO, que
-    // son las que aportan masa luminosa; las finas son grano de dos píxeles y
-    // no engordan la línea.
-    //
-    // Por eso el tope de ráfaga sólo significa algo acompañado del de calibre:
-    // si `fineSizeScale` se acercara a 1, «fina» pasaría a ser una segunda capa
-    // de cuerpo por la puerta de atrás y este tope dejaría de proteger nada.
+  it("mantiene el rastro de WebGL como instrumentación y no como cometa", () => {
+    /*
+      El pase de instrumentación (2026-09-06) puso números al encargo, y esta
+      prueba los fija en la unidad en la que se pidieron. Ninguna de las tres
+      primeras se puede leer de un solo campo del perfil, que es justamente por
+      lo que existían las confusiones que costaron el pase anterior.
+
+      · DENSIDAD en motas por PÍXEL RECORRIDO, no por evento. `maxBurst` no es
+        «motas por evento» desde que hay dos calibres, y `trailStepPx` solo no
+        dice nada sin `fineShare`. Lo que se ve es (1 + fineShare)/trailStepPx.
+      · COLA en tiempo VISIBLE, no en vida del pool. `fadePower` decide qué
+        fracción de la vida está por encima del umbral de visión, así que una
+        vida más corta con exponente más plano puede no acortar nada.
+      · TAMAÑO en radio medio, que es el único sitio donde `sizeBase`,
+        `sizePower` y `sizeRange` significan algo juntos.
+    */
     const webgl = STARDUST_PROFILES.webgl;
-    expect(webgl.peakAlpha).toBeLessThan(STARDUST_PROFILES.flat.peakAlpha);
-    expect(webgl.maxBurst).toBeLessThan(STARDUST_PROFILES.flat.maxBurst);
+    const flat = STARDUST_PROFILES.flat;
+
+    /* El punto de comparación es el WebGL ANTERIOR, no `flat`: los porcentajes
+       del encargo se dieron sobre lo que había en pantalla, y `flat` nunca tuvo
+       calibre fino ni esta vida. Los tres valores viejos quedan escritos aquí
+       para que la horquilla se pueda releer sin git. */
+    const beforeDensity = (1 + 0.75) / 6.5;
+    const beforeVisible = ((560 + 1_000) / 2) * (1 - Math.pow(0.1, 1 / 1.2));
+    const beforeRadius = 0.74 + (2.3 + 0.95) / (2.3 + 1);
+
+    const density = (p: typeof webgl | typeof flat) =>
+      (1 + p.fineShare) / p.trailStepPx;
+    expect(density(webgl)).toBeLessThan(beforeDensity * 0.25);
+    expect(density(webgl)).toBeGreaterThan(beforeDensity * 0.18);
+    expect(density(webgl)).toBeLessThan(density(flat));
+
+    // Vida media × fracción visible de esa vida. La fracción sale de resolver
+    // restante^fadePower = 0.1, el umbral por debajo del cual la mota deja de
+    // leerse sobre el disco.
+    const visible = (p: typeof webgl | typeof flat) =>
+      ((p.minLifetimeMs + p.maxLifetimeMs) / 2) *
+      (1 - Math.pow(0.1, 1 / p.fadePower));
+    expect(visible(webgl)).toBeLessThan(beforeVisible * 0.4);
+    expect(visible(webgl)).toBeGreaterThan(beforeVisible * 0.3);
+
+    // Radio medio de una mota de cuerpo a velocidad 1: la esperanza de
+    // random^sizePower es 1/(sizePower + 1).
+    const radius = (p: typeof webgl | typeof flat) =>
+      p.sizeBase + (p.sizeRange + p.sizeSpeed) / (p.sizePower + 1);
+    expect(radius(webgl)).toBeLessThan(beforeRadius * 0.55);
+    expect(radius(webgl)).toBeLessThan(radius(flat));
+
+    /* La ventana de tonos de WebGL vive ENTERA en la mitad fría de la paleta:
+       el rastro no puede volver a introducir magenta en una navegación que ya
+       había convergido al cian. Los tres primeros tonos son el rastro violeta
+       de `flat` y no se tocan. */
+    expect(webgl.toneFirst).toBeGreaterThanOrEqual(3);
+    expect(flat.toneLast).toBeLessThan(webgl.toneFirst + 1);
+
+    expect(webgl.peakAlpha).toBeLessThan(flat.peakAlpha);
+    expect(webgl.maxBurst).toBeLessThan(flat.maxBurst);
+    /* Si `fineSizeScale` se acercara a 1, «fina» pasaría a ser una segunda capa
+       de cuerpo por la puerta de atrás y el tope de ráfaga dejaría de proteger
+       nada. */
     expect(webgl.fineSizeScale).toBeLessThan(0.5);
-    // La vida, en cambio, está ya a 20 ms del techo de `flat` tras el segundo
-    // pase: la asersión se conserva porque `flat` es el límite acordado del
-    // efecto, pero como guard no queda nada que ceder. Si hace falta más
-    // permanencia, lo que hay que revisar es ese techo, no este número.
-    expect(webgl.maxLifetimeMs).toBeLessThanOrEqual(
-      STARDUST_PROFILES.flat.maxLifetimeMs,
-    );
+    expect(webgl.maxLifetimeMs).toBeLessThanOrEqual(flat.maxLifetimeMs);
+  });
+
+  it("siembra WebGL sólo con tonos fríos y flat sólo con los suyos", () => {
+    // El reparto es aleatorio, así que se recorre la ventana entera en vez de
+    // fiarse de una muestra: `flat` no puede tocar el frío ni WebGL el violeta.
+    for (const draw of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) {
+      const cold = createStardustPool(20);
+      spawnStardust(cold, 0, 0, 20, 0, 16, fixedRandom(draw), "webgl");
+      for (let index = 0; index < cold.capacity; index += 1) {
+        if (cold.active[index] === 0) continue;
+        expect(cold.tone[index]).toBeGreaterThanOrEqual(3);
+        expect(cold.tone[index]).toBeLessThanOrEqual(5);
+      }
+
+      const warm = createStardustPool(20);
+      spawnStardust(warm, 0, 0, 20, 0, 16, fixedRandom(draw), "flat");
+      for (let index = 0; index < warm.capacity; index += 1) {
+        if (warm.active[index] === 0) continue;
+        expect(warm.tone[index]).toBeLessThanOrEqual(3);
+      }
+    }
   });
 
   it("la mota fina se suma a la de cuerpo, no la sustituye", () => {

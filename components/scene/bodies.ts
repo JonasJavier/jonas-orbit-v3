@@ -605,17 +605,23 @@ const BODY_FRAGMENT = /* glsl */ `
         como hielo iluminado. Pierde un quinto de saturación y algo de valor, y
         la lectura pasa de «bola azul brillante» a «océano con plataforma».
       */
-      albedo = mix(vec3(0.006, 0.024, 0.078), vec3(0.022, 0.094, 0.226), basin);
+      /* El extremo profundo baja otro tercio (2026-09-06). Un océano sin fondo
+         negro no se lee como profundo, y el fondo es lo que da la escala: si el
+         agua más honda del cuerpo está a 0.078 de azul, el camino de luz sólo
+         le saca tres paradas y la lectura vuelve a ser «bola azul con brillo».
+         El contraste entre el agua honda y el reflejo es literalmente la única
+         relación de valores que tiene este mundo. */
+      albedo = mix(vec3(0.004, 0.017, 0.060), vec3(0.019, 0.086, 0.208), basin);
       /* Las bandas se pintan POCO a propósito: el dueño las pidió «muy
          sutiles», y una banda de color fuerte vuelve a leerse como nube. Lo que
          las hace visibles es la inclinación de la lámina, no el pigmento. */
-      albedo = mix(albedo, vec3(0.062, 0.19, 0.376), shallow * 0.55);
+      albedo = mix(albedo, vec3(0.062, 0.19, 0.376), shallow * 0.30);
       /* El acento somero es una VETA, no un continente: sale del cruce de la
          corriente con el bajío, así que sigue una dirección. */
       albedo = mix(
         albedo,
         vec3(0.126, 0.298, 0.472),
-        shallow * smoothstep(0.62, 0.94, current) * 0.42
+        shallow * smoothstep(0.62, 0.94, current) * 0.22
       );
       /*
         CORRIENTES ZONALES: lo que hace que el cerebro diga AGUA.
@@ -675,8 +681,14 @@ const BODY_FRAGMENT = /* glsl */ `
         -0.55, 0.72, dot(oceanUp, vec3(0.38, 0.46, -0.80))
       );
       albedo *= mix(0.84, 1.06, hemisphere);
-      /* Nube fría y apagada. Ni blanca ni cálida: es vapor sobre agua helada. */
-      albedo = mix(albedo, vec3(0.398, 0.486, 0.588), cloudCover * 0.26);
+      /* Nube fría y apagada. Ni blanca ni cálida: es vapor sobre agua helada.
+         Y pesa 0.16, no 0.26 (2026-09-06). Las masas pálidas eran el ÚNICO
+         competidor del camino de luz, y a tamaño de hero competían y ganaban:
+         lo primero que veía el ojo eran manchas claras sobre azul, que es la
+         firma de un planeta nuboso. Bajarlas no quita meteorología —las bandas
+         siguen ahí— sino que devuelve la jerarquía: el sitio más brillante del
+         cuerpo tiene que ser el reflejo de Gargantúa, y sólo ése. */
+      albedo = mix(albedo, vec3(0.398, 0.486, 0.588), cloudCover * 0.09);
       /*
         BRILLO. El agua es la superficie más reflectiva del sistema, y por eso
         el mando no es «cuánto» sino «con qué forma». Aquí sólo queda el suelo;
@@ -1546,6 +1558,26 @@ const BODY_FRAGMENT = /* glsl */ `
       que es donde el ojo lee la orografía.
     */
     float diffuse = day * limb * clamp(1.0 + reliefOffset * 2.6, 0.4, 1.6);
+    /*
+      AGUA: la misma corrección que la roca, y era lo que le faltaba a Miller.
+
+      La envolvente común satura en n·l = 0.34, así que más de la mitad del
+      hemisferio diurno salía a brillo PLENO. Sobre un mundo con relieve eso se
+      nota poco; sobre un océano continuo es fatal, porque el único sitio donde
+      un cuerpo sin accidentes cuenta su tamaño y su curvatura es el degradado.
+      Con la meseta no había degradado: había un disco azul uniforme con un
+      trazo blanco encima, que es exactamente como lo describió el dueño.
+
+      Exponente 0.55 y no 1: el agua devuelve luz difusa por dispersión bajo la
+      superficie, así que su caída es más lenta que la de un lambert seco. Lo
+      que importa es que YA NO HAY MESETA — el punto que mira de frente a
+      Gargantúa y el que está a 60° de él dejan de valer lo mismo. Medido sobre
+      la envolvente: donde antes había 1.00 plano de 0.34 en adelante, ahora hay
+      0.60 en el arranque y 0.95 en el punto subestelar.
+    */
+    if (uKind == 0) {
+      diffuse = day * limb * (0.10 + 0.90 * pow(max(shadedNdl, 0.0), 0.55));
+    }
     /* Roca mate: la pendiente y la incidencia conservan dirección en todo el
        hemisferio diurno, sin una meseta de brillo al saturarse day. */
     if (uKind == 1) diffuse = day * limb * (0.12 + 0.88 * max(shadedNdl, 0.0));
@@ -1581,6 +1613,28 @@ const BODY_FRAGMENT = /* glsl */ `
       rebotar que cualquier otro mundo con aire.
     */
     float nightFloor = 0.5;
+    /*
+      Y Miller estrena el suyo (2026-09-06), que es lo que le faltaba para
+      leerse como un océano y no como una bola azul.
+
+      Se había quedado con el valor COMÚN, 0.5, el más alto de todo el sistema:
+      medio hemisferio nocturno de rebote sin dirección repartido por igual. Un
+      cuerpo así no tiene terminador —tiene un degradado— y sin terminador no
+      hay dónde leer que la luz viene de Gargantúa ni, con ella, el tamaño de
+      lo que se está mirando.
+
+      Es exactamente el mismo movimiento que la fase 1 hizo con la Endurance
+      (0.42 → 0.30) y con Edmunds (0.28 → 0.22), y el principio es el mismo: no
+      oscurecerlo, repartir su valor. Lo que pierde aquí se le devuelve entero
+      —y multiplicado— en la lámina de agua de más abajo, que sí sabe dónde
+      está la fuente.
+
+      Y el agua es, físicamente, el peor rebotador del cuadro: a incidencia
+      normal devuelve un 2 %, contra el 10-30 % de la roca seca de Edmunds. Que
+      su cara noche conservara MÁS relleno que la de un mundo mineral era la
+      única cifra del bloque que contradecía su propio material.
+    */
+    if (uKind == 0) nightFloor = 0.32;
     if (uKind == 1) nightFloor = 0.22;
     if (uKind == 4) nightFloor = 0.26;
     if (uKind == 5) nightFloor = 0.44;
@@ -1680,19 +1734,63 @@ const BODY_FRAGMENT = /* glsl */ `
          banda ancha y muy tenue, anisótropa también, que dice que ahí abajo
          sigue habiendo agua. Es el término que en la versión anterior valía
          0.26 con lóbulo isótropo, y por eso salía mancha. */
-      float oceanSeat = exp(-(alongOff2 * 1.7 + acrossOff2 * 22.0)) * gloss * day;
-      float oceanSheet = exp(-(alongOff2 * 7.5 + acrossOff2 * 265.0))
-                       * gloss * day;
+      /*
+        FRESNEL DE AGUA, y es lo que convierte la lámina en océano (2026-09-06).
+
+        Faltaba la mitad del material. El agua es la superficie del sistema con
+        el comportamiento angular más extremo que existe: a incidencia normal
+        devuelve un 2 % y a incidencia rasante devuelve casi el 100 %. Es una
+        propiedad, no un efecto — y es LA propiedad por la que un océano visto
+        desde órbita no se parece a nada más.
+
+        Sin ella, el reflejo pesaba lo mismo en el centro del disco que en el
+        limbo, así que el camino de luz salía como una banda blanca uniforme
+        cruzando una bola: exactamente el trazo que se leía como nube. Con ella,
+        la misma lámina se ADELGAZA hacia el centro y se ABRE hacia el borde, que
+        es lo que hace el mar de verdad cuando se mira de lejos, y es también lo
+        que da la sensación de superficie ENORME: el reflejo cuenta la curvatura.
+
+        Schlick sobre el ángulo de vista, exponente 5, sin una muestra ni un
+        sitio de FBM más. La ganancia no arranca en cero porque el 2 % literal
+        apagaría el corazón del reflejo, que es la parte que ya estaba aprobada;
+        arranca en 0.62 y llega a 1.9. El destello del oleaje gana bastante
+        menos —son microfacetas, y su normal ya no es la del cuerpo—, lo justo
+        para que el rastro de chispas siga la misma ley que la lámina que lo
+        contiene.
+      */
+      float waterFresnel = pow(1.0 - max(dot(normal, view), 0.0), 5.0);
+      float waterGain = mix(0.78, 2.1, waterFresnel);
+      float oceanSeat = exp(-(alongOff2 * 1.7 + acrossOff2 * 22.0))
+                      * gloss * day * waterGain;
+      /* Más larga y más estrecha (2026-09-06): 7.5 → 6.4 a lo largo y 265 → 330
+         a lo ancho. Un CAMINO de luz, no una mancha alargada — es la diferencia
+         entre ver el reflejo de una fuente sobre agua y ver una nube con
+         forma. La energía que pierde de ancho la recupera de peso. */
+      float oceanSheet = exp(-(alongOff2 * 6.4 + acrossOff2 * 290.0))
+                       * gloss * day * waterGain;
       float oceanGlint = exp(-(alongOff2 * 26.0 + acrossOff2 * 520.0))
-                       * millerGlitterMask * day;
+                       * millerGlitterMask * day * mix(0.86, 1.34, waterFresnel);
       /* El asiento va PICADO POR LAS BANDAS. Una lámina de reflejo continua
          sobre todo el hemisferio es exactamente lo que hace que un océano se
          lea como gas: sin corrientes que la corten, no hay superficie. */
-      color += mix(key, vec3(0.34, 0.56, 0.88), 0.46)
-             * oceanSeat * (0.3 + millerBands * 1.2) * 0.08;
-      color += mix(key, vec3(0.42, 0.62, 0.92), 0.34) * oceanSheet * 0.30;
+      /*
+        Y las tres anchuras se reparten la TEMPERATURA, que es la otra mitad de
+        por qué el trazo se leía como nube.
+
+        Un reflejo especular devuelve el color de la fuente, y la fuente aquí es
+        ámbar. La versión anterior enfriaba el camino estrecho un 34 % y la
+        sábana ancha un 46 %, o sea casi lo mismo: el resultado era una banda
+        blanca de temperatura indefinida, que es la firma de una nube. Ahora el
+        reparto es explícito y opuesto — el camino estrecho se queda casi en el
+        ámbar del disco y la sábana ancha se va al azul del cielo. Sobre agua
+        fría eso sólo puede ser una cosa, y además dice de dónde viene la luz
+        sin dibujar ninguna flecha.
+      */
+      color += mix(key, vec3(0.34, 0.56, 0.88), 0.58)
+             * oceanSeat * (0.3 + millerBands * 1.2) * 0.115;
+      color += mix(key, vec3(0.42, 0.62, 0.92), 0.22) * oceanSheet * 0.66;
       color += mix(vec3(1.0, 0.92, 0.78), vec3(0.66, 0.86, 1.0), 0.3)
-             * oceanGlint * 0.42;
+             * oceanGlint * 0.60;
 
       /*
         EL FILO SE VUELVE ASIMÉTRICO, y ése es el punto tres.
@@ -1762,7 +1860,8 @@ const BODY_FRAGMENT = /* glsl */ `
        contraluz seguía siendo el del resto —azul de campo estelar sobre casi
        medio disco— y sobre un mundo sin aire eso no cierra la silueta: la
        empaña. Lo que separa a este cuerpo del fondo es su propio filo cálido. */
-    color += backRimColor * backRim * (uKind == 1 ? 0.10 : 0.55);
+    color += backRimColor * backRim
+           * (uKind == 1 ? 0.10 : (uKind == 0 ? 0.40 : 0.55));
 
     /*
       Metales: una segunda reflexión, ancha y fría.
@@ -1990,7 +2089,14 @@ const BODY_FRAGMENT = /* glsl */ `
        Ranger tiene bloque propio: a 117° el filo es su iluminación principal,
        no un adorno que la separa del fondo. El resto del sistema se queda en
        0.18 sin enterarse. */
-    float commonRim = uKind == 4 ? 0.62 : 0.18;
+    /* Y Miller paga 0.07 en vez de 0.18. Este filo es un borde DIFUSO, y el
+       agua no tiene borde difuso: su limbo lo dibuja el reflejo especular, que
+       a incidencia rasante se vuelve espejo. Los 0.18 comunes le ponían encima
+       un contorno cálido que rodeaba el cuerpo mirase donde mirase — la otra
+       mitad del aro pálido, junto con el relleno de canto— y competía justo con
+       el término que sí cuenta de dónde viene la luz. Lo que se le quita aquí
+       se le devuelve en la lámina de agua, que sube a la vez. */
+    float commonRim = uKind == 4 ? 0.62 : (uKind == 0 ? 0.07 : 0.18);
     color += key * warmRim * (uKind == 2 ? tesseractRim : commonRim);
     /*
       Y el relleno de canto tampoco es igual para todos dentro del Tesseracto.
@@ -2002,9 +2108,17 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Y el relleno de canto también baja para el mundo mineral: 0.32 levantaba
        el limbo entero, iluminado o no, y es el tercer ingrediente del lavado
        azul que se está retirando. */
+    /* Y Miller baja a 0.13 por el mismo motivo por el que bajó Edmunds, sólo
+       que en su caso el aro sobrevivió a los dos pases anteriores: se estuvo
+       buscando en la atmósfera —que ya está casi apagada, 0.09— y en el halo
+       común, y estaba aquí. Este término levanta el canto MIRE DONDE MIRE, así
+       que dibujaba una línea pálida por toda la circunferencia, cara noche
+       incluida. Un planeta rodeado de un aro uniforme se lee como una canica
+       iluminada desde dentro; el limbo de un océano lo tiene que dibujar el
+       reflejo, que sólo existe de un lado. */
     float fillRim = uKind == 2 && vSurfaceMask > 4.5
       ? 0.26
-      : (uKind == 1 ? 0.11 : 0.32);
+      : (uKind == 1 ? 0.11 : (uKind == 0 ? 0.13 : 0.32));
     color += materialFill * fresnel * fillRim;
     color += emissive;
 
@@ -2018,8 +2132,59 @@ const BODY_FRAGMENT = /* glsl */ `
       La adquisición ya la cuentan el arco de la órbita, los corchetes, el raíl y
       el NAV TARGET: el cuerpo sólo tiene que confirmarla, no anunciarla.
     */
+    /*
+      ── Y el tinte se reparte por MATERIAL (2026-09-06) ────────────────────
+
+      Bajarlo una vez para todos no bastaba, y el motivo es el mismo criterio
+      que sostiene la capa visual: la misma luz toca materiales distintos sin
+      borrar su identidad. Un tinte de navegación uniforme hace exactamente lo
+      contrario — sobre el océano de Miller el cian ES su color y no se nota,
+      sobre la roca ocre de Edmunds lo convierte en otro mundo acuático justo
+      en el momento en que el visitante lo está señalando. El cuerpo que peor
+      lo llevaba era el que más lejos estaba de la paleta de navegación.
+
+      Así que el foco deja de ser un color y pasa a ser tres cosas cuyo reparto
+      depende del material:
+
+      · focusTint — cuánto cian aguanta el cuerpo sin dejar de ser él. Los
+        tres que ya vivían cerca de la paleta de navegación (agua, baliza y el
+        ámbar propio del Tesseracto) lo conservan entero.
+      · focusGain — el material se sube a sí mismo. No añade color: multiplica
+        el que ya tenía, así que un planeta ocre se enciende ocre.
+      · focusEdge — el filo cálido, que ya sabe dónde está Gargantúa, se marca
+        un poco más. Es la parte que se lee como «apuntado» a tamaño de hero.
+
+      Edmunds baja a un 8 % del tinte y Endurance a un 16 %: la nave es aluminio
+      marfil y aguanta algo más de cian que la roca seca sin dejar de ser metal,
+      que es justo el orden en que el dueño describió el problema. Lo que dice
+      de verdad la adquisición sigue estando fuera del cuerpo — los corchetes,
+      el arco de la órbita, el raíl y el NAV TARGET.
+
+      Los dos números salieron de MEDIR el color medio del cuerpo apuntado, no
+      de mirarlo: sobre el hero de 1440x860, Edmunds pasaba de 51/34/21 en
+      reposo a 66/50/36 apuntado —o sea, el azul subía un 71 % contra un 29 %
+      del rojo— y la Endurance de 21/20/20, neutra, a 27/34/36, o sea a fría.
+      Un cuerpo cuyo canal azul crece el doble que el rojo al adquirirlo ya no
+      conserva su material; ése es el umbral que fija estos dos valores.
+
+      Y por eso la Endurance acabó en 16 y no en 34: a 34 la medida seguía
+      dando 27/33/34, o sea el azul todavía por encima del rojo y todavía
+      creciendo el doble. El paso de 45 a 34 casi no movió la aguja —27/34/36 →
+      27/33/34— porque el tinte entra multiplicado por el fresnel y el casco es
+      casi todo canto: sobre esa geometría hace falta bajar el número mucho más
+      de lo que parece para bajar el color un poco. Lo que se le quita se le
+      devuelve en filo (0.20 → 0.30), que marca el contorno sin tocar la
+      temperatura del metal.
+    */
     vec3 focusColor = uKind == 2 ? vec3(1.0, 0.64, 0.34) : uNavigation;
-    color += focusColor * uFocus * (0.032 + fresnel * 0.44);
+    float focusTint = 1.0;
+    float focusGain = 0.0;
+    float focusEdge = 0.0;
+    if (uKind == 1) { focusTint = 0.08; focusGain = 0.16; focusEdge = 0.11; }
+    if (uKind == 4) { focusTint = 0.16; focusGain = 0.15; focusEdge = 0.30; }
+    color *= 1.0 + uFocus * focusGain * (0.55 + 0.45 * fresnel);
+    color += key * warmRim * uFocus * focusEdge;
+    color += focusColor * uFocus * focusTint * (0.032 + fresnel * 0.44);
 
     gl_FragColor = vec4(color, outputAlpha);
   }
@@ -2979,104 +3144,6 @@ function beam(section: number, length: number): THREE.BufferGeometry {
   return new THREE.BoxGeometry(section, length, section);
 }
 
-/**
- * Marco de apertura: cuatro barras en el plano XZ con un hueco rectangular.
- *
- * Es la pieza que sustituye a las doce aristas del cubo, y el cambio no es de
- * grosor sino de CLASE. Una arista es una línea: no tiene cara que orientar
- * hacia la luz, y a tamaño de Hero una retícula de aristas se lee como un icono
- * dibujado. Un marco tiene canto, cara interior y cara exterior — o sea masa,
- * hueco y dos superficies que responden distinto a la misma fuente.
- *
- * `halfX/halfZ` miden al EJE de la barra; `width` es su ancho dentro del plano y
- * `depth` su canto en el eje del túnel. Las barras nacen con la longitud en Y y
- * se rotan al colocarlas, así que conservan la convención de UV de las vigas:
- * `u` cruza la sección y `v` la recorre.
- *
- * ── Por qué caja plana y no `roundedBox` ────────────────────────────────────
- *
- * Se probó con el canto redondeado, y salió mal por donde no se esperaba. El
- * redondeo de three usa cinco segmentos por eje, así que una barra larga tiene
- * cinco facetas por filo; con el especular estrecho que pide este material, cada
- * faceta devuelve su propio destello y el resultado en pantalla es una fila de
- * cuentas a lo largo del canto. Se ve en la captura y se ve muy claro: la barra
- * deja de ser metal y pasa a ser un cordón de bolitas.
- *
- * El chaflán del shader hace el mismo trabajo sobre las mismas UV, es un
- * degradado continuo que no puede facetarse, y cuesta 24 vértices por barra en
- * vez de 200.
- */
-function apertureFrame(
-  halfX: number,
-  halfZ: number,
-  width: number,
-  depth: number,
-  folds: readonly [number, number, number, number] = [0, 0, 0, 0],
-  widths: readonly [number, number, number, number] = [1, 1, 1, 1],
-  /*
-    Lados presentes: [z=+halfZ, z=−halfZ, x=+halfX, x=−halfX]. Un marco con un lado
-    ausente deja de ser un túnel cuadrado y pasa a ser arquitectura abierta: el
-    ojo no puede cerrarlo como un prisma.
-  */
-  present: readonly [boolean, boolean, boolean, boolean] = [
-    true,
-    true,
-    true,
-    true,
-  ],
-  spans: readonly [number, number, number, number] = [1, 1, 1, 1],
-  offsets: readonly [number, number, number, number] = [0, 0, 0, 0],
-): THREE.BufferGeometry[] {
-  // El solape del canto cierra las esquinas sin una pieza extra. Los spans y
-  // offsets permiten que una barra sobrepase una esquina y muera antes de la
-  // opuesta: un marco sigue siendo reconocible sin cerrar un rectángulo ideal.
-  const spanX = halfX * 2 + width;
-  const spanZ = halfZ * 2 + width;
-  // El alabeo va sobre el eje LARGO de la barra y antes de colocarla: gira su
-  // sección sin moverla de sitio.
-  const roll = (geometry: THREE.BufferGeometry, angle: number) =>
-    placed(geometry, [0, 0, 0], [0, angle, 0]);
-  // Cada barra puede ensancharse por su cuenta: la silueta deja de ser un
-  // diamante de cuatro lados iguales sin dejar de ser una placa con un agujero.
-  // El eje escalado es el ANCHO dentro del plano en cada grupo (Z en las que
-  // corren en X, X en las que corren en Z); el canto del túnel no se toca.
-  const widenInPlaneX = (base: THREE.BufferGeometry, scale: number) =>
-    scale === 1 ? base : base.scale(1, 1, scale);
-  const widenInPlaneZ = (base: THREE.BufferGeometry, scale: number) =>
-    scale === 1 ? base : base.scale(scale, 1, 1);
-  const bars = [
-    // Las dos barras que corren en X, a z = ±half.
-    ...([halfZ, -halfZ] as const).map((z, index) =>
-      placed(
-        roll(
-          widenInPlaneX(
-            new THREE.BoxGeometry(depth, spanX * spans[index], width),
-            widths[index],
-          ),
-          folds[index],
-        ),
-        [offsets[index], 0, z],
-        [0, 0, Math.PI / 2],
-      ),
-    ),
-    // Y las dos que corren en Z, a x = ±half.
-    ...([halfX, -halfX] as const).map((x, index) =>
-      placed(
-        roll(
-          widenInPlaneZ(
-            new THREE.BoxGeometry(width, spanZ * spans[index + 2], depth),
-            widths[index + 2],
-          ),
-          folds[index + 2],
-        ),
-        [x, 0, offsets[index + 2]],
-        [Math.PI / 2, 0, 0],
-      ),
-    ),
-  ];
-  return bars.filter((_, index) => present[index]);
-}
-
 /** Tirante entre dos puntos: el hipercubo son sus diagonales, no sus caras. */
 function strut(
   from: THREE.Vector3,
@@ -3102,547 +3169,133 @@ function strut(
   );
 }
 
-/** Nodo facetado. Indexado a mano: `OctahedronGeometry` no lo está y no fusiona. */
-function latticeNode(radius: number): THREE.BufferGeometry {
-  const geometry = new THREE.OctahedronGeometry(radius, 0);
-  const indexed = mergeVertices(geometry);
-  geometry.dispose();
-  return indexed;
-}
-
-/** Los cuatro cuadrantes de un plano: (+,+), (+,−), (−,+), (−,−). */
-const BOX_QUADRANTS = [
-  [1, 1],
-  [1, -1],
-  [-1, 1],
-  [-1, -1],
-] as const;
-
-/**
- * Caja de vigas: hasta doce aristas de sección cuadrada, cada una opcional.
- *
- * Es la pieza que da la SILUETA del Tesseracto, y la razón de que exista está
- * en el fallo de la versión anterior: siete marcos apilados a lo largo de un
- * eje no dibujan un volumen, dibujan una diana. Desde el Hero —55 px— eso se
- * leía como un manojo de líneas cruzadas y no como una arquitectura.
- *
- * Una caja de aristas gruesas, en cambio, se reconoce entera de un vistazo:
- * ancho, alto y fondo a la vez. Es la lectura simple que la dirección pide
- * FUERA, para poder poner la complejidad DENTRO.
- *
- * Orden de las aristas, que es el de `present`:
- *
- *   0-3    a lo largo de X, en (y, z) = (+,+) (+,−) (−,+) (−,−)
- *   4-7    a lo largo de Y, en (x, z) = (+,+) (+,−) (−,+) (−,−)
- *   8-11   a lo largo de Z, en (x, y) = (+,+) (+,−) (−,+) (−,−)
- *
- * La longitud lleva un `section` de más para que las esquinas cierren por
- * solape, sin una pieza de nudo por vértice.
- */
-function boxFrame(
-  half: VectorTuple,
-  section: number,
-  present: readonly boolean[],
-): THREE.BufferGeometry[] {
-  const [hx, hy, hz] = half;
-  const edges: THREE.BufferGeometry[] = [];
-  for (const [a, b] of BOX_QUADRANTS) {
-    edges.push(
-      placed(
-        beam(section, hx * 2 + section),
-        [0, a * hy, b * hz],
-        [0, 0, Math.PI / 2],
-      ),
-    );
-  }
-  for (const [a, b] of BOX_QUADRANTS) {
-    edges.push(placed(beam(section, hy * 2 + section), [a * hx, 0, b * hz]));
-  }
-  for (const [a, b] of BOX_QUADRANTS) {
-    edges.push(
-      placed(
-        beam(section, hz * 2 + section),
-        [a * hx, b * hy, 0],
-        [Math.PI / 2, 0, 0],
-      ),
-    );
-  }
-  return edges.filter((_, index) => present[index]);
-}
-
-/**
- * La caja exterior y su inclinación respecto del eje de la recursión.
- *
- * ── Por qué la caja va TORCIDA contra el túnel ──────────────────────────────
- *
- * Son dos requisitos que se pelean. La recursión sólo se lee si sus marcos
- * llegan casi de frente a la cámara —de canto se convierten en cuatro rayas—,
- * y un volumen sólo se lee si NO llega de frente: una caja vista por su cara
- * es un cuadrado.
- *
- * La solución es no compartir eje. El túnel apunta casi a la cámara, así que
- * la caída de marcos se ve enfilada; la caja va girada contra él, así que
- * enseña tres caras. De paso, el desencaje ES la primera rareza del objeto: el
- * espacio de dentro no está alineado con la caja que lo contiene.
- *
- * ── Cuánto de torcida: 15° de yaw y 9° de pitch (2026-09-04) ────────────────
- *
- * Hubo una versión a 39° que buscaba fuga: con la cara trasera a diecisiete
- * píxeles de la delantera, el volumen se leía sin discusión. El problema es que
- * a esos grados la caja llegaba a 33° del eje de vista y tapaba lo que este
- * objeto tiene que enseñar. Dirección lo dijo así:
- *
- *   Está enseñando demasiado el lateral. La silueta es menos reconocible, el
- *   vacío central no se lee, las capas interiores se amontonan y parece un
- *   objeto que pasa por ahí en vez de un destino.
- *
- * Y el objeto se rediseñó justo para que se leyeran el marco exterior, los
- * marcos interiores y la progresión hacia el vacío. De canto se esconde
- * exactamente aquello que lo caracteriza.
- *
- * La primera corrección se fue a 17.5° y ahí apareció el otro extremo: a esa
- * escala el objeto empezaba a leerse como un SÍMBOLO de cuadrados concéntricos
- * en vez de como un objeto dimensional. Tres grados y medio bastan para
- * devolver la fuga sin volver a esconder el interior, así que la cara queda a
- * 20.9° del eje de vista —yaw 18.8°, pitch 10.0°— con las aristas a 10° de la
- * escuadra. Frontal para entender la estructura de un vistazo; torcida para
- * conservar volumen. Ni 33°, que lo escondía, ni 17°, que lo aplanaba.
- *
- * No son tres números sueltos: se resolvieron invirtiendo la cadena
- * `orientación de reposo → roll → inclinación` contra la dirección real de la
- * cámara al cuerpo. Cambiar la fase del Tesseracto obliga a rehacer ese cálculo.
- */
-const TESSERACT_BOX_HALF: VectorTuple = [1.02, 0.23, 0.95];
-const TESSERACT_BOX_SECTION = 0.155;
-const TESSERACT_BOX_TILT: VectorTuple = [0.251, 0.053, 0.417];
-/*
-  Y un giro final SOBRE EL EJE DEL TÚNEL, que es casi el eje de vista: o sea, un
-  giro en el plano de la pantalla. Va aparte y va el último porque hace un
-  trabajo distinto del de la inclinación, y mezclarlos en un Euler los vuelve
-  imposibles de ajustar por separado.
-
-  Es el mando de la ESCUADRA. Con la caja de canto hacía falta mucho (0.55 rad)
-  para sacarla del rombo; ahora que llega casi de frente, el mismo giro la
-  volvería a ladear, así que baja a −0.09 y las aristas quedan a 10° de la
-  horizontal. Diez, y no cero, por lo de siempre: una caja perfectamente a
-  escuadra deja de parecer una caja y parece un icono.
-*/
-const TESSERACT_BOX_ROLL = -0.09;
-
-/** Un punto del espacio de la caja, llevado al espacio del túnel. */
-function boxPoint(x: number, y: number, z: number): THREE.Vector3 {
-  return new THREE.Vector3(x, y, z)
-    .applyEuler(new THREE.Euler(...TESSERACT_BOX_TILT))
-    .applyAxisAngle(new THREE.Vector3(0, 1, 0), TESSERACT_BOX_ROLL);
-}
-
-/**
- * Cuatro marcos en progresión geométrica: 0.68 → 0.50 → 0.345 → 0.225.
- * El último añade profundidad a tamaño de hero sin tapar el hueco. Sus giros,
- * inclinaciones y desplazamientos alternos desencajan el túnel de la caja.
- */
-interface TesseractRing {
-  halfX: number;
-  halfZ: number;
-  y: number;
-  twist: number;
-  width: number;
-  depth: number;
-  shift: readonly [number, number];
-  tilt: readonly [number, number];
-  widths: readonly [number, number, number, number];
-}
-
-const TESSERACT_RINGS = [
-  {
-    halfX: 0.68,
-    halfZ: 0.625,
-    y: 0.1,
-    twist: (10 * Math.PI) / 180,
-    width: 0.092,
-    depth: 0.09,
-    shift: [0.025, -0.018],
-    tilt: [-0.04, 0.035],
-    widths: [1.06, 0.95, 1.03, 0.97],
-  },
-  {
-    halfX: 0.5,
-    halfZ: 0.455,
-    y: -0.25,
-    twist: (-8 * Math.PI) / 180,
-    width: 0.08,
-    depth: 0.078,
-    shift: [-0.032, 0.024],
-    tilt: [0.045, -0.038],
-    widths: [0.96, 1.07, 0.98, 1.04],
-  },
-  {
-    halfX: 0.345,
-    halfZ: 0.31,
-    y: -0.55,
-    twist: (13 * Math.PI) / 180,
-    width: 0.07,
-    depth: 0.068,
-    shift: [0.022, 0.028],
-    tilt: [-0.035, 0.06],
-    widths: [1.04, 0.97, 1.06, 0.95],
-  },
-  {
-    halfX: 0.225,
-    halfZ: 0.205,
-    y: -0.86,
-    twist: (-7 * Math.PI) / 180,
-    width: 0.052,
-    depth: 0.055,
-    shift: [-0.006, 0.014],
-    tilt: [0.025, -0.025],
-    widths: [1.02, 0.97, 1.03, 0.98],
-  },
-] as const satisfies readonly TesseractRing[];
-
-/**
- * La espalda pertenece a la misma caja que el frente. Sus cuatro lados y
- * cuatro tirantes cierran el volumen; la arista imposible sigue en el frente.
- * El desfase en profundidad se ve por los laterales, no por otro rectángulo
- * girado que compita con la recursión.
- */
-const TESSERACT_BACK_Y = -0.38;
-
-/**
- * Las cuatro esquinas de un marco, con su giro, inclinación y desplazamiento.
- *
- * Existe porque los puentes entre capas van de una esquina concreta a otra
- * esquina concreta, y esa cuenta escrita a mano se equivoca siempre: hay que
- * componer el mismo Euler que usa la colocación del marco o el puente aterriza
- * en el aire.
- */
-function ringCorners(ring: TesseractRing): THREE.Vector3[] {
-  const orientation = new THREE.Euler(ring.tilt[0], ring.twist, ring.tilt[1]);
-  return ([
-    [1, 1],
-    [1, -1],
-    [-1, -1],
-    [-1, 1],
-  ] as const).map(([sx, sz]) =>
-    new THREE.Vector3(sx * ring.halfX, 0, sz * ring.halfZ)
-      .applyEuler(orientation)
-      .add(new THREE.Vector3(ring.shift[0], ring.y, ring.shift[1])),
-  );
-}
-
-/**
- * Tesseracto: arquitectura de grafito con un túnel que se repliega hacia dentro.
- *
- * El frente interrumpido, la espalda completa y cuatro tirantes comparten
- * esquinas. Dos paneles laterales dan espesor visible sin tapar el túnel.
- * La referencia del dueño pide volumen construido y profundidad: la espalda
- * ya no es un rectángulo independiente tan oscuro que parezca inexistente.
- *
- * Cuatro marcos interiores disminuyen de tamaño y alternan orientación; el
- * calor aumenta hacia el fondo. La cáscara permanece fija, y sólo los tres
- * grupos interiores derivan. Se conservan la arista desplazada, el puente
- * inconcluso y el nodo huérfano como contradicciones legibles.
- *
- * Cuatro draws, un material opaco, sin texturas ni cambios de cámara o posición.
- */
+/** Architectural corridor inspired by the owner's 2026-09-06 reference.
+ * Its envelope is open and interlocked; seven connected thresholds converge
+ * into an empty aperture. Four batches share the existing graphite shader. */
 function tesseractModel(input: SceneBodyInput): BodyModel {
-  /*
-    Un solo material opaco para todo el cuerpo: el grafito, el filo cálido, la
-    oclusión de cavidad y las ranuras de tungsteno salen del mismo shader con
-    la máscara de superficie. Sin transparencias, sin segundo material.
-  */
   const structure = bodyMaterial(input, KIND.tesseract);
   const root = new THREE.Object3D();
+  const point = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+  const shellParts: THREE.BufferGeometry[] = [];
+  const midParts: THREE.BufferGeometry[] = [];
+  const deepParts: THREE.BufferGeometry[] = [];
+  const thresholdParts: THREE.BufferGeometry[] = [];
 
-  const [ring2, ring3, ring4, ring5] = TESSERACT_RINGS;
-  const [corners2, corners3, corners4] = TESSERACT_RINGS.map(ringCorners);
-
-  /** Una pieza de la caja, llevada del espacio de la caja al del túnel. */
-  const tilted = (geometry: THREE.BufferGeometry): THREE.BufferGeometry =>
-    placed(
-      placed(geometry, [0, 0, 0], TESSERACT_BOX_TILT),
-      [0, 0, 0],
-      [0, TESSERACT_BOX_ROLL, 0],
+  const corners = (hx: number, hz: number, y: number, twist: number, dx = 0, dz = 0) =>
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([x, z]) =>
+      point(x * hx, 0, z * hz)
+        .applyAxisAngle(point(0, 1, 0), twist)
+        .add(point(dx, y, dz)),
     );
+  const portal = (
+    target: THREE.BufferGeometry[], pts: THREE.Vector3[], width: number,
+    mask: number, openSide = -1,
+  ) => {
+    for (let edge = 0; edge < 4; edge++) {
+      const a = pts[edge];
+      const b = pts[(edge + 1) % 4];
+      if (edge === openSide) {
+        target.push(surfaceMasked(strut(a, a.clone().lerp(b, 0.36), width), mask));
+        target.push(surfaceMasked(strut(a.clone().lerp(b, 0.56), b, width), mask));
+      } else {
+        target.push(surfaceMasked(strut(a, b, width * (edge % 2 ? 1 : 0.82)), mask));
+      }
+    }
+  };
 
-  /** Un marco de la recursión ya colocado: giro + inclinación + altura. */
-  const ringAt = (ring: TesseractRing): THREE.BufferGeometry[] =>
-    apertureFrame(
-      ring.halfX,
-      ring.halfZ,
-      ring.width,
-      ring.depth,
-      [0, 0, 0, 0],
-      ring.widths,
-      [true, true, true, true],
-    ).map((part) =>
-      placed(
-        part,
-        [ring.shift[0], ring.y, ring.shift[1]],
-        [ring.tilt[0], ring.twist, ring.tilt[1]],
-      ),
-    );
+  // Two staggered structural bays, plus a transverse incomplete bay. They
+  // show front, side and rear surfaces instead of closing a perfect cube.
+  const front = corners(0.98, 1.12, 0.30, -0.08, -0.035, 0.025);
+  const rear = corners(1.04, 1.02, -0.48, 0.19, 0.06, -0.035);
+  portal(shellParts, front, 0.15, 0, 0);
+  portal(shellParts, rear, 0.09, 5, 2);
+  for (let corner = 0; corner < 4; corner++) {
+    shellParts.push(surfaceMasked(strut(front[corner], rear[corner], 0.075), 5));
+  }
+  // The reference's long planes: broad dark faces framed by narrow highlights.
+  shellParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.22, 0.66, 1.58), [-0.99, -0.02, 0.10], [0.04, -0.08, 0.05]), 5));
+  shellParts.push(surfaceMasked(placed(new THREE.BoxGeometry(1.36, 0.53, 0.12), [0.14, -0.10, 1.04], [-0.06, 0.10, 0]), 0));
 
-  /*
-    LA CÁSCARA NO SE MUEVE. Es arquitectura, y la arquitectura no tiembla: todo
-    el movimiento del cuerpo vive en los tres grupos interiores. Eso también
-    garantiza que la deriva ambiental no pueda destruir la silueta.
-  */
-  const shell = mergedMesh(
-    [
-      // Frente: tres lados continuos y el cuarto interrumpido más abajo.
-      ...boxFrame(TESSERACT_BOX_HALF, TESSERACT_BOX_SECTION, [
-        true, false, false, false,
-        false, false, false, false,
-        true, false, true, false,
-      ]).map(tilted),
-      // Marco posterior completo. Deja un hueco central y conserva las cuatro
-      // esquinas que permiten leer una espalda, también en la zona izquierda.
-      ...apertureFrame(1.02, 0.95, 0.135, 0.135).map((part) =>
-        surfaceMasked(tilted(placed(part, [0, TESSERACT_BACK_Y, 0])), 5),
-      ),
-      // Cada esquina delantera llega a su esquina posterior correspondiente.
-      ...BOX_QUADRANTS.map(([x, z]) => surfaceMasked(
-        strut(
-          boxPoint(x * 1.02, 0.23, z * 0.95),
-          boxPoint(x * 1.02, TESSERACT_BACK_Y, z * 0.95),
-          0.115,
-        ),
-        5,
-      )),
-      // Dos caras de metal dan espesor y superficie donde leer la luz. Son
-      // laterales de la caja: ninguna placa ocupa el hueco del túnel.
-      surfaceMasked(tilted(placed(
-        new THREE.BoxGeometry(1.86, 0.61, 0.045),
-        [0, -0.075, -0.95],
-      )), 5),
-      surfaceMasked(tilted(placed(
-        new THREE.BoxGeometry(0.045, 0.45, 1.62),
-        [-1.02, -0.095, 0.08],
-      )), 5),
-      /*
-        LA ARISTA PARTIDA, y va en el MARCO DE DELANTE a propósito.
+  // Cantilevered L shapes cross the shell and continue beyond its edges.
+  // No radial spikes: each extension belongs to a recognisable structural bay.
+  const wings = [
+    [point(-1.54, 0.08, -0.35), point(-0.74, 0.08, -0.35), point(-0.74, -0.49, -1.12)],
+    [point(1.53, -0.20, 0.28), point(0.71, -0.20, 0.28), point(0.71, 0.38, 1.18)],
+    [point(-0.24, -0.37, -1.48), point(0.38, -0.37, -1.48), point(0.38, 0.29, -0.76)],
+    [point(0.20, 0.26, 1.49), point(-0.42, 0.26, 1.49), point(-0.42, -0.41, 0.84)],
+  ];
+  for (const [a, b, c] of wings) {
+    shellParts.push(surfaceMasked(strut(a, b, 0.085), 0));
+    shellParts.push(surfaceMasked(strut(b, c, 0.067), 5));
+  }
 
-        Estuvo primero en una arista del fondo, que es donde no sirve de nada:
-        una contradicción escondida detrás de la estructura no contradice a
-        nadie. Ahora parte por la mitad una de las cuatro aristas de la cara que
-        mira a la cámara. El tramo de la izquierda va donde toca; el de la
-        derecha sigue a la MISMA altura pero 0.15 más adentro, con un hueco de
-        otro tanto entre los dos, así que la arista se mete detrás del cuerpo y
-        vuelve a salir por donde no debía.
+  const sizes = [0.81, 0.635, 0.492, 0.377, 0.283, 0.205, 0.142];
+  const levels = sizes.map((size, i) => corners(
+    size, size * 1.08, 0.20 - i * 0.19,
+    (i % 2 ? -0.045 : 0.035),
+    0.012 * Math.sin(i * 1.2), 0.008 * Math.cos(i),
+  ));
+  for (let i = 0; i < levels.length; i++) {
+    const target = i < 3 ? midParts : i < 5 ? deepParts : thresholdParts;
+    const mask = i < 2 ? 2 : i < 3 ? 3 : i < 5 ? 4 : 4.25;
+    portal(target, levels[i], Math.max(0.021, 0.059 - i * 0.006), mask);
+    // Raking rails join corresponding corners; never cross the central void.
+    const previous = i === 0 ? front : levels[i - 1];
+    for (const corner of [0, 2]) {
+      target.push(surfaceMasked(strut(previous[corner], levels[i][corner], Math.max(0.014, 0.035 - i * 0.003)), i < 3 ? 2 : 3));
+    }
+  }
 
-        Los dos tramos comparten altura y dirección a propósito: con el segundo
-        además bajado y girado —como estuvo un intento— dejan de leerse como UNA
-        arista rota y pasan a ser dos barras paralelas, que es ruido. La
-        contradicción necesita que el ojo insista en unirlas.
-      */
-      tilted(
-        placed(
-          beam(TESSERACT_BOX_SECTION, 1.04),
-          [-0.56, 0.23, -0.95],
-          [0, 0, Math.PI / 2],
-        ),
-      ),
-      tilted(
-        placed(
-          beam(TESSERACT_BOX_SECTION, 0.96),
-          [0.59, 0.23, -0.79],
-          [0, 0, Math.PI / 2],
-        ),
-      ),
-      /*
-        UN PANEL, y no es decoración: es la única superficie ANCHA del cuerpo.
-        Sin él todo es canto, la clave sólo devuelve filos y el objeto se lee
-        como alambre por muy gruesas que sean las vigas. Un panel tiene cara: un
-        valor continuo donde apoyar la lectura de material.
-
-        Es un trozo de suelo en la esquina del fondo, y está donde está por dos
-        capturas fallidas. Ocupando el fondo entero quedaba de frente a la
-        cámara y tapaba exactamente el vacío —un panel claro justo donde tiene
-        que haber estrellas—. Con un segundo panel de pared lateral, los dos
-        engordaban el lado derecho hasta convertirlo en un haz de barras. Uno
-        solo, pequeño y al fondo, se ve A TRAVÉS de la caja y cuenta a qué
-        profundidad está el otro lado.
-      */
-      tilted(
-        placed(new THREE.BoxGeometry(0.52, 0.026, 0.42), [-0.66, -0.222, -0.56]),
-      ),
-      /*
-        DOS ESPOLONES CORTOS, asimétricos y gruesos. Salen de las CARAS y no de
-        las esquinas, así que mueren dentro de la esfera que ya define la caja:
-        cambian la silueta sin tocar el radio publicado ni convertir el cuerpo
-        en una antena. La versión anterior tenía cinco, largos y repartidos en
-        cinco direcciones — y ésa era la silueta de estrella que había que
-        matar.
-      */
-      strut(boxPoint(0.98, 0.02, 0.16), boxPoint(1.4, 0.1, 0.06), 0.105),
-      strut(boxPoint(0.24, 0.0, -0.92), boxPoint(0.34, -0.06, -1.36), 0.092),
-      /*
-        Nodos de acero pulido en tres esquinas de la caja, con radios distintos:
-        cuatro iguales serían repetición mecánica, y la repetición mecánica es
-        lo que hace que una figura se entienda de un vistazo. Son los únicos
-        destellos duros del exterior — la caja no emite nada.
-      */
-      ...(
-        [
-          [boxPoint(1.02, 0.23, 0.95), 0.072],
-          [boxPoint(-1.02, 0.23, 0.95), 0.056],
-          [boxPoint(1.02, -0.23, -0.95), 0.048],
-        ] as const
-      ).map(([corner, radius]) =>
-        surfaceMasked(
-          placed(latticeNode(radius), [corner.x, corner.y, corner.z]),
-          1,
-        ),
-      ),
-    ],
-    structure,
-  );
+  const shell = mergedMesh(shellParts, structure);
   shell.name = "tesseract-shell";
   root.add(shell);
-
-  /*
-    LOS MARCOS MEDIOS: las capas 2 y 3 de la recursión, sus dos puentes y la
-    viga imposible.
-
-    Los puentes existen para que la recursión se lea CONECTADA. Sin ellos son
-    tres marcos flotando a distintas profundidades, que es lo mismo que decir
-    tres objetos; con ellos el ojo entiende que lo de dentro cuelga de lo de
-    fuera, y entonces la pregunta pasa a ser hasta dónde sigue.
-
-    Van a esquinas NO homólogas —de la esquina i a la i+1— así que salen
-    alabeados y no existe ninguna cara plana que los contenga.
-  */
   const mid = new THREE.Object3D();
-  const midMesh = mergedMesh(
-    [
-      ...ringAt(ring2).map((part) => surfaceMasked(part, 2)),
-      ...ringAt(ring3).map((part) => surfaceMasked(part, 3)),
-      /*
-        LOS PUENTES VAN TODOS A LA MISMA ESQUINA, y ésa es la diferencia entre
-        una espina y tres palos. Repartidos —cada tramo a una esquina distinta—
-        cruzaban el hueco por sitios distintos y el ojo los leía como ruido
-        encima de la recursión; encadenados por la esquina 0 forman UNA línea
-        que baja desde una esquina de la caja hasta el fondo, y esa línea es lo
-        que hace que los marcos se lean colgados unos de otros en vez de
-        flotando.
-      */
-      strut(boxPoint(1.02, 0.23, 0.95), corners2[0], 0.068),
-      strut(corners2[0], corners3[0], 0.056),
-    ],
-    structure,
-  );
-  midMesh.name = "tesseract-mid-frames";
-  mid.add(midMesh);
-  root.add(mid);
-
-  /*
-    EL FONDO: penúltimo marco y puentes. El umbral final deriva por separado.
-
-    Son los marcos más pequeños y calientes: sus ranuras de tungsteno son la
-    luz fuerte del cuerpo y están al final del recorrido, que es lo que
-    lleva el ojo hacia adentro. Dentro del último no hay nada — ni núcleo, ni
-    reactor, ni velo. El cilindro central queda libre en toda la altura y por
-    ahí pasan las estrellas.
-  */
   const deep = new THREE.Object3D();
-  const deepMesh = mergedMesh(
-    [
-      ...ringAt(ring4).map((part) => surfaceMasked(part, 4)),
-      strut(corners3[0], corners4[0], 0.048),
-      /*
-        EL PUENTE QUE NO LLEGA. Se detiene al 58 % del camino y en su extremo
-        flota un nodo facetado: un destello sin soporte justo donde la barra
-        debería continuar y no continúa. Pregunta «¿cómo se sostiene eso?» sin
-        gastar ni un emisivo.
-      */
-      strut(corners3[2], corners3[2].clone().lerp(corners4[2], 0.58), 0.042),
-      surfaceMasked(
-        placed(
-          latticeNode(0.04),
-          (() => {
-            const tip = corners3[2].clone().lerp(corners4[2], 0.58);
-            return [tip.x, tip.y, tip.z] as const;
-          })(),
-        ),
-        1,
-      ),
-    ],
-    structure,
-  );
-  deepMesh.name = "tesseract-deep-frames";
-  deep.add(deepMesh);
-  root.add(deep);
-
-  // El último umbral tiene su propio ritmo. Su pivote vive en el centro del
-  // marco para que inclinarlo no lo haga barrer y taponar el agujero del túnel.
   const threshold = new THREE.Object3D();
-  const thresholdMesh = mergedMesh(
-    ringAt({ ...ring5, y: 0 }).map((part) => surfaceMasked(part, 4.25)),
-    structure,
-  );
-  thresholdMesh.name = "tesseract-threshold";
-  threshold.add(thresholdMesh);
-  threshold.position.y = ring5.y;
-  root.add(threshold);
+  const groups = [mid, deep, threshold];
+  const parts = [midParts, deepParts, thresholdParts];
+  const names = ["tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"];
+  groups.forEach((group, i) => {
+    const mesh = mergedMesh(parts[i], structure);
+    mesh.name = names[i];
+    group.add(mesh);
+    root.add(group);
+  });
 
-  /* Contrato semántico de la geometría. Los tests fijan la lectura —cuántas
-     capas, cuánto puente, cuánta contradicción y que el centro esté vacío— sin
-     acoplarse a cada coordenada artística. */
+  // Preserve the destination's occupied volume; only its internal architecture
+  // changes. Normalise actual shell vertices, not an inflated bounding sphere.
+  const vertices = shell.geometry.getAttribute("position");
+  let shellRadius = 0;
+  const vertex = new THREE.Vector3();
+  for (let i = 0; i < vertices.count; i++) {
+    shellRadius = Math.max(shellRadius, vertex.fromBufferAttribute(vertices, i).length());
+  }
+  const unitScale = 1.56 / shellRadius;
+  root.traverse((node) => {
+    if (node instanceof THREE.Mesh) node.geometry.scale(unitScale, unitScale, unitScale);
+  });
   root.userData.tesseractArchitecture = {
-    /* Caja más cuatro marcos interiores; la espalda pertenece a la caja. */
-    visualLayers: 1 + TESSERACT_RINGS.length,
-    recursiveRings: TESSERACT_RINGS.length,
-    structuralBridges: 3,
-    shellExtensions: 2,
-    interruptedBeams: 2,
-    /* Cada marco interior lleva su propio escalón hacia el vacío. */
-    emissiveTiers: 4,
-    /* Frente, interior y FONDO. Sin esto el cuerpo se leía sólo por delante. */
-    rearFrame: true,
-    depthRails: 4,
-    sidePanels: 2,
-    centralVoid: true,
-    closedOuterCube: false,
+    visualLayers: 9, recursiveRings: 7, structuralBridges: 14,
+    shellExtensions: 4, interruptedBeams: 2, emissiveTiers: 4,
+    rearFrame: true, depthRails: 4, sidePanels: 2,
+    centralVoid: true, closedOuterCube: false,
   };
 
   return {
     root,
     materials: [structure],
-    /* La cáscara fija ancla tres ritmos interiores. La contracción desigual
-       cambia las proporciones y las oclusiones, de forma visible en pocos
-       segundos a tamaño de hero. Todo oscila: no hay vueltas completas,
-       acumulación por fotograma ni desplazamiento del destino. */
     animate(seconds) {
-      const wave = (period: number, phase = 0) =>
-        Math.sin((seconds * Math.PI * 2) / period + phase);
-
-      mid.rotation.set(
-        wave(12.7, 0.6) * 0.035,
-        0.02 + wave(10.7) * 0.12,
-        wave(14.3, 2.2) * 0.028,
-      );
+      const wave = (period: number, phase = 0) => Math.sin(seconds * Math.PI * 2 / period + phase);
+      // Oscillation, never accumulating spin. The shell is absolutely still.
+      mid.rotation.set(wave(12.7, 0.6) * 0.035, 0.02 + wave(10.7) * 0.12, wave(14.3, 2.2) * 0.028);
       mid.position.set(wave(13.9) * 0.018, wave(9.4, 1) * 0.035, wave(11.9, 1.1) * 0.016);
-      const middleFold = wave(10.7, 0.7);
-      mid.scale.set(1 + middleFold * 0.045, 1, 1 - middleFold * 0.035);
-
-      // El fondo va en contra: cuando los medios avanzan, retrocede.
-      deep.rotation.set(
-        wave(11.1, 2.4) * 0.055,
-        -0.05 + wave(8.9, Math.PI) * 0.19,
-        wave(13.7, 1.1) * 0.045,
-      );
-      deep.position.set(wave(12.3, 2) * 0.028, wave(8.2) * 0.045, wave(10.1) * 0.024);
-      const deepFold = wave(8.9, 2.3);
-      deep.scale.set(1 + deepFold * 0.075, 1, 1 - deepFold * 0.055);
-
-      threshold.rotation.set(
-        wave(9.7, 0.7) * 0.06,
-        0.04 + wave(7.3, 2.1) * 0.24,
-        wave(11.3, 2) * 0.05,
-      );
-      threshold.position.set(wave(9.1, 1.7) * 0.018, ring5.y + wave(7.9) * 0.04, wave(10.9) * 0.016);
-      threshold.scale.setScalar(1 + wave(7.3, 2.8) * 0.085);
+      mid.scale.set(1 + wave(10.7, 0.7) * 0.045, 1, 1 - wave(10.7, 0.7) * 0.035);
+      deep.rotation.set(wave(11.1, 2.4) * 0.055, -0.05 + wave(8.9, Math.PI) * 0.19, wave(13.7, 1.1) * 0.045);
+      deep.position.set(wave(12.3, 2) * 0.02, wave(8.2) * 0.035, wave(10.1) * 0.018);
+      deep.scale.set(1 + wave(8.9, 2.3) * 0.055, 1, 1 - wave(8.9, 2.3) * 0.04);
+      threshold.rotation.set(wave(9.7, 0.7) * 0.025, 0.04 + wave(7.3, 2.1) * 0.24, wave(11.3, 2) * 0.02);
+      threshold.position.set(wave(9.1, 1.7) * 0.008, wave(7.9) * 0.025, wave(10.9) * 0.007);
+      threshold.scale.setScalar(1 + wave(7.3, 2.8) * 0.055);
     },
   };
 }

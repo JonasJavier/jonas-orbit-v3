@@ -129,6 +129,65 @@ macroforma (cuenca pálida) bajando la frecuencia de provincia de 1.62 a 1.28, y
 la Ranger cambia su relleno plano por un **rebote dirigido**: ámbar hacia
 Gargantúa, azul de campo estelar en la espalda.
 
+**Raíl, atlas plano y Tesseracto (2026-09-06):**
+`docs/design/atlas-tesseract-reference.md` manda sobre los documentos anteriores
+en **el orden visible de las etiquetas del raíl, la composición y el acabado del
+mapa 2D, y la geometría del Tesseracto en las dos versiones**. El raíl nombra
+primero el CONTENIDO —Historia, Desarrollo, Proyectos, Creatividad, Laboratorio,
+Contacto— y revela el nombre cósmico al apuntar; el nombre accesible de cada
+enlace pasa a ser «Contacto Ranger» y no al revés. El atlas plano tiene
+composición propia en **tres** formatos —`wide`, `portrait` y `short`, este
+último para el apaisado corto— en `lib/flat-composition.ts`, independiente de
+los datos orbitales de WebGL. El Tesseracto sustituye la caja compacta por un
+corredor de marcos entrelazados hacia un punto de fuga, con cuatro draws y un
+solo material. No cambian posición, cámara ni datos orbitales de ningún cuerpo.
+`e2e/atlas.spec.ts` comprueba los seis formatos: cuerpos dentro de pantalla y por
+encima del raíl, enlaces y proxies de 44 px, centro de cada proxy alcanzable y
+cero desbordamiento horizontal.
+
+**Tercer recorte de escala (2026-09-06):** la sección `14 septies` de
+`docs/design/hero-gargantua-direction.md` sustituye la columna de tamaño de
+`14 sexies` para **tres** cuerpos y sólo tres — Endurance −3.5 % (4.547 →
+4.388), Tesseracto −1.5 % (2.669 → 2.629), Ranger −0.5 % (1.92 → 1.9104).
+Miller y Edmunds **no se tocan**, y esa asimetría es la decisión: son el
+contrapeso del cuadro y encogerlos otra vez habría movido la composición, no la
+escala. Gargantúa, posición, fase, inclinación, cámara, material y HUD siguen
+intactos.
+
+**El cielo deja de participar del remolino (2026-09-06):** la sección
+`14 octies` de `docs/design/hero-gargantua-direction.md` manda sobre `6` en
+**cuánto se estira el fondo estelar y dónde**. El estiramiento se reserva para
+la vecindad del agujero —puerta por parámetro de impacto, entera hasta 17 rs y
+cerrada en 30— y en la periferia pagan sólo las escalas gruesas; **el campo fino
+(escala 520) no se toca**. Medido con `tools/star-streaks.mjs`: −31 % de
+presencia luminosa en la periferia, 0 % de cambio en el anillo de 250-400 px. No
+se toca el lensing del disco.
+
+**El rastro del puntero vuelve a la cabina (2026-09-06):** la sección
+`14 nonies` de `docs/design/hero-gargantua-direction.md` sustituye `11 ter` y
+`11 quater` en **densidad, cola, calibre y color** del perfil `webgl` del
+stardust: 21 % de la densidad anterior, cola un 65 % más corta, motas a la mitad
+de radio y ventana de tonos en la mitad FRÍA de la paleta (cian, cian pálido,
+blanco frío) — la navegación ya había convergido al cian y el rastro era la
+única pieza que seguía hablando en magenta. El retículo de `11 bis` no se toca y
+el perfil `flat` sigue congelado byte a byte.
+
+**Miller — océano gigantesco (2026-09-06):** la sección `9 ter` de
+`docs/design/world-visual-language.md` sustituye material, paleta e iluminación
+de Miller. **Su posición no se toca**, por petición explícita del dueño. Cambios
+centrales: ley difusa propia sin meseta de terminador, Fresnel de agua sobre la
+lámina, camino de luz cálido contra sábana fría, agua honda más profunda y masas
+pálidas retiradas, y suelo nocturno y filos propios en vez de los comunes. Ni un
+sitio de FBM, ni una textura, ni un draw call nuevos.
+
+**El foco no puede borrar el material (2026-09-06):** la sección `9 quater` de
+`docs/design/world-visual-language.md` manda sobre la respuesta de adquisición
+de los seis cuerpos. El tinte de navegación deja de ser uniforme y se reparte por
+material: Edmunds al 8 % y Endurance al 16 %, con la diferencia devuelta en
+ganancia propia y filo. Es la aplicación directa del criterio de la capa visual
+—la misma luz toca materiales diferentes sin borrar su identidad— al único sitio
+donde el sistema lo incumplía.
+
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station

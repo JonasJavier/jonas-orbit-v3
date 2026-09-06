@@ -120,7 +120,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     await page.goto("/es?no3d=1");
     const map = systemMap(page);
     const endurance = map.getByRole("link", {
-      name: /Endurance Proyectos/i,
+      name: /Proyectos Endurance/i,
     });
     const target = page.locator(".hud__target");
 
@@ -139,7 +139,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     ).toHaveAttribute("data-target-state", "target");
 
     const miller = map.getByRole("link", {
-      name: /Miller Desarrollo/i,
+      name: /Desarrollo Miller/i,
     });
     await miller.focus();
     await expect(miller).toBeFocused();
@@ -204,7 +204,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   }) => {
     await page.goto("/es");
     await systemMap(page)
-      .getByRole("link", { name: /Endurance Proyectos/i })
+      .getByRole("link", { name: /Proyectos Endurance/i })
       .click();
     await expect(page).toHaveURL(/\/es\/proyectos$/);
 
@@ -222,8 +222,10 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     page,
   }) => {
     await page.goto("/es");
+    // El raíl nombra primero el CONTENIDO y después el destino cósmico, así
+    // que el nombre accesible es «Contacto Ranger». Ver el pase del atlas.
     await systemMap(page)
-      .getByRole("link", { name: /Ranger Contacto/i })
+      .getByRole("link", { name: /Contacto Ranger/i })
       .click();
     await expect(page).toHaveURL(/\/es\/contacto$/);
     await expect(
@@ -395,7 +397,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     for (const world of WORLDS) {
       // Primer salto desde el mapa de la home; a partir de ahí, la cabecera de
       // cada mundo. Es el recorrido real de quien navega con teclado.
-      // El mapa de la home anuncia «Miller Desarrollo» desde que la etiqueta
+      // El mapa de la home anuncia «Desarrollo Miller» desde que la etiqueta
       // lleva el nombre del cuerpo; la cabecera de cada mundo sigue anunciando
       // sólo la función. Por eso el selector es exacto en una y por subcadena
       // en el otro.

@@ -56,6 +56,13 @@ if (clockFlag && !Number.isFinite(clock)) {
   process.exit(1);
 }
 const withoutLabels = flags.has("--sin-rotulos");
+const flat = flags.has("--flat");
+const dimension = (name, fallback) => {
+  const option = [...flags].find((flag) => flag.startsWith(`--${name}=`));
+  const value = option ? Number(option.split("=")[1]) : fallback;
+  if (!Number.isInteger(value) || value < 240 || value > 4096) throw new Error(`Invalid ${name}`);
+  return value;
+};
 const dir = resolve(process.env.SHOTS_DIR ?? ".shots");
 mkdirSync(dir, { recursive: true });
 
@@ -63,15 +70,15 @@ const browser = await chromium.launch({
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const context = await browser.newContext({
-  viewport: { width: 1440, height: 860 },
+  viewport: { width: dimension("width", 1440), height: dimension("height", 860) },
   deviceScaleFactor: 1,
-  reducedMotion: "no-preference",
+  reducedMotion: flat ? "reduce" : "no-preference",
 });
 const page = await context.newPage();
 page.on("pageerror", (e) => console.error("[page error]", e.message));
 await page.addInitScript(
-  ({ glow, reloj, acumular }) => {
-    localStorage.setItem("jonas-orbit:efectos-forzados", "true");
+  ({ glow, reloj, acumular, flat }) => {
+    if (!flat) localStorage.setItem("jonas-orbit:efectos-forzados", "true");
     // La escena lee el banco UNA vez al montarse, así que tiene que estar
     // escrito antes de que corra un solo script de la página.
     const banco = {};
@@ -85,7 +92,7 @@ await page.addInitScript(
       localStorage.setItem("jonas-orbit:banco-visual", JSON.stringify(banco));
     }
   },
-  { glow: !withoutGlow, reloj: clock, acumular: !withoutAccumulation },
+  { glow: !withoutGlow, reloj: clock, acumular: !withoutAccumulation, flat },
 );
 await page.goto(url, { waitUntil: "load", timeout: 120000 });
 if (withoutLabels) {

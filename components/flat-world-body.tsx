@@ -23,128 +23,48 @@ const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
   { angle: group + ENDURANCE_SLOT_SPREAD, primary: false },
 ]);
 
-/**
- * Esquema estático del Tesseracto: conserva el escorzo del hero, la espalda
- * completa, dos laterales, cuatro marcos interiores y el vacío central.
- * Grafito con filos cálidos; el estado de selección tampoco introduce cian.
- */
+/** Static counterpart of the architectural corridor: seven recessed bays,
+ * broad graphite side faces, cantilevers and an unobstructed vanishing point. */
 function Tesseract() {
+  const front = [[30, 28], [102, 37], [102, 111], [26, 100]];
+  const levels = [0.80, 0.635, 0.49, 0.377, 0.283, 0.205, 0.142].map((scale, i) =>
+    front.map(([x, y]) => [70 + (x - 70) * scale + (i % 2 ? 1 : -1), 70 + (y - 70) * scale]),
+  );
+  const path = (points: number[][]) => `M${points.map((p) => p.join(" ")).join("L")}Z`;
   return (
-    <svg viewBox="0 0 120 120" focusable="false">
+    <svg viewBox="0 0 140 140" focusable="false">
       <defs>
-        <linearGradient id="flat-tesseract-side" x1="0" y1="0" x2="1" y2="0">
-          <stop stopColor="#171b20" />
-          <stop offset="0.62" stopColor="#38372f" />
-          <stop offset="1" stopColor="#20232a" />
+        <linearGradient id="flat-tesseract-metal" x1="0" y1="0" x2="1" y2="0.7">
+          <stop stopColor="#71614a" /><stop offset="0.17" stopColor="#262729" />
+          <stop offset="0.7" stopColor="#11151a" /><stop offset="1" stopColor="#514332" />
+        </linearGradient>
+        <linearGradient id="flat-tesseract-edge" x1="0" y1="1" x2="1" y2="0">
+          <stop stopColor="#f2cf91" /><stop offset="0.45" stopColor="#9b784d" />
+          <stop offset="1" stopColor="#383a3c" />
         </linearGradient>
       </defs>
-      <g fill="none" strokeLinecap="butt" strokeLinejoin="miter">
-        {/* Espalda completa: comparte esquinas y fuga con la caja delantera. */}
-        <path
-          data-flat-part="rear-frame"
-          d="M35.5 19.1 17.3 72 68.5 78.3 86.7 25.4Z"
-          stroke="#393a36"
-          strokeWidth="3.6"
-        />
-        {/* Laterales con superficie; el centro sigue abierto al cielo. */}
-        <path
-          data-flat-part="side-panel"
-          d="M35.5 19.1 17.3 72 25.3 85.3 43.5 32.4Z"
-          fill="url(#flat-tesseract-side)"
-        />
-        <path
-          data-flat-part="side-panel"
-          d="M17.3 72 68.5 78.3 76.5 91.6 25.3 85.3Z"
-          fill="#22262b"
-        />
-        <path
-          d="M43.5 32.4 35.5 19.1M25.3 85.3 17.3 72M76.5 91.6 68.5 78.3M94.7 38.7 86.7 25.4"
-          stroke="#44423a"
-          strokeWidth="3.2"
-        />
-        <path
-          d="M17.3 72 35.5 19.1 86.7 25.4"
-          stroke="#938571"
-          strokeWidth="0.9"
-          opacity="0.66"
-        />
-        {/* Dos espolones cortos y asimétricos. */}
-        <path d="M92 55 107 52" stroke="#242a31" strokeWidth="3.4" />
-        <path d="M33 74 19 79.5" stroke="#242a31" strokeWidth="3" />
-        {/* Marco exterior: izquierda, abajo y derecha de una pieza. */}
-        <path
-          data-flat-part="outer-frame"
-          d="M43.5 32.4 25.3 85.3 76.5 91.6 94.7 38.7"
-          stroke="#2a3038"
-          strokeWidth="4.6"
-        />
-        {/* Su cuarto lado, PARTIDO: se interrumpe y sigue fuera de eje. */}
-        <path d="M94.7 38.7 68 35.4" stroke="#2a3038" strokeWidth="4.6" />
-        <path d="M60 28.6 44.2 26.4" stroke="#2a3038" strokeWidth="4.6" />
-        {/*
-          EL FILO, que es lo que en la escena dibuja la figura.
-
-          Sobre un cielo azul oscuro, un grafito de valor 0.17 contra un fondo de
-          0.11 no separa nada: la primera versión de este dibujo salía toda de
-          losas grises indistinguibles. En 3D eso lo resuelve el chaflán —sólo se
-          enciende el canto cuya cara mira al disco— y aquí se resuelve igual:
-          una línea clara y fina sobre los DOS lados que en la escena miran a
-          Gargantúa, arriba y a la derecha. Ni contorno completo ni relleno: el
-          mismo recurso, traducido.
-        */}
-        <path
-          d="M94.7 38.7 76.5 91.6M94.7 38.7 68 35.4M60 28.6 44.2 26.4"
-          stroke="#8e949b"
-          strokeWidth="1.1"
-          opacity="0.75"
-        />
-        <path
-          d="M86.7 25.4 35.5 19.1"
-          stroke="#6d737a"
-          strokeWidth="0.9"
-          opacity="0.6"
-        />
-        {/* Marco 2: girado contra la caja, todavía casi frío. */}
-        <path
-          data-flat-part="inner-frame"
-          d="M86.6 69.3 69.5 35.9 33.4 54.7 50.5 88Z"
-          stroke="#4a4338"
-          strokeWidth="3.4"
-        />
-        <path
-          d="M86.6 69.3 69.5 35.9"
-          stroke="var(--flat-accent)"
-          strokeWidth="1.1"
-          opacity="0.4"
-        />
-        {/* Marco 3: ya tibio. */}
-        <path
-          data-flat-part="inner-frame"
-          d="M78.3 70.6 70.2 44.5 41.7 53.4 49.8 79.5Z"
-          stroke="var(--flat-accent)"
-          strokeWidth="3"
-          opacity="0.62"
-        />
-        {/* Marco 4: la brasa, alrededor del vacío. */}
-        <path
-          data-flat-part="inner-frame"
-          d="M73.4 65.8 65.1 49.1 46.6 58.2 54.9 74.9Z"
-          stroke="var(--flat-accent)"
-          strokeWidth="2.6"
-        />
-        {/* Último escalón: refuerza la profundidad sin rellenar el hueco. */}
-        <path
-          data-flat-part="inner-frame"
-          d="M69.1 63.3 62.2 53.1 50.9 60.8 57.8 70.9Z"
-          stroke="var(--flat-accent)"
-          strokeWidth="1.9"
-        />
-        {/* El puente que no llega: se para a medio camino. */}
-        <path d="M41.7 53.4 47.5 56.3" stroke="#4a4338" strokeWidth="2.2" />
+      <g fill="none" strokeLinejoin="miter" strokeLinecap="square">
+        <path data-flat-part="rear-frame" d="M46 12 121 28 116 93 40 85Z" stroke="#303236" strokeWidth="4" />
+        <path d="M46 12 121 28M40 85 116 93" stroke="#997b53" strokeWidth="0.9" />
+        <path data-flat-part="side-panel" d="M30 28 46 12 40 85 26 100Z" fill="url(#flat-tesseract-metal)" />
+        <path data-flat-part="side-panel" d="M26 100 40 85 116 93 102 111Z" fill="url(#flat-tesseract-metal)" />
+        <path d="M102 37 121 28M102 111 116 93M30 28 46 12" stroke="#534a3d" strokeWidth="2.5" />
+        {/* Dark face plus a single offset edge gives each beam real thickness. */}
+        <path data-flat-part="outer-frame" d={path(front)} stroke="url(#flat-tesseract-metal)" strokeWidth="5" />
+        <path d="M30 28 26 100 102 111M30 28 102 37" stroke="url(#flat-tesseract-edge)" strokeWidth="1.1" />
+        <path d="M14 56 49 60 49 21M127 83 93 80 93 121M19 119 62 109M57 9 56 27" stroke="#22262a" strokeWidth="4" />
+        <path d="M14 54 47 58M127 81 95 78M19 117 62 107" stroke="url(#flat-tesseract-edge)" strokeWidth="1" />
+        {levels.map((points, i) => (
+          <g key={i}>
+            <path data-flat-part="inner-frame" d={path(points)} stroke={i < 3 ? "#292827" : "#4d3b29"} strokeWidth={3.1 - i * 0.31} />
+            <path d={`M${points[1].join(" ")}L${points[0].join(" ")}L${points[3].join(" ")}L${points[2].join(" ")}`} stroke="url(#flat-tesseract-edge)" strokeWidth={1.1 - i * 0.055} opacity={0.65 + i * 0.055} />
+            {[0, 2].map((corner) => {
+              const previous = i === 0 ? front[corner] : levels[i - 1][corner];
+              return <path key={corner} d={`M${previous.join(" ")}L${points[corner].join(" ")}`} stroke="#806444" strokeWidth={0.9} />;
+            })}
+          </g>
+        ))}
       </g>
-      {/* El centro queda sin relleno: el cielo atraviesa los marcos. */}
-      {/* Y el nodo huérfano del puente, flotando donde la barra debería seguir. */}
-      <circle cx="47.5" cy="56.3" r="1.5" fill="var(--flat-accent)" opacity="0.9" />
     </svg>
   );
 }
@@ -153,29 +73,37 @@ function Miller() {
   return (
     <svg viewBox="0 0 120 120" focusable="false">
       <defs>
-        <radialGradient id="flat-miller-ocean" cx="30%" cy="22%" r="78%">
-          <stop offset="0" stopColor="#dffaff" />
-          <stop offset="0.23" stopColor="var(--flat-accent)" />
-          <stop offset="0.62" stopColor="#163b5d" />
-          <stop offset="1" stopColor="#030812" />
+        <radialGradient id="flat-miller-ocean" cx="77%" cy="72%" r="91%">
+          <stop stopColor="#91a8b0" /><stop offset="0.25" stopColor="#425f74" />
+          <stop offset="0.57" stopColor="#1d334a" /><stop offset="0.84" stopColor="#080e1b" />
+          <stop offset="1" stopColor="#04070e" />
         </radialGradient>
-        <clipPath id="flat-miller-disc">
-          <circle cx="60" cy="60" r="39" />
-        </clipPath>
+        <radialGradient id="flat-miller-night" cx="82%" cy="80%" r="93%">
+          <stop offset="0.3" stopColor="#020713" stopOpacity="0" />
+          <stop offset="0.8" stopColor="#020713" stopOpacity="0.62" />
+          <stop offset="1" stopColor="#020713" stopOpacity="0.92" />
+        </radialGradient>
+        <clipPath id="flat-miller-disc"><circle cx="60" cy="60" r="45" /></clipPath>
+        <filter id="flat-miller-currents" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.026 0.095" numOctaves="2" seed="8" result="current" />
+          <feDisplacementMap in="SourceGraphic" in2="current" scale="5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
       </defs>
-      <circle cx="60" cy="60" r="42" fill="none" stroke="var(--flat-secondary)" strokeOpacity="0.2" strokeWidth="3" />
-      <circle data-flat-part="planet" cx="60" cy="60" r="39" fill="url(#flat-miller-ocean)" />
-      <g data-flat-part="ocean" clipPath="url(#flat-miller-disc)" fill="none" strokeLinecap="round">
-        <path d="M8 43c18-7 28 9 47 1s33-9 58 1" stroke="#e9fdff" strokeOpacity="0.48" strokeWidth="2.2" />
-        <path d="M2 57c22-8 32 8 50 1s38-10 69 1" stroke="#87e8ff" strokeOpacity="0.42" strokeWidth="1.8" />
-        <path d="M4 72c20-7 32 7 50 1s36-7 67 1" stroke="#c7f5ff" strokeOpacity="0.27" strokeWidth="1.5" />
-        <path d="M14 85c14-5 27 4 43 0s33-5 52 0" stroke="#8dd9ee" strokeOpacity="0.2" />
+      <circle data-flat-part="planet" cx="60" cy="60" r="45" fill="url(#flat-miller-ocean)" />
+      <g clipPath="url(#flat-miller-disc)">
+        <g data-flat-part="ocean" fill="none" filter="url(#flat-miller-currents)" transform="rotate(-18 60 60)">
+          {[31, 40, 49, 57, 65, 72, 79, 85, 92].map((y, i) => <path key={y} d={`M8 ${y} Q38 ${y + 8} 61 ${y + 2} T114 ${y - 2}`} stroke={i % 3 === 0 ? "#b1c8cd" : "#557e96"} strokeWidth={i % 3 === 0 ? 1.3 : 2.4} opacity={0.16 + i * 0.024} />)}
+          <path d="M65 78Q78 84 101 76" stroke="#ebe1c6" strokeWidth="2.6" opacity="0.65" />
+          <path d="M71 81Q83 84 101 79" stroke="#f5edda" strokeWidth="0.8" opacity="0.7" />
+        </g>
+        <circle cx="60" cy="60" r="45" fill="url(#flat-miller-night)" />
       </g>
-      <path d="M36 31c9-9 21-12 33-9" fill="none" stroke="#fff" strokeLinecap="round" strokeOpacity="0.58" strokeWidth="3" />
-      <path d="M30 91c20 12 49 10 64-9" fill="none" stroke="var(--flat-accent)" strokeOpacity="0.3" strokeWidth="2" />
+      <path d="M97 36A45 45 0 0 1 51 104" fill="none" stroke="#b7c3c2" strokeWidth="0.85" opacity="0.7" />
+      <path d="M30 26A45 45 0 0 0 17 73" fill="none" stroke="#3c567d" strokeWidth="0.65" opacity="0.48" />
     </svg>
   );
 }
+
 
 /**
  * Endurance en `flat`, con la MISMA arquitectura que el modelo 3D.
@@ -297,30 +225,38 @@ function Edmunds() {
   return (
     <svg viewBox="0 0 120 120" focusable="false">
       <defs>
-        <radialGradient id="flat-edmunds-terrain" cx="31%" cy="25%" r="76%">
-          <stop offset="0" stopColor="#ffd3a3" />
-          <stop offset="0.28" stopColor="var(--flat-secondary)" />
-          <stop offset="0.64" stopColor="var(--flat-accent)" />
-          <stop offset="1" stopColor="#24100d" />
+        <radialGradient id="flat-edmunds-terrain" cx="80%" cy="25%" r="85%">
+          <stop stopColor="#c5a075" /><stop offset="0.30" stopColor="#876044" />
+          <stop offset="0.67" stopColor="#3e2c26" /><stop offset="1" stopColor="#080b10" />
         </radialGradient>
-        <clipPath id="flat-edmunds-disc">
-          <circle cx="60" cy="60" r="39" />
-        </clipPath>
+        <linearGradient id="flat-edmunds-night" x1="1" y1="0.3" x2="0" y2="0.65">
+          <stop offset="0.35" stopColor="#06090f" stopOpacity="0" />
+          <stop offset="0.72" stopColor="#06090f" stopOpacity="0.7" />
+          <stop offset="1" stopColor="#06090f" stopOpacity="0.97" />
+        </linearGradient>
+        <clipPath id="flat-edmunds-disc"><circle cx="60" cy="60" r="45" /></clipPath>
+        <filter id="flat-edmunds-rock" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="21" result="rock" />
+          <feDisplacementMap in="SourceGraphic" in2="rock" scale="11" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
       </defs>
-      <circle cx="60" cy="60" r="42" fill="none" stroke="var(--flat-secondary)" strokeOpacity="0.22" strokeWidth="3" />
-      <circle data-flat-part="planet" cx="60" cy="60" r="39" fill="url(#flat-edmunds-terrain)" />
-      <g data-flat-part="terrain" clipPath="url(#flat-edmunds-disc)">
-        <path d="M17 76c16-18 26-5 39-20s25-7 47-24l17 51-20 24-73-3Z" fill="#4c201a" fillOpacity="0.34" />
-        <path d="M22 80c12-9 25-5 35-15s28-10 43-23" fill="none" stroke="#f8b078" strokeOpacity="0.4" strokeWidth="2" />
-        <path d="M31 91c18-15 28-3 48-19 8-7 15-8 26-10" fill="none" stroke="#2f1312" strokeOpacity="0.46" strokeWidth="3" />
-        <ellipse cx="48" cy="43" rx="9" ry="5" fill="#5a2a22" fillOpacity="0.42" />
-        <ellipse cx="76" cy="55" rx="5" ry="3" fill="#2a1110" fillOpacity="0.35" />
-        <ellipse cx="52" cy="84" rx="6" ry="3.5" fill="#2a1110" fillOpacity="0.28" />
+      <circle data-flat-part="planet" cx="60" cy="60" r="45" fill="url(#flat-edmunds-terrain)" />
+      <g clipPath="url(#flat-edmunds-disc)">
+        <g data-flat-part="terrain" filter="url(#flat-edmunds-rock)">
+          <path d="M45 13 79 20 87 34 73 53 91 67 77 84 59 75 52 53 32 41Z" fill="#c4a17a" opacity="0.49" />
+          <path d="M67 16 60 35 70 45 53 61 62 80 43 101 26 70 31 28Z" fill="#392c25" opacity="0.8" />
+          <path d="M89 48 107 59 108 83 85 100 69 84 77 67Z" fill="#ab794e" opacity="0.52" />
+          <path d="M55 26 76 31 83 41 76 49 67 41Z" fill="#d8b98d" opacity="0.65" />
+          <path d="M53 70 68 62 80 42M66 88 80 69 91 59M43 47 59 34" fill="none" stroke="#dbb386" strokeWidth="1.2" opacity="0.5" />
+          <path d="M50 73 65 64 77 41M63 89 77 70 89 59" fill="none" stroke="#291f1c" strokeWidth="1.8" opacity="0.72" />
+        </g>
+        <circle cx="60" cy="60" r="45" fill="url(#flat-edmunds-night)" />
       </g>
-      <path d="M34 32c12-10 26-12 40-7" fill="none" stroke="#fff3d9" strokeLinecap="round" strokeOpacity="0.45" strokeWidth="2.7" />
+      <path d="M67 15A45 45 0 0 1 96 87" fill="none" stroke="#d4b490" strokeWidth="0.9" opacity="0.7" />
     </svg>
   );
 }
+
 
 /**
  * Ranger en `flat`: la misma nave que el modelo 3D, en planta.

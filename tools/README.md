@@ -24,6 +24,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `stability.mjs` | mide si el disco avanza o hierve entre fotogramas |
 | `disk-metrics.mjs` | área oscura e histograma de la banda del disco |
 | `epoch-ripple.mjs` | ondulación de luminancia a lo largo de un ciclo de épocas del disco |
+| `star-streaks.mjs` | cuánto se estiran las estrellas del fondo, por anillo de distancia al agujero |
 | `glsl-check.mjs` | falla si hay backticks dentro de los shaders |
 
 ## Las dos pruebas del contrato visual
@@ -39,6 +40,17 @@ node tools/shot.mjs mundo --sin-glow --sin-rotulos
 `lib/visual-bench.ts`): si un objeto pierde su identidad ahí, su diseño no está
 terminado. `--sin-rotulos` oculta el raíl y los nombres, que es la única forma de
 comprobar si un cuerpo se reconoce sin que se lo digan.
+
+`--flat` captura el ATLAS 2D en vez de la escena: reporta reduced-motion y no
+escribe el interruptor de efectos, que es exactamente lo que hace un equipo de
+verdad con el movimiento reducido. `--width=` y `--height=` cambian el viewport
+(240-4096 px), y los dos juntos son la única forma de juzgar el atlas en los
+formatos donde se rompe — el apaisado corto y el vertical estrecho:
+
+```bash
+node tools/shot.mjs atlas-movil http://localhost:3100/es 2000 --flat --width=375 --height=812
+node tools/shot.mjs atlas-corto http://localhost:3100/es 2000 --flat --width=812 --height=375
+```
 
 ## El disco ENVEJECE, y por eso `shot.mjs` sabe clavar el reloj
 
@@ -81,6 +93,33 @@ que son la misma configuración media época después. Un cierre fuera del ruido
 captura significa deriva, que es peor que la ondulación. Y el ruido de captura
 hay que medirlo repitiendo la MISMA fase dos veces: bajo SwiftShader sale del
 orden de 0.15 %, y una ondulación de ese tamaño no existe.
+
+## `star-streaks.mjs` existe porque una discusión no se cerraba mirando
+
+El dueño veía «trazos gravitacionales por toda la pantalla»; la aritmética del
+lente decía que en la periferia la magnificación tangencial no llega al 15 %.
+Una de las dos lecturas estaba mal y no había forma de saber cuál sin medir los
+blobs del render.
+
+Segmenta el cielo por umbral, descarta lo que no es estrella —disco, cuerpos,
+HUD— y saca de cada mancha la razón entre sus ejes principales. Después las
+agrupa por anillos de distancia a Gargantúa, que es la variable que importa: la
+dirección de arte pide puntos fuera y estiramiento dentro.
+
+```bash
+node tools/star-streaks.mjs antes despues
+```
+
+Dos avisos que costaron un intento cada uno:
+
+- **El umbral engaña en las dos direcciones.** Una mancha redonda que se apaga
+  deja un núcleo alargado, así que un recuento de «alargadas» puede SUBIR donde
+  hay menos luz. Por eso el script imprime también el brillo medio del anillo,
+  que no depende de ningún umbral, y por eso TRAZO se define como alargado **y**
+  largo: una mancha de tres píxeles con aspecto 2 es un punto un poco oval.
+- **El HUD contamina.** Los rótulos del raíl y del lado derecho caen dentro de
+  los anillos exteriores y pesan más que las estrellas. Para comparar dos
+  pasadas, captura con `--sin-rotulos` o mide ventanas de cielo limpio.
 
 ## `composition.mjs` LEE la escena, no la reimplementa
 

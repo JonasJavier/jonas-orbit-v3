@@ -1,0 +1,138 @@
+/* The rail names the content first; the destination is revealed on acquisition.
+   Reserve both lines so hover never moves adjacent links. */
+.system-map .nav-rail__link {
+  min-height: 44px;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 0.85rem;
+  align-content: center;
+  row-gap: 0.3rem;
+}
+.system-map .nav-rail__name {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 0.69rem;
+  letter-spacing: 0.11em;
+}
+.system-map .nav-rail__active-marker { position: absolute; left: 0; top: 0.7rem; }
+.system-map .nav-rail__role {
+  grid-column: 1;
+  grid-row: 2;
+  max-height: none;
+  font-size: 0.54rem;
+  letter-spacing: 0.17em;
+}
+
+/* Same DOM targets in both renderers, a distinct composition for the atlas. */
+html:not([data-scene-live="true"]) .system-map .system-map__slot {
+  left: var(--atlas-x);
+  top: var(--atlas-y);
+  --flat-anchor-x: 0px;
+  --flat-anchor-y: 0px;
+  --atlas-size: clamp(76px, 8.6vw, 142px);
+  --map-hit-radius-x: calc(var(--atlas-size) * 0.43);
+  --map-hit-radius-y: calc(var(--atlas-size) * 0.43);
+}
+html:not([data-scene-live="true"]) .system-map [data-flat-world] {
+  width: var(--atlas-size);
+  filter: drop-shadow(0 5px 12px #0008);
+}
+html:not([data-scene-live="true"]) .system-map [data-flat-world]::before {
+  content: none;
+}
+html:not([data-scene-live="true"]) .system-map [data-flat-visual="tesseract"] {
+  --atlas-size: clamp(108px, 12vw, 198px);
+  --map-hit-radius-x: calc(var(--atlas-size) * 0.41);
+  --map-hit-radius-y: calc(var(--atlas-size) * 0.44);
+}
+html:not([data-scene-live="true"]) .system-map [data-flat-visual="ship"] {
+  --atlas-size: clamp(140px, 16vw, 264px);
+}
+html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] {
+  --atlas-size: clamp(94px, 10vw, 160px);
+  --map-hit-radius-y: calc(var(--atlas-size) * 0.25);
+}
+html:not([data-scene-live="true"]) .system-map [data-centre="true"] {
+  --map-hit-radius-x: clamp(44px, 7vw, 112px);
+  --map-hit-radius-y: clamp(44px, 7vw, 112px);
+}
+html:not([data-scene-live="true"]) .system-map .system-map__field::before,
+html:not([data-scene-live="true"]) .system-map .system-map__field::after {
+  content: none;
+}
+/* Subdued sky; the atlas is illuminated from its centre. */
+html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__haze {
+  opacity: 0.22;
+}
+html:not([data-scene-live="true"]) body:has(.system-home) .site-starfield {
+  opacity: 0.58;
+  mask-image: radial-gradient(circle at 46% 49%, transparent calc(min(70vw, 112vh) * 0.102), #000 calc(min(70vw, 112vh) * 0.116));
+}
+html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__gargantua {
+  top: 49%;
+  left: 46%;
+  right: auto;
+  width: min(70vw, 112vh);
+  opacity: 0.96;
+  transform: translate(-50%, -50%) rotate(-10deg);
+}
+
+@media (max-width: 60rem) {
+  .system-map .nav-rail {
+    bottom: max(0.7rem, env(safe-area-inset-bottom));
+    gap: 0.25rem 0.1rem;
+  }
+  .system-map .nav-rail__link {
+    min-height: 48px;
+    padding-inline: 0.2rem;
+    justify-items: center;
+    text-align: center;
+  }
+  .system-map .nav-rail__name { font-size: 0.65rem; letter-spacing: 0.05em; }
+  .system-map .nav-rail__role { font-size: 0.5rem; }
+  html:not([data-scene-live="true"]) body:has(.system-home) .hud__controls { bottom: 9rem; }
+}
+@media (max-aspect-ratio: 1/1) {
+  html:not([data-scene-live="true"]) .system-map .system-map__slot {
+    left: var(--atlas-portrait-x);
+    top: var(--atlas-portrait-y);
+    --atlas-size: clamp(58px, 18vw, 118px);
+  }
+  html:not([data-scene-live="true"]) .system-map [data-flat-visual="tesseract"] {
+    --atlas-size: clamp(88px, 27vw, 176px);
+  }
+  html:not([data-scene-live="true"]) .system-map [data-flat-visual="ship"] {
+    --atlas-size: clamp(100px, 30vw, 204px);
+  }
+  html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] {
+    --atlas-size: clamp(68px, 21vw, 142px);
+  }
+  html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__gargantua {
+    top: 43%;
+    left: 48%;
+    width: 106vw;
+  }
+  html:not([data-scene-live="true"]) body:has(.system-home) .site-starfield {
+    mask-image: radial-gradient(circle at 48% 43%, transparent 10.8vw, #000 12.3vw);
+  }
+}
+/* A short landscape screen needs a single rail row and a compact atlas. */
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  .system-map .nav-rail {
+    display: flex;
+    justify-content: center;
+    left: 1rem;
+    right: 1rem;
+    bottom: max(0.3rem, env(safe-area-inset-bottom));
+  }
+  .system-map .nav-rail__item { flex: 1; }
+  .system-map .nav-rail__name { font-size: 0.58rem; }
+  html:not([data-scene-live="true"]) .system-map .system-map__slot {
+    left: var(--atlas-short-x);
+    top: var(--atlas-short-y);
+    --atlas-size: 17vh;
+  }
+  html:not([data-scene-live="true"]) .system-map [data-flat-visual="tesseract"] { --atlas-size: 24vh; }
+  html:not([data-scene-live="true"]) .system-map [data-flat-visual="ship"] { --atlas-size: 29vh; }
+  html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] { --atlas-size: 20vh; }
+  html:not([data-scene-live="true"]) body:has(.system-home) .hud__controls { bottom: 4.7rem; }
+}
