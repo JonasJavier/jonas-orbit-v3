@@ -67,7 +67,7 @@ lo fija el suelo nocturno:
 | Familia | Suelo nocturno | Por qué |
 |---|---|---:|
 | Mundos con aire | 0.50 | tienen atmósfera que rebota |
-| Endurance | 0.60 | mucha cara por unidad de silueta; con menos se abren agujeros negros entre módulos |
+| Endurance | 0.42 | exterior frío legible; cavidades con oclusión independiente |
 | Ranger | 0.44 | chapa, no manta |
 | Tesseracto y estructura | 0.40 | metal oscuro |
 
@@ -365,7 +365,55 @@ prefijo `output/playwright/tesseract-anomaly-final-`.
 
 ## 8. F1.2 — Edmunds
 
-### Mundo habitable — revisión del dueño (2026-09-05)
+### Mundo mineral — revisión del dueño (2026-09-05)
+
+Esta revisión sustituye **todo el material y el aire** del apartado histórico
+`Mundo habitable` de abajo. El dueño lee aquella versión como un planeta
+volcánico: las manchas crema parecen emitir, las nubes ocultan el terreno y el
+rim blanco tiene demasiado peso. La dirección vigente es **seco, mineral,
+polvoriento, ocre y hierro**, remoto y potencialmente habitable. Miller conserva
+su contraste de agua fría y reflejo. Gargantúa es la fuente y domina por luz.
+
+**Composición intacta.** No cambia geometría, tamaño, posición, fase,
+inclinación, giro propio, cámara, interacción ni otros cuerpos. El peso visual
+se corrige por material antes de considerar cualquier reducción de escala.
+
+**Superficie.** Se retiran nubes, velo alto, casquetes y sus reflejos. Dos
+campos de FBM organizan cuencas de umber, macizos de ocre rojizo, mesetas de arena
+y provincias de hierro oscuro. Las fronteras son más definidas; una fractura
+extensa lleva depósitos de sedimento a sus lados. El grano sólo modula ±4 %.
+Los escarpes toman su pendiente del mismo campo que define las mesetas, sin
+muestrear más ruido; su efecto en la incidencia se acota a ±0.09. Los estratos
+se filtran según la huella del píxel para desaparecer antes de producir aliasing.
+Las grandes estructuras mandan sobre el detalle al tamaño real del Hero.
+
+**Paleta e iluminación.** El albedo de roca principal baja a
+`0.34, 0.185, 0.105`; la arena es `0.43, 0.30, 0.18` y el hierro oscuro
+`0.245, 0.105, 0.062`. Se retira la sobresaturación anterior (1.36 → 0.94).
+El difuso depende de la incidencia y de la pendiente incluso en pleno día:
+máxima respuesta hacia Gargantúa, arriba a la derecha en el Hero. Las pocas
+crestas claras exigen altura **y** ladera orientada al disco, y siguen pasando
+por la iluminación difusa; no hay emisión. La roca casi no tiene especular.
+
+**Noche y aire.** El relieve analítico conserva irregularidad suave en el
+terminador. Rebote cálido mínimo y corto, relleno nocturno a 0.28 y contraluz
+azul atenuado permiten que la izquierda desaparezca en azul-negro. El halo
+común de Edmunds se retira; el aire queda en un filo de exponente 11, ocre
+pálido, cuya intensidad cae al rodear el limbo según su orientación al disco.
+No hay contorno blanco uniforme.
+
+**Presupuesto.** Dos sitios de FBM frente a cuatro, sin texturas, materiales,
+geometría ni draws adicionales. La ley de luz común conserva su dirección,
+temperatura e intensidad: sólo cambia la respuesta del material de Edmunds.
+
+**Aceptación visual.** Hero, detalle y thumbnail deben conservar provincias,
+volumen y roca seca sin etiquetas, bloom ni emisivos. Sin regiones que parezcan
+lava, algodón o energía. La valoración estética final sigue siendo del dueño.
+
+### Mundo habitable — referencia sustituida (2026-09-05)
+
+Registro histórico: nubes, paleta, saturación y aire descritos a continuación
+quedan sustituidos por `Mundo mineral`.
 
 El dueño lee el Edmunds anterior como «esfera con ruido procedural»: silueta
 correcta y buen peso compositivo abajo a la izquierda, pero sin identidad. Esta
@@ -556,6 +604,131 @@ cuerpo más luminoso del cuadro.
 prefijo `output/playwright/miller-oceano-`: hero completo a 1440×860, close-up
 comparativo antes/después y bloom-off. Los tests del modelo no juzgan material:
 la aprobación es visual y es del dueño.
+
+
+### Corrientes y dirección de luz — segunda revisión del dueño (2026-09-05)
+
+El dueño aprueba la base —«mundo oscuro y acuático que empieza a pertenecer a
+Gargantúa», 8/10— y pide un pase pequeño, no un rediseño: bandas largas de
+reflejo siguiendo la curvatura, más claridad sobre de dónde viene la luz, un
+limbo asimétrico y algo más de microcontraste. Nada de continentes, nubes ni
+glow nuevo.
+
+**Dónde estaban de verdad las manchas blandas.** Se buscaron tres veces en la
+paleta y en la capa de nubes, y no estaban en ninguna de las dos. Pintar los
+campos en canales de color lo resolvió en dos capturas:
+
+- `reliefOffset` en un canal enseñó que **la marejada** —dos trenes de onda
+  cruzados de amplitud parecida— produce un patrón de **batido**: elipses de
+  interferencia del tamaño de una cuarta parte del cuerpo. A 47 px de radio eso
+  no se lee como oleaje sino como manchas sin dirección. Baja de 0.0052 a
+  **0.0018**: sigue rompiendo el terminador, deja de pintar.
+- La máscara de bajío en otro canal enseñó el segundo foco: salía de mezclar
+  tres campos de pesos parecidos —macro, vetas y corriente—, y esa construcción
+  sólo puede dar una nube isótropa. La capa de nubes, en cambio, apenas
+  aparecía: nunca fue el problema.
+
+Los tres pases anteriores subieron dosis sobre los mandos equivocados y el
+contraste local **bajó** cada vez (30.1 → 28.6 → 28.9 → 28.5). El diagnóstico por
+canales costó dos builds y lo resolvió.
+
+**Corrientes zonales, y son lo primero que se decide.** Una banda latitudinal
+—`vLocal.y * 6.6`, perturbada por la macro y las vetas, dos o tres bandas sobre
+la cara visible— pasa a ser la voz que manda en la máscara de bajío. Las masas
+claras dejan de ser nubes y pasan a ser franjas largas que siguen la curvatura.
+Cuesta cero sitios de FBM.
+
+**Y las bandas inclinan la lámina.** Pintarlas en el albedo no bastaba: sobre un
+cuerpo oscuro un ±17 % de color son seis niveles de gris y el ojo los lee como
+más nube. Lo que se ve en un océano no es agua de otro color por franjas — es la
+lámina inclinada por franjas devolviendo la luz de otra manera. Mismo truco de
+gradiente analítico que la marejada, una escala por encima y sin una muestra
+extra. Por eso el color de las bandas se queda deliberadamente bajo
+(`0.062, 0.19, 0.376` al 55 %) y el peso está en el relieve (0.023).
+
+**Filo asimétrico.** Encendía desde `ndl = −0.06`, o sea casi todo el hemisferio
+visible, y sumado al desborde del halo común dibujaba una línea pálida
+prácticamente uniforme por el borde inferior: un contorno de recorte. Ahora la
+puerta abre en 0.22 y cierra en 0.86, así que el filo **nace** mirando a
+Gargantúa y muere dando la vuelta al limbo; y cambia de color con la misma rampa
+—cyan pálido en los flancos, blanco cálido en el punto más encarado—. El halo
+común baja otra vez, de 0.30 a **0.16**.
+
+**Microcontraste.** Un unsharp barato sobre la escala media: `albedo *= 1 +
+(shoal − 0.47) * 0.7`. Realza lo que ya era claro y hunde lo que ya era oscuro
+sin inventar estructura ni mover la jerarquía de masas.
+
+**Medido.** Contraste local dentro del disco (desviación de luma): **30.1 → 29.6**
+con la media bajando de 68.4 a 63.7 — o sea más contraste *relativo* sobre un
+cuerpo más oscuro, y con dirección donde antes había manchas. `npm run check` en
+verde (187 tests, build). Capturas con el prefijo
+`output/playwright/miller-corrientes-`.
+
+## Endurance — peso, escala e integración (2026-09-05)
+
+Revisión solicitada por el dueño sobre la base existente. Sustituye los valores
+anteriores de material y núcleo, y autoriza el ajuste de pose de Endurance:
+
+- Manta estándar de 0.47 a 0.34 y principal de 0.72 a 0.49, en aluminio marfil
+  apagado. Especulares más estrechos, menor reflexión ancha y menos ambiente.
+- La dirección de luz sigue siendo el origen de Gargantúa. El casco usa Lambert
+  facetado para distinguir caras encaradas y oblicuas, conservando la clave cálida
+  común. Suelo nocturno 0.42, sombra azul grisácea y cavidades interiores oscuras
+  por orientación radial y profundidad entre rieles. Es oclusión analítica, no
+  shadow maps; no se añaden luces ni pases de sombras.
+- Barril central de diámetro 0.48 a 0.37 y longitud 0.50 a 0.65. Collar, cinturón,
+  mástil y propulsión acompañan el eje más esbelto; los brazos llegan al cinturón.
+- Los doce módulos mantienen sus cuatro grupos. Los satélites alternan planos
+  axiales con 0.21 de separación, pequeñas diferencias fijas de tamaño y giros
+  de hasta 4°. Sus soportes conectan los planos; los accesorios siguen a su módulo.
+- Se conservan cuatro radiadores: dos crecen de 0.32 a 0.50/0.46 y los otros
+  dos mantienen su longitud. Se corrige el metadato antiguo que declaraba ocho.
+- Yaw adicional de 0.12 rad (6.9°). No cambia posición, escala del conjunto,
+  órbita, cámara, HUD, fallback plano ni los otros cuerpos. Las dos extensiones
+  amplían la silueta local y el radio publicado se calcula desde sus vértices.
+
+Se mantienen cuatro draws y el mismo mapa procedural; no hay nuevas texturas,
+dependencias ni sitios de FBM. El pase se revisa con hero completo, bloom-off,
+thumbnail, interacción y ruta de Proyectos. La aprobación visual corresponde al
+dueño; las pruebas técnicas no la sustituyen.
+
+
+### Trenes largos y filo sin halo — tercera revisión del dueño (2026-09-05)
+
+El dueño aprueba masa oscura, dirección de luz y ausencia de hotspot, y pide tres
+cosas: el filo cyan superior sigue demasiado uniforme, la superficie sigue algo
+nebulosa, y el reflejo debería ser más lámina y menos mancha.
+
+**El halo común no puede ser direccional, por construcción.** Usa exponente 2.2 y
+desborda hasta `ndl = −0.45`, así que cualquier peso que se le deje pinta también
+el hemisferio que no mira a Gargantúa. Bajó de 1.12 a 0.30, luego a 0.16, y
+termina en **0.09**: casi apagado. Todo el aire visible pasa al filo propio, con
+la puerta desplazada a `smoothstep(0.28, 0.9, ndl)` y peso 2.15. El limbo
+superior queda gobernado sólo por el contraluz frío común, que es ley compartida
+y no se toca.
+
+**La marejada cambia de escala, no de volumen.** Bajarla a un tercio quitó las
+manchas de batido pero dejó el océano sin estructura propia. Los números de onda
+caen de ~21 a ~5.2 — de doce crestas sobre el diámetro a menos de dos — y el
+segundo tren pasa a pesar un quinto del primero. Quedan dos o tres trenes largos
+y oblicuos que cruzan las corrientes latitudinales, y el batido entre ellos tiene
+ahora una escala **mayor que el cuerpo**, así que no puede dibujar elipses dentro
+de él. La amplitud vuelve a subir a 0.013 sobre gradientes cuatro veces menores,
+y la cresta manda también sobre el brillo (`gloss *= 0.68 + swellCrest * 0.58`):
+una cresta larga devuelve luz distinta que un seno, y eso es lo que hace
+inequívoco que es agua.
+
+**La lámina se alarga.** El lóbulo pasa de `11 / 210` a `7.5 / 265` y el destello
+de `48 / 420` a `26 / 520`: más largo, más estrecho, menos puntual. El núcleo
+isótropo baja otra vez, de 0.12 a **0.085**.
+
+**Medido.** Contraste relativo dentro del disco (desviación / media de luma):
+**0.440 → 0.465 → 0.514**, un 17 % por encima del primer pase, con la media
+cayendo de 68.4 a 56.8 — más estructura sobre un océano más oscuro, que es la
+dirección pedida. Posición y tamaño en pantalla sin cambio (centro 435.0/224.5 →
+436.5/225.5; la diferencia es el limbo pálido que se ha retirado). `npm run
+check` en verde (188 tests, build). Capturas con el prefijo
+`output/playwright/miller-trenes-`.
 
 ## 10. Herramientas
 | script | para qué |
