@@ -278,10 +278,10 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(architecture).toMatchObject({
         // La referencia añade un escalón interior; la espalda y los laterales
         // completan la caja sin convertirse en más capas de la recursión.
-        visualLayers: 5,
-        recursiveRings: 4,
-        structuralBridges: 3,
-        shellExtensions: 2,
+        visualLayers: 9,
+        recursiveRings: 7,
+        structuralBridges: 14,
+        shellExtensions: 4,
         interruptedBeams: 2,
         emissiveTiers: 4,
         // Frente, interior y FONDO: sin esto el cuerpo se leía sólo por delante.

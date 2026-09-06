@@ -75,8 +75,8 @@ export function NavRail({
                   de cada destino no orientaba a nadie: seis pares de dígitos
                   compitiendo con seis nombres son doce cosas que leer para
                   elegir una. El nombre es el destino; el número era ruido. */}
-              <span className="nav-rail__name">{world.cosmicName}</span>{" "}
-              <span className="nav-rail__role">{world.shortLabel}</span>
+              <span className="nav-rail__name">{world.shortLabel}</span>{" "}
+              <span className="nav-rail__role">{world.cosmicName}</span>
               <span className="visually-hidden" aria-hidden="true">
                 {world.summary}
               </span>

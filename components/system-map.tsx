@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { WorldId } from "@/content/worlds.data";
 import { projectPlacement } from "@/lib/system-map";
+import { flatCompositionFor } from "@/lib/flat-composition";
 import {
   shouldNavigateToWorld,
   useWorldNavigation,
@@ -20,6 +21,7 @@ import type { WorldNavItem } from "@/lib/worlds";
 import { FlatWorldBody } from "./flat-world-body";
 import { NavRail } from "./nav-rail";
 import { SystemHud } from "./system-hud";
+import "./system-map-atlas.css";
 
 type HitboxShape = "box" | "craft" | "sphere";
 
@@ -130,6 +132,7 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
         <ol className="system-map__field" aria-hidden="true">
           {worlds.map((world) => {
             const point = projectPlacement(world.placement);
+            const atlas = flatCompositionFor(world.id);
             const isCentre = world.placement.orbitRadius === 0;
             const hitbox = interactionVolumeFor(world);
             const itemState =
@@ -156,6 +159,12 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                     // destinos en 0,0 hasta recargar la página.
                     "--map-flat-x": `${point.x.toFixed(2)}%`,
                     "--map-flat-y": `${point.y.toFixed(2)}%`,
+                    "--atlas-x": `${atlas.wide.x}%`,
+                    "--atlas-y": `${atlas.wide.y}%`,
+                    "--atlas-portrait-x": `${atlas.portrait.x}%`,
+                    "--atlas-portrait-y": `${atlas.portrait.y}%`,
+                    "--atlas-short-x": `${atlas.short.x}%`,
+                    "--atlas-short-y": `${atlas.short.y}%`,
                     "--map-x": `${point.x.toFixed(2)}%`,
                     "--map-y": `${point.y.toFixed(2)}%`,
                     "--order": world.order,

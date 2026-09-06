@@ -1,5 +1,7 @@
 # Lenguaje visual común de los mundos — F1.0
 
+> **Revisión del dueño · 2026-09-06:** [Raíl, atlas y Tesseracto](atlas-tesseract-reference.md) sustituye la geometría anterior del Tesseracto y el acabado del atlas 2D. Conserva luz común, cuatro batches del Tesseracto y pruebas de centro abierto, movimiento y envolvente.
+
 > **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
 
 
@@ -1007,12 +1009,146 @@ No se añade un solo sitio de FBM, ni una textura, ni un draw call —plumas
 incluidas—: el presupuesto sigue en 19 batches de 20 y en 12 sitios de ruido de
 12.
 
+## 9 ter. Miller — el océano gigantesco (2026-09-06)
+
+Manda sobre §9 en **material, paleta e iluminación de Miller**. No toca su
+posición, su tamaño, su órbita, su inclinación, la cámara ni el HUD — el dueño
+fue explícito: *«Yo ya no movería a Miller. Ahora está donde tenía que estar.»*
+
+**El diagnóstico del dueño, literal:** «A cierta distancia sigue leyendo primero
+como planeta azul bonito, y después como Miller. La diagonal blanca de agua
+ayuda muchísimo, pero todavía podríamos reforzar la sensación de océano
+gigantesco mediante material e iluminación, no mediante más efectos.»
+
+Así que no entra ni un efecto nuevo: ni un sitio de FBM más, ni una textura, ni
+un draw call. Lo que cambia son cinco cosas que ya estaban.
+
+### 1. Se acaba la meseta del terminador
+
+Era el fallo estructural. La envolvente común de luz satura en n·l = 0.34, así
+que más de la mitad del hemisferio diurno salía a brillo PLENO. En un mundo con
+relieve eso apenas se nota; en un océano continuo es fatal, porque **el
+degradado es el único sitio donde un cuerpo sin accidentes cuenta su curvatura y
+su tamaño**. Sin degradado quedaba un disco azul uniforme con un trazo encima.
+
+Miller estrena su propia ley difusa, como ya la tenían la roca de Edmunds y la
+chapa de la Endurance: `0.10 + 0.90·(n·l)^0.55`. El exponente no es 1 porque el
+agua devuelve luz por dispersión bajo la superficie y su caída es más lenta que
+la de un lambert seco. Lo que importa es que ya no hay meseta.
+
+### 2. Fresnel de agua sobre la lámina
+
+Faltaba la mitad del material. El agua es la superficie del sistema con el
+comportamiento angular más extremo que existe: **a incidencia normal devuelve un
+2 % y a incidencia rasante casi el 100 %**. Sin ese término, el reflejo pesaba
+lo mismo en el centro del disco que en el limbo, y salía como una banda blanca
+uniforme cruzando una bola — la firma de una nube, no de un mar.
+
+Schlick sobre el ángulo de vista, exponente 5, sin una muestra extra: la lámina
+se adelgaza hacia el centro y se abre hacia el borde. Es lo que hace el mar de
+verdad visto de lejos, y es lo que hace que **el reflejo cuente la curvatura**.
+
+### 3. El camino de luz es cálido; la sábana, fría
+
+Un reflejo especular devuelve el color de la fuente, y la fuente aquí es ámbar.
+La versión anterior enfriaba el camino estrecho un 34 % y la sábana ancha un
+46 %: casi lo mismo, y el resultado era una banda blanca de temperatura
+indefinida. Ahora el reparto es opuesto —camino al 22 % de frío, sábana al 58 %—
+así que sobre agua fría sólo puede ser una cosa, y además dice de dónde viene la
+luz sin dibujar ninguna flecha. La lámina se alarga y se estrecha (7.5 → 6.4 a
+lo largo, 265 → 290 a lo ancho) para que sea un CAMINO y no una mancha.
+
+### 4. El agua honda baja, y las masas pálidas se retiran
+
+El contraste entre el agua profunda y el reflejo es literalmente la única
+relación de valores que tiene este mundo, y las masas pálidas —nube y bajío— se
+la estaban comiendo: a tamaño de hero lo primero que veía el ojo eran manchas
+claras sobre azul, que es la firma de un planeta nuboso. El tinte de nube baja de
+0.26 a 0.09, el bajío de 0.55 a 0.30, la veta somera de 0.42 a 0.22, y el extremo
+profundo de la cuenca cae otro tercio. **No es meteorología menos: es jerarquía
+más.** El sitio más brillante del cuerpo tiene que ser el reflejo de Gargantúa, y
+sólo ése.
+
+### 5. Ni suelo nocturno común ni aro pálido
+
+Miller se había quedado con el suelo de relleno nocturno COMÚN, 0.5, el más alto
+del sistema — y el agua es, físicamente, el peor rebotador del cuadro. Baja a
+0.32, la misma operación que la fase 1 hizo con la Endurance y con Edmunds. El
+relleno de canto baja de 0.32 a 0.13 y el filo cálido común de 0.18 a 0.07: los
+dos levantaban el limbo MIRE DONDE MIRE, y entre ambos dibujaban una línea pálida
+por toda la circunferencia, cara noche incluida. El agua no tiene borde difuso:
+su limbo lo dibuja el reflejo, que sólo existe de un lado.
+
+### Medida
+
+Sobre el disco de Miller en el hero de 1440×860, luminancia:
+
+| | antes | ahora |
+| --- | --- | --- |
+| media | 63.1 | **51.2** |
+| p50 | 59 | **48** |
+| p95 | 116 | **108** |
+| p99.5 | 143 | **155** |
+| máximo | 186 | **198** |
+
+La media baja y el pico sube: es exactamente el reparto que se buscaba. El agua
+se hunde y el camino de luz se separa de ella, que es lo que convierte una bola
+azul en una superficie enorme reflejando una fuente.
+
+## 9 quater. El foco no puede borrar el material (2026-09-06)
+
+Manda sobre la respuesta de adquisición de los seis cuerpos. Es la aplicación
+directa del criterio de §3 —*una misma luz toca materiales diferentes sin borrar
+su identidad*— al único sitio donde el sistema lo estaba incumpliendo.
+
+**El diagnóstico del dueño:** «Cuando seleccionas Edmunds, la respuesta cian es
+demasiado fuerte. El planeta acaba pareciendo casi otro mundo acuático. Yo no
+teñiría el objeto al adquirirlo. Mantendría Edmunds marrón/ocre, y pondría el
+estado interactivo en brackets cian + órbita cian + un pequeñísimo aumento de
+luz/rim. Nada más.»
+
+Bajarlo una vez para todos no valía, porque el problema es relativo al material:
+sobre el océano de Miller el cian ES su color y no se nota; sobre la roca ocre de
+Edmunds lo convierte en otro mundo. **El cuerpo que peor lo llevaba era el que
+más lejos estaba de la paleta de navegación.**
+
+El foco deja de ser un color y pasa a ser tres cosas cuyo reparto depende del
+material:
+
+| | `focusTint` | `focusGain` | `focusEdge` |
+| --- | --- | --- | --- |
+| Edmunds (roca) | 0.08 | 0.16 | 0.11 |
+| Endurance (metal) | 0.16 | 0.15 | 0.30 |
+| Agua, baliza, Tesseracto | 1.00 | — | — |
+
+`focusTint` es cuánto cian aguanta el cuerpo sin dejar de ser él. `focusGain`
+multiplica el color que ya tenía, así que un planeta ocre se enciende ocre.
+`focusEdge` marca un poco más el filo cálido, que ya sabe dónde está Gargantúa —
+es la parte que se lee como «apuntado» a tamaño de hero sin tocar la
+temperatura.
+
+**Los números salieron de medir, no de mirar.** Media RGB del cuerpo apuntado
+sobre el hero, y el umbral es que el canal azul no crezca al doble que el rojo:
+
+| | reposo | tinte 45 % | tinte 34 % | tinte 16 % |
+| --- | --- | --- | --- | --- |
+| Endurance | 21/20/20 | 27/34/36 | 27/33/34 | **26/31/32** |
+
+El paso de 45 a 34 casi no mueve la aguja porque el tinte entra multiplicado por
+el fresnel y el casco es casi todo canto: sobre esa geometría hay que bajar el
+número mucho más de lo que parece para bajar el color un poco.
+
+Lo que dice de verdad la adquisición sigue estando **fuera del cuerpo**: los
+corchetes, el arco de la órbita, el raíl y el NAV TARGET. El cuerpo sólo la
+confirma.
+
 ## 10. Herramientas
 | script | para qué |
 |---|---|
 | `tools/shot.mjs` | captura del hero, con `--sin-glow` y `--sin-rotulos` |
 | `tools/composition.mjs` | dónde cae cada destino en pantalla, en píxeles |
 | `tools/crop.mjs` | recorta y amplía una zona de una captura |
+| `tools/star-streaks.mjs` | cuánto se estiran las estrellas, por anillo de distancia |
 
 Las tres leen la escena real. Ninguna reimplementa su matemática: una copia de
 la proyección se desincronizaría el día que alguien tocara la pose, y entonces

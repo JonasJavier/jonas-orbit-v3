@@ -51,6 +51,38 @@ export const STARDUST_MAX_LIFETIME_MS = 1_020;
  * permanente— y la mota se lee durante el tramo en que el ojo la está
  * siguiendo.
  *
+ * ── Pase de instrumentación (2026-09-06) ───────────────────────────────────
+ *
+ * Y el perfil de WebGL da marcha atrás en casi todo lo anterior, por una razón
+ * que no es de calibración sino de LENGUAJE. El rastro era la única pieza de la
+ * escena que no hablaba de navegación: todo lo demás —el retículo, los
+ * corchetes, el arco de la órbita, el raíl, el NAV TARGET— había convergido al
+ * cian de instrumentación, y el polvo seguía siendo violeta, ancho y largo. Un
+ * cursor de partículas magenta no dice cabina, dice portafolio creativo.
+ *
+ * Y era dominante: durante un barrido normal quedaban arcos violetas cruzando
+ * el cuadro por zonas que la composición había dejado vacías a propósito, así
+ * que el ojo seguía al ratón en vez de a Gargantúa. Un rastro que compite con
+ * el sujeto de la escena no es respuesta, es ruido.
+ *
+ * Los cuatro números que lo arreglan, con la medida de cada uno:
+ *
+ *   · **Densidad al 21 %.** `trailStepPx` 6.5 → 24 y `maxBurst` 12 → 4. Lo que
+ *     se compara no es la ráfaga sino las motas POR PÍXEL recorrido, que es lo
+ *     que se ve: (1 + fineShare)/trailStepPx pasa de 0.269 a 0.056.
+ *   · **Cola un 65 % más corta.** La vida baja a 250-440 ms y `fadePower`
+ *     vuelve a 2. Los dos a la vez: la vida recorta el 56 % y el exponente
+ *     acorta además el tramo VISIBLE de esa vida, de un 84 % a un 67 %.
+ *   · **Motas menos de la mitad de grandes.** El radio medio de una mota de
+ *     cuerpo cae de 1.73 a 0.87 px, y con `glowScale` 3.3 → 3 el sprite pasa de
+ *     11.4 a 5.2 px de lado.
+ *   · **Cian y blanco frío.** La ventana de tonos del perfil se mueve a la
+ *     mitad fría de la paleta; ver `PARTICLE_TONES`.
+ *
+ * Lo que NO cambia: el retículo, que el dueño aprobó tal cual, y el perfil
+ * `flat`, que sigue congelado byte a byte —su ventana de tonos es la de siempre
+ * y su `fineShare` sigue en cero.
+ *
  * `fineShare` añade una SEGUNDA clase de mota por encima de la anterior, no en
  * su lugar: por cada mota de cuerpo se siembran `fineShare` motas finas, con
  * una fracción del tamaño y su propio sprite. Sin ese sprite propio la idea no
@@ -77,23 +109,29 @@ export const STARDUST_PROFILES = {
     fineShare: 0,
     fineSizeScale: 1,
     fineGlowScale: 3.4,
+    toneFirst: 0,
+    toneSpread: 3.24,
+    toneLast: 3,
   },
   webgl: {
-    capacity: 520,
-    minLifetimeMs: 560,
-    maxLifetimeMs: 1_000,
-    peakAlpha: 0.88,
-    trailStepPx: 6.5,
-    maxBurst: 12,
-    glowScale: 3.3,
-    sizeBase: 0.74,
+    capacity: 300,
+    minLifetimeMs: 250,
+    maxLifetimeMs: 440,
+    peakAlpha: 0.7,
+    trailStepPx: 24,
+    maxBurst: 4,
+    glowScale: 3,
+    sizeBase: 0.38,
     sizePower: 2.3,
-    sizeRange: 2.3,
-    sizeSpeed: 0.95,
-    fadePower: 1.2,
-    fineShare: 0.75,
-    fineSizeScale: 0.38,
-    fineGlowScale: 2.1,
+    sizeRange: 1.15,
+    sizeSpeed: 0.45,
+    fadePower: 2,
+    fineShare: 0.34,
+    fineSizeScale: 0.46,
+    fineGlowScale: 2.6,
+    toneFirst: 3,
+    toneSpread: 3.3,
+    toneLast: 5,
   },
 } as const;
 
@@ -238,8 +276,13 @@ export function spawnStardust(
           (config.sizeRange + speed * config.sizeSpeed)) *
       (isFine ? config.fineSizeScale : 1);
     pool.phase[index] = random() * Math.PI * 2;
-    // Violet/magenta/pink dominan; el cyan es una señal rara (1/12 aprox.).
-    pool.tone[index] = Math.min(3, Math.floor(random() * 3.24));
+    // La ventana de tonos es del PERFIL. En `flat`, violeta/magenta/rosa
+    // dominan y el cian es una señal rara (1/12 aprox.); en WebGL no hay más
+    // que frío. Ver la nota de la paleta en `PARTICLE_TONES`.
+    pool.tone[index] = Math.min(
+      config.toneLast,
+      config.toneFirst + Math.floor(random() * config.toneSpread),
+    );
     pool.fine[index] = isFine ? 1 : 0;
 
     if (!wasActive) pool.activeCount += 1;
@@ -272,11 +315,28 @@ export function updateStardust(pool: StardustPool, deltaMs: number) {
   return pool.activeCount;
 }
 
+/**
+ * Paleta, en dos mitades que ningún perfil mezcla.
+ *
+ * Los tres primeros son el rastro violeta de `flat`, congelado. Del 3 en
+ * adelante vive la mitad fría, que es la única que usa WebGL desde el pase de
+ * instrumentación: el sistema de navegación ya había convergido al cian
+ * —retículo, corchetes, arco de órbita, raíl, NAV TARGET— y el rastro era la
+ * única pieza de la escena que seguía hablando en magenta. Un cursor de
+ * partículas violeta pertenece a otro lenguaje visual; sobre una cabina no dice
+ * precisión, dice portafolio creativo.
+ *
+ * El cian del 3 es el mismo que ya existía como señal rara en `flat`, así que
+ * la mitad fría no estrena ningún color: hereda el que la navegación ya usaba y
+ * lo continúa hacia el blanco.
+ */
 const PARTICLE_TONES = [
   "183, 126, 255",
   "236, 111, 203",
   "255, 154, 196",
   "126, 220, 255",
+  "180, 232, 255",
+  "226, 240, 255",
 ] as const;
 
 /**

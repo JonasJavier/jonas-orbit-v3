@@ -287,7 +287,7 @@ const float HIGHLIGHT_KNEE = 9.6;
  *  celdas. Al ser 3D no hay acumulación en los polos, y como el lente magnifica
  *  brutalmente la vecindad del anillo, ahí las estrellas se estiran en arcos
  *  solas: es el anillo de Einstein del fondo, y no hay que dibujarlo. */
-float starLayer(vec3 dir, float scale, float density) {
+float starLayer(vec3 dir, float scale, float density, float bright) {
   vec3 cell = floor(dir * scale);
   vec3 h = hash33(cell);
   float present = step(1.0 - density, h.z);
@@ -302,23 +302,53 @@ float starLayer(vec3 dir, float scale, float density) {
   // Muchas diminutas y unas pocas legibles. El brillo conserva una cola corta:
   // suficiente para dar profundidad, sin fabricar copos blancos ni competir
   // con el disco cuando el lente las estira.
-  float magnitude = 0.30 + 0.80 * pow(h.y, 12.0);
+  float magnitude = 0.30 + 0.80 * pow(h.y, 12.0) * bright;
   return present * magnitude * exp(-d * d * 245.0);
 }
 
-vec3 skySample(vec3 dir) {
+vec3 skySample(vec3 dir, float lensing) {
+  /*
+    EL ESTIRAMIENTO SE RESERVA PARA LA VECINDAD DEL AGUJERO (2026-09-06).
+
+    El fondo entero participaba del remolino y eso rompía la jerarquía de la
+    primera lectura: el ojo encontraba antes el cielo que los cuerpos. Medido
+    con tools/star-streaks.mjs sobre el render —no estimado—, el anillo de
+    250-400 px alrededor de la sombra tenía estrellas de aspecto 4.6 y la
+    periferia, más allá de 550 px, todavía 1.8. Ahí fuera la magnificación
+    tangencial del lente no llega al 15 %: lo que alargaba las manchas de la
+    periferia era, sobre todo, que se les aplicaba la MISMA mezcla de dirección
+    desviada que a las de dentro.
+
+    lensing llega ya medido desde el integrador: es cuánto se ha desviado ESE
+    rayo, así que la puerta la abre la física y no una máscara de pantalla.
+    Fuera, la cola brillante de la magnitud paga un 22 % — son las estrellas
+    grandes las que dejan trazo, y el campo fino no se toca. El velo de nebulosa
+    también, porque es lo único continuo que el lente puede curvar y por tanto
+    la otra mitad de la sensación de remolino.
+  */
   // Tres escalas perceptuales. La capa lejana aporta densidad subpíxel; la media
   // establece paralaje óptico por el lente; la cercana se reserva para muy pocos
   // puntos con más presencia. El campo sigue siendo negro y el disco continúa
   // ocultándolo naturalmente donde domina su luminancia.
+  float bright = mix(0.58, 1.0, lensing);
   vec3 color = vec3(0.0);
-  color += starLayer(dir, 44.0, 0.100) * vec3(1.00, 0.97, 0.92) * 0.48;
-  color += starLayer(dir, 112.0, 0.150) * vec3(0.88, 0.93, 1.00) * 0.33;
-  color += starLayer(dir, 246.0, 0.205) * vec3(1.00, 0.93, 0.84) * 0.19;
+  /* Y las dos escalas gruesas pagan además un peso, porque el trazo largo lo
+     dejan ellas: una estrella de la capa fina no llega a tres píxeles ni
+     estirada. Medido con tools/star-streaks.mjs sobre el render, los trazos de
+     la periferia —manchas de aspecto > 1.7 Y más de 5 px de largo— son casi
+     todos de la escala 44. */
+  color += starLayer(dir, 44.0, 0.100, bright)
+         * vec3(1.00, 0.97, 0.92) * 0.48 * mix(0.58, 1.0, lensing);
+  color += starLayer(dir, 112.0, 0.150, bright)
+         * vec3(0.88, 0.93, 1.00) * 0.33 * mix(0.72, 1.0, lensing);
+  color += starLayer(dir, 246.0, 0.205, bright)
+         * vec3(1.00, 0.93, 0.84) * 0.19 * mix(0.90, 1.0, lensing);
   // Cuarta escala, la más fina: densidad subpíxel que rellena el cielo entre
   // las tres anteriores. Sin ella, subir sólo el brillo daba estrellas más
-  // gordas en vez de un cielo más poblado, que es lo que se pedía.
-  color += starLayer(dir, 520.0, 0.235) * vec3(0.94, 0.96, 1.00) * 0.10;
+  // gordas en vez de un cielo más poblado, que es lo que se pedía. Es EL campo
+  // fino, así que se queda entera: lo que se retira de la periferia son los
+  // trazos grandes, no el cielo.
+  color += starLayer(dir, 520.0, 0.235, 1.0) * vec3(0.94, 0.96, 1.00) * 0.10;
 
   // Velo muy tenue. Existe para que el lente tenga algo continuo que curvar
   // además de puntos: sin él la distorsión del fondo es casi invisible.
@@ -326,7 +356,7 @@ vec3 skySample(vec3 dir) {
   float cloud = fbm(vec2(sph.x * 1.15, sph.y * 2.3) * 1.7);
   float veil = smoothstep(0.54, 1.00, cloud);
   color += mix(vec3(0.014, 0.024, 0.041), vec3(0.043, 0.022, 0.012), cloud)
-         * veil * 0.32;
+         * veil * 0.32 * mix(0.74, 1.0, lensing);
 
   return color;
 }
@@ -1376,8 +1406,37 @@ void main() {
   // (el hilo justo alrededor del anillo de fotones, donde la órbita da vueltas)
   // se quedan con lo que hayan acumulado del disco.
   if (escaped && transmit > 0.002) {
-    vec3 skyDir = normalize(mix(straight, dir, uSkyLens));
-    color += transmit * skySample(skyDir);
+    /*
+      DÓNDE SE CURVA EL CIELO, y por qué el mando es el PARÁMETRO DE IMPACTO.
+
+      La primera versión de esta puerta comparaba la dirección de salida con la
+      de entrada —cuánto se ha desviado este rayo— y no funcionó: medida sobre
+      el render, valía 0.88 en las esquinas y 1.00 en el centro, o sea que no
+      separaba nada. El motivo es que el integrador no renormaliza dir, así que
+      1 - dot(straight, dir) mezcla el ángulo con la DERIVA DE MÓDULO del
+      leapfrog, que es del orden de medio punto porcentual y no depende de la
+      posición en pantalla. Normalizar tampoco lo arregla del todo: lo que queda
+      es el error angular acumulado en cinco mil pasos, que también es casi
+      constante. Una puerta construida sobre el residuo numérico del integrador
+      es una puerta que no se abre.
+
+      El parámetro de impacto no tiene ese problema porque se conoce ANTES de
+      integrar: es la distancia a la que el rayo pasaría del centro si no
+      hubiera gravedad, y es exactamente la variable de la que depende la
+      deflexión (alfa = 2·rs/b). Se calcula con un producto vectorial y no tiene
+      error acumulado de ninguna clase.
+
+      Los dos números, en radios de Schwarzschild y para el encuadre de
+      1440×860: la puerta está entera hasta b = 17 rs —que son los 340 px
+      alrededor de la sombra, donde el estiramiento ES la escena— y cerrada en
+      b = 30 rs, unos 560 px. Las esquinas quedan en 35-40 rs, o sea fuera.
+    */
+    float impact = length(cross(uCamPos, straight));
+    float lensing = 1.0 - smoothstep(uRs * 17.0, uRs * 30.0, impact);
+    vec3 skyDir = normalize(
+      mix(straight, dir, uSkyLens * mix(0.72, 1.0, lensing))
+    );
+    color += transmit * skySample(skyDir, lensing);
   }
 
   /*

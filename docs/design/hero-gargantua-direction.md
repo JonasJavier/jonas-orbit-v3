@@ -1,5 +1,7 @@
 # Hero / System Map — dirección artística vigente
 
+> **Revisión del dueño · 2026-09-06:** [Raíl, atlas y Tesseracto](atlas-tesseract-reference.md) sustituye el orden visible de las etiquetas inferiores, la composición y acabado 2D y la geometría del Tesseracto según la nueva referencia. La composición 3D y el contrato de cámara conservan sus reglas.
+
 > **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
 
 
@@ -600,6 +602,143 @@ de la Endurance sobre el resto, que pasa de 2.045 a 2.014 contra un suelo de
 sigue entre el Tesseracto y el 65 % de la Endurance. Que un recorte de este
 tamaño no acerque ningún test es lo que confirma que es un ajuste fino y no una
 decisión de composición disfrazada.
+
+## 14 septies. Tercer recorte de escala (2026-09-06)
+
+Manda sobre la columna `size` de §14 sexies. No toca posición, fase,
+inclinación, cámara, material ni HUD.
+
+Y a diferencia de los dos anteriores **no toca a los cinco destinos, sino a
+tres**. Esa asimetría es la decisión:
+
+| Destino | `size` antes | `size` ahora | Δ | Radio publicado (rs) |
+| --- | --- | --- | --- | --- |
+| Endurance | 4.547 | 4.388 | −3.5 % | 6.496 → 6.269 |
+| Tesseracto | 2.669 | 2.629 | −1.5 % | 4.723 → 4.652 |
+| Ranger | 1.92 | 1.9104 | −0.5 % | 2.577 → 2.564 |
+| Miller | 2.782 | — | sin tocar | 3.116 |
+| Edmunds | 2.732 | — | sin tocar | 3.060 |
+
+**Por qué los dos planetas se quedan.** Miller y Edmunds son el contrapeso del
+cuadro: uno arriba a la izquierda, el otro abajo a la izquierda, sosteniendo el
+lado que Gargantúa no ocupa. Encogerlos otra vez mientras la Endurance cede el
+triple habría movido la COMPOSICIÓN, no la escala — y la composición está
+cerrada desde el pase de respiración. Lo que este pase reparte es el peso de las
+tres piezas que seguían por encima de su sitio: la nave grande, la estructura
+anómala y el acento pequeño.
+
+**Por qué el Tesseracto se queda en el borde bajo de su horquilla.** El dueño
+pidió entre un 1 y un 2 %; se aplica el 1.5 y no el 2 porque su radio publicado
+tiene una banda dura en `bodies.test.ts`, [4.55, 5.05], y a −1.5 % queda en
+4.652 — a una décima de rs del suelo. Es el margen más fino de todo el bloque.
+
+Medido con `tools/composition.mjs` a 1440×860, radio en píxeles contra la sombra
+de Gargantúa:
+
+| Destino | vs. sombra antes | vs. sombra ahora | Δ relativo |
+| --- | --- | --- | --- |
+| Endurance | 3.157× | **3.050×** | −3.4 % |
+| Ranger | 1.560× | **1.556×** | −0.3 % |
+| Tesseracto | 1.305× | **1.284×** | −1.6 % |
+| Edmunds | 1.181× | **1.182×** | +0.1 % |
+| Miller | 1.011× | **1.009×** | −0.2 % |
+
+Las dos últimas filas son la comprobación de que el pase hace lo que dice: los
+cuerpos que no se tocan no se mueven ni una décima, aunque la cámara sí se haya
+acercado un poco de rebote.
+
+**Guardas.** La ventaja de tamaño aparente de la Endurance sobre el resto pasa
+de 2.014 a 1.954 contra un suelo de 1.4. El Tesseracto queda en 4.652 dentro de
+[4.55, 5.05]. Miller sigue siendo el menor tamaño aparente, la Ranger sigue
+entre el Tesseracto y el 65 % de la Endurance, y el disco sigue sacándole más
+del doble a la envolvente de la Endurance.
+
+## 14 octies. El cielo deja de participar del remolino (2026-09-06)
+
+Manda sobre §6 en **cuánto se estira el fondo y dónde**. No toca el lensing del
+disco, ni la densidad del campo, ni el velo.
+
+**El diagnóstico, y no era el obvio.** El dueño describía «trazos
+gravitacionales por toda la pantalla» y una sensación de que el observador
+entero gira alrededor de Gargantúa. La primera hipótesis —que el lente estira
+las estrellas hasta las esquinas— es falsa y se puede calcular: a 800 px de la
+sombra el parámetro de impacto ronda los 39 rs y la magnificación tangencial no
+llega al 15 %. Lo que hay en la periferia no son arcos: son estrellas GRANDES,
+muchas, y ligeramente ovaladas.
+
+Medido con `tools/star-streaks.mjs` sobre el render —segmenta el cielo, descarta
+disco, cuerpos y HUD, y saca de cada mancha la razón entre sus ejes—: el anillo
+de 250-400 px tenía aspecto 5.1 y la periferia 1.9. El estiramiento REAL vive
+pegado al agujero; la presencia de la periferia era masa luminosa.
+
+**La puerta se abre con el parámetro de impacto.** La primera versión comparaba
+la dirección de salida del rayo con la de entrada, y no funcionó: medida sobre
+el render valía 0.88 en las esquinas y 1.00 en el centro. El integrador no
+renormaliza `dir`, así que `1 - dot(straight, dir)` mezcla el ángulo con la
+deriva de módulo del leapfrog, que no depende de dónde estés en la pantalla. Una
+puerta construida sobre el residuo numérico del integrador no se abre nunca.
+
+El parámetro de impacto sí: se conoce **antes** de integrar, es un producto
+vectorial, y es exactamente la variable de la que depende la deflexión. La
+puerta está entera hasta b = 17 rs —los 340 px alrededor de la sombra, donde el
+estiramiento ES la escena— y cerrada en b = 30 rs, unos 560 px.
+
+**Qué paga la periferia.** Sólo las escalas gruesas, que son las que dejan
+trazo: la capa 44 al 58 %, la 112 al 72 %, la 246 al 90 % y **la 520 entera**.
+Esa última es el campo fino, y no se toca: lo que se retira es el trazo grande,
+no el cielo. La cola brillante de la magnitud paga un 42 % y el velo de nebulosa
+un 26 %, porque es lo único continuo que el lente puede curvar y por tanto la
+otra mitad de la sensación de remolino. La mezcla de dirección desviada baja al
+72 %, así que lo poco que queda de estiramiento ahí fuera se acorta también.
+
+**Resultado medido**, en tres ventanas de cielo limpio (sin HUD, sin cuerpos,
+sin disco) a unos 600 px de la sombra, energía de píxeles brillantes:
+
+| ventana | antes | ahora | Δ |
+| --- | --- | --- | --- |
+| superior derecha | 6.01k | 3.68k | −39 % |
+| superior izquierda | 4.18k | 3.25k | −22 % |
+| inferior izquierda | 1.56k | 1.04k | −33 % |
+
+Media −31 %, dentro de la horquilla del 25-35 % que pidió el dueño. El anillo de
+250-400 px no se mueve: 36.8k antes y 36.8k después. Los estiramientos siguen
+donde tienen que estar.
+
+## 14 nonies. El rastro del puntero vuelve a la cabina (2026-09-06)
+
+Manda sobre §11 ter y §11 quater en **densidad, cola, calibre y color** del
+perfil `webgl`. No toca el retículo de §11 bis, que el dueño aprobó tal cual, ni
+el perfil `flat`, que sigue congelado byte a byte.
+
+**El problema no era de calibración, era de LENGUAJE.** Todo lo demás de la
+escena había convergido al cian de instrumentación —retículo, corchetes, arco de
+órbita, raíl, NAV TARGET— y el polvo seguía siendo violeta, ancho y largo. Un
+cursor de partículas magenta no dice cabina; dice portafolio creativo. Y era
+dominante: durante un barrido normal quedaban arcos violetas cruzando zonas que
+la composición había dejado vacías a propósito, así que el ojo seguía al ratón
+en vez de a Gargantúa.
+
+| qué | antes | ahora | medida |
+| --- | --- | --- | --- |
+| Densidad | 0.269 motas/px | **0.056** | −79 %, o sea el 21 % de la anterior |
+| Cola visible | 666 ms | **236 ms** | −65 % |
+| Radio medio de mota | 1.73 px | **0.87 px** | −50 % |
+| Sprite dibujado | 11.4 px | **5.2 px** | −54 % |
+| Ventana de tonos | violeta/magenta/rosa | **cian, cian pálido, blanco frío** | — |
+| Alfa de pico | 0.88 | **0.70** | −20 % |
+
+Las tres primeras filas están en la unidad en la que se pidieron, no en la del
+perfil, y eso importa: `maxBurst` no es «motas por evento» desde que hay dos
+calibres, y la vida del pool no es la cola visible —`fadePower` decide qué
+fracción de esa vida está por encima del umbral de visión, y vuelve de 1.2 a 2,
+o sea de un 84 % de la vida a un 67 %—. `lib/stardust.test.ts` fija las tres
+contra los valores viejos escritos a mano, para que la horquilla se pueda releer
+sin git.
+
+**Los dos calibres se conservan.** El grano fino era una petición del dueño del
+día anterior y sigue ahí, sólo que en proporción menor (0.75 → 0.34 por mota de
+cuerpo) y con el mismo tope de calibre: si `fineSizeScale` se acercara a 1,
+«fina» sería una segunda capa de cuerpo por la puerta de atrás.
 
 ### Modelos
 

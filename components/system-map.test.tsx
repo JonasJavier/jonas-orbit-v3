@@ -84,7 +84,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("cada destino se anuncia con su nombre cósmico y su función", () => {
     /*
-      El nombre accesible pasó de «Desarrollo» a «Miller Desarrollo».
+      El nombre accesible pasó de «Desarrollo» a «Desarrollo Miller».
 
       La etiqueta visible ahora tiene dos líneas: el nombre del cuerpo manda y
       la función va debajo. Los dos entran en el nombre accesible, y eso es
@@ -100,7 +100,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
     for (const world of worlds) {
       const esperado = new RegExp(
-        "^" + world.cosmicName + " " + world.shortLabel + "$",
+        "^" + world.shortLabel + " " + world.cosmicName + "$",
         "i",
       );
       const link = screen.getByRole("link", { name: esperado });
@@ -224,7 +224,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const endurance = within(map).getByRole("link", {
-      name: /^Endurance Proyectos$/i,
+      name: /^Proyectos Endurance$/i,
     });
 
     fireEvent.pointerEnter(endurance);
@@ -259,7 +259,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   it("focus de teclado produce el mismo TARGET sin depender de glow", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const miller = screen.getByRole("link", {
-      name: /^Miller Desarrollo$/i,
+      name: /^Desarrollo Miller$/i,
     });
 
     fireEvent.focus(miller);
@@ -283,7 +283,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   it("clic principal bloquea el destino y navega por la abstracción", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const endurance = screen.getByRole("link", {
-      name: /^Endurance Proyectos$/i,
+      name: /^Proyectos Endurance$/i,
     });
 
     fireEvent.click(endurance, { button: 0 });
@@ -300,7 +300,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   it("un clic modificado conserva el comportamiento nativo del enlace", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const endurance = screen.getByRole("link", {
-      name: /^Endurance Proyectos$/i,
+      name: /^Proyectos Endurance$/i,
     });
 
     // El listener de document corre después del handler React delegado: deja
