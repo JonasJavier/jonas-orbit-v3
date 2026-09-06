@@ -124,6 +124,14 @@ for (const name of names) {
     sxy /= count;
     const trace = sxx + syy;
     const det = sxx * syy - sxy * sxy;
+    /* Orientación del eje mayor, y es la medida que decide QUÉ estira la
+       mancha. El lente magnifica en la dirección TANGENCIAL —perpendicular al
+       radio que va a la sombra— así que un arco gravitacional tiene su eje
+       mayor a 90° del radio. Una mancha estirada por el muestreo del retículo
+       de estrellas no sabe dónde está el agujero: su eje apunta a cualquier
+       sitio. Promediar |cos| del ángulo entre el eje y la tangente separa las
+       dos causas sin ambigüedad: ~1 es lente, ~0.64 (la media de |cos| sobre
+       ángulos uniformes) es ruido de muestreo. */
     const root = Math.sqrt(Math.max((trace * trace) / 4 - det, 0));
     /* Regularización de un doceavo, que es la varianza de la cuantización a
        píxel. Sin ella una mancha de un píxel de ancho da eje menor cero y el
@@ -131,11 +139,31 @@ for (const name of names) {
        nada y el ruido de fondo mandaba sobre la medida. */
     const major = trace / 2 + root + 1 / 12;
     const minor = trace / 2 - root + 1 / 12;
+    // Autovector del eje mayor de la matriz [[sxx, sxy], [sxy, syy]].
+    const axis =
+      Math.abs(sxy) > 1e-9
+        ? Math.atan2(major - 1 / 12 - sxx, sxy)
+        : sxx >= syy
+          ? 0
+          : Math.PI / 2;
+    const radial = Math.atan2(my - CENTRE.y, mx - CENTRE.x);
+    const tangential = radial + Math.PI / 2;
+    /* Las trazas de órbita son líneas de un píxel de ancho que cruzan medio
+       cuadro, y sus fragmentos entraban en la muestra como si fueran estrellas
+       larguísimas: un solo trozo con aspecto 30 movía la media del cuartil
+       superior en punto y medio, y el mismo cambio del cielo salía mejor o peor
+       según cuántos trozos hubieran caído en el anillo. Se descartan por
+       ESTRUCTURA, no por aspecto: una estrella lensada nunca baja de un píxel y
+       medio de eje menor. */
+    const thinLine = Math.sqrt(minor) * 2 < 1.6 && Math.sqrt(major) * 2 > 9;
+    if (thinLine) continue;
+
     blobs.push({
       aspect: Math.sqrt(major / minor),
       length: Math.sqrt(major) * 2,
       energy,
       distance: Math.hypot(mx - CENTRE.x, my - CENTRE.y),
+      tangency: Math.abs(Math.cos(axis - tangential)),
     });
   }
 
@@ -146,7 +174,9 @@ for (const name of names) {
   const isStreak = (b) => b.aspect > 1.7 && b.length >= 5;
   console.log(`
 ${name} — ${blobs.length} estrellas`);
-  console.log("anillo (px)      n   aspecto   largo px   trazos   energía trazo");
+  console.log(
+    "anillo (px)      n   aspecto   largo px   trazos   energía trazo   tangencia   asp.25%",
+  );
   for (let ring = 0; ring < RINGS.length - 1; ring += 1) {
     const inner = RINGS[ring];
     const outer = RINGS[ring + 1];
@@ -157,8 +187,34 @@ ${name} — ${blobs.length} estrellas`);
     const length = inside.reduce((sum, b) => sum + b.length, 0) / inside.length;
     const streaks = inside.filter(isStreak);
     const energy = streaks.reduce((sum, b) => sum + b.energy, 0);
+    /*
+      ASPECTO DE LAS MÁS BRILLANTES, y esta columna existe por un error de
+      lectura que costó una pasada entera.
+
+      El aspecto medio del anillo NO se puede comparar entre dos capturas con
+      brillos distintos: al atenuar una estrella, su halo redondo cae por debajo
+      del umbral de segmentación y lo que sobrevive es el núcleo, que es la
+      parte alargada. La mancha se vuelve MÁS oval en la medida justo cuando
+      tiene MENOS luz en pantalla. Se ve en las tres capturas del pase del
+      cielo: 1.92 → 2.12 → 2.24 mientras la energía caía a la mitad.
+
+      El cuartil superior está lejos del umbral en las dos capturas, así que su
+      forma es la de verdad. Es la única columna que dice si el estiramiento se
+      ha corregido de verdad o sólo se ha escondido.
+    */
+    const byEnergy = [...inside].sort((a, b) => b.energy - a.energy);
+    const brightest = byEnergy.slice(0, Math.max(1, Math.round(inside.length / 4)));
+    const brightAspect =
+      brightest.reduce((sum, b) => sum + b.aspect, 0) / brightest.length;
+
+    /* Sólo las manchas con forma: en una redonda el eje mayor es ruido puro y
+       su orientación no significa nada. */
+    const shaped = inside.filter((b) => b.aspect > 1.6);
+    const tangency = shaped.length
+      ? shaped.reduce((sum, b) => sum + b.tangency, 0) / shaped.length
+      : 0;
     console.log(
-      `${String(inner).padStart(5)}–${String(outer).padEnd(6)} ${String(inside.length).padStart(5)}   ${aspect.toFixed(2).padStart(6)}   ${length.toFixed(1).padStart(7)}   ${String(streaks.length).padStart(6)}   ${(energy / 1000).toFixed(1).padStart(11)} k`,
+      `${String(inner).padStart(5)}–${String(outer).padEnd(6)} ${String(inside.length).padStart(5)}   ${aspect.toFixed(2).padStart(6)}   ${length.toFixed(1).padStart(7)}   ${String(streaks.length).padStart(6)}   ${(energy / 1000).toFixed(1).padStart(11)} k   ${tangency.toFixed(2).padStart(9)}   ${brightAspect.toFixed(2).padStart(8)}`,
     );
   }
   /* Y la medida sin umbral, que es la que no se puede engañar: brillo TOTAL

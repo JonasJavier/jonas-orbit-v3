@@ -306,7 +306,7 @@ float starLayer(vec3 dir, float scale, float density, float bright) {
   return present * magnitude * exp(-d * d * 245.0);
 }
 
-vec3 skySample(vec3 dir, float lensing) {
+vec3 skySample(vec3 dir, float lensing, float presence) {
   /*
     EL ESTIRAMIENTO SE RESERVA PARA LA VECINDAD DEL AGUJERO (2026-09-06).
 
@@ -330,7 +330,7 @@ vec3 skySample(vec3 dir, float lensing) {
   // establece paralaje óptico por el lente; la cercana se reserva para muy pocos
   // puntos con más presencia. El campo sigue siendo negro y el disco continúa
   // ocultándolo naturalmente donde domina su luminancia.
-  float bright = mix(0.58, 1.0, lensing);
+  float bright = mix(0.58, 1.0, presence);
   vec3 color = vec3(0.0);
   /* Y las dos escalas gruesas pagan además un peso, porque el trazo largo lo
      dejan ellas: una estrella de la capa fina no llega a tres píxeles ni
@@ -338,11 +338,11 @@ vec3 skySample(vec3 dir, float lensing) {
      la periferia —manchas de aspecto > 1.7 Y más de 5 px de largo— son casi
      todos de la escala 44. */
   color += starLayer(dir, 44.0, 0.100, bright)
-         * vec3(1.00, 0.97, 0.92) * 0.48 * mix(0.58, 1.0, lensing);
+         * vec3(1.00, 0.97, 0.92) * 0.48 * mix(0.58, 1.0, presence);
   color += starLayer(dir, 112.0, 0.150, bright)
-         * vec3(0.88, 0.93, 1.00) * 0.33 * mix(0.72, 1.0, lensing);
+         * vec3(0.88, 0.93, 1.00) * 0.33 * mix(0.72, 1.0, presence);
   color += starLayer(dir, 246.0, 0.205, bright)
-         * vec3(1.00, 0.93, 0.84) * 0.19 * mix(0.90, 1.0, lensing);
+         * vec3(1.00, 0.93, 0.84) * 0.19 * mix(0.90, 1.0, presence);
   // Cuarta escala, la más fina: densidad subpíxel que rellena el cielo entre
   // las tres anteriores. Sin ella, subir sólo el brillo daba estrellas más
   // gordas en vez de un cielo más poblado, que es lo que se pedía. Es EL campo
@@ -356,7 +356,7 @@ vec3 skySample(vec3 dir, float lensing) {
   float cloud = fbm(vec2(sph.x * 1.15, sph.y * 2.3) * 1.7);
   float veil = smoothstep(0.54, 1.00, cloud);
   color += mix(vec3(0.014, 0.024, 0.041), vec3(0.043, 0.022, 0.012), cloud)
-         * veil * 0.32 * mix(0.74, 1.0, lensing);
+         * veil * 0.32 * mix(0.74, 1.0, presence);
 
   return color;
 }
@@ -1427,23 +1427,74 @@ void main() {
       error acumulado de ninguna clase.
 
       Los dos números, en radios de Schwarzschild y para el encuadre de
-      1440×860: la puerta está entera hasta b = 17 rs —que son los 340 px
+      1440×860: la puerta está entera hasta b = 16 rs —que son los 320 px
       alrededor de la sombra, donde el estiramiento ES la escena— y cerrada en
-      b = 30 rs, unos 560 px. Las esquinas quedan en 35-40 rs, o sea fuera.
+      b = 23 rs, unos 430 px. Las esquinas quedan en 35-40 rs, o sea fuera.
+
+      Cerraba en 30 rs (560 px) y se apretó a 23 midiendo: el anillo de 400-550
+      px seguía dentro de la puerta y mantenía manchas de aspecto 2.3 — óvalos
+      suaves, no arcos, pero suficientes para que un tercio del ancho del cuadro
+      siguiera participando del remolino. A 23 ese anillo pasa a puntos y el de
+      250-400, que es donde viven los arcos de verdad (aspecto 8), conserva la
+      puerta casi entera.
     */
     float impact = length(cross(uCamPos, straight));
-    float lensing = 1.0 - smoothstep(uRs * 17.0, uRs * 30.0, impact);
-    /* Y fuera de la puerta el cielo se endereza casi del todo: 0.45 de la
-       dirección desviada, no 0.72. El dueño lo pidió con estas palabras —«que
-       las estrellas alejadas sean predominantemente puntos casi estáticos»— y
-       es la parte del encargo que el brillo no puede dar: una estrella más
-       tenue sigue siendo una estrella estirada. Lo que endereza la mancha es
-       usar menos dirección desviada, porque el estiramiento es el jacobiano de
-       esta misma mezcla. Dentro de la puerta no cambia nada. */
+    /*
+      DOS PUERTAS, Y NO ES UNA POR CAPRICHO.
+
+      El encargo tiene dos mitades que se comportan de forma opuesta:
+
+      · La FORMA —que la estrella lejana sea un punto— la decide la mezcla de
+        dirección, y una puerta estrecha ahí HACE DAÑO. La mezcla es un campo
+        espacial, así que su propia pendiente entra en el jacobiano: al tapar la
+        deflexión deprisa se añade una compresión radial que alarga las manchas
+        justo por fuera de la rampa. Medido: con la puerta cerrando en 23 rs, el
+        anillo de 400-550 px pasó de 2.15 a 2.63 de aspecto. Cuanto más suave la
+        rampa, menos artefacto — por eso ésta cierra en 34 rs.
+      · El BRILLO no tiene jacobiano. Se le puede poner una puerta tan estrecha
+        como se quiera sin efectos secundarios, y es la que de verdad retira
+        presencia del anillo medio: un óvalo más tenue deja de leerse como
+        trazo aunque conserve su geometría.
+
+      Así que la mezcla usa lensing (rampa larga, 16-34 rs) y la magnitud usa
+      presence (rampa corta, 15-23 rs). Los arcos de 250-400 px, que son lo que
+      hay que conservar, quedan dentro de las dos.
+    */
+    float lensing = 1.0 - smoothstep(uRs * 16.0, uRs * 34.0, impact);
+    float presence = 1.0 - smoothstep(uRs * 15.0, uRs * 23.0, impact);
+    /*
+      FUERA DE LA PUERTA EL CIELO SE ENDEREZA, y ésta es la línea del encargo.
+
+      «Que las estrellas alejadas sean predominantemente puntos casi estáticos y
+      reservar los estiramientos para una región más próxima al agujero negro.»
+      Eso es una petición sobre la FORMA, y el brillo no la puede cumplir: una
+      estrella más tenue sigue siendo una estrella estirada. La primera pasada
+      bajó la presencia luminosa de la periferia un 31 % y las manchas seguían
+      midiendo 1.9 de aspecto.
+
+      Quien decide la forma es esta mezcla, porque el estiramiento es su
+      jacobiano: con skyDir = mix(straight, dir, s), la magnificación en cada
+      eje vale (1-s) + s·μ. Con μ tangencial ≈ 1.38 y radial ≈ 0.73 —los que
+      dan el 1.9 medido— la razón cae a 1.34 con s = 0.45 y a **1.19 con
+      s = 0.28**, que ya es un punto. Dentro de la puerta s sigue valiendo 1 y
+      los arcos no se tocan.
+
+      Y que la causa era el lente hay que dejarlo escrito, porque se diagnosticó
+      mal dos veces. tools/star-streaks.mjs mide la TANGENCIA: el ángulo entre
+      el eje mayor de cada mancha y la perpendicular al radio que va a la
+      sombra. El lente magnifica en tangencial, así que un arco gravitacional
+      marca ~1.00; el ruido de muestreo del retículo de estrellas no sabe dónde
+      está el agujero y marca ~0.64. La periferia marcaba **1.00 a 400-550 px y
+      0.83 más allá**. Era el lente, hasta las esquinas.
+
+      La primera versión de esta puerta no lo demostraba porque valía 1 en toda
+      la pantalla —ver la nota del parámetro de impacto—, así que bajar esta
+      mezcla no cambiaba nada y parecía que la causa era otra.
+    */
     vec3 skyDir = normalize(
-      mix(straight, dir, uSkyLens * mix(0.45, 1.0, lensing))
+      mix(straight, dir, uSkyLens * mix(0.25, 1.0, lensing))
     );
-    color += transmit * skySample(skyDir, lensing);
+    color += transmit * skySample(skyDir, lensing, presence);
   }
 
   /*

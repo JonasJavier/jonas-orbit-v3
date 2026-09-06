@@ -658,18 +658,33 @@ del doble a la envolvente de la Endurance.
 Manda sobre §6 en **cuánto se estira el fondo y dónde**. No toca el lensing del
 disco, ni la densidad del campo, ni el velo.
 
-**El diagnóstico, y no era el obvio.** El dueño describía «trazos
-gravitacionales por toda la pantalla» y una sensación de que el observador
-entero gira alrededor de Gargantúa. La primera hipótesis —que el lente estira
-las estrellas hasta las esquinas— es falsa y se puede calcular: a 800 px de la
-sombra el parámetro de impacto ronda los 39 rs y la magnificación tangencial no
-llega al 15 %. Lo que hay en la periferia no son arcos: son estrellas GRANDES,
-muchas, y ligeramente ovaladas.
+**El diagnóstico costó tres lecturas equivocadas**, y las tres merecen quedar
+escritas porque cada una era una trampa de medida distinta.
 
-Medido con `tools/star-streaks.mjs` sobre el render —segmenta el cielo, descarta
-disco, cuerpos y HUD, y saca de cada mancha la razón entre sus ejes—: el anillo
-de 250-400 px tenía aspecto 5.1 y la periferia 1.9. El estiramiento REAL vive
-pegado al agujero; la presencia de la periferia era masa luminosa.
+1. *El lente no llega a las esquinas.* Se calculó: a 800 px de la sombra el
+   parámetro de impacto ronda los 39 rs y la magnificación tangencial no llega
+   al 15 %. Conclusión aparente: la periferia no está lensada. **Falso**, y lo
+   desmiente la TANGENCIA que mide `tools/star-streaks.mjs` — el ángulo entre el
+   eje mayor de cada mancha y la perpendicular al radio que va a la sombra. El
+   lente magnifica en tangencial, así que un arco marca ~1.00; el ruido de
+   muestreo del retículo de estrellas no sabe dónde está el agujero y marca
+   ~0.64. La periferia marcaba **1.00 a 400-550 px y 0.86 más allá**.
+2. *Bajar la mezcla de dirección no cambia la forma.* Se probó y no cambió nada.
+   El motivo no era el lever sino la puerta: la primera versión se construía
+   sobre la desviación medida del rayo y valía ~1 en toda la pantalla (ver la
+   nota del parámetro de impacto), así que la mezcla nunca bajaba.
+3. *La periferia tiene manchas de aspecto 3.1.* Eran **fragmentos de las trazas
+   de órbita**: líneas de un píxel que cruzan medio cuadro y que la segmentación
+   contaba como estrellas larguísimas. Con ellas descartadas por estructura, la
+   periferia lejana ya medía 1.38 — ya era casi puntos. Lo que de verdad quedaba
+   por arreglar era el anillo MEDIO, 400-550 px, con 2.15.
+
+Y una cuarta trampa, ésta en la comparación: **el aspecto medio de un anillo no
+se puede comparar entre capturas de brillos distintos.** Al atenuar una estrella
+su halo redondo cae bajo el umbral de segmentación y sobrevive el núcleo, que es
+la parte alargada: la mancha se mide MÁS oval justo cuando tiene MENOS luz. Por
+eso la columna que decide es el aspecto del **cuartil más brillante**, que está
+lejos del umbral en las dos capturas.
 
 **La puerta se abre con el parámetro de impacto.** La primera versión comparaba
 la dirección de salida del rayo con la de entrada, y no funcionó: medida sobre
@@ -683,26 +698,41 @@ vectorial, y es exactamente la variable de la que depende la deflexión. La
 puerta está entera hasta b = 17 rs —los 340 px alrededor de la sombra, donde el
 estiramiento ES la escena— y cerrada en b = 30 rs, unos 560 px.
 
-**Qué paga la periferia.** Sólo las escalas gruesas, que son las que dejan
-trazo: la capa 44 al 58 %, la 112 al 72 %, la 246 al 90 % y **la 520 entera**.
-Esa última es el campo fino, y no se toca: lo que se retira es el trazo grande,
-no el cielo. La cola brillante de la magnitud paga un 42 % y el velo de nebulosa
-un 26 %, porque es lo único continuo que el lente puede curvar y por tanto la
-otra mitad de la sensación de remolino. La mezcla de dirección desviada baja al
-72 %, así que lo poco que queda de estiramiento ahí fuera se acorta también.
+**Hay DOS puertas, y no es un capricho.** El encargo tiene dos mitades que se
+comportan de forma opuesta:
 
-**Resultado medido**, en tres ventanas de cielo limpio (sin HUD, sin cuerpos,
-sin disco) a unos 600 px de la sombra, energía de píxeles brillantes:
+- La **forma** —que la estrella lejana sea un punto— la decide la mezcla de
+  dirección, y una puerta estrecha ahí **hace daño**. La mezcla es un campo
+  espacial, así que su propia pendiente entra en el jacobiano: al tapar la
+  deflexión deprisa se añade una compresión radial que alarga las manchas justo
+  por fuera de la rampa. Medido: cerrando en 23 rs, el anillo de 400-550 px
+  empeoró de 2.15 a 2.63 de aspecto. Por eso esta puerta va de 16 a **34 rs**,
+  con rampa larga, y su suelo es 0.25.
+- El **brillo** no tiene jacobiano. Admite una puerta tan estrecha como se
+  quiera sin efectos secundarios, y es la que de verdad retira presencia del
+  anillo medio: un óvalo más tenue deja de leerse como trazo aunque conserve su
+  geometría. Va de 15 a **23 rs**.
 
-| ventana | antes | ahora | Δ |
+**Qué paga la periferia en brillo.** Sólo las escalas gruesas, que son las que
+dejan trazo: la capa 44 al 58 %, la 112 al 72 %, la 246 al 90 % y **la 520
+entera**. Esa última es el campo fino, y no se toca: lo que se retira es el trazo
+grande, no el cielo. La cola brillante de la magnitud paga un 42 % y el velo de
+nebulosa un 26 %, porque es lo único continuo que el lente puede curvar y por
+tanto la otra mitad de la sensación de remolino.
+
+**Resultado medido** con `tools/star-streaks.mjs`, energía de las manchas que son
+trazo —alargadas Y de más de 5 px— por anillo de distancia a la sombra:
+
+| anillo | trazos | energía de trazo | aspecto del cuartil más brillante |
 | --- | --- | --- | --- |
-| superior derecha | 6.01k | 3.68k | −39 % |
-| superior izquierda | 4.18k | 3.25k | −22 % |
-| inferior izquierda | 1.56k | 1.04k | −33 % |
+| 250-400 px (los arcos) | 13 → **13** | 28.2k → **27.9k** (−1 %) | 6.26 → **6.21** |
+| 400-550 px (medio) | 9 → **7** | 23.4k → **17.5k** (−25 %) | 2.15 → **2.28** |
+| 550-1200 px (periferia) | 3 → **1** | 13.2k → **4.5k** (−66 %) | 1.38 → **1.32** |
 
-Media −31 %, dentro de la horquilla del 25-35 % que pidió el dueño. El anillo de
-250-400 px no se mueve: 36.8k antes y 36.8k después. Los estiramientos siguen
-donde tienen que estar.
+Periferia completa (≥400 px): **−40 %**. Los arcos junto al agujero no se mueven
+—un 1 %, que es ruido de captura— y el brillo medio del cielo lejano baja sólo un
+10 %, así que el campo fino sigue entero. Es exactamente el reparto que pedía el
+encargo: los estiramientos reservados a la vecindad del agujero y puntos fuera.
 
 ## 14 nonies. El rastro del puntero vuelve a la cabina (2026-09-06)
 
@@ -720,12 +750,11 @@ en vez de a Gargantúa.
 
 | qué | antes | ahora | medida |
 | --- | --- | --- | --- |
-| Densidad | 0.269 motas/px | **0.056** | −79 %, o sea el 21 % de la anterior |
+| Densidad | 0.269 motas/px | **0.145** | −46 %, o sea el 54 % de la anterior |
 | Cola visible | 666 ms | **236 ms** | −65 % |
-| Radio medio de mota | 1.73 px | **0.87 px** | −50 % |
-| Sprite dibujado | 11.4 px | **5.2 px** | −54 % |
+| Radio medio de mota | 1.73 px | **1.73 px** | sin cambio |
 | Ventana de tonos | violeta/magenta/rosa | **cian, cian pálido, blanco frío** | — |
-| Alfa de pico | 0.88 | **0.70** | −20 % |
+| Alfa de pico | 0.88 | **0.90** | sin cambio |
 
 Las tres primeras filas están en la unidad en la que se pidieron, no en la del
 perfil, y eso importa: `maxBurst` no es «motas por evento» desde que hay dos
@@ -736,9 +765,31 @@ contra los valores viejos escritos a mano, para que la horquilla se pueda releer
 sin git.
 
 **Los dos calibres se conservan.** El grano fino era una petición del dueño del
-día anterior y sigue ahí, sólo que en proporción menor (0.75 → 0.34 por mota de
-cuerpo) y con el mismo tope de calibre: si `fineSizeScale` se acercara a 1,
-«fina» sería una segunda capa de cuerpo por la puerta de atrás.
+día anterior y sigue ahí (0.75 → 0.6 por mota de cuerpo) con el mismo tope de
+calibre: si `fineSizeScale` se acercara a 1, la mota fina pasaría a ser una
+segunda capa de cuerpo por la puerta de atrás.
+
+**La primera pasada se pasó de frenada, y merece quedar escrito.** La horquilla
+del encargo —20-25 % de la densidad, partículas mucho menores— se cumplió al pie
+de la letra en las tres variables a la vez, y el dueño abrió la escena y dijo que
+**casi no había polvo**. El error es fácil de repetir: las reducciones se
+multiplican. Al 21 % de densidad, con motas a la mitad de radio —o sea a un
+cuarto de ÁREA— y el alfa a 0.70, la masa luminosa del rastro quedaba en un 4 %
+de la anterior. La horquilla hablaba de una variable y se aplicó a tres.
+
+La corrección devuelve **calibre y alfa enteros** y deja la densidad a la mitad.
+Ese reparto es la decisión: de las tres, la densidad es la que fabrica la
+sensación de arco —más motas por píxel es una línea más continua— mientras que el
+calibre y el alfa sólo deciden si una mota se ve o no se ve. Se recorta lo que
+hace daño y se devuelve lo que sólo hace visible. La cola no se devuelve nunca:
+era la que dibujaba los arcos.
+
+**Aviso para quien lo revise:** el rastro no se puede juzgar con `tools/shot.mjs`.
+Bajo SwiftShader un fotograma de la escena dura más que la vida entera de una
+mota (250-440 ms), así que el `updateStardust` de ese único fotograma las mata a
+todas y el lienzo sale vacío aunque el pool se haya llenado. Los números de la
+tabla son aritmética exacta del perfil y están fijados en `lib/stardust.test.ts`;
+la revisión es a ojo, en hardware real.
 
 ### Modelos
 
