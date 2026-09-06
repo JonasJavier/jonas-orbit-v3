@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { findWorldRoute, type WorldRoute } from "./world-route";
 
 const routes: WorldRoute[] = [
-  { href: "/es/sobre-mi", id: "tesseract", accent: "#f2c879" },
+  { href: "/es/sobre-mi", id: "gargantua", accent: "#ffb45c" },
   { href: "/es/proyectos", id: "endurance", accent: "#f0bc72" },
   { href: "/es/contacto", id: "ranger", accent: "#c58cff" },
 ];

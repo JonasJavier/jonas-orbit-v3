@@ -9,6 +9,35 @@
  * Aquí NUNCA va texto visible al usuario (títulos, narrativa, alt, CTAs).
  * Sólo viven identidad técnica y parámetros estructurales de la escena.
  */
+/**
+ * ── Arquitectura narrativa vigente (2026-09-06) ─────────────────────────────
+ *
+ * Cada cuerpo representa una dimensión distinta del portafolio, y la
+ * asociación es CANÓNICA: sustituye cualquier mapping anterior.
+ *
+ *   1. Gargantúa  → Sobre mí       2. Miller    → Formación
+ *   3. Endurance   → Proyectos      4. Edmunds   → Creatividad
+ *   5. Tesseracto  → Experimentos   6. Ranger    → Contacto
+ *
+ * Gargantúa es el centro visual del sistema, así que es también el centro de
+ * IDENTIDAD del portafolio: quién soy, cómo pienso, hacia dónde quiero crecer.
+ * Esa coincidencia entre jerarquía visual y jerarquía narrativa es la razón de
+ * ser del cambio, y por eso Gargantúa no puede volver a ser «Laboratorio» ni
+ * «Proyectos».
+ *
+ * ── Qué es `order` y qué NO es ──────────────────────────────────────────────
+ *
+ * `order` es el orden NARRATIVO: el del raíl, el del DOM, el del tabulador, el
+ * de los vecinos y el del sitemap. **No tiene ninguna relación con la posición
+ * del cuerpo en la escena**, que vive entera en `placement` y en
+ * `lib/scene-depth.ts`, y que se indexa por `WorldId`. Reordenar la narrativa
+ * no mueve un solo píxel de la composición: se comprobó al aplicar este pase,
+ * y `worlds.data.test.ts` lo mantiene separado.
+ *
+ * El único efecto colateral de `order` fuera de la navegación es el retardo
+ * escalonado de entrada de las etiquetas (`--order` en globals.css), que por
+ * definición sigue al orden de lectura.
+ */
 export const WORLD_IDS = [
   "tesseract",
   "miller",
@@ -260,7 +289,7 @@ export interface WorldStructuralData {
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
-    order: 1,
+    order: 5,
     cosmicName: "Tesseracto",
     accent: "#f2c879",
     secondary: "#73d7ff",
@@ -391,7 +420,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
     sceneName: "scene-edmunds",
   },
   gargantua: {
-    order: 5,
+    order: 1,
     cosmicName: "Gargantúa",
     accent: "#ffb45c",
     secondary: "#d8e6ff",

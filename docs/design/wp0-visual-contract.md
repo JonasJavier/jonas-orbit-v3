@@ -1,5 +1,7 @@
 # WP0 — contrato visual de Jonás Orbit
 
+> **Decisión vigente del dueño · 2026-09-06:** el significado de cada destino lo fija [Arquitectura narrativa](arquitectura-narrativa.md) — Gargantúa = Sobre mí, Miller = Formación, Endurance = Proyectos, Edmunds = Creatividad, Tesseracto = Experimentos, Ranger = Contacto — y sustituye cualquier asociación anterior entre cuerpo y sección. Siguen siendo seis cuerpos y la escena no cambia: ni posición, ni escala, ni cámara, ni material. **Revoca del banner de abajo únicamente el veto sobre `/es/formacion`**, que ahora es Miller; lo retirado el 2026-09-04 fue un CUERPO (Cooper Station) y sigue retirado, mientras que lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya existía. `/es/desarrollo` y `/es/laboratorio` pasan a responder 404.
+>
 > **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
 
 

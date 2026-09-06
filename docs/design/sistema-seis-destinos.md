@@ -6,20 +6,30 @@ revisión visual del dueño. Las capturas y mediciones no constituyen aprobació
 
 ## Catálogo y navegación
 
-| Orden | WorldId | Nombre | Ruta ES |
-|---|---|---|---|
-| 1 | `tesseract` | Tesseracto | `/es/sobre-mi` |
-| 2 | `miller` | Miller | `/es/desarrollo` |
-| 3 | `endurance` | Endurance | `/es/proyectos` |
-| 4 | `edmunds` | Edmunds | `/es/creatividad` |
-| 5 | `gargantua` | Gargantúa | `/es/laboratorio` |
-| 6 | `ranger` | Ranger | `/es/contacto` |
+> **Superseded en catálogo y rutas · 2026-09-06.** El significado de cada
+> destino y su slug los fija ahora [Arquitectura
+> narrativa](arquitectura-narrativa.md). Esta sección conserva lo que sigue
+> vigente —que hay SEIS cuerpos y que Cooper Station está retirado— y su tabla
+> queda actualizada al mapping nuevo.
+
+| Orden | WorldId | Nombre | Significado | Ruta ES |
+|---|---|---|---|---|
+| 1 | `gargantua` | Gargantúa | Sobre mí | `/es/sobre-mi` |
+| 2 | `miller` | Miller | Formación | `/es/formacion` |
+| 3 | `endurance` | Endurance | Proyectos | `/es/proyectos` |
+| 4 | `edmunds` | Edmunds | Creatividad | `/es/creatividad` |
+| 5 | `tesseract` | Tesseracto | Experimentos | `/es/experimentos` |
+| 6 | `ranger` | Ranger | Contacto | `/es/contacto` |
 
 Cooper Station se retira del producto: identidad, datos, MDX, modelos WebGL y
 SVG, materiales exclusivos, hitboxes, profundidad, navegación y generación de
-rutas/OG/sitemap. No hay sustituto ni espacio reservado en arrays. La antigua
-`/es/formacion` responde 404; no se inventa una redirección hacia contenido
-distinto. No se redistribuye su prosa ni se modifica la Formación del CV.
+rutas/OG/sitemap. No hay sustituto ni espacio reservado en arrays. **Eso sigue
+intacto: el cuerpo no vuelve.** Lo que sí cambió el 2026-09-06 es el segmento
+`/es/formacion`, que dejó de ser un 404 y pasó a ser Miller — un significado
+sobre un cuerpo que ya existía, no la reintroducción de Cooper Station. Su prosa
+no se recupera. Las rutas retiradas que hoy responden 404 son `/es/desarrollo` y
+`/es/laboratorio`, y tampoco se inventa una redirección hacia contenido
+distinto.
 
 Hay seis targets HTML, cinco cuerpos secundarios WebGL/SVG y Gargantúa en su
 pase/backdrop compartido. La home más los seis destinos suman siete rutas; el

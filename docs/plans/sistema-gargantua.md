@@ -1,5 +1,7 @@
 # Diseño: Sistema Gargantúa — la home deja de ser un scroll y pasa a ser un lugar
 
+> **Decisión vigente del dueño · 2026-09-06:** el significado de cada destino lo fija [Arquitectura narrativa](../design/arquitectura-narrativa.md) — Gargantúa = Sobre mí, Miller = Formación, Endurance = Proyectos, Edmunds = Creatividad, Tesseracto = Experimentos, Ranger = Contacto — y sustituye cualquier asociación anterior entre cuerpo y sección. Siguen siendo seis cuerpos y la escena no cambia: ni posición, ni escala, ni cámara, ni material. **Revoca del banner de abajo únicamente el veto sobre `/es/formacion`**, que ahora es Miller; lo retirado el 2026-09-04 fue un CUERPO (Cooper Station) y sigue retirado, mientras que lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya existía. `/es/desarrollo` y `/es/laboratorio` pasan a responder 404.
+>
 > **Decisión vigente del dueño · 2026-09-04:** el sistema tiene exactamente seis destinos: Tesseracto, Miller, Endurance, Edmunds, Gargantúa y Ranger. Cooper Station y `/es/formacion` están retirados, sin sustituto ni reasignación editorial. El [contrato de seis destinos](../design/sistema-seis-destinos.md) sustituye cualquier número, pose, destino o bloqueo de posición anterior que lo contradiga. Los registros fechados de fases anteriores son evidencia histórica, no instrucciones para reintroducir objetos. La nueva composición queda pendiente de aprobación visual del dueño.
 
 
@@ -63,12 +65,16 @@ slugs localizados con significado (tensión T1, ya resuelta a favor del slug ES)
 | `WorldId` | Ruta ES | Contenido |
 |---|---|---|
 | — | `/es` | **System Map / Sistema Gargantúa** (escena + HUD/raíl; fallback semántico sin bloque personal visible) |
-| `tesseract` | `/es/sobre-mi` | Historia y perfil |
-| `miller` | `/es/desarrollo` | Desarrollo: stack, forma de trabajar |
+| `gargantua` | `/es/sobre-mi` | Identidad, enfoque y perfil |
+| `miller` | `/es/formacion` | Educación, cursos y certificaciones |
 | `endurance` | `/es/proyectos` | Índice de proyectos |
 | `edmunds` | `/es/creatividad` | Fotografía y diseño |
-| `gargantua` | `/es/laboratorio` | Experimentos reales del propio build |
+| `tesseract` | `/es/experimentos` | Exploración técnica y prototipos |
 | `ranger` | `/es/contacto` | Contacto, oferta freelance, canales directos |
+
+*(Tabla actualizada el 2026-09-06 por el pase de arquitectura narrativa. La
+asignación anterior —Tesseracto = Sobre mí, Miller = Desarrollo, Gargantúa =
+Laboratorio— está obsoleta.)*
 
 **El árbol de rutas ya existente encaja sin forzarlo** — y esto es evidencia de
 que el pivote va a favor del código, no en contra:
@@ -753,9 +759,11 @@ porque el scroll ya no toca la cámara.
   propios contra los 40 propuestos. *Recomendación: declarar la excepción para la
   única ruta de conversión del sitio y congelar el resto — el formulario es el
   producto, no adorno.* Hereda y sustituye a T8.
-- **Slugs ES definitivos** (§2) — ✅ **CERRADA 2026-08-07.** Fijados los
-  funcionales: `/es/sobre-mi`, `/es/formacion`, `/es/desarrollo`,
-  `/es/proyectos`, `/es/creatividad`, `/es/laboratorio`, `/es/contacto`.
+- **Slugs ES definitivos** (§2) — ✅ **CERRADA 2026-08-07, REABIERTA Y VUELTA A
+  CERRAR 2026-09-06.** Los vigentes son seis: `/es/sobre-mi`, `/es/formacion`,
+  `/es/proyectos`, `/es/creatividad`, `/es/experimentos`, `/es/contacto`. La
+  lista anterior tenía siete porque incluía a Cooper Station; `/es/desarrollo` y
+  `/es/laboratorio` quedaron retirados al reasignar los significados.
 - **Baseline de Next/React congelado en 145,6 KiB gz.** Regla de no-regresión:
   cualquier subida se investiga antes de aceptarse.
 - **Dominio y 301** — heredado del plan principal, sin cambios.

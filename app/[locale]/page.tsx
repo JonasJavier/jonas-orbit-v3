@@ -9,7 +9,7 @@ import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
 const HOME_TITLE =
   "Jonás Javier Encarnación — Desarrollador full-stack y creador visual";
 const HOME_DESCRIPTION =
-  "Sistema Gargantúa: seis destinos que recorren el trabajo de Jonás Javier Encarnación — desarrollo full-stack, proyectos, creatividad visual y contacto directo. No separo creatividad y tecnología: las mantengo en la misma órbita.";
+  "Sistema Gargantúa: seis destinos que recorren el trabajo de Jonás Javier Encarnación — sobre mí, formación, proyectos, creatividad, experimentos y contacto. No separo creatividad y tecnología: las mantengo en la misma órbita.";
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.map((locale) => ({ locale }));

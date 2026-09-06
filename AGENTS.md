@@ -188,6 +188,38 @@ ganancia propia y filo. Es la aplicación directa del criterio de la capa visual
 —la misma luz toca materiales diferentes sin borrar su identidad— al único sitio
 donde el sistema lo incumplía.
 
+**ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
+significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
+asociación canónica entre cuerpo y sección:
+
+| `WorldId` | Significado | Ruta ES |
+| --- | --- | --- |
+| `gargantua` | Sobre mí | `/es/sobre-mi` |
+| `miller` | Formación | `/es/formacion` |
+| `endurance` | Proyectos | `/es/proyectos` |
+| `edmunds` | Creatividad | `/es/creatividad` |
+| `tesseract` | Experimentos | `/es/experimentos` |
+| `ranger` | Contacto | `/es/contacto` |
+
+Cualquier texto anterior que diga **Tesseracto = Sobre mí/Historia**, **Miller =
+Desarrollo** o **Gargantúa = Laboratorio** está obsoleto. El nombre visible de
+`tesseract` es `Experimentos`, nunca `Laboratorio`. `/es/desarrollo` y
+`/es/laboratorio` responden 404, sin alias ni redirección.
+
+Dos separaciones que hay que respetar al tocar esto:
+
+1. **`order` es orden NARRATIVO, no posición.** Gobierna raíl, DOM, tabulador,
+   vecinos y sitemap; la escena se indexa por `WorldId` vía `placement` y
+   `lib/scene-depth.ts`. Reordenar la narrativa no mueve ningún cuerpo.
+2. **El significado vive en el MDX, no en la estructura.** `worlds.data.ts`
+   sigue sin una sola palabra visible: etiqueta, título y slug están en el
+   frontmatter, y por eso este cambio no tocó routing.
+
+Este documento **revoca el veto sobre `/es/formacion`** que estableció la
+decisión del 2026-09-04 al retirar Cooper Station. Lo retirado entonces fue un
+CUERPO y sigue retirado; lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya
+existía. Siguen siendo seis destinos.
+
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station
