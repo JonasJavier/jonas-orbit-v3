@@ -180,6 +180,31 @@ lámina, camino de luz cálido contra sábana fría, agua honda más profunda y 
 pálidas retiradas, y suelo nocturno y filos propios en vez de los comunes. Ni un
 sitio de FBM, ni una textura, ni un draw call nuevos.
 
+**Miller — océano encendido y en movimiento (2026-09-06):** la sección
+`9 quinquies` de `docs/design/world-visual-language.md` **revierte** la
+dirección de `9 ter` para Miller y manda sobre `9`, `9 ter` y la parte de
+`9 quater` que le toca, en **paleta, exposición, nubes, animación de superficie
+y filo**. Posición, tamaño, órbita, inclinación, cámara, HUD, fallback plano y
+el resto de los cuerpos siguen intactos.
+
+El dueño rechazó el resultado acumulado de las cuatro revisiones anteriores —
+«está muy apagado y oscuro»— y dio una referencia de mundo de agua **encendido**,
+con nubes visibles y oleaje animado. El principio que sustituye al anterior:
+**«océano» no es un nivel de exposición, es un comportamiento.** La identidad se
+defiende con camino de luz que se desplaza, destellos que centellean, cresta con
+espuma intermitente y una capa de nube que va a otra velocidad que el agua —
+todo eso se lee igual de bien sobre un cuerpo brillante. Cualquier texto anterior
+que justifique bajar la luz de Miller para que se lea como océano está obsoleto.
+
+Cambios centrales: cinco tonos de agua en vez de tres grises azulados; el bajío
+pasa de veta a provincia; las nubes vuelven a verse (tinte 5.5 % → 30 %) y se
+mueven siete veces más rápido que la marejada; tres escalas de oleaje animadas
+de verdad; suelo difuso 0.10 → 0.19 y atmósfera 0.09 → 0.26. **Sobrevive la
+cresta** de `9 quater`, que es lo único de aquel pase que el dueño aprobó y que
+no dependía de que el cuerpo fuera oscuro. Presupuesto intacto: tres sitios de
+FBM, una octava suelta, ni un draw call ni un uniforme nuevos. El movimiento no
+toca accesibilidad: con reduced-motion no hay canvas.
+
 **El foco no puede borrar el material (2026-09-06):** la sección `9 quater` de
 `docs/design/world-visual-language.md` manda sobre la respuesta de adquisición
 de los seis cuerpos. El tinte de navegación deja de ser uniforme y se reparte por
@@ -219,6 +244,26 @@ Este documento **revoca el veto sobre `/es/formacion`** que estableció la
 decisión del 2026-09-04 al retirar Cooper Station. Lo retirado entonces fue un
 CUERPO y sigue retirado; lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya
 existía. Siguen siendo seis destinos.
+
+**Hipercubo de cristal (2026-09-06):** la sección `Hipercubo de cristal` de
+`docs/design/atlas-tesseract-reference.md` manda sobre todo lo anterior en
+**geometría, material y versión plana del Tesseracto**. Sustituye el corredor de
+marcos por el 4-cubo real —dieciséis vértices, treinta y dos aristas y rotación
+en cuatro dimensiones proyectada por perspectiva— recorrido por un trazo
+luminoso en circuito euleriano, en cristal casi negro con acentos cian y
+violeta. Un segundo pase (mismo día) corrige la primera versión, que salió
+ilegible: la lectura no dependía de la exposición sino de la JERARQUÍA, así que
+`sampleTesseract` publica la profundidad en W de cada vértice y con ella se
+reparten luz y grosor de trazo entre las dos celdas del hipercubo — gruesa y
+clara la cercana en la cuarta dimensión, fina y apagada la lejana. El perfil
+plano comparte ese reparto en ancho de trazo y opacidad. Tres draws y **tres** materiales, uno menos y dos más que antes: la
+diferencia entre capas es de MEZCLA, no de acabado. El Tesseracto sale del
+material común de los cuerpos y con él se retiran sus ocho ramas `uKind == 2`.
+No cambian posición, fase, inclinación, tamaño, cámara ni datos orbitales de
+ningún cuerpo, y la envolvente se normaliza al mismo radio de antes. El corredor
+anterior queda recuperable en `output/archive/` (ignorado por git) y vivo en el
+historial. Las secciones `Profundidad contradictoria` y `Remodelado estructural`
+del mismo documento quedan como referencia histórica sustituida.
 
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos

@@ -72,3 +72,6 @@ crash.log
 
 # capturas de tools/ (ver tools/README.md)
 /.shots/
+
+# copias locales de trabajo (backups recuperables, no viajan al repo)
+/output/archive/
