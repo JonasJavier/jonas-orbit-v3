@@ -67,9 +67,26 @@ lo fija el suelo nocturno:
 | Familia | Suelo nocturno | Por qué |
 |---|---|---:|
 | Mundos con aire | 0.50 | tienen atmósfera que rebota |
-| Endurance | 0.42 | exterior frío legible; cavidades con oclusión independiente |
 | Ranger | 0.44 | chapa, no manta |
 | Tesseracto y estructura | 0.40 | metal oscuro |
+| Endurance | 0.30 | *(0.42 hasta el pase de fase 1)* luz sin dirección repartida por todo el casco; lo que se le quita vuelve como filo y lámina, que sí dependen de dónde está Gargantúa |
+| Edmunds | 0.22 | *(0.28 hasta el pase de fase 1)* roca seca sin océano ni nubes: tiene menos que rebotar que cualquier otro mundo con aire |
+
+El filo cálido tampoco es igual para todos, y por el mismo motivo por el que el
+suelo no lo es: **cuánto trabajo tiene que hacer depende de la geometría de luz
+del sitio**. El ángulo entre Gargantúa y la cámara en cada destino está medido y
+manda sobre esta tabla:
+
+| Cuerpo | Ángulo luz-cámara | Filo cálido | Por qué |
+|---|---:|---:|---|
+| Tesseracto | 28.9° | 0.045 – 0.115 | luz casi de frente: el filo lo pone el material |
+| Miller | 47.0° | 0.18 | difuso de sobra |
+| Edmunds | 80.9° | 0.061 | lateral pura: media luna y filo corto |
+| Endurance | 117.4° | 0.50 | contraluz de tres cuartos: **el filo ES su iluminación** |
+| Ranger | 153.3° | envoltura propia | contraluz casi puro; ver su bloque dedicado |
+
+Un cuerpo a 117° o a 153° no tiene difuso que ajustar. Subirle la exposición no
+lo ilumina: lo lava. Lo que lo dibuja es el canto.
 
 > **Principio:** la misma luz toca materiales diferentes.
 
@@ -729,6 +746,266 @@ dirección pedida. Posición y tamaño en pantalla sin cambio (centro 435.0/224.
 436.5/225.5; la diferencia es el limbo pálido que se ha retirado). `npm run
 check` en verde (188 tests, build). Capturas con el prefijo
 `output/playwright/miller-trenes-`.
+
+## 9 bis. Fase 1 — Presencia, lectura y cine (2026-09-05)
+
+Revisión del dueño sobre Endurance, Edmunds y la Ranger. **No es una fase de
+composición**: no se mueve un cuerpo de sitio, no cambia la cámara, no cambia el
+HUD y no cambia el fallback plano. Lo que cambia es iluminación, material,
+silueta, acento y lectura a distancia.
+
+El principio que la ordena, en palabras del encargo: **no hacerlos más oscuros,
+hacerlos más intencionales.** Menos gris lavado, menos blanco plano, menos
+material muerto; más luz dirigida, más contraste local, más jerarquía entre luz
+y sombra. Bajar la exposición no es cine; repartir el valor sí.
+
+Sustituye, para estos tres cuerpos, los apartados de material y luz de las
+revisiones anteriores del 2026-09-05. Miller y el Tesseracto no se tocan.
+
+### El diagnóstico que faltaba: la geometría de luz de cada sitio
+
+Los tres problemas reportados tenían el mismo origen y ninguno era el material.
+El ángulo entre Gargantúa y la cámara, medido en la posición real de cada
+cuerpo, decide qué término de iluminación puede hacer algo por él:
+
+| Cuerpo | Ángulo | Qué significa |
+|---|---:|---|
+| Edmunds | 80.9° | luz lateral: media luna clásica |
+| Endurance | 117.4° | tres cuartos a contraluz |
+| Ranger | 153.3° | contraluz casi puro |
+
+La Endurance a 117° no tenía apenas difuso que ajustar, y aun así todo su
+tratamiento vivía en el difuso y en un suelo nocturno alto: luz sin dirección
+repartida por igual. Eso es exactamente lo que produce «modelo 3D iluminado» en
+vez de «nave delante de un agujero negro». La Ranger, a 153°, ya tenía su bloque
+de contraluz propio, y por eso su arreglo fue mucho más corto.
+
+### Pase 1 · Endurance
+
+- **Valor por familia de material, no un gris con motas.** Manta principal de
+  0.49 a 0.66 (aluminio marfil con recorrido, no blanco plano), manta estándar
+  con más recorrido interno, grafito de 0.58 a 0.30 —dejó de competir con la
+  manta principal— y radiador con el valle más hundido y el estriado con un
+  tercio más de contraste. Cuatro familias, cuatro valores separados.
+- **Lámina ancha de fuente extensa.** Era el único casco metálico del sistema
+  sin ella: tenía el filete de exponente 22 y nada más, así que dos módulos
+  vecinos con la misma manta devolvían lo mismo mirasen donde mirasen. El disco
+  es enorme y un panel encarado le devuelve una lámina suave: es lo que separa
+  los módulos entre sí y lo que produce «metal vivo».
+- **Filo de Gargantúa, de 0.18 a 0.50**, más un bloque de envoltura propio
+  —ancha y ámbar corta— como el que ya tenía la Ranger. A 117° el filo no es un
+  adorno que separa del fondo: es la iluminación principal.
+- **Cavidades de verdad.** Banda de receso más ancha, oclusión de 0.78 a 0.88 y
+  suelo de cavidad de 0.38 a 0.24. Suelo nocturno de 0.42 a 0.30, con el relleno
+  frío direccional subiendo de 0.16 a 0.30 para que la espalda tenga materia y
+  no sea un recorte.
+- **Propulsión visible.** Cuatro grupos de maniobra de dos toberas sobre el
+  barril, y dos de ellas encendidas. El sitio no es una preferencia: la proa da
+  0.672 con la cámara y −0.918 con Gargantúa, así que las cuatro campanas
+  principales quedan detrás Y a plena luz —invisibles las dos cosas— mientras
+  que la mitad de proa del barril mira a cámara Y está en sombra. Una brasa
+  sobre chapa oscura es la lectura más limpia que puede tener un acento de
+  propulsión. Cero draws nuevos: comparten material con las balizas y se
+  distinguen por máscara de vértice.
+- **Pose: 0.30/0.32/−0.08 → 0.38/0.29/−0.12.** 2.6° más comprimida contra la
+  cámara y 1.7° más rasante contra la luz. Se probó el doble de giro y se
+  descartó en la captura: a esa compresión el aro deja de leerse como aro, y la
+  silueta circular es media identidad de esta nave. El blanco de clic sigue a la
+  pose (`hitScaleY` 0.64 → 0.62).
+
+**Medido** tras esta primera ronda sobre la ventana de 260×270 px que ocupa en
+el hero: contraste (desviación / media) 1.834 → 2.050, percentil 95 de luma 86 →
+104, relación cálido/frío 1.158 → 1.201. La segunda ronda lo lleva más lejos;
+los números finales están en su tabla.
+
+### Pase 2 · Edmunds
+
+El encargo aquí era doble y conviene no confundirlo: **recuperar lectura
+mineral, no recuperar brillo de fuego.** La revisión mineral anterior corrigió
+un planeta que parecía incandescente y se pasó al otro lado; la mitad diurna se
+resolvía casi entera por debajo de 60 de luma y las cuatro provincias se leían
+como una sola mancha.
+
+- **Las cuatro provincias suben un 16 %, todas a la vez y sin tocar el tono.**
+  La relación entre umber, macizo, arena y hierro es exactamente la misma; lo
+  que cambia es el tramo de la escala donde ocurre. No vuelve el naranja.
+- **Más geología.** Relieve analítico un 29 % más marcado, escarpes de 0.022 a
+  0.028, estratos de 0.18 a 0.24, arena de cresta de 0.38 a 0.44 y un punto
+  menos de desaturación (0.94 → 0.975).
+- **La sombra se conserva profunda y deja de ser azul.** El lavado que cubría
+  casi medio disco no salía de la clave sino de tres términos de canto: relleno
+  nocturno (0.28 → 0.22, con mezcla propia mineral en vez del azul de cielo),
+  contraluz frío (0.24 → 0.10) y relleno de canto (0.32 → 0.11).
+- **Filo cálido de Gargantúa, de 0.12 a 0.34 del común.** Un mundo cuya única
+  luz es un disco de acreción tenía menos relación visible con él que cualquier
+  casco del sistema.
+- **Atmósfera más fina y más concentrada.** Exponente 11 → 14 y puerta desplazada
+  a `smoothstep(0.26, 0.94, ndl)`: gana peso (0.55 → 0.95) sin ganar extensión,
+  que es la diferencia entre una línea de aire y un halo.
+
+**Medido** tras esta primera ronda sobre su ventana de 160×160 px: contraste
+1.340 → 1.450, relación cálido/frío 1.757 → 2.143, limbo iluminado (95, 63, 44)
+→ (106, 69, 45). Más legible y más mineral, con la sombra más profunda que
+antes; los números finales están en la tabla de la segunda ronda.
+
+### Pase 3 · Ranger
+
+- **La proa apuntaba mal, y llevaba tiempo.** El documento dice desde el
+  principio que apunta a la Endurance y que ese gesto cuenta un viaje sin que
+  nada se mueva, pero eso nunca se comprobó contra la pantalla. Medido: la
+  dirección Ranger → Endurance proyectada sobre el cuadro es (0.978, **+0.207**)
+  y la proa daba (0.986, **−0.168**). Veinte grados de error, y del signo que
+  peor se lee: una nave con el morro caído no va a ningún sitio.
+- **La pose nueva se eligió por barrido con las puertas medidas**, y hubo que
+  añadir una cuarta magnitud a mitad de camino: **hacia dónde miran las
+  toberas**. Las dos primeras candidatas dejaban el eje de escape en −0.08 —las
+  campanas al otro lado, con sus brasas invisibles— y ése era justo el acento
+  que pedía el encargo. La elegida da dorso·luz 0.197, dorso·cámara 0.232,
+  proa (0.718, **+0.197**) y escape·cámara **0.569**, mejor que el 0.508 de
+  partida: el morro sube 25°, el área vista se queda donde estaba y los motores
+  se ven mejor que antes.
+- **Escape y baliza dejan de ser lo mismo.** Máscara 0 en violeta de identidad
+  para puntas de ala y morro —señal—; máscara 1 en blanco azulado para las dos
+  campanas y dos toberas de maniobra de proa nuevas —escape—, con fase propia.
+  Un acento frío-lavanda sobre chapa lavanda era buena parte de por qué la nave
+  se leía como miniatura de plástico.
+- **Contraste entre piezas, sin apagar nada.** Chapa con más recorrido y
+  calentada en el extremo claro (una nave iluminada por un disco ámbar no
+  devuelve blanco neutro), junta más hundida (0.62 → 0.74), plano sustentador un
+  escalón entero por debajo del fuselaje —antes casi compartían valor y el
+  larguero oscuro tenía que separarlos él solo— y tapas de servicio un punto más
+  vivas.
+- **Filo ámbar de 0.30 a 0.44 y envoltura de 0.62 a 0.70.** Lo que hacía gris a
+  esta nave no era su chapa: forzada a blanco puro se veía igual de apagada.
+
+**Medido** tras esta primera ronda sobre su ventana de 200×110 px: percentil 95
+de luma 99 → 121, contraste 1.283 → 1.291, media prácticamente clavada (34.2 →
+33.8). Más clara donde importa y con el mismo peso en el cuadro; los números
+finales están en la tabla de la segunda ronda.
+
+### Segunda ronda: propulsión de verdad, estela y jerarquía (2026-09-05)
+
+Revisión del dueño sobre la primera ronda. El veredicto, resumido: *«correcta
+técnicamente, insuficiente dramáticamente. No está fea. Solo no está contando
+nada.»* Y tres encargos concretos: los propulsores no se notan lo suficiente,
+falta estela, y Edmunds se está perdiendo en la oscuridad.
+
+#### La estela, y por qué cuesta cero draws
+
+Una pluma necesita transparencia con caída — y el presupuesto de batches está
+cerrado en veinte, con diecinueve gastados. Un material más por nave lo habría
+roto, así que la pluma entra en el material EMISIVO que ya existe, junto a las
+balizas, con tres piezas de maquinaria nuevas:
+
+1. **La rampa viaja dentro de la máscara.** `aSurfaceMask` ya es un float
+   interpolado por vértice; `surfaceRamp` escribe 8.0 en la garganta y 9.0 en la
+   punta, y el fragment recupera el parámetro restando. Ni un atributo más, ni
+   un canal de vértice más, ni tocar la fusión de geometrías.
+2. **El emisivo pasa a mezcla aditiva** sin escritura de profundidad. Es lo que
+   hace que la pluma se deshaga en el negro en vez de tener borde. Las balizas
+   pagan la mitad de brillo para no cambiar de aspecto: con dos caras activas
+   una esfera diminuta se dibuja dos veces y suma, y sin esa corrección se
+   convertían en halos cian del tamaño del barril.
+3. **`modelRadius` poda la pluma.** Una nave no ocupa más espacio por encender
+   un motor: contarla hinchaba el radio publicado un 15 % en la Ranger, y con él
+   el blanco de clic, los corchetes de adquisición y la distancia de encuadre.
+   El umbral de la máscara vale 8 y no 2 justamente por esto — el atributo es
+   compartido entre materiales, y con base 2 la poda se comía el grafito y los
+   radiadores de la Endurance, que usan las máscaras 2 y 3.
+
+**La pluma es corta a propósito**, y los números salen de una captura. La
+primera versión —ganancia 1.15, caída con exponente 1.7— salía un foco de coche
+más largo que la nave. La única fuente de luz de este sistema es Gargantúa y esa
+regla no la rompe un propulsor: ganancia **0.36**, caída con exponente **2.4**
+(la mitad del brillo se ha ido en el primer 25 % de la longitud), alfa 0.62 y un
+factor de incidencia que borra la silueta del cono. Blanco casi puro en la
+garganta, azul en la punta: un escape que conserva su color hasta el final se
+lee como plástico.
+
+#### Endurance: la maniobra se va al borde del aro
+
+La primera ronda puso ocho toberas diminutas sobre el barril y el dueño tenía
+razón en que no se notaban. La pregunta estaba bien planteada —dónde caben unos
+propulsores que se vean, con las campanas principales invisibles por pose— pero
+la respuesta era mala por dos motivos: son pequeñas, y están en la zona más
+ocupada del modelo. Y una pluma que sale del barril apunta hacia la cámara,
+donde el escorzo la convierte en una mancha redonda.
+
+El borde del aro resuelve las tres cosas a la vez: se ve contra negro y fuera de
+la silueta, la pluma se despliega a lo ancho en vez de venir de frente, y es lo
+que haría una nave así — el par de actitud de un anillo se da en el radio
+máximo. **Cuatro toberas entre grupos, en los 46° de riel desnudo, y sólo dos
+encendidas y opuestas**: eso es un par puro, o sea una nave corrigiendo su giro.
+Disparan a 24° del radio, no tangencialmente: la primera versión corría la pluma
+pegada al aro y el escape se leía dentro de la nave.
+
+El resto del hero pass es jerarquía de valor llevada más lejos: manta principal
+a 0.735, manta estándar a 0.345, grafito a 0.232, oclusión de cavidad a 0.93 con
+suelo 0.19, suelo nocturno a 0.26, filo cálido a 0.62 y envoltura a 0.38 / 0.42.
+Caras heroicas y caras sacrificadas, que era el encargo. La pose gana otro grado
+y medio (0.42/0.28/−0.14: 4.0° más comprimida contra la cámara, 2.4° más rasante
+contra la luz) y el blanco de clic la sigue, `hitScaleY` 0.64 → 0.60.
+
+#### Ranger: relleno con dirección
+
+Lo que la dejaba plana no era la chapa sino el relleno: un color plano sumado a
+toda la superficie por igual. Un relleno sin dirección no puede integrar nada,
+porque no sabe dónde está la fuente. Ahora son **dos rellenos y una rampa que
+los cruza** — la chapa que aún mira algo hacia Gargantúa recoge un rebote ámbar,
+la que le da la espalda se queda con el azul del campo estelar. Misma cantidad
+de luz, repartida por orientación. Más una segunda línea de filo, estrecha y
+rojiza, pegada al canto.
+
+Sus dos campanas ganan pluma corta —0.30 de largo contra 1.7 de nave, unos 17 px
+en el hero— y las gargantas bajan a 0.056 de radio: la versión anterior las
+dejaba en dos faros que lavaban el fuselaje entero, y eso trabajaba justo en
+contra del contraste de material que pedía la revisión.
+
+#### Edmunds: cuatro macroformas
+
+Subir la reflectancia hizo el hemisferio diurno visible; no lo hizo legible. A
+la distancia del hero un planeta se lee por cuántas masas distintas se le
+distinguen, y había una provincia grande peleándose con una escala media que la
+troceaba. Dos cambios, ninguno añade una llamada de ruido:
+
+- **La provincia baja de 1.62 a 1.28 de frecuencia** — cuatro masas sobre el
+  disco en vez de siete.
+- **La escala media deja de mandar sobre el color** (de ±20 % a ±12 %): pasa a
+  ser textura dentro de cada masa, que es su papel.
+
+Y aparece la cuarta macroforma, la **cuenca pálida**: los valores bajos de la
+misma provincia, que antes se iban a umber oscuro sin más. Depósitos de polvo
+claro en el fondo de una cuenca son lo que un mundo seco tiene de verdad.
+Cuesta un `smoothstep`, no un campo nuevo. El filo cálido sube a 0.52 del común
+y la sombra no se toca: el problema estaba en la zona iluminada, no en la
+oscura.
+
+#### Medido, antes → después de las dos rondas
+
+| Ventana | Contraste | Percentil 95 | Cálido/frío | % bajo 12 de luma |
+|---|---|---|---|---|
+| Endurance (260×270) | 1.834 → **2.074** | 86 → **111** | 1.158 → **1.195** | 62.6 → **64.8** |
+| Edmunds (160×160) | 1.340 → **1.514** | 80 → **99** | 1.757 → **2.053** | 64.2 → **67.3** |
+| Ranger (200×110) | 1.283 → **1.300** | 99 → **137** | 1.060 → **1.111** | 10.7 → **11.8** |
+| Ranger, sólo casco | 1.105 → **1.134** | 233 → 224 | 1.006 → **1.091** | — |
+
+La última fila es la que dice que las plumas están controladas. Una versión
+intermedia dejaba el casco en 1.020 de contraste y 57.5 de media —el bloom del
+escape lavando la nave— y eso es exactamente lo contrario de lo que pedía la
+revisión. Con la pluma en su tamaño final el casco conserva su media (53.4 →
+53.0) y gana contraste.
+
+### Pruebas del contrato
+
+Los tres pasan el **bloom-off** con `--sin-glow --sin-rotulos`: silueta,
+volumen, material y jerarquía se conservan sin emisivos ni halo, y ninguna de
+las brasas nuevas tapa geometría. Ninguno sube de casilla en la tabla del §2 —la
+Endurance sigue en 8.5 y la Ranger en 6.5-7— porque lo que gana cada uno es
+CONTRASTE INTERNO, no luminancia media. `npm run check` en verde (188 tests).
+
+No se añade un solo sitio de FBM, ni una textura, ni un draw call —plumas
+incluidas—: el presupuesto sigue en 19 batches de 20 y en 12 sitios de ruido de
+12.
 
 ## 10. Herramientas
 | script | para qué |

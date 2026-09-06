@@ -93,6 +93,42 @@ tamaño y vida, y alarga la curva de apagado. No cambian el ámbito de la capa
 —exponente de apagado a 1,2— y añade un **segundo calibre**: motas finas con
 sprite propio sembradas encima de las de cuerpo, no en su lugar.
 
+**Segundo recorte de escala (2026-09-05):** la sección `14 sexies` de
+`docs/design/hero-gargantua-direction.md` sustituye otra vez la escala de los
+cinco destinos secundarios por petición del dueño — Endurance −2 %, Tesseracto
+−1.5 %, Miller y Edmunds −1 %, Ranger −0.5 %. Gargantúa no se toca. Posición,
+fase, inclinación, cámara, material y HUD siguen intactos. Sustituye la columna
+de tamaño de `14 quáter` y la de `docs/design/sistema-seis-destinos.md`.
+
+**Fase 1 — presencia, lectura y cine (2026-09-05):** la sección `9 bis` de
+`docs/design/world-visual-language.md` manda sobre todo lo anterior en
+**iluminación, material, silueta, acento de propulsión y pose de Endurance,
+Edmunds y la Ranger**. No toca composición, cámara, HUD ni fallback plano, y no
+toca a Miller ni al Tesseracto. Su principio es explícito y sustituye cualquier
+lectura contraria: **no hacerlos más oscuros, hacerlos más intencionales** —el
+cine sale de repartir el valor, no de bajar la exposición. Cambios centrales:
+el suelo nocturno deja de ser un número por familia y pasa a depender de la
+geometría de luz medida en cada sitio (Endurance 0.42 → 0.30, Edmunds 0.28 →
+0.22); el filo cálido también (Endurance 0.18 → 0.50, Edmunds 0.12 → 0.34 del
+común); las dos naves y el mundo mineral ganan contraste interno sin ganar
+luminancia media; la Endurance estrena propulsión de maniobra visible y la
+Ranger separa escape (blanco azulado) de baliza (violeta) por máscara de
+vértice, sin un draw call más. Las poses de Endurance y Ranger cambian dentro
+de las puertas que fija `bodies.test.ts`.
+
+Una **segunda ronda** (mismo día, misma sección) añade **estela de propulsión**
+a las dos naves y sustituye la solución de propulsión de la primera: la
+maniobra de la Endurance se va del barril al **borde del aro** —cuatro toberas
+entre grupos, dos encendidas y opuestas— porque en el barril no se leían. La
+pluma no cuesta ningún draw: viaja en el material emisivo con la rampa dentro de
+`aSurfaceMask` (base 8, por encima de las máscaras de casco), el emisivo pasa a
+mezcla aditiva con las balizas compensadas a la mitad, y **`modelRadius` poda la
+pluma** — una nave no ocupa más espacio por encender un motor, y contarla
+hinchaba el blanco de clic y la distancia de encuadre. Edmunds gana una cuarta
+macroforma (cuenca pálida) bajando la frecuencia de provincia de 1.62 a 1.28, y
+la Ranger cambia su relleno plano por un **rebote dirigido**: ámbar hacia
+Gargantúa, azul de campo estelar en la espalda.
+
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station

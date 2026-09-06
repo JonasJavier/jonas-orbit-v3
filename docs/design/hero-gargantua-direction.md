@@ -547,6 +547,60 @@ Todas vienen de decisiones ya tomadas y ninguna se reabre:
 4. La órbita de Miller sigue por dentro de la del Tesseracto, y ninguna entra en
    el disco de acreción.
 
+## 14 sexies. Segundo recorte de escala (2026-09-05)
+
+Tercera pasada del mismo día, y de naturaleza distinta a las dos anteriores.
+Manda sobre la columna `size` de §14 quáter; no toca posición, fase,
+inclinación, cámara, material ni HUD.
+
+§14 quáter arreglaba una jerarquía rota — la escena decía *objetos* donde tenía
+que decir *agujero negro*. Aquí no hay nada roto: el dueño pide margen extra, en
+porcentajes pequeños y distintos por cuerpo. Conviene tenerlo escrito, porque a
+la hora de leer la tabla la diferencia de propósito explica por qué los números
+son diez veces menores.
+
+| Destino | `size` antes | `size` ahora | Δ | Radio publicado (rs) |
+| --- | --- | --- | --- | --- |
+| Endurance | 4.64 | 4.547 | −2 % | 6.629 → 6.496 |
+| Tesseracto | 2.71 | 2.669 | −1.5 % | 4.796 → 4.723 |
+| Miller | 2.81 | 2.782 | −1 % | 3.147 → 3.116 |
+| Edmunds | 2.76 | 2.732 | −1 % | 3.091 → 3.060 |
+| Ranger | 1.93 | 1.92 | −0.5 % | 2.590 → 2.577 |
+
+El reparto conserva el orden de §14 quáter —quien más compite con el centro,
+más cede— a una décima parte de su magnitud. Ningún recorte es visible por sí
+solo; lo que se mueve es la suma.
+
+**Gargantúa vuelve a crecer sin tocarse**, aunque bastante menos que la vez
+anterior, y el motivo conviene dejarlo escrito: el encuadre se mide contra la
+envolvente de los cuerpos **y contra el borde del disco de acreción**, y desde
+§14 quáter quien manda es casi siempre el disco. Encoger los destinos ya no
+acerca la cámara en la misma proporción, sólo en la parte que todavía depende de
+ellos. Medido con `tools/composition.mjs` a 1440×860, antes → después:
+
+| Destino | radio en px | vs. sombra de Gargantúa |
+| --- | --- | --- |
+| Endurance | 147.3 → 144.9 | 3.223× → **3.157×** |
+| Ranger | 71.5 → 71.6 | 1.565× → **1.560×** |
+| Tesseracto | 60.7 → 59.9 | 1.328× → **1.305×** |
+| Edmunds | 54.6 → 54.2 | 1.195× → **1.181×** |
+| Miller | 46.7 → 46.4 | 1.022× → **1.011×** |
+| Gargantúa | 45.7 → 45.9 | — |
+
+La columna que importa es la tercera: cada cuerpo cede contra el centro
+exactamente el porcentaje pedido. La segunda engaña —la Ranger incluso *gana*
+una décima de píxel— porque la cámara se acerca a la vez que ella encoge, y a
+−0.5 % las dos cosas se cancelan. Es la comprobación de que el recorte es
+relativo a Gargantúa y no una reducción del sistema entero.
+
+**Ninguna guarda se roza.** La que más aprieta es la ventaja de tamaño aparente
+de la Endurance sobre el resto, que pasa de 2.045 a 2.014 contra un suelo de
+1.4; el radio del Tesseracto queda en 4.723 dentro de su banda [4.55, 5.05], con
+0.17 rs por debajo; Miller sigue siendo el menor tamaño aparente y la Ranger
+sigue entre el Tesseracto y el 65 % de la Endurance. Que un recorte de este
+tamaño no acerque ningún test es lo que confirma que es un ajuste fino y no una
+decisión de composición disfrazada.
+
 ### Modelos
 
 ### Movimiento
