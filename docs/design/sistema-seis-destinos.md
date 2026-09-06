@@ -106,6 +106,8 @@ Esta tabla quedó superada el 2026-09-05 en dos pasadas, ambas en §14 de
   a 2.71 / 2.81 / 4.64 / 2.76 / 1.93 para las mismas cinco filas.
 - **§14 quinquies** (respiración) cambia radio, fase e inclinación de los dos
   cuerpos de arriba: Tesseracto a 32 / 300 / 30 y Miller a 28 / 240 / 37.
+- **§14 sexies** (segundo recorte) vuelve a cambiar sólo la columna de TAMAÑO,
+  que queda en 2.669 / 2.782 / 4.547 / 2.732 / 1.92 para las mismas cinco filas.
 
 Endurance, Edmunds y la Ranger conservan intactos radio, fase e inclinación, y
 las seis profundidades de `scene-depth.ts` no se tocan. El razonamiento de esta

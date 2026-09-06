@@ -1033,12 +1033,15 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       let hitScaleX = 1;
       let hitScaleY = 1;
       if (body.visual === "ship") {
-        // La Endurance se muestra ahora a 48° de frontal en vez de a 60°: la
+        // La Endurance se muestra ahora a 51.2° de frontal en vez de a 60°: la
         // elipse del anillo es bastante menos achatada y el blanco tiene que
         // seguirla, o el clic falla justo en los grupos de módulos de arriba y
-        // abajo, que es donde el ojo apunta.
+        // abajo, que es donde el ojo apunta. El pase de fase 1 le devolvió 4.0°
+        // de compresión (47.8 → 51.2) para separar los grupos por luz, y este
+        // 0.60 es el coseno de ese ángulo con un punto de holgura: el blanco
+        // sigue a la pose.
         hitScaleX = 0.82;
-        hitScaleY = 0.64;
+        hitScaleY = 0.60;
 
       }
       projected.push(

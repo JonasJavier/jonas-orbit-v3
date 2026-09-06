@@ -274,6 +274,18 @@ const BODY_FRAGMENT = /* glsl */ `
   uniform sampler2D uSurfaceMap;
   /* Banco de pruebas visual: 1 en producción. Ver lib/visual-bench.ts. */
   uniform float uEmission;
+  /*
+    Régimen de la propulsión: 0 continuo, 1 pulsado.
+
+    Las dos naves comparten programa y comparten el ramo emisivo, pero no hacen
+    lo mismo con sus motores, y ésa es justamente la diferencia que se quiere
+    ver. La Ranger EMPUJA —un crucero mantiene su motor encendido—; la Endurance
+    CORRIGE —una estación de anillo dispara impulsos cortos y espaciados—. Un
+    uniforme por material es lo más barato que distingue las dos cosas: no añade
+    atributo de vértice, no añade draw y no obliga a un uKind nuevo con todo
+    lo que arrastra (retorno anticipado, escalado de emisivos, banco visual).
+  */
+  uniform float uPulsed;
 
   varying vec3 vNormalW;
   varying vec3 vNormalL;
@@ -336,6 +348,49 @@ const BODY_FRAGMENT = /* glsl */ `
     píxeles se convertía en un tejido de moiré porque el detalle caía por debajo
     del píxel. Menos rayas y más anchas sobreviven al tamaño real en pantalla.
   */
+  /*
+    RÉGIMEN DE DISPARO DE UN RCS.
+
+    Un propulsor de control de actitud no es una antorcha: da un impulso corto,
+    lo mantiene, se apaga, y vuelve un rato después. Lo que hace que se lea como
+    una máquina corrigiendo —y no como un efecto— son tres propiedades, y las
+    tres están aquí:
+
+    1. **El pulso dura de verdad.** Entre medio segundo y un segundo y cuarto.
+       Un parpadeo rápido es lenguaje de videojuego; esto es un chorro de gas.
+    2. **La envolvente no es simétrica.** Ataque en el 14 % inicial —la válvula
+       abre de golpe— y caída larga en la última mitad, que es el gas que queda
+       saliendo. Al revés se ve como un fundido, no como una válvula.
+    3. **Los dos propulsores NO coinciden.** La semilla sale de la posición
+       angular de cada tobera, así que cada una tiene su propio ciclo, su propio
+       instante de disparo y su propia duración. Dos luces sincronizadas se leen
+       como un efecto; desincronizadas, como una nave.
+
+    El ciclo dura unos nueve segundos y el disparo cae en un sitio distinto de
+    cada ciclo —el desorden sale de una función hash sobre el número de ciclo—,
+    así que el patrón no se repite en la escala de tiempo que nadie mira. Es
+    determinista y depende sólo de uTime: dos pestañas abiertas ven lo mismo, y
+    el paso de animación no depende de los fotogramas por segundo.
+  */
+  float thrusterDuty(float seed) {
+    /* El periodo también depende de la semilla —7.9 s contra 10.8 s— así que
+       las dos toberas no sólo empiezan desfasadas: nunca vuelven a coincidir.
+       Con el mismo periodo y sólo un desfase, el patrón se repetiría cada
+       ciclo y el ojo lo cazaría en menos de un minuto. */
+    float cycle = uTime * (0.11 + seed * 0.017) + seed * 0.41;
+    float index = floor(cycle);
+    float phase = cycle - index;
+    float jitter = fract(sin(index * 43.7 + seed * 12.9) * 4137.31);
+    float start = 0.12 + jitter * 0.58;
+    /* 0.06 a 0.12 de ciclo. Con los dos periodos de arriba eso da impulsos de
+       0.47 a 0.94 s en una tobera y de 0.65 a 1.29 s en la otra: dentro del
+       medio segundo largo que pide la dirección, y distintos entre sí. */
+    float length = 0.06 + jitter * 0.06;
+    float u = (phase - start) / length;
+    float inside = step(0.0, u) * step(u, 1.0);
+    return inside * smoothstep(0.0, 0.14, u) * (1.0 - smoothstep(0.5, 1.0, u));
+  }
+
   float panels(vec3 p, float density) {
     float bands = abs(fract(p.y * density) - 0.5);
     float ribs = abs(fract((p.x + p.z) * density * 0.5) - 0.5);
@@ -676,11 +731,35 @@ const BODY_FRAGMENT = /* glsl */ `
       /* Edmunds: roca seca, hierro y arena bajo la luz de Gargantúa.
          La macro decide provincias; la escala media sigue sus límites; el
          grano sólo modula. Sin nubes, velo, casquetes ni emisión. Dos FBM. */
-      float provinces = fbm(vLocal * 1.62 + vec3(4.2, 1.1, 7.3));
+      /*
+        MACROFORMAS, y esto es lo que faltaba en la primera pasada.
+
+        Subir la reflectancia hizo el hemisferio diurno visible; no lo hizo
+        LEGIBLE. A la distancia del hero un planeta no se lee por su detalle
+        sino por cuántas masas distintas se le distinguen, y aquí había una
+        provincia grande peleándose con una escala media que la troceaba: el
+        resultado era una mancha marrón con textura.
+
+        Dos cambios y ninguno añade una llamada de ruido:
+
+        1. **La provincia baja de 1.62 a 1.28 de frecuencia.** Menos formas y
+           más grandes: cuatro masas sobre el disco en vez de siete.
+        2. **La escala media deja de mandar sobre el color.** Modulaba el albedo
+           un ±20 % y se comía los bordes de las provincias; ahora es ±12 % y
+           trabaja de textura dentro de cada masa, que es su papel.
+
+        Y aparece una cuarta macroforma, la CUENCA PÁLIDA: los valores bajos de
+        la misma provincia, que antes se iban a umber oscuro sin más. Depósitos
+        de polvo claro en el fondo de la cuenca son lo que un mundo seco tiene
+        de verdad, y dan la cuarta masa que pedía la revisión. Cuesta un
+        smoothstep, no un campo nuevo.
+      */
+      float provinces = fbm(vLocal * 1.28 + vec3(4.2, 1.1, 7.3));
       float terrain = fbm(vLocal * 4.6 + provinces * 1.9);
       float grain = noise(vLocal * 15.5);
+      float pan = 1.0 - smoothstep(0.315, 0.368, provinces);
       float upland = smoothstep(0.43, 0.49, provinces);
-      float plateau = smoothstep(0.54, 0.59, provinces + (terrain - 0.5) * 0.12);
+      float plateau = smoothstep(0.52, 0.585, provinces + (terrain - 0.5) * 0.12);
       float ironMass = smoothstep(0.62, 0.67, provinces);
 
       /* Cordilleras continuas con pendiente analítica: los claros sólo se
@@ -699,7 +778,11 @@ const BODY_FRAGMENT = /* glsl */ `
       vec3 up = normalize(vLocal);
       vec3 tangentSlope = slope - up * dot(slope, up);
       vec3 lightLocal = normalize(vLightLocal);
-      reliefOffset = -dot(tangentSlope, lightLocal) * 0.0105 * (0.2 + upland);
+      /* Relieve un 29 % más marcado (0.0105 → 0.0135). Lo que se pide ver en
+         este cuerpo es ROCA, y la roca se lee por sombra propia: subir el
+         albedo sin subir la pendiente iluminada devuelve una calcomanía más
+         clara, no un planeta más seco. */
+      reliefOffset = -dot(tangentSlope, lightLocal) * 0.0135 * (0.2 + upland);
 
       /* Escarpes derivados de la misma meseta que pinta el material. Las
          derivadas de pantalla recuperan su pendiente sin volver a muestrear
@@ -713,21 +796,44 @@ const BODY_FRAGMENT = /* glsl */ `
       vec3 geologicalSlope = (dFdx(geologicalHeight) * acrossY
                             + dFdy(geologicalHeight) * acrossX)
                            * sign(determinant) / max(abs(determinant), 1e-8);
-      reliefOffset += clamp(-dot(geologicalSlope, lightLocal) * 0.022, -0.09, 0.09);
+      reliefOffset += clamp(-dot(geologicalSlope, lightLocal) * 0.028, -0.11, 0.11);
 
       /* Cuenca de umber, macizo rojizo, meseta de arena y provincia de hierro.
-         Umbrales estrechos: bordes erosionados de roca, no algodón luminoso. */
-      albedo = mix(vec3(0.075, 0.046, 0.035), vec3(0.16, 0.091, 0.061), terrain);
-      albedo = mix(albedo, vec3(0.34, 0.185, 0.105), upland);
-      albedo = mix(albedo, vec3(0.43, 0.30, 0.18), plateau * 0.82);
-      albedo = mix(albedo, vec3(0.245, 0.105, 0.062), ironMass * 0.9);
+         Umbrales estrechos: bordes erosionados de roca, no algodón luminoso.
+
+         ── Fase 1 (2026-09-05): +16 % de reflectancia en las cuatro ──────────
+
+         La revisión mineral se pasó de frenada hacia el otro lado. Corregir un
+         planeta que parecía incandescente bajando la reflectancia funciona
+         hasta que el hemisferio iluminado deja de contar su material: en la
+         captura, la mitad diurna se resolvía casi entera por debajo de 60 de
+         luma y las cuatro provincias se leían como una sola mancha marrón.
+
+         Las cuatro suben un 16 %, TODAS a la vez y sin tocar el tono. Eso es lo
+         que hay que subrayar, porque es la diferencia entre lo que se pide y lo
+         que se rechazó: aquí no vuelve el naranja: la relación entre umber,
+         macizo, arena y hierro es exactamente la misma que antes, sólo que
+         ocurre en un tramo de la escala donde el ojo puede verla. Un planeta
+         seco y legible, no un planeta encendido. */
+      albedo = mix(vec3(0.086, 0.052, 0.040), vec3(0.185, 0.104, 0.070), terrain);
+      /* Cuenca de polvo claro: la macroforma que faltaba, y la más pálida del
+         cuerpo. Va la primera para que las otras tres puedan pisarla. */
+      albedo = mix(albedo, vec3(0.478, 0.388, 0.284), pan * 0.72);
+      albedo = mix(albedo, vec3(0.458, 0.249, 0.140), upland);
+      albedo = mix(albedo, vec3(0.596, 0.414, 0.248), plateau * 0.95);
+      albedo = mix(albedo, vec3(0.285, 0.118, 0.070), ironMass * 0.9);
       /* Estratos erosionados de la escala media. Se desvanecen al dejar de
          resolverse; nunca sustituyen a las cuatro provincias principales. */
       float strataPhase = terrain * 48.0 + provinces * 14.0;
       float strata = sin(strataPhase);
       float strataVisible = 1.0 - smoothstep(0.7, 2.2, fwidth(strataPhase));
-      albedo *= 1.0 - (0.5 + 0.5 * strata) * upland * strataVisible * 0.18;
-      albedo *= 0.83 + terrain * 0.34;
+      albedo *= 1.0 - (0.5 + 0.5 * strata) * max(upland, pan * 0.8) * strataVisible * 0.24;
+      /* +8 % de medios tonos y ni un punto de sombra. Sube el suelo del
+         multiplicador, que es lo que toca la roca ya iluminada, y se deja la
+         pendiente donde estaba: el terminador, los negros y el contraste entre
+         provincias no se mueven. Se pidió más información en la luz, no menos
+         sombra, y son dos cosas distintas. */
+      albedo *= 0.95 + terrain * 0.24;
 
       /* Una fractura extensa, deformada por la provincia. Sus depósitos
          siguen la falla; el detalle fino no crea islas claras independientes. */
@@ -746,9 +852,13 @@ const BODY_FRAGMENT = /* glsl */ `
       float crest = smoothstep(0.48, 0.92, height) * upland;
       float crestFacing = smoothstep(0.015, 0.12, reliefOffset)
                         * smoothstep(0.0, 0.55, ndl);
-      albedo = mix(albedo, vec3(0.49, 0.37, 0.245), crest * crestFacing * 0.38);
+      albedo = mix(albedo, vec3(0.56, 0.425, 0.285), crest * crestFacing * 0.44);
+      /* Y un punto menos de desaturación (0.94 → 0.975). El gris que se le
+         restaba existía para evitar el planeta de fantasía; con la reflectancia
+         donde estaba también se llevaba por delante la diferencia entre ocre,
+         arena y hierro, que es justo lo que se pide ver. */
       float groundLuma = dot(albedo, vec3(0.2126, 0.7152, 0.0722));
-      albedo = mix(vec3(groundLuma), albedo, 0.94);
+      albedo = mix(vec3(groundLuma), albedo, 0.975);
       gloss = 0.018;
       specularPower = 56.0;
       specularStrength = 0.18;
@@ -1092,17 +1202,31 @@ const BODY_FRAGMENT = /* glsl */ `
         marfil apagado para los cuatro módulos principales. Tres valores
         separados hacen el trabajo que doce siluetas iguales no hacían.
       */
-      albedo = mix(vec3(0.10, 0.115, 0.135), vec3(0.34, 0.345, 0.33), blanket);
-      albedo = mix(albedo, vec3(0.68, 0.46, 0.26), warmFoil * 0.26);
+      /*
+        FASE 1 · PASE 1 (2026-09-05). Lo que fallaba no era que estuviera clara:
+        era que estaba PLANA. Con 117° entre la luz y la cámara —medido, no
+        estimado— casi todo lo que se ve de esta nave cae del lado del
+        terminador, así que su lectura no la puede dar el difuso. La da el
+        reparto de valor entre familias de material y el filo.
+
+        Manta estándar: mismo sitio en la escala, más recorrido dentro de ella.
+        El extremo oscuro baja y el claro sube, así que la misma pieza tiene
+        ahora caras separadas en vez de un gris único con motas.
+      */
+      albedo = mix(vec3(0.078, 0.088, 0.104), vec3(0.345, 0.338, 0.314), blanket);
+      albedo = mix(albedo, vec3(0.72, 0.49, 0.27), warmFoil * 0.30);
       /* La costura pesaba 0.68 y dibujaba una rejilla casi negra sobre cada
          cara: a tamaño de Hero la nave parecía forrada de azulejos. Una manta
          térmica real tiene juntas, pero no son surcos —van cosidas, no
          mecanizadas— y a esta distancia valen un cuarto de lo que valían. */
       albedo = mix(albedo, vec3(0.12, 0.13, 0.145), seam * 0.34);
       albedo *= 0.9 + macroVariation * 0.17;
-      gloss = mix(0.27, 0.10, microRoughness);
-      specularPower = 76.0;
-      specularStrength = 0.52;
+      /* Y el brillo también se separa: la manta responde, la roca no. Subir el
+         gloss aquí es lo que permite que la lámina ancha de más abajo encuentre
+         módulos concretos en vez de barrer la nave entera por igual. */
+      gloss = mix(0.36, 0.12, microRoughness);
+      specularPower = 78.0;
+      specularStrength = 0.68;
 
       /* Cuatro acabados dentro del mismo draw: la máscara viaja como atributo
          de vértice y la textura sigue siendo común. */
@@ -1117,33 +1241,52 @@ const BODY_FRAGMENT = /* glsl */ `
           nave con estriado DIRECCIONAL, y esa dirección —perpendicular al
           brazo— es lo que la separa de todo lo demás en una silueta de 160 px.
         */
+        /* El estriado gana recorrido —de 0.15 a 0.20 de separación entre valle
+           y cresta— y el valle se hunde: es la única superficie de la nave que
+           puede permitirse ser casi negra sin perder su dirección. */
         float ribs = smoothstep(0.28, 0.5, abs(fract(vUv.x * 13.0) - 0.5));
-        albedo = mix(vec3(0.052, 0.062, 0.079), vec3(0.2, 0.225, 0.255), ribs);
-        gloss = 0.28 + ribs * 0.3;
+        albedo = mix(vec3(0.038, 0.046, 0.060), vec3(0.235, 0.258, 0.286), ribs);
+        gloss = 0.22 + ribs * 0.46;
         specularPower = 44.0;
-        specularStrength = 0.58;
+        specularStrength = 0.66;
       } else if (vSurfaceMask > 1.5) {
-        albedo = mix(vec3(0.11, 0.14, 0.17), vec3(0.49, 0.54, 0.58), blanket * 0.55);
-        albedo = mix(albedo, vec3(0.04, 0.055, 0.07), seam * 0.72);
-        gloss = 0.46;
-        specularPower = 58.0;
+        /* Grafito satinado, y AHORA SÍ oscuro. Terminaba en 0.49/0.54/0.58 —un
+           acero medio— así que competía en valor con la manta principal y las
+           dos se fundían en una sola masa. Es el material de las juntas y los
+           encastres: su trabajo es separar piezas, no exhibirse. */
+        albedo = mix(vec3(0.052, 0.059, 0.068), vec3(0.232, 0.245, 0.258), blanket * 0.55);
+        albedo = mix(albedo, vec3(0.028, 0.038, 0.05), seam * 0.72);
+        gloss = 0.54;
+        specularPower = 64.0;
       } else if (vSurfaceMask > 0.5) {
         /* Módulos principales: manta más clara y reflectante. La repetición
            cada 90° crea jerarquía sin sumar colores ni paneles aleatorios. */
-        /* Aluminio marfil: baja de 0.72 a 0.49 para que el difuso conserve
-           material y sólo los reflejos localizados alcancen valores altos. */
-        albedo = mix(vec3(0.12, 0.135, 0.15), vec3(0.49, 0.475, 0.435), blanket);
-        albedo = mix(albedo, vec3(0.13, 0.14, 0.155), seam * 0.3);
-        gloss = mix(0.32, 0.14, microRoughness);
-        specularPower = 92.0;
+        /*
+          Aluminio marfil. Bajó de 0.72 a 0.49 para quitarle el aspecto de
+          plástico blanco, y ahí se pasó de frenada: a 0.49 los cuatro módulos
+          principales dejaban de ser los cuatro módulos principales. Vuelve a
+          0.66, que NO es volver al punto de partida —el 0.72 era un blanco
+          plano y esto es un marfil con recorrido de 0.105 a 0.66— y recupera
+          lo que la jerarquía necesita: una familia claramente más clara que
+          las otras tres.
+        */
+        albedo = mix(vec3(0.098, 0.107, 0.119), vec3(0.735, 0.700, 0.622), blanket);
+        albedo = mix(albedo, vec3(0.115, 0.125, 0.14), seam * 0.3);
+        gloss = mix(0.46, 0.16, microRoughness);
+        specularPower = 108.0;
+        specularStrength = 0.86;
       }
       /* Oclusión de los recesos entre rieles: sólo las caras que miran hacia
          el interior del aro. Las tapas exteriores conservan su luz directa. */
       vec3 radialNormal = vec3(vLocal.xy, 0.0) / max(length(vLocal.xy), 0.001);
       float inward = max(-dot(normalize(vNormalL), radialNormal), 0.0);
-      float railCavity = (1.0 - smoothstep(0.10, 0.27, abs(vLocal.z)))
-                       * smoothstep(0.35, 0.70, length(vLocal.xy));
-      materialOcclusion = 1.0 - inward * railCavity * 0.78;
+      /* La banda de receso se ensancha (0.12-0.32 en vez de 0.10-0.27) y empieza
+         antes en radio: alcanza también el encastre de los brazos, que es donde
+         la nave tiene sus huecos más profundos y donde el gris uniforme se
+         notaba más. La profundidad sube de 0.78 a 0.88. */
+      float railCavity = (1.0 - smoothstep(0.12, 0.32, abs(vLocal.z)))
+                       * smoothstep(0.30, 0.66, length(vLocal.xy));
+      materialOcclusion = 1.0 - inward * railCavity * 0.93;
     } else if (uKind == 5) {
       /*
         Ranger: chapa aeronáutica, no manta térmica.
@@ -1159,12 +1302,20 @@ const BODY_FRAGMENT = /* glsl */ `
       float warmFoil = surface.g;
       float seam = surface.b;
       float microRoughness = surface.a;
-      albedo = mix(vec3(0.425, 0.432, 0.438), vec3(0.9, 0.9, 0.895), blanket);
-      albedo = mix(albedo, vec3(0.74, 0.61, 0.43), warmFoil * 0.22);
-      albedo = mix(albedo, vec3(0.098, 0.101, 0.108), seam * 0.62);
-      gloss = mix(0.74, 0.26, microRoughness);
+      /*
+        FASE 1 · PASE 3 (2026-09-05). La chapa arrancaba en 0.425 y terminaba en
+        0.90: un recorrido de medio punto sobre un valor ya alto, que en pantalla
+        es una nave de un solo tono. El extremo oscuro baja a 0.30 y el claro se
+        calienta —una nave iluminada por un disco ámbar no devuelve blanco
+        neutro— así que el fuselaje pasa a tener zonas, y la junta se hunde más
+        (0.62 → 0.74) para que esas zonas tengan bordes.
+      */
+      albedo = mix(vec3(0.340, 0.345, 0.356), vec3(0.960, 0.942, 0.908), blanket);
+      albedo = mix(albedo, vec3(0.78, 0.63, 0.43), warmFoil * 0.26);
+      albedo = mix(albedo, vec3(0.082, 0.086, 0.094), seam * 0.74);
+      gloss = mix(0.82, 0.26, microRoughness);
       specularPower = 62.0;
-      specularStrength = 1.05;
+      specularStrength = 1.18;
 
       /* El canal de manta ya lleva la junta restada, así que arrastra consigo
          la rejilla de paneles. El ala la devuelve: un plano sustentador tiene
@@ -1178,16 +1329,21 @@ const BODY_FRAGMENT = /* glsl */ `
           mancha y la nave pierde su planta justo al tamaño en que se mira.
           Las líneas de cuerda van con la envergadura, como los largueros.
         */
+        /* El plano baja un escalón entero respecto del fuselaje. Antes iba de
+           0.362 a 0.80 —o sea, casi el mismo sitio que la chapa— y por eso ala
+           y cuerpo se fundían; el larguero oscuro tenía que hacer solo todo el
+           trabajo de separarlos. Ahora los separa el valor, y el larguero
+           dibuja el filo. */
         float chordwise = smoothstep(0.42, 0.5, abs(fract(vUv.y * 4.0) - 0.5));
-        albedo = mix(vec3(0.362, 0.368, 0.372), vec3(0.8, 0.802, 0.798), 0.3 + smoothPlate * 0.45);
-        albedo = mix(albedo, vec3(0.112, 0.118, 0.126), chordwise * 0.5);
+        albedo = mix(vec3(0.300, 0.307, 0.318), vec3(0.780, 0.774, 0.758), 0.3 + smoothPlate * 0.45);
+        albedo = mix(albedo, vec3(0.078, 0.083, 0.090), chordwise * 0.58);
         gloss = mix(0.5, 0.2, microRoughness);
         specularPower = 46.0;
         specularStrength = 0.82;
       } else if (vSurfaceMask > 1.5) {
         /* Tapa de servicio. Bajó de saturación: en naranja pleno eran lo
            primero que se veía de la nave, por delante de la proa. */
-        albedo = mix(vec3(0.17, 0.075, 0.03), vec3(0.56, 0.28, 0.09), smoothPlate);
+        albedo = mix(vec3(0.17, 0.075, 0.03), vec3(0.62, 0.31, 0.10), smoothPlate);
         gloss = 0.31;
         specularPower = 38.0;
       } else if (vSurfaceMask > 0.5) {
@@ -1216,11 +1372,118 @@ const BODY_FRAGMENT = /* glsl */ `
       specularPower = 30.0;
       specularStrength = 0.62;
     } else if (uKind == 8) {
+      /*
+        Balizas y toberas comparten material, y por tanto draw call. La máscara
+        de vértice es lo que los separa: un quinto material por nave habría
+        costado un batch de los veinte que hay, y el presupuesto está cerrado.
+
+        · Máscara 0 — BALIZA. Luz de navegación en el color del cuerpo, con el
+          latido lento de siempre.
+        · Máscara 1 — TOBERA. Plasma blanco-azulado, más frío y algo más débil
+          que una baliza: es escape, no señal. Su fase depende de la posición
+          local de la pieza, así que las cuatro campanas de la Endurance y las
+          dos de la Ranger no respiran a la vez — cuatro luces sincronizadas se
+          leen como un efecto, y desincronizadas como una máquina encendida.
+      */
       float pulse = 0.94 + 0.06 * sin(uTime * 0.55);
       albedo = vec3(0.0);
       float glow = 2.75 + uFocus * 0.55;
-      emissive = uAccent * glow * pulse;
+      vec3 emissiveTint = uAccent;
       gloss = 0.0;
+      /*
+        La semilla es el LADO del modelo, no el ángulo exacto.
+
+        Tiene que ser constante dentro de cada tobera, y el ángulo no lo es: la
+        pluma se aleja del centro, así que su atan2 recorría siete grados de
+        punta a punta y cada anillo de la malla disparaba en un instante
+        distinto — el cono se encendía a trozos. Las dos toberas activas están
+        diametralmente opuestas, así que el signo de x las separa sin ambigüedad
+        y vale lo mismo en todos sus vértices, pluma incluida.
+
+        Es estable aunque el cuerpo gire: vLocal es anterior a la rotación.
+      */
+      float duty = mix(1.0, thrusterDuty(step(0.0, vLocal.x) * 2.0 - 1.0), uPulsed);
+      if (vSurfaceMask > 7.5) {
+        /*
+          PLUMA, y la rampa viaja DENTRO de la máscara.
+
+          aSurfaceMask es un float interpolado por vértice, así que no hace
+          falta un atributo nuevo —ni tocar la fusión de geometrías, ni pagar un
+          canal más— para tener un gradiente: la garganta vale 2.0, la punta
+          3.0, y lo de en medio sale de la interpolación. Es el mismo truco de
+          los cuatro acabados del casco llevado un paso más allá.
+
+          Tres cosas la separan de un cono azul pegado detrás del motor:
+
+          1. **Cae, no se corta.** El alfa va con (1−t) elevado a 1.7: la mitad
+             de la pluma se ha ido en el primer tercio de su longitud.
+          2. **Se enfría al alejarse.** Blanco casi puro en la garganta, azul en
+             la punta. Un escape que conserva su color hasta el final se lee
+             como plástico.
+          3. **No tiene borde.** El alfa cae también con la incidencia, así que
+             la silueta del cono nunca llega a dibujarse: lo que se ve es un
+             núcleo brillante que se deshace, no un objeto.
+
+          Y late. Un escape estable es una textura; uno que respira es una
+          máquina encendida.
+        */
+        float plume = clamp(vSurfaceMask - 8.0, 0.0, 1.0);
+        /*
+          Los tres números de esta pluma salen de una captura, no de un gusto.
+
+          La primera versión usaba 1.15 de ganancia y exponente 1.7, y en el
+          hero salía un foco de coche: un cono blanco sólido más largo que la
+          nave, con el bloom encima. Un escape de maniobra tiene que decir
+          «encendido», no iluminar la escena — la única fuente de luz de este
+          sistema es Gargantúa, y esa regla no la rompe un propulsor.
+
+          Ganancia a 0.34, caída a exponente 2.4 (la mitad del brillo se ha ido
+          en el primer 25 % de la longitud) y alfa a 0.62. Lo que queda es una
+          lengua corta que se deshace, que es exactamente lo pedido.
+        */
+        /*
+          Y la pluma RESPIRA de largo, que no es lo mismo que parpadear.
+
+          Dos senos inconmensurables mueven la longitud efectiva un ±9 %: la
+          pluma se estira y se recoge sin llegar nunca a repetirse ni a llamar
+          la atención. Es lo que separa un cono geométrico de un chorro. Se
+          aplica sobre el parámetro, no sobre el brillo: alargar por brillo
+          sube el bloom y vuelve a lavar el casco, que es el error que costó
+          dos capturas.
+        */
+        float breath = 1.0 + 0.09 * sin(uTime * 0.37 + vLocal.z * 2.0)
+                           + 0.05 * sin(uTime * 0.83);
+        plume = clamp(plume / breath, 0.0, 1.0);
+        float fade = pow(1.0 - plume, 2.8);
+        float flicker = 0.84 + 0.16 * sin(uTime * 2.3 + plume * 9.0 + vLocal.y * 6.0);
+        /* Exterior casi transparente: la incidencia entra más tarde y más
+           deprisa, así que el borde del cono desaparece del todo y lo que queda
+           es núcleo. */
+        float core = smoothstep(0.06, 0.78, abs(dot(normal, view)));
+        emissive = mix(vec3(0.88, 0.95, 1.0), vec3(0.34, 0.55, 1.0), plume)
+                 * glow * 0.36 * flicker;
+        outputAlpha = fade * core * 0.62 * duty;
+      } else if (vSurfaceMask > 0.5) {
+        /* Garganta de la tobera: el punto más caliente y el más pequeño.
+           Entre impulsos NO se apaga del todo: conserva un rescoldo del 16 %.
+           Una tobera que acaba de disparar sigue caliente, y ese resto es lo
+           que dice que el propulsor existe cuando no está encendido. */
+        emissiveTint = vec3(0.66, 0.82, 1.0);
+        glow *= 0.70;
+        pulse = 0.86 + 0.14 * sin(uTime * 0.33 + vLocal.x * 5.0 + vLocal.y * 3.0);
+        emissive = emissiveTint * glow * pulse * mix(1.0, 0.16 + 0.84 * duty, uPulsed);
+      } else {
+        /*
+          Y la baliza paga la mitad, para NO cambiar de aspecto.
+
+          El material pasó a mezcla aditiva por la pluma, y con dos caras
+          activas una esfera diminuta se dibuja dos veces y suma: las balizas de
+          la Endurance se convirtieron en halos cian del tamaño del barril. El
+          0.5 devuelve el brillo exacto que tenían cuando el material era opaco.
+          El cambio de mezcla es para la pluma; no puede pagarlo el resto.
+        */
+        emissive = emissiveTint * glow * pulse * 0.5;
+      }
     }
 
     /*
@@ -1250,7 +1513,9 @@ const BODY_FRAGMENT = /* glsl */ `
       excepción para el cuerpo que más falta le hace.
     */
     if (uKind == 8) {
-      gl_FragColor = vec4(emissive + uNavigation * uFocus * 0.75, 1.0);
+      /* El alfa sale del ramo: 1.0 en balizas y gargantas, la rampa en la
+         pluma. Con mezcla aditiva el alfa es el que gradúa cuánto suma. */
+      gl_FragColor = vec4(emissive + uNavigation * uFocus * 0.75, outputAlpha);
       return;
     }
 
@@ -1304,29 +1569,47 @@ const BODY_FRAGMENT = /* glsl */ `
       familia de material: cuánto rebote de cielo conserva la cara que no ve a
       Gargantúa. Los mundos, que tienen aire, conservan más; el metal, menos.
 
-      Endurance conserva un suelo frío de 0.42. La oclusión analítica oscurece
-      sus cavidades de forma independiente de las superficies exteriores.
+      Endurance baja de 0.42 a 0.30 en el pase de fase 1, y NO para oscurecerla:
+      ese suelo era luz sin dirección repartida por todo el casco, o sea justo
+      lo que la aplanaba. Lo que se le quita aquí se le devuelve multiplicado en
+      el filo cálido y en la lámina ancha, que sí dependen de dónde está
+      Gargantúa. La oclusión analítica oscurece sus cavidades de forma
+      independiente de las superficies exteriores.
+
+      Edmunds baja de 0.28 a 0.22 por el mismo motivo y en la misma pasada: es
+      roca seca sin océano ni nubes, así que su cara noche tiene menos que
+      rebotar que cualquier otro mundo con aire.
     */
     float nightFloor = 0.5;
-    if (uKind == 1) nightFloor = 0.28;
-    if (uKind == 4) nightFloor = 0.42;
+    if (uKind == 1) nightFloor = 0.22;
+    if (uKind == 4) nightFloor = 0.26;
     if (uKind == 5) nightFloor = 0.44;
     if (uKind == 2 || uKind == 7) nightFloor = 0.4;
     float nightFill = mix(nightFloor, 1.0, day);
     /* El Tesseracto no hereda el tinte azul del cielo. Su sombra conserva una
        reflexión neutra-cálida de acero ennegrecido; toda temperatura visible
        procede del mismo disco ámbar que ilumina el resto del sistema. */
-    vec3 materialFill = uKind == 2 ? vec3(0.024, 0.022, 0.019) : fill;
+    /* Y Edmunds tampoco hereda el azul entero del cielo. Es roca seca sin
+       océano ni nube: lo que rebota en su cara noche es medio grado más cálido
+       y bastante más flojo que el relleno común. El lavado azul que le cubría
+       casi medio disco salía de aquí y de los dos filos de más abajo, no de la
+       clave — por eso subir el albedo sin tocar esto no lo habría arreglado. */
+    vec3 materialFill = uKind == 2
+      ? vec3(0.024, 0.022, 0.019)
+      : (uKind == 1 ? vec3(0.024, 0.025, 0.035) : fill);
     vec3 color = albedo * (
       key * diffuse * materialOcclusion + materialFill * nightFill
     );
-    if (uKind == 4) color *= mix(0.38, 1.0, materialOcclusion);
+    /* Y las cavidades bajan de 0.38 a 0.24 de suelo: un receso entre rieles no
+       recibe ni clave ni cielo, y lo que hacía que la nave se leyera maciza era
+       precisamente que sus huecos no llegaban a negro. */
+    if (uKind == 4) color *= mix(0.19, 1.0, materialOcclusion);
     /* Edmunds conserva sólo un rebote corto en el relieve del terminador. */
     float bandFalloff = uKind == 1 ? 18.0 : 15.0;
     float terminatorBand = exp(-abs(shadedNdl - 0.055) * bandFalloff)
                          * (1.0 - day * 0.34);
     if (uKind == 0 || uKind == 1) {
-      color += albedo * key * terminatorBand * (uKind == 1 ? 0.055 : 0.09);
+      color += albedo * key * terminatorBand * (uKind == 1 ? 0.075 : 0.09);
     }
 
     /* Especular del disco: una banda estrecha, no un punto de estudio.
@@ -1437,9 +1720,13 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Aire fino: sólo el arco encarado al disco, sin blanco ni halo uniforme.
        El rebote cálido queda pegado al terminador y conserva el terreno. */
     if (uKind == 1) {
-      float limbArc = pow(1.0 - max(dot(normal, view), 0.0), 11.0);
-      float airLit = smoothstep(0.18, 0.90, ndl);
-      color += vec3(0.56, 0.43, 0.29) * limbArc * airLit * uLightIntensity * 0.55;
+      /* Más fino y más concentrado: exponente 11 → 14 y puerta desplazada, así
+         que el arco vive sólo donde de verdad hay atmósfera atravesada por la
+         luz. Lo que gana en peso (0.55 → 0.95) no lo gana en extensión — que es
+         la diferencia entre una línea de aire y un halo. */
+      float limbArc = pow(1.0 - max(dot(normal, view), 0.0), 14.0);
+      float airLit = smoothstep(0.26, 0.94, ndl);
+      color += vec3(0.62, 0.46, 0.30) * limbArc * airLit * uLightIntensity * 0.95;
       color += albedo * key
              * exp(-abs(shadedNdl + 0.06) * 19.0) * (1.0 - day) * 0.07;
     }
@@ -1471,7 +1758,11 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 backRimColor = uKind == 2
       ? vec3(0.052, 0.047, 0.04)
       : vec3(0.062, 0.086, 0.152);
-    color += backRimColor * backRim * (uKind == 1 ? 0.24 : 0.55);
+    /* Edmunds paga 0.15 en vez de 0.24, y con el relleno mineral de arriba. Su
+       contraluz seguía siendo el del resto —azul de campo estelar sobre casi
+       medio disco— y sobre un mundo sin aire eso no cierra la silueta: la
+       empaña. Lo que separa a este cuerpo del fondo es su propio filo cálido. */
+    color += backRimColor * backRim * (uKind == 1 ? 0.10 : 0.55);
 
     /*
       Metales: una segunda reflexión, ancha y fría.
@@ -1507,9 +1798,35 @@ const BODY_FRAGMENT = /* glsl */ `
           un agujero recortado, pero ya no compite con la fuente. Plata cálida
           hacia el disco, azul acero casi negro en la espalda.
         */
-        color += albedo * vec3(0.006, 0.007, 0.009) * materialOcclusion;
-        color += key * pow(specBase, 22.0) * gloss * day * 0.12 * materialOcclusion;
-        color += vec3(0.11, 0.15, 0.23) * coldRim * 0.16;
+        /* El mismo rebote dirigido que la Ranger, en la escala que admite un
+           casco que ya vive casi entero de su filo: ámbar hacia Gargantúa, azul
+           acero en la espalda. Es poco, pero es lo único que traía color a las
+           caras que no alcanzan ni el filo ni la lámina. */
+        color += albedo * mix(
+          vec3(0.005, 0.006, 0.009),
+          vec3(0.026, 0.019, 0.011),
+          smoothstep(-0.7, 0.2, ndl)
+        ) * materialOcclusion;
+        /*
+          LÁMINA ANCHA, y es la pieza que faltaba.
+
+          La Endurance era el único casco metálico del sistema SIN el barrido de
+          fuente extensa: tenía el filete de exponente 22 y nada más, así que
+          fuera de ese filete todas sus caras devolvían exactamente lo mismo. Un
+          disco de acreción es enorme; un panel orientado hacia él devuelve una
+          lámina suave y ancha, y es lo que separa dos módulos vecinos que
+          comparten material pero no orientación. Con el gloss ya escalonado por
+          familia, esta lámina encuentra los módulos principales y deja mate el
+          radiador — que es exactamente el «metal vivo» que se pedía.
+        */
+        color += mix(key, vec3(1.0, 0.93, 0.84), 0.16) * sheen * 0.42 * materialOcclusion;
+        /* Y el filete estrecho sube de 0.12 a 0.22: sobre el marfil de los
+           módulos principales es el único highlight duro de la nave. */
+        color += key * pow(specBase, 22.0) * gloss * day * 0.22 * materialOcclusion;
+        /* Relleno frío del lado contrario. Sube de 0.16 a 0.30 y se enfría: es
+           lo que impide que bajar el suelo nocturno devuelva un recorte negro,
+           y a diferencia del suelo SÍ tiene dirección. */
+        color += vec3(0.10, 0.145, 0.235) * coldRim * 0.30;
       } else {
         /*
           PLATA CÁLIDA, no azul.
@@ -1548,11 +1865,61 @@ const BODY_FRAGMENT = /* glsl */ `
     */
     if (uKind == 5) {
       float wrap = smoothstep(-0.62, 0.3, ndl);
-      color += key * fresnel * wrap * 0.62;
-      color += vec3(1.0, 0.72, 0.42) * pow(fresnel, 1.5) * wrap * 0.3;
-      // Y el relleno del cielo por el lado opuesto, para que la sombra tenga
-      // materia en vez de ser un recorte negro.
-      color += albedo * vec3(0.05, 0.062, 0.094);
+      color += key * fresnel * wrap * 0.70;
+      /* Y la línea ámbar sube de 0.30 a 0.44: con 153° entre luz y cámara, ESTE
+         es el término que dibuja el borde de ataque, la cabina y las góndolas.
+         Lo que hacía gris a esta nave no era su chapa —forzada a blanco puro se
+         veía igual de apagada— sino que su filo no llegaba a encenderse. */
+      color += vec3(1.0, 0.72, 0.42) * pow(fresnel, 1.5) * wrap * 0.58;
+      /* Y una segunda línea, más estrecha y más roja, pegada al canto. Es la
+         que integra la nave con Gargantúa: sin ella el acero devolvía un filo
+         crema genérico que podría venir de cualquier parte. */
+      color += vec3(1.0, 0.58, 0.26) * pow(fresnel, 3.2) * wrap * 0.52;
+      /*
+        RELLENO CON DIRECCIÓN, que no es lo mismo que ambiente.
+
+        Esto era un color plano sumado a toda la chapa por igual: el término que
+        impedía que la sombra fuera un recorte negro, y a la vez el que dejaba a
+        la nave en lavanda. Un relleno sin dirección no puede integrar nada,
+        porque no sabe dónde está la fuente.
+
+        Ahora son dos rellenos y una rampa que los cruza. La chapa que aún mira
+        algo hacia Gargantúa —aunque esté pasado el terminador, que a 153° es
+        casi toda la que se ve— recoge un rebote ÁMBAR; la que le da la espalda
+        del todo se queda con el azul del campo estelar. Misma cantidad de luz,
+        repartida por orientación en vez de por igual, y ésa es toda la
+        diferencia entre una nave gris y una nave que está ahí dentro.
+      */
+      float bounce = smoothstep(-0.78, 0.16, ndl);
+      color += albedo * mix(
+        vec3(0.024, 0.030, 0.046),
+        vec3(0.082, 0.058, 0.034),
+        bounce
+      );
+    }
+
+    /*
+      CONTRALUZ DE LA ENDURANCE, y es el término que ordena toda su lectura.
+
+      Su geometría de luz está medida: 117° entre Gargantúa y la cámara. Eso
+      significa que la mayor parte de lo que se ve de la nave está cerca del
+      terminador o pasado, y que ningún ajuste del difuso puede arreglarla — el
+      difuso ahí no existe. Lo que sí existe a 117° es el FILO: la luz recorta
+      el canto de cada módulo del lado que mira al disco.
+
+      Es el mismo mecanismo que ya tenía la Ranger a 153°, y no haberlo escrito
+      también aquí es la razón de fondo de que la Endurance se leyera como un
+      modelo iluminado por un plató en vez de como una nave delante de un
+      agujero negro. Dos términos: la envoltura ancha, que dice de qué lado
+      viene la luz, y la línea ámbar corta, que dibuja el canto encendido.
+
+      Ambos pasan por la oclusión: un canto metido en un receso entre rieles no
+      ve el disco, y sin ese factor el filo dibujaba también los huecos.
+    */
+    if (uKind == 4) {
+      float wrap = smoothstep(-0.40, 0.36, ndl);
+      color += key * fresnel * wrap * 0.38 * materialOcclusion;
+      color += vec3(1.0, 0.74, 0.44) * pow(fresnel, 1.6) * wrap * 0.42 * materialOcclusion;
     }
 
     /*
@@ -1592,7 +1959,13 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
        cuerpo del fondo negro sin dibujarle un contorno. */
     float warmRim = fresnel * smoothstep(-0.25, 0.42, ndl);
-    if (uKind == 1) warmRim *= 0.12 * smoothstep(0.18, 0.86, ndl);
+    /* El filo cálido de Edmunds valía un 12 % del común —o sea, casi nada— y
+       ésa era la mitad del problema: un planeta cuya única luz es un disco de
+       acreción tenía menos relación visible con él que cualquier casco. Sube a
+       0.34 con la puerta bajada, así que el borde que mira a Gargantúa se
+       enciende de verdad. Sigue por debajo de un tercio del rim común: no es
+       un contorno naranja, es el arco que cuenta de dónde viene la luz. */
+    if (uKind == 1) warmRim *= 0.52 * smoothstep(0.08, 0.66, ndl);
     if (uKind == 4) warmRim *= materialOcclusion;
     /*
       El Tesseracto paga un tercio del rim común. Es grafito casi negro con la
@@ -1613,7 +1986,12 @@ const BODY_FRAGMENT = /* glsl */ `
     float tesseractRim = vSurfaceMask > 4.5
       ? 0.075
       : (vSurfaceMask > 1.5 ? 0.115 : 0.045);
-    color += key * warmRim * (uKind == 2 ? tesseractRim : 0.18);
+    /* La Endurance paga MÁS que el común, y por la misma razón por la que la
+       Ranger tiene bloque propio: a 117° el filo es su iluminación principal,
+       no un adorno que la separa del fondo. El resto del sistema se queda en
+       0.18 sin enterarse. */
+    float commonRim = uKind == 4 ? 0.62 : 0.18;
+    color += key * warmRim * (uKind == 2 ? tesseractRim : commonRim);
     /*
       Y el relleno de canto tampoco es igual para todos dentro del Tesseracto.
       Este término levanta el borde de CUALQUIER pieza mire donde mire, así que
@@ -1621,7 +1999,12 @@ const BODY_FRAGMENT = /* glsl */ `
       su albedo, un canto levantado por igual lo devolvía al mismo plano que la
       caja de delante y el fondo dejaba de leerse como fondo.
     */
-    float fillRim = uKind == 2 && vSurfaceMask > 4.5 ? 0.26 : 0.32;
+    /* Y el relleno de canto también baja para el mundo mineral: 0.32 levantaba
+       el limbo entero, iluminado o no, y es el tercer ingrediente del lavado
+       azul que se está retirando. */
+    float fillRim = uKind == 2 && vSurfaceMask > 4.5
+      ? 0.26
+      : (uKind == 1 ? 0.11 : 0.32);
     color += materialFill * fresnel * fillRim;
     color += emissive;
 
@@ -1643,6 +2026,23 @@ const BODY_FRAGMENT = /* glsl */ `
 `;
 
 const NAVIGATION_COLOUR = "#7fe5ff";
+/**
+ * Base de la rampa de máscara que el shader interpreta como PLUMA.
+ *
+ * Vive en una constante porque la usan tres sitios que tienen que coincidir o
+ * el efecto se rompe en silencio: quien construye la rampa (`surfaceRamp`), el
+ * ramo emisivo del fragment y la poda de `modelRadius`. El shader reserva todo
+ * lo que hay de aquí para arriba; por debajo van los acabados de casco.
+ *
+ * Vale 8 y no 2, y la diferencia costó una prueba: el atributo es COMPARTIDO
+ * entre materiales, así que un umbral bajo choca con los acabados del casco.
+ * Con base 2, la poda de `modelRadius` se comía el grafito y los radiadores de
+ * la Endurance —máscaras 2 y 3— y el radio publicado caía un 26 %. El shader no
+ * se enteraba, porque allí la máscara se lee dentro del ramo del material que
+ * la escribió; la poda, que es transversal, sí. Ocho está por encima de las
+ * cinco máscaras del Tesseracto, que es el que más usa.
+ */
+const PLUME_MASK = 8;
 const STRUCTURE_KIND = 7;
 const EMISSIVE_KIND = 8;
 const ENDURANCE_SERVICE_KIND = 9;
@@ -1653,6 +2053,9 @@ interface MaterialOptions {
   depthWrite?: boolean;
   side?: THREE.Side;
   surfaceTexture?: THREE.Texture;
+  blending?: THREE.Blending;
+  /** Propulsión a impulsos en vez de continua. Sólo la lee el ramo emisivo. */
+  pulsed?: boolean;
 }
 
 type HullSurface = "endurance" | "ranger";
@@ -1792,6 +2195,7 @@ function bodyMaterial(
     transparent: options.transparent ?? false,
     depthWrite: options.depthWrite ?? true,
     side: options.side ?? THREE.FrontSide,
+    blending: options.blending ?? THREE.NormalBlending,
     uniforms: {
       uAccent: { value: new THREE.Color(options.accent ?? input.accent) },
       uSecondary: { value: new THREE.Color(options.secondary ?? input.secondary) },
@@ -1804,6 +2208,7 @@ function bodyMaterial(
       uSurfaceMap: { value: options.surfaceTexture ?? null },
       // Producción por defecto; sólo el banco de pruebas lo baja (§F1.0).
       uEmission: { value: 1 },
+      uPulsed: { value: options.pulsed ? 1 : 0 },
     },
   });
   // Three hace dos pases para transparent + DoubleSide salvo que se indique lo
@@ -1834,6 +2239,44 @@ function placed(
     new THREE.Vector3(1, 1, 1),
   );
   return geometry.applyMatrix4(matrix);
+}
+
+/**
+ * Máscara VARIABLE a lo largo de un eje local, para las plumas de propulsión.
+ *
+ * `surfaceMasked` escribe una constante y con eso basta para elegir acabado;
+ * una pluma necesita saber además CUÁNTO ha avanzado, y eso es un gradiente.
+ *
+ * En vez de añadir un atributo —que obligaría a rellenarlo en toda geometría
+ * que se fusione con ésta, y a pagar un canal de vértice más— se aprovecha que
+ * `aSurfaceMask` ya es un float interpolado: la garganta escribe `base` y la
+ * punta `base + 1`, y el fragment recupera el parámetro restando. El shader
+ * reserva para esto todo lo que hay por encima de 1.5.
+ *
+ * Se aplica DESPUÉS de `placed`, porque mide sobre las coordenadas ya
+ * horneadas en el espacio del modelo.
+ */
+function surfaceRamp(
+  geometry: THREE.BufferGeometry,
+  axis: "x" | "y" | "z",
+  from: number,
+  to: number,
+  base: number,
+): THREE.BufferGeometry {
+  const position = geometry.getAttribute("position");
+  const values = new Float32Array(position.count);
+  const read =
+    axis === "x"
+      ? (index: number) => position.getX(index)
+      : axis === "y"
+        ? (index: number) => position.getY(index)
+        : (index: number) => position.getZ(index);
+  for (let index = 0; index < position.count; index++) {
+    const t = THREE.MathUtils.clamp((read(index) - from) / (to - from), 0, 1);
+    values[index] = base + t;
+  }
+  geometry.setAttribute("aSurfaceMask", new THREE.BufferAttribute(values, 1));
+  return geometry;
 }
 
 /** Marca una pieza para seleccionar un acabado dentro del mismo draw call. */
@@ -1965,7 +2408,23 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   const service = bodyMaterial(input, ENDURANCE_SERVICE_KIND, {
     accent: "#c0793d",
   });
-  const lights = bodyMaterial(input, EMISSIVE_KIND, { accent: input.secondary });
+  /* El emisivo pasa a mezcla ADITIVA. Sin ella la pluma sería un cono opaco
+     con un borde dibujado; con ella, y sin escribir profundidad, se suma sobre
+     lo que haya detrás y se deshace en el negro. Las balizas no cambian de
+     aspecto —emisivo puro sobre fondo oscuro suma igual que sustituye— y el
+     batch sigue siendo uno solo porque el material declara `forceSinglePass`. */
+  const lights = bodyMaterial(input, EMISSIVE_KIND, {
+    accent: input.secondary,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    /* Pulsado, y es la diferencia de CARÁCTER con la Ranger. Un anillo de
+       ciento y pico metros no viaja empujando: mantiene su orientación con
+       impulsos cortos y espaciados. Dos antorchas permanentes decían lo
+       contrario — que la nave está acelerando— y eso no es lo que hace. */
+    pulsed: true,
+  });
   const root = new THREE.Object3D();
   const assembly = new THREE.Object3D();
   assembly.name = "endurance-assembly";
@@ -2059,6 +2518,96 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       placed(new THREE.TorusGeometry(0.079, 0.011, 5, 12), [x, y, -0.75]),
     );
   }
+
+  /* ── Maniobra: cuatro toberas EN EL BORDE DEL ARO ──────────────────────────
+
+     La primera versión las puso sobre el barril, y era la respuesta equivocada
+     a la pregunta correcta. La pregunta —dónde caben unos propulsores que se
+     vean— sigue estando bien planteada: la actitud de esta nave está medida y
+     su proa da 0.645 con la cámara y −0.897 con Gargantúa, así que las cuatro
+     campanas principales quedan enteramente detrás Y enteramente iluminadas.
+     Invisibles las dos cosas; una brasa dentro de ellas sería geometría muerta.
+
+     Lo que fallaba era la respuesta. Ocho toberas diminutas sobre el barril se
+     perdían por dos motivos a la vez: son pequeñas, y están en la zona más
+     ocupada del modelo — un punto de luz entre módulos, brazos y rieles es un
+     píxel más. Y una pluma que sale del barril apunta hacia la cámara, donde
+     el escorzo la convierte en una mancha redonda.
+
+     El borde del aro resuelve las tres cosas:
+
+     · **Se ve.** Contra negro, fuera de la silueta, sin nada alrededor.
+     · **La pluma se despliega A LO ANCHO** en vez de venir de frente, porque
+       sale casi tangente al aro. Es la diferencia entre leer una estela y ver
+       un borrón.
+     · **Es lo que haría una nave así.** El par de actitud de un anillo se da en
+       el radio máximo; poner el control de actitud en el eje es tirar palanca.
+
+     Van entre grupos, en los 46° de riel desnudo, para no pelearse con los
+     radiadores. Cuatro toberas, y sólo DOS encendidas y opuestas: eso es un
+     par puro, o sea una nave corrigiendo su giro. Con las cuatro a la vez no
+     está maniobrando, está decorada. */
+  const RIM_THRUSTER_ANGLES = [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4];
+  RIM_THRUSTER_ANGLES.forEach((angle, index) => {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    /* Casi RADIAL, no tangente. La primera versión disparaba tangencialmente
+       —que es lo que da par puro— y en la captura la pluma corría pegada al
+       borde del aro, cruzándose con radiadores y módulos: el escape se leía
+       dentro de la nave. A 24° del radio conserva componente tangencial
+       suficiente para que siga siendo control de actitud y sale del contorno
+       en su primer tercio, que es donde tiene todo su brillo. */
+    const fire = angle + (index % 2 === 0 ? 0.42 : -0.42);
+    const fireX = Math.cos(fire);
+    const fireY = Math.sin(fire);
+    const baseX = cos * (RING + 0.055);
+    const baseY = sin * (RING + 0.055);
+
+    structureParts.push(
+      // Bloque de tanques: lo que hace que la tobera pertenezca a la nave.
+      placed(
+        roundedBox(0.13, 0.115, 0.115, 0.02),
+        [cos * (RING + 0.02), sin * (RING + 0.02), 0],
+        [0, 0, angle],
+      ),
+      // Campana. Grande a propósito: por debajo de esto no se lee que es una.
+      placed(
+        new THREE.CylinderGeometry(0.055, 0.032, 0.115, 9, 1, true),
+        [baseX + fireX * 0.085, baseY + fireY * 0.085, 0],
+        [0, 0, fire - Math.PI / 2],
+      ),
+    );
+
+    if (index % 2 !== 0) return;
+
+    /* Garganta y pluma del par activo. La rampa de máscara va sobre el eje X
+       local de la geometría, así que la pluma se construye a lo largo de X y se
+       gira después: `surfaceRamp` mide sobre coordenadas ya horneadas, y
+       hornear la rotación primero haría que la rampa cruzara la pluma en
+       diagonal. Se ramplea antes de colocar. */
+    const throat = 0.14;
+    const tip = 0.44;
+    const plume = surfaceRamp(
+      new THREE.CylinderGeometry(0.084, 0.034, tip - throat, 10, 1, true)
+        .rotateZ(-Math.PI / 2)
+        .translate((throat + tip) / 2, 0, 0),
+      "x",
+      throat,
+      tip,
+      PLUME_MASK,
+    );
+    lightParts.push(
+      surfaceMasked(
+        placed(
+          new THREE.CircleGeometry(0.030, 9),
+          [baseX + fireX * 0.142, baseY + fireY * 0.142, 0],
+          [0, fire + Math.PI / 2, 0],
+        ),
+        1,
+      ),
+      placed(plume, [baseX, baseY, 0], [0, 0, fire]),
+    );
+  });
 
   /* ── 2. Estructura primaria: la circunferencia completa ────────────────────
      Dos rieles y sus travesaños. Es la pieza que faltaba: sin ella los módulos
@@ -2397,6 +2946,13 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     radiators: GROUPS,
     dockedRangers: 2,
     dockedLanders: 2,
+    /* Fase 1: propulsión visible. Cuatro grupos de maniobra de dos toberas cada
+       uno sobre el barril, y las cuatro campanas principales con brasa dentro.
+       Van en el contrato porque son lectura, no adorno: son lo que distingue una
+       nave EN SERVICIO de una maqueta bien iluminada. */
+    manoeuvringPods: 4,
+    manoeuvringNozzles: 4,
+    firingNozzles: 2,
   };
 
   return {
@@ -3168,7 +3724,13 @@ function rangerModel(input: SceneBodyInput): BodyModel {
     surfaceTexture: createHullSurfaceTexture("ranger"),
   });
   const structure = bodyMaterial(input, STRUCTURE_KIND);
-  const beacon = bodyMaterial(input, EMISSIVE_KIND, { accent: input.accent });
+  const beacon = bodyMaterial(input, EMISSIVE_KIND, {
+    accent: input.accent,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+  });
   const root = new THREE.Object3D();
   // Grupo propio: la pose de reposo va en la raíz y la actitud viva aquí dentro.
   const craft = new THREE.Object3D();
@@ -3282,6 +3844,15 @@ function rangerModel(input: SceneBodyInput): BodyModel {
       new THREE.BoxGeometry(0.84, 0.07, 0.29),
       [-0.07, -0.115, 0],
     ),
+    /* Bloque de maniobra de proa. Va en estructura —metal oscuro— para que la
+       brasa que lleva encima tenga contra qué leerse: un punto de luz sobre
+       chapa clara es una mota, sobre chapa oscura es una tobera. */
+    ...[-1, 1].map((side) =>
+      placed(
+        new THREE.BoxGeometry(0.10, 0.055, 0.05),
+        [0.42, 0.05, side * 0.125],
+      ),
+    ),
     // Montante central de la cabina, más los dos travesaños del marco.
     placed(new THREE.BoxGeometry(0.26, 0.026, 0.02), [0.31, 0.165, 0]),
     placed(new THREE.BoxGeometry(0.018, 0.028, 0.16), [0.43, 0.145, 0]),
@@ -3327,17 +3898,67 @@ function rangerModel(input: SceneBodyInput): BodyModel {
   structureMesh.name = "ranger-heat-shield-and-engines";
   craft.add(structureMesh);
 
-  /* Balizas: punta de ala, morro y las dos brasas de tobera. Físicas y
-     diminutas —el bloom óptico las convierte en luz, no un degradado— y ahora
-     las de motor viven DENTRO de la campana, que es lo que hace que el escape
-     se lea como escape y no como dos puntos pegados a la cola. */
+  /*
+     Balizas y escape, y NO son lo mismo.
+
+     Las dos cosas comparten material —un cuarto por nave habría costado un draw
+     del presupuesto de veinte, y no hay— pero se distinguen por máscara de
+     vértice, que es gratis:
+
+     · Máscara 0, en violeta de identidad: puntas de ala y morro. Son luces de
+       navegación, o sea SEÑAL: dicen dónde empieza y acaba la nave.
+     · Máscara 1, en blanco azulado: las dos campanas y las dos toberas de
+       maniobra de proa. Son ESCAPE, y por eso ni comparten color con las
+       balizas ni laten a su ritmo.
+
+     El violeta de las balizas se quedaba solo antes de este pase, y con él la
+     nave entera: un acento frío-lavanda sobre chapa lavanda es lo que hacía que
+     la Ranger se leyera como una miniatura de plástico. El contraste entre una
+     señal violeta y un escape blanco-azul es lo que la vuelve una máquina.
+
+     Todas son físicas y diminutas: el bloom óptico las convierte en luz, y las
+     de motor viven DENTRO de la campana, que es lo que hace que el escape se lea
+     como escape y no como dos puntos pegados a la cola. */
   const beaconMesh = mergedMesh(
     [
       placed(new THREE.SphereGeometry(0.021, 7, 5), [-0.2, -0.042, WING_SPAN + 0.02]),
       placed(new THREE.SphereGeometry(0.021, 7, 5), [-0.2, -0.042, -WING_SPAN - 0.02]),
       placed(new THREE.SphereGeometry(0.019, 7, 5), [0.75, 0.025, 0]),
-      placed(new THREE.CircleGeometry(0.082, 12), [-0.645, -0.06, 0.215], [0, -Math.PI / 2, 0]),
-      placed(new THREE.CircleGeometry(0.082, 12), [-0.645, -0.06, -0.215], [0, -Math.PI / 2, 0]),
+      ...[-1, 1].map((side) =>
+        surfaceMasked(
+          placed(
+            new THREE.CircleGeometry(0.048, 12),
+            [-0.652, -0.06, side * 0.215],
+            [0, -Math.PI / 2, 0],
+          ),
+          1,
+        ),
+      ),
+      /* Y su pluma. Corta —0.30 de largo contra 1.7 de nave, o sea unos 17 px
+         en el hero— y con la rampa sobre el eje X local, que es el de la nave:
+         la garganta en la boca de la campana y la punta detrás. Se construye
+         a lo largo de X y se ramplea antes de colocarla en su góndola. */
+      ...[-1, 1].map((side) =>
+        placed(
+          surfaceRamp(
+            new THREE.CylinderGeometry(0.060, 0.036, 0.30, 10, 1, true)
+              .rotateZ(Math.PI / 2)
+              .translate(-0.27, 0, 0),
+            "x",
+            -0.12,
+            -0.42,
+            PLUME_MASK,
+          ),
+          [-0.55, -0.06, side * 0.215],
+        ),
+      ),
+      // Toberas de maniobra de proa: el par que hace apuntar a una lanzadera.
+      ...[-1, 1].map((side) =>
+        surfaceMasked(
+          placed(new THREE.SphereGeometry(0.019, 6, 5), [0.44, 0.055, side * 0.145]),
+          1,
+        ),
+      ),
     ],
     beacon,
   );
@@ -3404,6 +4025,21 @@ function bodyModel(input: SceneBodyInput): BodyModel {
  * cuerpos: el Tesseracto (−16 %) y la Ranger (−10 %), que son los dos únicos con
  * geometría de caja fusionada. Los otros cuatro devuelven exactamente el mismo
  * número que antes, porque para ellos la cota ya era exacta.
+ *
+ * ── Y la LUZ no es silueta (2026-09-05) ─────────────────────────────────────
+ *
+ * Las plumas de propulsión entraron en el mismo draw call que las balizas, así
+ * que sus vértices llegan aquí como cualquier otro — y son, con diferencia, los
+ * más lejanos del modelo. Contarlos hinchaba el radio publicado un 15 % en la
+ * Ranger y un 8 % en la Endurance, con tres consecuencias todas equivocadas: el
+ * blanco de clic crecía hacia el vacío detrás del motor, los corchetes de
+ * adquisición encuadraban humo, y la cámara se alejaba para «dejar sitio» a una
+ * estela. Una nave no ocupa más espacio por encender un motor.
+ *
+ * Así que este recorrido salta lo que la máscara marca como pluma. No es una
+ * excepción para un efecto: es la regla correcta, y el sitio donde vive dice
+ * exactamente eso — `radius` describe la SILUETA, y una pluma es luz emitida,
+ * no materia. Las gargantas (máscara 1) sí cuentan: ésas son chapa.
  */
 function modelRadius(root: THREE.Object3D): number {
   const vertex = new THREE.Vector3();
@@ -3413,11 +4049,12 @@ function modelRadius(root: THREE.Object3D): number {
   // Recursión propia y no `traverse`: hay que poder podar un SUBÁRBOL entero,
   // y el callback de traverse no puede detener el descenso a los hijos.
   const visit = (node: THREE.Object3D) => {
-    const position = (node as Partial<THREE.Mesh>).geometry?.getAttribute(
-      "position",
-    );
+    const geometry = (node as Partial<THREE.Mesh>).geometry;
+    const position = geometry?.getAttribute("position");
     if (position) {
+      const mask = geometry?.getAttribute("aSurfaceMask");
       for (let i = 0; i < position.count; i++) {
+        if (mask && mask.getX(i) > PLUME_MASK - 0.5) continue;
         vertex
           .fromBufferAttribute(position as THREE.BufferAttribute, i)
           .applyMatrix4(node.matrixWorld);
@@ -3476,12 +4113,54 @@ function modelRadius(root: THREE.Object3D): number {
  * mover la nave y el dorso baja del suelo de luz, el test lo dice en vez de
  * salir en una captura tres semanas después.
  *
+ * ── Fase 1 (2026-09-05): la proa apuntaba mal ───────────────────────────────
+ *
+ * La corrección anterior arregló la luz y dejó pasar lo otro. Este documento
+ * dice desde el principio que «la proa apunta a la Endurance» y que ese gesto
+ * cuenta un viaje sin que nada se mueva — pero eso nunca se comprobó CONTRA LA
+ * PANTALLA, que es donde el gesto ocurre. Medido: la dirección Ranger →
+ * Endurance proyectada sobre el cuadro es **(0.978, +0.207)** —arriba y a la
+ * derecha, porque la Endurance está más alta— y la proa daba **(0.986,
+ * −0.168)**: derecha y ligeramente ABAJO. Veinte grados de error, y del signo
+ * que peor se lee: una nave con el morro caído es una nave que no va a ningún
+ * sitio, que es exactamente el «se ve horizontal y quieta» del encargo.
+ *
+ * El dorso nuevo lo corrige y no cuesta luz. Contra la posición real:
+ *
+ * | | dorso·luz | dorso·cámara | proa en pantalla |
+ * |---|---|---|---|
+ * | Antes | 0.230 | 0.231 | (0.986, −0.168) |
+ * | Ahora | 0.197 | 0.232 | (0.718, **+0.197**) |
+ *
+ * El morro sube de −9.7° a +15.4° sobre la horizontal del cuadro, el área vista
+ * se queda donde estaba y lo que se paga es un 14 % de incidencia de luz, que
+ * sigue muy por encima del suelo de 0.15 que fija la suite.
+ *
+ * Y hay una cuarta magnitud que sólo apareció al mirar la captura: **hacia
+ * dónde miran las toberas**. Es el producto del eje de escape por la cámara, y
+ * las dos primeras poses candidatas lo dejaban en −0.08 — o sea, las dos
+ * campanas apuntando al otro lado, con sus brasas invisibles. Justo el acento
+ * que pedía el encargo, apagado por una decisión sobre la proa. Con esta pose
+ * vale **0.569**, mejor incluso que el 0.508 de partida: los motores se ven
+ * desde el hero, y se ven mejor que antes.
+ *
+ * El barrido que produjo estos números está en el histórico de la sesión: se
+ * recorrió la vecindad del dorso en dos parámetros, se descartó todo lo que
+ * bajara de 0.19 en cualquiera de los dos productos, y de lo que quedaba se
+ * eligió lo que acerca la proa a la Endurance sin perder área vista.
+ *
+ * Existía una solución que clavaba la proa en el ideal —(0.974, +0.228), y sin
+ * coste de luz— y se descartó EN LA CAPTURA: pedía bajar el área vista a 0.195,
+ * y con ella la nave se leía de canto y apagada. La proa a medio camino sobre
+ * una silueta entera se ve mejor que la proa perfecta sobre una silueta fina;
+ * el barrido acota el espacio, la captura elige dentro de él.
+ *
  * Se calcula una vez al cargar el módulo; el cuerpo ya no gira, así que esta
  * pose es toda su orientación.
  */
 const RANGER_ATTITUDE = (() => {
-  const top = new THREE.Vector3(0.299, 0.949, -0.095).normalize();
-  const nose = new THREE.Vector3(0.855, -0.185, -0.489)
+  const top = new THREE.Vector3(-0.076, 0.993, -0.088).normalize();
+  const nose = new THREE.Vector3(0.764, 0.001, -0.645)
     .projectOnPlane(top)
     .normalize();
   const side = new THREE.Vector3().crossVectors(nose, top).normalize();
@@ -3501,8 +4180,33 @@ function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Eu
     cuerpo está a 22 rs del centro y la cámara mira al centro, así que su rayo
     llega oblicuo. El pase de peso añade 0.12 rad (6.9°) de yaw sobre la pose
     anterior, comprimiendo el aro sin cambiar cámara ni posición.
+
+    ── Fase 1 (2026-09-05): 0.30/0.32/−0.08 → 0.46/0.27/−0.16 ────────────────
+
+    El pedido fue «rotarla un pelín para que no se vea tan presentada», y aquí
+    hay dos cosas que medir, no una. Con la pose anterior el eje del anillo daba
+    **0.672 con la cámara** —el aro casi de frente— y **−0.918 con Gargantúa**,
+    o sea el plano del anillo casi perpendicular a la única luz del sistema. Lo
+    segundo es lo que de verdad la aplanaba: con la luz llegando casi de canto
+    al plano, los doce módulos recibían todos prácticamente la misma incidencia.
+
+    La pose nueva mueve las dos a la vez y muy poco: 0.627 con la cámara —4.0°
+    más comprimido— y −0.886 con la luz, 2.4° más rasante sobre el plano del
+    anillo. Eso basta para que los grupos dejen de recibir la misma incidencia:
+    los del lado encarado ganan cara iluminada y los del contrario entran en
+    sombra.
+
+    Se probó también más giro (0.46/0.27/−0.16, o sea 0.608 y −0.874) y se
+    descartó mirando la captura: a esa compresión el aro deja de leerse como
+    aro. La silueta circular es la mitad de la identidad de esta nave —lo dice
+    la nota de `enduranceModel`— así que el techo del giro no lo pone el gusto,
+    lo pone la lectura de la rueda.
+
+    El blanco de clic sigue a la pose: `hitScaleY` baja de 0.64 a 0.60 en
+    `system-scene.ts`, que es el coseno del ángulo nuevo. Un aro más comprimido
+    con la elipse antigua falla justo en los grupos de arriba y abajo.
   */
-  if (visual === "ship") return target.set(0.3, 0.32, -0.08);
+  if (visual === "ship") return target.set(0.42, 0.28, -0.14);
   /*
     Tesseracto. Ésta es TODA su orientación —no gira sobre su eje— así que hace
     bastante más trabajo que la de cualquier otro cuerpo.

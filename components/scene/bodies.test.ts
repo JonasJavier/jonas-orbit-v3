@@ -46,11 +46,17 @@ function measuredRadius(root: THREE.Object3D): number {
   root.updateMatrixWorld(true);
 
   const visit = (node: THREE.Object3D) => {
-    const position = (node as Partial<THREE.Mesh>).geometry?.getAttribute(
-      "position",
-    );
+    const geometry = (node as Partial<THREE.Mesh>).geometry;
+    const position = geometry?.getAttribute("position");
     if (position) {
+      /* Las plumas de propulsión no son silueta: son luz emitida, y hacerlas
+         contar hinchaba el blanco de clic y la distancia de encuadre hacia el
+         vacío que hay detrás de un motor. La producción las poda por máscara y
+         aquí se poda igual — la coincidencia que este test comprueba es la del
+         RESULTADO, no la de las dos implementaciones. */
+      const mask = geometry?.getAttribute("aSurfaceMask");
       for (let index = 0; index < position.count; index++) {
+        if (mask && mask.getX(index) > 7.5) continue;
         radius = Math.max(
           radius,
           vertex
@@ -190,6 +196,21 @@ describe("cuerpos del Sistema Gargantúa", () => {
         radiators: 4,
         dockedRangers: 2,
         dockedLanders: 2,
+        /*
+          El pase de fase 1 amplía el contrato con la propulsión visible. Está
+          aquí y no en una captura porque es exactamente la clase de detalle que
+          alguien retira «porque no se nota»: ocho toberas diminutas y cuatro
+          brasas dentro de las campanas son lo que separa una nave en servicio
+          de una maqueta bien iluminada, y su coste es cero draws — comparten
+          material con las balizas y se distinguen por máscara de vértice.
+
+          Y son DOS encendidas de ocho, no ocho: ese número está en el contrato
+          porque es la diferencia entre una nave corrigiendo actitud y una nave
+          con luces de feria.
+        */
+        manoeuvringPods: 4,
+        manoeuvringNozzles: 4,
+        firingNozzles: 2,
       });
 
       /*

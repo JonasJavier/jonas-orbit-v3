@@ -202,6 +202,39 @@ export interface WorldStructuralData {
  * del cuadro; queda en 29.7 % / 25.6 %), sigue cinco puntos por debajo del
  * Tesseracto en vez de formar con él una línea superior, y el vacío de la
  * esquina superior izquierda sigue ahí a propósito.
+ *
+ * ── Segundo recorte, y por qué es de otra naturaleza (2026-09-05) ───────────
+ *
+ * El pase de autoridad de arriba resolvía una jerarquía rota: la escena no
+ * decía «agujero negro», decía «objetos». Éste no arregla nada roto. El dueño
+ * pidió un margen extra, en porcentajes pequeños y distintos por cuerpo, y esa
+ * diferencia de propósito importa a la hora de leer los números:
+ *
+ *   · **Endurance −2 %** (4.64 → 4.547) · **Tesseracto −1.5 %** (2.71 → 2.669)
+ *   · **Miller −1 %** (2.81 → 2.782) · **Edmunds −1 %** (2.76 → 2.732)
+ *   · **Ranger −0.5 %** (1.93 → 1.92)
+ *
+ * El reparto conserva el orden del pase de autoridad —quien más competía, más
+ * cede— pero a una décima parte de su magnitud. Ninguno de estos recortes es
+ * visible por sí solo; lo que se mueve es la suma, que es exactamente lo que
+ * pedía el encargo.
+ *
+ * Y NO es un cambio de composición: sitio, fase, inclinación, cámara, HUD y
+ * fallback plano no se tocan. Lo único que se desplaza, y otra vez de rebote,
+ * es Gargantúa — pero mucho menos que la vez anterior, y eso hay que leerlo
+ * bien: el encuadre se mide contra la envolvente de los cuerpos Y contra el
+ * borde del disco, y desde el pase de autoridad quien manda casi siempre es el
+ * disco. Medido con `tools/composition.mjs`, la sombra pasa de 45.7 a 45.9 px
+ * mientras los cinco destinos ceden entre un 0.3 y un 2.1 % de radio RELATIVO a
+ * ella. Ése es el número del encargo; el radio absoluto en píxeles engaña
+ * porque la cámara se acerca a la vez.
+ *
+ * Las cuatro guardas de `bodies.test.ts` siguen con holgura de sobra —la que
+ * más aprieta es la ventaja de la Endurance sobre el resto, 2.045 → 2.014
+ * contra un suelo de 1.4— porque los cinco encogen a la vez y los cocientes
+ * apenas se mueven. Que un recorte de este tamaño no roce ningún test es la
+ * comprobación de que es un ajuste fino y no una decisión de composición
+ * disfrazada.
  */
 export const worldsData: Record<WorldId, WorldStructuralData> = {
   tesseract: {
@@ -226,8 +259,11 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
 
        `size` 2.87 → 2.71 en el pase de autoridad: el recorte más leve de los
        cinco cuerpos que se tocan, porque éste se reconoce por silueta y encoge
-       mal. Sigue por encima de donde estaba antes de la recomposición (2.7). */
-    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.71 },
+       mal. Sigue por encima de donde estaba antes de la recomposición (2.7).
+       El segundo recorte le quita un 1.5 % más (2.71 → 2.669): su radio
+       publicado baja de 4.796 a 4.723 rs y sigue dentro de la banda [4.55,
+       5.05] que fija `bodies.test.ts`, con 0.17 rs de margen por abajo. */
+    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.669 },
     sceneName: "scene-tesseract",
   },
   miller: {
@@ -252,7 +288,9 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
 
        `size` 3.05 → 2.81 en el pase de autoridad. A su tamaño anterior seguía
        leyéndose como un protagonista individual pese a la distancia; ahora la
-       distancia y el tamaño dicen lo mismo.
+       distancia y el tamaño dicen lo mismo. El segundo recorte le quita un 1 %
+       más (2.81 → 2.782); sigue siendo el cuerpo de menor tamaño aparente del
+       sistema, que es la condición que comprueba la suite.
 
        ── 26/242/31 → 28/240/37 (2026-09-05, pase de respiración) ────────────
 
@@ -274,7 +312,7 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        tocan los bordes del cuadro. Su tamaño aparente tampoco cambia: 47.5 px
        antes y después, porque los 2 rs de órbita extra se compensan con la
        inclinación. Se mueve, no encoge. */
-    placement: { orbitRadius: 28, phase: 240, inclination: 37, size: 2.81 },
+    placement: { orbitRadius: 28, phase: 240, inclination: 37, size: 2.782 },
     sceneName: "scene-miller",
   },
   endurance: {
@@ -293,8 +331,13 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        más motivos que el tamaño: masa blanca, mucho detalle por unidad de
        silueta y el sitio más cercano al centro visual. Sigue siendo el segundo
        ancla —le saca un 40 % largo al siguiente, y eso lo vigila
-       `bodies.test.ts`—, sólo que ahora a distancia del centro. */
-    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 4.64 },
+       `bodies.test.ts`—, sólo que ahora a distancia del centro.
+
+       El segundo recorte le quita un 2 % más (4.64 → 4.547), el mayor de los
+       cinco por el mismo motivo que entonces: es el único que puede competir.
+       Su ventaja sobre el resto pasa de 2.045 a 2.014 veces, muy por encima
+       del 1.4 que exige la suite. */
+    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 4.547 },
     sceneName: "scene-endurance",
   },
   edmunds: {
@@ -309,8 +352,9 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
 
        Lo único que cambia es `size`, 3.0 → 2.76: el mismo −8 % que Miller, para
        que la relación entre los dos planetas se conserve exacta mientras ambos
-       ceden peso al centro. */
-    placement: { orbitRadius: 25.5, phase: 167, inclination: 56, size: 2.76 },
+       ceden peso al centro. El segundo recorte repite la regla —−1 % en los
+       dos, 2.76 → 2.732— justamente para no romperla. */
+    placement: { orbitRadius: 25.5, phase: 167, inclination: 56, size: 2.732 },
     sceneName: "scene-edmunds",
   },
   gargantua: {
@@ -348,10 +392,12 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
       cuadro, a 2.6 dejaba de ser un detalle y empezaba a ser un sexto
       protagonista. El pase de autoridad de Gargantúa le quita otro 3.5 % (2.0 →
       1.93) y ni uno más: éste ya era el acento pequeño de la escena, y lo que
-      hay por debajo no es «más discreta» sino una miga. El mapa plano usa esta
-      misma fase: las dos vistas cuentan lo mismo.
+      hay por debajo no es «más discreta» sino una miga. El segundo recorte le
+      quita medio punto (1.93 → 1.92), el menor de los cinco y por la misma
+      razón. El mapa plano usa esta misma fase: las dos vistas cuentan lo
+      mismo.
     */
-    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 1.93 },
+    placement: { orbitRadius: 24, phase: 97, inclination: 14, size: 1.92 },
     sceneName: "scene-ranger",
   },
 };
