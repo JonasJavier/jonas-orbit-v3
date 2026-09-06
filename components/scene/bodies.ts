@@ -414,9 +414,6 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Y sus corrientes zonales, que además de pintar tienen que ROMPER el
        reflejo extendido: una lámina de agua sin bandas se lee como gas. */
     float millerBands = 0.0;
-    /* Y Edmunds su capa de nubes: es lo único de su superficie que responde a
-       la luz como algo distinto de roca seca. Mismo motivo, mismo sitio. */
-    float edmundsCloud = 0.0;
 
     if (uKind == 0) {
       /*
@@ -510,28 +507,39 @@ const BODY_FRAGMENT = /* glsl */ `
 
         Y AQUÍ ESTABAN LAS MANCHAS NEBULOSAS. Se veían como nube, hielo o gas y
         se buscaron tres veces en la paleta y en la capa de nubes; no estaban
-        ahí. Dos trenes cruzados de amplitud parecida producen un patrón de
-        BATIDO —elipses grandes de interferencia, del tamaño de una cuarta parte
-        del cuerpo— que a esta distancia no se lee como oleaje sino como manchas
-        blandas sin dirección. Se ve de un vistazo pintando reliefOffset en un
-        canal.
+        ahí. Dos trenes cruzados de amplitud parecida y número de onda ~21
+        producen un patrón de BATIDO —elipses de interferencia del tamaño de una
+        cuarta parte del cuerpo— que a esta distancia no se lee como oleaje sino
+        como manchas blandas sin dirección. Se ve de un vistazo pintando
+        reliefOffset en un canal.
 
-        La respuesta no es quitarla: rompe el terminador y eso hace falta. Es
-        bajarla de 0.0052 a 0.0018 y dejar que la escala grande la mande. El
-        relieve del cuerpo pasa a estar gobernado por bandas largas con
-        dirección, y la marejada vuelve a ser lo que decía ser: el borde
-        irregular de la media luna.
+        Bajarla a un tercio quitó las manchas pero dejó el océano sin su
+        estructura propia. La respuesta buena es cambiarle la ESCALA, no el
+        volumen: los números de onda caen de ~21 a ~5.2, o sea de doce crestas
+        sobre el diámetro a menos de dos. Lo que queda son dos o tres trenes
+        largos y oblicuos que cruzan las corrientes latitudinales, y el batido
+        entre ellos pasa a tener una escala MAYOR que el propio cuerpo — así que
+        ya no puede dibujar elipses dentro de él. El segundo tren pesa un quinto
+        del primero para que no salga un rayado regular.
+
+        A esa escala la amplitud vuelve a subir —0.013 sobre gradientes cuatro
+        veces menores— y ahora el tren manda también sobre el BRILLO, no sólo
+        sobre el difuso: una cresta larga devuelve luz distinta que un seno, y
+        eso es lo que hace inequívoco que la superficie es agua y no nube.
       */
-      vec3 swellA = vec3(14.9, -8.3, 11.7);
-      vec3 swellB = vec3(-10.3, 12.9, 16.1);
+      vec3 swellA = vec3(3.7, -2.1, 2.9);
+      vec3 swellB = vec3(-2.4, 3.2, 4.1);
       float swellPhaseA = dot(vLocal, swellA) + uTime * 0.05;
       float swellPhaseB = dot(vLocal, swellB) - uTime * 0.037;
-      vec3 swellSlope = swellA * cos(swellPhaseA) * 0.6
-                      + swellB * cos(swellPhaseB) * 0.4;
+      vec3 swellSlope = swellA * cos(swellPhaseA) * 0.8
+                      + swellB * cos(swellPhaseB) * 0.2;
       vec3 oceanUp = normalize(vLocal);
       vec3 swellTangent = swellSlope - oceanUp * dot(swellSlope, oceanUp);
       reliefOffset = -dot(swellTangent, normalize(vLightLocal))
-                   * 0.0018 * (1.0 - cloudCover * 0.55);
+                   * 0.013 * (1.0 - cloudCover * 0.55);
+      /* Y la cresta larga también decide cuánto refleja: es la mitad de por qué
+         se lee como lámina de agua y no como bruma. */
+      float swellCrest = 0.5 + 0.5 * cos(swellPhaseA);
 
       /*
         PALETA: azul grisáceo, no cyan de piscina.
@@ -613,7 +621,7 @@ const BODY_FRAGMENT = /* glsl */ `
       );
       albedo *= mix(0.84, 1.06, hemisphere);
       /* Nube fría y apagada. Ni blanca ni cálida: es vapor sobre agua helada. */
-      albedo = mix(albedo, vec3(0.398, 0.486, 0.588), cloudCover * 0.3);
+      albedo = mix(albedo, vec3(0.398, 0.486, 0.588), cloudCover * 0.26);
       /*
         BRILLO. El agua es la superficie más reflectiva del sistema, y por eso
         el mando no es «cuánto» sino «con qué forma». Aquí sólo queda el suelo;
@@ -625,6 +633,7 @@ const BODY_FRAGMENT = /* glsl */ `
       /* Y las bandas mandan sobre el brillo más que sobre el color: es la
          diferencia entre pintar rayas y tener corrientes. */
       gloss *= 0.6 + millerBands * 0.72;
+      gloss *= 0.68 + swellCrest * 0.58;
       /* La máscara del destello viaja resuelta: quien la usa está veinte líneas
          más abajo y no tiene acceso al oleaje ni a la nube. */
       millerGlitterMask = smoothstep(0.30, 0.88, waveField * 0.58 + microWaves * 0.42)
@@ -644,7 +653,7 @@ const BODY_FRAGMENT = /* glsl */ `
         donde el cuerpo deja de parecer iluminado de frente.
       */
       specularPower = 320.0;
-      specularStrength = 0.12;
+      specularStrength = 0.085;
       /*
         ATMÓSFERA FINA, y esto es la mitad del arreglo.
 
@@ -656,75 +665,27 @@ const BODY_FRAGMENT = /* glsl */ `
       */
       atmosphere = vec3(0.196, 0.436, 0.756);
       /* 0.20, no 0.30. El halo COMÚN desborda hasta ndl = −0.45, así que buena
-         parte de la línea pálida que rodeaba el limbo por abajo salía de aquí
-         y no del filo propio. Lo que se le quita se le devuelve al filo
-         direccional, que sí sabe dónde está Gargantúa. */
-      atmosphereWeight = 0.16;
+         parte de la línea pálida que rodeaba el limbo salía de aquí y no del
+         filo propio. Termina en 0.09: el halo común usa exponente 2.2 y desborda
+         hasta ndl = −0.45, así que por construcción NO PUEDE ser direccional —
+         cualquier valor que se le deje pinta también el hemisferio que no mira
+         a Gargantúa. Lo que se le quita se le devuelve entero al filo propio,
+         que sí sabe dónde está la fuente. */
+      atmosphereWeight = 0.09;
     } else if (uKind == 1) {
-      /*
-        Edmunds: el mundo de la Creatividad — el destino habitable del sistema.
-
-        ── Qué fallaba ─────────────────────────────────────────────────────
-        La versión anterior ya tenía masa y relieve, pero seguía leyéndose como
-        «esfera con ruido procedural»: cobre y basalto en la misma familia
-        cálida que Gargantúa, depósitos minerales que a tamaño de Hero salían
-        como SALPICADURAS repartidas por el disco, ninguna atmósfera perceptible
-        y una cara noche lavada a gris azulado sin información. Cumplía su papel
-        compositivo abajo a la izquierda y no contaba nada.
-
-        ── Qué lo cambia ───────────────────────────────────────────────────
-        1. **Jerarquía estricta de tres escalas.** Una macroforma decide qué es
-           tierra y qué es cuenca; una escala media —deformada por la macro, así
-           que sus costas SIGUEN al continente en vez de cruzarlo— pone regiones;
-           el grano fino sólo remata y nunca pinta contraste. El salpicado de
-           alta frecuencia que pintaba color ha desaparecido.
-        2. **Paleta propia, fuera de la familia de Gargantúa.** Caliza, arena y
-           marfil arriba; umber cálido en las cuencas; un acento salvia apagado
-           en la franja costera. Ni azul (Miller), ni ámbar (el disco), ni el
-           blanco-metal de la Endurance.
-        3. **Aire.** Nubes crema alargadas en longitud, un velo alto que lava el
-           color hacia el limbo y un filo de atmósfera fino. Es lo que separa el
-           planeta del fondo y le da escala; el halo y el crepúsculo van en el
-           bloque uKind == 1 de más abajo, con la luz ya resuelta.
-
-        Cuatro sitios de FBM, uno menos que antes: el grano fino pasa a una
-        octava —a frecuencia 15 las siguientes caen por debajo del píxel— y el
-        sitio liberado paga las nubes. El presupuesto del shader se mide en
-        sitios de llamada, no en cuerpos.
-      */
-      /* MACRO: dos masas y su mar. Es la única escala que decide geografía. */
-      float continents = fbm(vLocal * 1.62 + vec3(4.2, 1.1, 7.3));
-      /* MEDIA: deformada por la macro. Sin ese warp, las regiones cruzan la
-         costa y el planeta vuelve a ser ruido sobre una bola. */
-      float terrain = fbm(vLocal * 4.6 + continents * 1.9);
-      /* NUBES: latitud comprimida ×3.1, así que salen alargadas en longitud
-         —como en un mundo que rota— y no como algodón isótropo. */
-      float cloudField = fbm(
-        vec3(vLocal.x, vLocal.y * 3.1, vLocal.z) * 3.05
-          + vec3(uTime * 0.0032, 0.0, 4.1)
-      );
-      /* VELO ALTO: la bruma que lava el color hacia el limbo. */
-      float veil = smoothstep(
-        0.46,
-        0.82,
-        fbm(vLocal * 2.15 + vec3(uTime * 0.0018, 8.0, 2.0))
-      );
-      /* GRANO: una octava. Modula, no pinta. */
+      /* Edmunds: roca seca, hierro y arena bajo la luz de Gargantúa.
+         La macro decide provincias; la escala media sigue sus límites; el
+         grano sólo modula. Sin nubes, velo, casquetes ni emisión. Dos FBM. */
+      float provinces = fbm(vLocal * 1.62 + vec3(4.2, 1.1, 7.3));
+      float terrain = fbm(vLocal * 4.6 + provinces * 1.9);
       float grain = noise(vLocal * 15.5);
+      float upland = smoothstep(0.43, 0.49, provinces);
+      float plateau = smoothstep(0.54, 0.59, provinces + (terrain - 0.5) * 0.12);
+      float ironMass = smoothstep(0.62, 0.67, provinces);
 
-      /*
-        Relieve. Tres ondas de números de onda primos entre sí, así que el
-        patrón no se repite en la esfera; la amplitud sube donde hay tierra
-        alta y se apaga en las cuencas, que es donde el terreno real es plano.
-        El gradiente es la derivada exacta —la misma onda en coseno— y su
-        componente tangencial es la pendiente que ve la luz.
-
-        Los números de onda bajan a ~0.73 de los anteriores: a veinte, las
-        cordilleras salían del tamaño del grano y el planeta tendía a pelota de
-        golf. Más largas, se leen como CADENAS que cruzan una región — que es
-        justo la lectura de geografía que faltaba.
-      */
-      float land = smoothstep(0.44, 0.57, continents);
+      /* Cordilleras continuas con pendiente analítica: los claros sólo se
+         ganan en crestas cuya ladera mira al disco, nunca en manchas de albedo.
+         Las cuencas conservan una topografía mucho más plana. */
       vec3 waveA = vec3(12.7, 7.9, -8.9);
       vec3 waveB = vec3(-7.1, 14.3, 10.4);
       vec3 waveC = vec3(9.4, -11.6, 15.1);
@@ -738,143 +699,60 @@ const BODY_FRAGMENT = /* glsl */ `
       vec3 up = normalize(vLocal);
       vec3 tangentSlope = slope - up * dot(slope, up);
       vec3 lightLocal = normalize(vLightLocal);
-      /* Amplitud pequeña a propósito: laderas de unos 15°, cordilleras que
-         cruzan el terminador y no un mapa de relieve exagerado. Casi toda la
-         amplitud vive en tierra; el fondo de cuenca es plano. */
-      float reliefStrength = 0.0125 * (0.22 + land * 1.05);
-      reliefOffset = -dot(tangentSlope, lightLocal) * reliefStrength;
+      reliefOffset = -dot(tangentSlope, lightLocal) * 0.0105 * (0.2 + upland);
 
-      /* Casquetes: no nieve, sales heladas. Dan un eje visible — sin polos, una
-         esfera girando no tiene norte. */
-      float polar = smoothstep(0.66, 0.95, abs(vLocal.y));
+      /* Escarpes derivados de la misma meseta que pinta el material. Las
+         derivadas de pantalla recuperan su pendiente sin volver a muestrear
+         ruido: arena, ladera y sombra comparten una sola topografía. */
+      float geologicalHeight = upland * 0.18 + plateau * 0.14 + terrain * 0.45;
+      vec3 dpdx = dFdx(vLocal);
+      vec3 dpdy = dFdy(vLocal);
+      vec3 acrossY = cross(dpdy, up);
+      vec3 acrossX = cross(up, dpdx);
+      float determinant = dot(dpdx, acrossY);
+      vec3 geologicalSlope = (dFdx(geologicalHeight) * acrossY
+                            + dFdy(geologicalHeight) * acrossX)
+                           * sign(determinant) / max(abs(determinant), 1e-8);
+      reliefOffset += clamp(-dot(geologicalSlope, lightLocal) * 0.022, -0.09, 0.09);
 
-      /*
-        LA COSTA es donde el umbral se cruza, y por eso land * (1 - land):
-        vale uno justo en el borde del continente y cero en tierra firme y en
-        mar abierto. Es el único sitio donde entra el acento salvia — un mundo
-        habitable enseña su clorofila donde hay agua, no repartida por el disco.
-      */
-      float coast = land * (1.0 - land) * 4.0;
+      /* Cuenca de umber, macizo rojizo, meseta de arena y provincia de hierro.
+         Umbrales estrechos: bordes erosionados de roca, no algodón luminoso. */
+      albedo = mix(vec3(0.075, 0.046, 0.035), vec3(0.16, 0.091, 0.061), terrain);
+      albedo = mix(albedo, vec3(0.34, 0.185, 0.105), upland);
+      albedo = mix(albedo, vec3(0.43, 0.30, 0.18), plateau * 0.82);
+      albedo = mix(albedo, vec3(0.245, 0.105, 0.062), ironMass * 0.9);
+      /* Estratos erosionados de la escala media. Se desvanecen al dejar de
+         resolverse; nunca sustituyen a las cuatro provincias principales. */
+      float strataPhase = terrain * 48.0 + provinces * 14.0;
+      float strata = sin(strataPhase);
+      float strataVisible = 1.0 - smoothstep(0.7, 2.2, fwidth(strataPhase));
+      albedo *= 1.0 - (0.5 + 0.5 * strata) * upland * strataVisible * 0.18;
+      albedo *= 0.83 + terrain * 0.34;
 
-      /*
-        LA PALETA ES ÓXIDO DE HIERRO, no caliza. (Corrección de dirección del
-        dueño, 2026-09-05, sobre esta misma revisión.)
+      /* Una fractura extensa, deformada por la provincia. Sus depósitos
+         siguen la falla; el detalle fino no crea islas claras independientes. */
+      float faultCoord = dot(vLocal, vec3(0.72, -0.43, 0.54))
+                       + (provinces - 0.5) * 0.65 - 0.16;
+      float faultWidth = max(fwidth(faultCoord), 0.008);
+      float fault = 1.0 - smoothstep(0.018, 0.018 + faultWidth * 1.5, abs(faultCoord));
+      float sediment = 1.0 - smoothstep(0.04, 0.12, abs(faultCoord - 0.09));
+      albedo = mix(albedo, vec3(0.37, 0.255, 0.15), sediment * upland * 0.38);
+      albedo *= 1.0 - fault * upland * 0.34;
+      albedo *= 0.96 + grain * 0.08;
+      albedo *= 1.0 - (1.0 - smoothstep(-0.85, -0.3, height)) * upland * 0.22;
 
-        Dos versiones anteriores fallaron por el mismo lado. La primera puso la
-        tierra en 0.60 buscando caliza y salió una luna gris: con la clave ámbar
-        encima, un albedo alto lava el color, comprime el contraste contra el
-        hemisferio diurno y multiplica el relleno azul del cielo en la cara
-        noche. La segunda subió el croma pero mantuvo la familia beige-salvia
-        dominando la superficie, y el planeta seguía leyéndose lavado.
-
-        El problema nunca fue la jerarquía de escalas —esa se queda entera— sino
-        QUÉ familia manda en cada masa. Se invierte el reparto: rust /
-        reddish-brown / terracota es la voz principal, ocre y arena la segunda,
-        y el olivo queda como acento.
-
-        Referencia perceptual del dueño para la captura final: #351C18 umber,
-        #54251C pardo rojizo, #873A25 rust, #B9623D terracota, #B97835 cobre,
-        #C9974C ocre cálido, #CDB17A arena, #687056 olivo apagado. Los vec3 de
-        aquí no son esos hex —el shader trabaja antes del tono y de la clave
-        ámbar— pero SÍ conservan sus proporciones de canal, que es lo que decide
-        el tono: la versión gris tenía G/R = 0.72 y B/R = 0.41; la terracota de
-        aquí va a 0.45 y 0.26.
-
-        Y el rojo vive en REGIONES, nunca en salpicaduras: cada mezcla de abajo
-        cuelga de la macroforma o de la escala media. Ninguna del grano.
-      */
-      /* Cuenca profunda: deep umber. No baja a negro — en sombra tiene que
-         quedar información, no un agujero. */
-      albedo = vec3(0.118, 0.052, 0.038);
-      /* Cuencas medias erosionadas: pardo rojizo. */
-      albedo = mix(albedo, vec3(0.232, 0.098, 0.066), smoothstep(0.18, 0.62, terrain));
-      /* REGIÓN A — la masa continental, y la voz principal del planeta. */
-      albedo = mix(albedo, vec3(0.552, 0.248, 0.142), land);
-      /*
-        REGIÓN B — la franja mineral de óxido, y la única pieza nueva de esta
-        pasada. Sale de una BANDA en el espacio de la macroforma, no de otra
-        octava de ruido: continents entre 0.50 y 0.88 es una región geológica
-        grande y contigua, así que el rust aparece como provincia y no como
-        moteado. Cuesta dos smoothstep y ningún sitio de FBM.
-      */
-      float rustBelt = smoothstep(0.5, 0.62, continents)
-                     * (1.0 - smoothstep(0.72, 0.88, continents));
-      albedo = mix(albedo, vec3(0.392, 0.136, 0.078), rustBelt * 0.76);
-      /* Cobre en el terreno medio: la transición entre la terracota y el ocre,
-         que es lo que impide que las dos masas se toquen con un borde duro. */
-      albedo = mix(
-        albedo,
-        vec3(0.578, 0.318, 0.132),
-        land * smoothstep(0.3, 0.58, terrain) * 0.5
-      );
-      /*
-        REGIÓN C — altiplanos de ocre y arena. Siguen siendo el valor más claro
-        del suelo y por eso se ganan en dos condiciones —tierra Y terreno alto—,
-        pero cubren bastante menos que en la versión beige: el umbral sube de
-        0.44 a 0.52 y el peso baja de 0.9 a 0.56. Eran ellos los que lavaban el
-        planeta, y su luminancia también es menor: en 0.79 competían de tono con
-        el disco de Gargantúa.
-      */
-      albedo = mix(
-        albedo,
-        vec3(0.642, 0.438, 0.208),
-        land * smoothstep(0.56, 0.86, terrain) * 0.46
-      );
-      /* REGIÓN D — olivo apagado de costa. ACENTO, no familia: se ve porque
-         ahora lo rodea óxido, no caliza. */
-      albedo = mix(albedo, vec3(0.232, 0.258, 0.162), coast * 0.5);
-      /* El relieve tiñe: las crestas están expuestas y se aclaran hacia arena;
-         los valles acumulan umber. Es la escala media haciendo de escala media
-         — y la cresta se queda en arena, no en marfil, para no volver a lavar. */
-      albedo = mix(albedo, vec3(0.702, 0.508, 0.268), smoothstep(0.4, 0.95, height) * land * 0.18);
-      albedo = mix(albedo, vec3(0.082, 0.036, 0.026), smoothstep(-0.3, -0.95, height) * 0.3);
-      /* Grano: ±6 % multiplicativo. No introduce color ni contraste propio. */
-      albedo *= 0.94 + grain * 0.12;
-      /*
-        SATURACIÓN, un solo mando y aplicado SÓLO al suelo.
-
-        Extrapolar desde la luma (t > 1 en el mix) sube el croma sin tocar el
-        valor, así que la jerarquía de masas que acabamos de construir no se
-        mueve: la cuenca sigue siendo la cuenca y el altiplano el altiplano.
-        Va antes de nubes y casquetes a propósito — el vapor de agua y el hielo
-        no tienen color propio, y saturarlos los volvería de plástico.
-      */
+      /* Arena expuesta sólo en una fracción de crestas orientadas hacia la
+         luz. Es reflectancia difusa; sigue apagándose con la cara nocturna. */
+      float crest = smoothstep(0.48, 0.92, height) * upland;
+      float crestFacing = smoothstep(0.015, 0.12, reliefOffset)
+                        * smoothstep(0.0, 0.55, ndl);
+      albedo = mix(albedo, vec3(0.49, 0.37, 0.245), crest * crestFacing * 0.38);
       float groundLuma = dot(albedo, vec3(0.2126, 0.7152, 0.0722));
-      albedo = max(mix(vec3(groundLuma), albedo, 1.36), vec3(0.0));
-      /*
-        Velo alto: lava, no tapa — y ahora lava MUCHO menos. Pesaba 0.13 con un
-        beige claro y era el segundo responsable de apagar el color cerca del
-        limbo, justo donde el planeta necesita conservar identidad. Baja a 0.07
-        y su color entra en la familia del cobre.
-      */
-      albedo = mix(albedo, vec3(0.612, 0.42, 0.222), veil * 0.07);
-      /*
-        NUBES. Bandas, no una capa: un planeta encapotado pierde la superficie
-        que acabamos de construir, y la dirección pide leer superficie + aire.
-        Crema —no blanco puro—, que es lo que las mantiene fuera de la familia
-        blanco-metal de la Endurance. El umbral sube de 0.545 a 0.575 y la mezcla
-        baja de 0.6 a 0.46: se conservan los cúmulos fuertes y desaparece el velo
-        continuo que neutralizaba el óxido. La lectura tiene que ser SUPERFICIE +
-        NUBES, no crema con huecos de superficie.
-      */
-      edmundsCloud = smoothstep(0.575, 0.735, cloudField + veil * 0.07);
-      albedo = mix(albedo, vec3(0.862, 0.792, 0.632), edmundsCloud * 0.46);
-      /* Casquetes: sal helada, y también entran en la familia cálida. Bajan de
-         0.24 a 0.17 por el mismo motivo que los altiplanos. */
-      albedo = mix(albedo, vec3(0.79, 0.742, 0.648), polar * 0.17);
-      /* Brillo SELECTIVO: la roca seca no brilla. Responden las nubes, el hielo
-         de los casquetes y, muy poco, el velo alto. */
-      gloss = 0.03 + edmundsCloud * 0.24 + polar * 0.16 + veil * 0.05;
-      specularPower = 40.0;
-      specularStrength = 0.5;
-      /*
-        Atmósfera fina. Antes ámbar puro a 1.18: un halo ancho de la misma
-        familia que el disco, que además lavaba el limbo de milky. Ahora es
-        crema con caída salvia y pesa 0.66; el filo estrecho —el que de verdad
-        vende el aire— se añade aparte, con exponente alto, en uKind == 1.
-      */
-      atmosphere = vec3(0.855, 0.735, 0.535);
-      atmosphereWeight = 0.3;
+      albedo = mix(vec3(groundLuma), albedo, 0.94);
+      gloss = 0.018;
+      specularPower = 56.0;
+      specularStrength = 0.18;
+      /* El aire se resuelve abajo como filo direccional. Sin halo común. */
     } else if (uKind == 2) {
       /*
         Tesseracto: grafito casi negro, metal frío y filos blanco-crema.
@@ -1211,10 +1089,10 @@ const BODY_FRAGMENT = /* glsl */ `
         Con toda la nave en manta clara el conjunto se leía como una mancha
         blanca con motas oscuras: había piezas, pero no jerarquía. La manta
         estándar —rieles, cordones, satélites— baja a gris medio y deja el
-        blanco casi puro para los cuatro módulos principales. Tres valores
+        marfil apagado para los cuatro módulos principales. Tres valores
         separados hacen el trabajo que doce siluetas iguales no hacían.
       */
-      albedo = mix(vec3(0.13, 0.145, 0.165), vec3(0.47, 0.475, 0.46), blanket);
+      albedo = mix(vec3(0.10, 0.115, 0.135), vec3(0.34, 0.345, 0.33), blanket);
       albedo = mix(albedo, vec3(0.68, 0.46, 0.26), warmFoil * 0.26);
       /* La costura pesaba 0.68 y dibujaba una rejilla casi negra sobre cada
          cara: a tamaño de Hero la nave parecía forrada de azulejos. Una manta
@@ -1222,9 +1100,9 @@ const BODY_FRAGMENT = /* glsl */ `
          mecanizadas— y a esta distancia valen un cuarto de lo que valían. */
       albedo = mix(albedo, vec3(0.12, 0.13, 0.145), seam * 0.34);
       albedo *= 0.9 + macroVariation * 0.17;
-      gloss = mix(0.34, 0.13, microRoughness);
-      specularPower = 38.0;
-      specularStrength = 0.72;
+      gloss = mix(0.27, 0.10, microRoughness);
+      specularPower = 76.0;
+      specularStrength = 0.52;
 
       /* Cuatro acabados dentro del mismo draw: la máscara viaja como atributo
          de vértice y la textura sigue siendo común. */
@@ -1252,17 +1130,20 @@ const BODY_FRAGMENT = /* glsl */ `
       } else if (vSurfaceMask > 0.5) {
         /* Módulos principales: manta más clara y reflectante. La repetición
            cada 90° crea jerarquía sin sumar colores ni paneles aleatorios. */
-        /* 0.72, no 0.99. El blanco puro es lo que hacía que el ojo aterrizara
-           aquí antes que en el agujero negro: a la intensidad de clave de esta
-           órbita, 0.99 revienta el canal y la manta deja de tener material —
-           pasa a ser papel recortado. A 0.72 sigue siendo la superficie más
-           clara de la escena y recupera medio tono de rango donde antes había
-           saturación. */
-        albedo = mix(vec3(0.145, 0.165, 0.185), vec3(0.72, 0.7, 0.66), blanket);
+        /* Aluminio marfil: baja de 0.72 a 0.49 para que el difuso conserve
+           material y sólo los reflejos localizados alcancen valores altos. */
+        albedo = mix(vec3(0.12, 0.135, 0.15), vec3(0.49, 0.475, 0.435), blanket);
         albedo = mix(albedo, vec3(0.13, 0.14, 0.155), seam * 0.3);
-        gloss = mix(0.46, 0.2, microRoughness);
-        specularPower = 48.0;
+        gloss = mix(0.32, 0.14, microRoughness);
+        specularPower = 92.0;
       }
+      /* Oclusión de los recesos entre rieles: sólo las caras que miran hacia
+         el interior del aro. Las tapas exteriores conservan su luz directa. */
+      vec3 radialNormal = vec3(vLocal.xy, 0.0) / max(length(vLocal.xy), 0.001);
+      float inward = max(-dot(normalize(vNormalL), radialNormal), 0.0);
+      float railCavity = (1.0 - smoothstep(0.10, 0.27, abs(vLocal.z)))
+                       * smoothstep(0.35, 0.70, length(vLocal.xy));
+      materialOcclusion = 1.0 - inward * railCavity * 0.78;
     } else if (uKind == 5) {
       /*
         Ranger: chapa aeronáutica, no manta térmica.
@@ -1400,6 +1281,12 @@ const BODY_FRAGMENT = /* glsl */ `
       que es donde el ojo lee la orografía.
     */
     float diffuse = day * limb * clamp(1.0 + reliefOffset * 2.6, 0.4, 1.6);
+    /* Roca mate: la pendiente y la incidencia conservan dirección en todo el
+       hemisferio diurno, sin una meseta de brillo al saturarse day. */
+    if (uKind == 1) diffuse = day * limb * (0.12 + 0.88 * max(shadedNdl, 0.0));
+    /* Chapa facetada: Lambert conserva diferencias entre caras iluminadas;
+       el terminador de los planetas las igualaba a partir de n·l = 0.34. */
+    if (uKind == 4) diffuse = day * (0.12 + 0.88 * max(ndl, 0.0));
 
     /* Los mundos pierden más fill en su hemisferio nocturno. El terminador
        gana una línea de penumbra cálida: la dirección hacia Gargantúa se
@@ -1417,13 +1304,12 @@ const BODY_FRAGMENT = /* glsl */ `
       familia de material: cuánto rebote de cielo conserva la cara que no ve a
       Gargantúa. Los mundos, que tienen aire, conservan más; el metal, menos.
 
-      Endurance es la excepción alta a propósito: tiene más caras por unidad de
-      silueta que ningún otro cuerpo, y un suelo bajo no le da grafito — le abre
-      agujeros negros entre los módulos y se lee como confeti alrededor de un
-      aro.
+      Endurance conserva un suelo frío de 0.42. La oclusión analítica oscurece
+      sus cavidades de forma independiente de las superficies exteriores.
     */
     float nightFloor = 0.5;
-    if (uKind == 4) nightFloor = 0.6;
+    if (uKind == 1) nightFloor = 0.28;
+    if (uKind == 4) nightFloor = 0.42;
     if (uKind == 5) nightFloor = 0.44;
     if (uKind == 2 || uKind == 7) nightFloor = 0.4;
     float nightFill = mix(nightFloor, 1.0, day);
@@ -1434,14 +1320,13 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 color = albedo * (
       key * diffuse * materialOcclusion + materialFill * nightFill
     );
-    /* Edmunds tiene aire de sobra para ensanchar su amanecer: la banda cae a
-       10.5 en vez de 15 y pesa algo más. Es la mitad de «suavizar el
-       terminador»; la otra mitad es el crepúsculo de su propio bloque. */
-    float bandFalloff = uKind == 1 ? 10.5 : 15.0;
+    if (uKind == 4) color *= mix(0.38, 1.0, materialOcclusion);
+    /* Edmunds conserva sólo un rebote corto en el relieve del terminador. */
+    float bandFalloff = uKind == 1 ? 18.0 : 15.0;
     float terminatorBand = exp(-abs(shadedNdl - 0.055) * bandFalloff)
                          * (1.0 - day * 0.34);
     if (uKind == 0 || uKind == 1) {
-      color += albedo * key * terminatorBand * (uKind == 1 ? 0.135 : 0.09);
+      color += albedo * key * terminatorBand * (uKind == 1 ? 0.055 : 0.09);
     }
 
     /* Especular del disco: una banda estrecha, no un punto de estudio.
@@ -1512,10 +1397,10 @@ const BODY_FRAGMENT = /* glsl */ `
          banda ancha y muy tenue, anisótropa también, que dice que ahí abajo
          sigue habiendo agua. Es el término que en la versión anterior valía
          0.26 con lóbulo isótropo, y por eso salía mancha. */
-      float oceanSeat = exp(-(alongOff2 * 2.6 + acrossOff2 * 24.0)) * gloss * day;
-      float oceanSheet = exp(-(alongOff2 * 11.0 + acrossOff2 * 210.0))
+      float oceanSeat = exp(-(alongOff2 * 1.7 + acrossOff2 * 22.0)) * gloss * day;
+      float oceanSheet = exp(-(alongOff2 * 7.5 + acrossOff2 * 265.0))
                        * gloss * day;
-      float oceanGlint = exp(-(alongOff2 * 48.0 + acrossOff2 * 420.0))
+      float oceanGlint = exp(-(alongOff2 * 26.0 + acrossOff2 * 520.0))
                        * millerGlitterMask * day;
       /* El asiento va PICADO POR LAS BANDAS. Una lámina de reflejo continua
          sobre todo el hemisferio es exactamente lo que hace que un océano se
@@ -1542,43 +1427,22 @@ const BODY_FRAGMENT = /* glsl */ `
       */
       float airEdge = pow(1.0 - max(dot(normal, view), 0.0), 8.0)
                     * (0.82 + millerWeather * 0.36);
-      float airLit = smoothstep(0.22, 0.86, ndl);
-      float airFacing = smoothstep(0.46, 0.99, ndl);
+      float airLit = smoothstep(0.28, 0.9, ndl);
+      float airFacing = smoothstep(0.5, 1.0, ndl);
       color += mix(vec3(0.3, 0.6, 1.0), vec3(0.88, 0.95, 1.0), airFacing)
-             * airEdge * airLit * uLightIntensity * 1.62;
+             * airEdge * airLit * uLightIntensity * 2.15;
       color += key * airEdge * airFacing * 0.54;
     }
 
-    /*
-      EDMUNDS TIENE AIRE, y aquí es donde se nota. Tres términos, todos
-      derivados de la MISMA luz del disco: ninguno es una lámpara nueva.
-
-      1. **El filo.** Exponente 7 contra el 2.2 del halo común: eso es una
-         LÍNEA de atmósfera en el limbo, no un resplandor alrededor del
-         planeta. Pesa en el lado iluminado y se apaga cruzando el terminador,
-         que es donde la luz atraviesa más aire y donde deja de haber luz que
-         atravesar. Sin esto, la esfera se pega al fondo negro y pierde escala.
-      2. **El crepúsculo.** La atmósfera dobla el ámbar más allá del
-         terminador. Va multiplicado por el albedo a propósito, y por eso pesa
-         tanto: es lo único que pone GEOGRAFÍA dentro de la penumbra. El
-         contraluz frío común —ley compartida, y se queda— cubre casi un tercio
-         del disco con un azul plano; sobre un mundo cálido eso se leía como un
-         velo lechoso. La respuesta no es quitar luz sino dar detalle: dentro
-         del mismo azul aparecen las cuencas y los altiplanos, y el velo pasa a
-         leerse como noche vista a través de aire.
-      3. **El brillo de las nubes.** Lo único de este mundo que responde como
-         algo que no sea roca seca. Acotado a edmundsCloud, así que la esfera
-         no se vuelve una bola brillante.
-    */
+    /* Aire fino: sólo el arco encarado al disco, sin blanco ni halo uniforme.
+       El rebote cálido queda pegado al terminador y conserva el terreno. */
     if (uKind == 1) {
-      float limbArc = pow(1.0 - max(dot(normal, view), 0.0), 7.0);
-      color += mix(vec3(1.0, 0.87, 0.63), vec3(0.66, 0.74, 0.62), 0.18)
-             * limbArc * smoothstep(-0.2, 0.55, ndl) * uLightIntensity * 1.85;
+      float limbArc = pow(1.0 - max(dot(normal, view), 0.0), 11.0);
+      float airLit = smoothstep(0.18, 0.90, ndl);
+      color += vec3(0.56, 0.43, 0.29) * limbArc * airLit * uLightIntensity * 0.55;
       color += albedo * key
-             * smoothstep(-0.62, 0.18, shadedNdl) * (1.0 - day) * 0.46;
-      color += key * pow(specBase, 46.0) * edmundsCloud * day * 0.55;
+             * exp(-abs(shadedNdl + 0.06) * 19.0) * (1.0 - day) * 0.07;
     }
-
     /*
       Atmósfera. Se acumula hacia el borde Y hacia la cara iluminada, que es la
       dispersión real: el filo brillante aparece donde la luz atraviesa más aire.
@@ -1607,7 +1471,7 @@ const BODY_FRAGMENT = /* glsl */ `
     vec3 backRimColor = uKind == 2
       ? vec3(0.052, 0.047, 0.04)
       : vec3(0.062, 0.086, 0.152);
-    color += backRimColor * backRim * 0.55;
+    color += backRimColor * backRim * (uKind == 1 ? 0.24 : 0.55);
 
     /*
       Metales: una segunda reflexión, ancha y fría.
@@ -1643,8 +1507,8 @@ const BODY_FRAGMENT = /* glsl */ `
           un agujero recortado, pero ya no compite con la fuente. Plata cálida
           hacia el disco, azul acero casi negro en la espalda.
         */
-        color += albedo * vec3(0.018, 0.018, 0.021);
-        color += mix(key, vec3(0.6, 0.64, 0.71), 0.16) * sheen * 0.2;
+        color += albedo * vec3(0.006, 0.007, 0.009) * materialOcclusion;
+        color += key * pow(specBase, 22.0) * gloss * day * 0.12 * materialOcclusion;
         color += vec3(0.11, 0.15, 0.23) * coldRim * 0.16;
       } else {
         /*
@@ -1728,6 +1592,8 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
        cuerpo del fondo negro sin dibujarle un contorno. */
     float warmRim = fresnel * smoothstep(-0.25, 0.42, ndl);
+    if (uKind == 1) warmRim *= 0.12 * smoothstep(0.18, 0.86, ndl);
+    if (uKind == 4) warmRim *= materialOcclusion;
     /*
       El Tesseracto paga un tercio del rim común. Es grafito casi negro con la
       luz casi de frente: el fresnel ya levanta sus cantos por especular, y el
@@ -2076,9 +1942,8 @@ function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
  *
  * ── El orden de lectura, ahora explícito ────────────────────────────────────
  *
- * 1. **Núcleo.** Barril axial con collar de atraque a proa y bloque de cuatro
- *    campanas a popa. Es la pieza individual más grande y la única que rompe el
- *    plano del anillo: se ve primero y explica dónde está el eje.
+ * 1. **Núcleo.** Eje esbelto con collar de atraque a proa y bloque de cuatro
+ *    campanas a popa. Explica la profundidad sin tapar los brazos.
  * 2. **Estructura primaria.** Dos rieles continuos cierran la circunferencia
  *    ENTERA, también donde no hay módulos. La rueda existe aunque falte carga,
  *    y ése es el dato que convierte doce cajas en una nave.
@@ -2129,13 +1994,13 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   const lightParts: THREE.BufferGeometry[] = [];
 
   /* ── 1. Núcleo ─────────────────────────────────────────────────────────────
-     El eje va en Z, perpendicular al plano del anillo. El barril mide 0.5 de
-     largo por 0.48 de diámetro: más volumen que el módulo principal, que es
-     exactamente lo que hacía falta para que el centro se lea como centro. */
+     El eje va en Z, perpendicular al plano del anillo. El barril mide 0.65 de
+     largo por 0.37 de diámetro: el collar y la propulsión prolongan su lectura
+     axial sin convertir el centro en un botón macizo. */
   hullParts.push(
     surfaceMasked(
       placed(
-        new THREE.CylinderGeometry(0.24, 0.24, 0.5, 18),
+        new THREE.CylinderGeometry(0.185, 0.185, 0.65, 18),
         [0, 0, 0],
         [Math.PI / 2, 0, 0],
       ),
@@ -2144,8 +2009,8 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     // Proa: collar de atraque troncocónico. Por aquí entra todo lo que llega.
     surfaceMasked(
       placed(
-        new THREE.CylinderGeometry(0.125, 0.215, 0.22, 16),
-        [0, 0, 0.33],
+        new THREE.CylinderGeometry(0.10, 0.17, 0.22, 16),
+        [0, 0, 0.425],
         [Math.PI / 2, 0, 0],
       ),
       PRIMARY_BLANKET,
@@ -2153,8 +2018,8 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     // Popa: sección de servicio en grafito, más estrecha y claramente distinta.
     surfaceMasked(
       placed(
-        new THREE.CylinderGeometry(0.185, 0.205, 0.24, 16),
-        [0, 0, -0.32],
+        new THREE.CylinderGeometry(0.155, 0.175, 0.24, 16),
+        [0, 0, -0.415],
         [Math.PI / 2, 0, 0],
       ),
       GRAPHITE,
@@ -2163,18 +2028,18 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
 
   structureParts.push(
     // Cinturón: el nudo donde el núcleo recoge la carga de los cuatro brazos.
-    new THREE.TorusGeometry(0.3, 0.052, 8, 26),
-    placed(new THREE.TorusGeometry(0.25, 0.018, 5, 18), [0, 0, 0.2]),
-    placed(new THREE.TorusGeometry(0.25, 0.018, 5, 18), [0, 0, -0.19]),
+    new THREE.TorusGeometry(0.255, 0.045, 8, 26),
+    placed(new THREE.TorusGeometry(0.195, 0.018, 5, 18), [0, 0, 0.25]),
+    placed(new THREE.TorusGeometry(0.195, 0.018, 5, 18), [0, 0, -0.25]),
     // Mástil y reflector de alta ganancia: escala y función en dos piezas.
     placed(
       new THREE.CylinderGeometry(0.012, 0.012, 0.26, 7),
-      [0, 0, 0.55],
+      [0, 0, 0.64],
       [Math.PI / 2, 0, 0],
     ),
     placed(
       new THREE.ConeGeometry(0.075, 0.03, 12, 1, true),
-      [0, 0, 0.69],
+      [0, 0, 0.78],
       [Math.PI / 2, 0, 0],
     ),
   );
@@ -2188,10 +2053,10 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     structureParts.push(
       placed(
         new THREE.CylinderGeometry(0.05, 0.082, 0.22, 10, 1, true),
-        [x, y, -0.55],
+        [x, y, -0.645],
         [Math.PI / 2, 0, 0],
       ),
-      placed(new THREE.TorusGeometry(0.079, 0.011, 5, 12), [x, y, -0.655]),
+      placed(new THREE.TorusGeometry(0.079, 0.011, 5, 12), [x, y, -0.75]),
     );
   }
 
@@ -2230,7 +2095,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
      alternas. A tamaño de Hero cada brazo mide unos 3 px de canto: por debajo
      de eso no hay celosía que valga, y por eso los cordones anteriores —de 22
      mm— sencillamente no existían en pantalla. */
-  const ARM_INNER = 0.34;
+  const ARM_INNER = 0.28;
   const ARM_OUTER = RING - 0.24;
   const ARM_BAYS = 4;
   /** Semiseparación tangencial de los cordones. */
@@ -2254,7 +2119,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       hullParts.push(
         surfaceMasked(
           placed(
-            new THREE.BoxGeometry(ARM_OUTER - ARM_INNER, 0.055, 0.055),
+            new THREE.BoxGeometry(ARM_OUTER - ARM_INNER, 0.045, 0.045),
             at((ARM_INNER + ARM_OUTER) / 2, side),
             [0, 0, angle],
           ),
@@ -2333,22 +2198,27 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
      que produce lectura de ingeniería en vez de repetición. */
   for (let group = 0; group < GROUPS; group++) {
     const groupAngle = Math.PI / 2 - group * GROUP_STEP;
+    const primaryZ = [0.065, -0.055, 0.025, -0.04][group];
 
     for (let slot = -1; slot <= 1; slot++) {
       const isPrimary = slot === 0;
       const angle = groupAngle + slot * SLOT_SPREAD;
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
-      const radial = isPrimary ? 0.46 : 0.32;
-      const tangential = isPrimary ? 0.33 : 0.25;
-      const depth = isPrimary ? 0.33 : 0.25;
+      // Variaciones fijas de carga, no ruido ni nuevas piezas. Los satélites
+      // alternan delante/detrás de los rieles y dejan ver sus soportes.
+      const variation = Math.sin(group * 2.3 + slot * 1.7);
+      const radial = (isPrimary ? 0.46 : 0.32) * (1 + variation * 0.065);
+      const tangential = (isPrimary ? 0.33 : 0.25) * (1 - variation * 0.08);
+      const depth = isPrimary ? 0.33 : 0.22 + (variation + 1) * 0.025;
+      const moduleZ = isPrimary ? primaryZ : primaryZ + slot * 0.105;
 
       hullParts.push(
         surfaceMasked(
           placed(
             roundedBox(radial, tangential, depth, 0.03),
-            [cos * RING, sin * RING, 0],
-            [0, 0, angle],
+            [cos * RING, sin * RING, moduleZ],
+            [0, 0, angle + (isPrimary ? 0 : variation * 0.07)],
           ),
           isPrimary ? PRIMARY_BLANKET : BLANKET,
         ),
@@ -2356,14 +2226,10 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
 
       // Cuello al riel: el módulo está montado sobre la estructura, no flotando.
       structureParts.push(
-        placed(
-          new THREE.CylinderGeometry(0.052, 0.052, 0.16, 10),
-          [
-            cos * (RING - radial / 2 - 0.06),
-            sin * (RING - radial / 2 - 0.06),
-            0,
-          ],
-          [0, 0, angle - Math.PI / 2],
+        strut(
+          new THREE.Vector3(cos * (RING - 0.28), sin * (RING - 0.28), 0),
+          new THREE.Vector3(cos * (RING - radial / 2 + 0.02), sin * (RING - radial / 2 + 0.02), moduleZ),
+          0.064,
         ),
       );
 
@@ -2372,14 +2238,14 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
         structureParts.push(
           placed(
             new THREE.CylinderGeometry(0.062, 0.062, 0.05, 12),
-            [cos * (RING + 0.04), sin * (RING + 0.04), depth / 2 + 0.02],
+            [cos * (RING + 0.04), sin * (RING + 0.04), moduleZ + depth / 2 + 0.02],
             [Math.PI / 2, 0, 0],
           ),
         );
         serviceParts.push(
           placed(
             new THREE.BoxGeometry(0.17, 0.15, 0.014),
-            [cos * (RING - 0.09), sin * (RING - 0.09), depth / 2 + 0.008],
+            [cos * (RING - 0.09), sin * (RING - 0.09), moduleZ + depth / 2 + 0.008],
             [0, 0, angle],
           ),
         );
@@ -2394,20 +2260,21 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
           Un radiador por grupo, en el eje del brazo. Hubo ocho —dos por
           grupo, sobre los satélites— y el contorno se volvió un engranaje:
           dieciséis puntas alrededor del anillo son ruido, no ingeniería.
-          Cuatro paneles alineados con los cuatro brazos repiten el mismo
-          ritmo que ya cuentan brazos, grupos y campanas.
+          Se conservan cuatro paneles; sólo dos se alargan para introducir
+          direcciones selectivas en la silueta.
 
           Y van EN EL PLANO del anillo, no perpendiculares. Perpendiculares se
           veían de canto justo desde la pose del Hero: cuatro palos rayados
           saliendo del aro. En el plano prolongan el disco de la nave y
           aportan lo que ninguna otra pieza aporta, superficie plana grande.
         */
+        const panelLength = [0.50, 0.32, 0.46, 0.32][group];
         hullParts.push(
           surfaceMasked(
             placed(
-              new THREE.BoxGeometry(0.32, 0.36, 0.014),
-              [cos * (RING + 0.35), sin * (RING + 0.35), 0],
-              [0, 0, angle],
+              new THREE.BoxGeometry(panelLength, 0.32, 0.014),
+              [cos * (RING + 0.19 + panelLength / 2), sin * (RING + 0.19 + panelLength / 2), primaryZ],
+              [0, 0, angle + (group % 2 === 0 ? 0.06 : -0.04)],
             ),
             RADIATOR,
           ),
@@ -2415,7 +2282,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
         structureParts.push(
           placed(
             new THREE.BoxGeometry(0.12, 0.032, 0.032),
-            [cos * (RING + 0.24), sin * (RING + 0.24), 0],
+            [cos * (RING + 0.24), sin * (RING + 0.24), primaryZ],
             [0, 0, angle],
           ),
         );
@@ -2424,8 +2291,8 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
           serviceParts.push(
             placed(
               new THREE.BoxGeometry(0.12, 0.11, 0.012),
-              [cos * RING, sin * RING, depth / 2 + 0.007],
-              [0, 0, angle],
+              [cos * RING, sin * RING, moduleZ + depth / 2 + 0.007],
+              [0, 0, angle + variation * 0.07],
             ),
           );
         }
@@ -2441,7 +2308,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     const sin = Math.sin(groupAngle);
     // Alternan cara: dos por delante del plano del anillo y dos por detrás.
     // Cuatro cosas apiladas del mismo lado se leen como una sola masa.
-    const dockZ = (group % 2 === 0 ? 1 : -1) * (0.33 / 2 + 0.075);
+    const dockZ = primaryZ + (group % 2 === 0 ? 1 : -1) * (0.33 / 2 + 0.075);
     if (group % 2 === 0) {
       // Ranger: dos semialas en flecha y una cabina mínima.
       for (const side of [1, -1]) {
@@ -2502,7 +2369,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
 
   // Balizas del núcleo: proa y popa, para que el eje tenga principio y final.
   lightParts.push(
-    placed(new THREE.SphereGeometry(0.023, 8, 6), [0, 0, 0.45]),
+    placed(new THREE.SphereGeometry(0.023, 8, 6), [0, 0, 0.545]),
     placed(new THREE.SphereGeometry(0.019, 7, 5), [0.19, 0.19, -0.2]),
     placed(new THREE.SphereGeometry(0.019, 7, 5), [-0.19, -0.19, -0.2]),
   );
@@ -2527,7 +2394,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     arms: GROUPS,
     primaryModules: GROUPS,
     engineBells: 4,
-    radiators: GROUPS * 2,
+    radiators: GROUPS,
     dockedRangers: 2,
     dockedLanders: 2,
   };
@@ -3632,12 +3499,10 @@ function restOrientation(visual: WorldStructuralData["visual"], target: THREE.Eu
   /*
     Endurance. El ángulo se mide contra el EJE DE VISTA, no contra el mundo: el
     cuerpo está a 22 rs del centro y la cámara mira al centro, así que su rayo
-    llega oblicuo. Con la pose anterior el anillo quedaba a 60° de frontal —una
-    elipse aplastada donde no cabía leer ni un brazo—; a 48° la circunferencia
-    se reconoce, los cuatro brazos separan sus grupos y el núcleo sigue
-    asomando por delante del plano.
+    llega oblicuo. El pase de peso añade 0.12 rad (6.9°) de yaw sobre la pose
+    anterior, comprimiendo el aro sin cambiar cámara ni posición.
   */
-  if (visual === "ship") return target.set(0.3, 0.2, -0.08);
+  if (visual === "ship") return target.set(0.3, 0.32, -0.08);
   /*
     Tesseracto. Ésta es TODA su orientación —no gira sobre su eje— así que hace
     bastante más trabajo que la de cualquier otro cuerpo.

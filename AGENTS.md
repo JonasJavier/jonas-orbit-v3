@@ -36,18 +36,33 @@ diferentes— y define el bloom-off test: un cuerpo que pierde su identidad al
 apagar el glow no está terminado. Gargantúa queda **congelada** durante la fase.
 El `Rediseño imposible` del Tesseracto conserva su geometría y material.
 
-**Revisión de Edmunds (2026-09-05):** la sección `Mundo habitable` de
+**Revisión de Edmunds (2026-09-05):** la sección `Mundo mineral` de
 `docs/design/world-visual-language.md` sustituye su material y su paleta por
-petición del dueño: mundo terrestre cálido con jerarquía de tres escalas, nubes
-y atmósfera fina, distinto de Miller. Posición, tamaño, órbita y el resto de los
-cuerpos siguen intactos. Cuatro sitios de FBM, uno menos que antes.
+petición del dueño: roca seca, ocre, arena y hierro, sin nubes ni apariencia
+incandescente; provincias geológicas, crestas orientadas hacia Gargantúa y
+atmósfera fina direccional. Posición, tamaño, órbita y el resto de los cuerpos
+siguen intactos. Dos sitios de FBM, dos menos que antes. El apartado anterior
+`Mundo habitable` queda como referencia histórica sustituida.
 
-**Revisión de Miller (2026-09-05):** la sección `Océano global` de
-`docs/design/world-visual-language.md` sustituye su material, su paleta, su
+**Revisión de Miller (2026-09-05):** las secciones `Océano global`,
+`Corrientes y dirección de luz` y `Trenes largos y filo sin halo` de
+`docs/design/world-visual-language.md` sustituyen su material, su paleta, su
 modelo de reflejo y su atmósfera por petición del dueño: océano continuo azul
-grisáceo, lámina de luz anisótropa en vez de foco isótropo, y filo de aire
-direccional hacia Gargantúa. Posición, tamaño, órbita, inclinación, cámara y el
-resto de los cuerpos siguen intactos. Tres sitios de FBM, los mismos que antes.
+grisáceo con corrientes zonales, lámina de luz anisótropa en vez de foco
+isótropo, y filo de aire asimétrico que nace
+mirando a Gargantúa. La marejada baja a un tercio —su patrón de batido era lo
+que producía las manchas blandas— y la banda latitudinal manda sobre el relieve.
+El halo común de Miller queda casi apagado (0.09) porque, con exponente 2.2, por
+construcción no puede ser direccional: todo el aire visible lo pone su filo
+propio. Posición, tamaño, órbita, inclinación, cámara y el resto de los cuerpos
+siguen intactos. Tres sitios de FBM, los mismos que antes.
+
+**Revisión de Endurance (2026-09-05):** la sección `Endurance — peso, escala e
+integración` de `docs/design/world-visual-language.md` sustituye su material,
+núcleo y pose por petición del dueño: aluminio marfil apagado, luz facetada desde
+Gargantúa, cavidades oscuras, eje esbelto, módulos en planos distintos, dos
+radiadores más largos y 6.9° adicionales de yaw. Posición, escala del conjunto,
+cámara, HUD, fallback plano y otros cuerpos siguen intactos. Cuatro draws.
 
 **Revisión del Tesseracto (2026-09-05):** la sección `Umbral vivo` de
 `docs/design/world-visual-language.md` sustituye sus límites anteriores de

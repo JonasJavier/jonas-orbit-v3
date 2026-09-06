@@ -106,6 +106,40 @@ function apparentSize(id: Exclude<WorldId, "gargantua">, radius: number): number
 }
 
 describe("cuerpos del Sistema Gargantúa", () => {
+  it("conserva el vacío central y dos extensiones selectivas en Endurance", () => {
+    const body = bodyFor("endurance");
+    try {
+      const mesh = body.object.getObjectByName("endurance-twelve-module-ring") as THREE.Mesh;
+      const position = mesh.geometry.getAttribute("position");
+      const mask = mesh.geometry.getAttribute("aSurfaceMask");
+      const hub = new THREE.Box3();
+      const panels = Array.from({ length: 4 }, () => new THREE.Box3());
+      const vertex = new THREE.Vector3();
+      for (let i = 0; i < position.count; i++) {
+        vertex.fromBufferAttribute(position, i);
+        if (mask.getX(i) === 1 && Math.hypot(vertex.x, vertex.y) < 0.5) {
+          hub.expandByPoint(vertex);
+        }
+        if (mask.getX(i) === 3) {
+          const angle = Math.atan2(vertex.y, vertex.x);
+          const quadrant = ((Math.round(angle / (Math.PI / 2)) % 4) + 4) % 4;
+          panels[quadrant].expandByPoint(vertex);
+        }
+      }
+      const hubSize = hub.getSize(new THREE.Vector3());
+      expect(hubSize.x).toBeLessThan(0.42);
+      expect(hubSize.z / hubSize.x).toBeGreaterThan(2);
+      const lengths = panels.map((panel, quadrant) => {
+        const size = panel.getSize(new THREE.Vector3());
+        return quadrant % 2 === 0 ? size.x : size.y;
+      });
+      expect(lengths.filter((length) => length > 0.44)).toHaveLength(2);
+      expect(lengths.filter((length) => length < 0.38)).toHaveLength(2);
+    } finally {
+      disposeBody(body);
+    }
+  });
+
   it("construye identidades compuestas en vez de placeholders de una pieza", () => {
     const endurance = bodyFor("endurance");
     const tesseract = bodyFor("tesseract");
@@ -153,7 +187,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
         arms: 4,
         primaryModules: 4,
         engineBells: 4,
-        radiators: 8,
+        radiators: 4,
         dockedRangers: 2,
         dockedLanders: 2,
       });
