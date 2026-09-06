@@ -214,137 +214,54 @@ describe("cuerpos del Sistema Gargantúa", () => {
       });
 
       /*
-        EL TESSERACTO ES ARQUITECTURA IMPOSIBLE, y su contrato de lectura son
-        cuatro piezas con papeles distintos: la cáscara (la caja de siete aristas
-        con su arista partida, el panel de suelo, dos espolones y los nodos),
-        los marcos medios (las capas 2 y 3 de la recursión con sus puentes) y el
-        fondo (con el puente que no llega y su nodo huérfano) y el último umbral,
-        que puede variar su orientación sin arrastrar los marcos anteriores.
+        EL TESSERACTO ES UN HIPERCUBO DE CRISTAL, y su contrato de lectura son
+        tres piezas con papeles distintos: el cristal (las treinta y dos
+        aristas con volumen), el trazo (el lápiz emisivo que las recorre) y las
+        membranas (seis caras a contraluz). Tres draws, uno menos que el
+        corredor que sustituye.
 
-        Todo opaco y fusionado en cuatro draws con un solo material: el calor
-        sale del shader, no de un segundo material ni de una transparencia. Se
-        rompió una vez con LineSegments —una arista mide un píxel a cualquier
-        distancia, sin volumen y sin sombreado— y otra con un velo translúcido
-        que se llevaba la mirada por delante de la estructura. Lo que se
-        comprueba aquí es que no hay ni una cosa ni la otra.
+        Se comprueba que son MALLAS y que tienen caras porque esto se rompió una
+        vez con LineSegments: una arista de línea mide un píxel a cualquier
+        distancia, no tiene volumen y no admite sombreado — o sea, el wireframe
+        grueso que la dirección de arte lleva cuatro pases evitando.
       */
-      const maskOf = (name: string) => {
-        const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
-          THREE.BufferGeometry,
-          THREE.ShaderMaterial
-        >;
-        expect(mesh, name).toBeInstanceOf(THREE.Mesh);
-        expect(mesh, name).not.toBeInstanceOf(THREE.LineSegments);
-        expect(
-          mesh.geometry.getIndex()?.count ?? 0,
-          `${name} no tiene caras`,
-        ).toBeGreaterThan(0);
-        return Math.max(
-          ...Array.from(
-            mesh.geometry.getAttribute("aSurfaceMask")
-              .array as ArrayLike<number>,
-          ),
-        );
-      };
-
+      const crystalParts = ["tesseract-crystal-edges", "tesseract-drawing-light", "tesseract-glass-facets"]
+        .map((name) => {
+          const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
+            THREE.BufferGeometry,
+            THREE.ShaderMaterial
+          >;
+          expect(mesh, name).toBeInstanceOf(THREE.Mesh);
+          expect(mesh, name).not.toBeInstanceOf(THREE.LineSegments);
+          expect(mesh.geometry.getIndex()?.count, name).toBeGreaterThan(0);
+          return mesh;
+        });
+      const [crystalEdges, drawingLight] = crystalParts;
       /*
-        LAS MÁSCARAS SON LA JERARQUÍA LUMINOSA, y por eso se comprueban: la
-        dirección pidió que la luz subiera hacia adentro —caja apagada, marco 2
-        apenas, marco 3 medio, marco 4 la brasa— y eso vive entero en el número
-        que lleva cada pieza. Aplanarlo devuelve el objeto al fallo de siempre:
-        toda la estructura encendida a la vez, o sea un wireframe grueso.
-
-        Cáscara exterior: caja, panel y espolones (máscara 0), que no emiten
-        nada; los nodos de acero pulido (1), que son el único destello de fuera;
-        y el marco TRASERO con sus tirantes de fuga (5).
-
-        La 5 rompe el orden de brillo a propósito y por eso se comprueba aquí:
-        de 0 a 4 la escala sube hacia adentro, y el fondo se sale de ella por
-        abajo. Si alguien la reasigna a un valor intermedio, el marco trasero
-        pasa a estar tan iluminado como la caja de delante y deja de leerse
-        como fondo — que era justo el problema que vino a resolver.
+        Y no hay una cuarta pieza escondida. El presupuesto del cuerpo es su
+        parte más fácil de perder: cada idea nueva llega pidiendo «sólo un
+        mesh más».
       */
-      expect(maskOf("tesseract-shell")).toBe(5);
-      // Marcos medios: el segundo (2) y el tercero (3) de la recursión, con sus
-      // puentes en la máscara neutra.
-      expect(maskOf("tesseract-mid-frames")).toBe(3);
-      // Fondo: el cuarto marco es el escalón más caliente (4), y el nodo
-      // huérfano del puente que no llega va en la de acero (1).
-      expect(maskOf("tesseract-deep-frames")).toBe(4);
-      expect(maskOf("tesseract-threshold")).toBe(4.25);
-
-      const architecture = tesseract.object.children[0].userData
-        .tesseractArchitecture as Record<string, unknown>;
-      expect(architecture).toMatchObject({
-        // La referencia añade un escalón interior; la espalda y los laterales
-        // completan la caja sin convertirse en más capas de la recursión.
-        visualLayers: 9,
-        recursiveRings: 7,
-        structuralBridges: 14,
-        shellExtensions: 4,
-        interruptedBeams: 2,
-        emissiveTiers: 4,
-        // Frente, interior y FONDO: sin esto el cuerpo se leía sólo por delante.
-        rearFrame: true,
-        depthRails: 4,
-        sidePanels: 2,
-        centralVoid: true,
-        closedOuterCube: false,
-      });
-
+      let crystalMeshes = 0;
+      tesseract.object.traverse((node) => { if (node instanceof THREE.Mesh) crystalMeshes++; });
+      expect(crystalMeshes).toBe(3);
       /*
-        Un solo material opaco para todo el cuerpo. El calor sale del shader
-        con la máscara de superficie: ni segundo material, ni transparencias,
-        ni velo que se lleve la mirada.
+        EL BLOOM-OFF TEST, en forma de aserción. El cristal es OPACO y escribe
+        profundidad: su silueta no depende del trazo, que es aditivo y se apaga
+        entero con `uEmission`. Si alguien vuelve transparente esta capa, el
+        cuerpo pasa a existir sólo mientras el lápiz pasa por delante.
       */
-      const tesseractParts = [
-        "tesseract-shell",
-        "tesseract-mid-frames",
-        "tesseract-deep-frames",
-        "tesseract-threshold",
-      ].map((name) => {
-        const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
-          THREE.BufferGeometry,
-          THREE.ShaderMaterial
-        >;
-        expect(mesh, name).toBeInstanceOf(THREE.Mesh);
-        return mesh;
-      });
-      expect(
-        new Set(tesseractParts.map((mesh) => mesh.material)).size,
-        "el Tesseracto usa más de un material",
-      ).toBe(1);
-      for (const mesh of tesseractParts) {
-        expect(mesh.material.transparent).toBe(false);
-      }
-
+      expect(crystalEdges.material.transparent).toBe(false);
+      expect(crystalEdges.material.depthWrite).toBe(true);
+      expect(crystalEdges.material.uniforms.uEmission).toBeDefined();
+      expect(drawingLight.material.blending).toBe(THREE.AdditiveBlending);
+      expect(drawingLight.material.depthWrite).toBe(false);
       /*
-        Lo retirado NO vuelve, y cada nombre es una lección distinta:
-
-        · la retícula de cubos concéntricos se leía como «demo de Three.js»
-          —doce aristas encendidas por igual y ninguna cara que la luz pudiera
-          explicar—;
-        · el marco interior cerrado devolvía la serie «marco dentro de marco
-          dentro de marco», que el ojo completa solo y resuelve en dos segundos;
-        · el núcleo emisivo se leía como reactor y explicaba el objeto justo
-          donde no hay que explicarlo;
-        · el velo translúcido se llevaba la mirada por delante de la
-          estructura, que es exactamente lo que hacía el núcleo que sustituyó;
-        · las dos placas torsionadas se dejaban entender: marco exterior,
-          marco interior, centro. Interesante, y todavía no imposible.
+        Lo retirado NO vuelve: el corredor de marcos y sus umbrales contaban
+        una arquitectura recorrible, que es lo contrario de una figura de
+        cuatro dimensiones proyectada.
       */
-      for (const retired of [
-        "tesseract-hypercube-lattice",
-        "tesseract-inner-well",
-        "tesseract-inner-cage",
-        "tesseract-translucent-strata",
-        "tesseract-inner-frame",
-        "tesseract-core",
-        "tesseract-outer-shell",
-        "tesseract-fold-fragments",
-        "tesseract-fold-blades",
-        "tesseract-veil",
-      ]) {
+      for (const retired of ["tesseract-shell", "tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"]) {
         expect(tesseract.object.getObjectByName(retired), retired).toBeUndefined();
       }
 
@@ -622,69 +539,30 @@ describe("cuerpos del Sistema Gargantúa", () => {
     }
   });
 
-  /*
-    El dueño pidió movimiento interior perceptible (2026-09-05). La cáscara
-    sigue inmóvil; lo que cambia es la relación entre tres estratos internos.
-    Las garantías son de comportamiento: amplitud acotada, retorno, mismo
-    instante/misma pose y ninguna expansión fuera del radio de interacción.
-  */
-  it("reconfigura el interior del Tesseracto con cáscara y radio estables", () => {
+  it("reconfigura el cristal sin mover el destino, inflar el radio ni crear buffers", () => {
     const body = bodyFor("tesseract");
     try {
       const model = body.object.children[0];
-      const shell = body.object.getObjectByName("tesseract-shell");
-      const names = ["tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"];
-      const groups = names.map((name) => {
-        const group = body.object.getObjectByName(name)?.parent;
-        if (!group) throw new Error(`falta ${name}`);
-        return group;
-      });
-      if (!shell) throw new Error("falta la cáscara");
-
-      body.object.updateMatrixWorld(true);
-      const restPose = model.quaternion.clone();
-      const shellPose = shell.matrixWorld.clone();
       const destination = body.object.position.clone();
-      const interiorPose = () => groups.map((group) => ({
-        rotation: [group.rotation.x, group.rotation.y, group.rotation.z],
-        position: group.position.toArray(),
-        scale: group.scale.toArray(),
-      }));
-      const poses: ReturnType<typeof interiorPose>[] = [];
+      const mesh = body.object.getObjectByName("tesseract-crystal-edges") as THREE.Mesh;
+      const attribute = mesh.geometry.getAttribute("position");
+      const initial = Array.from(attribute.array);
+      const rootPose = model.quaternion.clone();
       for (let seconds = 0; seconds <= 120; seconds += 0.5) {
         body.spinAt(seconds);
-        expect(body.object.position, `destino t=${seconds}`).toEqual(destination);
-        expect(model.quaternion.equals(restPose), `giro propio t=${seconds}`).toBe(true);
-        shell.updateMatrixWorld(true);
-        expect(shell.matrixWorld.equals(shellPose), `cáscara t=${seconds}`).toBe(true);
-        expect(measuredRadius(body.object), `radio t=${seconds}`).toBeLessThanOrEqual(body.radius + 0.00001);
-        poses.push(interiorPose());
+        expect(body.object.position).toEqual(destination);
+        expect(model.quaternion.equals(rootPose)).toBe(true);
+        expect(mesh.geometry.getAttribute("position")).toBe(attribute);
+        expect(measuredRadius(body.object)).toBeLessThanOrEqual(body.radius + 0.00001);
       }
-
-      body.spinAt(37);
-      expect(interiorPose()).toEqual(poses[74]);
-      const swing = (values: number[]) => Math.max(...values) - Math.min(...values);
-      for (let group = 0; group < groups.length; group++) {
-        const samples = poses.map((pose) => pose[group]);
-        const yaws = samples.map((pose) => pose.rotation[1]);
-        const midpoint = (Math.min(...yaws) + Math.max(...yaws)) / 2;
-        let reversals = 0;
-        for (let index = 1; index < yaws.length; index++) {
-          if ((yaws[index - 1] < midpoint) !== (yaws[index] < midpoint)) reversals++;
-        }
-        // Varias idas y vueltas: no puede convertirse en una rotación continua.
-        expect(reversals, names[group]).toBeGreaterThanOrEqual(8);
-        expect(swing(yaws), names[group]).toBeGreaterThan(0.2);
-        expect(swing(yaws), names[group]).toBeLessThan(0.55);
-        for (let axis = 0; axis < 3; axis++) {
-          expect(swing(samples.map((pose) => pose.position[axis])), names[group]).toBeLessThan(0.11);
-        }
-        for (const pose of samples) {
-          expect(Math.abs(pose.rotation[0]), names[group]).toBeLessThan(0.08);
-          expect(Math.abs(pose.rotation[2]), names[group]).toBeLessThan(0.08);
-          for (const scale of pose.scale) expect(Math.abs(scale - 1), names[group]).toBeLessThan(0.1);
-        }
-      }
+      body.spinAt(6);
+      const sample = Array.from(attribute.array);
+      expect(sample).not.toEqual(initial);
+      body.spinAt(21600);
+      expect(Array.from(attribute.array).every(Number.isFinite)).toBe(true);
+      expect(measuredRadius(body.object)).toBeLessThanOrEqual(body.radius + 0.00001);
+      body.spinAt(6);
+      expect(Array.from(attribute.array)).toEqual(sample);
     } finally {
       disposeBody(body);
     }
@@ -712,7 +590,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
       camera.updateMatrixWorld(true);
       const position = orbitalPosition(worldsData.tesseract.placement, 0, new THREE.Vector3());
       placeBodyOnDepthLayer(position, camera.position, bodyDepthLayerFor("tesseract"), body.object.position);
-      const names = ["tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"];
+      const names = ["tesseract-crystal-edges", "tesseract-drawing-light", "tesseract-glass-facets"];
       const meshes = names.map((name) => {
         const mesh = body.object.getObjectByName(name);
         if (!(mesh instanceof THREE.Mesh)) throw new Error(`falta ${name}`);
@@ -750,30 +628,6 @@ describe("cuerpos del Sistema Gargantúa", () => {
       disposeBody(body);
     }
   });
-  it("deja atravesar el túnel al completar la espalda y sus laterales", () => {
-    const body = bodyFor("tesseract");
-    const raycaster = new THREE.Raycaster();
-    try {
-      const model = body.object.children[0];
-      for (let seconds = 0; seconds <= 120; seconds += 1) {
-        body.spinAt(seconds);
-        body.object.updateMatrixWorld(true);
-        // Ambos sentidos: una placa con el dorso oculto tampoco puede tapar
-        // el centro. La espalda rodea un vacío, no es una tapa negra.
-        for (const side of [-1, 1]) {
-          raycaster.set(
-            model.localToWorld(new THREE.Vector3(0, side * 3, 0)),
-            new THREE.Vector3(0, -side, 0).transformDirection(model.matrixWorld),
-          );
-          expect(raycaster.intersectObject(body.object, true), `t=${seconds}, lado=${side}`)
-            .toHaveLength(0);
-        }
-      }
-    } finally {
-      disposeBody(body);
-    }
-  });
-
   /*
     LA RANGER NO GIRA, y es una decisión de dirección de arte, no un descuido.
 

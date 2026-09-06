@@ -1144,6 +1144,156 @@ Lo que dice de verdad la adquisición sigue estando **fuera del cuerpo**: los
 corchetes, el arco de la órbita, el raíl y el NAV TARGET. El cuerpo sólo la
 confirma.
 
+## 9 quinquies. Miller — océano encendido y en movimiento (2026-09-06)
+
+Manda sobre §9, §9 ter y sobre la parte de §9 quater que toca a Miller en
+**paleta, exposición, nubes, animación de superficie y filo**. No toca su
+posición, su tamaño, su órbita, su inclinación, la cámara, el HUD ni el fallback
+plano. No toca ningún otro cuerpo.
+
+**Y revierte una dirección, no la afina.** Las cuatro revisiones anteriores
+—§9, §9 ter, §9 quater— empujaron a Miller hacia lo oscuro y lo austero, cada
+paso con un argumento correcto: el agua es mal rebotador, las masas pálidas
+competían con el reflejo, el halo isótropo era de interfaz. El resultado
+conjunto no era correcto. El dueño lo vio en una captura aislada y lo dijo sin
+rodeos:
+
+> «No me gusta Miller ahora, vamos a cambiar de idea. Está muy apagado y
+> oscuro. Vamos a hacer una versión más mejorada de la que te envié en la foto.
+> Para las nubes sería bueno si se ven, mucho mejor si hay una animación de
+> olas.»
+
+La referencia que dio es un mundo de agua **encendido**: cian y turquesa, con
+nubes visibles y superficie viva.
+
+### El error de razonamiento que hay que no repetir
+
+Las tres revisiones anteriores intentaron defender la lectura «océano» **quitando
+luz**. Cada una encontró un competidor del camino de luz —la nube, el bajío, el
+suelo nocturno, el halo— y lo bajó. Sumadas, dejaron un cuerpo cuyo p50 valía 47
+sobre 255 y cuyo croma medio había caído a 0.327: técnicamente un océano
+austero, en pantalla una piedra azul.
+
+Lo que faltaba entender es que **«océano» no es un nivel de exposición, es un
+comportamiento**. Un gigante gaseoso no tiene un camino de luz especular que se
+desplaza, ni destellos que centellean, ni una cresta con espuma intermitente, ni
+una capa de nube que va a otra velocidad que la superficie de debajo. Un océano
+sí — y todo eso se lee igual de bien, o mejor, sobre un cuerpo brillante. La
+identidad se defiende con comportamiento, no con oscuridad.
+
+### 1. El mar se mueve
+
+Tres escalas de oleaje, las tres con gradiente analítico —la derivada de un seno
+es un coseno y no cuesta una muestra más— y las tres avanzando a velocidades
+distintas. Que sean **distintas** es el punto: dos trenes a la misma velocidad
+son un dibujo que se traslada; tres a velocidades distintas son una superficie.
+
+| campo | número de onda | velocidad antes | ahora |
+| --- | --- | --- | --- |
+| marejada A | ~5.2 | 0.05 rad/s | **0.19** |
+| marejada B | ~5.6 | 0.037 | **0.135** |
+| rizo medio | 13.5 | — (no existía) | **0.62** |
+| oleaje corto | 27 | — (estático) | **1.15** |
+| microoleaje | 18 | 0.012 | **0.24** |
+| nube | 2.45 | 0.004 | **0.028** |
+
+El rizo medio es el que de verdad se ve moverse: cuatro crestas sobre el
+diámetro visible. No pinta color —a esta distancia el pigmento a esa escala es
+grano— sino que inclina la lámina y modula el brillo, que es como se ve el
+viento sobre el agua desde arriba.
+
+Esto **no rompe** la dirección artística del hero. El sistema sigue quieto:
+Miller no recorre su órbita. Lo que se mueve es su superficie, exactamente igual
+que el Tesseracto se reconfigura sin salir de su envolvente. Y
+no compromete la accesibilidad: con reduced-motion no hay canvas
+(`lib/effects-mode.ts`), así que el mar sólo se mueve para quien ya está viendo
+una escena en movimiento.
+
+### 2. Las nubes vuelven a verse
+
+La «bruma» de §9 ter pesaba un tinte del 5 % con una puerta de excepción: era
+invisible. Vuelve como meteorología de verdad — puerta de (0.40, 0.76) sobre una
+frecuencia más baja (2.85 → 2.45), sistemas grandes con brazos en vez de encaje
+fino, y tinte de 0.30 hacia un blanco frío.
+
+El argumento que las había retirado —competían con el camino de luz— se resuelve
+sin borrarlas, dándoles **otra naturaleza**. Una nube se distingue de un reflejo
+por tres cosas y ninguna es el brillo:
+
+1. **Se mueve a su propio ritmo**, siete veces más rápido que la marejada. Ese
+   desfase es lo que las separa en dos capas para el ojo.
+2. **Mata el especular de debajo** — `gloss` cae a 0.06 bajo cobertura total.
+   Es la propiedad que impide que una nube blanca se lea nunca como reflejo.
+3. **Tiene borde**, porque la puerta es un smoothstep estrecho y el reflejo es
+   una gaussiana.
+
+### 3. Cinco aguas, no tres grises
+
+| | antes (§9 ter) | ahora |
+| --- | --- | --- |
+| abismo | (0.004, 0.019, 0.043) | **(0.010, 0.046, 0.112)** |
+| océano | (0.026, 0.088, 0.186) | **(0.036, 0.212, 0.372)** |
+| bajío | (0.086, 0.176, 0.268) | **(0.098, 0.398, 0.508)** |
+| laguna | (0.138, 0.246, 0.336) | **(0.232, 0.560, 0.586)** |
+| nube | (0.398, 0.486, 0.588) al 5.5 % | **(0.800, 0.868, 0.905) al 30 %** |
+
+Y **el bajío se abre**, que resultó ser la mitad del apagón. Su puerta valía
+(0.50, 0.86) sobre una suma cuyo máximo real ronda 0.9: cubría un puñado de
+vetas finas y todo lo demás era agua honda. A (0.33, 0.76) pasa a ser una
+provincia. No era la paleta — era cuánto cuerpo llegaba a los tonos claros de la
+paleta.
+
+### 4. La exposición, en tres números y no en veinte
+
+| | antes | ahora | por qué |
+| --- | --- | --- | --- |
+| suelo difuso | 0.10 | **0.19** | dispersión bajo la superficie: en agua clara no es despreciable, y es la razón física de que un mar visto desde arriba no se apague a negro fuera del punto subsolar |
+| suelo nocturno | 0.32 | **0.34** | el término no modela el rebote del agua, modela cuánto cielo conserva la cara noche — y Miller es el cuerpo con más atmósfera y más nube del sistema |
+| atmósfera | 0.09 | **0.26** | un mundo de agua con aire tiene halo |
+
+El exponente 0.55 de la ley difusa **se queda**: es lo que evita la meseta del
+terminador, y esa parte de §9 ter sigue siendo correcta. Lo que cambia es el
+término constante, no la forma de la caída.
+
+### 5. Lo que sobrevive de las revisiones anteriores
+
+- **La cresta** (§9 quater, cuarta revisión): zona plateada estrecha, espuma
+  sólo en algunos segmentos, sombra a un lado y ladera al otro, extremos que se
+  apagan de forma desigual. Es lo único de aquel pase que el dueño aprobó
+  explícitamente, y no dependía de que el cuerpo fuera oscuro.
+- **El filo roto**: los tramos siguen apareciendo y desapareciendo, pero su
+  recorrido pasa de (0.16 … 1.42) a (0.46 … 1.55). Sobre un cuerpo encendido, un
+  trozo de limbo a 0.16 no se lee como aire irregular: se lee como una mordida.
+- **La ley difusa sin meseta**, las corrientes zonales, la escala media de
+  líneas y el fresnel de agua sobre la lámina.
+
+### Medida
+
+Disco de Miller en el hero de 1440×860, luminancia 0-255:
+
+| | referencia del dueño | §9 ter (rechazada) | ahora |
+| --- | --- | --- | --- |
+| media | 51.0 | 49.3 | **96.7** |
+| p50 | 47 | 44 | **94** |
+| p95 | 108 | 107 | **172** |
+| p99.5 | 154 | 188 | **216** |
+| croma medio | 0.397 | 0.327 | **0.373** |
+| disco en penumbra (<25) | 20.6 % | 19.3 % | **2.5 %** |
+| disco que compite (>140) | 1.0 % | 2.0 % | **23.7 %** |
+
+Y la animación, medida con `tools/body-metrics.mjs --difiere` sobre dos renders
+**del mismo instante** que sólo difieren en la fase del oleaje: el campo animado
+decide el 12.2 % del disco en el segundo 4 y el 29.3 % en el segundo 10 — crece
+con el tiempo, que es lo que hace un tren de ondas que avanza.
+
+**Y una trampa de medición que conviene no repetir.** El primer intento comparó
+dos INSTANTES distintos y dio 45 % del disco cambiando: parecía una prueba
+excelente de que el mar se movía. No lo era. Con todo el campo de oleaje
+congelado la cifra seguía siendo 46 %, porque Miller **gira sobre su eje** y una
+rotación rígida cambia todos los píxeles. Sobre un cuerpo que gira, la
+diferencia entre dos instantes no dice nada del material; hay que comparar dos
+renders de la misma pose.
+
 ## 10. Herramientas
 | script | para qué |
 |---|---|
@@ -1151,6 +1301,7 @@ confirma.
 | `tools/composition.mjs` | dónde cae cada destino en pantalla, en píxeles |
 | `tools/crop.mjs` | recorta y amplía una zona de una captura |
 | `tools/star-streaks.mjs` | cuánto se estiran las estrellas, por anillo de distancia |
+| `tools/body-metrics.mjs` | reparto de valores dentro del disco de un cuerpo |
 
 Las tres leen la escena real. Ninguna reimplementa su matemática: una copia de
 la proyección se desincronizaría el día que alguien tocara la pose, y entonces

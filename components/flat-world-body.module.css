@@ -61,7 +61,7 @@
   --flat-size: clamp(4.7rem, 5.75vw, 6.9rem);
 
   filter:
-    drop-shadow(0 0 0.34rem color-mix(in srgb, var(--flat-accent) 18%, transparent))
+    drop-shadow(0 0 0.28rem rgb(112 194 255 / 20%))
     drop-shadow(0 0 1.5rem rgba(0, 0, 0, 0.9));
 }
 
@@ -100,10 +100,10 @@
   opacity: 1;
 }
 
-/* Después del estado común para conservar el tungsteno también al enfocar. */
+/* El foco conserva la dispersión fría del nuevo cristal. */
 :global(.system-map__slot:not([data-target-state="idle"])) .tesseract {
   filter:
-    drop-shadow(0 0 0.34rem color-mix(in srgb, var(--flat-accent) 52%, transparent))
+    drop-shadow(0 0 0.34rem rgb(112 194 255 / 45%))
     drop-shadow(0 0 1.6rem rgba(0, 0, 0, 0.86));
 }
 

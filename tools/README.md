@@ -25,6 +25,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `disk-metrics.mjs` | área oscura e histograma de la banda del disco |
 | `epoch-ripple.mjs` | ondulación de luminancia a lo largo de un ciclo de épocas del disco |
 | `star-streaks.mjs` | cuánto se estiran las estrellas del fondo, por anillo de distancia al agujero |
+| `body-metrics.mjs` | reparto de valores dentro del disco de un cuerpo secundario |
 | `glsl-check.mjs` | falla si hay backticks dentro de los shaders |
 
 ## Las dos pruebas del contrato visual
@@ -120,6 +121,33 @@ Dos avisos que costaron un intento cada uno:
 - **El HUD contamina.** Los rótulos del raíl y del lado derecho caen dentro de
   los anillos exteriores y pesan más que las estrellas. Para comparar dos
   pasadas, captura con `--sin-rotulos` o mide ventanas de cielo limpio.
+
+## `body-metrics.mjs`, y la trampa de medir un cuerpo que gira
+
+`disk-metrics.mjs` mide la banda de Gargantúa y `star-streaks.mjs` el cielo;
+faltaba lo mismo para los cinco destinos secundarios, que es donde vive todo el
+trabajo de `docs/design/world-visual-language.md`. Recorta el círculo del cuerpo
+—centro y radio te los da `composition.mjs`— y saca media, percentiles, croma
+medio y qué fracción del disco está en penumbra o compite con el reflejo.
+
+```bash
+node tools/composition.mjs
+node tools/body-metrics.mjs --centro=429.8,222.6 --radio=46.6 antes despues
+```
+
+El par que importa casi siempre es **media contra p99.5**: bajar la media
+subiendo el pico es «repartir el valor», que es el movimiento que pide la fase 1
+del contrato visual; bajar las dos es simplemente apagar el cuerpo, y no es lo
+mismo. El **croma** distingue un mundo que se fue al color de uno que se fue al
+valor.
+
+`--difiere a b` compara dos capturas píxel a píxel dentro del disco. **Sobre un
+cuerpo que gira sobre su eje no mide la animación del material**, y esto costó
+dos pasadas: con todo el oleaje de Miller congelado, la diferencia entre el
+segundo 4 y el 10 seguía siendo 11.7 de media y el 46 % del disco, porque la
+rotación rígida cambia todos los píxeles. Para aislar lo que decide el material,
+compara dos renders **del mismo instante** que difieran sólo en el término que
+investigas.
 
 ## `composition.mjs` LEE la escena, no la reimplementa
 

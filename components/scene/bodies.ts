@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createTesseractModel } from "./tesseract-model";
 import {
   mergeGeometries,
   mergeVertices,
@@ -100,7 +101,11 @@ export function orbitalPosition(
   );
 }
 
-/** Traducción del modelo visual del contenido al índice que usa el shader. */
+/** Traducción del modelo visual del contenido al índice que usa el shader.
+ *
+ *  `tesseract` conserva su número aunque el material común ya no tenga una
+ *  rama para él: desde que el hipercubo tiene shader propio, este índice sólo
+ *  se lee para distinguir «tiene malla» de «la dibuja el raymarch». */
 const KIND: Record<WorldStructuralData["visual"], number> = {
   water: 0,
   desert: 1,
@@ -469,41 +474,62 @@ const BODY_FRAGMENT = /* glsl */ `
     /* Y sus corrientes zonales, que además de pintar tienen que ROMPER el
        reflejo extendido: una lámina de agua sin bandas se lee como gas. */
     float millerBands = 0.0;
+    /* Y la rotura de la cresta, que es lo que convierte el camino de luz en
+       una deformación del agua y no en una pincelada. Viaja resuelta por el
+       mismo motivo que la máscara de destello: sus tres ingredientes —veta de
+       bajío, oleaje y nube— viven en el bloque del material. */
+    float millerCrestFoam = 0.0;
 
     if (uKind == 0) {
       /*
-        Miller: océano global bajo una luz brutal.
+        Miller: un océano LUMINOSO, y esta vez con el mar en movimiento.
 
-        ── Qué fallaba ─────────────────────────────────────────────────────
-        La versión anterior se leía «bonita» y genérica: esfera azul luminosa a
-        medio camino entre planeta helado y gigante gaseoso. Cuatro cosas la
-        delataban, y ninguna era la silueta.
+        ── El giro de dirección (2026-09-06, quinta revisión) ───────────────
+        Las cuatro revisiones anteriores empujaron a Miller hacia lo oscuro y
+        lo austero: agua honda casi negra, nubes casi retiradas, croma bajo.
+        Técnicamente cada paso era correcto y el resultado conjunto no. El
+        dueño lo vio en una captura aislada y lo dijo sin rodeos — «está muy
+        apagado y oscuro». La referencia que dio es un mundo de agua ENCENDIDO:
+        cian y turquesa, con nubes que se ven y con superficie viva.
 
-        1. **Un foco frontal.** Una mancha blanca lechosa, redonda y centrada
-           que hacía de Miller una canica de cristal. No venía del especular
-           estrecho sino de una lámina de exponente 15 encima: un lóbulo tan
-           ancho que cubría un tercio del disco con luz plana.
-        2. **Nubes y espuma repartidas.** Motitas claras por todo el globo. A
-           tamaño de Hero eso no es meteorología, es textura de planeta.
-        3. **Un halo isótropo.** La atmósfera pesaba 1.12 y rodeaba el cuerpo
-           por igual, también donde no llega luz. Ayudaba a que se viera lindo;
-           no a que se viera creíble.
-        4. **Ninguna relación visible con Gargantúa.** La luz llegaba, pero
-           nada en el cuerpo decía DE DÓNDE.
+        Así que la meta cambia de sitio. No se defiende «océano» quitándole luz
+        al cuerpo: se defiende dándole COMPORTAMIENTO. Un gigante gaseoso no
+        tiene un camino de luz especular que se desplaza, ni destellos que
+        centellean, ni una cresta con espuma intermitente. Un océano sí, y eso
+        se lee igual de bien —mejor— sobre un cuerpo brillante.
 
-        ── La dirección ────────────────────────────────────────────────────
-        Más agua que nubes. Un océano continuo, frío y austero, con una lámina
-        de luz encima —no un punto— y el aire justo para tener volumen. Un
-        sitio silencioso, inundado y peligroso; no un planeta azul bonito.
+        Tres cosas nuevas y una recuperada:
 
-        Tres sitios de FBM y una octava suelta, exactamente el presupuesto
-        anterior: la cuenca, las vetas de bajío y la bruma. Lo que desaparece
-        —bandas de tormenta, rompientes, espuma— no se sustituye por más ruido
-        sino por menos.
+        1. **El mar se mueve.** La marejada, el rizo medio y el microoleaje
+           avanzan de verdad, no a la velocidad simbólica de antes. El sistema
+           sigue quieto como manda la dirección artística —Miller no recorre su
+           órbita— pero su SUPERFICIE respira, igual que el Tesseracto se
+           reconfigura sin salir de su envolvente.
+        2. **Las nubes vuelven a verse**, y se desplazan sobre el agua a otra
+           velocidad que el oleaje. Ese desfase es meteorología: es lo que
+           distingue una capa de vapor por encima de una superficie de un
+           patrón pintado sobre ella.
+        3. **La paleta se enciende.** Abismo azul de medianoche, océano cian,
+           bajíos turquesa y lagunas de aguamarina. Cinco aguas, no tres grises
+           azulados.
+        4. **La cresta se queda.** Es lo único de las cuatro revisiones
+           anteriores que el dueño aprobó explícitamente, y no depende de que
+           el cuerpo sea oscuro: sigue siendo una zona plateada estrecha con
+           espuma a tramos, sombra a un lado y ladera al otro.
+
+        Presupuesto intacto: tres sitios de FBM y una octava suelta. Ni un draw
+        call, ni una textura, ni un uniforme nuevo — la animación sale del
+        uTime que este shader ya recibía.
+
+        Y el movimiento no compromete la accesibilidad: con reduced-motion no
+        hay canvas (ver lib/effects-mode.ts), así que el mar sólo se mueve para
+        quien ya está viendo una escena en movimiento.
       */
       /* MACRO: la cuenca. Es la única escala que decide dónde el agua tiene
-         fondo, y la que hace que el planeta tenga sitios y no manchas. */
-      float basin = fbm(vLocal * 1.72 + vec3(2.7, 0.0, 5.1));
+         fondo, y la que hace que el planeta tenga sitios y no manchas. Baja de
+         1.72 a 1.55: masas algo más grandes, que es lo que deja sitio a que se
+         distingan los tres tonos de agua en vez de mezclarse en uno. */
+      float basin = fbm(vLocal * 1.55 + vec3(2.7, 0.0, 5.1));
       /* VETAS DE BAJÍO. Anisótropa —latitud comprimida ×2.8— y DEFORMADA por la
          macro: sin ese warp las vetas cruzan la cuenca y vuelven a ser ruido
          sobre una bola. Es el mismo truco que ordenó la geografía de Edmunds. */
@@ -512,233 +538,245 @@ const BODY_FRAGMENT = /* glsl */ `
       );
       /* Y una banda direccional larga que las peina. Un océano visto desde
          órbita tiene corrientes, que son PATRONES LARGOS; el detalle repartido
-         al azar es justo lo que se estaba quitando. */
+         al azar es justo lo que no se quiere. */
       float current = 0.5 + 0.5 * sin(
         dot(vLocal, vec3(5.3, 2.1, -3.9)) + shoal * 4.6
       );
       /*
-        CORRIENTES ZONALES, y son lo primero que se decide.
-
-        Aquí estaba el fallo que sobrevivió a tres pases. Las masas claras del
-        cuerpo salían de mezclar tres campos de pesos parecidos —macro, vetas y
-        corriente— y eso, por construcción, no puede dar otra cosa que una nube
-        isótropa: manchas blandas que el ojo lee como vapor, hielo o gas. Se ve
-        en un segundo pintando la máscara de bajío en un canal.
-
-        Ahora la voz que manda es una banda LATITUDINAL: sigue la curvatura del
-        cuerpo, no el ruido, y sobre la cara visible caen dos o tres. La macro y
-        las vetas siguen ahí, pero como perturbación, para que las bandas no
-        sean rayas de pijama. Cuesta cero sitios de FBM.
+        CORRIENTES ZONALES. Siguen mandando sobre la geografía: son una banda
+        LATITUDINAL, o sea que va con la curvatura del cuerpo y no con el ruido,
+        y sobre la cara visible caen dos o tres. La macro y las vetas entran
+        como perturbación para que no sean rayas de pijama.
       */
       float bandPhase = vLocal.y * 6.6 + basin * 0.8 - shoal * 0.4;
       millerBands = 0.5 + 0.5 * sin(bandPhase);
+      /*
+        Y EL BAJÍO SE ABRE, que es la mitad de por qué el cuerpo estaba oscuro.
+
+        La puerta valía (0.50, 0.86) sobre una suma cuyo máximo real ronda 0.9:
+        cubría un puñado de vetas finas y todo lo demás era agua honda. A
+        (0.30, 0.74) el bajío pasa a ser una PROVINCIA —un tercio largo del
+        cuerpo— y por fin hay superficie que iluminar. No era la paleta: era
+        cuánto cuerpo llegaba a los tonos claros de la paleta.
+      */
       float shallow = smoothstep(
-        0.5,
-        0.86,
-        millerBands * 0.5 + basin * 0.32 + shoal * 0.18
+        0.33,
+        0.76,
+        millerBands * 0.42 + basin * 0.40 + shoal * 0.20
       );
       /*
-        BRUMA, no capa de nubes. Alargada en longitud y con el umbral alto: lo
-        que queda son unas pocas bandas finas, no algodón repartido. Miller es
-        agua; la nube es lo que deja ver el agua, no lo que la tapa.
+        NUBES, y esta vez se ven.
+
+        Miller tiene una atmósfera de agua sobre un océano hervido por la marea:
+        lo raro era que casi no tuviera nube. Tres cambios respecto de la
+        «bruma» anterior:
+
+          · La puerta baja de (0.66, 0.90) a (0.40, 0.76). Deja de ser un
+            umbral de excepción y pasa a cubrir del orden de un cuarto del
+            cuerpo, que es lo que se ve en la referencia del dueño.
+          · La frecuencia baja de 2.85 a 2.35 y la compresión latitudinal de
+            3.4 a 2.3: sistemas nubosos GRANDES con brazos, no encaje fino. A
+            47 px de radio el encaje fino es grano.
+          · Y se MUEVEN, a 0.028 de longitud por segundo, casi tres veces más
+            rápido que la marejada. Ese desfase entre la nube y el agua de
+            debajo es lo que las separa en dos capas para el ojo.
       */
       millerWeather = fbm(
-        vec3(vLocal.x, vLocal.y * 3.4, vLocal.z) * 2.85
-          + vec3(uTime * 0.004, 0.0, 3.3)
+        vec3(vLocal.x, vLocal.y * 3.1, vLocal.z) * 2.45
+          + vec3(uTime * 0.028, 0.0, 3.3)
       );
-      float cloudCover = smoothstep(0.66, 0.9, millerWeather + current * 0.06);
-      /* Oleaje de superficie: no pinta color, sólo rompe la lámina de luz. */
-      float waveField = 0.5 + 0.5 * sin(
-        vLocal.y * 27.0 + vLocal.x * 6.0 + shoal * 4.8
+      float cloudCover = smoothstep(
+        0.47, 0.84, millerWeather + current * 0.06 + millerBands * 0.05
       );
-      /* Una octava: microoleaje, por debajo del píxel a esta distancia. */
-      float microWaves = noise(vLocal * 18.0 + vec3(uTime * 0.012, 0.0, 0.0));
-
       /*
-        MAREJADA. Dos trenes de onda largos, de gradiente exacto —la derivada
-        de un seno es un coseno, no cuesta una muestra más— que inclinan el
-        término lambert. En un mundo de olas de kilómetro, el terminador no es
-        una curva limpia: es una banda rota.
+        ── EL MAR SE MUEVE ──────────────────────────────────────────────────
 
-        Y AQUÍ ESTABAN LAS MANCHAS NEBULOSAS. Se veían como nube, hielo o gas y
-        se buscaron tres veces en la paleta y en la capa de nubes; no estaban
-        ahí. Dos trenes cruzados de amplitud parecida y número de onda ~21
-        producen un patrón de BATIDO —elipses de interferencia del tamaño de una
-        cuarta parte del cuerpo— que a esta distancia no se lee como oleaje sino
-        como manchas blandas sin dirección. Se ve de un vistazo pintando
-        reliefOffset en un canal.
+        Tres escalas de oleaje, las tres con gradiente ANALÍTICO —la derivada de
+        un seno es un coseno y no cuesta una muestra más— y las tres avanzando a
+        velocidades distintas. Que sean distintas es el punto: dos trenes a la
+        misma velocidad son un dibujo que se traslada; tres a velocidades
+        distintas son una superficie.
 
-        Bajarla a un tercio quitó las manchas pero dejó el océano sin su
-        estructura propia. La respuesta buena es cambiarle la ESCALA, no el
-        volumen: los números de onda caen de ~21 a ~5.2, o sea de doce crestas
-        sobre el diámetro a menos de dos. Lo que queda son dos o tres trenes
-        largos y oblicuos que cruzan las corrientes latitudinales, y el batido
-        entre ellos pasa a tener una escala MAYOR que el propio cuerpo — así que
-        ya no puede dibujar elipses dentro de él. El segundo tren pesa un quinto
-        del primero para que no salga un rayado regular.
-
-        A esa escala la amplitud vuelve a subir —0.013 sobre gradientes cuatro
-        veces menores— y ahora el tren manda también sobre el BRILLO, no sólo
-        sobre el difuso: una cresta larga devuelve luz distinta que un seno, y
-        eso es lo que hace inequívoco que la superficie es agua y no nube.
+        MAREJADA, número de onda ~5.2: dos o tres crestas sobre el diámetro. Su
+        velocidad sube de 0.05 a 0.19 rad/s, o sea de un movimiento simbólico
+        que sólo se apreciaba comparando capturas a un avance visible en unos
+        segundos. Sigue siendo lenta en términos de cuerpo: una cresta tarda del
+        orden de medio minuto en cruzar el disco.
       */
       vec3 swellA = vec3(3.7, -2.1, 2.9);
       vec3 swellB = vec3(-2.4, 3.2, 4.1);
-      float swellPhaseA = dot(vLocal, swellA) + uTime * 0.05;
-      float swellPhaseB = dot(vLocal, swellB) - uTime * 0.037;
+      float swellPhaseA = dot(vLocal, swellA) + uTime * 0.19;
+      float swellPhaseB = dot(vLocal, swellB) - uTime * 0.135;
       vec3 swellSlope = swellA * cos(swellPhaseA) * 0.8
                       + swellB * cos(swellPhaseB) * 0.2;
       vec3 oceanUp = normalize(vLocal);
       vec3 swellTangent = swellSlope - oceanUp * dot(swellSlope, oceanUp);
+      /* La nube apaga el relieve porque tapa el agua, no porque la aplane. */
       reliefOffset = -dot(swellTangent, normalize(vLightLocal))
-                   * 0.013 * (1.0 - cloudCover * 0.55);
-      /* Y la cresta larga también decide cuánto refleja: es la mitad de por qué
-         se lee como lámina de agua y no como bruma. */
+                   * 0.016 * (1.0 - cloudCover * 0.55);
+      /*
+        RIZO MEDIO, y es el que de verdad se ve moverse. Número de onda 13.5
+        —unas cuatro crestas sobre el diámetro visible— a 0.62 rad/s. No pinta
+        color, porque a esta distancia el pigmento a esa escala es grano: lo que
+        hace es inclinar la lámina y modular el brillo, que es exactamente como
+        se ve el viento sobre el agua desde arriba.
+      */
+      vec3 rippleDir = vec3(-1.9, 5.4, 3.1) * 2.2;
+      float ripplePhase = dot(vLocal, rippleDir) + uTime * 0.62 + shoal * 3.1;
+      float ripple = 0.5 + 0.5 * sin(ripplePhase);
+      vec3 rippleSlope = rippleDir * cos(ripplePhase);
+      vec3 rippleTangent = rippleSlope - oceanUp * dot(rippleSlope, oceanUp);
+      reliefOffset += -dot(rippleTangent, normalize(vLightLocal))
+                    * 0.0021 * (1.0 - cloudCover * 0.7);
+      /* Y la cresta larga decide cuánto refleja: es la mitad de por qué se lee
+         como lámina de agua y no como bruma. */
       float swellCrest = 0.5 + 0.5 * cos(swellPhaseA);
+      /* Oleaje corto: no pinta, sólo pica la lámina de luz. Y avanza. */
+      float waveField = 0.5 + 0.5 * sin(
+        vLocal.y * 27.0 + vLocal.x * 6.0 + shoal * 4.8 + uTime * 1.15
+      );
+      /* Una octava de ruido: microoleaje, por debajo del píxel a esta
+         distancia, y el responsable de que el destello CENTELLEE en vez de
+         quedarse quieto. Su deriva sube de 0.012 a 0.24. */
+      float microWaves = noise(
+        vLocal * 18.0 + vec3(uTime * 0.24, uTime * 0.09, 0.0)
+      );
 
       /*
-        PALETA: azul grisáceo, no cyan de piscina.
+        ── PALETA: cinco aguas ──────────────────────────────────────────────
 
-        Los tres tramos de profundidad se conservan —son lo que da fondo al
-        agua— pero bajan croma y suben contraste entre sí. El bajío era
-        (0.09, 0.47, 0.55): un turquesa eléctrico que a tamaño de Hero se leía
-        como hielo iluminado. Pierde un quinto de saturación y algo de valor, y
-        la lectura pasa de «bola azul brillante» a «océano con plataforma».
+        La revisión anterior tenía tres tonos y los tres oscuros: petróleo, azul
+        acero y un bajío gris. Aquí hay cinco y suben todos, con el salto de
+        croma repartido en la parte ALTA de la rampa — el abismo se queda
+        profundo porque es lo que sigue dando la escala, y lo que se enciende es
+        el agua que recibe luz.
+
+          abismo   (0.012, 0.052, 0.104)  azul de medianoche, no negro
+          océano   (0.048, 0.223, 0.348)  el tono base, cian marino
+          bajío    (0.132, 0.470, 0.545)  turquesa: la provincia iluminada
+          laguna   (0.268, 0.632, 0.628)  aguamarina, sólo donde la corriente
+                                          cruza el bajío
+          nube     (0.780, 0.855, 0.900)  blanco frío, con el agua por debajo
       */
-      /* El extremo profundo baja otro tercio (2026-09-06). Un océano sin fondo
-         negro no se lee como profundo, y el fondo es lo que da la escala: si el
-         agua más honda del cuerpo está a 0.078 de azul, el camino de luz sólo
-         le saca tres paradas y la lectura vuelve a ser «bola azul con brillo».
-         El contraste entre el agua honda y el reflejo es literalmente la única
-         relación de valores que tiene este mundo. */
-      albedo = mix(vec3(0.004, 0.017, 0.060), vec3(0.019, 0.086, 0.208), basin);
-      /* Las bandas se pintan POCO a propósito: el dueño las pidió «muy
-         sutiles», y una banda de color fuerte vuelve a leerse como nube. Lo que
-         las hace visibles es la inclinación de la lámina, no el pigmento. */
-      albedo = mix(albedo, vec3(0.062, 0.19, 0.376), shallow * 0.30);
-      /* El acento somero es una VETA, no un continente: sale del cruce de la
-         corriente con el bajío, así que sigue una dirección. */
+      albedo = mix(vec3(0.010, 0.046, 0.112), vec3(0.036, 0.212, 0.372), basin);
+      albedo = mix(albedo, vec3(0.098, 0.398, 0.508), shallow * 0.66);
+      /* La laguna es una VETA, no un continente: sale del cruce de la corriente
+         con el bajío, así que sigue una dirección. */
       albedo = mix(
         albedo,
-        vec3(0.126, 0.298, 0.472),
-        shallow * smoothstep(0.62, 0.94, current) * 0.22
+        vec3(0.232, 0.560, 0.586),
+        shallow * smoothstep(0.58, 0.92, current) * 0.34
       );
       /*
-        CORRIENTES ZONALES: lo que hace que el cerebro diga AGUA.
-
-        Las masas grandes ya estaban bien, pero eran blandas: nubosas por
-        dentro, y una mancha suave azul claro se puede leer como nube, hielo o
-        gas. Lo que faltaba era DIRECCIÓN a escala del planeta.
-
-        Tres bandas largas siguiendo la curvatura —van con la latitud del
-        cuerpo, no con el ruido— y perturbadas por la macroforma para que no
-        sean rayas de pijama. No es textura de oleaje: a 47 px de radio unas
-        olitas son grano y desaparecen. Es la variación grande de la lámina
-        oceánica: dónde el agua devuelve luz y dónde la traga. Y por eso el
-        término principal que modulan no es el color sino el BRILLO, aquí y en
-        el reflejo extendido de más abajo.
-
-        Cuesta cero sitios de FBM: la perturbación sale de basin y de shoal,
-        que ya estaban calculados.
+        CORRIENTES OSCURAS. Sobreviven al giro de dirección porque no son
+        oscuridad general: son masas ALARGADAS —la cuenca cruzada con la banda
+        direccional— que separan una provincia de agua de la siguiente. Sin
+        ellas, un cuerpo encendido se convierte en una bola de color plano. Lo
+        que baja es su fuerza, de 0.46 a 0.26: cortan, no apagan.
       */
+      float darkCurrent = smoothstep(0.60, 0.26, basin * 0.66 + current * 0.34);
+      albedo *= 1.0 - darkCurrent * 0.26;
       /*
-        Y LAS BANDAS INCLINAN LA LÁMINA, que es lo que las hace agua.
-
-        Pintarlas en el albedo no bastaba: a esta distancia un ±17 % de color
-        sobre un cuerpo oscuro son seis niveles de gris y el ojo los lee como
-        más nube. Lo que se ve en un océano de verdad no es que el agua cambie
-        de color por franjas — es que la lámina está inclinada por franjas y
-        devuelve la luz de otra manera.
-
-        Mismo truco de gradiente analítico que la marejada, una escala por
-        encima: la derivada de la fase respecto de la posición es la constante
-        de la banda por el coseno, así que no cuesta una muestra más. El efecto
-        aparece fuerte cerca del terminador —donde una inclinación pequeña
-        decide entre luz y sombra— y suave en pleno día, que es exactamente
-        cómo se comporta un mar iluminado de refilón.
+        LAS BANDAS INCLINAN LA LÁMINA, que es lo que las hace agua. Pintarlas en
+        el albedo no basta: lo que se ve en un océano de verdad no es que el
+        agua cambie de color por franjas, es que la lámina está inclinada por
+        franjas y devuelve la luz de otra manera. Gradiente analítico: la
+        derivada de la fase es la constante de la banda por el coseno.
       */
       vec3 bandSlope = vec3(0.0, 6.6, 0.0) * cos(bandPhase);
       vec3 bandTangent = bandSlope - oceanUp * dot(bandSlope, oceanUp);
-      reliefOffset += -dot(bandTangent, normalize(vLightLocal)) * 0.023;
+      reliefOffset += -dot(bandTangent, normalize(vLightLocal)) * 0.019;
       /*
-        MICROCONTRASTE, un realce local del 7 %.
-
-        A tamaño de Hero el planeta corría el riesgo de leerse como una bola
-        azul ligeramente desenfocada: masas correctas, ningún filo. Esto es un
-        unsharp barato sobre la escala MEDIA —la que ya decide regiones— y no
-        sobre el grano: multiplica por la desviación de shoal respecto de su
-        media, así que aclara lo que ya era claro y hunde lo que ya era oscuro
-        sin inventar estructura nueva ni tocar la jerarquía de masas.
+        ESCALA MEDIA: líneas suaves que siguen la curvatura. Es el tercer
+        armónico de la misma banda latitudinal —nueve líneas sobre la cara
+        visible en vez de tres—, desfasado por la veta de bajío para que no sea
+        un rayado de regla y picado por la banda grande, así que sólo aparece
+        dentro de una corriente. Cuesta un seno.
       */
-      albedo *= 1.0 + (shoal - 0.47) * 0.7;
+      float detailPhase = bandPhase * 3.0 + shoal * 2.4;
+      albedo *= 1.0 + sin(detailPhase) * millerBands * 0.13;
+      vec3 detailSlope = vec3(0.0, 19.8, 0.0) * cos(detailPhase);
+      vec3 detailTangent = detailSlope - oceanUp * dot(detailSlope, oceanUp);
+      reliefOffset += -dot(detailTangent, normalize(vLightLocal))
+                    * 0.0030 * millerBands;
+      /* MICROCONTRASTE: un unsharp barato sobre la escala MEDIA, no sobre el
+         grano. Aclara lo que ya era claro y hunde lo que ya era oscuro sin
+         inventar estructura nueva ni tocar la jerarquía de masas. */
+      albedo *= 1.0 + (shoal - 0.47) * 0.62;
       albedo *= 0.94 + millerBands * 0.12;
-      /*
-        Un hemisferio algo más profundo que el otro. Catorce puntos de
-        luminancia sobre una dirección fija, sin ruido nuevo: lo justo para que
-        el brillo no esté repartido con simetría de render.
-      */
+      /* Un hemisferio algo más profundo que el otro, sobre una dirección fija y
+         sin ruido nuevo: lo justo para que el brillo no esté repartido con
+         simetría de render. */
       float hemisphere = smoothstep(
         -0.55, 0.72, dot(oceanUp, vec3(0.38, 0.46, -0.80))
       );
-      albedo *= mix(0.84, 1.06, hemisphere);
-      /* Nube fría y apagada. Ni blanca ni cálida: es vapor sobre agua helada.
-         Y pesa 0.16, no 0.26 (2026-09-06). Las masas pálidas eran el ÚNICO
-         competidor del camino de luz, y a tamaño de hero competían y ganaban:
-         lo primero que veía el ojo eran manchas claras sobre azul, que es la
-         firma de un planeta nuboso. Bajarlas no quita meteorología —las bandas
-         siguen ahí— sino que devuelve la jerarquía: el sitio más brillante del
-         cuerpo tiene que ser el reflejo de Gargantúa, y sólo ése. */
-      albedo = mix(albedo, vec3(0.398, 0.486, 0.588), cloudCover * 0.09);
+      albedo *= mix(0.88, 1.08, hemisphere);
+      /*
+        Y LA NUBE PESA 0.62, no 0.055.
+
+        Aquí estaba la otra mitad del apagón. La revisión anterior había dejado
+        la nube en un tinte del 5 %, o sea invisible, y el argumento era que las
+        masas pálidas competían con el camino de luz. Y competían — pero la
+        respuesta buena no era borrarlas, era darles OTRA NATURALEZA. Una nube
+        se distingue de un reflejo por tres cosas y ninguna es el brillo: se
+        mueve a su propio ritmo, mata el especular de debajo, y tiene borde. Las
+        tres están puestas, así que la nube ya puede ser tan clara como pide la
+        referencia sin volver a confundirse con el reflejo.
+      */
+      albedo = mix(albedo, vec3(0.800, 0.868, 0.905), cloudCover * 0.30);
       /*
         BRILLO. El agua es la superficie más reflectiva del sistema, y por eso
         el mando no es «cuánto» sino «con qué forma». Aquí sólo queda el suelo;
         la forma la ponen el lóbulo anisótropo y el destello del oleaje, más
         abajo, ya con la luz resuelta.
+
+        Y la nube lo mata: 0.06 bajo cobertura total. Es la propiedad que impide
+        que una nube blanca se lea como reflejo, por clara que sea.
       */
-      gloss = mix(0.92, 0.08, cloudCover);
-      gloss *= 0.62 + waveField * 0.22 + microWaves * 0.2;
-      /* Y las bandas mandan sobre el brillo más que sobre el color: es la
+      gloss = mix(0.95, 0.06, cloudCover);
+      gloss *= 0.58 + waveField * 0.22 + microWaves * 0.2;
+      /* Las bandas mandan sobre el brillo más que sobre el color: es la
          diferencia entre pintar rayas y tener corrientes. */
       gloss *= 0.6 + millerBands * 0.72;
-      gloss *= 0.68 + swellCrest * 0.58;
-      /* La máscara del destello viaja resuelta: quien la usa está veinte líneas
-         más abajo y no tiene acceso al oleaje ni a la nube. */
-      millerGlitterMask = smoothstep(0.30, 0.88, waveField * 0.58 + microWaves * 0.42)
-                        * (1.0 - cloudCover * 0.82);
+      gloss *= 0.66 + swellCrest * 0.56;
+      /* Y el rizo medio, que es el que se ve moverse. */
+      gloss *= 0.74 + ripple * 0.44;
+      /* La máscara del destello viaja resuelta: quien la usa está doscientas
+         líneas más abajo y no tiene acceso al oleaje ni a la nube. Con el
+         microoleaje animado, esta máscara CENTELLEA. */
+      millerGlitterMask = smoothstep(0.28, 0.86, waveField * 0.55 + microWaves * 0.45)
+                        * (1.0 - cloudCover * 0.88);
       /*
-        EL NÚCLEO ISÓTROPO CASI DESAPARECE, y ésta es la línea que quita la
-        mancha blanca.
+        ESPUMA POR SEGMENTOS, y aquí empieza la cresta.
 
-        Valía 74 de exponente y 0.82 de peso, y ahí estaba el foco de plató:
-        con exponente 74 el lóbulo cae a 1/e a ocho grados de normal, que sobre
-        un cuerpo de 47 px de radio son catorce píxeles de diámetro —un tercio
-        del planeta— saturados a blanco. Bajarle el peso no arreglaba la FORMA:
-        un disco redondo y liso encima de un océano sigue siendo una canica.
-
-        A 320 y 0.12 lo que queda es el corazón caliente del reflejo, cuatro
-        píxeles, dentro de la lámina anisótropa que sí tiene dirección. Aquí es
-        donde el cuerpo deja de parecer iluminado de frente.
+        «Espuma únicamente en algunos segmentos» — el dueño, en la revisión
+        anterior, y es lo único de aquel pase que sigue en pie tal cual. Una
+        deformación de mil kilómetros no rompe entera: rompe a trozos. Lo que
+        manda es por tanto una escala GRANDE —la veta de bajío— y no el oleaje;
+        el oleaje sólo pica por dentro de cada tramo, y ahora además hace que
+        los tramos HIERVAN, porque el microoleaje avanza.
+      */
+      millerCrestFoam = smoothstep(0.42, 0.58, shoal)
+                      * (0.38 + 0.62 * smoothstep(0.24, 0.86, waveField * 0.6 + microWaves * 0.4))
+                      * (1.0 - cloudCover * 0.74);
+      /*
+        EL NÚCLEO ISÓTROPO. Exponente 320 y peso bajo: lo que queda es el
+        corazón caliente del reflejo, unos pocos píxeles, dentro de la lámina
+        anisótropa que sí tiene dirección. Sube de 0.085 a 0.16 con el resto del
+        cuerpo, pero no cambia de FORMA — la mancha blanca redonda de las
+        primeras versiones venía de un exponente 74, no de este peso.
       */
       specularPower = 320.0;
-      specularStrength = 0.085;
+      specularStrength = 0.16;
       /*
-        ATMÓSFERA FINA, y esto es la mitad del arreglo.
-
-        Pesaba 1.12 y era un halo isótropo: rodeaba el cuerpo por igual, cara
-        noche incluida, y lo dejaba flotando dentro de un aro azul de interfaz.
-        Baja a 0.3 —el mismo orden que Edmunds— y el aire que de verdad se ve
-        pasa a ser el filo direccional del bloque uKind == 0 de más abajo. El
-        color pierde algo de croma para no volver a competir con el ámbar.
+        ATMÓSFERA. Vuelve a pesar de verdad —0.09 → 0.34— porque un mundo de
+        agua con aire tiene halo, y el halo es parte de por qué la referencia
+        del dueño se ve encendida. Sigue muy por debajo del 1.12 original, que
+        era el que rodeaba el cuerpo por igual también en la cara noche; el aire
+        CON DIRECCIÓN lo sigue poniendo el filo del bloque de más abajo.
       */
-      atmosphere = vec3(0.196, 0.436, 0.756);
-      /* 0.20, no 0.30. El halo COMÚN desborda hasta ndl = −0.45, así que buena
-         parte de la línea pálida que rodeaba el limbo salía de aquí y no del
-         filo propio. Termina en 0.09: el halo común usa exponente 2.2 y desborda
-         hasta ndl = −0.45, así que por construcción NO PUEDE ser direccional —
-         cualquier valor que se le deje pinta también el hemisferio que no mira
-         a Gargantúa. Lo que se le quita se le devuelve entero al filo propio,
-         que sí sabe dónde está la fuente. */
-      atmosphereWeight = 0.09;
+      atmosphere = vec3(0.216, 0.492, 0.784);
+      atmosphereWeight = 0.26;
     } else if (uKind == 1) {
       /* Edmunds: roca seca, hierro y arena bajo la luz de Gargantúa.
          La macro decide provincias; la escala media sigue sus límites; el
@@ -875,321 +913,6 @@ const BODY_FRAGMENT = /* glsl */ `
       specularPower = 56.0;
       specularStrength = 0.18;
       /* El aire se resuelve abajo como filo direccional. Sin halo común. */
-    } else if (uKind == 2) {
-      /*
-        Tesseracto: grafito casi negro, metal frío y filos blanco-crema.
-
-        ── Lo que cambia respecto de la versión anterior ────────────────────
-        Aquel material era CASI TODO EMISIÓN: un canal ámbar recorriendo cada
-        viga, más una jaula interior que era literalmente albedo = 0 con
-        emisión pura. Encender todas las aristas por igual es, sin rodeos,
-        dibujar el wireframe que la dirección artística prohíbe — y además
-        salía por un atajo del final de este shader que se saltaba difuso,
-        especular, relleno y contraluz. El único cuerpo del sistema que no
-        obedecía a Gargantúa era justo el que tenía que ser el más raro.
-
-        Ahora pasa por el mismo modelo de luz que todo lo demás y la forma la
-        revelan highlights, intersecciones, rim y diferencias de rugosidad. Lo
-        único que emite son las ranuras de tungsteno de los dos marcos
-        profundos y la costura tenue de las piezas transversales. El resto es
-        material. Ningún emisivo frío: este cuerpo no toca el secundario cian.
-
-        Las UV siguen siendo las de la barra —u cruza la sección, v la
-        recorre—, así que todo el detalle es procedural: ni textura que se
-        pixele al acercarse ni línea que se quede en un píxel al alejarse.
-      */
-      float along = vUv.y;
-      float across = abs(vUv.x - 0.5);
-
-      /*
-        El chaflán es lo que da SECCIÓN.
-
-        Las barras ya llegan con el canto redondeado, así que la normal hace
-        casi todo el trabajo; esto sube el pulido de los últimos milímetros del
-        filo, que es donde la clave del disco deja la línea blanco-crema que
-        dibuja la figura.
-
-        Iba de 0.36 a 0.49 —un filo estrechísimo, para que no se encendiera la
-        arista entera— y con las vigas nuevas se volvió en contra: una viga de
-        la caja mide ahora cinco píxeles en pantalla, así que ese filo caía por
-        debajo del píxel y, sin antialias, salía roto en una fila de CUENTAS a
-        lo largo del canto. El mismo fallo que ya está documentado dos veces en
-        este cuerpo, otra vez por la misma causa. De 0.29 a 0.5 el filo mide dos
-        píxeles y vuelve a ser una línea; para que no encienda la barra entera,
-        lo que baja es su fuerza, no su ancho.
-      */
-      // El filo integra la huella del píxel: no desaparece entre muestras
-      // cuando una cara oblicua queda por debajo del píxel en el hero.
-      float faceFootprint = fwidth(vUv.x);
-      float pixelAcross = min(faceFootprint * 0.5, 0.25);
-      float chamfer = smoothstep(0.29 - pixelAcross, 0.5 + pixelAcross, across);
-      // Al no resolverse el ancho de una cara, usamos la cobertura media del
-      // bisel (21 %). Así el especular no convierte vigas finas en cuentas.
-      chamfer = mix(chamfer, 0.21, smoothstep(0.16, 0.48, faceFootprint));
-      /*
-        Grano de laminación, de frecuencia MUY baja: menos de un ciclo de lado a
-        lado de la barra. A tamaño de Hero una barra mide siete píxeles, y a esa
-        talla sin(across * 21) no es veta — son cuatro píxeles por ciclo, o sea
-        una barra de puntos. Fue exactamente lo que salió en la primera captura.
-      */
-      float grain = 0.5 + 0.5 * sin(across * 7.0 + along * 1.6);
-
-      /*
-        Grafito, no gris medio: la estructura tiene que ABSORBER la luz para que
-        lo poco que devuelve se lea como filo y no como superficie.
-
-        Y el especular de la CARA baja mucho —0.3 de fuerza sobre 0.16 de
-        gloss— mientras el del FILO sube. Esto es lo que arregló la primera
-        versión, que salía gris claro y uniforme: con la cara devolviendo tanto
-        como el canto, una barra de siete píxeles es toda highlight y el objeto
-        vuelve a ser un wireframe, sólo que más gordo. Aquí la cara es casi
-        negra y la línea blanco-crema del canto dibuja la figura ella sola.
-
-        Importa más de lo normal porque a este cuerpo la luz le llega CASI DE
-        FRENTE: está al otro lado de Gargantúa, así que la fuente queda entre él
-        y la cámara. Sin terminador que reparta valores, todo el modelado
-        depende de la diferencia entre cara y canto.
-      */
-      albedo = mix(
-        vec3(0.015, 0.016, 0.019),
-        vec3(0.04, 0.042, 0.047),
-        grain * 0.5
-      );
-      /*
-        Y el filo es CREMA CÁLIDO, no acero azulado.
-
-        Iba en vec3(0.46, 0.472, 0.5) —más azul que rojo— y con eso el objeto
-        salía gris neutro dentro de un sistema iluminado por un disco de
-        acreción dorado. Un cuerpo cuyo reflejo no coincide con su fuente se lee
-        como pegado encima de la escena, que es el diagnóstico que ya está
-        escrito para la Ranger unas líneas más abajo. La dirección pide
-        exactamente esto: grafito casi negro y bordes blanco-crema ligeramente
-        cálidos.
-      */
-      /*
-        Y EL FILO SE ENCIENDE POR ORIENTACIÓN, no por pintura.
-
-        Subiendo el albedo del chaflán se encendían las aristas TODAS POR IGUAL
-        —incluidas las que dan la espalda al disco— y eso es literalmente volver
-        a dibujar el wireframe, que es lo que la dirección artística prohíbe.
-        Así que el chaflán aporta poco albedo y casi todo especular: sólo brilla
-        el canto cuya cara está orientada hacia Gargantúa, y el resto se queda
-        en grafito. La luz vuelve a decidir qué se ve.
-
-        El lóbulo del filo es ANCHO (potencia 20) y el de la cara estrecho (55),
-        que parece al revés y no lo es: un chaflán no es una superficie pulida
-        plana, es un filete que barre noventa grados de normales en un milímetro.
-        Su respuesta integrada es ancha por construcción. La cara sí es plana, y
-        una cara plana casi negra tiene que devolver un filete estrecho o vuelve
-        a lavarse.
-      */
-      /* Y un degradado suave a lo ancho antes del filo: el centro de la cara
-         más apagado que sus bordes. Una placa real tiene bisel, y sin este
-         medio tono la cara de doce píxeles sale de un solo valor plano — que
-         es lo que hacía que el conjunto se leyera como cartón recortado. */
-      albedo *= 0.55 + 0.65 * across;
-      /*
-        EL REPARTO, que es lo que dirección pidió en números: 70-80 % de grafito
-        muy oscuro, 15-20 % de highlight crema-cobre y muy poco emisivo. Antes
-        el cuerpo entero flotaba en un beige uniforme y eso lo integraba con
-        Gargantúa a costa de aplanarle el material: parecía naturalmente dorado
-        en vez de parecer ILUMINADO por un disco dorado, que no es lo mismo.
-
-        El grafito baja otro 35 % y el cobre del chaflán sube de saturación pero
-        NO de superficie: sigue entrando por especular, así que sólo se enciende
-        el canto cuya cara mira al disco. El calor pasa a ser una respuesta a la
-        fuente y deja de ser el color del objeto.
-
-        Corrección del lavado (2026-09-04): el cobre del chaflán teñía el ALBEDO
-        (0.3 de mezcla) y el barrido posterior encendía las CARAS enteras, así
-        que cara + canto devolvían calor a la vez y el objeto salía beige. El
-        cobre baja a 0.22 de mezcla y toda la luz cálida de superficie se mueve
-        al especular orientado: la cara se queda en grafito salvo que su normal
-        mire al disco.
-      */
-      albedo = mix(albedo, vec3(0.31, 0.33, 0.35), chamfer * 0.10);
-      gloss = mix(0.035, 0.72, chamfer);
-      specularPower = mix(68.0, 18.0, chamfer);
-      /*
-        0.9, no 1.7. Con 1.7 TODOS los cantos que miraban al disco reventaban a
-        la vez y el objeto dibujaba su wireframe completo en crema: a este
-        cuerpo la luz le llega casi de frente, así que sin estrechar el filo
-        toda barra devuelve lo mismo. Estrecho y contenido, el canto que mira a
-        Gargantúa llega a crema y el resto se queda en grafito.
-
-        Y baja otra vez, de 0.46 a 0.40, al separar la caja exterior de los
-        marcos: este ramo es ahora SÓLO el exterior, y la dirección lo quiere
-        casi a oscuras. Los marcos de dentro suben hasta 0.95 en su propio
-        ramo, así que la diferencia entre fuera y dentro es de más del doble —
-        que es lo que hace legibles las capas a 55 px.
-      */
-      specularStrength = 0.022 + chamfer * 0.17;
-
-      /*
-        OCLUSIÓN DE CAVIDAD, analítica.
-
-        La escena no tiene sombras proyectadas, y a ningún otro cuerpo le hacen
-        falta: una esfera y un casco convexo se explican con su terminador. Este
-        no. Es una estructura hueca —una caja de vigas con tres marcos dentro— y
-        además le llega la luz casi de frente, así que sin nada más TODAS sus
-        caras devuelven lo mismo y el conjunto se lee como un anillo de cartón
-        gris. Es lo que salió en las tres primeras capturas.
-
-        Lo que falta es saber qué caras miran al hueco. Y eso sí es barato: el
-        producto escalar de la normal con la dirección radial del propio punto.
-        Positivo hacia fuera, negativo hacia dentro. Las caras que miran al eje
-        ven menos cielo y menos disco, así que se apagan; las de fuera se quedan
-        como están. Ni un shadow map, ni una muestra de ruido, y aparece la
-        profundidad del túnel.
-      */
-      float cavity = clamp(-dot(normalize(vNormalL), normalize(vLocal)), 0.0, 1.0);
-      // El interior recoge más rebote del mismo disco. Conserva sus escalones
-      // de material incluso con emisión y bloom a cero.
-      float innerFrame = step(1.5, vSurfaceMask) * (1.0 - step(4.5, vSurfaceMask));
-      materialOcclusion = 1.0 - cavity * mix(0.86, 0.60, innerFrame);
-
-      /*
-        DOS COSAS QUE SÓLO EXISTEN EN ESTE CUERPO, y las dos van aquí porque las
-        usan los tres escalones de dentro.
-
-        ── El sesgo hacia el vacío ─────────────────────────────────────────────
-        La cavidad ya sabe qué caras miran al eje. Reutilizarlo para el calor hace
-        que el tungsteno se encienda POR DENTRO de cada marco y se apague por
-        fuera: el brillo deja de ser un color de la pieza y pasa a ser lo que se
-        ve al asomarse. Es la diferencia entre un marco pintado de ámbar y un
-        marco con algo encendido detrás.
-
-        ── La respiración ──────────────────────────────────────────────────────
-        El mismo pulso llega con retraso a cada profundidad: la caja no
-        respira, el primer marco apenas, el del fondo es el que late.
-        Va en el shader y no en el modelo a propósito:
-        es luz, no geometría, así que no toca la silueta, no puede desalinear
-        una pieza y no cuesta ni una matriz. Y como pasa por el escalado global
-        de emisivos, el banco de bloom-off la apaga con todo lo demás.
-      */
-      float inward = 0.55 + 0.9 * cavity;
-      // El calor cruza las capas con retraso: no se enciende toda la caja a la vez.
-      float breath2 = 0.83 + 0.17 * sin(uTime * 0.72 + along * 2.0);
-      float breath3 = 0.76 + 0.24 * sin(uTime * 0.72 - 1.4 + along * 2.0);
-      float breath4 = 0.73 + 0.27 * sin(uTime * 0.72 - 2.8 + along * 2.0);
-
-      /*
-        LA JERARQUÍA LUMINOSA, que es la mitad del diseño de este cuerpo.
-
-        La dirección la pidió en una escala: caja ~10, marco 2 ~18, marco 3 ~28,
-        marco 4 ~40 y el filo del vacío ~55. No son valores literales de un
-        uniform, es el orden: la luz sube hacia adentro y por eso el ojo entra.
-        Al revés —o plano, que era el fallo de la versión anterior— la estructura
-        entera se enciende a la vez y vuelve a salir un wireframe grueso.
-
-        Cada escalón sube TRES cosas juntas: el grafito se aclara y se
-        entibia, el filo devuelve más, y el tungsteno emite más. Con una sola de
-        las tres el escalón no se ve a 55 px.
-
-        La rampa se abrió el 2026-09-04 (0.15/0.30/0.62 → 0.12/0.36/0.95 de
-        emisivo, y el filo cálido con ella). Con la caja casi de frente el
-        recorrido hacia dentro pasó a ser LA lectura del objeto, y con los
-        escalones anteriores los tres marcos llegaban demasiado parecidos: el
-        ojo veía cuadrados concéntricos en vez de viajar. Ahora el primero es
-        más sobrio que antes y el fondo bastante más caliente — la diferencia
-        entre marcar la profundidad y describirla.
-
-        ── Por qué el tungsteno es un DEGRADADO ANCHO y no una ranura ────────
-        Iba como ranura de 0.05 de ancho, que es el 10 % de la cara de la barra.
-        A tamaño de Hero una barra interior mide tres píxeles, así que la ranura
-        medía tres décimas de píxel: en la captura no salía una línea, salía un
-        RASTRO DE CUENTAS —el mismo fallo del grano de laminación que ya está
-        documentado arriba, y por la misma causa—. Ahora el calor ocupa el 60 %
-        central de la cara con bordes suaves: a tres píxeles es una barra que
-        brilla, y al acercar la cámara sigue siendo un degradado y no un borde
-        duro.
-      */
-      if (vSurfaceMask > 4.5) {
-        /*
-          EL FONDO: marco trasero y tirantes de fuga.
-
-          Es la única máscara que ROMPE el orden de brillo, y a propósito: 0 a 4
-          suben hacia adentro, y ésta se sale de la escala por abajo. Lo que
-          está detrás tiene que llegar MÁS APAGADO que la caja de delante o no
-          se lee como fondo, se lee como calco. Grafito casi negro, sin cobre en
-          el albedo, sin emisivo y con el filo apenas encendido: sólo lo justo
-          para que sus esquinas se despeguen del cielo cuando asoman por los
-          lados.
-        */
-        albedo = mix(vec3(0.025, 0.026, 0.029), vec3(0.07, 0.069, 0.066), grain * 0.5);
-        albedo *= 0.6 + 0.5 * across;
-        gloss = mix(0.05, 0.5, chamfer);
-        specularPower = mix(72.0, 26.0, chamfer);
-        specularStrength = 0.05 + chamfer * 0.48;
-      } else if (vSurfaceMask > 3.5) {
-        /*
-          MARCO 4 — el fondo del recorrido. Es el más pequeño y el más caliente:
-          la única luz fuerte del cuerpo, y está al final. Desde el Hero se lee
-          como una brasa dentro del vacío; al acercar la cámara se descubre que
-          lo que brilla es una ranura embutida en una viga, no un núcleo.
-        */
-        albedo = mix(vec3(0.045, 0.042, 0.035), vec3(0.14, 0.125, 0.095), grain * 0.5);
-        albedo *= 0.4 + 0.85 * across;
-        albedo = mix(albedo, vec3(0.76, 0.65, 0.46), chamfer * 0.36);
-        gloss = mix(0.1, 0.72, chamfer);
-        specularPower = mix(54.0, 19.0, chamfer);
-        specularStrength = 0.18 + chamfer * 1.25;
-
-        float glow = 1.0 - smoothstep(0.1, 0.42, across);
-        float run = smoothstep(0.12, 0.3, along) * (1.0 - smoothstep(0.7, 0.9, along));
-        albedo = mix(albedo, vec3(0.024, 0.016, 0.011), glow * 0.5);
-        float threshold = step(4.1, vSurfaceMask);
-        float depthHeat = mix(0.58, 0.84, threshold);
-        float depthBreath = mix(breath4, 0.78 + 0.22 * sin(uTime * 0.72 - 4.1 + along * 2.0), threshold);
-        emissive = vec3(1.0, 0.67, 0.33) * glow * run * inward * depthBreath * depthHeat;
-      } else if (vSurfaceMask > 2.5) {
-        /*
-          MARCO 3 y la viga imposible. Escalón intermedio: grafito ya tibio y
-          media ranura. La viga que entra por detrás y sale por delante comparte
-          este acabado a propósito — así sus dos tramos se reconocen como LA
-          MISMA pieza, que es lo que hace que la discontinuidad duela.
-        */
-        albedo = mix(vec3(0.03, 0.026, 0.021), vec3(0.08, 0.07, 0.056), grain * 0.5);
-        albedo *= 0.45 + 0.8 * across;
-        albedo = mix(albedo, vec3(0.64, 0.56, 0.42), chamfer * 0.29);
-        gloss = mix(0.08, 0.66, chamfer);
-        specularPower = mix(56.0, 20.0, chamfer);
-        specularStrength = 0.14 + chamfer * 0.98;
-
-        float glow = 1.0 - smoothstep(0.1, 0.4, across);
-        float run = smoothstep(0.16, 0.34, along) * (1.0 - smoothstep(0.66, 0.86, along));
-        albedo = mix(albedo, vec3(0.02, 0.016, 0.012), glow * 0.5);
-        emissive = vec3(1.0, 0.55, 0.23) * glow * run * inward * breath3 * 0.36;
-      } else if (vSurfaceMask > 1.5) {
-        /*
-          MARCO 2 — el primer paso hacia dentro. Apenas se separa de la caja:
-          un grafito un punto más claro y una costura ámbar corta. Si aquí ya
-          hubiera brasa, el recorrido se acabaría en el primer escalón.
-        */
-        albedo = mix(vec3(0.023, 0.022, 0.023), vec3(0.06, 0.058, 0.058), grain * 0.5);
-        albedo *= 0.5 + 0.72 * across;
-        albedo = mix(albedo, vec3(0.5, 0.44, 0.34), chamfer * 0.14);
-        gloss = mix(0.065, 0.58, chamfer);
-        specularPower = mix(60.0, 22.0, chamfer);
-        specularStrength = 0.1 + chamfer * 0.74;
-
-        float glow = 1.0 - smoothstep(0.12, 0.4, across);
-        float run = smoothstep(0.22, 0.4, along) * (1.0 - smoothstep(0.6, 0.8, along));
-        albedo = mix(albedo, vec3(0.016, 0.016, 0.018), glow * 0.5);
-        emissive = vec3(1.0, 0.58, 0.26) * glow * run * inward * breath2 * 0.12;
-      } else if (vSurfaceMask > 0.5) {
-        /*
-          Nodos. Acero pulido y facetado: las piezas que devuelven un destello
-          duro del disco, y ese destello es lo que convierte el objeto en algo
-          construido en vez de dibujado. Son el ÚNICO brillo del exterior, que
-          por lo demás no emite nada: la dirección pide la caja casi a oscuras y
-          la luz concentrada dentro.
-        */
-        albedo = vec3(0.06, 0.064, 0.074);
-        gloss = 0.95;
-        specularPower = 30.0;
-        specularStrength = 1.35;
-      }
     } else if (uKind == 4) {
       /*
         Endurance: mantas térmicas y panel pintado, no metal cromado.
@@ -1504,25 +1227,23 @@ const BODY_FRAGMENT = /* glsl */ `
       El banco de pruebas del contrato visual necesita poder apagar los emisivos
       para comprobar que un cuerpo conserva silueta, volumen y material sin
       ellos. Escalarlos aquí —después de que cada material haya escrito el suyo
-      y antes de que nadie los use— garantiza que no queda ninguno fuera: ni el
-      canal del Tesseracto, ni las balizas, ni el rebote de los anillos.
+      y antes de que nadie los use— garantiza que no queda ninguno fuera de
+      este material: ni las balizas, ni el rebote de los anillos. El Tesseracto
+      ya no pasa por aquí —tiene material propio— y declara un uEmission con
+      el mismo nombre, que es lo que hace que el banco de pruebas lo siga
+      apagando sin saber nada de él.
     */
     emissive *= uEmission;
 
     /*
       Las balizas salen por aquí y no tocan nada más: son luces, no superficies.
 
-      El Tesseracto SALÍA TAMBIÉN, y ése era el fallo de fondo de su versión
-      anterior. El atajo se escribió cuando su malla eran aristas (EdgesGeometry)
-      sin atributo de normal, donde el difuso habría salido NaN. Desde que tiene
-      estructura de verdad, el atajo dejó de tener motivo y se quedó: el único
-      cuerpo del sistema que no obedecía a Gargantúa era justo el que la
-      dirección artística quiere más raro, y «raro» no es «ajeno a la luz».
-
-      Ahora pasa por el mismo terminador, el mismo relleno de cielo, el mismo
-      contraluz frío y el mismo especular que los otros seis. La misma luz toca
-      materiales diferentes: es la regla del contrato visual, y no admite una
-      excepción para el cuerpo que más falta le hace.
+      Aquí salía TAMBIÉN el Tesseracto, cuando compartía este material. Se le
+      quitó el atajo para que obedeciera a Gargantúa como los demás, y esa
+      regla viaja con él a su material propio: sus aristas de cristal siguen
+      recibiendo la clave, el fresnel y el reflejo del disco. La misma luz toca
+      materiales diferentes; lo que no admite excepción es la luz, no el
+      shader que la escribe.
     */
     if (uKind == 8) {
       /* El alfa sale del ramo: 1.0 en balizas y gargantas, la rampa en la
@@ -1575,8 +1296,18 @@ const BODY_FRAGMENT = /* glsl */ `
       la envolvente: donde antes había 1.00 plano de 0.34 en adelante, ahora hay
       0.60 en el arranque y 0.95 en el punto subestelar.
     */
+    /*
+      Y el suelo sube de 0.10 a 0.30 (quinta revisión). El exponente 0.55 se
+      queda —es lo que mantiene el degradado y evita la meseta— pero el término
+      constante es DISPERSIÓN BAJO LA SUPERFICIE, y en agua clara es cualquier
+      cosa menos despreciable: es la razón física por la que un mar tropical
+      visto desde arriba no se apaga a negro fuera del punto subsolar. Con 0.10
+      el cuerpo perdía toda su provincia turquesa en cuanto se salía del centro
+      del hemisferio diurno, que es literalmente lo que el dueño describió como
+      «muy apagado y oscuro».
+    */
     if (uKind == 0) {
-      diffuse = day * limb * (0.10 + 0.90 * pow(max(shadedNdl, 0.0), 0.55));
+      diffuse = day * limb * (0.19 + 0.81 * pow(max(shadedNdl, 0.0), 0.55));
     }
     /* Roca mate: la pendiente y la incidencia conservan dirección en todo el
        hemisferio diurno, sin una meseta de brillo al saturarse day. */
@@ -1634,23 +1365,24 @@ const BODY_FRAGMENT = /* glsl */ `
       su cara noche conservara MÁS relleno que la de un mundo mineral era la
       única cifra del bloque que contradecía su propio material.
     */
-    if (uKind == 0) nightFloor = 0.32;
+    /* Miller vuelve a 0.46 (quinta revisión). El 0.32 salía de un argumento
+       correcto —el agua es el peor rebotador del cuadro, un 2 % a incidencia
+       normal— aplicado al término equivocado: este suelo no modela el rebote
+       del AGUA, modela cuánto cielo conserva la cara que no ve a Gargantúa, y
+       Miller es el cuerpo del sistema con más atmósfera y más nube. La cara
+       noche de un mundo oceánico nublado no es la de un casco de aluminio. */
+    if (uKind == 0) nightFloor = 0.34;
     if (uKind == 1) nightFloor = 0.22;
     if (uKind == 4) nightFloor = 0.26;
     if (uKind == 5) nightFloor = 0.44;
-    if (uKind == 2 || uKind == 7) nightFloor = 0.4;
+    if (uKind == 7) nightFloor = 0.4;
     float nightFill = mix(nightFloor, 1.0, day);
-    /* El Tesseracto no hereda el tinte azul del cielo. Su sombra conserva una
-       reflexión neutra-cálida de acero ennegrecido; toda temperatura visible
-       procede del mismo disco ámbar que ilumina el resto del sistema. */
     /* Y Edmunds tampoco hereda el azul entero del cielo. Es roca seca sin
        océano ni nube: lo que rebota en su cara noche es medio grado más cálido
        y bastante más flojo que el relleno común. El lavado azul que le cubría
        casi medio disco salía de aquí y de los dos filos de más abajo, no de la
        clave — por eso subir el albedo sin tocar esto no lo habría arreglado. */
-    vec3 materialFill = uKind == 2
-      ? vec3(0.024, 0.022, 0.019)
-      : (uKind == 1 ? vec3(0.024, 0.025, 0.035) : fill);
+    vec3 materialFill = uKind == 1 ? vec3(0.024, 0.025, 0.035) : fill;
     vec3 color = albedo * (
       key * diffuse * materialOcclusion + materialFill * nightFill
     );
@@ -1729,6 +1461,27 @@ const BODY_FRAGMENT = /* glsl */ `
       float acrossOff = dot(normal, acrossDir);
       float acrossOff2 = acrossOff * acrossOff;
       float alongOff2 = max(1.0 - specBase * specBase - acrossOff2, 0.0);
+      /*
+        Y AHORA LA BASE SE CIERRA, porque la cresta necesita LADOS.
+
+        Hasta aquí sólo se usaban cuadrados, y con cuadrados el perfil del
+        camino de luz es forzosamente simétrico: una gaussiana que se apaga
+        igual por arriba que por abajo. Eso es exactamente lo que hacía que se
+        leyera como pincelada. Una cresta de agua tiene cara y espalda.
+
+        El eje acrossDir es perpendicular al plano luz-vista y halfVec está dentro
+        de él, así que el tercer eje sale de un producto vectorial y ya es
+        unitario — ni una raíz. Con él, acrossOff con SIGNO deja de ser sólo
+        un ancho y pasa a distinguir el lado iluminado del lado en sombra.
+      */
+      vec3 alongDir = cross(acrossDir, halfVec);
+      float alongOff = dot(normal, alongDir);
+      /* Y los dos extremos del camino no se apagan igual. Un 34 % de asimetría
+         es poco en número y mucho en lectura: es lo que impide que la cresta
+         termine en una punta limpia por los dos lados, que es de lo que estaba
+         hecha la pincelada. Se declara aquí arriba porque lo usan los cuatro
+         términos del camino, empezando por el primero. */
+      float crestTaper = 1.0 - 0.34 * smoothstep(-0.10, 0.46, alongOff);
       /* Tres anchos del MISMO lóbulo, no tres efectos. El asiento es lo que
          impide que el camino de luz se lea como un arañazo pegado encima: una
          banda ancha y muy tenue, anisótropa también, que dice que ahí abajo
@@ -1760,16 +1513,99 @@ const BODY_FRAGMENT = /* glsl */ `
       */
       float waterFresnel = pow(1.0 - max(dot(normal, view), 0.0), 5.0);
       float waterGain = mix(0.78, 2.1, waterFresnel);
-      float oceanSeat = exp(-(alongOff2 * 1.7 + acrossOff2 * 22.0))
+      float oceanSeat = exp(-(alongOff2 * 2.4 + acrossOff2 * 28.0))
                       * gloss * day * waterGain;
       /* Más larga y más estrecha (2026-09-06): 7.5 → 6.4 a lo largo y 265 → 330
          a lo ancho. Un CAMINO de luz, no una mancha alargada — es la diferencia
          entre ver el reflejo de una fuente sobre agua y ver una nube con
          forma. La energía que pierde de ancho la recupera de peso. */
-      float oceanSheet = exp(-(alongOff2 * 6.4 + acrossOff2 * 290.0))
-                       * gloss * day * waterGain;
+      /*
+        Y EL CAMINO SE PICA CON LAS CORRIENTES.
+
+        Una lámina especular continua de extremo a extremo es lo último que
+        quedaba de la pincelada: en el mar de verdad el camino de luz se
+        estrangula donde la superficie cambia de inclinación. Las bandas
+        latitudinales ya cruzan la diagonal —van con la curvatura, no con ella—
+        así que estrechan el camino una o dos veces a lo largo de su recorrido.
+        Es el mismo picado que lleva el asiento desde la segunda revisión; lo
+        raro era que el término estrecho no lo tuviera.
+      */
+      float oceanSheet = exp(-(alongOff2 * 6.4 + acrossOff2 * 360.0))
+                       * gloss * day * waterGain
+                       * (0.40 + 0.60 * millerBands) * crestTaper;
       float oceanGlint = exp(-(alongOff2 * 26.0 + acrossOff2 * 520.0))
                        * millerGlitterMask * day * mix(0.86, 1.34, waterFresnel);
+      /*
+        ── LA CRESTA (2026-09-06, cuarta revisión) ─────────────────────────
+
+        El diagnóstico del dueño, literal: «Ahora parece casi una pincelada
+        luminosa sobre la esfera. Podría transformarse sutilmente en una cresta
+        oceánica gigantesca. No una ola caricaturesca.» Y la condición de
+        contorno, también suya: desde lejos tiene que seguir viéndose la MISMA
+        diagonal, porque esa diagonal es lo que hace que Miller funcione en la
+        composición. El detalle raro ocurre DENTRO de la esfera, no la rompe.
+
+        Así que no se mueve nada de dónde está el camino de luz. Lo que cambia
+        es su PERFIL TRANSVERSAL, que hasta ahora era una gaussiana simétrica
+        —y una gaussiana simétrica es, por construcción, una pincelada—. Tres
+        términos, y los tres viven dentro de la huella que ya estaba aprobada:
+
+        1. **La espalda oscura.** Un lóbulo NEGATIVO pegado al camino, a un lado
+           solo. Es la línea que convierte el trazo en algo con volumen: un ojo
+           que ve claro-oscuro adyacente reconstruye un relieve, y eso no lo
+           puede hacer con una gaussiana. Va en multiplicativo sobre el color ya
+           formado y antes de sumar los reflejos, así que oscurece AGUA, que es
+           lo que hay en el seno de una ola, y no apaga la lámina.
+        2. **El filo de plata.** Un cuarto ancho del mismo lóbulo —la mitad de
+           estrecho que el camino— encendido SÓLO donde la máscara de rotura
+           dice que la cresta rompe. Es la única espuma del cuerpo, y es
+           intermitente por definición.
+        3. **El sesgo.** El seno se aparta del camino un poco más según se
+           avanza a lo largo de él, y la cresta se afila por un extremo. Una
+           deformación de agua no es un segmento recto de anchura constante; en
+           cuanto los dos bordes dejan de ser paralelos, el ojo deja de leer
+           «trazo» y empieza a leer «cosa».
+
+        Cuesta tres exponenciales y ni un sitio de ruido: la rotura viajaba ya
+        resuelta desde el material.
+      */
+      /*
+        LA CARA DE LA CRESTA, y es la línea que hace el trabajo.
+
+        Costó una captura entender por qué oscurecer el agua junto al camino no
+        se veía: el agua de al lado YA ESTÁ casi negra —0.02 lineal— y el 86 %
+        de casi nada sigue siendo casi nada. Una sombra no se puede pintar donde
+        no hay luz que quitar. Lo que reconstruye un relieve en el ojo es un par
+        claro-oscuro ADYACENTE, así que primero hay que poner el claro.
+
+        Y no vale subir el asiento: el asiento es un lóbulo de sigma 0.15, o sea
+        un tercio del disco, y ensancharlo por un lado no da una cresta — da
+        neblina. La segunda captura salió con medio planeta empañado.
+
+        Éste es el ancho que faltaba, entre el camino (sigma 0.037) y el asiento
+        (0.15): la LADERA. Un solo lado, porque una ola tiene cara y espalda, y
+        con la puerta desplazada hacia el lado contrario para que el borde de la
+        ladera caiga justo sobre el camino y no alrededor de él. Del otro lado
+        no hay nada que lo compense, y ahí es donde el seno hace de sombra.
+      */
+      float crestFacing = smoothstep(0.105, -0.015, acrossOff);
+      float crestSlope = exp(-(alongOff2 * 5.0 + acrossOff2 * 135.0))
+                       * gloss * day * waterGain * crestFacing;
+      /* Y el asiento pierde un tercio DEL LADO DE LA ESPALDA. No es una
+         segunda ladera: es que el único término que reparte luminancia ancha
+         alrededor del camino no puede seguir siendo simétrico si la cresta no
+         lo es. Sin esto, el seno de más abajo oscurece sobre negro y no se ve
+         —fue el diagnóstico de la primera captura— porque no había luz que
+         quitar justo ahí. */
+      oceanSeat *= mix(0.58, 1.0, crestFacing);
+      /* Y el seno se separa del camino según se avanza: bordes no paralelos. */
+      float troughOff = acrossOff - 0.058 - alongOff * 0.052;
+      float crestTrough = exp(-(alongOff2 * 4.6 + troughOff * troughOff * 380.0))
+                        * day * crestTaper
+                        * (0.55 + 0.45 * millerCrestFoam);
+      float crestFoam = exp(-(alongOff2 * 4.2 + acrossOff2 * 1700.0))
+                      * millerCrestFoam * day * crestTaper
+                      * mix(0.72, 1.5, waterFresnel);
       /* El asiento va PICADO POR LAS BANDAS. Una lámina de reflejo continua
          sobre todo el hemisferio es exactamente lo que hace que un océano se
          lea como gas: sin corrientes que la corten, no hay superficie. */
@@ -1786,11 +1622,27 @@ const BODY_FRAGMENT = /* glsl */ `
         fría eso sólo puede ser una cosa, y además dice de dónde viene la luz
         sin dibujar ninguna flecha.
       */
-      color += mix(key, vec3(0.34, 0.56, 0.88), 0.58)
-             * oceanSeat * (0.3 + millerBands * 1.2) * 0.115;
-      color += mix(key, vec3(0.42, 0.62, 0.92), 0.22) * oceanSheet * 0.66;
-      color += mix(vec3(1.0, 0.92, 0.78), vec3(0.66, 0.86, 1.0), 0.3)
-             * oceanGlint * 0.60;
+      /* La espalda va PRIMERO: oscurece el agua que hay debajo, no los
+         reflejos que vienen después. Un 62 % es mucho sobre una lámina y casi
+         nada sobre un cuerpo cuyo seno ya estaba en penumbra — que es
+         exactamente donde tiene que notarse. */
+      color *= 1.0 - crestTrough * 0.62;
+      color += mix(key, vec3(0.36, 0.68, 0.94), 0.52)
+             * oceanSeat * (0.3 + millerBands * 1.2) * 0.185;
+      /* La ladera va entre el asiento y el camino, y con su temperatura: es
+         agua inclinada devolviendo el disco, así que se queda más cerca del
+         ámbar que la sábana ancha y más lejos que el filo del camino. */
+      color += mix(key, vec3(0.42, 0.72, 0.96), 0.38) * crestSlope * 0.34;
+      color += mix(key, vec3(0.46, 0.74, 0.98), 0.22) * oceanSheet * 0.92;
+      /* Y la espuma, casi blanca y sólo un punto fría: es agua pulverizada, no
+         reflejo, así que no se queda con el ámbar del disco como el camino ni
+         se va al cielo como la sábana. */
+      color += vec3(0.94, 0.97, 1.0) * crestFoam * 2.70;
+      /* Y el destello sube a 0.95 y se enfría un poco. Con el microoleaje
+         animado ya no es un adorno estático: es el CENTELLEO, o sea la señal
+         más barata y más inequívoca de que ahí abajo hay agua y no gas. */
+      color += mix(vec3(1.0, 0.94, 0.82), vec3(0.72, 0.92, 1.0), 0.42)
+             * oceanGlint * 0.95;
 
       /*
         EL FILO SE VUELVE ASIMÉTRICO, y ése es el punto tres.
@@ -1806,13 +1658,65 @@ const BODY_FRAGMENT = /* glsl */ `
         cyan pálido en los flancos, blanco cálido en el punto más encarado. El
         borde ya no dice sólo que hay aire — dice de dónde viene la luz.
       */
-      float airEdge = pow(1.0 - max(dot(normal, view), 0.0), 8.0)
-                    * (0.82 + millerWeather * 0.36);
-      float airLit = smoothstep(0.28, 0.9, ndl);
+      /*
+        Y EL FILO SE ROMPE EN TRAMOS (2026-09-06, cuarta revisión).
+
+        «Ahora mismo está casi uniformemente trazado alrededor de una parte de
+        la esfera. El océano debería reaccionar a la luz de manera distinta
+        según el ángulo, así que algunos pequeños segmentos pueden desaparecer
+        completamente y otros brillar» — el dueño. Y tiene razón por una razón
+        que además es técnica: la modulación que tenía, 0.82 + bruma·0.36,
+        nunca bajaba de 0.82, o sea que era un contorno continuo con una leve
+        ondulación encima. Un contorno continuo es la firma de «esfera con rim
+        light», no de superficie húmeda.
+
+        Ahora el mando es una PUERTA sobre dos campos que ya existían —la bruma
+        y las corrientes latitudinales, que a lo largo del limbo van cambiando—
+        y su recorrido llega hasta 0.16, o sea que hay tramos donde el filo
+        desaparece de verdad. Los que sobreviven pagan 1.42 en vez de 1.18, así
+        que el borde gana contraste sin ganar luminancia media.
+      */
+      /* El recorrido de la puerta se suaviza en la quinta revisión: de
+         (0.16 … 1.42) a (0.46 … 1.55). Los tramos siguen apareciendo y
+         desapareciendo —era lo que pedía el dueño y sigue en pie— pero el
+         mínimo deja de ser un agujero: sobre un cuerpo encendido, un trozo de
+         limbo a 0.16 no se lee como «aire irregular», se lee como una mordida.
+         Y el exponente baja de 8 a 6.5, así que el filo es un poco más ancho,
+         que es lo que hace que el borde brille en vez de subrayarse. */
+      float airBreak = smoothstep(0.22, 0.68, millerWeather * 0.54 + millerBands * 0.46);
+      float airEdge = pow(1.0 - max(dot(normal, view), 0.0), 6.5)
+                    * mix(0.46, 1.55, airBreak);
+      float airLit = smoothstep(0.20, 0.9, ndl);
       float airFacing = smoothstep(0.5, 1.0, ndl);
-      color += mix(vec3(0.3, 0.6, 1.0), vec3(0.88, 0.95, 1.0), airFacing)
-             * airEdge * airLit * uLightIntensity * 2.15;
-      color += key * airEdge * airFacing * 0.54;
+      color += mix(vec3(0.34, 0.72, 1.0), vec3(0.90, 0.97, 1.0), airFacing)
+             * airEdge * airLit * uLightIntensity * 2.6;
+      color += key * airEdge * airFacing * 0.58;
+
+      /*
+        LA CARA NOCHE SIGUE SIENDO AGUA, y ahora se le nota más.
+
+        «Conservaría el lado oscuro, aunque introduciría una cantidad diminuta
+        de azul profundo reflejado dentro de él. No para iluminarlo. Sólo para
+        que siga sintiéndose como agua incluso donde no recibe la luz directa»
+        — el dueño, y es la descripción exacta de lo que hace un océano de
+        noche: el agua es un espejo, así que su cara oscura no devuelve negro,
+        devuelve el cielo. Aquí el cielo es un campo estelar sobre un disco de
+        acreción, y eso es un petróleo muy oscuro.
+
+        Va con el fresnel dentro porque un espejo devuelve más cuanto más
+        rasante se le mira, que es también lo que impide que esto se convierta
+        en un relleno plano: el centro de la cara noche se queda casi negro y lo
+        que se levanta es el canto, o sea justo donde el agua estaría
+        reflejando. Y va DESPUÉS de los reflejos para que no los tiña.
+
+        El suelo nocturno común no puede hacer este trabajo: es acromático por
+        diseño —el mismo relleno de cielo para todo el sistema, escalado por
+        familia—, así que subirlo aclara sin decir de qué está hecho el cuerpo.
+        Éste sí: es azul de agua honda, y por eso puede pesar dos veces y media
+        más que en la revisión anterior sin devolver el degradado plano.
+      */
+      float oceanNight = (1.0 - day) * (0.30 + 0.70 * fresnel);
+      color += vec3(0.0090, 0.0262, 0.0355) * oceanNight;
     }
 
     /* Aire fino: sólo el arco encarado al disco, sin blanco ni halo uniforme.
@@ -1853,9 +1757,7 @@ const BODY_FRAGMENT = /* glsl */ `
     */
     float backRim = pow(1.0 - max(dot(normal, view), 0.0), 3.0)
                   * (1.0 - smoothstep(-0.5, 0.22, ndl));
-    vec3 backRimColor = uKind == 2
-      ? vec3(0.052, 0.047, 0.04)
-      : vec3(0.062, 0.086, 0.152);
+    vec3 backRimColor = vec3(0.062, 0.086, 0.152);
     /* Edmunds paga 0.15 en vez de 0.24, y con el relleno mineral de arriba. Su
        contraluz seguía siendo el del resto —azul de campo estelar sobre casi
        medio disco— y sobre un mundo sin aire eso no cierra la silueta: la
@@ -1872,12 +1774,12 @@ const BODY_FRAGMENT = /* glsl */ `
       una silueta gris rotando —el giro no tiene nada a lo que agarrarse— y ése
       era justo el motivo de que la Endurance pareciera la única viva.
 
-      El Tesseracto se quedó FUERA, y se probó dentro. Su barrido usa potencia
-      6, que es una lámina angularmente enorme: sobre una barra de siete píxeles
-      no barre nada, la enciende entera. La primera captura con él dentro salía
-      gris claro y uniforme —justo el wireframe grueso que se quería evitar— y
-      su microtransformación se percibe igual de bien por el filo especular
-      estrecho, que sí recorre los cantos al moverse las piezas.
+      El Tesseracto se quedó FUERA, y se probó dentro: a potencia 6 la lámina
+      es angularmente enorme y sobre una barra de siete píxeles no barre nada,
+      la enciende entera. Aquella captura salía gris claro y uniforme —justo el
+      wireframe grueso que se quería evitar—. Su material propio conserva la
+      lección: reflejo especular ESTRECHO, que sí recorre los cantos según las
+      piezas se mueven.
     */
     if (uKind == 4 || uKind == 5 || uKind == 7) {
       float sheen = pow(specBase, 6.0) * gloss * day;
@@ -2021,40 +1923,6 @@ const BODY_FRAGMENT = /* glsl */ `
       color += vec3(1.0, 0.74, 0.44) * pow(fresnel, 1.6) * wrap * 0.42 * materialOcclusion;
     }
 
-    /*
-      Barrido del Tesseracto: la reflexión ancha del disco, pero CERRADA.
-
-      Los cascos usan potencia 6, que sobre una barra de doce píxeles no barre
-      nada — la enciende entera. A potencia 22 la lámina recorre los cantos
-      según las piezas interiores se mueven, y ésa es la única forma de que una
-      microtransformación de tres grados se note en pantalla sin acelerarla.
-    */
-    if (uKind == 2) {
-      /*
-        El barrido lleva un SUELO de gloss bajo (0.04): sólo evita que la cara
-        orientada quede muerta. La fuerza baja a 0.25 porque ahora el contraste
-        lo pone la diferencia entre barras —cada marco lleva su propia
-        inclinación fuera del plano, así que la luz ya no las encuentra a todas
-        a la vez— y no el brillo absoluto.
-      */
-      float sweep = pow(specBase, 24.0)
-                  * (0.04 + gloss * 0.96)
-                  * day
-                  * materialOcclusion;
-      /*
-        Y el barrido TAMBIÉN escalona. Con un solo factor para todo el cuerpo,
-        la caja devolvía tanta reflexión ancha como los marcos de dentro y la
-        jerarquía se aplanaba justo en el término que más superficie toca. La
-        capa de fondo casi no participa, la caja poco, y los tres marcos
-        interiores el doble: la separación entre fuera y dentro deja de
-        depender sólo del emisivo.
-      */
-      float sweepGain = vSurfaceMask > 4.5
-        ? 0.14
-        : (vSurfaceMask > 1.5 ? 0.32 : 0.15);
-      color += mix(key, vec3(0.92, 0.88, 0.8), 0.2) * sweep * sweepGain;
-    }
-
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
        cuerpo del fondo negro sin dibujarle un contorno. */
     float warmRim = fresnel * smoothstep(-0.25, 0.42, ndl);
@@ -2066,25 +1934,6 @@ const BODY_FRAGMENT = /* glsl */ `
        un contorno naranja, es el arco que cuenta de dónde viene la luz. */
     if (uKind == 1) warmRim *= 0.52 * smoothstep(0.08, 0.66, ndl);
     if (uKind == 4) warmRim *= materialOcclusion;
-    /*
-      El Tesseracto paga un tercio del rim común. Es grafito casi negro con la
-      luz casi de frente: el fresnel ya levanta sus cantos por especular, y el
-      0.18 genérico le ponía una segunda línea crema ENCIMA — borde sobre borde
-      — que a escala de Hero se comía la diferencia entre cara y filo y
-      devolvía el marco beige. A 0.06 el cuerpo se sigue separando del negro
-      pero el filo lo dibuja el material, no el contorno.
-    */
-    /*
-      Y el filo del Tesseracto se reparte igual que el barrido. El tercio del
-      rim común valía cuando todo el cuerpo era una sola familia de material;
-      con cinco, un valor único volvía a igualar el fondo con el centro. El
-      marco trasero casi no lo paga —tiene que quedarse en penumbra—, la caja
-      paga poco, y los marcos interiores el triple: es lo que les da el canto
-      encendido que los separa entre sí a 55 px.
-    */
-    float tesseractRim = vSurfaceMask > 4.5
-      ? 0.075
-      : (vSurfaceMask > 1.5 ? 0.115 : 0.045);
     /* La Endurance paga MÁS que el común, y por la misma razón por la que la
        Ranger tiene bloque propio: a 117° el filo es su iluminación principal,
        no un adorno que la separa del fondo. El resto del sistema se queda en
@@ -2096,15 +1945,8 @@ const BODY_FRAGMENT = /* glsl */ `
        mitad del aro pálido, junto con el relleno de canto— y competía justo con
        el término que sí cuenta de dónde viene la luz. Lo que se le quita aquí
        se le devuelve en la lámina de agua, que sube a la vez. */
-    float commonRim = uKind == 4 ? 0.62 : (uKind == 0 ? 0.07 : 0.18);
-    color += key * warmRim * (uKind == 2 ? tesseractRim : commonRim);
-    /*
-      Y el relleno de canto tampoco es igual para todos dentro del Tesseracto.
-      Este término levanta el borde de CUALQUIER pieza mire donde mire, así que
-      es el que más trabajaba en contra del marco trasero: por muy negro que sea
-      su albedo, un canto levantado por igual lo devolvía al mismo plano que la
-      caja de delante y el fondo dejaba de leerse como fondo.
-    */
+    float commonRim = uKind == 4 ? 0.62 : (uKind == 0 ? 0.15 : 0.18);
+    color += key * warmRim * commonRim;
     /* Y el relleno de canto también baja para el mundo mineral: 0.32 levantaba
        el limbo entero, iluminado o no, y es el tercer ingrediente del lavado
        azul que se está retirando. */
@@ -2116,9 +1958,7 @@ const BODY_FRAGMENT = /* glsl */ `
        incluida. Un planeta rodeado de un aro uniforme se lee como una canica
        iluminada desde dentro; el limbo de un océano lo tiene que dibujar el
        reflejo, que sólo existe de un lado. */
-    float fillRim = uKind == 2 && vSurfaceMask > 4.5
-      ? 0.26
-      : (uKind == 1 ? 0.11 : (uKind == 0 ? 0.13 : 0.32));
+    float fillRim = uKind == 1 ? 0.11 : (uKind == 0 ? 0.13 : 0.32);
     color += materialFill * fresnel * fillRim;
     color += emissive;
 
@@ -2146,9 +1986,9 @@ const BODY_FRAGMENT = /* glsl */ `
       Así que el foco deja de ser un color y pasa a ser tres cosas cuyo reparto
       depende del material:
 
-      · focusTint — cuánto cian aguanta el cuerpo sin dejar de ser él. Los
-        tres que ya vivían cerca de la paleta de navegación (agua, baliza y el
-        ámbar propio del Tesseracto) lo conservan entero.
+      · focusTint — cuánto cian aguanta el cuerpo sin dejar de ser él. Los dos
+        que ya vivían cerca de la paleta de navegación —agua y baliza— lo
+        conservan entero. El Tesseracto tiene su propio reparto, en su material.
       · focusGain — el material se sube a sí mismo. No añade color: multiplica
         el que ya tenía, así que un planeta ocre se enciende ocre.
       · focusEdge — el filo cálido, que ya sabe dónde está Gargantúa, se marca
@@ -2176,7 +2016,7 @@ const BODY_FRAGMENT = /* glsl */ `
       devuelve en filo (0.20 → 0.30), que marca el contorno sin tocar la
       temperatura del metal.
     */
-    vec3 focusColor = uKind == 2 ? vec3(1.0, 0.64, 0.34) : uNavigation;
+    vec3 focusColor = uNavigation;
     float focusTint = 1.0;
     float focusGain = 0.0;
     float focusEdge = 0.0;
@@ -2204,8 +2044,8 @@ const NAVIGATION_COLOUR = "#7fe5ff";
  * Con base 2, la poda de `modelRadius` se comía el grafito y los radiadores de
  * la Endurance —máscaras 2 y 3— y el radio publicado caía un 26 %. El shader no
  * se enteraba, porque allí la máscara se lee dentro del ramo del material que
- * la escribió; la poda, que es transversal, sí. Ocho está por encima de las
- * cinco máscaras del Tesseracto, que es el que más usa.
+ * la escribió; la poda, que es transversal, sí. Ocho está holgadamente por
+ * encima de las tres máscaras de casco de la Endurance, que es la que más usa.
  */
 const PLUME_MASK = 8;
 const STRUCTURE_KIND = 7;
@@ -3169,137 +3009,6 @@ function strut(
   );
 }
 
-/** Architectural corridor inspired by the owner's 2026-09-06 reference.
- * Its envelope is open and interlocked; seven connected thresholds converge
- * into an empty aperture. Four batches share the existing graphite shader. */
-function tesseractModel(input: SceneBodyInput): BodyModel {
-  const structure = bodyMaterial(input, KIND.tesseract);
-  const root = new THREE.Object3D();
-  const point = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
-  const shellParts: THREE.BufferGeometry[] = [];
-  const midParts: THREE.BufferGeometry[] = [];
-  const deepParts: THREE.BufferGeometry[] = [];
-  const thresholdParts: THREE.BufferGeometry[] = [];
-
-  const corners = (hx: number, hz: number, y: number, twist: number, dx = 0, dz = 0) =>
-    [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([x, z]) =>
-      point(x * hx, 0, z * hz)
-        .applyAxisAngle(point(0, 1, 0), twist)
-        .add(point(dx, y, dz)),
-    );
-  const portal = (
-    target: THREE.BufferGeometry[], pts: THREE.Vector3[], width: number,
-    mask: number, openSide = -1,
-  ) => {
-    for (let edge = 0; edge < 4; edge++) {
-      const a = pts[edge];
-      const b = pts[(edge + 1) % 4];
-      if (edge === openSide) {
-        target.push(surfaceMasked(strut(a, a.clone().lerp(b, 0.36), width), mask));
-        target.push(surfaceMasked(strut(a.clone().lerp(b, 0.56), b, width), mask));
-      } else {
-        target.push(surfaceMasked(strut(a, b, width * (edge % 2 ? 1 : 0.82)), mask));
-      }
-    }
-  };
-
-  // Two staggered structural bays, plus a transverse incomplete bay. They
-  // show front, side and rear surfaces instead of closing a perfect cube.
-  const front = corners(0.98, 1.12, 0.30, -0.08, -0.035, 0.025);
-  const rear = corners(1.04, 1.02, -0.48, 0.19, 0.06, -0.035);
-  portal(shellParts, front, 0.15, 0, 0);
-  portal(shellParts, rear, 0.09, 5, 2);
-  for (let corner = 0; corner < 4; corner++) {
-    shellParts.push(surfaceMasked(strut(front[corner], rear[corner], 0.075), 5));
-  }
-  // The reference's long planes: broad dark faces framed by narrow highlights.
-  shellParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.22, 0.66, 1.58), [-0.99, -0.02, 0.10], [0.04, -0.08, 0.05]), 5));
-  shellParts.push(surfaceMasked(placed(new THREE.BoxGeometry(1.36, 0.53, 0.12), [0.14, -0.10, 1.04], [-0.06, 0.10, 0]), 0));
-
-  // Cantilevered L shapes cross the shell and continue beyond its edges.
-  // No radial spikes: each extension belongs to a recognisable structural bay.
-  const wings = [
-    [point(-1.54, 0.08, -0.35), point(-0.74, 0.08, -0.35), point(-0.74, -0.49, -1.12)],
-    [point(1.53, -0.20, 0.28), point(0.71, -0.20, 0.28), point(0.71, 0.38, 1.18)],
-    [point(-0.24, -0.37, -1.48), point(0.38, -0.37, -1.48), point(0.38, 0.29, -0.76)],
-    [point(0.20, 0.26, 1.49), point(-0.42, 0.26, 1.49), point(-0.42, -0.41, 0.84)],
-  ];
-  for (const [a, b, c] of wings) {
-    shellParts.push(surfaceMasked(strut(a, b, 0.085), 0));
-    shellParts.push(surfaceMasked(strut(b, c, 0.067), 5));
-  }
-
-  const sizes = [0.81, 0.635, 0.492, 0.377, 0.283, 0.205, 0.142];
-  const levels = sizes.map((size, i) => corners(
-    size, size * 1.08, 0.20 - i * 0.19,
-    (i % 2 ? -0.045 : 0.035),
-    0.012 * Math.sin(i * 1.2), 0.008 * Math.cos(i),
-  ));
-  for (let i = 0; i < levels.length; i++) {
-    const target = i < 3 ? midParts : i < 5 ? deepParts : thresholdParts;
-    const mask = i < 2 ? 2 : i < 3 ? 3 : i < 5 ? 4 : 4.25;
-    portal(target, levels[i], Math.max(0.021, 0.059 - i * 0.006), mask);
-    // Raking rails join corresponding corners; never cross the central void.
-    const previous = i === 0 ? front : levels[i - 1];
-    for (const corner of [0, 2]) {
-      target.push(surfaceMasked(strut(previous[corner], levels[i][corner], Math.max(0.014, 0.035 - i * 0.003)), i < 3 ? 2 : 3));
-    }
-  }
-
-  const shell = mergedMesh(shellParts, structure);
-  shell.name = "tesseract-shell";
-  root.add(shell);
-  const mid = new THREE.Object3D();
-  const deep = new THREE.Object3D();
-  const threshold = new THREE.Object3D();
-  const groups = [mid, deep, threshold];
-  const parts = [midParts, deepParts, thresholdParts];
-  const names = ["tesseract-mid-frames", "tesseract-deep-frames", "tesseract-threshold"];
-  groups.forEach((group, i) => {
-    const mesh = mergedMesh(parts[i], structure);
-    mesh.name = names[i];
-    group.add(mesh);
-    root.add(group);
-  });
-
-  // Preserve the destination's occupied volume; only its internal architecture
-  // changes. Normalise actual shell vertices, not an inflated bounding sphere.
-  const vertices = shell.geometry.getAttribute("position");
-  let shellRadius = 0;
-  const vertex = new THREE.Vector3();
-  for (let i = 0; i < vertices.count; i++) {
-    shellRadius = Math.max(shellRadius, vertex.fromBufferAttribute(vertices, i).length());
-  }
-  const unitScale = 1.56 / shellRadius;
-  root.traverse((node) => {
-    if (node instanceof THREE.Mesh) node.geometry.scale(unitScale, unitScale, unitScale);
-  });
-  root.userData.tesseractArchitecture = {
-    visualLayers: 9, recursiveRings: 7, structuralBridges: 14,
-    shellExtensions: 4, interruptedBeams: 2, emissiveTiers: 4,
-    rearFrame: true, depthRails: 4, sidePanels: 2,
-    centralVoid: true, closedOuterCube: false,
-  };
-
-  return {
-    root,
-    materials: [structure],
-    animate(seconds) {
-      const wave = (period: number, phase = 0) => Math.sin(seconds * Math.PI * 2 / period + phase);
-      // Oscillation, never accumulating spin. The shell is absolutely still.
-      mid.rotation.set(wave(12.7, 0.6) * 0.035, 0.02 + wave(10.7) * 0.12, wave(14.3, 2.2) * 0.028);
-      mid.position.set(wave(13.9) * 0.018, wave(9.4, 1) * 0.035, wave(11.9, 1.1) * 0.016);
-      mid.scale.set(1 + wave(10.7, 0.7) * 0.045, 1, 1 - wave(10.7, 0.7) * 0.035);
-      deep.rotation.set(wave(11.1, 2.4) * 0.055, -0.05 + wave(8.9, Math.PI) * 0.19, wave(13.7, 1.1) * 0.045);
-      deep.position.set(wave(12.3, 2) * 0.02, wave(8.2) * 0.035, wave(10.1) * 0.018);
-      deep.scale.set(1 + wave(8.9, 2.3) * 0.055, 1, 1 - wave(8.9, 2.3) * 0.04);
-      threshold.rotation.set(wave(9.7, 0.7) * 0.025, 0.04 + wave(7.3, 2.1) * 0.24, wave(11.3, 2) * 0.02);
-      threshold.position.set(wave(9.1, 1.7) * 0.008, wave(7.9) * 0.025, wave(10.9) * 0.007);
-      threshold.scale.setScalar(1 + wave(7.3, 2.8) * 0.055);
-    },
-  };
-}
-
 /**
  * Superficie sustentadora extruida. Cuatro puntos y un espesor.
  *
@@ -3645,7 +3354,7 @@ function bodyModel(input: SceneBodyInput): BodyModel {
     case "desert":
       return simpleWorld(input, KIND.desert);
     case "tesseract":
-      return tesseractModel(input);
+      return createTesseractModel();
     case "ship":
       return enduranceModel(input);
     case "beacon":
@@ -3910,7 +3619,7 @@ const SPIN_RATE: Record<WorldStructuralData["visual"], number> = {
     empieza a esperar el siguiente fotograma.
 
     Lo que le queda es su microtransformación interna, que oscila sin dirección
-    estable y con periodos inconmensurables entre sí. Ver `tesseractModel`.
+    estable y con periodos inconmensurables entre sí. Ver `createTesseractModel`.
   */
   tesseract: 0,
   /*

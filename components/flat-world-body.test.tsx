@@ -73,44 +73,21 @@ describe("FlatWorldBody", () => {
     }
   });
 
-  it("dibuja el Tesseracto como marcos oscuros abiertos hacia un vacío", () => {
-    const tesseract = worlds.find((world) => world.id === "tesseract");
-    expect(tesseract).toBeDefined();
-
-    const { container } = render(
-      <FlatWorldBody world={tesseract as NonNullable<typeof tesseract>} />,
-    );
-
+  it("representa las 32 aristas del cristal sin animación ni corredor", () => {
+    const tesseract = worlds.find((world) => world.id === "tesseract")!;
+    const { container } = render(<FlatWorldBody world={tesseract} />);
     /*
-      La misma arquitectura imposible del modelo 3D: boca exterior, marcos
-      interiores y vacío central. En un equipo con movimiento reducido este
-      dibujo es el ÚNICO Tesseracto que se ve; si mostrara marcos cerrados con
-      núcleo brillante, el mismo destino contaría dos cosas distintas.
+      La misma topología del modelo 3D: treinta y dos aristas, seis membranas y
+      el arranque del trazo. En un equipo con movimiento reducido este dibujo es
+      el ÚNICO Tesseracto que se ve; si enseñara el corredor de marcos, el mismo
+      destino contaría dos cosas distintas según el perfil.
     */
-    expect(
-      container.querySelector('[data-flat-part="outer-frame"]'),
-    ).not.toBeNull();
-    expect(
-      container.querySelector('[data-flat-part="rear-frame"]'),
-    ).not.toBeNull();
-    expect(
-      container.querySelectorAll('[data-flat-part="inner-frame"]'),
-    ).toHaveLength(7);
-    expect(
-      container.querySelectorAll('[data-flat-part="side-panel"]'),
-    ).toHaveLength(2);
-    // El hueco deja pasar el cielo; no es un disco negro que lo tapa.
-    expect(container.querySelector('[data-flat-part="core"]')).toBeNull();
-    expect(container.querySelector('circle[cx="60"][cy="62"]')).toBeNull();
-    /*
-      Nada de frío dentro del dibujo: el cuerpo es grafito + tungsteno y no
-      usa el secundario cian de su ficha. (El envoltorio sí publica la variable
-      —la comprueba el test genérico—; lo que no puede aparecer es dentro del
-      svg.)
-    */
-    expect(container.querySelector("svg")?.innerHTML).not.toContain(
-      "flat-secondary",
-    );
+    expect(container.querySelectorAll('[data-flat-part="crystal-edge"]')).toHaveLength(32);
+    expect(container.querySelectorAll('[data-flat-part="crystal-facet"]')).toHaveLength(6);
+    expect(container.querySelectorAll('[data-flat-part="drawing-light"]').length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-flat-part="outer-frame"]')).toBeNull();
+    // Congelado de verdad: el perfil plano no anima ni ejecuta nada.
+    expect(container.querySelector("animate, animateTransform, script")).toBeNull();
   });
 
   it("es puramente decorativo y no introduce movimiento ni copy duplicado", () => {

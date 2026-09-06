@@ -25,6 +25,7 @@ import { readFileSync } from "node:fs";
 const FILES = [
   "components/scene/gargantua-shaders.ts",
   "components/scene/bodies.ts",
+  "components/scene/tesseract-model.ts",
 ];
 const OPEN = /\/\* glsl \*\/ `/;
 

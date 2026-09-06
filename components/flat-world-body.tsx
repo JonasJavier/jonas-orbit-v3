@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { sampleTesseract, TESSERACT_FACETS, TESSERACT_PATH } from "@/lib/tesseract";
 import type { WorldNavItem } from "@/lib/worlds";
 import styles from "./flat-world-body.module.css";
 
@@ -23,50 +24,42 @@ const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
   { angle: group + ENDURANCE_SLOT_SPREAD, primary: false },
 ]);
 
-/** Static counterpart of the architectural corridor: seven recessed bays,
- * broad graphite side faces, cantilevers and an unobstructed vanishing point. */
+/** El hipercubo de cristal, congelado: la misma topología que WebGL y su
+ *  misma pose inicial, sin una sola animación. En un equipo con movimiento
+ *  reducido este dibujo es el ÚNICO Tesseracto que se ve. */
 function Tesseract() {
-  const front = [[30, 28], [102, 37], [102, 111], [26, 100]];
-  const levels = [0.80, 0.635, 0.49, 0.377, 0.283, 0.205, 0.142].map((scale, i) =>
-    front.map(([x, y]) => [70 + (x - 70) * scale + (i % 2 ? 1 : -1), 70 + (y - 70) * scale]),
-  );
-  const path = (points: number[][]) => `M${points.map((p) => p.join(" ")).join("L")}Z`;
-  return (
-    <svg viewBox="0 0 140 140" focusable="false">
-      <defs>
-        <linearGradient id="flat-tesseract-metal" x1="0" y1="0" x2="1" y2="0.7">
-          <stop stopColor="#71614a" /><stop offset="0.17" stopColor="#262729" />
-          <stop offset="0.7" stopColor="#11151a" /><stop offset="1" stopColor="#514332" />
-        </linearGradient>
-        <linearGradient id="flat-tesseract-edge" x1="0" y1="1" x2="1" y2="0">
-          <stop stopColor="#f2cf91" /><stop offset="0.45" stopColor="#9b784d" />
-          <stop offset="1" stopColor="#383a3c" />
-        </linearGradient>
-      </defs>
-      <g fill="none" strokeLinejoin="miter" strokeLinecap="square">
-        <path data-flat-part="rear-frame" d="M46 12 121 28 116 93 40 85Z" stroke="#303236" strokeWidth="4" />
-        <path d="M46 12 121 28M40 85 116 93" stroke="#997b53" strokeWidth="0.9" />
-        <path data-flat-part="side-panel" d="M30 28 46 12 40 85 26 100Z" fill="url(#flat-tesseract-metal)" />
-        <path data-flat-part="side-panel" d="M26 100 40 85 116 93 102 111Z" fill="url(#flat-tesseract-metal)" />
-        <path d="M102 37 121 28M102 111 116 93M30 28 46 12" stroke="#534a3d" strokeWidth="2.5" />
-        {/* Dark face plus a single offset edge gives each beam real thickness. */}
-        <path data-flat-part="outer-frame" d={path(front)} stroke="url(#flat-tesseract-metal)" strokeWidth="5" />
-        <path d="M30 28 26 100 102 111M30 28 102 37" stroke="url(#flat-tesseract-edge)" strokeWidth="1.1" />
-        <path d="M14 56 49 60 49 21M127 83 93 80 93 121M19 119 62 109M57 9 56 27" stroke="#22262a" strokeWidth="4" />
-        <path d="M14 54 47 58M127 81 95 78M19 117 62 107" stroke="url(#flat-tesseract-edge)" strokeWidth="1" />
-        {levels.map((points, i) => (
-          <g key={i}>
-            <path data-flat-part="inner-frame" d={path(points)} stroke={i < 3 ? "#292827" : "#4d3b29"} strokeWidth={3.1 - i * 0.31} />
-            <path d={`M${points[1].join(" ")}L${points[0].join(" ")}L${points[3].join(" ")}L${points[2].join(" ")}`} stroke="url(#flat-tesseract-edge)" strokeWidth={1.1 - i * 0.055} opacity={0.65 + i * 0.055} />
-            {[0, 2].map((corner) => {
-              const previous = i === 0 ? front[corner] : levels[i - 1][corner];
-              return <path key={corner} d={`M${previous.join(" ")}L${points[corner].join(" ")}`} stroke="#806444" strokeWidth={0.9} />;
-            })}
-          </g>
-        ))}
-      </g>
-    </svg>
-  );
+  const vertices = new Float32Array(48), cells = new Float32Array(16);
+  sampleTesseract(0, vertices, cells);
+  const points = Array.from({ length: 16 }, (_, i) => {
+    const x = vertices[i * 3], y = vertices[i * 3 + 1], z = vertices[i * 3 + 2];
+    return [70 + (x * 0.92 + z * 0.38) * 35, 70 + (-y * 0.92 + z * 0.30 - x * 0.13) * 35];
+  });
+  const line = (a: number, b: number) => "M" + points[a].join(" ") + "L" + points[b].join(" ");
+  /* La misma jerarquía de la cuarta dimensión que en WebGL, y por el mismo
+     motivo: con las treinta y dos aristas al mismo grosor esto es una jaula
+     plana. Aquí no hay shader, así que el reparto viaja en el ancho de trazo
+     y en la opacidad, que es exactamente lo que haría alguien dibujándolo. */
+  const cell = (a: number, b: number) => (cells[a] + cells[b]) * 0.5;
+  return <svg viewBox="0 0 140 140" focusable="false">
+    <defs>
+      <linearGradient id="flat-tesseract-crystal" x1="0" y1="1" x2="1" y2="0">
+        <stop stopColor="#725bdd" /><stop offset="0.5" stopColor="#82d6ee" /><stop offset="1" stopColor="#d9faff" />
+      </linearGradient>
+    </defs>
+    <g strokeLinejoin="round" fill="none">
+      {TESSERACT_FACETS.map((face, i) => <path key={i} data-flat-part="crystal-facet"
+        d={"M" + face.map((v) => points[v].join(" ")).join("L") + "Z"}
+        fill={i % 2 ? "#98d8ef" : "#7966cd"}
+        fillOpacity={0.05 + cell(face[0], face[2]) * 0.07} />)}
+      {TESSERACT_PATH.map(([a, b], i) => <path key={i} data-flat-part="crystal-edge"
+        d={line(a, b)} stroke="url(#flat-tesseract-crystal)"
+        strokeOpacity={(0.34 + cell(a, b) * 0.52).toFixed(3)}
+        strokeWidth={(0.72 + cell(a, b) * 1.25).toFixed(3)} />)}
+      {TESSERACT_PATH.slice(0, 11).map(([a, b], i) => <path key={i} data-flat-part="drawing-light"
+        d={line(a, b)} stroke={i > 8 ? "#efffff" : "#77dffa"}
+        strokeWidth={(0.75 + i * 0.055).toFixed(3)} strokeOpacity={(0.26 + i * 0.068).toFixed(3)} />)}
+    </g>
+  </svg>;
 }
 
 function Miller() {
