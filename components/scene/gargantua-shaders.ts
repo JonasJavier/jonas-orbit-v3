@@ -1433,8 +1433,15 @@ void main() {
     */
     float impact = length(cross(uCamPos, straight));
     float lensing = 1.0 - smoothstep(uRs * 17.0, uRs * 30.0, impact);
+    /* Y fuera de la puerta el cielo se endereza casi del todo: 0.45 de la
+       dirección desviada, no 0.72. El dueño lo pidió con estas palabras —«que
+       las estrellas alejadas sean predominantemente puntos casi estáticos»— y
+       es la parte del encargo que el brillo no puede dar: una estrella más
+       tenue sigue siendo una estrella estirada. Lo que endereza la mancha es
+       usar menos dirección desviada, porque el estiramiento es el jacobiano de
+       esta misma mezcla. Dentro de la puerta no cambia nada. */
     vec3 skyDir = normalize(
-      mix(straight, dir, uSkyLens * mix(0.72, 1.0, lensing))
+      mix(straight, dir, uSkyLens * mix(0.45, 1.0, lensing))
     );
     color += transmit * skySample(skyDir, lensing);
   }
