@@ -38,9 +38,9 @@ describe("stardust pool", () => {
     expect(spawnStardust(pool, 0, 0, 20, 0, 16, fixedRandom(0.5))).toBe(14);
   });
 
-  it("aplica en WebGL su propio perfil de 1–4 motas de cuerpo más finas", () => {
+  it("aplica en WebGL su propio perfil de 1–9 motas de cuerpo más finas", () => {
     const pool = createStardustPool(STARDUST_PROFILES.webgl.capacity);
-    // 4 de cuerpo + round(4 × 0.34) = 1 fina.
+    // 9 de cuerpo + round(9 × 0.55) = 5 finas.
     expect(
       spawnStardust(
         pool,
@@ -52,8 +52,8 @@ describe("stardust pool", () => {
         fixedRandom(0.5),
         "webgl",
       ),
-    ).toBe(5);
-    expect(pool.capacity).toBe(300);
+    ).toBe(14);
+    expect(pool.capacity).toBe(640);
     expect(pool.lifetime[0]).toBeGreaterThanOrEqual(
       STARDUST_PROFILES.webgl.minLifetimeMs,
     );
@@ -77,6 +77,16 @@ describe("stardust pool", () => {
         vida más corta con exponente más plano puede no acortar nada.
       · TAMAÑO en radio medio, que es el único sitio donde `sizeBase`,
         `sizePower` y `sizeRange` significan algo juntos.
+
+      Y las tres tienen SUELO además de techo, que es la lección de la primera
+      pasada: se cumplió la horquilla del encargo en las tres a la vez, las
+      reducciones se multiplicaron —21 % de densidad × un cuarto de área × 0.8
+      de alfa— y el rastro se quedó en un 4 % de masa luminosa. El dueño abrió
+      la escena y dijo que casi no había polvo. Un techo sin suelo no describe
+      un rastro discreto; describe cualquier cosa por debajo, incluido nada.
+
+      La cola es la excepción y sigue teniendo el techo apretado: de las cuatro
+      quejas, los arcos cruzando zonas vacías los resolvía ella sola.
     */
     const webgl = STARDUST_PROFILES.webgl;
     const flat = STARDUST_PROFILES.flat;
@@ -91,9 +101,8 @@ describe("stardust pool", () => {
 
     const density = (p: typeof webgl | typeof flat) =>
       (1 + p.fineShare) / p.trailStepPx;
-    expect(density(webgl)).toBeLessThan(beforeDensity * 0.25);
-    expect(density(webgl)).toBeGreaterThan(beforeDensity * 0.18);
-    expect(density(webgl)).toBeLessThan(density(flat));
+    expect(density(webgl)).toBeLessThan(beforeDensity * 0.65);
+    expect(density(webgl)).toBeGreaterThan(beforeDensity * 0.45);
 
     // Vida media × fracción visible de esa vida. La fracción sale de resolver
     // restante^fadePower = 0.1, el umbral por debajo del cual la mota deja de
@@ -108,7 +117,11 @@ describe("stardust pool", () => {
     // random^sizePower es 1/(sizePower + 1).
     const radius = (p: typeof webgl | typeof flat) =>
       p.sizeBase + (p.sizeRange + p.sizeSpeed) / (p.sizePower + 1);
-    expect(radius(webgl)).toBeLessThan(beforeRadius * 0.55);
+    /* El calibre dejó de ser una palanca de recorte: lo que fabrica la
+       sensación de arco es la densidad, y el radio sólo decide si una mota se
+       ve. Lo que sigue vigilado es que no crezca por encima del rastro de
+       `flat`, que es el límite acordado del efecto. */
+    expect(radius(webgl)).toBeLessThanOrEqual(beforeRadius);
     expect(radius(webgl)).toBeLessThan(radius(flat));
 
     /* La ventana de tonos de WebGL vive ENTERA en la mitad fría de la paleta:

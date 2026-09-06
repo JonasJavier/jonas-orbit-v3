@@ -67,17 +67,45 @@ export const STARDUST_MAX_LIFETIME_MS = 1_020;
  *
  * Los cuatro números que lo arreglan, con la medida de cada uno:
  *
- *   · **Densidad al 21 %.** `trailStepPx` 6.5 → 24 y `maxBurst` 12 → 4. Lo que
+ *   · **Densidad al 54 %.** `trailStepPx` 6.5 → 11 y `maxBurst` 12 → 9. Lo que
  *     se compara no es la ráfaga sino las motas POR PÍXEL recorrido, que es lo
- *     que se ve: (1 + fineShare)/trailStepPx pasa de 0.269 a 0.056.
+ *     que se ve: (1 + fineShare)/trailStepPx pasa de 0.269 a 0.145.
  *   · **Cola un 65 % más corta.** La vida baja a 250-440 ms y `fadePower`
  *     vuelve a 2. Los dos a la vez: la vida recorta el 56 % y el exponente
- *     acorta además el tramo VISIBLE de esa vida, de un 84 % a un 67 %.
- *   · **Motas menos de la mitad de grandes.** El radio medio de una mota de
- *     cuerpo cae de 1.73 a 0.87 px, y con `glowScale` 3.3 → 3 el sprite pasa de
- *     11.4 a 5.2 px de lado.
+ *     acorta además el tramo VISIBLE de esa vida, de un 84 % a un 67 %. **Es la
+ *     única de las cuatro que no se devuelve**, y por eso es la que lleva el
+ *     peso del encargo: los arcos cruzando zonas vacías los dibujaba ella.
+ *   · **Calibre y alfa intactos.** El radio medio de una mota de cuerpo vuelve
+ *     a 1.73 px. No es un descuido: ver abajo.
  *   · **Cian y blanco frío.** La ventana de tonos del perfil se mueve a la
  *     mitad fría de la paleta; ver `PARTICLE_TONES`.
+ *
+ * ── Y la primera pasada se pasó de frenada (2026-09-06, mismo día) ──────────
+ *
+ * Los números de arriba no son los que se aplicaron primero. La horquilla del
+ * encargo —«20-25 % de la densidad actual, partículas mucho menores»— se
+ * cumplió al pie de la letra y el resultado fue que el dueño abrió la escena y
+ * dijo que **casi no había polvo**. Conviene dejar escrito por qué, porque el
+ * error es fácil de repetir: las tres reducciones se MULTIPLICAN. Al 21 % de
+ * densidad, con motas a la mitad de radio —o sea a un cuarto de área— y el alfa
+ * a 0.70, la masa luminosa del rastro quedaba en un 4 % de la anterior. La
+ * horquilla hablaba de una variable y se aplicó a tres.
+ *
+ * La corrección devuelve calibre y alfa ENTEROS y deja la densidad a la mitad,
+ * y ese reparto es la decisión, no un punto medio perezoso. De las tres
+ * variables, la densidad es la que fabrica la sensación de arco —más motas por
+ * píxel es una línea más continua— mientras que el calibre y el alfa sólo
+ * deciden si una mota se ve o no se ve. Recortar lo que hace daño y devolver lo
+ * que sólo hace visible es lo que permite que el rastro se lea sin volver a
+ * competir con Gargantúa.
+ *
+ * La cola no se devuelve nunca: es la que dibujaba los arcos.
+ *
+ * Y hubo un paso intermedio que tampoco valió —densidad 55 %, calibre 75 %,
+ * alfa 0.88— porque el calibre seguía multiplicando por 0.56 de ÁREA. Medido
+ * sobre el render con un barrido de 30 muestras, el lienzo del rastro tenía 587
+ * píxeles encendidos: existía en el pool y no en la pantalla, que es
+ * exactamente el fallo que este perfil nació para arreglar.
  *
  * Lo que NO cambia: el retículo, que el dueño aprobó tal cual, y el perfil
  * `flat`, que sigue congelado byte a byte —su ventana de tonos es la de siempre
@@ -114,21 +142,21 @@ export const STARDUST_PROFILES = {
     toneLast: 3,
   },
   webgl: {
-    capacity: 300,
+    capacity: 640,
     minLifetimeMs: 250,
     maxLifetimeMs: 440,
-    peakAlpha: 0.7,
-    trailStepPx: 24,
-    maxBurst: 4,
-    glowScale: 3,
-    sizeBase: 0.38,
+    peakAlpha: 0.9,
+    trailStepPx: 11,
+    maxBurst: 9,
+    glowScale: 3.35,
+    sizeBase: 0.74,
     sizePower: 2.3,
-    sizeRange: 1.15,
-    sizeSpeed: 0.45,
+    sizeRange: 2.3,
+    sizeSpeed: 0.95,
     fadePower: 2,
-    fineShare: 0.34,
+    fineShare: 0.6,
     fineSizeScale: 0.46,
-    fineGlowScale: 2.6,
+    fineGlowScale: 2.9,
     toneFirst: 3,
     toneSpread: 3.3,
     toneLast: 5,
