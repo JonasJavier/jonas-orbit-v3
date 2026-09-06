@@ -36,7 +36,9 @@ describe("getWorld / getWorlds (composición id + locale)", () => {
   it("devuelve los 6 mundos en orden narrativo", () => {
     const worlds = getWorlds("es");
     expect(worlds.map((w) => w.order)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(worlds[0].id).toBe("tesseract");
+    // Gargantúa abre el recorrido: es el centro visual del sistema y, desde
+    // el pase de arquitectura narrativa, también el centro de identidad.
+    expect(worlds[0].id).toBe("gargantua");
     expect(worlds[5].id).toBe("ranger");
   });
 
@@ -69,7 +71,17 @@ describe("G1 · contrato de rutas WorldId ↔ slug", () => {
     it(`[${locale}] una ruta desconocida no resuelve a ningún mundo`, () => {
       expect(getWorldBySlug("agujero-de-gusano", locale)).toBeUndefined();
       expect(getWorldBySlug("", locale)).toBeUndefined();
-      expect(getWorldBySlug("formacion", locale)).toBeUndefined();
+      /*
+        Aquí vivía `formacion`, que era la ruta de Cooper Station y tenía que
+        seguir dando 404 tras su retirada. Desde el pase de arquitectura
+        narrativa (2026-09-06) `formacion` EXISTE y es Miller, así que ese
+        guard se sustituye por los dos slugs que este pase retira: `desarrollo`
+        —el Miller anterior— y `laboratorio` —la Gargantúa anterior—. Sigue
+        siendo la misma garantía: un slug retirado no resuelve a otro mundo por
+        accidente.
+      */
+      expect(getWorldBySlug("desarrollo", locale)).toBeUndefined();
+      expect(getWorldBySlug("laboratorio", locale)).toBeUndefined();
     });
 
     it(`[${locale}] ningún slug secuestra un segmento reservado`, () => {
@@ -94,18 +106,19 @@ describe("G1 · contrato de rutas WorldId ↔ slug", () => {
     expect(items).toHaveLength(6);
     expect(items.map((item) => item.order)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(items[0].href).toBe("/es/sobre-mi");
+    expect(items[0].id).toBe("gargantua");
     expect(items[5].href).toBe("/es/contacto");
     // Nada de prosa larga en la proyección: cruza a todas las rutas.
     expect(Object.keys(items[0])).not.toContain("prose");
   });
 
   it("los vecinos recorren la secuencia completa sin salirse por los extremos", () => {
-    const first = getWorldNeighbours(getWorld("tesseract", "es"), "es");
+    const first = getWorldNeighbours(getWorld("gargantua", "es"), "es");
     expect(first.previous).toBeUndefined();
     expect(first.next?.id).toBe("miller");
 
     const last = getWorldNeighbours(getWorld("ranger", "es"), "es");
-    expect(last.previous?.id).toBe("gargantua");
+    expect(last.previous?.id).toBe("tesseract");
     expect(last.next).toBeUndefined();
   });
 });

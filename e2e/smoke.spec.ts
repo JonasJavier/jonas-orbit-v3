@@ -11,11 +11,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 /** Los 6 mundos en orden narrativo, con su ruta ES y su etiqueta de navegación. */
 const WORLDS = [
-  { slug: "sobre-mi", label: "Historia", title: "Mi historia" },
-  { slug: "desarrollo", label: "Desarrollo", title: "Desarrollo full-stack" },
+  { slug: "sobre-mi", label: "Sobre mí", title: "Sobre mí" },
+  { slug: "formacion", label: "Formación", title: "Formación" },
   { slug: "proyectos", label: "Proyectos", title: "Proyectos y sistemas" },
   { slug: "creatividad", label: "Creatividad", title: "Creatividad visual" },
-  { slug: "laboratorio", label: "Laboratorio", title: "Laboratorio" },
+  { slug: "experimentos", label: "Experimentos", title: "Experimentos" },
   { slug: "contacto", label: "Contacto", title: "Contacto" },
 ] as const;
 
@@ -139,7 +139,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     ).toHaveAttribute("data-target-state", "target");
 
     const miller = map.getByRole("link", {
-      name: /Desarrollo Miller/i,
+      name: /Formación Miller/i,
     });
     await miller.focus();
     await expect(miller).toBeFocused();
@@ -253,7 +253,9 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   test("cada mundo ofrece sus destinos contiguos y los extremos no inventan vecinos", async ({
     page,
   }) => {
-    await page.goto("/es/desarrollo");
+    // Formación (Miller, orden 2) tiene vecinos por los dos lados; Sobre mí
+    // (Gargantúa, orden 1) y Contacto (Ranger, orden 6) son los extremos.
+    await page.goto("/es/formacion");
     const neighbours = page.getByRole("navigation", {
       name: "Destinos contiguos",
     });
@@ -381,8 +383,8 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
       if (canvas) (canvas as HTMLElement).dataset.survivor = "sí";
     });
 
-    await systemMap(page).getByRole("link", { name: /Laboratorio/ }).click();
-    await expect(page).toHaveURL(/\/es\/laboratorio$/);
+    await systemMap(page).getByRole("link", { name: /Experimentos/ }).click();
+    await expect(page).toHaveURL(/\/es\/experimentos$/);
     await expect(page.getByTestId("starfield-2d")).toHaveAttribute(
       "data-survivor",
       "sí",
@@ -836,8 +838,8 @@ test.describe("G4 · sin escena no se descarga three.js", () => {
     await expect(map.getByRole("link")).toHaveCount(6);
 
     // Y llevan a alguna parte: es la diferencia entre degradar y romperse.
-    await map.getByRole("link", { name: /Laboratorio/ }).click();
-    await expect(page).toHaveURL(/\/es\/laboratorio$/);
+    await map.getByRole("link", { name: /Experimentos/ }).click();
+    await expect(page).toHaveURL(/\/es\/experimentos$/);
   });
 
   test("la home es una sola pantalla: no hay scroll vertical", async ({
@@ -856,20 +858,32 @@ test.describe("G4 · sin escena no se descarga three.js", () => {
 });
 
 
-test("seis destinos: la ruta retirada no tiene enlaces, sitemap ni OG", async ({ page, request }) => {
+/**
+ * Lo retirado no deja enlaces, sitemap ni OG.
+ *
+ * Este test nació para vigilar a Cooper Station, y su ruta era `/es/formacion`.
+ * El pase de arquitectura narrativa (2026-09-06) devuelve ese segmento al
+ * producto —ahora es Miller, Formación— así que la garantía se mantiene pero
+ * apunta a lo que de verdad está retirado: **Cooper Station como cuerpo**, y
+ * los dos slugs que ese pase deja atrás, `/es/desarrollo` (el Miller anterior)
+ * y `/es/laboratorio` (la Gargantúa anterior). Un slug retirado no puede
+ * resolver por accidente a otro mundo.
+ */
+test("lo retirado no tiene enlaces, sitemap ni OG", async ({ page, request }) => {
   await page.goto("/es?no3d=1");
   const rail = page.locator(".nav-rail");
   await expect(rail.locator("a")).toHaveCount(6);
+  // El orden del raíl ES el orden narrativo: Sobre mí abre y Contacto cierra.
   expect(await rail.locator("a").evaluateAll((links) => links.map((link) => link.getAttribute("data-rail-world")))).toEqual([
-    "tesseract", "miller", "endurance", "edmunds", "gargantua", "ranger",
+    "gargantua", "miller", "endurance", "edmunds", "tesseract", "ranger",
   ]);
-  await expect(page.locator('a[href*="formacion"], [data-world="cooper-station"]')).toHaveCount(0);
+  await expect(page.locator('[data-world="cooper-station"], a[href*="/es/desarrollo"], a[href*="/es/laboratorio"]')).toHaveCount(0);
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
   const xml = await sitemap.text();
-  expect(xml).not.toMatch(/formacion|cooper/i);
+  expect(xml).not.toMatch(/cooper|\/es\/desarrollo|\/es\/laboratorio/i);
   for (const world of WORLDS) expect(xml).toContain(`/es/${world.slug}</loc>`);
-  for (const path of ["/es/formacion", "/es/cooper-station", "/es/formacion/opengraph-image"]) {
+  for (const path of ["/es/cooper-station", "/es/desarrollo", "/es/laboratorio", "/es/laboratorio/opengraph-image"]) {
     expect((await request.get(path)).status(), path).toBe(404);
   }
 });

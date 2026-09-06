@@ -42,13 +42,15 @@ describe("WorldPage", () => {
     const neighbours = screen.getByRole("navigation", {
       name: "Destinos contiguos",
     });
-    expect(neighbours).toHaveTextContent("Mi historia");
+    // Miller es Formación y vive entre Sobre mí y Proyectos.
+    expect(neighbours).toHaveTextContent("Sobre mí");
     expect(neighbours).toHaveTextContent("Proyectos");
   });
 
   it("los extremos del recorrido no inventan vecinos", () => {
+    // Los extremos son Gargantúa (Sobre mí, orden 1) y Ranger (Contacto, 6).
     const { unmount } = render(
-      <WorldPage world={getWorld("tesseract", "es")} locale="es" />,
+      <WorldPage world={getWorld("gargantua", "es")} locale="es" />,
     );
     expect(
       screen

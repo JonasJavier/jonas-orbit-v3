@@ -84,7 +84,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("cada destino se anuncia con su nombre cósmico y su función", () => {
     /*
-      El nombre accesible pasó de «Desarrollo» a «Desarrollo Miller».
+      El nombre accesible pasó de «Formación» a «Formación Miller».
 
       La etiqueta visible ahora tiene dos líneas: el nombre del cuerpo manda y
       la función va debajo. Los dos entran en el nombre accesible, y eso es
@@ -259,7 +259,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   it("focus de teclado produce el mismo TARGET sin depender de glow", () => {
     const { container } = render(<SystemMap worlds={worlds} />);
     const miller = screen.getByRole("link", {
-      name: /^Desarrollo Miller$/i,
+      name: /^Formación Miller$/i,
     });
 
     fireEvent.focus(miller);
@@ -335,7 +335,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(millerProxy).toHaveAttribute("data-target-state", "idle");
 
     fireEvent.click(millerProxy as HTMLElement, { button: 0 });
-    expect(routerPush).toHaveBeenCalledWith("/es/desarrollo");
+    expect(routerPush).toHaveBeenCalledWith("/es/formacion");
     expect(millerProxy).toHaveAttribute("data-target-state", "locked");
     expect(container.querySelector(".hud__target")).toHaveTextContent(
       /Target locked/i,
