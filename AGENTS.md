@@ -198,8 +198,26 @@ que justifique bajar la luz de Miller para que se lea como océano está obsolet
 
 Cambios centrales: cinco tonos de agua en vez de tres grises azulados; el bajío
 pasa de veta a provincia; las nubes vuelven a verse (tinte 5.5 % → 30 %) y se
-mueven siete veces más rápido que la marejada; tres escalas de oleaje animadas
-de verdad; suelo difuso 0.10 → 0.19 y atmósfera 0.09 → 0.26. **Sobrevive la
+mueven al doble del giro del cuerpo; tres escalas de oleaje animadas de verdad;
+suelo difuso 0.10 → 0.19 y atmósfera 0.09 → 0.26.
+
+La animación deja **dos reglas**, y las dos costaron una entrega. Primera: se
+calibra en **píxeles por segundo, no en rad/s** — sobre un cuerpo que gira, un
+campo animado no existe hasta que su velocidad de superficie es varias veces la
+del giro. Miller gira a 2.35 px/s en su ecuador y todo su oleaje iba entre 0.5 y
+2.5 px/s, o sea que era textura arrastrada. Segunda: **acelerar no basta si el
+movimiento no tiene MARCHA** — con las velocidades ya subidas seguía sin verse,
+porque los trenes iban en ejes distintos y a velocidades de superficie distintas
+y se deslizaban unos a través de otros. Eso es hervor, no oleaje. Ahora los
+cuatro trenes y la nube comparten **un solo eje y una sola velocidad de
+superficie** (0.24 unidades/s, 11.3 px/s). Medido: el oleaje decide el 49 % del
+disco por segundo contra el 13 % de la rotación, y **cuánto cambia no predice si
+se ve; en qué dirección cambia, sí**.
+
+El pase cierra además la última excepción de `9 quater`: Miller era el único
+cuerpo con `focusTint` 1.0, y sobre un mundo que ya es cian eso no lo identifica,
+le **dobla la luminancia de la cara noche** (p05 28 → 57) y le borra el
+terminador. Baja a 0.20 con `focusGain` 0.15 y `focusEdge` 0.16. **Sobrevive la
 cresta** de `9 quater`, que es lo único de aquel pase que el dueño aprobó y que
 no dependía de que el cuerpo fuera oscuro. Presupuesto intacto: tres sitios de
 FBM, una octava suelta, ni un draw call ni un uniforme nuevos. El movimiento no
@@ -212,6 +230,32 @@ material: Edmunds al 8 % y Endurance al 16 %, con la diferencia devuelta en
 ganancia propia y filo. Es la aplicación directa del criterio de la capa visual
 —la misma luz toca materiales diferentes sin borrar su identidad— al único sitio
 donde el sistema lo incumplía.
+
+**Edmunds — geología, no textura (2026-09-07):** la sección `9 sexies` de
+`docs/design/world-visual-language.md` manda sobre `8`, sobre el `Pase 2 ·
+Edmunds` de `9 bis` y sobre `Edmunds: cuatro macroformas` en **campo geográfico,
+relieve, paleta, ley difusa y filo de limbo** de Edmunds. **Tamaño y posición
+quedan congelados por petición explícita del dueño** — Edmunds contrapesa a la
+Endurance y forma con la Ranger la base inferior, y eso no se discute. Tampoco
+cambian órbita, inclinación, cámara, HUD, fallback plano ni ningún otro cuerpo.
+
+El diagnóstico que sustituye a cualquier lectura anterior: **una puerta estrecha
+sobre una fbm de cuatro octavas no dibuja una macroforma, dibuja la octava
+fina.** De ahí las manchas del mismo calibre. La geografía pasa a decidirse en
+un campo ANALÍTICO de baja frecuencia —liso por construcción y con gradiente
+gratis— y la fbm queda degradada a perturbación de la frontera. Con eso, color y
+sombreado dejan de contar dos terrenos distintos: la misma función pinta la
+provincia y la ilumina. La cordillera se define por PENDIENTE y no por altura,
+lo que además retira el vocabulario de cráteres sin quitar ninguno —una puerta
+sobre una fbm isótropa sólo sabe hacer manchas redondas—, y el carbón deja de
+ser una máscara para ser el SUSTRATO, porque un fondo con frontera se lee como
+un cráter difuminado. El terminador no se aclara: la ley difusa de la roca pasa
+a exponente 1.35 sobre suelo 0.07 —contra el 0.55 sobre 0.19 del agua de
+Miller—, así que la caída a oscuridad es material y no exposición. El filete
+continuo del limbo se trocea con una máscara de cresta y gana destellos sueltos.
+Seis minerales —ocre, cobre, carbón, arcilla, arena, oliva apagado— sin subir la
+saturación media, porque Edmunds es Creatividad. Presupuesto intacto: dos sitios
+de fbm, uno de noise, cero draws y cero uniformes nuevos.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
@@ -245,6 +289,33 @@ decisión del 2026-09-04 al retirar Cooper Station. Lo retirado entonces fue un
 CUERPO y sigue retirado; lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya
 existía. Siguen siendo seis destinos.
 
+**Tesseracto V4 — pase de pulido (2026-09-06):** la sección `V4 — pase de pulido
+sobre la base canónica` de `docs/design/atlas-tesseract-reference.md` manda sobre
+`Hipercubo de cristal` en **material de la arista, oclusión de cruces, ritmo de la
+animación y tamaño de la punta**. V3 queda como BASE CANÓNICA por decisión del
+dueño —la búsqueda conceptual está cerrada— y de aquí en adelante sólo se pule:
+prohibido reabrir la matemática del 4-cubo, la estructura o la dirección visual.
+Cambios: normales por esquina en vez de por faceta (sin eso el material de tres
+niveles no se ve), punta un 20 % menor con la estela intacta, reloj deformado por
+dos armónicos que frenan en las poses legibles y aceleran en las comprimidas, una
+cuarta capa que sólo escribe profundidad para interrumpir la línea de detrás en
+los cruces, y un 3.5 % de contaminación cálida de Gargantúa. **No se engordan las
+aristas**: la presencia sale de contraste, oclusión y ritmo, nunca de masa. Cuatro
+draws, los mismos que el corredor. La persistencia 4D queda sin implementar a
+propósito: es una prueba A/B que sólo se puede juzgar en movimiento. Checkpoints
+intactos en `output/archive/tesseract-crystal-v2-…zip` y `-v3-…zip`.
+**Cuarto recorte de escala — sólo el Tesseracto (2026-09-06):** la sección
+`14 decies` de `docs/design/hero-gargantua-direction.md` sustituye la fila
+`Tesseracto` de `14 septies` y sólo esa: `size` 2.629 → 2.5764 (−2 %), radio
+publicado 4.667 → 4.574 rs. Es la deuda que aquel pase dejó abierta — el dueño
+había pedido entre 1 y 2 % y se aplicó 1.5 porque la banda dura de
+`bodies.test.ts` no daba para más. Ahora pide el 2 completo, así que la banda
+baja su suelo de 4.55 a 4.47 conservando el margen que tenía (0.117 → 0.104 rs).
+No se toca ningún otro cuerpo, ni posición, fase, inclinación, cámara, material
+o HUD, ni las cuatro guardas donde vive «ni mota ni inflado»: suelo aparente
+0.035, Miller el menor, el Tesseracto por encima de Miller y la Ranger entre el
+Tesseracto y el 65 % de la Endurance.
+
 **Hipercubo de cristal (2026-09-06):** la sección `Hipercubo de cristal` de
 `docs/design/atlas-tesseract-reference.md` manda sobre todo lo anterior en
 **geometría, material y versión plana del Tesseracto**. Sustituye el corredor de
@@ -263,7 +334,12 @@ No cambian posición, fase, inclinación, tamaño, cámara ni datos orbitales de
 ningún cuerpo, y la envolvente se normaliza al mismo radio de antes. El corredor
 anterior queda recuperable en `output/archive/` (ignorado por git) y vivo en el
 historial. Las secciones `Profundidad contradictoria` y `Remodelado estructural`
-del mismo documento quedan como referencia histórica sustituida.
+del mismo documento quedan como referencia histórica sustituida. La sección
+`V2 aprobada, y la deuda que deja para una V3` recoge la aprobación del dueño,
+dos vetos —no se recupera nada del Tesseracto arquitectónico anterior y no se
+añade nada alrededor: ni partículas, ni energía, ni rayos, ni esfera de glow— y
+siete frentes abiertos por orden de techo. El checkpoint intacto de esa V2 vive
+en `output/archive/tesseract-crystal-v2-2026-09-06.zip`.
 
 **Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos

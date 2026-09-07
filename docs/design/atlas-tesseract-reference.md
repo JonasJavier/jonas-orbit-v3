@@ -212,6 +212,149 @@ atlas y de reducción de efectos. Evidencia visual en
 1440×860 en dos fases del trazo, `final-bloom-off.png` para el bloom-off test y
 `crystal-flat.png` para el SVG del perfil plano.
 
+### V2 aprobada, y la deuda que deja para una V3 (2026-09-06)
+
+El dueño aprueba esta versión tras ver el vídeo completo y pide **conservarla
+intacta**: cualquier V3 tiene que demostrar que es mejor, no sólo distinta. El
+checkpoint vive en `output/archive/tesseract-crystal-v2-2026-09-06.zip`
+(ignorado por git) con las fuentes, las capturas y esta misma lista.
+
+Su lectura del pase, que fija el criterio para lo que venga: **el cambio de
+jerarquía por profundidad 4D importó mucho más que subir el brillo**. Lo que
+resuelve la figura es que el ojo entienda que hay estructura dentro de
+estructura —la celda cercana domina, la lejana retrocede y los tirantes
+explican la relación entre las dos—, no que haya más luz. Y la estela larga
+hace que la punta deje de ser una luciérnaga sobre un wireframe: se puede
+seguir un instante la geometría que acaba de construir.
+
+El concepto queda cerrado, y con él dos vetos. **No se recupera nada del
+Tesseracto anterior** —vigas, carcasa, marcos arquitectónicos, espolones, masa
+metálica—: aquel objeto representaba un Tesseracto mediante ARQUITECTURA y éste
+es una PROYECCIÓN de uno, y la diferencia es conceptual. Y **no se añade nada
+alrededor**: ni partículas, ni energía flotando, ni rayos, ni esfera de glow.
+
+Lo que sí queda pendiente, por orden de techo:
+
+1. **Menos wireframe de software.** Es el mayor límite que queda. La mejora
+   tiene que venir del MATERIAL de la arista y no de más geometría: núcleo casi
+   blanco muy fino, cuerpo translúcido frío, specular mínimo y variación tonal
+   con la profundidad. Que parezca cristal o luz comprimida, no un `lineWidth`.
+2. **Romper los cruces.** Cuando dos aristas se superponen en pantalla se
+   atraviesan, y ahí se pierde profundidad. Basta con que la de atrás pierda un
+   poco de intensidad alrededor del cruce —no hace falta ocultarla— para que el
+   cerebro diga «ésa está detrás». Y cuando la rotación 4D invierta la
+   relación, aparece la sensación imposible. Es la mejora con más recorrido.
+3. **Jerarquía en w menos binaria.** Hoy son dos familias muy evidentes;
+   convendría frente / medio / fondo, repartido a la vez en grosor, luminancia,
+   saturación y bloom, y muy poco en cada uno, para que la profundidad se lea
+   continua.
+4. **La punta todavía gana la primera mirada** en algunas poses (5, 8, 11, 17,
+   23 y 26 s). Se quiere el orden inverso: primero el Tesseracto, después
+   descubrir que algo lo recorre. Sin bajar la estela — bajando el núcleo, o
+   haciendo la punta algo menor cuando mira a cámara. No se retira: es
+   identidad nueva.
+5. **Que el recorrido signifique algo en 4D.** En vez de un lápiz recorriendo
+   aristas, que en ciertos momentos priorice los ocho enlaces entre celdas, que
+   son los que enseñan que esto no son dos cubos independientes. Cabe una
+   dramaturgia: celda cercana → conexiones w → celda lejana → reorganización.
+   Así la estela deja de ser bonita y pasa a explicar la estructura sin texto.
+6. **Velocidad no constante.** Desacelerar al llegar a una proyección muy
+   legible, sostenerla uno o dos segundos, deformarse, cruzar más rápido las
+   proyecciones sin interés y aterrizar en otra pose fuerte. Nunca como
+   parar → arrancar → parar: tiene que sentirse orgánico. Permite entender y
+   perder la forma alternativamente, que es más interesante que un spinner
+   matemático eterno. **No todas las proyecciones matemáticamente válidas son
+   igual de buenas visualmente**, y esta es la consecuencia práctica.
+7. **Memoria fantasma**, a probar en A/B y no necesariamente conservar: cuando
+   una celda cambia mucho de posición 4D, que sobreviva 300-600 ms una silueta
+   de dónde estaba al 5-10 % de intensidad. Si se nota como motion trail, fuera.
+
+### V4 — pase de pulido sobre la base canónica (2026-09-06)
+
+V3 queda como base canónica y esta sección **sólo pule**: material, oclusión,
+ritmo y punta. No toca la matemática del 4-cubo, ni la estructura, ni la
+dirección visual, ni la escala, ni la posición. El encargo del dueño fue
+explícito sobre el riesgo: *«corremos un peligro muy real ahora: sobretrabajarlo
+hasta destruir el hallazgo»*.
+
+El techo que ataca: conviven dos Tesseractos, un objeto 4D imposible en sus
+mejores poses y un modelo wireframe en las normales. Todo lo de aquí busca dar
+carácter físico también a las poses normales **sin complicar la geometría**.
+
+**1. La arista pasa de línea a varilla.** Dos cambios que van juntos. El
+material se parte en tres niveles dentro de la misma sección de dos píxeles
+—núcleo blanco frío estrechísimo, cuerpo cian/violeta translúcido y un halo casi
+inexistente que sólo se enciende donde la energía acaba de pasar— usando como
+parámetro `facing`, que en un tubo vale 1 en la línea central y cae hacia los
+cantos. Y las **normales pasan a ser por esquina y no por faceta**: con la
+normal de la faceta, `facing` saltaba en seis escalones —una cara encendida, las
+vecinas apagadas— y a dos píxeles eso se lee como una tira plana con un filo
+duro. Interpolada alrededor del tubo, el núcleo cae en el centro de la sección y
+la arista tiene redondez. Sin este segundo cambio el primero no se ve.
+
+**2. La punta encoge, la estela no.** El exponente sube de 14 a 22 —un 20 %
+menos de extensión— y su ganancia y su halo bajan con ella; la estela conserva
+sus trece aristas. El orden de lectura que se busca es Tesseracto primero y
+recorrido después: con la punta anterior el ojo iba a la bolita en 3, 13, 20.5,
+28 y 35.5 s y volvía luego a la figura. Menos cometa, más trazo.
+
+**3. El tiempo tiene ritmo.** `rhythm` en `lib/tesseract.ts` deforma el reloj
+antes de que entre en la rotación: se demora en las poses legibles y cruza más
+deprisa los estados comprimidos. Son **dos armónicos y no uno**, y ésa es la
+razón de que los números sean feos: con una sola sinusoide, mínimo y máximo caen
+a media onda de distancia —nueve segundos con periodo 18— y las poses que el
+dueño marcó como mejores (16.5 y 34.5 s) y las que marcó como débiles (21.5 y
+39.5 s) están a cinco. Con un solo término, frenar en las buenas dejaba las
+débiles a un 4 % por encima de la media: nada.
+
+Medido: 0.71 en 16.5 s y 34.5 s, 1.21 en 21.5 s y 39.5 s, 0.95 en las
+transiciones de 9 s y 27 s que el dueño quería conservar. Recorrido total dentro
+de [0.70, 1.22]. Sigue siendo función **pura** del tiempo absoluto —integrar una
+velocidad variable por fotograma habría atado la deformación al refresco de la
+pantalla, que es lo que prohíbe §8— y **estrictamente creciente**, comprobado
+hasta las seis horas: una figura que rebobina medio segundo se lee como un
+fallo, no como ritmo.
+
+**4. Los cruces se interrumpen.** El cristal ya se ocultaba a sí mismo —es
+geometría sólida con profundidad— pero lo hacía durante los dos píxeles que mide
+el tubo, y dos píxeles no se leen. Se añade una capa que **sólo escribe
+profundidad**: una cinta orientada a la cámara, más ancha que la arista, que
+hace que la línea de detrás se interrumpa unos píxeles alrededor de la
+intersección. Como el corte lo decide la profundidad real, cuando la rotación 4D
+invierte la relación la interrupción se invierte con ella.
+
+Tres detalles que no son opcionales. Sus extremos se retraen un 13 %: sin eso el
+ensanchado de una arista se comería a sus vecinas justo en los vértices, donde
+todas se tocan. Su profundidad se empuja hacia atrás una escala de radio: sin
+eso se taparía a sí misma —su superficie está más cerca de la cámara que la del
+tubo que envuelve— y la figura entera habría desaparecido. Y es una **cinta de
+cuatro vértices por arista y no un tubo**: con el tubo, el presupuesto de
+vértices del sistema pasaba de 19 500 a 20 001 y el test de batches se ponía
+rojo.
+
+**5. Contaminación de Gargantúa.** Un 3.5 % de temperatura cálida sobre la clave
+en las aristas que la miran. No las vuelve ámbar —eso rompería la familia fría
+que separa al Tesseracto de Miller, Edmunds y la Endurance— pero hace que el
+cuerpo pertenezca al mismo espacio físico aunque su material sea imposible.
+Sólo se nota comparando dos caras.
+
+**6. Y no engorda nada.** Las aristas conservan su calibre. La presencia extra
+sale del contraste dentro de la sección, de la oclusión y del ritmo. Engordarlas
+nos devolvería a la jaula, que es el fallo que las cuatro versiones anteriores
+llevan evitando.
+
+Presupuesto: cuatro draws y cuatro materiales —oclusión, cristal, trazo y
+membranas—, los mismos que gastaba el corredor. Ni una textura ni un sitio de
+ruido nuevos. Posición, fase, inclinación, tamaño, cámara, HUD y datos orbitales
+intactos; radio publicado sin mover, 4.574 rs.
+
+**Lo que NO se hizo, a propósito.** La persistencia 4D del punto 7 de la lista
+—que ciertas aristas w dejen ~300 ms una copia al 5-8 % mientras cambian de
+proyección— queda sin implementar. El dueño la planteó como prueba A/B con un
+criterio de rechazo explícito («si parece After Effects, se elimina»), y ese
+criterio sólo se puede aplicar mirándola en movimiento, no leyendo un diff.
+Entra cuando haya con qué compararla.
+
 ## Verificación
 
 - Suite existente: rutas, estado de foco/hover, accesibilidad, geometría,
