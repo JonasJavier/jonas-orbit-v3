@@ -1,5 +1,7 @@
 # Lenguaje visual común de los mundos — F1.0
 
+> **Endurance · vida operacional (2026-09-06):** [Pase de vida operacional](endurance-operational-life.md) sustituye únicamente sus luces propias y maniobra de §9 bis: fuentes cálidas y técnicas, diez RCS pequeños adicionales y microigniciones breves. Conserva geometría principal, pose, escala, casco, radiadores y cuatro draws; no cambia los demás cuerpos ni el bloom de Gargantúa.
+
 > **Revisión del dueño · 2026-09-06:** [Raíl, atlas y Tesseracto](atlas-tesseract-reference.md) sustituye la geometría anterior del Tesseracto y el acabado del atlas 2D. Conserva luz común, cuatro batches del Tesseracto y pruebas de centro abierto, movimiento y envolvente.
 
 > **Decisión vigente del dueño · 2026-09-06:** el significado de cada destino lo fija [Arquitectura narrativa](arquitectura-narrativa.md) — Gargantúa = Sobre mí, Miller = Formación, Endurance = Proyectos, Edmunds = Creatividad, Tesseracto = Experimentos, Ranger = Contacto — y sustituye cualquier asociación anterior entre cuerpo y sección. Siguen siendo seis cuerpos y la escena no cambia: ni posición, ni escala, ni cámara, ni material. **Revoca del banner de abajo únicamente el veto sobre `/es/formacion`**, que ahora es Miller; lo retirado el 2026-09-04 fue un CUERPO (Cooper Station) y sigue retirado, mientras que lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya existía. `/es/desarrollo` y `/es/laboratorio` pasan a responder 404.
@@ -1081,6 +1083,35 @@ dos levantaban el limbo MIRE DONDE MIRE, y entre ambos dibujaban una línea pál
 por toda la circunferencia, cara noche incluida. El agua no tiene borde difuso:
 su limbo lo dibuja el reflejo, que sólo existe de un lado.
 
+### 6. Y el foco deja de lavarlo
+
+`9 quater` repartió la respuesta de adquisición por material y dejó a Miller en
+el `focusTint` genérico de **1.0** —el más alto del sistema, contra el 0.08 de
+Edmunds y el 0.16 de la Endurance— con este argumento textual: *«sobre el océano
+de Miller el cian ES su color y no se nota»*. Era cierto cuando Miller era un
+gris azulado oscuro. **Dejó de serlo el día que Miller pasó a ser un cuerpo cian
+brillante**, y no se revisó al cambiar de dirección.
+
+Medido con el puntero encima, luminancia del disco:
+
+| | en reposo | `focusTint` 1.0 | `focusTint` 0.20 |
+| --- | --- | --- | --- |
+| media | 98.5 | 118 | **111.9** |
+| **p05 (cara noche)** | 28 | **57** | **38** |
+| croma | 0.399 | 0.411 | **0.376** |
+
+La cifra que importa no es la media: es el percentil 5. El término del tinte
+crece con el fresnel y **no depende de la luz**, así que donde más pesaba era
+justo donde no había nada con qué competir — la cara noche, que doblaba su
+luminancia. El tinte no aclaraba el cuerpo: **le borraba el terminador**, y con
+él la mitad del oleaje, en el momento exacto en que el visitante lo estaba
+mirando con más atención.
+
+Baja a 0.20 y la diferencia se le devuelve donde el propio `9 quater` dice que
+hay que devolverla: `focusGain` 0.15 y `focusEdge` 0.16. El cuerpo responde igual
+de fuerte a la adquisición —de 98.5 a 111.9 de media— pero respondiendo con lo
+suyo. Con esto **ya no queda ningún cuerpo fuera de la regla de `9 quater`**.
+
 ### Medida
 
 Sobre el disco de Miller en el hero de 1440×860, luminancia:
@@ -1188,19 +1219,75 @@ es un coseno y no cuesta una muestra más— y las tres avanzando a velocidades
 distintas. Que sean **distintas** es el punto: dos trenes a la misma velocidad
 son un dibujo que se traslada; tres a velocidades distintas son una superficie.
 
-| campo | número de onda | velocidad antes | ahora |
-| --- | --- | --- | --- |
-| marejada A | ~5.2 | 0.05 rad/s | **0.19** |
-| marejada B | ~5.6 | 0.037 | **0.135** |
-| rizo medio | 13.5 | — (no existía) | **0.62** |
-| oleaje corto | 27 | — (estático) | **1.15** |
-| microoleaje | 18 | 0.012 | **0.24** |
-| nube | 2.45 | 0.004 | **0.028** |
+**Y la unidad que importa es el píxel por segundo, no el rad/s.** El primer
+intento de este pase subió las velocidades de fase y el dueño no vio nada
+—«no veo las olas en Miller, no se ve la animación»—, porque se estaba mirando
+el número equivocado. Una fase en rad/s no dice cuánto se mueve un patrón en
+pantalla: hay que dividirla por el número de onda para tener velocidad de
+superficie y multiplicarla por el radio del cuerpo en píxeles, que aquí son 47.
 
-El rizo medio es el que de verdad se ve moverse: cuatro crestas sobre el
-diámetro visible. No pinta color —a esta distancia el pigmento a esa escala es
-grano— sino que inclina la lámina y modula el brillo, que es como se ve el
-viento sobre el agua desde arriba.
+Hecha la cuenta, todo el oleaje iba entre 0.5 y 2.5 px/s. **Y Miller gira sobre
+su eje a 0.05 rad/s, que en su ecuador son 2.35 px/s.** Todas las olas se movían
+igual o más despacio que la superficie que las lleva, y un patrón que viaja a la
+velocidad de su soporte es, por definición, textura pintada encima.
+
+De ahí sale la regla que conviene no olvidar la próxima vez que se anime algo en
+este sistema: **sobre un cuerpo que gira, un campo animado no existe hasta que
+su velocidad de superficie es varias veces la del giro.** Aquí se apunta a entre
+cuatro y seis veces.
+
+**Segunda regla: acelerar no basta si el movimiento no tiene MARCHA.** Con las
+velocidades ya subidas el dueño grabó la pantalla y seguía sin ver olas. Medido
+sobre su grabación, el 34-46 % del disco cambiaba por segundo: **se movía, y aun
+así no se leía**. Y lo que se movía no estaba concentrado en ninguna parte — la
+luminancia media de los píxeles que cambiaban (121) era prácticamente la de los
+que no (127), o sea que el cambio estaba repartido por igual.
+
+Ésa es la firma del problema: los tres trenes iban en **ejes distintos** y a
+**velocidades de superficie distintas**, así que se deslizaban unos a través de
+otros. Eso no es oleaje, es hervor, y el ojo lo archiva como ruido.
+
+Lo que hace que un mar se lea como mar es que sus crestas son largas, PARALELAS y
+avanzan TODAS HACIA EL MISMO LADO a la misma velocidad. Así que los cuatro trenes
+y la capa de nube comparten ahora **un solo eje** —el de la marejada mayor— y
+**una sola velocidad de superficie**, 0.24 unidades de radio por segundo: 11.3
+px/s, casi cinco veces el giro del cuerpo. Como la fase de un tren avanza a k·v,
+cada uno lleva su número de onda multiplicado por esa velocidad común — que es
+justo lo contrario de darles la misma fase.
+
+| campo | número de onda | eje antes | fase | px/s |
+| --- | --- | --- | --- | --- |
+| marejada A | 5.22 | (referencia) | **1.25** | 11.3 |
+| marejada B | 8.60 | a 96° y en sentido contrario | **2.06** | 11.3 |
+| rizo medio | 15.5 | a 78° | **3.72** | 11.3 |
+| oleaje corto | 27.7 | a 71° | **6.65** | 11.3 |
+| microoleaje | 18 | deriva en (x, y) sin relación | **4.32** | 11.3 |
+| nube | 2.45 | deriva sólo en x | **0.245** | 4.7 |
+
+Lo que impide que el resultado sea una reja de seno perfecta no es el desorden de
+direcciones —ése era el problema— sino cuatro cosas que ya estaban: los 15° de
+desvío del segundo tren, el desfase del rizo por la veta de bajío, las bandas
+latitudinales que lo cruzan y la espuma por segmentos.
+
+El rizo medio es el que se ve moverse: cinco crestas sobre el diámetro visible.
+No pinta color —a esta distancia el pigmento a esa escala es grano— sino que
+inclina la lámina y modula el brillo, que es como se ve el viento sobre el agua
+desde arriba. Su amplitud de relieve sube de 0.0021 a 0.0098; a 0.0125 dejaba de
+corrugar y **tallaba**, con franjas negras que se comían el turquesa justo donde
+el dueño lo quería.
+
+La nube comparte el eje pero va a menos de la mitad de la velocidad del agua. La
+dirección compartida es lo que le da marcha al conjunto; la velocidad distinta es
+lo que separa las dos capas. Si coincidieran en las dos cosas serían una sola
+pintura; si no coincidieran en ninguna, volveríamos al hervor.
+
+**Y el destello se abre**, que era la otra mitad de por qué no se veía el mar. Su
+lóbulo valía 26 a lo largo y 520 a lo ancho: un filete de cuatro píxeles pegado
+al camino de luz, donde el centelleo funcionaba perfectamente sobre el 2 % del
+disco. A 9 y 110 cubre buena parte del hemisferio que mira a Gargantúa, que es
+donde un océano de verdad tiene su campo de chispas. Lo que gana en superficie lo
+paga en peso —0.95 → 0.52— para que la luminancia media no suba: es reparto, no
+exposición.
 
 Esto **no rompe** la dirección artística del hero. El sistema sigue quieto:
 Miller no recorre su órbita. Lo que se mueve es su superficie, exactamente igual
@@ -1281,18 +1368,260 @@ Disco de Miller en el hero de 1440×860, luminancia 0-255:
 | disco en penumbra (<25) | 20.6 % | 19.3 % | **2.5 %** |
 | disco que compite (>140) | 1.0 % | 2.0 % | **23.7 %** |
 
-Y la animación, medida con `tools/body-metrics.mjs --difiere` sobre dos renders
-**del mismo instante** que sólo difieren en la fase del oleaje: el campo animado
-decide el 12.2 % del disco en el segundo 4 y el 29.3 % en el segundo 10 — crece
-con el tiempo, que es lo que hace un tren de ondas que avanza.
+Y la animación, medida con `tools/body-metrics.mjs --difiere`, con dos cifras que
+hay que leer juntas:
+
+| | superficie que cambia más de 8 niveles |
+| --- | --- |
+| un segundo de escena, ejes cruzados (lo que grabó el dueño) | 33 % |
+| un segundo de escena, **un solo eje y un solo paso** | **49 %** |
+| un segundo de escena, con el oleaje CONGELADO (o sea, sólo el giro) | 12.9 % |
+
+El campo de oleaje decide ahora la mitad del cuerpo visible y aporta casi cuatro
+veces lo que aporta la rotación. Pero el salto que importa no es de 33 a 49: es
+que el mismo 33 % anterior no se leía y éste sí, porque el reparto dejó de ser
+isótropo. **Cuánto cambia no predice si se ve; en qué dirección cambia, sí.**
 
 **Y una trampa de medición que conviene no repetir.** El primer intento comparó
 dos INSTANTES distintos y dio 45 % del disco cambiando: parecía una prueba
 excelente de que el mar se movía. No lo era. Con todo el campo de oleaje
 congelado la cifra seguía siendo 46 %, porque Miller **gira sobre su eje** y una
-rotación rígida cambia todos los píxeles. Sobre un cuerpo que gira, la
-diferencia entre dos instantes no dice nada del material; hay que comparar dos
-renders de la misma pose.
+rotación rígida cambia todos los píxeles. Sobre un cuerpo que gira, la diferencia
+entre dos instantes no dice nada del material: hay que comparar dos renders de la
+MISMA pose que difieran sólo en el término que se investiga. Ese error costó una
+entrega — se documentó movimiento que en pantalla no existía.
+
+## 9 sexies. Edmunds — geología, no textura (2026-09-07)
+
+Esta sección manda sobre `8`, sobre el `Pase 2 · Edmunds` de `9 bis` y sobre
+`Edmunds: cuatro macroformas` de su segunda ronda, en **campo geográfico,
+relieve, paleta, ley difusa y filo de limbo**. No toca composición, posición,
+tamaño, órbita, inclinación, cámara, HUD ni fallback plano, y no toca a ningún
+otro cuerpo. La revisión del dueño **congela expresamente tamaño y posición**:
+Edmunds compensa el peso de la Endurance a la derecha y forma con la Ranger la
+base inferior alrededor de Gargantúa, y eso no se discute.
+
+### El diagnóstico, que no era el que parecía
+
+El dueño lo mira aislado y aprueba la base —silueta limpia, terminador oscuro,
+luz conectada con Gargantúa, y un trabajo cromático que ningún otro cuerpo hace
+en el sistema— pero señala un defecto que la composición general disimula: **la
+textura está trabajando demasiado**. Muchas manchas de tamaño parecido, casi
+todo con la misma importancia, y el resultado se lee como *textura planetaria
+aplicada sobre una esfera* en vez de como *geología de un mundo*. Pide tres o
+cuatro accidentes dominantes —una meseta, una cuenca, una región fracturada, una
+planicie mineral— con el detalle pequeño subordinado. Y pide **relieve
+percibido**: que ciertas áreas atrapen a Gargantúa de otra manera.
+
+La causa era concreta y contraintuitiva, y conviene dejarla escrita porque se
+puede repetir en cualquier cuerpo procedural:
+
+> Las cuatro provincias se decidían con `smoothstep` **estrechos** —de 0.05 a
+> 0.065 de ancho— sobre un campo de `fbm` de cuatro octavas. Una fbm a
+> frecuencia 1.28 no es una forma grande: es una forma grande **más** tres
+> octavas por encima que suman ±0.15 de rizado, o sea **tres veces el ancho de
+> la puerta que decide la frontera**. El contorno de cada provincia no lo
+> dibujaba la macroforma: lo dibujaba la octava fina. De ahí las islas del mismo
+> calibre en todas partes.
+
+Subir la escala de la macro no lo arregla, porque el rizado sube con ella. Y el
+segundo síntoma —que las manchas cambian de color pero no parecen cambiar
+físicamente la superficie— tenía la misma raíz por otro lado: el color salía de
+`provinces` y el sombreado salía de ondas de frecuencia 12-15 más una derivada
+de pantalla. **Dos terrenos distintos, uno pintado y otro iluminado.** Un cuerpo
+así se lee como calcomanía por mucha textura que tenga.
+
+### 1. El campo que decide la geografía pasa a ser analítico
+
+Tres ondas direccionales de frecuencia baja construyen la tectónica. Es liso por
+construcción, así que una puerta ancha da una masa grande y no un encaje. La fbm
+sigue ahí pero degradada a **perturbación de la frontera** (0.40 de peso): es lo
+que impide que las masas parezcan estampadas a máquina, sin volver a decidir
+cuántas hay.
+
+Y trae **su propia pendiente**: la derivada de una suma de senos es la misma
+suma desfasada, así que cuesta tres cosenos y ninguna muestra de ruido. Ésa es
+la pieza que faltaba de verdad. Ahora la misma función pinta la provincia y la
+ilumina, y por eso la cuenca tiene borde encendido y el valle tiene sombra.
+
+**La frecuencia hubo que calibrarla contra la pantalla, y en las dos
+direcciones.** El primer intento usó vectores de módulo 3: sobre una esfera de
+radio 1 eso es media ondulación por cuerpo, o sea un degradado, y salieron dos
+masas en vez de cuatro. El cuerpo pasó de manchado a **aerografiado** —de un
+defecto al contrario— y con él se fueron la cordillera y el estriado, que están
+gateados por la pendiente. Con módulos de 4.2 a 6.1 la fase recorre unas dos
+ondulaciones de diámetro a diámetro, que sobre el disco visible son las tres o
+cuatro masas que pide la revisión.
+
+### 2. La región montañosa se define por pendiente, no por altura
+
+Es gratis —el gradiente ya está calculado— y es lo que separa de verdad los
+cuatro accidentes: **la cuenca y la meseta son sitios llanos a distinta altura,
+la cordillera es un sitio inclinado a media altura, y la planicie mineral es el
+resto.** Cuatro masas que se distinguen por cómo responden a la luz y no sólo
+por su tinte.
+
+Tiene además un efecto colateral que resuelve el veto sobre los cráteres. El
+dueño pide evitar el vocabulario circular —«la Luna pero marrón»— a favor de
+erosión, fracturas, estratos, mesetas y cordilleras. Una puerta sobre una fbm
+isótropa **sólo sabe hacer manchas redondas**; una puerta sobre la magnitud de
+un gradiente hace crestas y fallas, que son formas alargadas por construcción.
+No hubo que quitar cráteres: hubo que dejar de fabricarlos.
+
+### 3. El sustrato ES la planicie mineral
+
+Corrección de fondo, y de las que más cambiaron la lectura. La planicie estaba
+escrita como una provincia con máscara propia —carbón pintado sobre un sustrato
+umber— y en pantalla salía como **una mancha gris redonda de bordes suaves** en
+mitad del cuerpo: justo el vocabulario prohibido, un cráter enorme y
+difuminado.
+
+El error era de categoría. Un fondo no tiene frontera: es aquello contra lo que
+se recortan los accidentes. Así que el carbón deja de ser máscara y pasa a ser
+el sustrato —oscuro, casi neutro, texturado por la escala media en todo el
+cuerpo— y encima se recortan los tres accidentes que sí tienen forma. El cuerpo
+gana su cuarta masa sin dibujarla, y la llanura ya no puede leerse como un
+accidente circular porque no tiene contorno.
+
+Antes de eso hubo otro intento fallido que conviene recordar: el carbón se puso
+en 0.13 neutro y **no se veía nada**, porque el sustrato de debajo promediaba
+0.135. Una provincia que no se separa en valor de su fondo no es una provincia,
+es el fondo con otro nombre.
+
+### 4. Mesas: el detalle pequeño va DENTRO de las masas, no encima de todas
+
+Con la geografía resuelta por un campo liso, el cuerpo quedó sin un solo borde
+duro, y una superficie sin bordes duros no se lee como roca por buena que sea su
+composición. La respuesta no es volver a repartir manchas por todo el cuerpo: es
+meter accidentes de borde duro **dentro** de las provincias y no fuera —una
+puerta estrecha sobre la escala media, multiplicada por la meseta y la
+cordillera—. Confinados así, no compiten con las macroformas, viven dentro de
+una y por construcción son más pequeñas que ellas. Y escriben en el relieve, no
+sólo en el color: el escalón de una mesa tiene una cara iluminada y otra en
+sombra.
+
+En la misma línea, los **estratos dejan de seguir al ruido para seguir a la
+altura**. Un estrato es una capa horizontal cortada por la erosión: en planta se
+ve como una curva de nivel, y se apiña donde el terreno es empinado. Antes su
+fase era ruido de escala media, o sea bandas que cruzaban las provincias sin
+relación con nada.
+
+Y la **fractura larga** ahora también se hunde: sigue a la tectónica —corta el
+terreno en el sentido en que está plegado— y su labio escribe en el
+desplazamiento del terminador, así que un lado atrapa la luz de Gargantúa y el
+otro se apaga. Una falla que no proyecta sombra es una raya pintada.
+
+### 5. El terminador no se toca, y la caída se hace material
+
+La revisión es explícita: **no aclarar el lado oscuro**, conservar el negro
+profundo, y a lo sumo meter una cantidad mínima de detalle mineral justo al
+lado. Es además la diferencia que separa a Edmunds de Miller sin inventar
+efectos, porque Miller tiene agua y aire que dispersan.
+
+Se cumple sin subir un punto el suelo: lo que cambia es que la banda de
+terminador **deja de ser lisa** —la máscara de cresta la reparte— y que el suelo
+nocturno baja de 0.22 a 0.20.
+
+Y la ley difusa pasa de lambert puro a **exponente 1.35 sobre suelo 0.07**. Esto
+apareció por medida, no por gusto: con la geografía nueva el hemisferio diurno
+subía ocho puntos de media sin que subiera el pico, o sea que lo que engordaba
+eran los medios tonos, y un planeta cuyo rango vive todo en los medios es un
+planeta lavado. En el punto subestelar la respuesta es exactamente la misma que
+antes —el pico no se toca— y a incidencia media cae un tercio.
+
+No es un truco de exposición, es el modelo correcto para esta superficie: un
+regolito seco y rugoso se auto-ensombrece a incidencia rasante. La comparación
+con Miller lo dice todo — el agua tiene suelo 0.19 y exponente **0.55**, la
+caída más lenta del sistema por dispersión bajo la superficie. Las dos leyes se
+leen ahora como lo que son: **aire y agua contra polvo y piedra.**
+
+### 6. El filo del limbo se rompe
+
+El otro defecto que señala la revisión es el filete claro continuo del contorno
+derecho: un rim uniforme alrededor de una esfera es la firma de un render. Lo
+que se pide es luz, desaparece, pequeño destello, negro.
+
+Tres cambios, y los tres sobre términos que ya existían:
+
+- **El exponente del filo de aire baja de 14 a 9**, contra la intuición del pase
+  anterior. Aquel lo subió para concentrar el aire y acertaba en que un halo
+  ancho era un halo; pero a exponente 14 la banda mide un par de píxeles sobre
+  un cuerpo de 54 de radio, y eso no es una capa de atmósfera: es una **línea**
+  dibujada siguiendo la circunferencia. Más ancha y con menos peso, la misma
+  energía deja de leerse como contorno.
+- **Una máscara de cresta trocea el filo de aire y el filo cálido.** La
+  corrugación media varía mucho más deprisa a lo largo del limbo que la
+  geometría de la esfera, así que multiplicar por ella fragmenta el arco en el
+  orden de magnitud correcto. Los pesos suben para compensar: media más baja,
+  picos más altos.
+- **Un destello**, del cruce entre el pico de la cresta y el pico del limbo. No
+  es un material nuevo ni una muestra nueva: son dos términos que ya estaban,
+  multiplicados en vez de sumados. Vive en un puñado de sitios sueltos del
+  contorno y en ninguno más.
+
+El tercer ingrediente del contorno, el relleno de canto, baja de 0.11 a 0.07. A
+diferencia de los otros dos **no sabe dónde está la luz** —levanta el canto mire
+donde mire— así que no hay forma de darle topografía; lo único que se puede
+hacer con él es dejarlo casi fuera y devolver su trabajo a los dos que sí tienen
+dirección.
+
+### 7. Seis minerales, porque Edmunds es Creatividad
+
+El dueño lo propone y encaja: sin convertirlo en un planeta de colores locos,
+Edmunds puede ser el cuerpo de mayor riqueza mineral del sistema. Ocre, cobre,
+carbón, arcilla, arena y un oliva muy apagado. Es la diferenciación limpia del
+catálogo — el Tesseracto es raro por geometría, Miller por agua, la Endurance
+por ingeniería, Edmunds por material y superficie.
+
+Se cumple **sin subir la saturación media**: el hierro rojizo se desplaza hacia
+carbón y baja a sustrato, el macizo pasa a cobre, la cuenca gana arcilla fría y
+una veta de oliva en su fondo, y la meseta se queda con la arena. La arcilla
+deja de disputarle a la arena el extremo claro, que era otro motivo de que se
+leyeran como una sola mancha pálida: la cuenca es polvo depositado y la meseta
+es roca barrida por el viento.
+
+### Presupuesto
+
+**Ni un sitio de ruido nuevo**: dos llamadas a `fbm` y una a `noise`, las mismas
+de antes. Ni una textura, ni un uniforme, ni un draw call. Lo que se añade son
+seis senos y tres cosenos, más el reparto de máscaras que ya se calculaban.
+
+### Medido
+
+Ventana de 109×109 px sobre el disco de Edmunds, mismo reloj (`--reloj=18`),
+misma pose y mismo build salvo el material.
+
+| | antes | después |
+|---|---|---|
+| media | 36.8 | **38.1** |
+| mediana | 22 | **22** |
+| percentil 95 | 110 | **119** |
+| percentil 99.5 | 149 | **141** |
+| croma medio | 0.542 | **0.537** |
+| % bajo 25 de luma | 53.3 | **54.0** |
+| % sobre 140 de luma | 1.2 | **0.6** |
+
+Es el perfil que pide el principio de la fase 1 y conviene leerlo entero: la
+media, la mediana y el croma **vuelven a donde estaban**, la sombra profunda es
+un poco más profunda que antes, los altos ganan nueve puntos y las zonas
+quemadas se reducen a la mitad. Lo que cambia no es cuánta luz tiene el cuerpo:
+es cómo está repartida. Un pase que hubiera bajado las dos colas habría sido
+simplemente apagarlo.
+
+**Y una trampa de medición que costó dos capturas.** Edmunds gira sobre su eje y
+`shot.mjs` no clava el reloj si no se lo pides: dos capturas del mismo build
+salían con caras distintas del planeta y cualquier comparación de histogramas
+mentía. Todas las cifras de esta tabla están tomadas con `--reloj=18`. Es el
+mismo aviso que dejó escrito el pase de Miller, en su otra forma.
+
+### Pruebas del contrato
+
+Pasa el **bloom-off** con `--sin-glow --sin-rotulos`: provincias, fractura,
+terminador y paleta mineral se conservan enteros sin emisivos ni halo. No sube
+de casilla en la tabla del §2 —lo que gana es contraste interno, no luminancia
+media— y en el cuadro completo sigue haciendo sus dos trabajos: contrapesar a la
+Endurance a la derecha y formar con la Ranger la base inferior. `npm run check`
+en verde (194 tests).
 
 ## 10. Herramientas
 | script | para qué |

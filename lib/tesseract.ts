@@ -39,6 +39,48 @@ export const TESSERACT_FACETS = [
 ] as const;
 
 /**
+ * El tiempo del hipercubo no corre parejo: la figura tiene RITMO.
+ *
+ * Con una sola velocidad, a los pocos segundos el cerebro concluye «vale, está
+ * rotando todo el rato» y deja de mirar la forma para esperar el siguiente
+ * fotograma. El recorrido tiene poses que se entienden —el cubo dentro del
+ * cubo— y tramos comprimidos donde la proyección se aplana y pierde superficie
+ * aparente. Que las dos duren lo mismo desperdicia las primeras y alarga las
+ * segundas.
+ *
+ * Así que el reloj se deforma: se demora en las poses legibles y cruza algo más
+ * deprisa los estados comprimidos. La velocidad instantánea es
+ * `1 + A·(2π/P)·cos(...)`, o sea ±25 %, que es cambio suficiente para notarse
+ * como respiración y demasiado poco para leerse como parar y arrancar.
+ *
+ * Dos propiedades que NO son opcionales:
+ *
+ *  · Sigue siendo función pura del tiempo absoluto. Integrar una velocidad
+ *    variable fotograma a fotograma habría atado la deformación al refresco de
+ *    la pantalla, que es justo lo que prohíbe §8.
+ *  · Es estrictamente creciente. El factor nunca baja de 0.75, así que la
+ *    figura jamás retrocede: una animación que rebobina medio segundo se lee
+ *    como un fallo, no como ritmo.
+ *
+ * Son DOS armónicos y no uno, y ésa es toda la razón de que los números sean
+ * feos. Con una sola sinusoide, mínimo y máximo caen a media onda de distancia
+ * —nueve segundos con periodo 18— y las poses que el dueño marcó como mejores
+ * (16.5 s y 34.5 s) y las que marcó como débiles (21.5 s y 39.5 s) están a
+ * cinco. Con un solo término, frenar en las buenas dejaba las débiles a un 4 %
+ * por encima de la media: nada. El segundo armónico, a mitad de periodo,
+ * desplaza el máximo hasta donde hace falta.
+ *
+ * El resultado medido: 0.71 en 16.5 s y 34.5 s, 1.21 en 21.5 s y 39.5 s, y
+ * 0.95 en los tramos de transición de 9 s y 27 s, que el dueño quería que
+ * siguieran leyéndose. Recorrido total dentro de [0.70, 1.22].
+ */
+function rhythm(seconds: number): number {
+  return seconds
+    + 0.3151 * Math.sin((2 * Math.PI * (seconds - 7.5)) / 18)
+    + 0.2722 * Math.sin((2 * Math.PI * (seconds - 3.5)) / 9);
+}
+
+/**
  * Rotación en 4D y perspectiva, en tiempo ABSOLUTO y sobre memoria reutilizada.
  *
  * Absoluto y no incremental por el mismo motivo que `spinAt`: un paso por
@@ -54,9 +96,12 @@ export const TESSERACT_FACETS = [
  * lee como una jaula. Se normaliza en cada muestra —y no contra un rango fijo—
  * porque el recorrido en w cambia con la rotación: con una escala fija, la
  * jerarquía se desvanecía justo en las fases donde el cubo se ve más de frente.
+ *
+ * El tiempo entra POR EL RITMO y no en crudo — ver `rhythm`.
  */
 export function sampleTesseract(seconds: number, target: Float32Array, cells?: Float32Array): void {
-  const angles = [seconds * 0.19 + 0.35, seconds * 0.137 + 0.48, seconds * 0.083 + 0.16];
+  const t = rhythm(seconds);
+  const angles = [t * 0.19 + 0.35, t * 0.137 + 0.48, t * 0.083 + 0.16];
   const cos = angles.map(Math.cos), sin = angles.map(Math.sin);
   let cx = 0, cy = 0, cz = 0;
   for (let vertex = 0; vertex < 16; vertex++) {

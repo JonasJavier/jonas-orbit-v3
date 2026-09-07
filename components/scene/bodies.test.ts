@@ -210,7 +210,10 @@ describe("cuerpos del Sistema Gargantúa", () => {
         */
         manoeuvringPods: 4,
         manoeuvringNozzles: 4,
+        rcsNozzles: 10,
         firingNozzles: 2,
+        warmLights: 9,
+        technicalLights: 4,
       });
 
       /*
@@ -225,7 +228,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
         distancia, no tiene volumen y no admite sombreado — o sea, el wireframe
         grueso que la dirección de arte lleva cuatro pases evitando.
       */
-      const crystalParts = ["tesseract-crystal-edges", "tesseract-drawing-light", "tesseract-glass-facets"]
+      const crystalParts = ["tesseract-crystal-edges", "tesseract-drawing-light", "tesseract-glass-facets", "tesseract-crossing-occluder"]
         .map((name) => {
           const mesh = tesseract.object.getObjectByName(name) as THREE.Mesh<
             THREE.BufferGeometry,
@@ -236,7 +239,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
           expect(mesh.geometry.getIndex()?.count, name).toBeGreaterThan(0);
           return mesh;
         });
-      const [crystalEdges, drawingLight] = crystalParts;
+      const [crystalEdges, drawingLight, , crossingOccluder] = crystalParts;
       /*
         Y no hay una cuarta pieza escondida. El presupuesto del cuerpo es su
         parte más fácil de perder: cada idea nueva llega pidiendo «sólo un
@@ -244,7 +247,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
       */
       let crystalMeshes = 0;
       tesseract.object.traverse((node) => { if (node instanceof THREE.Mesh) crystalMeshes++; });
-      expect(crystalMeshes).toBe(3);
+      expect(crystalMeshes).toBe(4);
       /*
         EL BLOOM-OFF TEST, en forma de aserción. El cristal es OPACO y escribe
         profundidad: su silueta no depende del trazo, que es aditivo y se apaga
@@ -256,6 +259,19 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(crystalEdges.material.uniforms.uEmission).toBeDefined();
       expect(drawingLight.material.blending).toBe(THREE.AdditiveBlending);
       expect(drawingLight.material.depthWrite).toBe(false);
+      /*
+        LA CUARTA CAPA NO SE VE, Y ÉSA ES SU DEFINICIÓN. El tubo gordo de la
+        oclusión existe para que una arista que pasa por detrás se interrumpa
+        unos píxeles alrededor del cruce en vez de justo debajo. En el momento
+        en que escriba color deja de ser un auxiliar de profundidad y pasa a ser
+        un contorno grueso alrededor de cada arista: la jaula, otra vez.
+
+        Y va la PRIMERA. Escribir profundidad después del cristal no serviría de
+        nada, porque para entonces el cristal ya se dibujó.
+      */
+      expect(crossingOccluder.material.colorWrite).toBe(false);
+      expect(crossingOccluder.material.depthWrite).toBe(true);
+      expect(crossingOccluder.renderOrder).toBeLessThan(crystalEdges.renderOrder);
       /*
         Lo retirado NO vuelve: el corredor de marcos y sus umbrales contaban
         una arquitectura recorrible, que es lo contrario de una figura de
@@ -401,8 +417,15 @@ describe("cuerpos del Sistema Gargantúa", () => {
          encoja sin que nadie lo decida, y aquí lo decidió el dueño. Lo que sí se
          conserva intacto es el resto del bloque —el suelo aparente y la
          jerarquía contra Miller, Edmunds y la Ranger—, que es donde vive de
-         verdad «ni mota ni inflado». Sigue siendo una banda, no un número. */
-      expect(bodies.tesseract.radius).toBeGreaterThan(4.55);
+         verdad «ni mota ni inflado». Sigue siendo una banda, no un número.
+
+         El suelo baja otra vez a 4.47 el 2026-09-06 (§14 decies), cuando el
+         dueño pide el 2 % que el tercer recorte dejó a deber: 4.667 → 4.574.
+         Lo que se re-basa es el suelo, y lo que se conserva es el MARGEN —0.117
+         rs antes, 0.104 ahora—, que es la parte que de verdad vigila. Con dos
+         centésimas de holgura la banda no protege nada: se rompería sola al
+         primer retoque de geometría, y la V3 del Tesseracto ya está pedida. */
+      expect(bodies.tesseract.radius).toBeGreaterThan(4.47);
       expect(bodies.tesseract.radius).toBeLessThan(5.05);
       expect(size.tesseract).toBeGreaterThan(0.035);
 

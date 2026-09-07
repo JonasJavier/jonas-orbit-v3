@@ -316,8 +316,18 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        5.05] que fija `bodies.test.ts`, con 0.17 rs de margen por abajo. El
        tercero repite exactamente ese 1.5 % (2.669 → 2.629) y el radio queda en
        4.652: cien milésimas de rs por encima del suelo de la banda, que sigue
-       siendo el margen más apretado de los tres cuerpos que se tocan. */
-    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.629 },
+       siendo el margen más apretado de los tres cuerpos que se tocan.
+
+       CUARTO RECORTE (2026-09-06, §14 decies): 2.629 → 2.5764, el 2 % que el
+       tercero dejó a deber. Aquel pase se quedó en el 1.5 de una horquilla de
+       1 a 2 SÓLO porque la banda de `bodies.test.ts` no daba para más; el dueño
+       pidió el 2 completo, así que la banda baja su suelo de 4.55 a 4.47 y
+       conserva el margen que tenía (0.117 → 0.104 rs). El radio de partida es
+       4.667 y no el 4.652 de arriba porque entre medias el cuerpo dejó de ser
+       un corredor de marcos y pasó a ser el hipercubo de cristal: misma
+       envolvente normalizada, otra figura dentro, medio punto porcentual más
+       de vértice lejano. Radio publicado: 4.667 → 4.574. */
+    placement: { orbitRadius: 32, phase: 300, inclination: 30, size: 2.5764 },
     sceneName: "scene-tesseract",
   },
   miller: {

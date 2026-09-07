@@ -616,7 +616,7 @@ tres**. Esa asimetría es la decisión:
 | Destino | `size` antes | `size` ahora | Δ | Radio publicado (rs) |
 | --- | --- | --- | --- | --- |
 | Endurance | 4.547 | 4.388 | −3.5 % | 6.496 → 6.269 |
-| Tesseracto | 2.669 | 2.629 | −1.5 % | 4.723 → 4.652 |
+| Tesseracto | 2.669 | 2.629 | −1.5 % | 4.723 → 4.652 (ver §14 decies) |
 | Ranger | 1.92 | 1.9104 | −0.5 % | 2.577 → 2.564 |
 | Miller | 2.782 | — | sin tocar | 3.116 |
 | Edmunds | 2.732 | — | sin tocar | 3.060 |
@@ -829,6 +829,40 @@ Viñeta, reflejo frío del canto superior y marcas de calibración de 1 px. Ni u
 mampara, ni un marco metálico, ni un instrumento con volumen. Criterio de
 aceptación: si al describir la home alguien menciona el visor antes que
 Gargantúa, está mal hecho.
+
+## 14 decies. El 2 % que faltaba del Tesseracto (2026-09-06)
+
+Manda sobre la fila `Tesseracto` de §14 septies, y sólo sobre ella. No toca a
+ningún otro cuerpo, ni posición, fase, inclinación, cámara, material o HUD.
+
+`size` 2.629 → **2.5764** (−2 %). Radio publicado **4.667 → 4.574 rs**.
+
+**Es la deuda que dejó abierta §14 septies.** Aquel pase escribió que el dueño
+pedía entre un 1 y un 2 % y que se aplicaba el 1.5 «porque su radio publicado
+tiene una banda dura en `bodies.test.ts`, [4.55, 5.05]». La banda era la única
+razón de quedarse corto. El dueño pide ahora el 2 % completo, así que se aplica
+el 2 % completo y la banda se mueve con él.
+
+**La banda baja su suelo de 4.55 a 4.47, y eso no es aflojar el test.** Es la
+tercera vez que se re-basa —subió a [4.8, 5.3] el 2026-09-04 y volvió a
+[4.55, 5.05] el 2026-09-05— y siempre por el mismo motivo: la banda prohíbe que
+el cuerpo crezca o encoja sin que nadie lo decida, no fija un tamaño correcto.
+Aquí lo decidió el dueño. Lo que se conserva es el **margen**, que es lo que de
+verdad protege: 0.117 rs antes, 0.104 ahora. Una banda con dos centésimas de
+holgura no vigila nada — se rompe sola al primer retoque de geometría, y la V3
+del Tesseracto ya está pedida.
+
+**Lo que NO se toca, y es donde vive «ni mota ni inflado»:** el suelo absoluto
+de tamaño aparente (0.035), que Miller siga siendo el menor, que el Tesseracto
+lo supere, y que la Ranger quede entre el Tesseracto y el 65 % de la Endurance.
+Esas cuatro guardas siguen exactamente igual y siguen pasando.
+
+**Por qué el radio de partida es 4.667 y no el 4.652 que publicó §14 septies.**
+Entre medias, el Tesseracto dejó de ser un corredor de marcos y pasó a ser el
+hipercubo de cristal (ver `docs/design/atlas-tesseract-reference.md`). Su
+envolvente se normaliza al mismo radio local, pero la figura que la ocupa es
+otra y sus vértices más lejanos caen medio punto porcentual más afuera. El 2 %
+se aplica sobre lo que el cuerpo mide HOY, que es lo único que ve el visitante.
 
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
