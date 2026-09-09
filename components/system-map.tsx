@@ -99,6 +99,33 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
     };
   }, []);
 
+  /*
+    Adquirir y soltar son asimétricos, y tienen que serlo.
+
+    `pointerleave` decía `setPointerTarget(null)` a secas: quien saliera de un
+    destino apagaba el estado de navegación fuera cual fuera el destino activo.
+    Con blancos que se tocan —y el proxy de Gargantúa toca a media escena— el
+    navegador puede entregar el `pointerenter` del vecino ANTES del
+    `pointerleave` del que dejas, y entonces el segundo evento borraba una
+    adquisición que ya era del primero: el cuerpo se encendía y se apagaba solo
+    en el mismo gesto. Soltar solo puede apagar lo que uno mismo encendió.
+  */
+  function acquire(id: WorldId) {
+    setPointerTarget(id);
+  }
+
+  function release(id: WorldId) {
+    setPointerTarget((current) => (current === id ? null : current));
+  }
+
+  function focusOn(id: WorldId) {
+    setFocusTarget(id);
+  }
+
+  function blurFrom(id: WorldId) {
+    setFocusTarget((current) => (current === id ? null : current));
+  }
+
   function activate(
     event: ReactMouseEvent<HTMLAnchorElement>,
     destination: WorldDestination,
@@ -186,8 +213,9 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   data-world={world.id}
                   data-system-body={world.id}
                   data-target-state={itemState}
-                  onPointerEnter={() => setPointerTarget(world.id)}
-                  onPointerLeave={() => setPointerTarget(null)}
+                  onPointerEnter={() => acquire(world.id)}
+                  onPointerLeave={() => release(world.id)}
+                  onPointerCancel={() => release(world.id)}
                   onClick={(event) =>
                     activate(event, { id: world.id, href: world.href })
                   }
@@ -220,8 +248,10 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
           activeWorldId={activeWorldId}
           navigationState={navigationState}
           onActivate={activate}
-          onFocusTargetChange={setFocusTarget}
-          onPointerTargetChange={setPointerTarget}
+          onFocusAcquire={focusOn}
+          onFocusRelease={blurFrom}
+          onPointerAcquire={acquire}
+          onPointerRelease={release}
           worlds={worlds}
         />
       </nav>

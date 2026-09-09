@@ -1,16 +1,24 @@
 /* The rail names the content first; the destination is revealed on acquisition.
-   Reserve both lines so hover never moves adjacent links. */
+   Reserve both lines so hover never moves adjacent links.
+
+   El nombre pasa de 0.69rem (11 px) a 0.78rem (12.5 px). El blanco de pulsación
+   ya era de 44-50 px, así que esto no cambia la accesibilidad: cambia el PESO
+   VISUAL. Contra una escena que ocupa la pantalla entera, once píxeles se leían
+   como instrumentación de fondo y no como la navegación del sitio — y quien
+   llega por primera vez tiene que encontrar aquí las seis secciones. La estética
+   se conserva entera: misma familia mono, mismo espaciado, mismos dos niveles.
+   El nombre cósmico sube en la misma proporción para no aplanar la jerarquía. */
 .system-map .nav-rail__link {
   min-height: 44px;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 0.85rem;
+  grid-template-rows: auto 0.9rem;
   align-content: center;
   row-gap: 0.3rem;
 }
 .system-map .nav-rail__name {
   grid-column: 1;
   grid-row: 1;
-  font-size: 0.69rem;
+  font-size: 0.78rem;
   letter-spacing: 0.11em;
 }
 .system-map .nav-rail__active-marker { position: absolute; left: 0; top: 0.7rem; }
@@ -18,7 +26,7 @@
   grid-column: 1;
   grid-row: 2;
   max-height: none;
-  font-size: 0.54rem;
+  font-size: 0.58rem;
   letter-spacing: 0.17em;
 }
 
@@ -87,8 +95,8 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
     justify-items: center;
     text-align: center;
   }
-  .system-map .nav-rail__name { font-size: 0.65rem; letter-spacing: 0.05em; }
-  .system-map .nav-rail__role { font-size: 0.5rem; }
+  .system-map .nav-rail__name { font-size: 0.72rem; letter-spacing: 0.05em; }
+  .system-map .nav-rail__role { font-size: 0.53rem; }
   html:not([data-scene-live="true"]) body:has(.system-home) .hud__controls { bottom: 9rem; }
 }
 @media (max-aspect-ratio: 1/1) {
@@ -125,7 +133,7 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
     bottom: max(0.3rem, env(safe-area-inset-bottom));
   }
   .system-map .nav-rail__item { flex: 1; }
-  .system-map .nav-rail__name { font-size: 0.58rem; }
+  .system-map .nav-rail__name { font-size: 0.64rem; }
   html:not([data-scene-live="true"]) .system-map .system-map__slot {
     left: var(--atlas-short-x);
     top: var(--atlas-short-y);

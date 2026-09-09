@@ -1,5 +1,6 @@
 import { GargantuaSystem } from "@/components/scene/gargantua-system";
 import { SiteBackdrop } from "@/components/site-backdrop";
+import { SoundtrackControl } from "@/components/soundtrack-control";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
 import { getWorlds } from "@/lib/worlds";
@@ -57,6 +58,7 @@ export default async function LocaleLayout({
       <SiteBackdrop routes={routes} fallbackAccent={worldsData.gargantua.accent} />
       {published ? <GargantuaSystem bodies={bodies} routes={routes} /> : null}
       {children}
+      {published ? <SoundtrackControl /> : null}
     </>
   );
 }

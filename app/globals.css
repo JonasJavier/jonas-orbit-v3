@@ -2307,6 +2307,37 @@ html[data-starfield="ready"] .space-backdrop__stars {
   pointer-events: none;
 }
 
+/*
+  ══ El marco del mapa tiene que ser el MISMO que el del canvas ═══════════════
+
+  Este es el fallo que hacía que apuntar a un planeta no hiciera nada, y que los
+  corchetes de adquisición cayeran sobre el vacío a la derecha del cuerpo.
+
+  La escena publica `--map-x` / `--map-y` en **píxeles del viewport**: los saca
+  de proyectar con la cámara sobre `canvas.clientWidth/Height`, y el canvas es
+  `position: fixed; inset: 0`. Pero `.system-map` es `position: absolute` dentro
+  de `.system-home`, que es `width: min(100%, 92rem)` con `margin-inline: auto`.
+  O sea: en cuanto la ventana pasa de 1472 px, el contenedor deja de empezar en
+  el borde izquierdo y **todo el campo de destinos se desplaza (viewport −
+  1472)/2 hacia la derecha**, mientras los cuerpos siguen dibujándose donde
+  siempre.
+
+  Medido: 0 px a 1280 y a 1440 · **+224 px a 1920** · **+544 px a 2560**. Por eso
+  no aparecía en ninguna prueba: la suite y las capturas viven en 1440, justo
+  por debajo del umbral. En un monitor grande, que es donde se grabó el vídeo,
+  el blanco de clic de cada cuerpo estaba a media pantalla de su cuerpo.
+
+  No hace falta ningún desfase por objeto ni ninguna corrección de posición: lo
+  que hay que arreglar es el MARCO. Con la escena viva el mapa pasa a ser fijo y
+  del tamaño del viewport, exactamente el mismo espacio en el que la escena mide.
+  Y sólo con la escena viva: el atlas plano se compone en porcentajes de la
+  columna de contenido, y ése es su marco correcto.
+*/
+html[data-scene-live="true"] .system-map {
+  position: fixed;
+  inset: 0;
+}
+
 .system-map__field {
   position: absolute;
   inset: 0;
@@ -3352,7 +3383,11 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   position: fixed;
   bottom: 1.35rem;
   left: 3.4rem;
-  z-index: 5;
+  /* Por encima del 7 al que sube un destino apuntado. Los proxies de los
+     cuerpos son invisibles, así que uno que cayera sobre el raíl se comería
+     un enlace sin que se viera por qué. El raíl es el índice accesible: no lo
+     tapa nada. */
+  z-index: 8;
   display: flex;
   gap: 0.1rem;
   margin: 0;
@@ -3527,6 +3562,33 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
   /* La escena se queda de telón: el índice ya no está anclado a ella. */
   html[data-scene-live="true"] .system-canvas {
     opacity: 0.55;
+  }
+}
+
+/*
+  …salvo que haya escena 3D y un ratón de verdad.
+
+  La regla de arriba —`.system-map__field { display: none }` por debajo de 60
+  rem— se escribió para el ATLAS PLANO en un móvil, donde el campo son seis
+  rótulos que no caben. Pero con la escena viva ese campo es otra cosa: es el
+  único sitio donde los cuerpos DIBUJADOS reciben el puntero. Apagarlo en toda
+  ventana de menos de 960 px dejaba los seis planetas mudos al ratón —ni foco,
+  ni HUD, ni retículo, ni clic— en cualquier navegador que no estuviera
+  maximizado; y en un Windows al 125 %, 960 px CSS son 1200 px de pantalla. Era
+  la mitad del «a veces el hover no funciona al pasar por encima de un planeta»:
+  no fallaba a veces, fallaba a partir de cierto ancho de ventana.
+
+  Vuelve el blanco de puntero; siguen fuera los RÓTULOS anclados, que es lo que
+  de verdad no cabe. El nombre del destino apuntado lo dice el HUD, y el raíl
+  sigue siendo el índice accesible. En pantallas táctiles no cambia nada.
+*/
+@media (max-width: 60rem) and (hover: hover) and (pointer: fine) {
+  html[data-scene-live="true"] .system-map__field {
+    display: block;
+  }
+
+  html[data-scene-live="true"] .system-map__body {
+    display: none;
   }
 }
 
@@ -4136,6 +4198,25 @@ html[data-scene-live="true"] .hud__glass::after {
   z-index: 7;
 }
 
+/*
+  Gargantúa NO sube al apuntarla, y esa excepción arregla un fallo de puntero.
+
+  Su proxy no es un círculo pequeño: cubre el disco entero —unos 970 × 250 px en
+  escritorio— porque el blanco de clic tiene que seguir a lo que se ve. Con la
+  promoción común, apuntar el agujero negro metía esa elipse enorme por encima
+  de los otros cinco destinos, y a partir de ahí la Endurance y Edmunds dejaban
+  de responder en toda la franja donde se solapan: el puntero seguía dentro de
+  Gargantúa, así que ni entraba en el vecino ni salía de ella. El síntoma era
+  exactamente «a veces el hover no funciona al pasar por encima de un planeta».
+
+  Sube lo justo para separarse del fondo y se queda POR DEBAJO de los cinco
+  cuerpos, que son los pequeños. La regla general de un mapa con blancos
+  solapados es que gane siempre el más pequeño: es el que cuesta apuntar.
+*/
+.system-map__slot[data-centre="true"]:not([data-target-state="idle"]) {
+  z-index: 3;
+}
+
 .system-map__hit-target {
   position: absolute;
   top: 0;
@@ -4529,13 +4610,23 @@ html[data-pointer-life="ready"] .site-stardust {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  /*
+    El ámbito es el DOCUMENTO, no la columna de contenido.
+
+    Estaba colgado de `.system-home`, que mide como mucho 92rem y va centrada.
+    Mientras el mapa vivía dentro de esa columna las dos cosas coincidían; ahora
+    que el mapa mide el viewport entero —ver la nota de `.system-map`— no
+    coincidirían, y en una pantalla de 2560 px las dos bandas laterales se
+    quedarían con el retículo dibujado Y el cursor del sistema encima. Dos
+    cursores a la vez es peor que ninguno.
+  */
   html[data-pointer-life="ready"]
-    .system-home:has(.system-map[data-navigation-cursor="active"]) {
+    body:has(.system-map[data-navigation-cursor="active"]) {
     cursor: none;
   }
 
   html[data-pointer-life="ready"]
-    .system-home:has(.system-map[data-navigation-cursor="active"])
+    body:has(.system-map[data-navigation-cursor="active"])
     :is(.nav-rail__link, .hud__readout--action, button, input, textarea, select) {
     cursor: pointer;
   }

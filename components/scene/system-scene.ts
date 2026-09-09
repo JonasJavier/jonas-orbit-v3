@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { SavePass } from "three/examples/jsm/postprocessing/SavePass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
 import {
@@ -17,6 +19,7 @@ import {
   GARGANTUA_FRAGMENT,
   GARGANTUA_RS,
   GARGANTUA_VERTEX,
+  SHADOW_GUARD_FRAGMENT,
 } from "./gargantua-shaders";
 import {
   createBody,
@@ -126,6 +129,34 @@ const BLOOM: Record<QualityTier, { strength: number; radius: number; scale: numb
 const BASE_EXPOSURE = 0.95;
 const BLOOM_THRESHOLD = 2.0;
 const TEMPORAL_BLEND = 0.18;
+
+/**
+ * Radio aparente de la sombra, en unidades del integrador.
+ *
+ * No es el horizonte. Un observador lejano no ve una esfera de radio rs: ve el
+ * disco de parámetros de impacto que caen dentro, y ese borde está en
+ * b = 3√3·GM/c² = (√27/2)·rs con la convención del shader (horizonte en r = rs,
+ * esfera de fotones en 1.5·rs). Es el mismo número que se retiró de la
+ * geodésica por dibujar una circunferencia exacta de un píxel; aquí no dibuja
+ * nada, sólo acota dónde se protege el negro.
+ */
+const SHADOW_IMPACT = (Math.sqrt(27) / 2) * GARGANTUA_RS;
+
+/**
+ * Guarda de la sombra. Ver la nota larga de `SHADOW_GUARD_FRAGMENT`.
+ *
+ * `inner` deja el 72 % central protegido y abre el borde hasta el radio de la
+ * sombra, para que no se vea una circunferencia. `amount` se queda por debajo
+ * de 1 a propósito: retirar el halo del TODO deja un negro plano y recortado
+ * contra el disco: sigue mereciendo una traza. Y `darkGate` está en luminancia
+ * LINEAL, antes del tone mapping — el suelo del disco lensado dentro de la
+ * sombra vive muy por encima de esta ventana, así que sus arcos no la cruzan.
+ */
+const SHADOW_GUARD = {
+  inner: 0.72,
+  amount: 0.88,
+  darkGate: [0.006, 0.075] as const,
+};
 
 /** Halton(2,3) recentrado en el píxel. */
 const JITTER: readonly (readonly [number, number])[] = [
@@ -373,6 +404,32 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   bodyPass.clearDepth = true;
   composer.addPass(bodyPass);
 
+  /*
+    La copia SIN bloom, y por qué va aquí y no en otro sitio.
+
+    `UnrealBloomPass` compone su halo con mezcla ADITIVA sobre el mismo búfer
+    que acaba de leer: después de él ya no existe en ninguna parte la imagen
+    previa. La guarda de la sombra la necesita entera —no un umbral ni una
+    aproximación— así que se copia justo antes, con los cuerpos ya dibujados.
+    Cuesta un blit y un render target de media precisión; el raymarch de al lado
+    gasta entre 190 y 340 pasos por píxel.
+
+    Sólo existe si hay bloom que guardar: sin `canFloat` el halo está apagado y
+    la cadena vuelve a ser exactamente la de antes.
+  */
+  const savePass = canFloat
+    ? new SavePass(
+        // Sin profundidad ni stencil: aquí sólo se guarda color. El destino por
+        // defecto de `SavePass` los reserva y no los usa nadie.
+        new THREE.WebGLRenderTarget(1, 1, {
+          type: THREE.HalfFloatType,
+          depthBuffer: false,
+          stencilBuffer: false,
+        }),
+      )
+    : null;
+  if (savePass) composer.addPass(savePass);
+
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(1, 1),
     BLOOM[tier].strength,
@@ -380,6 +437,36 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     BLOOM_THRESHOLD,
   );
   composer.addPass(bloomPass);
+
+  const shadowGuardPass = savePass
+    ? new ShaderPass({
+        name: "ShadowGuard",
+        uniforms: {
+          tDiffuse: { value: null },
+          // Se enlaza DESPUÉS de construir el paso: `ShaderPass` clona los
+          // uniformes que recibe, y `cloneUniforms` no puede clonar la textura
+          // de un render target — la pone a null y avisa por consola.
+          tClean: { value: null },
+          uCentre: { value: new THREE.Vector2(0.5, 0.5) },
+          uRadius: { value: new THREE.Vector2(0.05, 0.05) },
+          uInner: { value: SHADOW_GUARD.inner },
+          uAmount: { value: SHADOW_GUARD.amount },
+          uDarkGate: {
+            value: new THREE.Vector2(
+              SHADOW_GUARD.darkGate[0],
+              SHADOW_GUARD.darkGate[1],
+            ),
+          },
+        },
+        vertexShader: GARGANTUA_VERTEX,
+        fragmentShader: SHADOW_GUARD_FRAGMENT,
+      })
+    : null;
+  if (shadowGuardPass && savePass) {
+    shadowGuardPass.uniforms.tClean.value = savePass.renderTarget.texture;
+    composer.addPass(shadowGuardPass);
+  }
+
   composer.addPass(new OutputPass());
 
   // === Cámara ==============================================================
@@ -411,6 +498,24 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   /** A dónde apunta el puntero. El de arriba persigue a este, suavizado. */
   let parallaxTargetX = 0;
   let parallaxTargetY = 0;
+  /**
+   * El paralaje se PARA mientras hay un destino adquirido.
+   *
+   * Es la otra mitad del fallo de puntero. El paralaje mueve el sistema entero
+   * hasta 1.5° siguiendo al ratón, y a la distancia de encuadre eso son unas
+   * decenas de píxeles en pantalla; además llega suavizado, con una constante
+   * de 0.32 s, así que sigue derivando casi un segundo después de que el ratón
+   * se pare. El resultado sobre un cuerpo pequeño era que el planeta se
+   * escurría por debajo de un cursor QUIETO y el hover se apagaba solo, sin que
+   * el visitante hubiera movido nada. Apuntar movía el blanco.
+   *
+   * Al adquirir se congela el objetivo en el ángulo actual —no en cero: la
+   * cámara no vuelve a su sitio, se queda donde está— y se ignoran los
+   * movimientos del puntero hasta soltar. Es la regla de siempre de esta
+   * escena: la interfaz manda sobre la atmósfera. Y no hay oscilación posible,
+   * porque adquirir siempre termina en un estado inmóvil.
+   */
+  let parallaxHeld = false;
   let frameDistance = 120;
   let cssWidth = 1;
   let cssHeight = 1;
@@ -820,6 +925,58 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     bloomPass.strength = BLOOM[tier].strength * pose.bloom * bench.bloom;
 
     measureCentreLabelDrop();
+    measureShadowGate(aspect, tanHalfFov);
+  }
+
+  /**
+   * Dónde cae la sombra en pantalla, para la guarda del bloom.
+   *
+   * Se resuelve con la MISMA base que arma los rayos del raymarch —`forward`,
+   * `rolledRight`, `rolledUp`, `tanHalfFov`, `aspect`— y no con la matriz de
+   * `bodyCamera`. Las dos coinciden hoy y podrían dejar de coincidir mañana; la
+   * sombra la dibuja el shader, así que la puerta se mide en su geometría.
+   *
+   * El semieje sale de proyectar dos puntos del borde: el disco de la sombra
+   * visto de canto es la esfera de radio `SHADOW_IMPACT` centrada en el origen,
+   * y basta un punto a cada lado para saber cuánto ocupa. Así el número sigue
+   * siendo correcto si cambian el encuadre, el campo de visión o el viewport,
+   * sin ninguna constante calibrada a ojo.
+   */
+  const shadowScratch = new THREE.Vector3();
+  const shadowEdge = new THREE.Vector3();
+  const shadowNdc = new THREE.Vector2();
+  const shadowNdcEdge = new THREE.Vector2();
+
+  function projectToNdc(
+    point: THREE.Vector3,
+    aspect: number,
+    tanHalfFov: number,
+    out: THREE.Vector2,
+  ) {
+    shadowScratch.copy(point).sub(cameraPosition);
+    const depth = Math.max(shadowScratch.dot(forward), 1e-3);
+    out.set(
+      shadowScratch.dot(rolledRight) / (depth * aspect * tanHalfFov),
+      shadowScratch.dot(rolledUp) / (depth * tanHalfFov),
+    );
+  }
+
+  function measureShadowGate(aspect: number, tanHalfFov: number) {
+    if (!shadowGuardPass) return;
+
+    projectToNdc(shadowEdge.set(0, 0, 0), aspect, tanHalfFov, shadowNdc);
+    const uniforms = shadowGuardPass.uniforms;
+    uniforms.uCentre.value.set(shadowNdc.x * 0.5 + 0.5, shadowNdc.y * 0.5 + 0.5);
+
+    shadowEdge.copy(rolledRight).multiplyScalar(SHADOW_IMPACT);
+    projectToNdc(shadowEdge, aspect, tanHalfFov, shadowNdcEdge);
+    const radiusX = Math.abs(shadowNdcEdge.x - shadowNdc.x) * 0.5;
+
+    shadowEdge.copy(rolledUp).multiplyScalar(SHADOW_IMPACT);
+    projectToNdc(shadowEdge, aspect, tanHalfFov, shadowNdcEdge);
+    const radiusY = Math.abs(shadowNdcEdge.y - shadowNdc.y) * 0.5;
+
+    uniforms.uRadius.value.set(radiusX, radiusY);
   }
 
   let accumulated = 0;
@@ -1214,9 +1371,18 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
           material.uniforms.uFocus.value = focus;
         }
       }
+
+      // Un destino adquirido —por puntero, por raíl o por teclado— congela el
+      // paralaje donde esté. Ver la nota de `parallaxHeld`.
+      const held = id !== null;
+      if (held && !parallaxHeld) {
+        parallaxTargetX = parallaxX;
+        parallaxTargetY = parallaxY;
+      }
+      parallaxHeld = held;
     },
     setParallax(x, y) {
-      if (!pose.animated) return;
+      if (!pose.animated || parallaxHeld) return;
       /*
         Sólo se apunta el objetivo. El bucle lo alcanza suavizado, y por eso
         aquí ya NO se tira la acumulación temporal: antes cada `pointermove`
@@ -1245,6 +1411,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       historyRead.dispose();
       historyWrite.dispose();
       fallbackTarget?.dispose();
+      savePass?.dispose();
+      shadowGuardPass?.dispose();
       bloomPass.dispose();
       composer.dispose();
       renderer.dispose();
