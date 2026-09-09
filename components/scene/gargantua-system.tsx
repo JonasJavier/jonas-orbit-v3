@@ -194,6 +194,7 @@ export function GargantuaSystem({
           },
         });
         handleRef.current = handle;
+        handle.setCovered(worldIdRef.current === "miller");
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -239,6 +240,7 @@ export function GargantuaSystem({
   useEffect(() => {
     worldIdRef.current = worldId;
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
+    handleRef.current?.setCovered(worldId === "miller");
   }, [worldId]);
 
   // Paralaje aditivo del puntero, acotado a 2° dentro de la escena (§3). La

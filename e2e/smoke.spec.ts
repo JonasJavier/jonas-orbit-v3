@@ -239,6 +239,8 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   }) => {
     for (const world of WORLDS) {
       await page.goto(`/es/${world.slug}`);
+      const menu = page.getByRole("button", { name: "Explorar", exact: true });
+      if (await menu.isVisible()) await menu.click();
       const link = missionNav(page).getByRole("link", { name: world.label });
       await expect(link).toHaveAttribute("aria-current", "page");
     }
@@ -408,6 +410,14 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
       // llamada, así que `nav === systemMap(page)` es siempre falso. La rama se
       // decide por la URL, que es el dato real.
       const enLaHome = page.url().endsWith("/es");
+      const menu = page.getByRole("button", { name: "Explorar", exact: true });
+      if (!enLaHome && await menu.isVisible()) {
+        for (let i = 0; i < 20 && !(await menu.evaluate((el) => el === document.activeElement)); i++) {
+          await page.keyboard.press("Tab");
+        }
+        await expect(menu).toBeFocused();
+        await page.keyboard.press("Enter");
+      }
       const nav = enLaHome ? systemMap(page) : missionNav(page);
       const link = enLaHome
         ? nav.getByRole("link", { name: new RegExp(world.label) })
