@@ -45,7 +45,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="h-full antialiased">
+    // `data-scroll-behavior` no es decoración: Next 16 dejó de neutralizar por
+    // su cuenta el `scroll-behavior: smooth` que globals.css pone en <html>, y
+    // sin este atributo avisa en cada navegación. Con él vuelve el
+    // comportamiento anterior —desplazamiento instantáneo al cambiar de ruta,
+    // suave para los saltos dentro de la página— que es justo el que queremos:
+    // viajar a un mundo no es hacer scroll.
+    <html lang="es" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

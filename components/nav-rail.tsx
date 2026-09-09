@@ -29,15 +29,22 @@ export function NavRail({
   worlds,
   activeWorldId,
   navigationState,
-  onPointerTargetChange,
-  onFocusTargetChange,
+  onPointerAcquire,
+  onPointerRelease,
+  onFocusAcquire,
+  onFocusRelease,
   onActivate,
 }: {
   worlds: readonly WorldNavItem[];
   activeWorldId: WorldId | null;
   navigationState: WorldNavigationState;
-  onPointerTargetChange(id: WorldId | null): void;
-  onFocusTargetChange(id: WorldId | null): void;
+  /* Soltar lleva el id, no `null`: quien deja un destino sólo puede apagar ESE
+     destino. Ver la nota de `release` en system-map.tsx — el orden de
+     enter/leave entre dos blancos que se tocan no está garantizado. */
+  onPointerAcquire(id: WorldId): void;
+  onPointerRelease(id: WorldId): void;
+  onFocusAcquire(id: WorldId): void;
+  onFocusRelease(id: WorldId): void;
   onActivate(
     event: ReactMouseEvent<HTMLAnchorElement>,
     destination: WorldDestination,
@@ -61,10 +68,11 @@ export function NavRail({
               data-active={itemState !== "idle" ? "true" : undefined}
               data-rail-world={world.id}
               data-target-state={itemState}
-              onPointerEnter={() => onPointerTargetChange(world.id)}
-              onPointerLeave={() => onPointerTargetChange(null)}
-              onFocus={() => onFocusTargetChange(world.id)}
-              onBlur={() => onFocusTargetChange(null)}
+              onPointerEnter={() => onPointerAcquire(world.id)}
+              onPointerLeave={() => onPointerRelease(world.id)}
+              onPointerCancel={() => onPointerRelease(world.id)}
+              onFocus={() => onFocusAcquire(world.id)}
+              onBlur={() => onFocusRelease(world.id)}
               onClick={(event) =>
                 onActivate(event, { id: world.id, href: world.href })
               }

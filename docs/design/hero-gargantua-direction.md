@@ -864,6 +864,66 @@ envolvente se normaliza al mismo radio local, pero la figura que la ocupa es
 otra y sus vértices más lejanos caen medio punto porcentual más afuera. El 2 %
 se aplica sobre lo que el cuerpo mide HOY, que es lo único que ve el visitante.
 
+## 14 undecies. El bloom no puede encender la sombra (2026-09-08)
+
+Manda sobre §6 en **qué le está permitido al halo dentro del disco de la
+sombra**. No toca el bloom —ni su fuerza, ni su radio, ni su umbral—, ni el
+raymarch, ni la geodésica, ni la escala de Gargantúa, ni ningún cuerpo. Es la
+única excepción a la congelación de Gargantúa, y la pidió el dueño con estas
+palabras: «no propongo apagar el resplandor: es parte del atractivo […]
+probaría únicamente proteger mejor ese negro».
+
+**El diagnóstico.** Con el glow apagado, la sombra es negro puro y su silueta
+corta como un cuchillo. Con el glow encendido, el interior entero se llenaba de
+un gris con degradado —claro por el lado del disco brillante, apagado por el
+otro— y el agujero dejaba de leerse como un agujero: parecía una esfera gris
+iluminada. No es un defecto del bloom, es su definición. La sombra está rodeada
+de material incandescente por los cuatro costados, así que un radio ancho
+recoge luz de todo su alrededor y la deposita justo en el único sitio del cuadro
+donde por construcción no puede haber nada. **El radio ancho no se toca**: es lo
+que hace que el disco se sienta un incendio y no una bombilla (§6). Lo que se
+protege es el negro.
+
+**Por qué no vale oscurecer un disco de pantalla.** Sería más barato y está mal.
+Dentro del radio de la sombra sí hay luz legítima: los rayos con parámetro de
+impacto por debajo del crítico caen al horizonte, pero muchos cruzan el plano
+del disco ANTES de caer, y esos arcos lensados entran bastante hacia dentro por
+arriba y por abajo. Medido en la captura de referencia: la zona negra de verdad
+mide 118 px de ancho y sólo 73 de alto sobre un disco de sombra de ~142. Un
+multiplicador se habría comido el resto.
+
+**La regla, en una frase: el halo no puede encender lo que estaba apagado, y no
+toca nada de lo que ya estaba encendido.** Se guarda la imagen justo antes del
+bloom —un `SavePass` entre los cuerpos y el halo— y después del bloom se mezcla
+hacia ella con dos puertas: una ESPACIAL, el disco de parámetro de impacto
+crítico b = (√27/2)·rs proyectado con la misma base de cámara que traza los
+rayos, con el 72 % central protegido entero y el borde abierto para que no
+aparezca una circunferencia dibujada; y una de MATERIAL, sobre la luminancia
+lineal previa al tone mapping, para que un arco lensado conserve su glow. El
+techo de recuperación es 0.88 y no 1: retirar el halo del todo deja un negro
+recortado contra el disco, que tampoco es lo que se ve.
+
+**Medido** a 1440 × 860, luminancia media por anillo del radio de la sombra:
+
+| anillo | antes | con la guarda | referencia sin glow |
+| --- | --- | --- | --- |
+| 0–0.35 (núcleo) | 106.8 | **18.2** | 0.0 |
+| 0.35–0.6 | 120.0 | **59.8** | 15.4 |
+| 0.6–0.8 | 171.8 | 151.9 | 105.2 |
+| 0.8–1.0 | 183.0 | 180.9 | 143.6 |
+| 1.0–1.25 (fuera) | 154.5 | **154.5** | 117.0 |
+| 1.25–1.7 (fuera) | 137.6 | **137.8** | 102.0 |
+
+El núcleo baja un 83 %. **Fuera del disco de la sombra no cambia ni un dígito**:
+el halo sobre el cielo negro sigue exactamente donde estaba, que era la
+condición del dueño. Los anillos 0.6–1.0 apenas se mueven porque ahí viven los
+arcos lensados, y esos son luz real que conserva su glow.
+
+**Coste.** Un blit y un render target de media precisión sin profundidad, en una
+cadena cuyo paso anterior gasta entre 190 y 340 pasos de integración por píxel.
+Sin `EXT_color_buffer_half_float` no hay bloom, así que tampoco se construye la
+guarda: la cadena vuelve a ser exactamente la de antes.
+
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
 Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas

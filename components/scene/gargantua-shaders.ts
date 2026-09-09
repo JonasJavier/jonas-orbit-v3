@@ -1559,3 +1559,75 @@ void main() {
   gl_FragColor = vec4(texture2D(tHistory, vUv).rgb, 1.0);
 }
 `;
+
+/**
+ * Guarda de la sombra: devuelve el negro que el bloom había rellenado.
+ *
+ * ── El problema, medido ──────────────────────────────────────────────────────
+ *
+ * Con el glow apagado, la sombra de Gargantúa es negro puro y su silueta corta
+ * como un cuchillo. Con el glow encendido, el interior entero se llenaba de un
+ * gris con degradado —claro por el lado del disco brillante, apagado por el
+ * otro— y el agujero dejaba de leerse como un agujero: parecía una esfera gris
+ * iluminada. No es un defecto del bloom, es su definición: la sombra está
+ * rodeada de material incandescente por los cuatro costados, así que un radio
+ * ancho recoge luz de todo su alrededor y la deposita justo en el único sitio
+ * del cuadro donde por construcción no puede haber nada.
+ *
+ * Y el radio ancho no se toca: es lo que hace que el disco se sienta un
+ * incendio y no una bombilla. Lo que se protege es el negro.
+ *
+ * ── Por qué necesita la imagen SIN bloom, y no un multiplicador ──────────────
+ *
+ * Oscurecer un disco de pantalla habría sido más barato y está mal. Dentro del
+ * radio de la sombra sí hay luz legítima: los rayos con parámetro de impacto
+ * por debajo del crítico caen al horizonte, pero muchos cruzan el plano del
+ * disco ANTES de caer, y esos arcos lensados entran bastante hacia dentro por
+ * arriba y por abajo. En la captura de referencia la zona negra de verdad mide
+ * 118 px de ancho y sólo 73 de alto sobre un disco de sombra de ~142: el resto
+ * es material real. Un multiplicador se lo habría comido.
+ *
+ * Así que la guarda mezcla hacia la imagen previa al bloom, que ya tiene ese
+ * material con su valor exacto, y además sólo donde esa imagen estaba OSCURA.
+ * El resultado es una regla que se puede decir en una frase: **el halo no puede
+ * encender lo que estaba apagado, y no toca nada de lo que ya estaba
+ * encendido.** El cielo negro de fuera del disco de la sombra conserva su halo
+ * entero, porque la puerta espacial no llega hasta allí.
+ */
+export const SHADOW_GUARD_FRAGMENT = /* glsl */ `
+precision highp float;
+
+/** La imagen ya compuesta con el bloom encima. */
+uniform sampler2D tDiffuse;
+/** La misma imagen justo antes del bloom, guardada por el SavePass. */
+uniform sampler2D tClean;
+/** Centro de la sombra en coordenadas de textura. */
+uniform vec2 uCentre;
+/** Semiejes de la sombra, en las mismas unidades. */
+uniform vec2 uRadius;
+/** Fracción del radio hasta donde la guarda vale entera; de ahí se abre a cero. */
+uniform float uInner;
+/** Techo de la guarda: 1.0 retiraría el halo del todo. */
+uniform float uAmount;
+/** Luminancia lineal donde la guarda pasa de entera (x) a nula (y). */
+uniform vec2 uDarkGate;
+
+varying vec2 vUv;
+
+void main() {
+  vec3 bloomed = texture2D(tDiffuse, vUv).rgb;
+  vec3 clean = texture2D(tClean, vUv).rgb;
+
+  // Puerta espacial: dentro del disco de la sombra y con el borde abierto, para
+  // que no aparezca una circunferencia dibujada — el mismo error que costó
+  // retirar el término analítico del anillo de fotones.
+  vec2 offset = (vUv - uCentre) / max(uRadius, vec2(1e-4));
+  float inside = 1.0 - smoothstep(uInner, 1.0, length(offset));
+
+  // Puerta de material: lo que ya emitía conserva su halo.
+  float lum = dot(clean, vec3(0.2126, 0.7152, 0.0722));
+  float dark = 1.0 - smoothstep(uDarkGate.x, uDarkGate.y, lum);
+
+  gl_FragColor = vec4(mix(bloomed, clean, inside * dark * uAmount), 1.0);
+}
+`;

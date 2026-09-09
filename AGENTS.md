@@ -257,6 +257,58 @@ Seis minerales —ocre, cobre, carbón, arcilla, arena, oliva apagado— sin sub
 saturación media, porque Edmunds es Creatividad. Presupuesto intacto: dos sitios
 de fbm, uno de noise, cero draws y cero uniformes nuevos.
 
+**El marco del overlay (2026-09-08):** la sección `13` de
+`docs/design/endurance-navigation-interface.md` manda sobre `7` y `12` en **en
+qué espacio se miden las coordenadas del mapa**, y es la causa raíz de «el HUD
+está descentrado» y «el hover sólo funciona en zonas muy específicas». La escena
+publica `--map-x` / `--map-y` en píxeles del VIEWPORT —proyecta contra un canvas
+`position: fixed; inset: 0`— pero `.system-map` era `position: absolute` dentro
+de `.system-home`, que mide `min(100%, 92rem)` y va centrada. Por encima de
+1472 px de ventana, cada destino quedaba desplazado (viewport − 1472)/2 a la
+derecha: **+224 px a 1920 y +544 px a 2560**. Con la escena viva, `.system-map`
+pasa a `fixed; inset: 0`; el atlas plano conserva su marco de columna, que es el
+suyo. No hay ni un desfase por objeto: la proyección siempre estuvo bien y el
+contenedor mal.
+
+Sobrevivió por dos coincidencias que hay que recordar antes de dar por buena
+cualquier prueba de la portada: **la suite entera vive en 1440 px**, justo por
+debajo del umbral, y **ninguna prueba e2e montaba la escena viva** —toda la
+cobertura usaba `?no3d=1`, donde el marco de columna es correcto—. La deuda la
+cubre `e2e/scene-overlay.spec.ts`, que comprueba el contrato en 1440, 1920 y
+2560 sin necesitar GPU. Se evaluó y se DESCARTÓ con números anclar el proxy en
+el centro de un `Box3` en vez del pivote: Miller y Edmunds tienen desfase 0.0 %,
+la Endurance 1.7 %, y en el Tesseracto el centro de la caja es peor ancla que el
+pivote porque `sampleTesseract` ya normaliza sus vértices a radio 1.5 alrededor
+de su centroide en cada fase.
+
+**Pase de cierre del puntero (2026-09-08):** la sección `12` de
+`docs/design/endurance-navigation-interface.md` manda sobre `6` y `7` del mismo
+documento en **tamaño del raíl y condiciones bajo las que un cuerpo recibe el
+puntero**. No toca composición, cámara, material, HUD ni el contrato
+`idle → target → locked`. El «a veces el hover no funciona» eran **tres fallos
+deterministas** que se disparaban en circunstancias distintas: el campo de
+cuerpos desaparecía entero por debajo de 960 px CSS aunque la escena estuviera
+viva —regla escrita para el atlas plano, aplicada también al 3D—; el proxy de
+Gargantúa, que cubre el disco completo, subía por encima de sus vecinos al ser
+apuntado y los dejaba inalcanzables en la franja de solape; y el paralaje seguía
+moviendo el sistema bajo un cursor quieto, así que el planeta se escurría solo.
+Ahora el campo vuelve con puntero fino y escena viva (sin los rótulos anclados,
+que son lo que no cabe), el centro se queda por debajo de los cinco cuerpos —en
+un mapa con blancos solapados gana siempre el más pequeño—, `setFocus` congela
+el paralaje mientras hay destino adquirido, y soltar sólo apaga lo que uno
+encendió. `.nav-rail__name` sube de 0.69 a 0.78 rem.
+
+**El bloom no puede encender la sombra (2026-09-08):** la sección `14 undecies`
+de `docs/design/hero-gargantua-direction.md` manda sobre `6` en **qué le está
+permitido al halo dentro del disco de la sombra**. Es la única excepción a la
+congelación de Gargantúa y la pidió el dueño. No se toca el bloom —ni fuerza, ni
+radio, ni umbral—, ni el raymarch, ni la geodésica, ni la escala. Se guarda la
+imagen previa al halo y se vuelve a ella dentro del disco de parámetro de
+impacto crítico, con puerta de material para no apagar los arcos lensados que sí
+viven ahí dentro. La regla: **el halo no puede encender lo que estaba apagado, y
+no toca nada de lo que ya estaba encendido.** Medido: el núcleo de la sombra baja
+de 106.8 a 18.2 y fuera del disco no cambia ni un dígito.
+
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
 asociación canónica entre cuerpo y sección:
