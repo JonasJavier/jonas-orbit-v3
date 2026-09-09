@@ -74,6 +74,8 @@ export interface ProjectedBody {
 
 export interface SceneHandle {
   setPose(pose: CameraPose): void;
+  /** An opaque destination covers the scene; retain its context without drawing. */
+  setCovered(covered: boolean): void;
   setFocus(id: WorldId | null): void;
   /** Paralaje aditivo del puntero, en el rango −1..1. */
   setParallax(x: number, y: number): void;
@@ -1019,6 +1021,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   const projectionScratch = new THREE.Vector3();
   let frameHandle = 0;
   let disposed = false;
+  let covered = false;
   let lastWidth = 0;
   let lastHeight = 0;
   let lastFrozenDraw = 0;
@@ -1317,7 +1320,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   }
 
   function handleVisibility() {
-    if (document.hidden) {
+    if (document.hidden || covered) {
       if (frameHandle) cancelAnimationFrame(frameHandle);
       frameHandle = 0;
     } else if (!frameHandle && !disposed) {
@@ -1345,6 +1348,11 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   frameHandle = requestAnimationFrame(renderFrame);
 
   return {
+    setCovered(next) {
+      covered = next;
+      canvas.dataset.covered = String(next);
+      handleVisibility();
+    },
     get diagnostics() {
       return [
         gpuName,

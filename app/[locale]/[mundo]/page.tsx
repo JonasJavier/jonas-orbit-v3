@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/site-shell";
 import { WorldPage } from "@/components/world-page";
+import { MillerPage } from "@/components/miller-page";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { buildWorldMetadata } from "@/lib/world-metadata";
 import { BESPOKE_WORLD_IDS, getWorldBySlug, getWorlds } from "@/lib/worlds";
@@ -58,10 +59,14 @@ export default async function WorldRoute({ params }: WorldRouteProps) {
     <SiteShell
       locale={typedLocale}
       activeWorldId={world.id}
-      mainClassName="world-route"
+      mainClassName={world.id === "miller" ? "miller-route" : "world-route"}
       footerLabel={`JONÁS ORBIT · DESTINO ${String(world.order).padStart(2, "0")} / ${world.cosmicName.toUpperCase()}`}
     >
-      <WorldPage world={world} locale={typedLocale} />
+      {world.id === "miller" ? (
+        <MillerPage world={world} locale={typedLocale} />
+      ) : (
+        <WorldPage world={world} locale={typedLocale} />
+      )}
     </SiteShell>
   );
 }

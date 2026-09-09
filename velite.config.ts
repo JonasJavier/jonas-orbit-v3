@@ -37,6 +37,21 @@ const worldProse = defineCollection({
       summary: s.string(),
       introduction: s.string(),
       closing: s.string(),
+      education: s.object({
+        heroLine: s.string(),
+        philosophy: s.string(),
+        certificates: s.array(s.object({
+          id: s.string(),
+          title: s.string(),
+          issuer: s.string(),
+          date: s.string().optional(),
+          detail: s.string(),
+          category: s.enum(["code", "design", "marketing"]),
+          kind: s.enum(["program", "role", "course"]),
+          href: s.string(),
+          preview: s.string(),
+        })).min(1),
+      }).optional(),
       facts: s.array(s.object({ value: s.string(), label: s.string() })).min(1),
       panels: s
         .array(

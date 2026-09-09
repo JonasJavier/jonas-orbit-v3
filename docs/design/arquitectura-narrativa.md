@@ -37,6 +37,9 @@ al adquirirla, en el HUD, como cualquier otro destino.
 **Miller — Formación.** Aprendizaje y evolución: educación, cursos,
 certificaciones, formación técnica y complementaria.
 
+El diseño de su página y el catálogo contrastado de estudios se concretan en
+[Miller — formación sin punto final](miller-formacion.md) (2026-09-09).
+
 **Endurance — Proyectos.** El trabajo de desarrollo: software, web, sistemas,
 casos de estudio, producto digital, trabajo técnico entregado. Ingeniería,
 ejecución y sistemas construidos para cumplir una misión. La etiqueta visible es
