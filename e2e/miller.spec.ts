@@ -9,6 +9,26 @@ async function oceanDrawsOverFrames(page: Page) {
   });
 }
 
+test("navbar: el menú móvil permite explorar, cerrar con Escape y volver al contenido", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/es/formacion?no3d=1");
+  const menu = page.getByRole("button", { name: "Explorar", exact: true });
+  await menu.focus();
+  await page.keyboard.press("Enter");
+  const nav = page.getByRole("navigation", { name: "Navegación de mundos" });
+  await expect(nav.getByRole("link")).toHaveCount(6);
+  await expect(nav.getByRole("link", { name: "Formación", exact: true })).toHaveAttribute("aria-current", "page");
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeFocused();
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
+  await expect(page).toHaveURL(/#certificados$/);
+  await menu.click();
+  await nav.getByRole("link", { name: "Proyectos", exact: true }).click();
+  await expect(page).toHaveURL(/\/es\/proyectos$/);
+  await expect(page.getByRole("button", { name: "Explorar", exact: true })).toHaveAttribute("aria-expanded", "false");
+});
+
 test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -93,6 +113,35 @@ test("Miller: reduced-motion conserva la imagen y el contenido sin animación", 
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
   await expect(page.getByText(/Cursé ocho meses/)).toBeVisible();
   await expect(page.locator('.miller-archive a[href$=".pdf"]')).toHaveCount(23);
+  expect(await page.locator(".miller-proof .miller-currents__light").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+});
+
+test("Miller: las corrientes comparten pausa con el océano y duermen fuera de vista", async ({ page }) => {
+  await page.goto("/es/formacion?no3d=1");
+  const currents = page.locator(".miller-proof .miller-currents__light");
+  const state = () => currents.evaluate((element) => getComputedStyle(element).animationPlayState);
+  await expect.poll(state).toBe("paused");
+  await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
+  await page.getByRole("button", { name: "Activar corrientes", exact: true }).click();
+  await expect.poll(state).toBe("running");
+  await page.getByRole("button", { name: "Pausar corrientes", exact: true }).click();
+  await expect.poll(state).toBe("paused");
+  await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
+  await page.getByRole("button", { name: "Reanudar corrientes", exact: true }).click();
+  await expect.poll(state).toBe("running");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, value: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect.poll(state).toBe("paused");
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, "hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect.poll(state).toBe("running");
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(state).toBe("paused");
+  await expect(page.getByRole("button", { name: "Pausar océano", exact: true })).toBeVisible();
 });
 
 test("Miller: formación y certificados funcionan sin JavaScript", async ({ browser, baseURL }) => {
