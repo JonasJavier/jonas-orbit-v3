@@ -8,13 +8,42 @@ No altera los cuerpos del atlas ni la composición o las poses de cámara.
 
 ## Experiencia
 
+### Pase de cabina y agua (2026-09-10)
+
+El dueño pide una experiencia menos convencional, espacial y fantástica,
+manteniendo el AGUA como identidad principal. La navbar prueba la consola de
+cabina; la página gana un marco de observación pequeño, botones con bisel y
+lavado de luz, hitos de inmersión y corrientes luminosas que atraviesan las
+secciones. El océano original y su oleaje siguen dominando el hero.
+
+El archivo de certificados pasa a un módulo de a bordo: filtros empotrados,
+indicadores de selección, registros M/01–M/23 y documentos dentro de visores
+oscuros. Los números identifican el orden real del catálogo y se mantienen
+al filtrar. No se recolorean, sustituyen ni inventan certificados. Cada vista
+previa recibe un reflejo breve al apuntar o enfocar; sus PDF y nombres
+accesibles se mantienen. El fondo del archivo reutiliza la imagen del océano.
+
+`MillerWater` comparte consentimiento y pausa entre el océano y las corrientes.
+El archivo ofrece un control de pausa propio que actúa sobre ambos. Las
+corrientes sólo avanzan cuando su sección está visible y la página está en
+primer plano. No se añade otro canvas ni un bucle JavaScript: la luz recorre
+los trazos SVG con CSS. El perfil ligero parte en reposo; reduced-motion
+apaga las animaciones decorativas y mantiene el opt-in del océano. Sin JS,
+el contenido completo permanece visible y los controles inertes se ocultan.
+
+La versión anterior de navbar y Miller está guardada en
+`output/archive/navbar-cristal-miller-20260910-142134.zip`.
+
+### Contenido y estructura
+
 - Entrada de océano, horizonte distante y tipografía editorial. El guiño a
   Interstellar es espacial y atmosférico; la imagen es original.
 - Una reflexión sobre el aprendizaje conecta con tres áreas: CS50, Marketing
   Digital y los estudios de Multimedia en ITLA. El bachillerato cierra el origen
   académico del recorrido.
-- Archivo con tres programas y cinco roles destacados. Los quince cursos se
-  despliegan con un `details` nativo; los filtros muestran cada área completa.
+- Galería de 23 certificados con imagen individual: tres programas, cinco roles
+  y quince cursos. Todos se muestran al abrir el archivo; los filtros permiten
+  consultar cada área por separado.
   Los documentos abren como PDF en otra pestaña, indicado en el nombre accesible.
 - Salida hacia los proyectos y enlaces a los dos destinos contiguos.
 
@@ -42,19 +71,25 @@ extracción de texto y revisión visual de los certificados escaneados.
 
 Los 23 PDF públicos son copias íntegras, con nombres normalizados, en
 `public/education/`. No se descargan al abrir la página; se solicitan al seguir
-un enlace. Las tres miniaturas son WebP de 760 px generadas desde los PDF.
+un enlace. Las 23 miniaturas son WebP de hasta 960 px generadas desde los PDF,
+con carga diferida. La vista previa es obligatoria en el esquema de Velite.
 
 ## Movimiento y rendimiento
 
 La imagen permanece en HTML y se sirve como WebP de 195.248 bytes, con precarga.
 Un canvas 2D decorativo refracta únicamente la zona del agua. Ancho máximo de
-1440 px, sin multiplicador de DPR, tope de 30 fps y dos ondas coherentes. No
+1440 px, sin multiplicador de DPR, tope de 30 fps y dos ondas coherentes. El
+pase de revisión sitúa el horizonte en el 24 % de la imagen, amplía el relieve
+a 24 px en primer plano y avanza las crestas a aproximadamente 60 px/s en una
+superficie de 700 px. Una segunda pasada screen hace que la luz siga la cresta
+sobre los detalles reales del agua. No
 añade dependencias, otro contexto WebGL ni acoplamiento entre scroll y cámara.
 
 El botón «Pausar océano» retira el canvas y deja la imagen estática. El perfil
-ligero y `prefers-reduced-motion` también lo retiran. IntersectionObserver y
+ligero y `prefers-reduced-motion` también lo retiran inicialmente, con un botón
+«Activar océano» para el consentimiento explícito. IntersectionObserver y
 `visibilitychange` detienen el bucle fuera de pantalla y en segundo plano.
-Sin JavaScript siguen disponibles la imagen, la prosa, los PDF y el desplegable;
+Sin JavaScript siguen disponibles la imagen, la prosa y todos los PDF;
 los filtros se ocultan porque requieren JavaScript.
 
 La escena persistente conserva su contexto al viajar a Miller, pero `setCovered`
@@ -72,22 +107,36 @@ Original conservado en la carpeta de imágenes generadas; copia optimizada en
 
 ## Verificación
 
+Pase de cabina y agua (2026-09-10): `npm run check` completo y 98 pruebas E2E
+de `navbar`, `miller` y `smoke` pasan en Chromium de escritorio y móvil. La
+cobertura añadida comprueba pausa compartida, consentimiento en perfil ligero,
+reduced-motion y suspensión de corrientes fuera de pantalla y en segundo plano.
+Revisión visual de hero, menú y archivo en producción a 1440 y 375 px.
+
+Los scripts iniciales modernos de Formación suman ahora 166,47 KiB gzip,
+frente a los 164,42 KiB registrados en la primera entrega y 164,35 KiB de la
+portada actual. Medición sobre el HTML de producción, sumando cada `src` una
+vez; excluye `nomodule`, cargas diferidas y prefetch. No se añaden dependencias
+ni recursos gráficos; el archivo reutiliza la imagen de agua ya descargada.
+
 `components/miller-page.test.tsx` cubre integridad del catálogo, archivos,
 contenido académico y filtros. `e2e/miller.spec.ts` cubre teclado, PDF reales,
 destinos, desbordamiento, movimiento/pausa, segundo plano, fuera de pantalla,
 reduced-motion, HTML sin JavaScript y persistencia de la escena al salir.
 Se conserva la matriz existente de rutas y banda sonora.
 
-Resultado: `npm run check` verde (205 tests unitarios y build estático); 86
+Resultado del pase de revisión: `npm run check` verde (205 tests unitarios y build estático); 88
 pruebas E2E de Miller, rutas y música pasan en Chromium de escritorio y móvil.
 Revisión visual sobre build de producción a 1440 px y 375 px, además de los
-estados filtrados y el desplegable sin JavaScript.
+estados filtrados, imágenes individuales, menú móvil y acceso sin JavaScript.
+La navbar y los tres conceptos de logo se documentan en
+[Identidad de Gargantúa](identity-gargantua.md).
 
-Revisión del bundle de producción: los scripts iniciales para navegadores
+Revisión del bundle de la primera entrega, antes del pase de navbar: los scripts iniciales para navegadores
 modernos suman 164,42 KiB gzip en Formación, frente a 164,35 KiB en la portada
 actual. El chunk específico compartido por las rutas `[mundo]` pesa 10,05 KiB
 gzip e incluye el océano y el archivo. Estas cifras excluyen el polyfill
 `nomodule` y las cargas diferidas; no son una puntuación Lighthouse ni una
 medición de toda la transferencia tras los prefetch de navegación. El fondo
-WebP pesa 190,7 KiB; las tres miniaturas suman 96,2 KiB antes de la optimización
-de imágenes de Next. No se incorporaron dependencias.
+WebP pesa 190,7 KiB. En el pase actual las 23 miniaturas suman 815 KiB antes de
+la optimización de imágenes de Next y se cargan bajo demanda. No se incorporaron dependencias.

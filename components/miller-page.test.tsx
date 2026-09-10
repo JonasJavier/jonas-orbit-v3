@@ -1,13 +1,22 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorld } from "@/lib/worlds";
 import { MillerCertificates } from "./miller-certificates";
 import { MillerPage } from "./miller-page";
+import { MillerWater } from "./miller-water";
 
 const world = getWorld("miller", "es");
 const certificates = world.prose.education!.certificates;
+
+beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", class {
+    observe() {}
+    disconnect() {}
+  });
+});
+afterEach(() => vi.unstubAllGlobals());
 
 describe("Miller · formación documentada", () => {
   it("conserva el contenido real y distingue ITLA de una titulación", () => {
@@ -33,7 +42,7 @@ describe("Miller · formación documentada", () => {
   });
 
   it("filtra por área, anuncia el total y permite volver al archivo completo", () => {
-    const { container } = render(<MillerCertificates certificates={certificates} />);
+    const { container } = render(<MillerWater><MillerCertificates certificates={certificates} /></MillerWater>);
     expect(container.querySelectorAll('a[href$=".pdf"]')).toHaveLength(23);
     expect(screen.getAllByRole("img", { name: /Vista previa de/ })).toHaveLength(23);
     fireEvent.click(screen.getByRole("button", { name: "Diseño y UX" }));

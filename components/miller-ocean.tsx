@@ -2,20 +2,14 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { useLightEffectsMode } from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { useMillerWater } from "./miller-water";
 
 /** A single 2D surface, capped at 30 fps. The photograph remains the no-JS fallback. */
 export function MillerOcean() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
-  const reducedMotion = usePrefersReducedMotion();
-  const lightEffects = useLightEffectsMode();
-  const [paused, setPaused] = useState(false);
+  const { running, preferenceBlocked, paused, toggle } = useMillerWater();
   const [ready, setReady] = useState(false);
-  const [activated, setActivated] = useState(false);
-  const preferenceBlocked = !activated && (reducedMotion || lightEffects);
-  const running = !paused && !preferenceBlocked;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -104,10 +98,7 @@ export function MillerOcean() {
       {running && ready ? <canvas aria-hidden="true" ref={canvasRef} /> : null}
       <div className="miller-ocean__shade" aria-hidden="true" />
       {ready ? (
-        <button className="miller-ocean__control" type="button" aria-pressed={running} onClick={() => {
-          if (preferenceBlocked) { setActivated(true); setPaused(false); }
-          else setPaused(!paused);
-        }}>
+        <button className="miller-ocean__control" type="button" aria-pressed={running} onClick={toggle}>
           <span aria-hidden="true">{running ? "Ⅱ" : "▷"}</span>
           {preferenceBlocked ? "Activar océano" : paused ? "Reanudar océano" : "Pausar océano"}
         </button>

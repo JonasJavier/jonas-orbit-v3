@@ -41,21 +41,31 @@ export function SiteHeader({
   }, [open]);
 
   return (
-    <header className="site-header site-header--voyage" ref={headerRef} data-menu-open={open}>
-      <noscript><style>{`.site-header--voyage .voyage-menu-toggle { display: none; } .site-header--voyage .voyage-navigation { display: block !important; }`}</style></noscript>
+    <header
+      className="site-header site-header--voyage"
+      ref={headerRef}
+      data-menu-open={open}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
+      <noscript><style>{`.site-header--voyage + .miller-route { --miller-nav-clearance: 0px; } .site-header--voyage .voyage-menu-toggle { display: none; } .site-header--voyage .voyage-navigation { display: block !important; position: static !important; max-height: none !important; box-shadow: none; } @media (max-width: 1080px) { .site-header.site-header--voyage { position: relative; } }`}</style></noscript>
       <div className="site-header__bar">
         <Link
           className="brand-lockup"
           href={`/${locale}`}
           aria-label="Jonás Orbit, inicio"
         >
-          <span className="brand-mark" aria-hidden="true">
-            <span />
-          </span>
-          <span>
-            <strong>JONÁS ORBIT</strong>
-            <small>PORTAFOLIO INTERESTELAR</small>
-          </span>
+          <strong className="voyage-wordmark" aria-hidden="true">
+            <span>JONÁS</span>
+            <span className="voyage-wordmark__orbit">
+              <svg className="voyage-wordmark__o" viewBox="0 0 26 28" fill="none" focusable="false">
+                <circle cx="13" cy="14" r="9.5" />
+                <path d="M2.5 26 23.5 2" />
+              </svg>
+              <span>RBIT</span>
+            </span>
+          </strong>
         </Link>
 
         <button ref={toggleRef} className="voyage-menu-toggle" type="button" aria-expanded={open} aria-controls="voyage-navigation" onClick={() => setOpen(!open)}>
@@ -65,9 +75,8 @@ export function SiteHeader({
 
       <div id="voyage-navigation" className="voyage-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setOpen(false); }}>
         <MissionNavigation worlds={worlds} activeWorldId={activeWorldId} />
-        <Link className="voyage-map-link" href={`/${locale}`}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-35 12 12)" /><circle cx="12" cy="12" r="3" /><circle cx="19" cy="6" r="1.5" /></svg><span>Volver al mapa</span><span aria-hidden="true">↗</span></Link>
+        <Link className="voyage-map-link" href={`/${locale}`} aria-label="Volver al mapa"><span>Mapa estelar</span><span aria-hidden="true">↗</span></Link>
       </div>
-      {activeWorldId === "miller" ? <nav className="voyage-page-nav" aria-label="En esta página"><span>MILLER <i>/</i> FORMACIÓN</span><div><a href="#panorama">Panorama</a><a href="#trayectoria">Trayectoria</a><a href="#certificados">Certificados <span aria-hidden="true">↓</span></a></div></nav> : null}
     </header>
   );
 }
