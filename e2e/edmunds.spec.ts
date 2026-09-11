@@ -21,10 +21,10 @@ test("Edmunds: sectores, mosaico, imágenes reales y rutas", async ({ page, requ
   const response = await request.get(await works.last().getAttribute("href") ?? "");
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"]).toContain("image/webp");
-  await page.getByRole("button", { name: "Todo 77" }).click();
-  await expect(works).toHaveCount(77);
+  await page.getByRole("button", { name: "Todo 90" }).click();
+  await expect(works).toHaveCount(90);
   // The mosaic groups the archive by sector, in the order of the journey.
-  await expect(page.locator(".edmunds-group__head h2")).toHaveText(["Horizontes", "De cerca", "Criaturas", "Retratos", "Invierno", "Después del sol", "Diseño"]);
+  await expect(page.locator(".edmunds-group__head h2")).toHaveText(["Diseño", "Horizontes", "De cerca", "Criaturas", "Retratos", "Invierno", "Después del sol"]);
   const neighbours = page.getByRole("navigation", { name: "Destinos contiguos" });
   await expect(neighbours.locator("a").first()).toHaveAttribute("href", "/es/proyectos");
   await expect(neighbours.locator("a").last()).toHaveAttribute("href", "/es/experimentos");
@@ -46,10 +46,10 @@ test("A15: visor modal, flechas, foco atrapado y devuelto con Escape", async ({ 
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
   await page.keyboard.press("ArrowRight");
-  await expect(dialog.locator("figcaption strong")).toHaveText("Cuando cae el día");
+  await expect(dialog.locator("figcaption strong")).toHaveText("Fuego de campamento");
   await page.keyboard.press("ArrowLeft");
   await expect(dialog.locator("figcaption strong")).toHaveText("Aurora");
-  await expect(dialog.locator(".edmunds-viewer__bar")).toContainText("06.01 · Después del sol · Fotografía");
+  await expect(dialog.locator(".edmunds-viewer__bar")).toContainText("07.01 · Después del sol · Fotografía");
   await expect.poll(() => dialog.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
@@ -57,7 +57,7 @@ test("A15: visor modal, flechas, foco atrapado y devuelto con Escape", async ({ 
   expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
 });
 
-test("Cubierta 3D: perspectiva, avance, arrastre y carga acotada", async ({ page }) => {
+test("Cubierta 3D: pantalla completa, perspectiva, avance, arrastre y carga acotada", async ({ page }) => {
   const loaded = new Set<string>();
   page.on("request", (request) => { if (/\/art\/edmunds\/.+webp/.test(request.url())) loaded.add(request.url()); });
   await page.goto("/es/creatividad");
@@ -66,24 +66,31 @@ test("Cubierta 3D: perspectiva, avance, arrastre y carga acotada", async ({ page
   await expect.poll(() => page.locator('.edmunds-artwork[data-offset="0"] img').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   expect(await page.locator(".edmunds-stage__space").evaluate((space) => getComputedStyle(space).perspective)).not.toBe("none");
   expect(await page.locator(".edmunds-artworks").evaluate((list) => getComputedStyle(list).transformStyle)).toBe("preserve-3d");
+  // The deck fills the first viewport below the navigation bar.
+  const deck = (await page.locator(".edmunds-gallery").boundingBox())!;
+  expect(deck.height).toBeGreaterThanOrEqual(page.viewportSize()!.height - 70);
   // Seven works on the deck, the ambient copy of the active one and at most the
   // seven sector covers: never the archive, never a 1920 px file.
   expect(loaded.size).toBeLessThanOrEqual(16);
   expect([...loaded].some((url) => url.includes("-1920.webp"))).toBe(false);
-  await expect(page.locator(".edmunds-hud__readouts")).toContainText("01 / 77");
+  await expect(page.locator(".edmunds-hud__readouts")).toContainText("01 / 90");
   await stage.focus();
   await page.keyboard.press("End");
-  await expect(page.locator(caption)).toHaveText("X Tecno");
-  await expect(page.locator(".edmunds-hud__readouts")).toContainText("07.12");
+  await expect(page.locator(caption)).toHaveText("Camino al anochecer");
+  await expect(page.locator(".edmunds-hud__readouts")).toContainText("07.10");
   await page.keyboard.press("ArrowRight");
+  await expect(page.locator(caption)).toHaveText("Fantasía");
+  await page.keyboard.press("PageDown");
   await expect(page.locator(caption)).toHaveText("Entre montañas");
+  await page.keyboard.press("Home");
+  await expect(page.locator(caption)).toHaveText("Fantasía");
   await stage.scrollIntoViewIfNeeded();
   const box = (await stage.boundingBox())!;
   await page.mouse.move(box.x + box.width * .7, box.y + box.height * .5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * .3, box.y + box.height * .5, { steps: 8 });
   await page.mouse.up();
-  await expect(page.locator(caption)).toHaveText("El peso del silencio");
+  await expect(page.locator(caption)).toHaveText("Hoy se come");
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.getByRole("button", { name: "Ampliar", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -92,7 +99,7 @@ test("Cubierta 3D: perspectiva, avance, arrastre y carga acotada", async ({ page
 test("Cubierta 3D: una obra lateral se centra, la central abre, y la bitácora cambia de sector", async ({ page }) => {
   await page.goto("/es/creatividad");
   await page.locator('.edmunds-artwork[data-offset="1"] a').click();
-  await expect(page.locator(caption)).toHaveText("El peso del silencio");
+  await expect(page.locator(caption)).toHaveText("Hoy se come");
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await expect(page.locator('.edmunds-artwork[data-offset="0"] a')).toHaveAttribute("aria-current", "true");
   await page.locator('.edmunds-artwork[data-offset="0"] a').click();
@@ -100,15 +107,31 @@ test("Cubierta 3D: una obra lateral se centra, la central abre, y la bitácora c
   await page.keyboard.press("Escape");
   const sectors = page.getByRole("navigation", { name: "Sectores del archivo" });
   await sectors.getByRole("button", { name: /Invierno/ }).click();
-  await expect(page.locator(caption)).toHaveText("El bosque en blanco");
-  await expect(page.locator(".edmunds-hud__readouts")).toContainText("01 / 12");
-  await expect(page.getByRole("button", { name: "Invierno 12", exact: true })).toHaveAttribute("aria-pressed", "true");
-  const track = page.getByRole("group", { name: "Posición en el archivo" });
-  await expect(track.getByRole("button")).toHaveCount(1);
-  await page.getByRole("button", { name: "Todo 77" }).click();
-  await expect(track.getByRole("button")).toHaveCount(7);
-  await track.getByRole("button", { name: /Criaturas/ }).click();
-  await expect(page.locator(caption)).toHaveText("Compartir el paisaje");
+  await expect(page.locator(caption)).toHaveText("Túnel de hielo");
+  await expect(page.locator(".edmunds-hud__readouts")).toContainText("01 / 16");
+  await expect(page.getByRole("button", { name: "Invierno 16", exact: true })).toHaveAttribute("aria-pressed", "true");
+  // The sector rail only exists on wide decks; phones keep the index in the HUD.
+  if (page.viewportSize()!.width > 700) {
+    const track = page.getByRole("group", { name: "Posición en el archivo" });
+    await expect(track.getByRole("button")).toHaveCount(1);
+    await page.getByRole("button", { name: "Todo 90" }).click();
+    await expect(track.getByRole("button")).toHaveCount(7);
+    await track.getByRole("button", { name: /Criaturas/ }).click();
+    await expect(page.locator(caption)).toHaveText("Otro universo");
+  }
+});
+
+test("Cubierta 3D: modo cine atenúa la instrumentación en reposo y la devuelve al mover el puntero", async ({ page }) => {
+  await page.goto("/es/creatividad");
+  const gallery = page.locator(".edmunds-gallery");
+  await expect(gallery).toHaveAttribute("data-idle", "false");
+  await expect(gallery).toHaveAttribute("data-idle", "true", { timeout: 8000 });
+  // The fade takes 1.6 s; the attribute flips first.
+  await expect.poll(() => page.locator(".edmunds-top").evaluate((top) => Number(getComputedStyle(top).opacity)), { timeout: 4000 }).toBeLessThan(0.5);
+  const box = (await gallery.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(gallery).toHaveAttribute("data-idle", "false");
+  await expect.poll(() => page.locator(".edmunds-top").evaluate((top) => Number(getComputedStyle(top).opacity))).toBe(1);
 });
 
 test("A14: un 404 en el visor permite reintentar y seguir explorando", async ({ page }) => {
@@ -120,18 +143,20 @@ test("A14: un 404 en el visor permite reintentar y seguir explorando", async ({ 
   await dialog.getByRole("button", { name: "Reintentar" }).click();
   await expect.poll(() => dialog.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await dialog.getByRole("button", { name: "Siguiente en el visor" }).click();
-  await expect(dialog.locator("figcaption strong")).toHaveText("Cuando cae el día");
+  await expect(dialog.locator("figcaption strong")).toHaveText("Fuego de campamento");
 });
 
-test("Edmunds: reduced-motion conserva el archivo y evita transiciones", async ({ page }) => {
+test("Edmunds: reduced-motion conserva el archivo, evita transiciones y nunca atenúa el cromo", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/creatividad");
   await expect(page.getByRole("button", { name: "Mosaico" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("link", { name: /^Ampliar:/ })).toHaveCount(77);
+  await expect(page.getByRole("link", { name: /^Ampliar:/ })).toHaveCount(90);
   await page.getByRole("button", { name: "Galería 3D" }).click();
   expect(await page.locator(".edmunds-artwork").first().evaluate((art) => getComputedStyle(art).transitionDuration)).toBe("0s");
   await page.getByRole("button", { name: "Obra siguiente" }).click();
-  await expect(page.locator(caption)).toHaveText("El peso del silencio");
+  await expect(page.locator(caption)).toHaveText("Hoy se come");
+  await page.waitForTimeout(4200);
+  await expect(page.locator(".edmunds-gallery")).toHaveAttribute("data-idle", "false");
 });
 
 test("Edmunds: todo el archivo es legible y enlazable sin JavaScript", async ({ browser, baseURL }) => {
@@ -141,14 +166,14 @@ test("Edmunds: todo el archivo es legible y enlazable sin JavaScript", async ({ 
     await page.goto("/es/creatividad");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Creatividad");
     const works = page.getByRole("link", { name: /^Ampliar:/ });
-    await expect(works).toHaveCount(77);
+    await expect(works).toHaveCount(90);
     await expect(page.getByRole("button", { name: "Galería 3D" })).toHaveCount(0);
     const last = works.last();
     await last.scrollIntoViewIfNeeded();
     await expect(last).toBeVisible();
     await last.focus();
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/art\/edmunds\/diseno-x-tecno-1920.webp$/);
+    await expect(page).toHaveURL(/\/art\/edmunds\/camino-al-anochecer-1920.webp$/);
   } finally { await context.close(); }
 });
 
@@ -192,7 +217,7 @@ test("Edmunds: touch permite pasar una obra sin abrir el visor", async ({ browse
     await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 300, y }] });
     await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 100, y }] });
     await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await expect(page.locator(caption)).toHaveText("El peso del silencio");
+    await expect(page.locator(caption)).toHaveText("Hoy se come");
     await expect(page.getByRole("dialog")).not.toBeVisible();
   } finally { await context.close(); }
 });
