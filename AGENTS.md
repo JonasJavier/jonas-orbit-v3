@@ -15,18 +15,26 @@ pasar por ese documento. La matriz de tests vive en su Appendix A.
 `/es/creatividad`, pedida por el dueño el mismo día tras rechazar la primera
 («la galería 3D no me gusta, quiero que sea más inmersiva; el foco de toda la
 página debe ser la galería 3D»). La página abre directamente sobre la galería,
-que ocupa la primera pantalla y lleva el `h1`: anillo de obras en CSS 3D con
-suelo de rejilla, reflejos, estrellas y luz ambiente de la obra activa; HUD con
-lecturas `OBRA / SECTOR / REGISTRO`; retículo sobre la obra centrada; raíl de
-sectores; paralaje de ±2° con puntero fino. Sigue sin WebGL, sin bucle y sin
-autoplay. El catálogo pasa de 60 a **77 obras en siete sectores** (Horizontes,
-De cerca, Criaturas, Retratos, Invierno, Después del sol, Diseño), ordenadas
-como un viaje, con `caption` y `medium` nuevos en el esquema de Velite. Una
-regla que costó una entrega: **en un contexto 3D real el plano de la lista está
-en z = 0, delante de toda obra empujada en Z, y se traga el puntero** — los
-contenedores llevan `pointer-events: none` y sólo las obras lo reciben. El
-System Map, sus cuerpos, cámara y materiales no cambian. Su valoración visual
-queda abierta.
+que ocupa la primera pantalla ENTERA con el cromo superpuesto y lleva el
+`h1`: anillo de obras en CSS 3D con suelo de rejilla, reflejos, nebulosa,
+estrellas, polvo, luz ambiente de la obra activa y el limbo de Edmunds bajo el
+horizonte; HUD con lecturas `OBRA / SECTOR / REGISTRO`; retículo sobre la obra
+centrada; raíl de sectores; paralaje de ±2° con puntero fino. Sigue sin WebGL,
+sin bucle y sin autoplay. El catálogo pasa de 60 a **90 obras en siete
+sectores con Diseño primero** (Diseño, Horizontes, De cerca, Criaturas,
+Retratos, Invierno, Después del sol), ordenadas como un viaje, con `caption` y
+`medium` nuevos en el esquema de Velite. Dos reglas que costaron una entrega
+cada una: **en un contexto 3D real el plano de la lista está en z = 0, delante
+de toda obra empujada en Z, y se traga el puntero** — los contenedores llevan
+`pointer-events: none` y sólo las obras lo reciben —, y **un suelo inclinado
+dentro del mismo contexto 3D que las obras se levanta por delante de la activa
+y pinta una franja sobre la foto** — el suelo vive en su propia perspectiva,
+detrás. Un cuarto pase añade el **modo cine** —la instrumentación se atenúa
+tras 3,5 s sin entrada y vuelve con cualquiera— y rehace el orden dentro de
+cada sector con criterio (las más fuertes primero, «Fantasía» abre, el
+homenaje a Interstellar cierra Diseño); las 90 obras se conservan porque la
+curación manual la hará el dueño. El System Map, sus cuerpos, cámara y
+materiales no cambian. Su valoración visual queda abierta.
 
 **Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
