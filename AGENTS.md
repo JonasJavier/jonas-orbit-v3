@@ -10,11 +10,23 @@ This version has breaking changes — APIs, conventions, and file structure may 
 aprobado con eng review CLEAR). No abras decisiones arquitectónicas nuevas sin
 pasar por ese documento. La matriz de tests vive en su Appendix A.
 
-**Página de Edmunds (2026-09-11):** `docs/design/edmunds-creatividad.md`
-documenta la primera implementación de `/es/creatividad` pedida por el dueño:
-fotografía, diseño y composición como hobby; catálogo en el MDX, galería CSS
-3D de perspectiva fija, mosaico y visor accesible. El System Map, sus cuerpos,
-cámara y materiales no cambian. Su valoración visual queda abierta.
+**Página de Edmunds — cubierta de observación (2026-09-11):**
+`docs/design/edmunds-creatividad.md` documenta la segunda implementación de
+`/es/creatividad`, pedida por el dueño el mismo día tras rechazar la primera
+(«la galería 3D no me gusta, quiero que sea más inmersiva; el foco de toda la
+página debe ser la galería 3D»). La página abre directamente sobre la galería,
+que ocupa la primera pantalla y lleva el `h1`: anillo de obras en CSS 3D con
+suelo de rejilla, reflejos, estrellas y luz ambiente de la obra activa; HUD con
+lecturas `OBRA / SECTOR / REGISTRO`; retículo sobre la obra centrada; raíl de
+sectores; paralaje de ±2° con puntero fino. Sigue sin WebGL, sin bucle y sin
+autoplay. El catálogo pasa de 60 a **77 obras en siete sectores** (Horizontes,
+De cerca, Criaturas, Retratos, Invierno, Después del sol, Diseño), ordenadas
+como un viaje, con `caption` y `medium` nuevos en el esquema de Velite. Una
+regla que costó una entrega: **en un contexto 3D real el plano de la lista está
+en z = 0, delante de toda obra empujada en Z, y se traga el puntero** — los
+contenedores llevan `pointer-events: none` y sólo las obras lo reciben. El
+System Map, sus cuerpos, cámara y materiales no cambian. Su valoración visual
+queda abierta.
 
 **Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
