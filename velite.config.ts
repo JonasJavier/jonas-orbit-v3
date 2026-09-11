@@ -37,6 +37,21 @@ const worldProse = defineCollection({
       summary: s.string(),
       introduction: s.string(),
       closing: s.string(),
+      creativity: s.object({
+        heroLine: s.string(),
+        statement: s.string(),
+        note: s.string(),
+        collections: s.array(s.object({ id: s.string(), label: s.string(), description: s.string() })).min(1),
+        artworks: s.array(s.object({
+          id: s.string().regex(/^[a-z0-9-]+$/),
+          title: s.string(),
+          alt: s.string(),
+          collection: s.string(),
+          source: s.string(),
+          width: s.number().positive(),
+          height: s.number().positive(),
+        })).min(1),
+      }).optional(),
       education: s.object({
         heroLine: s.string(),
         philosophy: s.string(),

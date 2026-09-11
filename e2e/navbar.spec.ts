@@ -1,5 +1,42 @@
 import { expect, test } from "@playwright/test";
 
+for (const width of [375, 1440]) {
+  test(`navbar: cielo discreto, pausa y preferencias a ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/es/formacion?no3d=0");
+    const header = page.getByRole("banner");
+    const sky = page.locator(".voyage-sky");
+    const animationState = () => sky.evaluate((element) => getComputedStyle(element, "::before").animationPlayState);
+    await expect(header).toHaveAttribute("data-sky-running", "true");
+    const box = await header.boundingBox();
+    expect(box!.y).toBe(0);
+    expect(box!.height).toBe(width < 1081 ? 63 : 67);
+    if (width < 1081) await page.getByRole("button", { name: "Explorar", exact: true }).click();
+    await page.getByRole("button", { name: "Pausar estrellas", exact: true }).click();
+    await expect.poll(animationState).toBe("paused");
+    await page.getByRole("button", { name: "Reanudar estrellas", exact: true }).click();
+    await expect.poll(animationState).toBe("running");
+    await page.evaluate(() => {
+      Object.defineProperty(document, "hidden", { configurable: true, value: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(animationState).toBe("paused");
+    await page.evaluate(() => {
+      Reflect.deleteProperty(document, "hidden");
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(animationState).toBe("running");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(header).toHaveAttribute("data-sky-running", "false");
+    expect(await sky.evaluate((element) => getComputedStyle(element, "::before").animationName)).toBe("none");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/es/formacion?no3d=1");
+    await expect(header).toHaveAttribute("data-sky-running", "false");
+    await expect(page.getByRole("button", { name: "Pausar estrellas", exact: true })).toBeHidden();
+  });
+}
+
 for (const viewport of [
   { width: 320, height: 568 },
   { width: 812, height: 375 },
@@ -14,6 +51,9 @@ for (const viewport of [
   test(`navbar: destinos alcanzables a ${viewport.width} × ${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/es/formacion?no3d=1");
+    const frame = await page.getByRole("banner").boundingBox();
+    expect(frame!.x).toBe(0);
+    expect(frame!.width).toBe(viewport.width);
     const hero = page.locator(".miller-hero");
     const before = await hero.boundingBox();
     const menu = page.getByRole("button", { name: "Explorar", exact: true });

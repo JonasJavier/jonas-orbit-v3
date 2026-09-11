@@ -14,7 +14,7 @@ const WORLDS = [
   { slug: "sobre-mi", label: "Sobre mí", title: "Sobre mí" },
   { slug: "formacion", label: "Formación", title: "Formación" },
   { slug: "proyectos", label: "Proyectos", title: "Proyectos y sistemas" },
-  { slug: "creatividad", label: "Creatividad", title: "Creatividad visual" },
+  { slug: "creatividad", label: "Creatividad", title: "Creatividad" },
   { slug: "experimentos", label: "Experimentos", title: "Experimentos" },
   { slug: "contacto", label: "Contacto", title: "Contacto" },
 ] as const;

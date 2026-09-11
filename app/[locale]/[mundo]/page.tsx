@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/site-shell";
 import { WorldPage } from "@/components/world-page";
 import { MillerPage } from "@/components/miller-page";
+import { EdmundsPage } from "@/components/edmunds-page";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { buildWorldMetadata } from "@/lib/world-metadata";
 import { BESPOKE_WORLD_IDS, getWorldBySlug, getWorlds } from "@/lib/worlds";
 
 /**
- * Los 4 mundos que son solo prosa.
+ * Los cuatro mundos resueltos desde MDX. Miller y Edmunds tienen presentación
+ * propia; los otros dos usan la página editorial común.
  *
  * Endurance (`/es/proyectos`) y Ranger (`/es/contacto`) tienen carpeta propia
  * porque montan el índice de proyectos y el formulario; sus segmentos estáticos
@@ -59,11 +61,13 @@ export default async function WorldRoute({ params }: WorldRouteProps) {
     <SiteShell
       locale={typedLocale}
       activeWorldId={world.id}
-      mainClassName={world.id === "miller" ? "miller-route" : "world-route"}
+      mainClassName={world.id === "miller" ? "miller-route" : world.id === "edmunds" ? "edmunds-route" : "world-route"}
       footerLabel={`JONÁS ORBIT · DESTINO ${String(world.order).padStart(2, "0")} / ${world.cosmicName.toUpperCase()}`}
     >
       {world.id === "miller" ? (
         <MillerPage world={world} locale={typedLocale} />
+      ) : world.id === "edmunds" ? (
+        <EdmundsPage world={world} locale={typedLocale} />
       ) : (
         <WorldPage world={world} locale={typedLocale} />
       )}

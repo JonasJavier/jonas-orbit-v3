@@ -8,7 +8,45 @@ No altera los cuerpos del atlas ni la composición o las poses de cámara.
 
 ## Experiencia
 
-### Pase de cabina y agua (2026-09-10)
+### Retirada del control del archivo y revisión del movimiento
+
+Por petición del dueño se retira el botón Animar/Pausar/Reanudar corrientes
+del archivo, junto con sus estilos. El control del hero sigue gobernando el
+océano y las corrientes decorativas.
+
+El dueño señala que el movimiento de la fotografía se concentra en una parte
+del agua. La implementación confirma la limitación: desplaza franjas de la
+imagen y concentra amplitud con `depth * depth`; no reconstruye oleaje real.
+La dirección propuesta es vídeo a partir de la imagen original: cámara fija,
+oleaje coherente en toda la superficie, nubes lentas y continuidad de bucle,
+conservando composición y espacio de lectura. No se ha generado ni integrado
+un vídeo: no hay un asset disponible y la conexión Weave/Figma está pendiente.
+
+### Pase editorial y selección de evidencias (2026-09-10)
+
+Tras comparar la consola, el dueño vuelve a la navbar de cristal. No se
+rediseña Miller para imitarla: el hero conserva tamaño, posición y composición
+del titular, la imagen y el oleaje. «Ver mi recorrido ↓» sustituye a «Explorar
+mi formación». Los titulares principales y las tres métricas se mantienen.
+
+La prosa intermedia explica la conexión entre código, personas, diseño y
+productos con menos metáforas. CS50x (2023) y CS50W (2024) se nombran
+inequívocamente como cursos del programa CS50 de Harvard. ITLA sigue sin
+titulación ni certificación. El cierre conecta lo aprendido con productos reales.
+
+El archivo presenta seis credenciales iniciales: CS50x, CS50W, Marketing
+Digital, UX Designer, UX Researcher y Analista de Marketing Online. «Ver los
+23 documentos ↓» despliega las otras diecisiete mediante `details`/`summary`
+nativos; se puede volver a los destacados y funciona con teclado y sin JS.
+Al filtrar se muestran todos los documentos del área; volver a Todo recupera
+la selección breve. Los 23 enlaces y documentos permanecen en el HTML servido.
+
+Las corrientes completas se reservan para «Siempre hay algo más por descubrir».
+El archivo usa cinco trazos horizontales más suaves; la trayectoria y el cierre
+dejan de repetir el mismo SVG. «Animar corrientes» aclara el control, manteniendo
+consentimiento, pausa compartida y suspensión fuera de pantalla.
+
+### Pase anterior — cabina y agua (2026-09-10)
 
 El dueño pide una experiencia menos convencional, espacial y fantástica,
 manteniendo el AGUA como identidad principal. La navbar prueba la consola de
@@ -42,8 +80,8 @@ La versión anterior de navbar y Miller está guardada en
   Digital y los estudios de Multimedia en ITLA. El bachillerato cierra el origen
   académico del recorrido.
 - Galería de 23 certificados con imagen individual: tres programas, cinco roles
-  y quince cursos. Todos se muestran al abrir el archivo; los filtros permiten
-  consultar cada área por separado.
+  y quince cursos. Seis destacados visibles al entrar, diecisiete desplegables;
+  los filtros permiten consultar cada área por separado.
   Los documentos abren como PDF en otra pestaña, indicado en el nombre accesible.
 - Salida hacia los proyectos y enlaces a los dos destinos contiguos.
 
@@ -106,6 +144,11 @@ Original conservado en la carpeta de imágenes generadas; copia optimizada en
 > Create an original cinematic photorealistic alien ocean landscape website hero BACKGROUND ASSET. Widescreen 16:9. No typography, interface, logos, people or ships. Camera one meter above endless cold slate teal-blue ocean with long sculptural parallel swells and delicate silver foam. Horizon upper third. An immense distant tidal wave like a mountain on far RIGHT horizon, hazy clouds, a tiny crescent planet in high right sky. Water dominates frame. Darker less detailed left half for white typography. Right half beautiful detailed physically believable sea textures and silver reflections. Subtle warm distant glow on right horizon, palette midnight navy, slate blue, deep cyan, pale silver, never tropical turquoise. Premium photographic film still, quiet epic cosmic scale reminiscent of exploring an ocean planet, no copied movie frame. This is for education as water that never stops flowing.
 
 ## Verificación
+
+Pase editorial y cristal (2026-09-10): `npm run check` completo, con 205 tests
+unitarios, y las 98 pruebas E2E de `navbar`, `miller` y `smoke` pasan. Las pruebas
+de archivo ahora verifican seis destacados, despliegue de los 23, cierre sin
+perder el foco, filtros y acceso al resto de documentos sin JavaScript.
 
 Pase de cabina y agua (2026-09-10): `npm run check` completo y 98 pruebas E2E
 de `navbar`, `miller` y `smoke` pasan en Chromium de escritorio y móvil. La

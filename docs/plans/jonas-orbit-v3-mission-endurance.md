@@ -362,8 +362,8 @@ Regla: todos los comportamientos de esta tabla tienen cobertura automatizada en 
 | A11 | Override de usuario persistido | Elección ignorada entre visitas | F2B | Unit | Vitest | localStorage manda sobre heurística | Pendiente |
 | A12 | Formulario: validación + estados | Envíos rotos sin feedback | F1A | Comp | Testing Library | Mensajes por campo; éxito/error/reintento renderizados | ✅ Cubierto (`contact-form.test.tsx`) |
 | A13 | Honeypot | Spam trivial | F1A | Unit/Comp | Vitest + Testing Library | Campo invisible; su llenado no verifica ni entrega | ✅ Cubierto (`contact-server.test.ts` + render del formulario) |
-| A14 | Galería: vacío / 1 foto / imagen 404 | Vitrina rota | F1A | Comp | Testing Library | Estados dignos; fallback en 404 | Pendiente |
-| A15 | Visor: teclado + focus trap | Inaccesible / foco fugado | F1A | Comp | Testing Library | Flechas/Escape; foco atrapado y devuelto | Pendiente |
+| A14 | Galería: vacío / 1 foto / imagen 404 | Vitrina rota | F1A | Comp | Testing Library | Estados dignos; fallback en 404 | ✅ Cubierto (`edmunds-page.test.tsx`; reintento real en `e2e/edmunds.spec.ts`) |
+| A15 | Visor: teclado + focus trap | Inaccesible / foco fugado | F1A | E2E | Playwright | Flechas/Escape; foco atrapado y devuelto | ✅ Cubierto (`e2e/edmunds.spec.ts`, modal nativo en escritorio y móvil) |
 | A16 | Reduced-motion en componentes | Coreografía forzada | F1A | Comp | Testing Library | Sin animación antes del opt-in; contenido íntegro | ✅ Cubierto (`narrative-experience.test.tsx`) |
 | A17 | Hero estable después de la hidratación | Hydration mismatch o layout shift en el fold | F1A | Comp | Testing Library | Markup servidor/cliente coherente; CTAs no cambian client-side; cero layout shift atribuible | ✅ Cubierto (hero estático + CTAs contractuales) |
 | A18 | Contenido opcional faltante | Componente roto por dato ausente | F1A | Comp | Testing Library | Render digno sin el dato | ✅ Cubierto (caso sin galería opcional) |

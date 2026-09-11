@@ -7,15 +7,16 @@ import { MillerOcean } from "./miller-ocean";
 import { MillerWater } from "./miller-water";
 import "./miller-page.css";
 
-function CurrentLines() {
+function CurrentLines({ surface = false }: { surface?: boolean }) {
+  const paths = Array.from({ length: surface ? 5 : 13 }, (_, i) => surface
+    ? `M-100 ${140 + i * 22} C200 ${90 + i * 26}, 410 ${210 + i * 12}, 730 ${150 + i * 20} S1050 ${120 + i * 19},1300 ${145 + i * 22}`
+    : `M-100 ${80 + i * 15} C250 ${-120 + i * 24}, 400 ${430 - i * 10}, 730 ${200 + i * 9} S1050 ${20 + i * 14},1300 ${160 + i * 10}`);
   return (
     <svg className="miller-currents" viewBox="0 0 1200 380" fill="none" aria-hidden="true" preserveAspectRatio="none">
-      {Array.from({ length: 13 }, (_, i) => (
-        <path key={i} d={`M-100 ${80 + i * 15} C250 ${-120 + i * 24}, 400 ${430 - i * 10}, 730 ${200 + i * 9} S1050 ${20 + i * 14},1300 ${160 + i * 10}`} />
-      ))}
+      {paths.map((path, i) => <path key={i} d={path} />)}
       <g className="miller-currents__light">
-        {[1, 4, 7, 10].map((i) => (
-          <path key={i} pathLength="1000" d={`M-100 ${80 + i * 15} C250 ${-120 + i * 24}, 400 ${430 - i * 10}, 730 ${200 + i * 9} S1050 ${20 + i * 14},1300 ${160 + i * 10}`} />
+        {(surface ? [1, 3] : [1, 4, 7, 10]).map((i) => (
+          <path key={i} pathLength="1000" d={paths[i]} />
         ))}
       </g>
     </svg>
@@ -39,7 +40,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
           <h1>{prose.title}<span>{education.heroLine}</span></h1>
           <p className="miller-hero__intro">{prose.introduction}</p>
           <div className="miller-hero__actions">
-            <a href="#trayectoria" className="miller-button">Explorar mi formación <span aria-hidden="true">↓</span></a>
+            <a href="#trayectoria" className="miller-button">Ver mi recorrido <span aria-hidden="true">↓</span></a>
             <a href="#certificados" className="miller-text-link">Ver certificados <span aria-hidden="true">↗</span></a>
           </div>
         </div>
@@ -48,7 +49,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
 
       <section className="miller-philosophy" data-water-section aria-labelledby="miller-philosophy-title">
         <CurrentLines />
-        <div className="miller-section-label"><span>01 / LA CORRIENTE</span><span aria-hidden="true">≈</span></div>
+        <div className="miller-section-label"><span>01 / CÓMO APRENDO</span><span aria-hidden="true">≈</span></div>
         <div className="miller-philosophy__copy">
           <h2 id="miller-philosophy-title">Siempre hay algo<br />más <em>por descubrir.</em></h2>
           <p>{education.philosophy}</p>
@@ -57,8 +58,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
       </section>
 
       <section id="trayectoria" className="miller-journey" data-water-section aria-labelledby="miller-journey-title">
-        <CurrentLines />
-        <div className="miller-section-heading"><p className="miller-eyebrow">02 / PUNTOS DE INMERSIÓN</p><h2 id="miller-journey-title">Distintas aguas.<br /><em>Una misma curiosidad.</em></h2><p>Código, estrategia y lenguaje visual. Tres corrientes que se encuentran en mi forma de crear.</p></div>
+        <div className="miller-section-heading"><p className="miller-eyebrow">02 / MI RECORRIDO</p><h2 id="miller-journey-title">Distintas aguas.<br /><em>Una misma curiosidad.</em></h2><p>Código, estrategia y lenguaje visual. Tres disciplinas que se cruzan en mi forma de resolver problemas y construir productos.</p></div>
         <div className="miller-studies">
           {prose.panels.slice(0, 3).map((panel, i) => (
             <section className="miller-study" key={panel.title}>
@@ -72,12 +72,12 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
       </section>
 
       <section id="certificados" className="miller-proof" data-water-section aria-labelledby="miller-proof-title">
-        <div className="miller-archive-tide" aria-hidden="true"><CurrentLines /></div>
-        <div className="miller-section-heading miller-section-heading--archive"><div><p className="miller-eyebrow">03 / BITÁCORA DE APRENDIZAJE</p><h2 id="miller-proof-title">Lo aprendido<br /><em>deja huella.</em></h2></div><p>Una selección de programas, roles y cursos que forman parte de mi recorrido. Cada documento se puede consultar.</p></div>
+        <div className="miller-archive-tide" aria-hidden="true"><CurrentLines surface /></div>
+        <div className="miller-section-heading miller-section-heading--archive"><div><p className="miller-eyebrow">03 / BITÁCORA DE APRENDIZAJE</p><h2 id="miller-proof-title">Lo aprendido<br /><em>deja huella.</em></h2></div><p>Una selección de cursos, programas y credenciales que documentan mi recorrido. Cuando existe evidencia disponible, puedes consultarla aquí.</p></div>
         <MillerCertificates certificates={education.certificates} />
       </section>
 
-      <section className="miller-horizon" data-water-section aria-labelledby="miller-horizon-title"><CurrentLines /><p className="miller-eyebrow">EL VIAJE CONTINÚA</p><h2 id="miller-horizon-title">La próxima ola<br /><em>es lo que construyo.</em></h2><p>{prose.closing}</p>{next ? <Link href={getWorldPath(next, locale)} className="miller-button">Explorar mis proyectos <span aria-hidden="true">→</span></Link> : null}</section>
+      <section className="miller-horizon" aria-labelledby="miller-horizon-title"><p className="miller-eyebrow">EL VIAJE CONTINÚA</p><h2 id="miller-horizon-title">La próxima ola<br /><em>es lo que construyo.</em></h2><p>{prose.closing}</p>{next ? <Link href={getWorldPath(next, locale)} className="miller-button">Explorar mis proyectos <span aria-hidden="true">→</span></Link> : null}</section>
       <nav className="miller-neighbours" aria-label="Destinos contiguos">
         {previous ? <Link href={getWorldPath(previous, locale)} rel="prev"><small>← {previous.cosmicName}</small><span>{previous.prose.title}</span></Link> : null}
         {next ? <Link href={getWorldPath(next, locale)} rel="next"><small>{next.cosmicName} →</small><span>{next.prose.title}</span></Link> : null}

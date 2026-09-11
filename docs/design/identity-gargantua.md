@@ -1,12 +1,80 @@
 # Identidad de Gargantúa y navbar
 
 Dirección solicitada por el dueño: cabina espacial minimalista y elegante.
-La prueba vigente es **Consola de cabina** (opción 1), solicitada después de
-aprobar **Ventana de observación**. Se conserva la marca JONÁS ØRBIT que gustó
+La dirección vigente es **Ventana de observación** (opción 2), recuperada por
+el dueño después de comparar la consola. Se conserva la marca JONÁS ØRBIT que gustó
 al dueño. Los iconos conservan Horizonte, por petición explícita.
 Se conservó el original anterior en `public/brand/previous-icon.svg`.
 
-## Prueba vigente — Consola de cabina (2026-09-10)
+## Dirección vigente — Cristal editorial (2026-09-10)
+
+**Retirada del marco:** a petición del dueño se eliminan los bordes exteriores,
+los anclajes metálicos, las esquinas redondeadas y las sombras del marco, también
+en el menú móvil. La franja estelar sigue de borde a borde; se mantienen alturas
+de 67/63 px, movimiento, separadores interiores y estado activo. El HUD de la
+escena y el marco del hero de Miller no pertenecen a este cambio.
+
+**Marco de extremo a extremo:** el dueño pide que llegue a ambos bordes de
+la página. La barra pasa al 100 % del ancho, sin límite de 1440 px ni márgenes
+laterales en móvil. Se conservan el borde lateral e inferior, las esquinas y
+los anclajes, ahora colocados dentro del marco para que no se corten ni causen
+scroll horizontal. Altura y animación intactas. Build y 26 pruebas de navbar
+pasan, incluyendo posición x=0 y ancho completo en la matriz 320–2560 px.
+
+**Cielo en deriva y menor presencia:** por petición posterior del dueño, la
+barra se adosa al borde superior (`top: 0`, sin margen), baja de 76 a 67 px
+en escritorio y de 72 a 63 px en móvil. Se atenúan el marco y los anclajes,
+sin reducir la tipografía ni los blancos de interacción de 44 px. Miller
+ajusta exclusivamente la reserva de altura para que el océano siga detrás.
+
+El cielo mantiene su base opaca, pero ahora tiene dos capas estelares de
+distinta escala y distribución. Deriva de 44 px en 90/130 segundos y variación
+lenta de opacidad en la capa lejana, sin fogonazos ni movimiento de los enlaces.
+Sólo se animan `transform` y `opacity`, sin canvas ni bucle JavaScript. Un
+control discreto junto a Mapa estelar permite pausar/reanudar; en móvil está
+dentro del menú. Pausa en segundo plano, en perfil ligero y con reduced-motion;
+sin JavaScript el cielo queda estático y el control se oculta.
+
+Verificación: `npm run check` completo (205 tests unitarios y build), más 102
+pruebas E2E de navbar, Miller y rutas. La nueva cobertura comprueba alturas,
+anclaje superior, pausa/reanudación, segundo plano, reduced-motion y perfil
+ligero a 375 y 1440 px. El resto de la matriz conserva los anchos 320–2560 px.
+
+**Prueba de cielo persistente, solicitada después:** la navbar contiene su
+propio campo estelar, independiente del contenido bajo ella. Sustituye el
+tinte al 24 % y el blur descritos abajo por una base azul-negra opaca con
+reflejos y estrellas SVG discretas (`public/brand/navigation-stars.svg`).
+La opacidad estabiliza el cielo incluso sobre los documentos blancos al hacer
+scroll; la sensación de cristal procede de los cantos y el reflejo superficial.
+El menú móvil comparte el material. No hay canvas, movimiento, listeners de
+scroll ni cambios al HUD o a Miller. Build y 22 pruebas de navbar pasan.
+
+La variante editorial transparente queda recuperable en
+`output/archive/navbar-cristal-editorial-20260910-200244.zip`; no sobrescribe
+las copias anteriores de cristal ni de consola.
+
+La vista frontal del concepto manda; el detalle volumétrico sólo explica el
+material. Una lámina azul-negra al 24 %, blur de 6 px, reflejo superior de 1 px
+y dos anclajes de titanio pequeños. Altura total de 76 px en escritorio y 72 px
+en móvil. No hay tornillos grandes, textura descargada ni volumen añadido.
+
+Los destinos vuelven a ser tipografía sin cajas, repartida por el espacio
+disponible. Inactivos gris claro, hover blanco con un punto cian tenue; activo
+cian pálido con subrayado de 2 px al 76 % del texto. El resplandor pertenece
+sólo a la línea, no a la palabra. La opacidad transiciona en 420 ms; no se
+simula un desplazamiento entre rutas que desmontan la cabecera. Los separadores
+después de la marca y antes de «Mapa estelar ↑» se conservan. La flecha señala
+el regreso al hub interno. No vuelve la fila inferior de Miller.
+
+La consola comparada también queda guardada, sin sobrescribir el cristal:
+`output/archive/navbar-consola-20260910-155800.zip` (nueve archivos, con sus
+rutas relativas). La copia original del cristal sigue intacta.
+
+Validación de este pase: `npm run check` completo y 98 pruebas E2E de navbar,
+Miller y rutas en Chromium de escritorio y móvil. Se mantienen las pruebas de
+una sola fila, blancos alcanzables, navegación por teclado y anchos 320–2560 px.
+
+## Prueba anterior — Consola de cabina (2026-09-10)
 
 La opción 1 sustituye temporalmente al cristal para poder juzgarla en el sitio.
 Carcasa de grafito con cepillado fino, biseles y anclajes pequeños; seis botones
@@ -56,7 +124,7 @@ con base oscura. No usan fuentes externas, filtros ni recursos incrustados.
 reales y botones que cambian únicamente la muestra de navbar. Permite descargar
 los SVG y conserva las alternativas como referencia histórica.
 
-## Navbar de cristal — versión guardada
+## Navbar de cristal — base guardada, anterior al pulido editorial
 
 La cabecera compartida de las páginas de contenido es una lámina de cristal
 ahumado con borde fino, reflejo contenido y dos pequeños soportes de titanio.

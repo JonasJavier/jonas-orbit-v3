@@ -194,7 +194,7 @@ export function GargantuaSystem({
           },
         });
         handleRef.current = handle;
-        handle.setCovered(worldIdRef.current === "miller");
+        handle.setCovered(worldIdRef.current === "miller" || worldIdRef.current === "edmunds");
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -240,7 +240,7 @@ export function GargantuaSystem({
   useEffect(() => {
     worldIdRef.current = worldId;
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
-    handleRef.current?.setCovered(worldId === "miller");
+    handleRef.current?.setCovered(worldId === "miller" || worldId === "edmunds");
   }, [worldId]);
 
   // Paralaje aditivo del puntero, acotado a 2° dentro de la escena (§3). La

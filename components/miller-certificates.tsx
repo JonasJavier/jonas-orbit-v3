@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { World } from "@/lib/worlds";
-import { useMillerWater } from "./miller-water";
 
 type Certificate = NonNullable<World["prose"]["education"]>["certificates"][number];
 const filters = [
@@ -14,18 +13,15 @@ const filters = [
 ] as const;
 
 export function MillerCertificates({ certificates }: { certificates: Certificate[] }) {
-  const { running, preferenceBlocked, paused, toggle } = useMillerWater();
   const [filter, setFilter] = useState<string>("all");
   const visible = certificates.filter((certificate) => filter === "all" || certificate.category === filter);
+  const featured = filter === "all" ? visible.slice(0, 6) : visible;
+  const remaining = filter === "all" ? visible.slice(6) : [];
   return (
     <div className="miller-archive">
-      <noscript><style>{`.miller-filters, .miller-water-toggle { display: none; }`}</style></noscript>
+      <noscript><style>{`.miller-filters { display: none; }`}</style></noscript>
       <div className="miller-archive__masthead">
         <span><i aria-hidden="true" /> ARCHIVO DE A BORDO</span>
-        <button className="miller-water-toggle" type="button" aria-pressed={running} onClick={toggle}>
-          <span aria-hidden="true">{running ? "Ⅱ" : "▷"}</span>
-          {preferenceBlocked ? "Activar corrientes" : paused ? "Reanudar corrientes" : "Pausar corrientes"}
-        </button>
       </div>
       <div className="miller-archive__toolbar">
         <div className="miller-filters" role="group" aria-label="Filtrar certificados por área">
@@ -36,8 +32,19 @@ export function MillerCertificates({ certificates }: { certificates: Certificate
         <p aria-live="polite" aria-atomic="true">{visible.length} documentos</p>
       </div>
       <ul className="miller-certificates">
-        {visible.map((certificate) => <CertificateCard key={certificate.id} certificate={certificate} index={certificates.indexOf(certificate) + 1} />)}
+        {featured.map((certificate) => <CertificateCard key={certificate.id} certificate={certificate} index={certificates.indexOf(certificate) + 1} />)}
       </ul>
+      {remaining.length > 0 ? (
+        <details className="miller-archive-more">
+          <summary>
+            <span className="miller-archive-more__closed">Ver los {certificates.length} documentos <span aria-hidden="true">↓</span></span>
+            <span className="miller-archive-more__open">Mostrar solo destacados <span aria-hidden="true">↑</span></span>
+          </summary>
+          <ul className="miller-certificates">
+            {remaining.map((certificate) => <CertificateCard key={certificate.id} certificate={certificate} index={certificates.indexOf(certificate) + 1} />)}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }

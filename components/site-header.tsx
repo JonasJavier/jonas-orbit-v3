@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import type { WorldNavItem } from "@/lib/worlds";
+import { useLightEffectsMode } from "@/lib/effects-mode";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MissionNavigation } from "./mission-navigation";
 import "./site-header.css";
 
@@ -20,6 +22,19 @@ export function SiteHeader({
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const lightEffects = useLightEffectsMode();
+  const reducedMotion = usePrefersReducedMotion();
+  const [skyPaused, setSkyPaused] = useState(false);
+  const [pageVisible, setPageVisible] = useState(false);
+  const skyEnabled = !lightEffects && !reducedMotion;
+  const skyRunning = skyEnabled && pageVisible && !skyPaused;
+
+  useEffect(() => {
+    const syncVisibility = () => setPageVisible(!document.hidden);
+    syncVisibility();
+    document.addEventListener("visibilitychange", syncVisibility);
+    return () => document.removeEventListener("visibilitychange", syncVisibility);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -45,11 +60,14 @@ export function SiteHeader({
       className="site-header site-header--voyage"
       ref={headerRef}
       data-menu-open={open}
+      data-sky-running={skyRunning}
+      data-sky-enabled={skyEnabled}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
     >
-      <noscript><style>{`.site-header--voyage + .miller-route { --miller-nav-clearance: 0px; } .site-header--voyage .voyage-menu-toggle { display: none; } .site-header--voyage .voyage-navigation { display: block !important; position: static !important; max-height: none !important; box-shadow: none; } @media (max-width: 1080px) { .site-header.site-header--voyage { position: relative; } }`}</style></noscript>
+      <noscript><style>{`.site-header--voyage + .miller-route { --miller-nav-clearance: 0px; } .site-header--voyage .voyage-menu-toggle, .site-header--voyage .voyage-sky-toggle { display: none; } .site-header--voyage .voyage-navigation { display: block !important; position: static !important; max-height: none !important; box-shadow: none; } @media (max-width: 1080px) { .site-header.site-header--voyage { position: relative; } }`}</style></noscript>
+      <div className="voyage-sky" aria-hidden="true" />
       <div className="site-header__bar">
         <Link
           className="brand-lockup"
@@ -75,7 +93,10 @@ export function SiteHeader({
 
       <div id="voyage-navigation" className="voyage-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setOpen(false); }}>
         <MissionNavigation worlds={worlds} activeWorldId={activeWorldId} />
-        <Link className="voyage-map-link" href={`/${locale}`} aria-label="Volver al mapa"><span>Mapa estelar</span><span aria-hidden="true">↗</span></Link>
+        <div className="voyage-return">
+          <button className="voyage-sky-toggle" type="button" onClick={() => setSkyPaused(!skyPaused)} aria-label={skyPaused ? "Reanudar estrellas" : "Pausar estrellas"} title={skyPaused ? "Reanudar estrellas" : "Pausar estrellas"} aria-pressed={!skyPaused}><span aria-hidden="true">{skyPaused ? "✧" : "Ⅱ"}</span></button>
+          <Link className="voyage-map-link" href={`/${locale}`} aria-label="Volver al mapa"><span>Mapa estelar</span><span aria-hidden="true">↑</span></Link>
+        </div>
       </div>
     </header>
   );

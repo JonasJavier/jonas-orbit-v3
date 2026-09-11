@@ -44,7 +44,8 @@ describe("Miller · formación documentada", () => {
   it("filtra por área, anuncia el total y permite volver al archivo completo", () => {
     const { container } = render(<MillerWater><MillerCertificates certificates={certificates} /></MillerWater>);
     expect(container.querySelectorAll('a[href$=".pdf"]')).toHaveLength(23);
-    expect(screen.getAllByRole("img", { name: /Vista previa de/ })).toHaveLength(23);
+    expect(container.querySelectorAll('details:not([open]) .miller-certificate')).toHaveLength(17);
+    expect(container.querySelectorAll('.miller-archive > .miller-certificates .miller-certificate')).toHaveLength(6);
     fireEvent.click(screen.getByRole("button", { name: "Diseño y UX" }));
     expect(screen.getByText("6 documentos")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ver certificado: UX Designer/ })).toBeInTheDocument();
@@ -54,5 +55,6 @@ describe("Miller · formación documentada", () => {
     fireEvent.click(screen.getByRole("button", { name: "Todo" }));
     expect(container.querySelectorAll('a[href$=".pdf"]')).toHaveLength(23);
     expect(screen.getByText("23 documentos")).toBeInTheDocument();
+    expect(container.querySelector('details')).not.toHaveAttribute('open');
   });
 });
