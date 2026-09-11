@@ -10,6 +10,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 aprobado con eng review CLEAR). No abras decisiones arquitectónicas nuevas sin
 pasar por ese documento. La matriz de tests vive en su Appendix A.
 
+**Página de Edmunds (2026-09-11):** `docs/design/edmunds-creatividad.md`
+documenta la primera implementación de `/es/creatividad` pedida por el dueño:
+fotografía, diseño y composición como hobby; catálogo en el MDX, galería CSS
+3D de perspectiva fija, mosaico y visor accesible. El System Map, sus cuerpos,
+cámara y materiales no cambian. Su valoración visual queda abierta.
+
 **Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
 transiciones y presupuestos**. En todo lo demás el plan principal sigue intacto.

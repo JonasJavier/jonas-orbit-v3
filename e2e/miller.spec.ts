@@ -45,6 +45,11 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
   await expect(page.getByRole("link", { name: /Ver certificado: CS50x/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Ver certificado: UX Designer/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Todo", exact: true }).click();
+  await expect(page.getByRole("link", { name: /Ver certificado:/ })).toHaveCount(6);
+  const more = page.locator(".miller-archive-more > summary");
+  await expect(more).toContainText("Ver los 23 documentos");
+  await more.focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("link", { name: /Ver certificado: Accesibilidad/ })).toBeVisible();
   const links = await page.locator('.miller-archive a[href$=".pdf"]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")!));
   expect(links).toHaveLength(23);
@@ -59,6 +64,9 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
     expect(response.status(), href).toBe(200);
     expect(response.headers()["content-type"], href).toContain("application/pdf");
   }
+  await more.click();
+  await expect(page.getByRole("link", { name: /Ver certificado:/ })).toHaveCount(6);
+  await expect(more).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const neighbours = page.getByRole("navigation", { name: "Destinos contiguos" });
   await expect(neighbours.locator("a").first()).toHaveAttribute("href", "/es/sobre-mi");
@@ -121,13 +129,15 @@ test("Miller: las corrientes comparten pausa con el océano y duermen fuera de v
   const currents = page.locator(".miller-proof .miller-currents__light");
   const state = () => currents.evaluate((element) => getComputedStyle(element).animationPlayState);
   await expect.poll(state).toBe("paused");
+  await expect(page.getByRole("button", { name: /corrientes/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Activar océano", exact: true }).click();
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
-  await page.getByRole("button", { name: "Activar corrientes", exact: true }).click();
   await expect.poll(state).toBe("running");
-  await page.getByRole("button", { name: "Pausar corrientes", exact: true }).click();
+  await page.getByRole("button", { name: "Pausar océano", exact: true }).click();
   await expect.poll(state).toBe("paused");
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
-  await page.getByRole("button", { name: "Reanudar corrientes", exact: true }).click();
+  await page.getByRole("button", { name: "Reanudar océano", exact: true }).click();
+  await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
   await expect.poll(state).toBe("running");
   await page.evaluate(() => {
     Object.defineProperty(document, "hidden", { configurable: true, value: true });
@@ -150,6 +160,8 @@ test("Miller: formación y certificados funcionan sin JavaScript", async ({ brow
   await page.goto("/es/formacion");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Formación");
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
+  await expect(page.getByRole("link", { name: /Ver certificado:/ })).toHaveCount(6);
+  await page.locator(".miller-archive-more > summary").click();
   await expect(page.getByRole("link", { name: /Ver certificado: Accesibilidad/ })).toBeVisible();
   await expect(page.locator('.miller-archive a[href$=".pdf"]')).toHaveCount(23);
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);

@@ -48,6 +48,10 @@ ejecución y sistemas construidos para cumplir una misión. La etiqueta visible 
 **Edmunds — Creatividad.** Diseño, UI/UX, fotografía, comunicación y dirección
 visual. **Los experimentos técnicos no van aquí.**
 
+La página y su selección de fotografías y diseños se concretan en
+[Edmunds — otra forma de mirar](edmunds-creatividad.md) (2026-09-11): práctica
+creativa personal, galería 3D de perspectiva fija y mosaico accesible.
+
 **Tesseracto — Experimentos.** Cosas construidas para explorar, aprender o
 probar una idea: Three.js, R3F, WebGL, shaders, motion, prototipos, conceptos de
 interacción, herramientas pequeñas. **No es un cajón de sobras**: representa
