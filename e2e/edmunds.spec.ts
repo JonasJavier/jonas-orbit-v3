@@ -1,15 +1,18 @@
 import { expect, test } from "@playwright/test";
 
 const caption = ".edmunds-gallery__caption h2";
+const counter = ".edmunds-gallery__caption > span";
 
-test("Edmunds: sectores, mosaico, imágenes reales y rutas", async ({ page, request }) => {
+test("Edmunds: cabecera, sectores, mosaico, imágenes reales y rutas", async ({ page, request }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/es/creatividad?no3d=1");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("CreatividadOtra forma de mirar.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Creatividad");
+  await expect(page.getByText("Otra forma de mirar.")).toBeVisible();
+  await expect(page.getByText(/El código es una parte de mí/)).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/es\/creatividad$/);
   await expect(page.getByRole("button", { name: "Mosaico", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Diseño 12", exact: true }).click();
+  await page.getByRole("button", { name: "Diseño", exact: true }).click();
   const works = page.getByRole("link", { name: /^Ampliar:/ });
   await expect(works).toHaveCount(12);
   await expect(page.getByRole("region", { name: "Archivo visual" }).getByRole("status")).toHaveText("12 piezas en esta selección");
@@ -21,10 +24,12 @@ test("Edmunds: sectores, mosaico, imágenes reales y rutas", async ({ page, requ
   const response = await request.get(await works.last().getAttribute("href") ?? "");
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"]).toContain("image/webp");
-  await page.getByRole("button", { name: "Todo 90" }).click();
+  await page.getByRole("button", { name: "Todo", exact: true }).click();
   await expect(works).toHaveCount(90);
-  // The mosaic groups the archive by sector, in the order of the journey.
-  await expect(page.locator(".edmunds-group__head h2")).toHaveText(["Diseño", "Horizontes", "De cerca", "Criaturas", "Retratos", "Invierno", "Después del sol"]);
+  // The mosaic groups the archive by sector, in the order of the journey, with
+  // nothing but the sector's name as a label.
+  await expect(page.locator(".edmunds-group__label")).toHaveText(["Diseño", "Horizontes", "De cerca", "Criaturas", "Retratos", "Invierno", "Después del sol"]);
+  await expect(page.getByText("Ejercicios personales.")).toHaveCount(0);
   const neighbours = page.getByRole("navigation", { name: "Destinos contiguos" });
   await expect(neighbours.locator("a").first()).toHaveAttribute("href", "/es/proyectos");
   await expect(neighbours.locator("a").last()).toHaveAttribute("href", "/es/experimentos");
@@ -46,10 +51,10 @@ test("A15: visor modal, flechas, foco atrapado y devuelto con Escape", async ({ 
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
   await page.keyboard.press("ArrowRight");
-  await expect(dialog.locator("figcaption strong")).toHaveText("Fuego de campamento");
+  await expect(dialog.locator("figcaption")).toHaveText("Fuego de campamento");
   await page.keyboard.press("ArrowLeft");
-  await expect(dialog.locator("figcaption strong")).toHaveText("Aurora");
-  await expect(dialog.locator(".edmunds-viewer__bar")).toContainText("07.01 · Después del sol · Fotografía");
+  await expect(dialog.locator("figcaption")).toHaveText("Aurora");
+  await expect(dialog.locator(".edmunds-viewer__bar")).toContainText("Después del sol");
   await expect.poll(() => dialog.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
@@ -57,7 +62,7 @@ test("A15: visor modal, flechas, foco atrapado y devuelto con Escape", async ({ 
   expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
 });
 
-test("Cubierta 3D: pantalla completa, perspectiva, avance, arrastre y carga acotada", async ({ page }) => {
+test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y carga acotada", async ({ page }) => {
   const loaded = new Set<string>();
   page.on("request", (request) => { if (/\/art\/edmunds\/.+webp/.test(request.url())) loaded.add(request.url()); });
   await page.goto("/es/creatividad");
@@ -66,18 +71,22 @@ test("Cubierta 3D: pantalla completa, perspectiva, avance, arrastre y carga acot
   await expect.poll(() => page.locator('.edmunds-artwork[data-offset="0"] img').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   expect(await page.locator(".edmunds-stage__space").evaluate((space) => getComputedStyle(space).perspective)).not.toBe("none");
   expect(await page.locator(".edmunds-artworks").evaluate((list) => getComputedStyle(list).transformStyle)).toBe("preserve-3d");
-  // The deck fills the first viewport below the navigation bar.
+  // The deck is a viewport of its own below the heading; the anchor lands on it
+  // exactly under the sticky navigation bar.
+  const viewport = page.viewportSize()!;
   const deck = (await page.locator(".edmunds-gallery").boundingBox())!;
-  expect(deck.height).toBeGreaterThanOrEqual(page.viewportSize()!.height - 70);
-  // Seven works on the deck, the ambient copy of the active one and at most the
-  // seven sector covers: never the archive, never a 1920 px file.
-  expect(loaded.size).toBeLessThanOrEqual(16);
+  expect(deck.height).toBeGreaterThanOrEqual(viewport.height - 70);
+  await page.getByRole("link", { name: /Entrar en la galería/ }).click();
+  await expect.poll(async () => Math.round((await page.locator(".edmunds-gallery").boundingBox())!.y)).toBeLessThanOrEqual(70);
+  // Seven works on the deck and the ambient copy of the active one: never the
+  // archive, never a 1920 px file.
+  expect(loaded.size).toBeLessThanOrEqual(9);
   expect([...loaded].some((url) => url.includes("-1920.webp"))).toBe(false);
-  await expect(page.locator(".edmunds-hud__readouts")).toContainText("01 / 90");
+  await expect(page.locator(counter)).toHaveText("Diseño · 01 / 90");
   await stage.focus();
   await page.keyboard.press("End");
   await expect(page.locator(caption)).toHaveText("Camino al anochecer");
-  await expect(page.locator(".edmunds-hud__readouts")).toContainText("07.10");
+  await expect(page.locator(counter)).toHaveText("Después del sol · 90 / 90");
   await page.keyboard.press("ArrowRight");
   await expect(page.locator(caption)).toHaveText("Fantasía");
   await page.keyboard.press("PageDown");
@@ -89,14 +98,18 @@ test("Cubierta 3D: pantalla completa, perspectiva, avance, arrastre y carga acot
   await page.mouse.move(box.x + box.width * .7, box.y + box.height * .5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * .3, box.y + box.height * .5, { steps: 8 });
+  // While the hand is down the ring travels with it.
+  expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("true");
+  await expect.poll(() => stage.evaluate((node) => parseFloat(node.style.getPropertyValue("--drag-px")))).toBeLessThan(-100);
   await page.mouse.up();
   await expect(page.locator(caption)).toHaveText("Hoy se come");
+  expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("false");
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.getByRole("button", { name: "Ampliar", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });
 
-test("Cubierta 3D: una obra lateral se centra, la central abre, y la bitácora cambia de sector", async ({ page }) => {
+test("Cubierta 3D: una obra lateral se centra, la central abre, y el filtro cambia de sector", async ({ page }) => {
   await page.goto("/es/creatividad");
   await page.locator('.edmunds-artwork[data-offset="1"] a').click();
   await expect(page.locator(caption)).toHaveText("Hoy se come");
@@ -105,31 +118,24 @@ test("Cubierta 3D: una obra lateral se centra, la central abre, y la bitácora c
   await page.locator('.edmunds-artwork[data-offset="0"] a').click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
-  const sectors = page.getByRole("navigation", { name: "Sectores del archivo" });
-  await sectors.getByRole("button", { name: /Invierno/ }).click();
+  await page.getByRole("button", { name: "Invierno", exact: true }).click();
   await expect(page.locator(caption)).toHaveText("Túnel de hielo");
-  await expect(page.locator(".edmunds-hud__readouts")).toContainText("01 / 16");
-  await expect(page.getByRole("button", { name: "Invierno 16", exact: true })).toHaveAttribute("aria-pressed", "true");
-  // The sector rail only exists on wide decks; phones keep the index in the HUD.
-  if (page.viewportSize()!.width > 700) {
-    const track = page.getByRole("group", { name: "Posición en el archivo" });
-    await expect(track.getByRole("button")).toHaveCount(1);
-    await page.getByRole("button", { name: "Todo 90" }).click();
-    await expect(track.getByRole("button")).toHaveCount(7);
-    await track.getByRole("button", { name: /Criaturas/ }).click();
-    await expect(page.locator(caption)).toHaveText("Otro universo");
-  }
+  await expect(page.locator(counter)).toHaveText("Invierno · 01 / 16");
+  await page.getByRole("button", { name: "Todo", exact: true }).click();
+  await expect(page.locator(counter)).toHaveText("Diseño · 01 / 90");
 });
 
-test("Cubierta 3D: modo cine atenúa la instrumentación en reposo y la devuelve al mover el puntero", async ({ page }) => {
+test("Cubierta 3D: modo cine atenúa los controles en reposo y los devuelve al mover el puntero", async ({ page }) => {
   await page.goto("/es/creatividad");
   const gallery = page.locator(".edmunds-gallery");
+  await gallery.scrollIntoViewIfNeeded();
   await expect(gallery).toHaveAttribute("data-idle", "false");
   await expect(gallery).toHaveAttribute("data-idle", "true", { timeout: 8000 });
   // The fade takes 1.6 s; the attribute flips first.
   await expect.poll(() => page.locator(".edmunds-top").evaluate((top) => Number(getComputedStyle(top).opacity)), { timeout: 4000 }).toBeLessThan(0.5);
   const box = (await gallery.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const viewport = page.viewportSize()!;
+  await page.mouse.move(box.x + box.width / 2, Math.min(box.y + box.height / 2, viewport.height - 40));
   await expect(gallery).toHaveAttribute("data-idle", "false");
   await expect.poll(() => page.locator(".edmunds-top").evaluate((top) => Number(getComputedStyle(top).opacity))).toBe(1);
 });
@@ -143,10 +149,10 @@ test("A14: un 404 en el visor permite reintentar y seguir explorando", async ({ 
   await dialog.getByRole("button", { name: "Reintentar" }).click();
   await expect.poll(() => dialog.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await dialog.getByRole("button", { name: "Siguiente en el visor" }).click();
-  await expect(dialog.locator("figcaption strong")).toHaveText("Fuego de campamento");
+  await expect(dialog.locator("figcaption")).toHaveText("Fuego de campamento");
 });
 
-test("Edmunds: reduced-motion conserva el archivo, evita transiciones y nunca atenúa el cromo", async ({ page }) => {
+test("Edmunds: reduced-motion conserva el archivo, evita transiciones y nunca atenúa los controles", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/creatividad");
   await expect(page.getByRole("button", { name: "Mosaico" })).toHaveAttribute("aria-pressed", "true");
@@ -185,6 +191,7 @@ for (const viewport of [{ width: 320, height: 740 }, { width: 768, height: 1024 
       await page.getByRole("button", { name: mode, exact: true }).click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByText("Otra forma de mirar.")).toBeVisible();
     }
   });
 }
