@@ -33,8 +33,12 @@ detrás. Un cuarto pase añade el **modo cine** —la instrumentación se atenú
 tras 3,5 s sin entrada y vuelve con cualquiera— y rehace el orden dentro de
 cada sector con criterio (las más fuertes primero, «Fantasía» abre, el
 homenaje a Interstellar cierra Diseño); las 90 obras se conservan porque la
-curación manual la hará el dueño. El System Map, sus cuerpos, cámara y
-materiales no cambian. Su valoración visual queda abierta.
+curación manual la hará el dueño. Un quinto pase **simplifica**: la cabecera
+es una sección propia que respira, la cubierta ocupa un viewport ella sola con
+sólo filtros, flechas y título, y desaparecen lecturas, raíl, leyendas de obra,
+cabeceras de sector y bitácora; el arrastre lleva el anillo con la mano. El
+System Map, sus cuerpos, cámara y materiales no cambian. Su valoración visual
+queda abierta.
 
 **Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,

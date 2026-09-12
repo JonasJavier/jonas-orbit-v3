@@ -15,8 +15,25 @@ el estado tras ese pase.
 aplicara todo lo que propuse salvo reducir el número de obras — la curación
 la hará él a mano. Entra el **modo cine**, el orden dentro de cada sector se
 rehace con criterio, «Fantasía» abre y el homenaje cierra Diseño, y el móvil
-pierde los efectos que más cuestan. Dirección pendiente de su valoración
-visual.
+pierde los efectos que más cuestan.
+
+**Quinto pase (mismo día): simplificar.** Jonás pidió menos instrumentación y
+más aire: «me gusta más lo minimalista y sólo las cosas necesarias». La
+cabecera sale de la cubierta y se convierte en una sección propia que respira
+(rótulo `DESTINO 04 / EDMUNDS`, `h1`, «Otra forma de mirar.» grande, la
+introducción y un enlace «Entrar en la galería» que aterriza en la cubierta
+exactamente bajo la barra); la cubierta ocupa un viewport entero ELLA SOLA, con
+el filtro de sectores y el conmutador de vista arriba y, abajo, sólo las
+flechas, `sector · posición`, el título de la obra y «Ampliar». Desaparecen las
+lecturas del HUD, «CUBIERTA DE OBSERVACIÓN», los contadores de los chips, el
+raíl de sectores con su pista, las leyendas de las obras (en cubierta, mosaico
+y visor: «las imágenes hablan por sí solas»), las cabeceras de sector del
+mosaico —queda una etiqueta mínima— y la bitácora de tarjetas, que duplicaba
+el filtro. El arrastre ahora lleva el anillo con la mano (`--drag-px`) y al
+soltar encaja con una curva expo de 1,05 s escalonada 30 ms por posición; el
+título entra con un fundido. Un detalle que costó una vuelta: `scroll-padding`
+global del sitio (8 rem) hacía aterrizar el ancla 195 px por debajo; la ruta
+lo fija a la altura de la barra. Dirección pendiente de su valoración visual.
 
 ## Qué cambia y por qué
 

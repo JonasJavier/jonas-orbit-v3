@@ -5,8 +5,8 @@ import { StructuredData } from "./structured-data";
 import { EdmundsGallery } from "./edmunds-gallery";
 import "./edmunds-page.css";
 
-/** Edmunds opens straight onto the observation deck: the gallery is the hero
- * and carries the page heading. The prose that follows is deliberately short. */
+/** Edmunds: a short heading that breathes, then the deck alone on a full
+ * viewport. The prose that follows is deliberately brief. */
 export function EdmundsPage({ world, locale }: { world: World; locale: Locale }) {
   const { prose } = world;
   const creativity = prose.creativity;
@@ -15,7 +15,18 @@ export function EdmundsPage({ world, locale }: { world: World; locale: Locale })
   return (
     <article className="edmunds-page">
       <StructuredData locale={locale} breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }} />
-      <EdmundsGallery artworks={creativity.artworks} collections={creativity.collections} heroLine={creativity.heroLine} title={prose.title} intro={prose.introduction} />
+      <header className="edmunds-intro">
+        <div className="edmunds-intro__title">
+          <p className="edmunds-eyebrow"><span className="edmunds-intro__dot" aria-hidden="true" /> DESTINO 04 <span>/</span> EDMUNDS</p>
+          <h1>{prose.title}</h1>
+          <p className="edmunds-intro__tagline">{creativity.heroLine}</p>
+        </div>
+        <div className="edmunds-intro__copy">
+          <p>{prose.introduction}</p>
+          <a href="#galeria" className="edmunds-intro__cta">Entrar en la galería <span aria-hidden="true">↓</span></a>
+        </div>
+      </header>
+      <EdmundsGallery artworks={creativity.artworks} collections={creativity.collections} />
       <section className="edmunds-statement" id="mirada" aria-labelledby="edmunds-statement-title">
         <div className="edmunds-statement__lead">
           <p className="edmunds-eyebrow">FUERA DEL CÓDIGO</p>
