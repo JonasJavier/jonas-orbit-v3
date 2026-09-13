@@ -9,6 +9,7 @@ import { useLightEffectsMode } from "@/lib/effects-mode";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { DownloadIcon } from "./download-icon";
 import { MissionNavigation } from "./mission-navigation";
+import { VoyageSky } from "./voyage-sky";
 import "./site-header.css";
 
 type Marker = { x: number; width: number; accent: string };
@@ -37,6 +38,7 @@ export function SiteHeader({
   const headerRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const destinationsRef = useRef<HTMLDivElement>(null);
+  const cvRef = useRef<HTMLDetailsElement>(null);
   const lightEffects = useLightEffectsMode();
   const reducedMotion = usePrefersReducedMotion();
   const [skyPaused, setSkyPaused] = useState(false);
@@ -69,6 +71,29 @@ export function SiteHeader({
       document.removeEventListener("keydown", escape);
     };
   }, [open]);
+
+  // El desplegable del CV es un <details>: abre y cierra sin JavaScript. Lo
+  // único que añade el cliente es cerrarlo al pulsar fuera o con Escape, que
+  // se queda aquí (stopImmediatePropagation) para no cerrar también el menú.
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      const details = cvRef.current;
+      if (details?.open && event.target instanceof Node && !details.contains(event.target)) details.open = false;
+    };
+    const escape = (event: KeyboardEvent) => {
+      const details = cvRef.current;
+      if (event.key !== "Escape" || !details?.open) return;
+      event.stopImmediatePropagation();
+      details.open = false;
+      details.querySelector("summary")?.focus();
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
 
   // La línea del destino activo: medida, no dibujada por enlace. Antes de
   // pintar ya está en su sitio (layout effect), y si la cabecera anterior la
@@ -127,7 +152,7 @@ export function SiteHeader({
       }}
     >
       <noscript><style>{`.site-header--voyage + .miller-route { --miller-nav-clearance: 0px; } .site-header--voyage .voyage-menu-toggle, .site-header--voyage .voyage-sky-toggle { display: none; } .site-header--voyage .voyage-navigation { display: flex !important; position: static !important; max-height: none !important; box-shadow: none; } @media (max-width: 1080px) { .site-header.site-header--voyage { position: relative; } }`}</style></noscript>
-      <div className="voyage-sky" aria-hidden="true" />
+      <div className="voyage-sky" aria-hidden="true"><VoyageSky running={skyRunning} /></div>
       <div className="site-header__bar">
         <Link
           className="brand-lockup"
@@ -158,7 +183,19 @@ export function SiteHeader({
         </div>
         <div className="voyage-return">
           <button className="voyage-sky-toggle" type="button" onClick={() => setSkyPaused(!skyPaused)} aria-label={skyPaused ? "Reanudar estrellas" : "Pausar estrellas"} title={skyPaused ? "Reanudar estrellas" : "Pausar estrellas"} aria-pressed={!skyPaused}><span aria-hidden="true">{skyPaused ? "✧" : "Ⅱ"}</span></button>
-          <a className="voyage-cv" download href="/cv/jonas-javier-cv-es.pdf" aria-label="Descargar CV (PDF)" title="Descargar CV (PDF)"><DownloadIcon /><span aria-hidden="true">CV</span></a>
+          <details
+            className="voyage-cv"
+            ref={cvRef}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+            }}
+          >
+            <summary className="voyage-cv__summary" aria-label="Descargar CV" title="Descargar CV"><DownloadIcon /><span aria-hidden="true">CV</span></summary>
+            <div className="voyage-cv__menu" onClick={() => { if (cvRef.current) cvRef.current.open = false; }}>
+              <a download href="/cv/jonas-javier-cv-es.pdf">Español <span>PDF</span></a>
+              <a download href="/cv/jonas-javier-cv-en-ats.pdf">English <span>PDF</span></a>
+            </div>
+          </details>
           <Link className="voyage-map-link" href={`/${locale}`} aria-label="Volver al mapa"><span>Mapa estelar</span><span aria-hidden="true">↑</span></Link>
         </div>
       </div>

@@ -83,18 +83,24 @@ de rumbo sigue el mismo `yaw`, y el mundo gira bajo la nave con la distancia.
 La búsqueda de estrellas es de cuatro celdas, exacta porque ninguna mide más
 de media celda. Su valoración visual queda abierta.
 
-**Cabecera — instrumento de a bordo (2026-09-13):** la sección `Instrumento
-de a bordo` de `docs/design/identity-gargantua.md` manda sobre el resto de
-ese documento en **cómo se leen los destinos, el estado activo, la línea
-viajera y las herramientas de la barra**. Conserva lo que el dueño fijó
-antes: marca, borde a borde sin marco, 67/63 px, una fila, cielo en deriva
-con pausa, «Mapa estelar ↑», menú «Explorar». Cada destino muestra el
-contenido y, en letra pequeña `aria-hidden`, «índice · cuerpo»; el activo usa
-`--nav-accent` de su mundo; la línea del activo se mide en un layout effect y
-VIAJA entre rutas gracias a un recuerdo de módulo (cada página monta su
-cabecera); sin JavaScript manda la línea por enlace del CSS. El CV se descarga
-desde la barra con el glifo compartido `download-icon.tsx`, que también usan
-el hero de Miller y el registro de la Ranger. El estado previo vive en
+**Cabecera — observatorio y acento por mundo (2026-09-13):** la sección
+`Observatorio y acento por mundo` de `docs/design/identity-gargantua.md`
+manda sobre el resto de ese documento en **estado activo, línea viajera, CV y
+cielo de la barra**. **La navbar es minimalista por decisión del dueño**:
+rechazó una versión con segunda línea «índice · cuerpo» bajo cada destino
+(«muy cargada») y quiere los seis nombres repartidos por el ancho como
+estaban. Conserva marca, borde a borde sin marco, 67/63 px, una fila, control
+de pausa, «Mapa estelar ↑» y menú «Explorar». Nuevo: el activo y el punto de
+hover usan `--nav-accent` de su mundo; la línea del activo se mide en un
+layout effect y VIAJA entre rutas por un recuerdo de módulo (cada página
+monta su cabecera), con la línea por enlace del CSS para el primer pintado y
+sin JavaScript; el CV es un `<details>` con **los dos CV, español e inglés**
+(hay dos CV, siempre), con el glifo compartido `download-icon.tsx` que también
+usan el hero de Miller y el registro de la Ranger; y el cielo pasa a
+`voyage-sky.tsx`, un canvas 2D de observatorio —tres profundidades en un solo
+sentido, magnitudes reales, centelleo, difracción, banda lechosa y meteoros—
+con la textura SVG como fallback sin JavaScript y un solo fotograma cuando
+está quieto. El estado previo vive en
 `output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`.
 
 **Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de

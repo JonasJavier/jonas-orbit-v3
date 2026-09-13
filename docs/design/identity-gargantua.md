@@ -6,57 +6,74 @@ el dueño después de comparar la consola. Se conserva la marca JONÁS ØRBIT qu
 al dueño. Los iconos conservan Horizonte, por petición explícita.
 Se conservó el original anterior en `public/brand/previous-icon.svg`.
 
-## Dirección vigente — Instrumento de a bordo (2026-09-13)
+## Dirección vigente — Observatorio y acento por mundo (2026-09-13)
 
-Pedido por el dueño tras aprobar la cabina de la Ranger: «que realmente se
-integre bien al proyecto, profesional, bien diseñada, pulida y acabada», con un
-icono de descarga del CV «muy minimalista» y la misma descarga en Miller. El
-estado anterior queda guardado, a petición suya, en
-`output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`
-(siete fuentes, seis capturas y `RECUPERAR.md` con el commit de origen).
+Dos pases el mismo día. El primero («instrumento de a bordo») puso bajo cada
+destino una segunda línea en mono con «índice · cuerpo» y agrupó los seis en
+el centro. El dueño lo rechazó de plano: «se ve muy cargada, el objeto es una
+navbar minimalista; me gusta cómo estaban organizados y desplegados los
+títulos en la anterior». Se quedó con lo que sí le gustó —el color por
+mundo— y pidió dos cosas más: que el icono del CV ofrezca **los dos CV,
+español e inglés**, y que las estrellas de la barra sean «más realistas, que
+parezca realmente un observatorio del universo». El estado anterior a todo
+esto está guardado en
+`output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`.
 
-**Lo que no cambia**, porque lo fijó él en los pases anteriores: marca JONÁS
-ØRBIT, barra de borde a borde sin marco ni anclajes, 67/63 px adosada arriba,
-una sola fila, cielo en deriva con su control de pausa, «Mapa estelar ↑»,
-menú «Explorar» en dos columnas hasta 1080 px, blancos de 44 px, HTML servido
-con `aria-current` y sin JavaScript para navegar.
+**Lo que no cambia**, porque lo fijó él antes: marca JONÁS ØRBIT, barra de
+borde a borde sin marco ni anclajes, 67/63 px adosada arriba, una sola fila,
+**seis nombres repartidos por el ancho** con tipografía de cuerpo y sin
+segunda línea, control de pausa del cielo, «Mapa estelar ↑», menú «Explorar»
+en dos columnas hasta 1080 px, blancos de 44 px, HTML servido con
+`aria-current` y navegación sin JavaScript.
 
 **Lo que cambia:**
 
-- **Cada destino se lee como una lectura de instrumento.** El nombre del
-  contenido encima («Formación») y debajo, en mono pequeña, su índice y su
-  cuerpo («02 · MILLER»). La segunda línea va `aria-hidden`: el nombre
-  accesible del enlace sigue siendo «Formación», igual que en el raíl de la
-  home. Los seis forman un grupo compacto y centrado entre la marca y las
-  herramientas, en vez de repartirse por todo el ancho.
-- **El activo habla en el acento de su mundo.** La línea inferior y la letra
-  pequeña toman `--nav-accent` (cian en Miller, ámbar en la Endurance, violeta
-  en la Ranger…); el nombre sólo sube a blanco. Ya no todo es cian.
+- **El activo habla en el acento de su mundo.** La línea inferior y el punto
+  de hover toman `--nav-accent` (cian en Miller, ámbar en la Endurance,
+  violeta en la Ranger…); el nombre sólo sube a blanco. Ya no todo es cian.
 - **La línea viaja entre rutas.** Cada página monta su propia cabecera, así
   que una transición CSS no puede unir dos montajes; `site-header.tsx` guarda
   en una variable de módulo dónde quedó la línea y la cabecera nueva la
   arranca ahí y la lleva al destino nuevo (`--marker-x`, `--marker-w`,
-  `--marker-accent` medidos en un layout effect, antes de pintar). La línea
+  `--marker-accent`, medidos en un layout effect antes de pintar). La línea
   por enlace del CSS sigue existiendo para el primer pintado y para quien
   navega sin JavaScript; en cuanto el cliente mide, se apaga. En el menú móvil
-  el nav está oculto y mide cero: ahí manda el borde izquierdo en acento.
-  Reduced-motion no viaja. El router no se entera.
-- **Herramientas a la derecha:** pausa del cielo, **CV** con el glifo de
-  descarga compartido (`components/download-icon.tsx`: bandeja y flecha en
-  trazo fino, hereda el color) y «MAPA ESTELAR ↑», ahora en mono pequeña para
-  emparejar con las lecturas. Entre 1081 y 1280 px el CV y el mapa quedan en
-  icono para que las seis lecturas quepan; en el menú móvil forman la fila
-  inferior.
-- **Miller** ofrece «Descargar CV · PDF» en las acciones del hero, junto a
-  recorrido y certificados; la Ranger usa el mismo glifo en su registro de a
-  bordo. Un solo icono de descarga en todo el sitio.
+  el nav está oculto y mide cero: ahí sigue la línea por enlace. Reduced-motion
+  no viaja. El router no se entera. Trampa que costó una vuelta: esperar a
+  `document.fonts.ready` asentaba la línea en un microtask, antes del cuadro
+  de viaje; el sitio usa fuentes del sistema y no hace falta.
+- **CV en dos idiomas.** El icono (glifo compartido `download-icon.tsx`:
+  bandeja y flecha en trazo fino) es el `summary` de un `<details>`: abre y
+  cierra sin JavaScript y muestra «Español · PDF» y «English · PDF», ambos con
+  `download`. El cliente sólo añade cerrarlo al pulsar fuera, al salir el foco
+  y con Escape —que se detiene ahí para no cerrar también el menú móvil—. Los
+  nombres accesibles evitan «CV español» a propósito: la Ranger ya tiene esos
+  enlaces y A31 los busca por regex.
+- **Observatorio** (`components/voyage-sky.tsx`). La textura SVG que
+  derivaba de un lado a otro pasa a ser el fallback sin JavaScript. Encima, un
+  canvas 2D dibuja un cielo de verdad: tres profundidades que pasan en UN
+  sentido a ritmos distintos (0,45 / 0,72 / 1 × 2,4 px/s), magnitudes
+  repartidas como en el cielo (`random^3.2`: muchas débiles, pocas
+  brillantes), tres temperaturas de color, centelleo propio por estrella con un
+  temblor rápido en las brillantes, picos de difracción y halo en las de
+  primera magnitud, una banda lechosa inclinada que también pasa, y un meteoro
+  cada 14-38 s. El reloj es de módulo para que el cielo no salte atrás al
+  cambiar de página, y el campo es determinista: el mismo cielo en todas las
+  rutas. 30 fps con `running`; quieto —pausa, segundo plano, reduced-motion,
+  perfil ligero— deja un solo fotograma, así que el control de pausa sigue
+  significando algo. DPR ≤ 2, `ResizeObserver`, sin dependencias. `:has()` en
+  el CSS retira la textura en cuanto el canvas marca `data-ready`.
+- **Miller** ofrece «Descargar CV · PDF» en las acciones del hero y la Ranger
+  usa el mismo glifo en su registro de a bordo.
 
-Verificación: `components/site-header.test.tsx` (nombres accesibles, letra
-pequeña oculta, acento por destino, CV y mapa, marcador medido antes de pintar
-y sin destino en la home, menú móvil con Escape) y en `e2e/navbar.spec.ts` la
-línea viajera entre Formación y Proyectos con cambio de acento, el CV a 44 px
-en barra y en menú, reduced-motion sin viaje y el CV en el hero de Miller. La
-matriz 320-2560 px, alturas, cielo y teclado no cambian.
+Verificación: `components/site-header.test.tsx` (nombres accesibles exactos,
+acento por destino, desplegable del CV con Escape y clic fuera, marcador
+medido antes de pintar, canvas montado en silencio sin 2D) y en
+`e2e/navbar.spec.ts` el observatorio contado por fotogramas —vivo, pausa,
+reanudación, segundo plano, reduced-motion y perfil ligero a 375 y 1440—, la
+línea viajera entre Formación y Proyectos con cambio de acento, el CV en
+barra y en menú con ambos idiomas, y el CV en el hero de Miller. La matriz
+320-2560 px, alturas y teclado no cambian.
 
 ## Dirección anterior — Cristal editorial (2026-09-10)
 
