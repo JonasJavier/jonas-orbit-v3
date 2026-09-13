@@ -66,8 +66,10 @@ en dos columnas hasta 1080 px, blancos de 44 px, HTML servido con
   el dueño no veía moverse nada porque su equipo declara movimiento reducido
   y la barra no ofrecía encenderlo. Segundo ajuste, a petición suya: menos
   estrellas y giro visible; con 0,06 estrellas por píxel y 7 px/s vio «mucho
-  movimiento», así que queda en 0,04 por píxel, 4 px/s en la capa cercana,
-  centelleo lento (0,3-1,9 Hz, ±30 %) y un meteoro cada 18-44 s. DPR ≤ 2, `ResizeObserver`, sin dependencias.
+  movimiento», y pidió un último recorte: queda en 0,034 estrellas por píxel,
+  3,2 px/s en la capa cercana, centelleo lento (0,3-1,9 Hz, ±30 %), un
+  meteoro cada 18-44 s y la banda lechosa a poco más de la mitad de claridad
+  (0,04 en el centro), que era «la parte más clara» que le molestaba. DPR ≤ 2, `ResizeObserver`, sin dependencias.
   `:has()` en el CSS retira la textura en cuanto el canvas marca `data-ready`.
 - **Miller** ofrece «Descargar CV · PDF» en las acciones del hero y la Ranger
   usa el mismo glifo en su registro de a bordo.
