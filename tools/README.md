@@ -26,6 +26,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `epoch-ripple.mjs` | ondulación de luminancia a lo largo de un ciclo de épocas del disco |
 | `star-streaks.mjs` | cuánto se estiran las estrellas del fondo, por anillo de distancia al agujero |
 | `body-metrics.mjs` | reparto de valores dentro del disco de un cuerpo secundario |
+| `gargantua-metrics.mjs` | luminancia por anillo de la sombra, negro de verdad, recorte blanco y asimetría de la banda |
 | `glsl-check.mjs` | falla si hay backticks dentro de los shaders |
 
 ## Las dos pruebas del contrato visual
@@ -121,6 +122,34 @@ Dos avisos que costaron un intento cada uno:
 - **El HUD contamina.** Los rótulos del raíl y del lado derecho caen dentro de
   los anillos exteriores y pesan más que las estrellas. Para comparar dos
   pasadas, captura con `--sin-rotulos` o mide ventanas de cielo limpio.
+
+## `gargantua-metrics.mjs`: la sombra, el blanco y los dos lados
+
+Es la medida del pase visual final de Gargantúa (`docs/design/hero-gargantua-direction.md`
+§14 duodecies) y de la guarda del bloom (§14 undecies), que antes se medían a
+mano. Sobre una captura de 1440×860 saca cuatro cosas, todas en la geometría de
+`disk-metrics.mjs` (sombra en 668,448, radio 95):
+
+```bash
+node tools/gargantua-metrics.mjs antes despues antes-noglow despues-noglow
+```
+
+- **Anillos de la sombra:** luminancia media por anillo del radio de la sombra.
+  Los dos interiores dicen si el agujero es negro o gris; el de 0.8-1.0 es el
+  filo; los dos exteriores no deberían moverse con un cambio de la sombra.
+- **Negro de verdad:** cuánto mide, por el centro, la zona por debajo de 8, y
+  qué fracción del disco de 1.25 R está ahí. Medirlo sólo sobre la captura
+  `--sin-glow` dice qué hace el raymarch; con glow, qué hace la guarda.
+- **Recorte blanco:** fracción de la banda del disco en ≥ 250 y ≥ 235. Es el
+  número del «reflector»: el blanco puro puede existir, pero localizado.
+- **Asimetría:** luminancia media a izquierda y derecha del centro dentro de la
+  banda, y su razón. Es la lectura tone-mapped del beaming, que es la que ve
+  el ojo, no el exponente del shader.
+
+Dos avisos. La banda incluye cielo y el centro de la sombra queda excluido, así
+que los absolutos importan poco: lo que vale es la diferencia entre capturas
+de la MISMA fase (`--reloj`). Y el HUD contamina la banda igual que a
+`star-streaks.mjs`: captura con `--sin-rotulos`.
 
 ## `body-metrics.mjs`, y la trampa de medir un cuerpo que gira
 

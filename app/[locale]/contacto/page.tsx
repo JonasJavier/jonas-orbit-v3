@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RangerContact } from "@/components/ranger-contact";
 import { SiteShell } from "@/components/site-shell";
-import { WorldPage } from "@/components/world-page";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { buildWorldMetadata } from "@/lib/world-metadata";
 import { getWorld } from "@/lib/worlds";
@@ -45,12 +44,10 @@ export default async function ContactPage({
     <SiteShell
       locale={typedLocale}
       activeWorldId={world.id}
-      mainClassName="world-route"
+      mainClassName="ranger-route"
       footerLabel={`JONÁS ORBIT · DESTINO ${String(world.order).padStart(2, "0")} / ${world.cosmicName.toUpperCase()}`}
     >
-      <WorldPage world={world} locale={typedLocale} showPanels={false}>
-        <RangerContact />
-      </WorldPage>
+      <RangerContact world={world} locale={typedLocale} />
     </SiteShell>
   );
 }

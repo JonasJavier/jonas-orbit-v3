@@ -240,15 +240,14 @@ export function ContactForm() {
       ) : null}
 
       <div className="contact-form-shell__heading">
-        <p className="section-kicker">CANAL CIFRADO / FORMULARIO</p>
-        <h3>Describe la misión</h3>
+        <h3>Prepara tu mensaje</h3>
         <p>
-          Contexto breve, objetivo y cualquier restricción importante. Yo me
-          encargo de convertirlo en una conversación concreta.
+          No necesitas tenerlo todo resuelto. Una idea es un buen comienzo.
         </p>
       </div>
 
-      <form className="contact-form" noValidate onSubmit={handleSubmit}>
+      <noscript><p>Para enviar el formulario necesitas JavaScript. También puedes usar el correo, WhatsApp o el teléfono de arriba.</p></noscript>
+      <form className="contact-form" aria-label="Enviar un mensaje a Jonás" noValidate onSubmit={handleSubmit}>
         <div className="contact-form__grid">
           <label>
             <span>Nombre</span>
@@ -319,7 +318,7 @@ export function ContactForm() {
             maxLength={2000}
             name="message"
             placeholder="Qué necesitas, para quién y qué resultado te gustaría conseguir…"
-            rows={7}
+            rows={5}
           />
           {fieldErrors.message ? (
             <small className="field-error" id="contact-message-error">

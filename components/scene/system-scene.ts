@@ -154,9 +154,18 @@ const SHADOW_IMPACT = (Math.sqrt(27) / 2) * GARGANTUA_RS;
  * LINEAL, antes del tone mapping — el suelo del disco lensado dentro de la
  * sombra vive muy por encima de esta ventana, así que sus arcos no la cruzan.
  */
+/*
+  Y sube (2026-09-12): `inner` 0.72 → 0.80 y `amount` 0.88 → 0.96. Con 0.88 el
+  12 % residual del halo dejaba el centro en 18 y el flanco que mira al
+  material brillante en 93 sobre 255: no un negro con una traza, un gris con
+  degradado. El pase de autoridad de la sombra vacía el interior en el propio
+  raymarch, y con el interior vacío la puerta de material deja pasar todo el
+  halo: había que cerrar más el techo. La traza sigue existiendo —4 %— y el
+  borde sigue abierto en el 20 % exterior del radio.
+*/
 const SHADOW_GUARD = {
-  inner: 0.72,
-  amount: 0.88,
+  inner: 0.8,
+  amount: 0.96,
   darkGate: [0.006, 0.075] as const,
 };
 

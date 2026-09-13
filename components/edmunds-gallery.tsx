@@ -4,6 +4,7 @@
    a second image transformation service. */
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { flushSync } from "react-dom";
 import type { World } from "@/lib/worlds";
 import { useLightEffectsMode } from "@/lib/effects-mode";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
@@ -18,24 +19,56 @@ type GalleryProps = Pick<Creativity, "artworks" | "collections">;
 const VISIBLE_SPAN = 3;
 /** Quiet time before the controls dim and leave the works alone. */
 const CINEMA_DELAY = 3500;
-/** Horizontal travel, in px, that turns a drag into a page. */
+/** Horizontal travel, in px, that turns a short drag into a page. */
 const DRAG_THRESHOLD = 45;
+/** Release speed, in px/ms, that adds one more position to a drag. */
+const FLICK = 0.55;
+/** The ring never travels more than this many positions in one animation. */
+const MAX_TRAVEL = 3;
+/** Build-time WebP rungs (tools/prepare-edmunds.mjs). */
+const RUNGS = [320, 480, 640, 960, 1280, 1920] as const;
+/** A WebP looked at 1:1 is soft; the same photo shrunk from a bigger file is
+ * crisp — that is why the viewer looked fine while the deck and the mosaic did
+ * not. Every context asks for 1.5× the pixels it paints. */
+const OVERSAMPLE = 1.5;
 const pad = (value: number) => String(value).padStart(2, "0");
+/** What the deck paints for a work of this aspect ratio, per breakpoint,
+ * mirroring `--art-height` and `max-width` in the stylesheet. */
+const deckSizes = (ratio: number) => {
+  const r = ratio.toFixed(3);
+  const paint = (height: string, max: string) => `calc(${OVERSAMPLE} * min(${r} * ${height}, ${max}))`;
+  return [
+    `(max-width: 700px) ${paint("clamp(180px, 40vh, 380px)", "80vw")}`,
+    `(max-width: 1080px) ${paint("clamp(240px, 46vh, 520px)", "min(760px, 84vw)")}`,
+    `(min-width: 1800px) ${paint("clamp(280px, 58vh, 720px)", "900px")}`,
+    paint("clamp(260px, 56vh, 620px)", "min(760px, 84vw)"),
+  ].join(", ");
+};
+/** Mosaic columns: two, three or four, plus the capped 1560 px layout. */
+const GRID_SIZES = `(max-width: 700px) calc(${OVERSAMPLE} * (50vw - 20px)), (max-width: 1080px) calc(${OVERSAMPLE} * (33vw - 30px)), (min-width: 1800px) ${Math.round(OVERSAMPLE * 375)}px, calc(${OVERSAMPLE} * (25vw - 30px))`;
 
-function ArtImage({ art, large = false, eager = false }: { art: Artwork; large?: boolean; eager?: boolean }) {
+function ArtImage({ art, large = false, eager = false, sizes }: { art: Artwork; large?: boolean; eager?: boolean; sizes?: string }) {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const suffix = attempt ? `?retry=${attempt}` : "";
   if (failed) return <span className="edmunds-image-error" role="status"><span>La imagen no se ha podido cargar.</span>{large ? <button type="button" onClick={() => { setAttempt(attempt + 1); setFailed(false); }}>Reintentar</button> : <span>Abre el visor para intentarlo otra vez.</span>}</span>;
-  return <img src={`/art/edmunds/${art.id}-${large ? 1920 : 960}.webp${suffix}`} srcSet={large ? undefined : `/art/edmunds/${art.id}-480.webp${suffix} 480w, /art/edmunds/${art.id}-960.webp${suffix} 960w`} sizes="(max-width: 700px) 84vw, 700px" alt={art.alt} width={art.width} height={art.height} loading={eager || large ? "eager" : "lazy"} decoding="async" draggable={false} onError={() => setFailed(true)} />;
+  return <img src={`/art/edmunds/${art.id}-${large ? 1920 : 960}.webp${suffix}`} srcSet={large ? undefined : RUNGS.map((width) => `/art/edmunds/${art.id}-${width}.webp${suffix} ${width}w`).join(", ")} sizes={large ? undefined : sizes} alt={art.alt} width={art.width} height={art.height} loading={eager || large ? "eager" : "lazy"} decoding="async" draggable={false} onError={() => setFailed(true)} />;
 }
 
 /** The deck: a fixed viewpoint over a ring of works on a full viewport, with
  * only the sector filter above and the work's title below. Only the works move.
  * No camera controller, render loop, WebGL context or autoplay; the pointer
- * adds at most two degrees of parallax, a drag carries the ring with it until
- * it is released, and after a few quiet seconds the controls dim. None of that
- * happens under reduced motion or the light profile. */
+ * adds at most two degrees of parallax, a drag turns the ring through its real
+ * 3D positions until it is released, and after a few quiet seconds the
+ * controls dim. None of that happens under reduced motion or the light profile.
+ *
+ * Every movement of the ring is ONE number: `--drag`, the fractional offset of
+ * the whole ring in positions, written on the stage and inherited by the works.
+ * While the hand is down it follows the pointer; on release, and for arrows,
+ * keys and sector jumps, the active index changes and `--drag` jumps by the
+ * same amount in the same frame — so nothing moves — and then eases back to 0
+ * with a single transition. The works never transition their own transform:
+ * that used to make the ring rubbery and the release abrupt. */
 export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const [collection, setCollection] = useState("all");
   const [active, setActive] = useState(0);
@@ -43,6 +76,10 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const [viewer, setViewer] = useState<number | null>(null);
   const [finePointer, setFinePointer] = useState(false);
   const [idle, setIdle] = useState(false);
+  /** The ambient light and the one before it: the newer fades in over the
+   * older, which leaves once the fade has ended. Derived during render (the
+   * documented "information from previous renders" pattern), not in an effect. */
+  const [ambient, setAmbient] = useState<{ previous: Artwork | null; current: Artwork | null }>({ previous: null, current: null });
   const reduced = usePrefersReducedMotion();
   const light = useLightEffectsMode();
   const mode = view ?? (reduced || light ? "grid" : "space");
@@ -53,13 +90,15 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-  const dragRef = useRef<{ x: number; y: number; pointer: number; engaged: boolean } | null>(null);
+  const dragRef = useRef<{ x: number; y: number; pointer: number; engaged: boolean; lastX: number; lastT: number; velocity: number } | null>(null);
   const frame = useRef(0);
   const idleTimer = useRef(0);
   const suppressClick = useRef(false);
   const open = viewer !== null;
   const parallax = mode === "space" && finePointer && !still;
   const cinema = mode === "space" && !still && !open;
+  if (mode === "space" && current && ambient.current?.id !== current.id) setAmbient({ previous: ambient.current, current });
+  const lights = mode === "space" ? [ambient.previous, ambient.current].filter((art): art is Artwork => art !== null) : [];
   const label = (id: string) => collections.find((item) => item.id === id)?.label ?? id;
   const sector = (id: string) => Math.max(0, collections.findIndex((item) => item.id === id));
   const segments = useMemo(() => {
@@ -111,15 +150,54 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
     return () => window.clearTimeout(idleTimer.current);
   }, [arm, active, collection]);
 
-  const step = (direction: number) => {
-    if (!filtered.length) return;
-    setActive((index) => (index + direction + filtered.length) % filtered.length);
+  /** One style write per frame; no state, no re-render. */
+  const write = (values: Record<string, string>) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => { for (const [key, value] of Object.entries(values)) stage.style.setProperty(key, value); });
   };
+  /** Width of one position, from the registered `--step`; a safe default where
+   * the stylesheet is not loaded (tests). */
+  const stepWidth = () => {
+    const stage = stageRef.current;
+    const value = stage ? parseFloat(getComputedStyle(stage).getPropertyValue("--step")) : NaN;
+    return Number.isFinite(value) && value > 0 ? value : 400;
+  };
+  /** Move to `index`. The ring is left exactly where it was — the active index
+   * changes and `--drag` absorbs the difference in the same frame — and then
+   * eases to rest. `from` is where the ring already is when a drag lets go. */
+  const go = (index: number, from = 0) => {
+    const stage = stageRef.current;
+    const length = filtered.length;
+    if (!length) return;
+    const target = ((index % length) + length) % length;
+    let travel = target - active;
+    if (travel > length / 2) travel -= length;
+    if (travel < -length / 2) travel += length;
+    // Never further than the visible window: a long jump reads as three steps.
+    travel = Math.max(-MAX_TRAVEL, Math.min(MAX_TRAVEL, travel));
+    cancelAnimationFrame(frame.current);
+    if (!stage || still || target === active) {
+      flushSync(() => setActive(target));
+      if (stage) { stage.dataset.dragging = "false"; stage.style.setProperty("--drag", "0"); }
+      return;
+    }
+    // Same frame: new offsets, compensating drag, no transition — the works
+    // stay put; then the transition takes `--drag` home.
+    stage.dataset.dragging = "true";
+    flushSync(() => setActive(target));
+    stage.style.setProperty("--drag", String(from + travel));
+    void getComputedStyle(stage).getPropertyValue("--drag");
+    stage.dataset.dragging = "false";
+    stage.style.setProperty("--drag", "0");
+  };
+  const step = (direction: number) => go(active + direction);
   /** Jump to the first work of the neighbouring sector, wrapping around. */
   const stepSector = (direction: number) => {
     if (!segments.length) return;
     const here = segments.findIndex((segment) => segment.start <= active && active < segment.start + segment.count);
-    setActive(segments[(here + direction + segments.length) % segments.length].start);
+    go(segments[(here + direction + segments.length) % segments.length].start);
   };
   const stepViewer = (direction: number) => {
     if (!filtered.length) return;
@@ -132,18 +210,21 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const select = (id: string) => {
     setCollection(id);
     setActive(0);
+    stageRef.current?.style.setProperty("--drag", "0");
   };
-  /** One style write per frame; no state, no re-render. */
-  const write = (values: Record<string, string>) => {
+  const endDrag = (dx: number, dy: number, velocity: number) => {
     const stage = stageRef.current;
     if (!stage) return;
     cancelAnimationFrame(frame.current);
-    frame.current = requestAnimationFrame(() => { for (const [key, value] of Object.entries(values)) stage.style.setProperty(key, value); });
-  };
-  const endDrag = (dx: number, dy: number) => {
-    const stage = stageRef.current;
-    if (stage) { stage.dataset.dragging = "false"; cancelAnimationFrame(frame.current); stage.style.setProperty("--drag-px", "0px"); }
-    if (Math.abs(dx) > DRAG_THRESHOLD && Math.abs(dx) > Math.abs(dy)) { suppressClick.current = true; step(dx < 0 ? 1 : -1); }
+    const horizontal = Math.abs(dx) > Math.abs(dy);
+    const positions = -dx / stepWidth();
+    // How far the hand carried the ring, plus one more for a flick.
+    let travel = horizontal ? Math.round(positions) : 0;
+    if (horizontal && !travel && Math.abs(dx) > DRAG_THRESHOLD) travel = dx < 0 ? 1 : -1;
+    if (horizontal && Math.abs(velocity) > FLICK) travel += velocity < 0 ? 1 : -1;
+    travel = Math.max(-MAX_TRAVEL, Math.min(MAX_TRAVEL, travel));
+    if (travel) { suppressClick.current = true; go(active + travel, still ? 0 : positions - travel); }
+    else { stage.dataset.dragging = "false"; stage.style.setProperty("--drag", "0"); }
   };
 
   const renderWork = (art: Artwork, index: number, distance: number) => {
@@ -154,10 +235,10 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
           if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
           event.preventDefault();
           // On the deck a side work first comes to the centre; only the centred one opens.
-          if (mode === "space" && distance !== 0) { setActive(index); return; }
+          if (mode === "space" && distance !== 0) { go(index); return; }
           showViewer(index, event.currentTarget);
         }}>
-          <ArtImage art={art} eager={mode === "space" && distance === 0} />
+          <ArtImage art={art} eager={mode === "space" && distance === 0} sizes={mode === "space" ? deckSizes(art.width / art.height) : GRID_SIZES} />
           <span className="edmunds-artwork__brackets" aria-hidden="true"><i /><i /><i /><i /></span>
           <span className="edmunds-artwork__expand" aria-hidden="true">↗</span>
         </a>
@@ -170,7 +251,17 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
     <section className="edmunds-gallery" id="galeria" aria-label="Archivo visual" data-view={mode} data-reduced={still} data-idle={idle && cinema}
       onPointerMove={wake} onPointerDown={wake} onKeyDown={wake} onFocus={wake} onTouchStart={wake}>
       <noscript><style>{`.edmunds-gallery .edmunds-controls, .edmunds-gallery .edmunds-gallery__foot, .edmunds-gallery .edmunds-deck__sky, .edmunds-gallery .edmunds-stage__floor { display: none; } .edmunds-gallery[data-view="space"] { height: auto; min-height: 0; overflow: visible; } .edmunds-gallery .edmunds-stage { position: static; inset: auto; display: block; height: auto; min-height: 0; padding: 24px var(--page-gutter) 40px; overflow: visible; } .edmunds-gallery .edmunds-stage__space, .edmunds-gallery .edmunds-deck { position: static; inset: auto; perspective: none; transform: none; } .edmunds-gallery .edmunds-artworks { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 32px; height: auto; perspective: none; transform: none; } .edmunds-gallery .edmunds-artwork { display: block; position: static; width: auto; max-width: none; transform: none; opacity: 1; filter: none; visibility: visible; pointer-events: auto; } .edmunds-gallery .edmunds-artwork figcaption { display: block; }`}</style></noscript>
-      {mode === "space" && current && <div className="edmunds-deck__sky" aria-hidden="true"><span className="edmunds-deck__nebula" /><span className="edmunds-deck__stars" /><span className="edmunds-deck__stars edmunds-deck__stars--far" /><span className="edmunds-deck__dust" /><img key={current.id} className="edmunds-deck__ambient" src={`/art/edmunds/${current.id}-480.webp`} alt="" width={current.width} height={current.height} decoding="async" draggable={false} /><span className="edmunds-deck__planet" /><span className="edmunds-deck__dune" /></div>}
+      {mode === "space" && current && <div className="edmunds-deck__sky" aria-hidden="true">
+        <span className="edmunds-deck__nebula" />
+        <span className="edmunds-deck__stars edmunds-deck__stars--far" />
+        <span className="edmunds-deck__stars" />
+        <span className="edmunds-deck__stars edmunds-deck__stars--bright" />
+        <span className="edmunds-deck__auroras"><span className="edmunds-deck__aurora" /><span className="edmunds-deck__aurora edmunds-deck__aurora--two" /></span>
+        <span className="edmunds-deck__dust" />
+        {lights.map((art, index) => <img key={art.id} className={index === lights.length - 1 && lights.length > 1 ? "edmunds-deck__ambient edmunds-deck__ambient--in" : "edmunds-deck__ambient"} src={`/art/edmunds/${art.id}-480.webp`} alt="" width={art.width} height={art.height} decoding="async" draggable={false} onAnimationEnd={() => setAmbient((state) => ({ previous: null, current: state.current }))} />)}
+        <span className="edmunds-deck__planet" />
+        <span className="edmunds-deck__dune" />
+      </div>}
       <div className="edmunds-top">
         <div className="edmunds-controls">
           <div className="edmunds-filters" role="group" aria-label="Filtrar por sector">
@@ -189,12 +280,12 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
             event.preventDefault();
             // Move focus to the stable stage before the previous card becomes inert.
             event.currentTarget.focus({ preventScroll: true });
-            if (event.key === "Home") setActive(0);
-            else if (event.key === "End") setActive(filtered.length - 1);
+            if (event.key === "Home") go(0);
+            else if (event.key === "End") go(filtered.length - 1);
             else if (event.key === "PageDown" || event.key === "PageUp") stepSector(event.key === "PageDown" ? 1 : -1);
             else step(event.key === "ArrowRight" ? 1 : -1);
           }}
-          onPointerDown={(event) => { if (mode === "space" && event.isPrimary && event.button === 0) { dragRef.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId, engaged: false }; suppressClick.current = false; } }}
+          onPointerDown={(event) => { if (mode === "space" && event.isPrimary && event.button === 0) { dragRef.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId, engaged: false, lastX: event.clientX, lastT: event.timeStamp, velocity: 0 }; suppressClick.current = false; } }}
           onPointerMove={(event) => {
             const start = dragRef.current;
             if (start && start.pointer === event.pointerId) {
@@ -205,8 +296,12 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
                 event.currentTarget.setPointerCapture(event.pointerId);
                 event.currentTarget.dataset.dragging = "true";
               }
-              // The ring follows the hand while the drag lasts.
-              if (start.engaged) write({ "--drag-px": `${still ? 0 : dx}px` });
+              if (!start.engaged) return;
+              // Recent speed, for the flick on release.
+              const elapsed = event.timeStamp - start.lastT;
+              if (elapsed > 0) { start.velocity = 0.6 * start.velocity + 0.4 * ((event.clientX - start.lastX) / elapsed); start.lastX = event.clientX; start.lastT = event.timeStamp; }
+              // The ring turns with the hand, position by position, while the drag lasts.
+              write({ "--drag": still ? "0" : (-dx / stepWidth()).toFixed(4) });
               return;
             }
             if (!parallax) return;
@@ -219,9 +314,11 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
             dragRef.current = null;
             if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
             if (!start || start.pointer !== event.pointerId) return;
-            endDrag(event.clientX - start.x, event.clientY - start.y);
+            // A hand that stopped before letting go carries no flick.
+            const velocity = event.timeStamp - start.lastT > 80 ? 0 : start.velocity;
+            endDrag(event.clientX - start.x, event.clientY - start.y, start.engaged ? velocity : 0);
           }}
-          onPointerCancel={() => { dragRef.current = null; suppressClick.current = false; endDrag(0, 0); }}
+          onPointerCancel={() => { dragRef.current = null; suppressClick.current = false; endDrag(0, 0, 0); }}
           onClickCapture={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = false; } }}>
           {mode === "space" ? (
             <>

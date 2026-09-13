@@ -68,6 +68,19 @@ const worldProse = defineCollection({
           href: s.string(),
           preview: s.string(),
         })).min(1),
+        /**
+         * Formación EN CURSO: sin `href` ni `preview` a propósito. Lo que está
+         * en marcha no tiene documento todavía y no se presenta como terminado
+         * (regla 8: contenido honesto). Cuando exista el certificado, la
+         * entrada se mueve a `certificates`, no se duplica.
+         */
+        inProgress: s.array(s.object({
+          id: s.string().regex(/^[a-z0-9-]+$/),
+          title: s.string(),
+          issuer: s.string().optional(),
+          detail: s.string(),
+          area: s.enum(["code", "languages"]),
+        })).optional(),
       }).optional(),
       facts: s.array(s.object({ value: s.string(), label: s.string() })).min(1),
       panels: s

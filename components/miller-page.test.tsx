@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorld } from "@/lib/worlds";
 import { MillerCertificates } from "./miller-certificates";
@@ -26,6 +26,23 @@ describe("Miller · formación documentada", () => {
     expect(screen.getByText(/Educación secundaria completada/)).toHaveTextContent("2021–2022");
     expect(screen.getByRole("navigation", { name: "Destinos contiguos" })).toHaveTextContent("Sobre mí");
     expect(certificates.some((certificate) => /ITLA|MINERD/.test(certificate.issuer))).toBe(false);
+  });
+
+  it("presenta la formación en curso como en marcha, sin documentos ni fechas de cierre", () => {
+    render(<MillerPage world={world} locale="es" />);
+    const list = screen.getByRole("list", { name: "Aprendizaje en curso" });
+    const items = within(list).getAllByRole("listitem");
+    expect(items).toHaveLength(3);
+    expect(within(list).getAllByText("En curso")).toHaveLength(3);
+    expect(within(list).queryAllByRole("link")).toHaveLength(0);
+    expect(within(list).getByRole("heading", { level: 4, name: /Inteligencia Artificial/ })).toBeInTheDocument();
+    expect(within(list).getByText("Harvard University · CS50 AI")).toBeInTheDocument();
+    expect(within(list).getByText("Conquer Languages")).toBeInTheDocument();
+    expect(within(list).getByRole("heading", { level: 4, name: "Francés" })).toBeInTheDocument();
+    const inProgress = world.prose.education!.inProgress!;
+    expect(new Set(inProgress.map((course) => course.id)).size).toBe(3);
+    expect(inProgress.some((course) => certificates.some((certificate) => certificate.id === course.id))).toBe(false);
+    expect(inProgress.some((course) => /completad|terminad|finalizad/i.test(course.detail))).toBe(false);
   });
 
   it("publica 23 documentos únicos y sus recursos existen", () => {

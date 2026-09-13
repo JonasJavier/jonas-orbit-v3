@@ -71,6 +71,11 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   await expect.poll(() => page.locator('.edmunds-artwork[data-offset="0"] img').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   expect(await page.locator(".edmunds-stage__space").evaluate((space) => getComputedStyle(space).perspective)).not.toBe("none");
   expect(await page.locator(".edmunds-artworks").evaluate((list) => getComputedStyle(list).transformStyle)).toBe("preserve-3d");
+  // Night sky: the auroras move on their own, and the deck asks for a file
+  // larger than the pixels it paints — never a 1:1 WebP, which reads soft.
+  expect(await page.locator(".edmunds-deck__aurora").first().evaluate((aurora) => getComputedStyle(aurora).animationName)).toContain("edmunds-aurora");
+  const served = await page.locator('.edmunds-artwork[data-offset="0"] img').evaluate((image: HTMLImageElement) => ({ natural: image.naturalWidth, painted: image.getBoundingClientRect().width * devicePixelRatio, src: image.currentSrc }));
+  expect(served.natural).toBeGreaterThanOrEqual(served.painted * 1.2);
   // The deck is a viewport of its own below the heading; the anchor lands on it
   // exactly under the sticky navigation bar.
   const viewport = page.viewportSize()!;
@@ -98,12 +103,22 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   await page.mouse.move(box.x + box.width * .7, box.y + box.height * .5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * .3, box.y + box.height * .5, { steps: 8 });
-  // While the hand is down the ring travels with it.
+  // While the hand is down the ring turns with it, in positions: the works
+  // are partway between two rest poses, not just shifted sideways.
   expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("true");
-  await expect.poll(() => stage.evaluate((node) => parseFloat(node.style.getPropertyValue("--drag-px")))).toBeLessThan(-100);
+  await expect.poll(() => stage.evaluate((node) => parseFloat(node.style.getPropertyValue("--drag")))).toBeGreaterThan(0.25);
+  const midway = await page.locator('.edmunds-artwork[data-offset="1"]').evaluate((art) => new DOMMatrix(getComputedStyle(art).transform).m41);
+  const rest = await page.locator('.edmunds-artwork[data-offset="1"]').evaluate((art) => { const stage = art.closest(".edmunds-stage") as HTMLElement; const saved = stage.style.getPropertyValue("--drag"); stage.style.setProperty("--drag", "0"); const x = new DOMMatrix(getComputedStyle(art).transform).m41; stage.style.setProperty("--drag", saved); return x; });
+  expect(midway).toBeLessThan(rest - 60);
   await page.mouse.up();
   await expect(page.locator(caption)).toHaveText("Hoy se come");
   expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("false");
+  // Release: the ring eases home from where the hand left it, as ONE number.
+  await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: 3000 }).toBeLessThan(0.01);
+  // The previous light stays under the new one until the crossfade ends.
+  await page.getByRole("button", { name: "Obra siguiente" }).click();
+  await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(2);
+  await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(1, { timeout: 4000 });
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page.getByRole("button", { name: "Ampliar", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -158,7 +173,8 @@ test("Edmunds: reduced-motion conserva el archivo, evita transiciones y nunca at
   await expect(page.getByRole("button", { name: "Mosaico" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("link", { name: /^Ampliar:/ })).toHaveCount(90);
   await page.getByRole("button", { name: "Galería 3D" }).click();
-  expect(await page.locator(".edmunds-artwork").first().evaluate((art) => getComputedStyle(art).transitionDuration)).toBe("0s");
+  expect(await page.locator(".edmunds-stage").evaluate((stage) => getComputedStyle(stage).transitionDuration)).toBe("0s");
+  expect(await page.locator(".edmunds-deck__aurora").first().evaluate((aurora) => getComputedStyle(aurora).animationName)).toBe("none");
   await page.getByRole("button", { name: "Obra siguiente" }).click();
   await expect(page.locator(caption)).toHaveText("Hoy se come");
   await page.waitForTimeout(4200);

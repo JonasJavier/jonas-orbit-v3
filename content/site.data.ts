@@ -20,6 +20,7 @@ export const SITE_PROFILE = {
   name: "Jonás Javier Encarnación",
   jobTitle: "Desarrollador full-stack y diseñador UX/UI",
   email: "jonasjavier.dev@gmail.com",
+  phone: "+18498625049",
   whatsapp: "18498625049",
   linkedin: "https://www.linkedin.com/in/jonas-javier-247b50425",
   github: "https://github.com/JonasJavier",

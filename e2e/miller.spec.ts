@@ -35,6 +35,10 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
   await page.goto("/es/formacion?no3d=1");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Formación.*sin punto final/);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/es\/formacion$/);
+  const inProgress = page.getByRole("list", { name: "Aprendizaje en curso" });
+  await expect(inProgress.getByRole("listitem")).toHaveCount(3);
+  await expect(inProgress.getByText("En curso")).toHaveCount(3);
+  await expect(inProgress.getByRole("link")).toHaveCount(0);
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
   await expect(page).toHaveURL(/#certificados$/);
   const code = page.getByRole("button", { name: "Código", exact: true });
@@ -79,9 +83,11 @@ test("Miller: el océano pausa, reanuda y deja de dibujar fuera de pantalla o en
   await page.addInitScript(() => {
     const state = window as unknown as { oceanDraws: number };
     state.oceanDraws = 0;
-    const original = CanvasRenderingContext2D.prototype.drawImage;
-    Object.defineProperty(CanvasRenderingContext2D.prototype, "drawImage", { configurable: true, value: function (this: CanvasRenderingContext2D, ...args: unknown[]) {
-      if (this.canvas.closest(".miller-ocean")) state.oceanDraws++;
+    // El océano vive en su propio contexto WebGL2: se cuentan sus draws, no los
+    // de la escena persistente, que duerme cubierta detrás de Miller.
+    const original = WebGL2RenderingContext.prototype.drawArrays;
+    Object.defineProperty(WebGL2RenderingContext.prototype, "drawArrays", { configurable: true, value: function (this: WebGL2RenderingContext, ...args: number[]) {
+      if (this.canvas instanceof HTMLCanvasElement && this.canvas.closest(".miller-ocean")) state.oceanDraws++;
       return Reflect.apply(original, this, args);
     } });
   });
@@ -159,6 +165,7 @@ test("Miller: formación y certificados funcionan sin JavaScript", async ({ brow
   const page = await context.newPage();
   await page.goto("/es/formacion");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Formación");
+  await expect(page.getByRole("list", { name: "Aprendizaje en curso" }).getByRole("listitem")).toHaveCount(3);
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
   await expect(page.getByRole("link", { name: /Ver certificado:/ })).toHaveCount(6);
   await page.locator(".miller-archive-more > summary").click();

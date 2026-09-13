@@ -1,3 +1,5 @@
+import { drawNebula } from "./nebula";
+
 type StarLayer = "far" | "mid" | "near";
 
 export interface StarPoint {
@@ -226,6 +228,7 @@ export function drawStarfield({
   accent: string;
 }) {
   context.clearRect(0, 0, width, height);
+  drawNebula(context, width, height);
   drawHaze(context, width, height, accent);
 
   for (const star of stars) {
