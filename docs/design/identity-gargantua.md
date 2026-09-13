@@ -61,8 +61,14 @@ en dos columnas hasta 1080 px, blancos de 44 px, HTML servido con
   cambiar de página, y el campo es determinista: el mismo cielo en todas las
   rutas. 30 fps con `running`; quieto —pausa, segundo plano, reduced-motion,
   perfil ligero— deja un solo fotograma, así que el control de pausa sigue
-  significando algo. DPR ≤ 2, `ResizeObserver`, sin dependencias. `:has()` en
-  el CSS retira la textura en cuanto el canvas marca `data-ready`.
+  significando algo. Con reduced-motion o perfil ligero el control pasa a
+  «Activar estrellas», el mismo consentimiento explícito del océano de Miller:
+  el dueño no veía moverse nada porque su equipo declara movimiento reducido
+  y la barra no ofrecía encenderlo. Segundo ajuste, a petición suya: menos
+  estrellas (0,06 por píxel de ancho, antes 0,115), giro más rápido (7 px/s
+  en la capa cercana, antes 2,4: a 2,4 nadie lo veía), centelleo más amplio
+  y meteoros cada 6-18 s. DPR ≤ 2, `ResizeObserver`, sin dependencias.
+  `:has()` en el CSS retira la textura en cuanto el canvas marca `data-ready`.
 - **Miller** ofrece «Descargar CV · PDF» en las acciones del hero y la Ranger
   usa el mismo glifo en su registro de a bordo.
 

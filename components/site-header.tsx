@@ -42,9 +42,22 @@ export function SiteHeader({
   const lightEffects = useLightEffectsMode();
   const reducedMotion = usePrefersReducedMotion();
   const [skyPaused, setSkyPaused] = useState(false);
+  const [skyActivated, setSkyActivated] = useState(false);
   const [pageVisible, setPageVisible] = useState(false);
-  const skyEnabled = !lightEffects && !reducedMotion;
+  // Como el océano de Miller: reduced-motion y el perfil ligero dejan el cielo
+  // quieto por defecto, y «Activar estrellas» es el consentimiento explícito.
+  const skyBlocked = (lightEffects || reducedMotion) && !skyActivated;
+  const skyEnabled = !skyBlocked;
   const skyRunning = skyEnabled && pageVisible && !skyPaused;
+  const skyLabel = skyBlocked ? "Activar estrellas" : skyPaused ? "Reanudar estrellas" : "Pausar estrellas";
+  const toggleSky = () => {
+    if (skyBlocked) {
+      setSkyActivated(true);
+      setSkyPaused(false);
+    } else {
+      setSkyPaused(!skyPaused);
+    }
+  };
 
   useEffect(() => {
     const syncVisibility = () => setPageVisible(!document.hidden);
@@ -182,7 +195,7 @@ export function SiteHeader({
           <i className="voyage-marker" aria-hidden="true" />
         </div>
         <div className="voyage-return">
-          <button className="voyage-sky-toggle" type="button" onClick={() => setSkyPaused(!skyPaused)} aria-label={skyPaused ? "Reanudar estrellas" : "Pausar estrellas"} title={skyPaused ? "Reanudar estrellas" : "Pausar estrellas"} aria-pressed={!skyPaused}><span aria-hidden="true">{skyPaused ? "✧" : "Ⅱ"}</span></button>
+          <button className="voyage-sky-toggle" type="button" onClick={toggleSky} aria-label={skyLabel} title={skyLabel} aria-pressed={skyRunning}><span aria-hidden="true">{skyRunning ? "Ⅱ" : "✧"}</span></button>
           <details
             className="voyage-cv"
             ref={cvRef}

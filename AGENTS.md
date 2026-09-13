@@ -99,8 +99,10 @@ sin JavaScript; el CV es un `<details>` con **los dos CV, español e inglés**
 usan el hero de Miller y el registro de la Ranger; y el cielo pasa a
 `voyage-sky.tsx`, un canvas 2D de observatorio —tres profundidades en un solo
 sentido, magnitudes reales, centelleo, difracción, banda lechosa y meteoros—
-con la textura SVG como fallback sin JavaScript y un solo fotograma cuando
-está quieto. El estado previo vive en
+con la textura SVG como fallback sin JavaScript, un solo fotograma cuando
+está quieto y «Activar estrellas» como opt-in bajo reduced-motion o perfil
+ligero (el dueño tiene movimiento reducido en su equipo y no veía nada). El
+estado previo vive en
 `output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`.
 
 **Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de
