@@ -65,9 +65,9 @@ en dos columnas hasta 1080 px, blancos de 44 px, HTML servido con
   «Activar estrellas», el mismo consentimiento explícito del océano de Miller:
   el dueño no veía moverse nada porque su equipo declara movimiento reducido
   y la barra no ofrecía encenderlo. Segundo ajuste, a petición suya: menos
-  estrellas (0,06 por píxel de ancho, antes 0,115), giro más rápido (7 px/s
-  en la capa cercana, antes 2,4: a 2,4 nadie lo veía), centelleo más amplio
-  y meteoros cada 6-18 s. DPR ≤ 2, `ResizeObserver`, sin dependencias.
+  estrellas y giro visible; con 0,06 estrellas por píxel y 7 px/s vio «mucho
+  movimiento», así que queda en 0,04 por píxel, 4 px/s en la capa cercana,
+  centelleo lento (0,3-1,9 Hz, ±30 %) y un meteoro cada 18-44 s. DPR ≤ 2, `ResizeObserver`, sin dependencias.
   `:has()` en el CSS retira la textura en cuanto el canvas marca `data-ready`.
 - **Miller** ofrece «Descargar CV · PDF» en las acciones del hero y la Ranger
   usa el mismo glifo en su registro de a bordo.

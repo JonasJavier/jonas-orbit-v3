@@ -28,8 +28,9 @@ const ORIGIN = typeof performance !== "undefined" ? performance.now() : 0;
 const TAU = Math.PI * 2;
 const LAYER_SPEED = [0.35, 0.6, 1];
 const TINTS = ["255, 255, 255", "255, 232, 205", "196, 214, 255"];
-/** Píxeles por segundo de la capa cercana. Con 2,4 nadie veía el giro. */
-const PAN = 7;
+/** Píxeles por segundo de la capa cercana. Con 2,4 nadie veía el giro; con 7
+    el dueño vio «mucho movimiento». */
+const PAN = 4;
 
 function seeded(seed: number) {
   let state = seed;
@@ -42,7 +43,7 @@ function seeded(seed: number) {
 function buildStars(width: number, height: number): Star[] {
   const random = seeded(2026);
   const span = width + 400;
-  const count = Math.round(span * 0.06);
+  const count = Math.round(span * 0.04);
   return Array.from({ length: count }, () => {
     // Distribución de magnitudes: casi todo es débil; una de cada veinte brilla.
     const magnitude = Math.pow(random(), 4.6);
@@ -53,7 +54,7 @@ function buildStars(width: number, height: number): Star[] {
       r,
       a: 0.22 + random() * 0.5 + magnitude * 0.25,
       tint: random() < 0.72 ? 0 : random() < 0.5 ? 1 : 2,
-      f: 0.5 + random() * 3.2,
+      f: 0.3 + random() * 1.6,
       p: random() * TAU,
       layer: r < 0.7 ? 0 : r < 1.2 ? 1 : 2,
     };
@@ -75,7 +76,7 @@ export function VoyageSky({ running }: { running: boolean }) {
     let frame = 0;
     let previous = 0;
     let meteor: Meteor | null = null;
-    let nextMeteor = 3 + Math.random() * 6;
+    let nextMeteor = 8 + Math.random() * 12;
     const random = seeded(Math.floor(ORIGIN) + 7);
 
     function draw() {
@@ -103,8 +104,8 @@ export function VoyageSky({ running }: { running: boolean }) {
         const x = ((star.x + t * PAN * LAYER_SPEED[star.layer]) % span) - 200;
         if (x < -4 || x > width + 4) continue;
         // Centelleo: una onda lenta propia y, en las brillantes, un temblor rápido.
-        let twinkle = 0.58 + 0.42 * Math.sin(t * star.f * TAU + star.p);
-        if (star.layer === 2) twinkle *= 0.86 + 0.14 * Math.sin(t * 9.7 + star.p * 3);
+        let twinkle = 0.7 + 0.3 * Math.sin(t * star.f * TAU + star.p);
+        if (star.layer === 2) twinkle *= 0.92 + 0.08 * Math.sin(t * 6.3 + star.p * 3);
         const alpha = star.a * twinkle;
         const color = TINTS[star.tint];
         if (star.r < 0.8) {
@@ -142,7 +143,7 @@ export function VoyageSky({ running }: { running: boolean }) {
         if (!meteor && t > nextMeteor) {
           const fromLeft = random() < 0.5;
           meteor = { born: t, x: fromLeft ? width * (0.1 + random() * 0.3) : width * (0.6 + random() * 0.3), y: random() * height * 0.6, dx: (fromLeft ? 1 : -1) * (260 + random() * 160), dy: 30 + random() * 40 };
-          nextMeteor = t + 6 + random() * 12;
+          nextMeteor = t + 18 + random() * 26;
         }
         if (meteor) {
           const age = t - meteor.born;
