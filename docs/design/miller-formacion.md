@@ -8,6 +8,70 @@ No altera los cuerpos del atlas ni la composición o las poses de cámara.
 
 ## Experiencia
 
+### Océano en WebGL2 y formación en curso (2026-09-12)
+
+El dueño rechazó el movimiento del hero: «no me gusta cuando está activada la
+animación, no se ve bien el movimiento». El diagnóstico sustituye al de la
+sección anterior, que ya sospechaba de la técnica: el canvas 2D desplazaba
+filas enteras de 3 px con una fase que dependía SÓLO de la profundidad, así que
+cada banda horizontal se movía como un bloque —de lado a lado y arriba y abajo—
+y la foto temblaba como gelatina. No era una cuestión de velocidad ni de
+amplitud, sino de que el campo no variaba en X ni tenía perspectiva.
+
+`MillerOcean` pasa a un contexto WebGL2 propio con un solo triángulo y la
+fotografía como textura. El fragment shader construye una superficie de mar en
+perspectiva —`z = 1 / (0.9·d + 0.1)`, con `d` la profundidad bajo el horizonte
+al 24 % de la imagen— y sobre ella suma tres trenes sinusoidales hacia la cámara
+(uno frontal y dos oblicuos, con velocidad `∝ 1/√k` como en aguas profundas) y
+un rizo de ruido advectado en la misma dirección. Cada píxel del agua se
+desplaza según la PENDIENTE de esa superficie (refracción) y sube con su altura;
+la luz baja de la derecha aclara las caras que la miran, oscurece las opuestas y
+deja destellos Blinn sobre las crestas y chispas breves sólo donde la foto ya
+tiene espuma. El cielo no se toca: `d ≤ 0` devuelve la textura tal cual. El
+desplazamiento se apaga con `smoothstep(0, 0.16, d)` para que no exista costura
+en el horizonte y crece con `d^1.5` hacia el primer plano.
+
+Calibración en píxeles por segundo, como manda la regla de Miller: el tren
+principal avanza unos 70 px/s junto al borde inferior a 600 px de agua y se
+frena en perspectiva hacia el horizonte. Medido con Playwright a 1440 px sobre
+tres capturas separadas 0,5 s: entre fotogramas cambia el 12–13 % de los
+píxeles del agua (más de 12 niveles) con una diferencia media de 5,5, y el
+cielo queda en 0,005. La franja de seis fotogramas a 0,2 s muestra las crestas
+viajando hacia abajo y a la izquierda con marcha coherente, sin bandas.
+
+Contrato que se conserva: consentimiento y pausa compartidos en `MillerWater`,
+30 fps, IntersectionObserver y `visibilitychange`, perfil ligero y
+reduced-motion en reposo con opt-in, fotografía como fallback sin JavaScript.
+Cambios de contrato: la resolución del canvas sube de 1440 px sin DPR a 2048 px
+con DPR ≤ 1,5, porque el coste ya no es de CPU; sin WebGL2 —o si el contexto se
+pierde— el canvas y el control desaparecen, porque un botón de «pausar» sobre
+una imagen que no puede moverse sería una mentira; y al pausar se suelta el
+contexto con `WEBGL_lose_context`. La escena persistente sigue dormida detrás
+(`setCovered`), así que en Miller nunca hay dos contextos dibujando. Cero
+dependencias nuevas. La dirección de vídeo propuesta en la sección siguiente
+queda descartada: esto se genera desde la foto original sin ningún asset más.
+
+`e2e/miller.spec.ts` cuenta ahora `drawArrays` del canvas de `.miller-ocean` en
+vez de `drawImage` del contexto 2D; el resto de la matriz —pausa, reanudación,
+segundo plano, fuera de pantalla, reduced-motion, sin JavaScript— no cambia.
+
+**Formación en curso.** El esquema de Velite gana `education.inProgress`
+—`id`, `title`, `issuer` opcional, `detail`, `area` (`code` | `languages`)—
+sin `href` ni `preview` A PROPÓSITO: lo que está en marcha no tiene documento y
+no se presenta como terminado. Tres entradas por información directa del dueño:
+Introducción a la Inteligencia Artificial (Harvard University · CS50 AI),
+Inglés avanzado (Conquer Languages) y Francés (nivel básico, sin institución).
+Se muestran en `02 / MI RECORRIDO`, entre los tres estudios y el punto de
+partida, como lista con etiqueta «En curso», punto de estado que late sólo con
+el agua en marcha, y una nota que dice que aparecerán en la bitácora cuando
+tengan documento. Cuando eso pase, la entrada se MUEVE a `certificates`; no se
+duplica. El test unitario comprueba tres entradas, cero enlaces, ids que no
+colisionan con el archivo y ausencia de palabras de cierre («completado»,
+«terminado», «finalizado»); el E2E comprueba el bloque con y sin JavaScript.
+La introducción de la sección nombra ahora los idiomas junto a código,
+estrategia y lenguaje visual.
+
+
 ### Retirada del control del archivo y revisión del movimiento
 
 Por petición del dueño se retira el botón Animar/Pausar/Reanudar corrientes

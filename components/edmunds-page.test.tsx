@@ -23,7 +23,7 @@ describe("Edmunds · cubierta de observación", () => {
     expect(within(neighbours).getByRole("link", { name: /Tesseracto/ })).toHaveAttribute("href", "/es/experimentos");
   });
 
-  it("publica una selección única en siete sectores, Diseño primero, con medio y tres WebP por obra", () => {
+  it("publica una selección única en siete sectores, Diseño primero, con medio y seis WebP por obra", () => {
     expect(artworks).toHaveLength(90);
     expect(collections).toHaveLength(7);
     expect(collections[0].id).toBe("disenos");
@@ -41,7 +41,7 @@ describe("Edmunds · cubierta de observación", () => {
       expect(collections.some((collection) => collection.id === art.collection), art.id).toBe(true);
       expect(art.alt.length).toBeGreaterThan(20);
       expect(art.medium === "photo").toBe(art.source.startsWith("Fotos/"));
-      for (const size of [480, 960, 1920]) {
+      for (const size of [320, 480, 640, 960, 1280, 1920]) {
         const path = join(process.cwd(), "public/art/edmunds", `${art.id}-${size}.webp`);
         expect(existsSync(path), art.id).toBe(true);
         const bytes = readFileSync(path);
@@ -73,6 +73,42 @@ describe("Edmunds · cubierta de observación", () => {
     fireEvent.keyDown(stage, { key: "PageUp" });
     fireEvent.keyDown(stage, { key: "PageUp" });
     expect(caption().querySelector("h2")).toHaveTextContent("Aurora");
+  });
+
+  it("pide a cada contexto más píxeles de los que pinta y anuncia los seis peldaños", () => {
+    const { container } = render(<EdmundsGallery artworks={artworks} collections={collections} />);
+    const active = container.querySelector<HTMLImageElement>('.edmunds-artwork[data-offset="0"] img')!;
+    expect(active.srcset.split(",")).toHaveLength(6);
+    expect(active.srcset).toContain("-1280.webp 1280w");
+    // The deck's sizes mirror the stylesheet: aspect ratio × art height, capped,
+    // times the oversampling factor; the mosaic uses its column widths.
+    expect(active.sizes).toContain("calc(1.5 * min(");
+    expect(active.sizes).toContain("clamp(260px, 56vh, 620px)");
+    expect(active.sizes).toContain("(max-width: 700px)");
+    fireEvent.click(screen.getByRole("button", { name: "Mosaico" }));
+    const tile = container.querySelector<HTMLImageElement>(".edmunds-artwork img")!;
+    expect(tile.sizes).toContain("25vw");
+    expect(tile.sizes).toContain("(max-width: 700px)");
+  });
+
+  it("mueve el anillo como un solo número y funde la luz ambiente sin apagarla", () => {
+    const { container } = render(<EdmundsGallery artworks={artworks} collections={collections} />);
+    const stage = container.querySelector<HTMLElement>(".edmunds-stage")!;
+    fireEvent.click(screen.getByRole("button", { name: "Obra siguiente" }));
+    expect(caption().querySelector("h2")).toHaveTextContent("Hoy se come");
+    // After a step the stage has been told to ease `--drag` back to rest.
+    expect(stage.style.getPropertyValue("--drag")).toBe("0");
+    expect(stage.dataset.dragging).toBe("false");
+    // Two ambient lights coexist until the newer one finishes fading in.
+    const lights = () => container.querySelectorAll(".edmunds-deck__ambient");
+    expect(lights()).toHaveLength(2);
+    expect(lights()[1]).toHaveClass("edmunds-deck__ambient--in");
+    fireEvent.animationEnd(lights()[1]);
+    expect(lights()).toHaveLength(1);
+    expect(lights()[0]).toHaveAttribute("src", "/art/edmunds/diseno-hot-summer-480.webp");
+    // The sky carries stars and two aurora curtains, all decorative.
+    expect(container.querySelectorAll(".edmunds-deck__aurora")).toHaveLength(2);
+    expect(container.querySelector(".edmunds-deck__sky")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("en la cubierta una obra lateral se centra antes de abrirse", () => {

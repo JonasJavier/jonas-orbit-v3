@@ -61,6 +61,10 @@ curiosidad técnica deliberada. El nombre visible es `Experimentos`, nunca
 **Ranger — Contacto.** Acción y transición: el paso de explorar el portafolio a
 iniciar una conversación. No cambia de propósito.
 
+Su página se concreta en [Ranger — cabina de comunicaciones](ranger-contacto.md)
+(2026-09-12): ventanal espacial, baliza interactiva, tres canales directos y
+formulario, con el teléfono y el correo confirmados por el dueño.
+
 ## Orden narrativo ≠ posición visual
 
 El orden canónico es Sobre mí → Formación → Proyectos → Creatividad →

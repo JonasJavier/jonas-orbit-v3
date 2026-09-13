@@ -40,6 +40,22 @@ cabeceras de sector y bitácora; el arrastre lleva el anillo con la mano. El
 System Map, sus cuerpos, cámara y materiales no cambian. Su valoración visual
 queda abierta.
 
+**Página de Miller — océano en WebGL2 y formación en curso (2026-09-12):**
+la sección `Océano en WebGL2 y formación en curso` de
+`docs/design/miller-formacion.md` manda sobre el resto de ese documento en
+**cómo se anima el hero de `/es/formacion` y cómo se presenta lo que Jonás está
+estudiando ahora**. El canvas 2D que desplazaba filas enteras —«gelatina», no
+agua— se sustituye por un contexto WebGL2 propio que refracta la fotografía con
+un campo de oleaje en perspectiva y luz desde la derecha; el cielo no se toca y
+la foto sigue siendo el fallback. Se conservan consentimiento, pausa, 30 fps,
+suspensión fuera de pantalla y reduced-motion; sin WebGL2 desaparecen canvas y
+control. La escena persistente sigue dormida detrás: nunca hay dos contextos
+dibujando. El esquema de Velite gana `education.inProgress` —sin `href` ni
+`preview` a propósito— y la página lo muestra como «En curso» entre los
+estudios y el punto de partida; cuando un curso tenga documento, la entrada se
+MUEVE a `certificates`, no se duplica. La dirección de vídeo del hero queda
+descartada. El System Map, sus cuerpos, cámara y materiales no cambian.
+
 **Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
 transiciones y presupuestos**. En todo lo demás el plan principal sigue intacto.
@@ -338,6 +354,29 @@ impacto crítico, con puerta de material para no apagar los arcos lensados que s
 viven ahí dentro. La regla: **el halo no puede encender lo que estaba apagado, y
 no toca nada de lo que ya estaba encendido.** Medido: el núcleo de la sombra baja
 de 106.8 a 18.2 y fuera del disco no cambia ni un dígito.
+
+**Pase visual final de Gargantúa (2026-09-12):** la sección `14 duodecies` de
+`docs/design/hero-gargantua-direction.md` manda sobre `4`, `6` y `14 undecies`
+en **cómo se separan materia, luz y vacío en la sombra, cuánto blanco hay en el
+disco y dónde, la estructura interna de las bandas, qué es el arco inferior y
+cuánto se diferencian los dos lados**. Levanta la congelación de Gargantúa por
+petición del dueño, con un diagnóstico de cinco puntos y la orden de hacer **un
+solo pase y parar**. No toca `rs`, posición, inclinación, cámara, HUD, bloom
+(fuerza, radio, umbral), raymarch ni geodésica. Cuatro reglas que costaron una
+entrega cada una: **el parámetro de impacto se conoce antes de integrar**, así
+que los rayos condenados a caer apagan lo que cruzan cerca del horizonte y el
+interior de la sombra se vacía en el propio raymarch (negro real 92 → 113 px sin
+glow, píxel central con glow 18 → 1); **el blanco se localiza bajando la rodilla
+de altas luces (9.6 → 5.8), no la exposición**, y pasa a ser propiedad de unos
+nudos; **el índice de orden no sabe qué es lensado** —los arcos de cobre bajo la
+sombra eran orden 0, medido con un render de sólo orden 0— y la regla correcta
+es geométrica: un cruce del plano hacia arriba es luz que ha dado la vuelta por
+debajo; y **el desvanecido de las lensadas tiene que entrar en la emisión**,
+porque los rayos rasantes saturan alpha y en la densidad sola no hace nada. La
+guarda del bloom sube a `inner` 0.80 / `amount` 0.96. `tools/gargantua-metrics.mjs`
+nace en este pase para medir anillos de la sombra, negro real, recorte blanco y
+asimetría. Cero evaluaciones de ruido, uniformes o draws nuevos. La revisión
+visual del dueño queda abierta.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la

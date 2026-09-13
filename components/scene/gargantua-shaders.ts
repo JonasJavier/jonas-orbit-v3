@@ -276,8 +276,21 @@ ${NOISE_CHUNK}
  * se lo come. Subir la exposición habría hecho lo contrario: aplanar el pico y
  * apenas mover los medios.
  */
+/*
+  Y la rodilla BAJA de 9.6 a 5.8 (2026-09-12), rompiendo a propósito la
+  proporción de arriba.
+
+  Con 9.6 la meseta del rodillo quedaba muy por encima del hombro de ACES: todo
+  lo que pasaba de ~3.4 antes del rodillo salía blanco, y con un beaming que
+  llega a 6.6 eso era la mitad interior del lado que se acerca — una mancha
+  sin gradiente del tamaño de la sombra, iluminada como por un reflector. El
+  pico sigue clipando (6.6 sobre ACES es blanco igual), pero la meseta cae
+  sobre el hombro y ahí la textura de la función fuente vuelve a tener
+  pendiente: el blanco puro pasa a ser una propiedad de los nudos, no de una
+  región. Los medios apenas se mueven porque el rodillo casi no los toca.
+*/
 const float DISK_GAIN = 5.9;
-const float HIGHLIGHT_KNEE = 9.6;
+const float HIGHLIGHT_KNEE = 5.8;
 
 // ---------------------------------------------------------------------------
 // Fondo: estrellas + velo de nebulosa. Se evalúa UNA vez por rayo, al escapar.
@@ -350,13 +363,23 @@ vec3 skySample(vec3 dir, float lensing, float presence) {
   // trazos grandes, no el cielo.
   color += starLayer(dir, 520.0, 0.235, 1.0) * vec3(0.94, 0.96, 1.00) * 0.10;
 
-  // Velo muy tenue. Existe para que el lente tenga algo continuo que curvar
-  // además de puntos: sin él la distorsión del fondo es casi invisible.
-  vec2 sph = vec2(atan(dir.z, dir.x), asin(clamp(dir.y, -1.0, 1.0)));
-  float cloud = fbm(vec2(sph.x * 1.15, sph.y * 2.3) * 1.7);
-  float veil = smoothstep(0.54, 1.00, cloud);
-  color += mix(vec3(0.014, 0.024, 0.041), vec3(0.043, 0.022, 0.012), cloud)
-         * veil * 0.32 * mix(0.74, 1.0, presence);
+  // Distant, static gas banks in world direction, without a spherical UV seam.
+  // Only escaping rays see them: the shadow and the disk still occlude the sky.
+  vec2 p = vec2(dir.x * 6.0, dir.y * 8.0);
+  float warp = fbm3(p * 0.7 + vec2(4.7, 9.2));
+  float gas = fbm(p * 1.8 + vec2(warp * 2.0, -warp));
+  float filament = pow(max(0.0, gas - 0.24), 1.6);
+  vec2 leftOffset = vec2((dir.x + 0.38) / 0.30,
+                         (dir.y - 0.03 + dir.x * 0.25) / 0.23);
+  vec2 rightOffset = vec2((dir.x - 0.42) / 0.32,
+                          (dir.y + 0.30 - dir.x * 0.2) / 0.27);
+  // pow(x, 2.0) is undefined for negative x in GLSL. Squared lengths are not.
+  float leftBank = exp(-dot(leftOffset, leftOffset));
+  float rightBank = exp(-dot(rightOffset, rightOffset));
+  float dust = 0.3 + 0.7 * min(1.0, abs(gas - warp) * 7.0);
+  vec3 gasColor = leftBank * vec3(0.11, 0.25, 0.44)
+                + rightBank * vec3(0.24, 0.144, 0.38);
+  color += gasColor * filament * dust * mix(1.0, 0.4, lensing);
 
   return color;
 }
@@ -376,6 +399,26 @@ vec3 skySample(vec3 dir, float lensing, float presence) {
  * 1 en adelante son las imágenes lensadas de orden superior.
  */
 vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alpha) {
+  /*
+    UNA IMAGEN DEL ENVÉS ES UNA IMAGEN LENSADA, cuente lo que cuente el índice.
+
+    order sólo cuenta cruces DENTRO del disco. El rayo que pasa por debajo del
+    borde cercano —o por su tramo exterior, que ya es casi transparente— no
+    cruza nada, dobla bajo el agujero y sube hasta cortar el plano detrás: ese
+    corte es el primero que cuenta, así que llegaba aquí como imagen directa y
+    ninguno de los repartos de orden lo tocaba. Y ése es el arco inferior
+    entero. Medido con un render de sólo orden 0 y otro de sólo órdenes altos
+    (2026-09-12): los arcos de cobre concéntricos bajo la sombra —«una segunda
+    copia circular del disco»— eran orden 0 en su totalidad; los órdenes altos
+    sólo ponían el filo y el tramo que se ve A TRAVÉS de la banda frontal.
+
+    La cámara está siempre por encima del plano, así que un cruce hacia ARRIBA
+    es, por construcción, luz que ha dado la vuelta por debajo: se trata como
+    primera imagen lensada y hereda su desvanecido exterior, su ablandado y su
+    tinte. La imagen directa —banda frontal y arco superior, que cruzan hacia
+    abajo— no se entera.
+  */
+  order = max(order, step(0.0, dir.y));
   float r = length(hit);
   float span = max(uDiskOuter - uDiskInner, 1e-3);
   float t = clamp((r - uDiskInner) / span, 0.0, 1.0);
@@ -776,7 +819,16 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
       corrientes anchas y el material comprimido de dentro conserva los estriados
       finos que transmiten velocidad.
     */
-    float fine = mix(1.0, 0.30, smoothstep(0.12, 0.72, t));
+    /*
+      Y el CARÁCTER del material cambia por sectores (2026-09-12). Con el peso
+      del grano dependiendo sólo del radio, todas las bandas de un mismo radio
+      tenían la misma textura y el disco se leía como una sola superficie
+      coherente. Modulándolo con m2 —que ya está calculado y es de escala
+      macro— unos sectores salen estriados y otros lisos y anchos, a igual
+      radio. No es más ruido: es el mismo ruido repartido con criterio.
+    */
+    float fine = mix(1.0, 0.30, smoothstep(0.12, 0.72, t))
+               * mix(0.55, 1.0, smoothstep(0.30, 0.70, m2));
     float grainFreq = 3.0 * mix(1.70, 0.50, t);
     float grain = fbmAA3(
       shearedFine * grainFreq + (wa - 0.5) * 1.4,
@@ -911,10 +963,20 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   */
   float lensed = min(order, 3.0);
   float higher = max(order - 1.0, 0.0);
-  float orderFade = exp(-higher * 1.8);
+  /* 1.8 → 1.55 (2026-09-12): con el interior de la sombra apagado, el filo
+     que la separa del disco lo dibujan los órdenes altos apilados contra la
+     curva crítica, y con 1.8 salían tan tenues que el borde se leía difuso.
+     Siguen siendo una caída exponencial —nadie cuenta aros— pero la línea
+     existe. */
+  float orderFade = exp(-higher * 1.55);
   /* La primera lensada también se ablanda un poco (0.18): pierde microdetalle,
      que es parte de lo que la hacía identificable como pieza aparte. */
-  float soften = clamp(order * 0.18 + higher * 0.28, 0.0, 0.70);
+  /* Y baja a 0.10 (2026-09-12): con 0.18 el arco inferior salía como una
+     segunda copia lisa del disco, un aro regular sin cortes ni carriles. Con
+     menos ablandado conserva sus interrupciones y sus masas, así que aparece y
+     desaparece por tramos en vez de dar la vuelta entera. Los órdenes altos
+     compensan con 0.32 y se quedan donde estaban. */
+  float soften = clamp(order * 0.10 + higher * 0.32, 0.0, 0.70);
 
   /*
     Y los ordenes superiores se PEGAN a la curva critica.
@@ -931,7 +993,17 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     funden con la imagen principal y pierden la identidad naranja. La primera
     imagen lensada (order 1, higher = 0) no se entera de nada de esto.
   */
-  float outerFade = 1.0 - smoothstep(0.10, 0.55, t) * clamp(lensed * 0.42, 0.0, 0.84);
+  /* 0.42 → 0.70 (2026-09-12): la primera lensada pierde casi todo su disco
+     exterior. Lo que el ojo leía como «una segunda copia circular del disco»
+     eran sus bandas de cobre —el disco lejano comprimido en arcos concéntricos
+     del mismo color que la banda primaria—. Sin ellas el arco inferior es el
+     material interior, fino y crema, y se lee como luz doblada, no como otro
+     disco. Se mantiene un 30 % para que no termine en un filo seco. */
+  /* Y la rampa se adelanta de (0.10, 0.55) a (0.08, 0.42): lo que seguía
+     dibujando bandas concéntricas bajo la sombra era el ámbar de t 0.3-0.55,
+     que la rampa anterior dejaba casi entero. El arco se queda con el oro y
+     el crema interiores, que es lo que enseña la referencia. */
+  float outerFade = 1.0 - smoothstep(0.08, 0.42, t) * clamp(lensed * 0.70, 0.0, 0.90);
   fabric = mix(fabric, 0.52, soften);
   laneMask = mix(laneMask, 0.60, soften);
 
@@ -981,7 +1053,21 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     ventana fija todos tenían el mismo calibre, y un calibre constante es media
     firma de «procedural».
   */
-  float gauge = (wa - 0.5) * 0.17;
+  /*
+    PRESENCIA POR LADO (2026-09-12). El beaming ya reparte la LUZ —el lado que
+    se acerca sale más de dos veces más luminoso en la imagen final— pero no la
+    MATERIA: los dos lóbulos tenían la misma densidad, el mismo grosor y la
+    misma extensión, y el ojo los leía como un objeto simétrico con un lado
+    iluminado. Un disco real no es axisimétrico —modos m = 1, ondas de densidad—
+    y aquí se toma la libertad, pequeña, de anclar esa asimetría al mismo lado
+    que el beaming: un 12 % más de densidad hacia la cámara y un 12 % menos en
+    el lado que se aleja. Es presencia, no brillo, y apaga con el interruptor.
+  */
+  vec3 flow = normalize(vec3(hit.z, 0.0, -hit.x));
+  float mu = dot(flow, -dir);
+  float presence = 1.0 + 0.12 * clamp(mu, -1.0, 1.0) * uDoppler;
+
+  float gauge = (wa - 0.5) * 0.22;
   float density = mix(mix(0.10, 0.24, cohesion), 2.48, smoothstep(0.28 + gauge, 0.74 + gauge, fabric));
 
   /*
@@ -1013,6 +1099,19 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      de la banda se conserva el contraste original y el disco exterior sigue
      pudiendo vaciarse. */
   float mass = smoothstep(mix(0.24, 0.06, cohesion), mix(0.76, 0.94, cohesion), macro);
+
+  /*
+    NUDOS Y POZOS (2026-09-12): el disco tenía detalle pero, de lejos, se
+    fundía en una superficie lisa — cada banda pesaba lo mismo que la vecina.
+    Lo que falta no es ruido, es JERARQUÍA de excepciones: unos pocos nudos
+    donde el material se apelotona y emite el doble, y unos pocos pozos oscuros
+    dentro de las masas densas. Los dos salen de campos ya mezclados, así que no
+    cuestan ni una evaluación de ruido y respetan la costura de las épocas. Y
+    como la rodilla ya no sube todo a blanco, los nudos son los únicos que
+    llegan a clipar: el blanco puro pasa a ser una propiedad suya.
+  */
+  float knot = smoothstep(0.60, 0.90, fabric * 0.55 + macro * 0.45);
+  float pit = smoothstep(0.34, 0.14, fabric) * mass;
   /*
     Y EL SUELO DE LAS MASAS LLEVA TEXTURA, que es distinto de subirlo.
 
@@ -1027,6 +1126,7 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     se queda donde estaba y lo único que cambia es que deja de ser uniforme.
   */
   density *= mix(mix(0.34, 0.78, cohesion) * mix(0.55, 1.35, fabric), 1.48, mass);
+  density *= (1.0 + 0.6 * knot) * (1.0 - 0.45 * pit) * presence;
   /* El carril de polvo tambien afloja hacia fuera, y por una razon fisica: un
      carril OSCURECE porque hay polvo que absorbe, y en el extremo del disco no
      queda material suficiente para absorber nada. Mantenerlo ahi a plena
@@ -1190,12 +1290,22 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   // opacidad y la función fuente.
   tint *= mix(0.52, 1.0, laneMask);
 
+  /*
+    TEMPERATURA POR MATERIAL (2026-09-12). La rampa de arriba sólo sabe de
+    radio: a igual r, un nudo denso y un jirón tenue salían del mismo color, y
+    eso es parte de lo que hacía que las bandas se leyeran como una sola
+    superficie. Lo denso tira un poco al crema —está más caliente— y lo tenue
+    al cobre. Es ligero a propósito: variación, no otra paleta.
+  */
+  float temper = clamp((fabric - 0.5) * 0.9 + (mass - 0.5) * 0.5, -1.0, 1.0);
+  tint = mix(tint, vec3(1.00, 0.97, 0.90), max(temper, 0.0) * 0.22);
+  tint = mix(tint, vec3(0.78, 0.36, 0.12), max(-temper, 0.0) * 0.28);
+
   // Corrimiento al rojo gravitacional (siempre) y beaming relativista (según el
   // interruptor). El material orbita a v = √(rs / 2(r − rs)) medido por un
   // observador estático local: 0.5c en la ISCO, y de ahí para arriba.
   float v = min(sqrt(0.5 * uRs / max(r - uRs, 0.30 * uRs)), 0.80);
-  vec3 flow = normalize(vec3(hit.z, 0.0, -hit.x));
-  float mu = dot(flow, -dir);
+  // flow y mu se calculan arriba, junto a la presencia por lado.
   float gamma = inversesqrt(max(1.0 - v * v, 1e-3));
   float beaming = 1.0 / max(gamma * (1.0 - v * mu), 1e-3);
   float gravity = sqrt(max(1.0 - uRs / r, 0.0));
@@ -1227,7 +1337,10 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      blanquea solo lo que satura. Lo que se recupera es el color de todo lo que
      NO satura, que es la mayor parte. */
   tint = mix(tint, vec3(1.00, 0.98, 0.93), max(doppler, 0.0) * 0.20 * uDoppler);
-  tint = mix(tint, vec3(0.62, 0.29, 0.10), max(-doppler, 0.0) * 0.46 * uDoppler);
+  /* 0.46 → 0.54 (2026-09-12): el lado que se aleja tira algo más al cobre.
+     Con la rodilla baja, ese lado ya no compite en blanco con el que se
+     acerca, y el color es lo que termina de separarlos. */
+  tint = mix(tint, vec3(0.62, 0.29, 0.10), max(-doppler, 0.0) * 0.54 * uDoppler);
 
   /*
     Y los ordenes superiores pierden identidad cromatica propia.
@@ -1284,9 +1397,24 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      ya tiene estructura que mirar en vez de ser fondo. */
   float source = mix(mix(0.30, 0.42, cohesion), 1.85, fabric)
                * mix(mix(mix(0.34, 0.48, cohesion), 0.72, smoothstep(0.52, 0.94, t)), 1.0, laneMask)
-               * mix(mix(0.45, 0.80, cohesion), 1.40, mass);
+               * mix(mix(0.45, 0.80, cohesion), 1.40, mass)
+               * (1.0 + 1.3 * knot) * (1.0 - 0.65 * pit);
 
-  vec3 emission = tint * heat * boost * source * DISK_GAIN;
+  /*
+    Y EL DESVANECIDO EXTERIOR DE LAS LENSADAS ENTRA TAMBIÉN EN LA EMISIÓN
+    (2026-09-12), porque en la densidad sola no hacía nada donde importaba.
+
+    outerFade multiplicaba únicamente la densidad, con la idea de que un arco
+    perdiera brillo y opacidad a la vez. Pero los rayos que forman el arco
+    inferior cruzan el plano rasantes, el camino óptico satura alpha a 1, y
+    con alpha saturada la densidad deja de importar: el arco salía con toda su
+    emisión aunque la densidad fuese un tercio. Medido: subir el desvanecido de
+    0.42 a 0.70 cambió los arcos de cobre bajo la sombra en nada perceptible.
+    Aplicado a la emisión, el material exterior de las imágenes lensadas se
+    apaga de verdad y el arco inferior se queda con su tramo interior, fino y
+    crema. La imagen directa no se entera: su outerFade vale 1.
+  */
+  vec3 emission = tint * heat * boost * source * DISK_GAIN * mix(1.0, outerFade, 0.85);
 
   // Rodillo de altas luces, ANTES del bloom y del tone mapping. ACES aplana todo
   // lo que pase de ~3, así que un disco que llega a 28 entrega su mitad brillante
@@ -1318,6 +1446,34 @@ void main() {
   // recto — sin casos especiales ni divisiones peligrosas.
   vec3 angular = cross(pos, dir);
   float h2 = dot(angular, angular);
+
+  /*
+    AUTORIDAD DE LA SOMBRA (2026-09-12): el interior de la curva crítica se
+    apaga, y se sabe ANTES de integrar qué rayos viven dentro.
+
+    El parámetro de impacto b = |r⃗ × d⃗| es una constante del rayo y decide su
+    destino: por debajo de b = (√27/2)·rs el rayo cae al horizonte, sin
+    excepción. Todo lo que un rayo condenado recoge del disco antes de caer se
+    pinta, por construcción, DENTRO del disco de la sombra — y en el encuadre
+    de 9° de elevación eso era mucho: los rayos apuntados a los flancos cruzan
+    el plano a 1.6-2.6 rs, justo por encima del borde interior, y los de la
+    mitad superior lo cruzan detrás del agujero a 2-5 rs. Medido en la captura
+    de referencia, el negro de verdad medía 92 px de ancho sobre una sombra de
+    142: el resto era crema lensada, un tercio de la sombra relleno de gris.
+
+    Físicamente ese material existe, pero es la zona de caída —por dentro de la
+    ISCO— y en un disco real casi no emite. Aquí el mismo criterio se aplica
+    SÓLO a los rayos condenados: el material se desvanece por debajo de 2.4 rs
+    y está entero a partir de 4.8. La banda primaria que cruza por delante de
+    la mitad inferior de la sombra cruza el plano lejos y no se entera; el
+    anillo de fotones y los arcos lensados viven en b > b crítico y tampoco.
+    La rampa en b se abre en el 18 % exterior del radio para que el borde no
+    sea una circunferencia: lo que queda ahí es el filo luminoso, y lo que se
+    va es el relleno.
+  */
+  float impact = sqrt(h2);
+  float bCrit = 2.598076 * uRs;
+  float doomed = 1.0 - smoothstep(bCrit * 0.82, bCrit * 0.99, impact);
 
   vec3 color = vec3(0.0);
   float transmit = 1.0;
@@ -1388,7 +1544,11 @@ void main() {
           travelled + dt * f,
           alpha
         );
-        color += transmit * emission * alpha;
+        // Autoridad de la sombra: ver la nota de doomed, arriba. Sólo apaga
+        // la EMISIÓN; la opacidad se queda, así que el rayo sigue muriendo
+        // donde moría.
+        float lip = smoothstep(uRs * 2.4, uRs * 4.8, hr);
+        color += transmit * emission * alpha * mix(1.0, lip, doomed);
         transmit *= 1.0 - alpha;
         hits += 1.0;
         // Con las imágenes de orden superior apagadas el rayo muere en el
@@ -1438,7 +1598,8 @@ void main() {
       250-400, que es donde viven los arcos de verdad (aspecto 8), conserva la
       puerta casi entera.
     */
-    float impact = length(cross(uCamPos, straight));
+    // impact es sqrt(h2), calculado arriba del bucle: la misma cantidad, una
+    // sola vez, y la comparte con la autoridad de la sombra.
     /*
       DOS PUERTAS, Y NO ES UNA POR CAPRICHO.
 

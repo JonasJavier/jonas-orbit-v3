@@ -28,6 +28,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
   const { education } = prose;
   const { previous, next } = getWorldNeighbours(world, locale);
   if (!education) return null;
+  const inProgress = education.inProgress ?? [];
   return (
     <MillerWater>
       <StructuredData locale={locale} breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }} />
@@ -58,7 +59,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
       </section>
 
       <section id="trayectoria" className="miller-journey" data-water-section aria-labelledby="miller-journey-title">
-        <div className="miller-section-heading"><p className="miller-eyebrow">02 / MI RECORRIDO</p><h2 id="miller-journey-title">Distintas aguas.<br /><em>Una misma curiosidad.</em></h2><p>Código, estrategia y lenguaje visual. Tres disciplinas que se cruzan en mi forma de resolver problemas y construir productos.</p></div>
+        <div className="miller-section-heading"><p className="miller-eyebrow">02 / MI RECORRIDO</p><h2 id="miller-journey-title">Distintas aguas.<br /><em>Una misma curiosidad.</em></h2><p>Código, estrategia, lenguaje visual e idiomas. Disciplinas que se cruzan en mi forma de resolver problemas y construir productos.</p></div>
         <div className="miller-studies">
           {prose.panels.slice(0, 3).map((panel, i) => (
             <section className="miller-study" key={panel.title}>
@@ -68,6 +69,26 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
             </section>
           ))}
         </div>
+        {inProgress.length > 0 ? (
+          <section className="miller-now" aria-labelledby="miller-now-title">
+            <div className="miller-now__heading">
+              <p className="miller-eyebrow"><span className="miller-status" aria-hidden="true" /> AHORA / EN CURSO</p>
+              <h3 id="miller-now-title">Lo que estoy aprendiendo <em>ahora mismo.</em></h3>
+              <p>Frentes abiertos hoy. Ninguno tiene todavía documento en la bitácora: cuando lo tenga, aparecerá abajo con los demás.</p>
+            </div>
+            <ul className="miller-now__list" aria-label="Aprendizaje en curso">
+              {inProgress.map((course) => (
+                <li key={course.id} className="miller-now__item">
+                  <div className="miller-now__strip" aria-hidden="true"><span>{course.area === "code" ? "CÓDIGO" : "IDIOMAS"}</span><i /></div>
+                  <span className="miller-now__badge"><i aria-hidden="true" />En curso</span>
+                  <h4>{course.title}</h4>
+                  {course.issuer ? <p className="miller-now__issuer">{course.issuer}</p> : null}
+                  <p>{course.detail}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <aside className="miller-origin"><span className="miller-eyebrow">EL PUNTO DE PARTIDA / 2022</span><h3>{prose.panels[4].title}</h3><p>{prose.panels[4].description}</p></aside>
       </section>
 

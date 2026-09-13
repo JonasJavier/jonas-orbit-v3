@@ -2,9 +2,14 @@
    Palette from the mineral world: carbon substrate, ochre, sand, copper, clay
    and a muted olive. The body's accent (#ff9b6b) and secondary (#f5cf83) are
    the two live colours; everything else is rock. */
+/* The ring's two numbers. `--step` is registered so the script can read it in
+   px; `--drag` so the stage can transition it: one eased number, inherited by
+   every work, is what turns the ring — the works never animate themselves. */
+@property --step { syntax: "<length>"; inherits: true; initial-value: 400px; }
+@property --drag { syntax: "<number>"; inherits: true; initial-value: 0; }
 .edmunds-route {
   --ed-ground: #100d0b;
-  --ed-space: #06050a;
+  --ed-space: #070a1c;
   --ed-panel: #1a1512;
   --ed-ink: #f7ecdc;
   --ed-muted: #b3a08f;
@@ -75,18 +80,35 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
 /* Sky: deep space, a faint nebula in the rock's own colours, two star fields,
    drifting dust, the active work's ambient light and, low on the horizon,
    Edmunds itself. */
-.edmunds-deck__sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(#040308, #08060b 40%, #100c0c 78%, #17110d); }
-.edmunds-deck__nebula, .edmunds-deck__stars, .edmunds-deck__dust, .edmunds-deck__ambient, .edmunds-deck__planet, .edmunds-deck__dune { position: absolute; inset: 0; }
+/* Night, not void: a navy that deepens overhead and warms toward the planet.
+   Dark enough for the works to lead, light enough for the sky to be a place. */
+.edmunds-deck__sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(180deg, #070a1c 0%, #0c1130 32%, #131a3e 58%, #1c1a36 76%, #221812 92%, #1a120f); }
+.edmunds-deck__nebula, .edmunds-deck__stars, .edmunds-deck__dust, .edmunds-deck__ambient, .edmunds-deck__planet, .edmunds-deck__dune, .edmunds-deck__auroras { position: absolute; inset: 0; }
 .edmunds-deck__nebula { background: radial-gradient(ellipse 55% 42% at 74% 18%, rgb(255 155 107 / 15%), transparent 70%), radial-gradient(ellipse 48% 38% at 18% 52%, rgb(122 84 140 / 17%), transparent 70%), radial-gradient(ellipse 70% 40% at 50% 30%, rgb(201 138 69 / 8%), transparent 72%); transform: translate(calc(var(--px, 0) * -10px), calc(var(--py, 0) * -6px)); transition: transform .6s ease-out; }
-.edmunds-deck__stars { inset: -40px -60px; background: url("/brand/navigation-stars.svg") center / 920px 230px repeat; opacity: .62; transform: translate(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -10px)); transition: transform .5s ease-out; animation: edmunds-drift 140s linear infinite alternate; }
-.edmunds-deck__stars--far { background-size: 1500px 375px; background-position: 30% 60%; opacity: .32; transform: translate(calc(var(--px, 0) * -8px), calc(var(--py, 0) * -4px)); animation: edmunds-drift 210s linear infinite alternate-reverse, edmunds-twinkle 9s ease-in-out infinite alternate; }
+.edmunds-deck__stars { inset: -40px -60px; background: url("/brand/navigation-stars.svg") center / 920px 230px repeat; opacity: .95; transform: translate(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -10px)); transition: transform .5s ease-out; animation: edmunds-drift 140s linear infinite alternate, edmunds-twinkle 7s ease-in-out infinite alternate; }
+.edmunds-deck__stars--far { background-size: 1500px 375px; background-position: 30% 60%; opacity: .55; transform: translate(calc(var(--px, 0) * -8px), calc(var(--py, 0) * -4px)); animation: edmunds-drift 210s linear infinite alternate-reverse, edmunds-twinkle-far 9s ease-in-out infinite alternate; }
+/* A dozen brighter stars with a soft core, each on its own twinkle. */
+.edmunds-deck__stars--bright { background: none; opacity: 1; background-image: radial-gradient(2.2px 2.2px at 9% 22%, #fff 40%, transparent 70%), radial-gradient(1.8px 1.8px at 21% 9%, #dbe8ff 40%, transparent 70%), radial-gradient(2.6px 2.6px at 33% 31%, #fff 40%, transparent 70%), radial-gradient(1.6px 1.6px at 44% 12%, #e8f0ff 40%, transparent 70%), radial-gradient(2px 2px at 57% 26%, #fff 40%, transparent 70%), radial-gradient(1.8px 1.8px at 66% 7%, #cfe0ff 40%, transparent 70%), radial-gradient(2.4px 2.4px at 78% 19%, #fff 40%, transparent 70%), radial-gradient(1.6px 1.6px at 88% 34%, #e8f0ff 40%, transparent 70%), radial-gradient(2px 2px at 95% 11%, #fff 40%, transparent 70%), radial-gradient(1.8px 1.8px at 15% 44%, #dbe8ff 40%, transparent 70%), radial-gradient(2.2px 2.2px at 71% 41%, #fff 40%, transparent 70%), radial-gradient(1.6px 1.6px at 50% 48%, #e8f0ff 40%, transparent 70%); transform: translate(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -12px)); animation: edmunds-twinkle-bright 5.5s ease-in-out infinite alternate; }
+/* Auroras: two curtains of diagonal bands — green with a violet fringe — that
+   drift against each other and breathe. Gradients, not filters: the softness
+   is baked into the stops, so the only thing animated is a transform. */
+.edmunds-deck__auroras { transform: translate(calc(var(--px, 0) * -12px), calc(var(--py, 0) * -7px)); transition: transform .6s ease-out; mix-blend-mode: screen; }
+.edmunds-deck__aurora { position: absolute; left: -18%; right: -18%; top: -6%; height: 64%; opacity: .78; transform-origin: 50% 0; background: repeating-linear-gradient(101deg, transparent 0 24px, rgb(92 236 178 / 30%) 78px, rgb(146 122 255 / 24%) 122px, rgb(92 236 178 / 0%) 168px, transparent 214px), linear-gradient(180deg, rgb(70 220 160 / 0%) 0%, rgb(70 220 160 / 34%) 26%, rgb(126 104 232 / 30%) 56%, rgb(126 104 232 / 0%) 100%); mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 82%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 22%, #000 58%, transparent 100%); mask-composite: intersect; animation: edmunds-aurora 26s ease-in-out infinite alternate; }
+.edmunds-deck__aurora--two { top: 4%; height: 54%; opacity: .5; background: repeating-linear-gradient(86deg, transparent 0 40px, rgb(120 210 255 / 22%) 88px, rgb(92 236 178 / 20%) 126px, transparent 150px 190px), linear-gradient(180deg, rgb(160 110 255 / 0%) 0%, rgb(160 110 255 / 26%) 30%, rgb(70 220 160 / 22%) 62%, transparent 100%); mask-image: linear-gradient(90deg, transparent 8%, #000 30%, #000 70%, transparent 96%), linear-gradient(180deg, transparent 0%, #000 30%, #000 62%, transparent 100%); mask-composite: intersect; animation: edmunds-aurora-two 33s ease-in-out infinite alternate; }
 .edmunds-deck__dust { background-image: radial-gradient(1.5px 1.5px at 12% 28%, rgb(245 207 131 / 70%), transparent 70%), radial-gradient(1px 1px at 31% 63%, rgb(255 155 107 / 60%), transparent 70%), radial-gradient(2px 2px at 47% 18%, rgb(247 236 220 / 45%), transparent 70%), radial-gradient(1px 1px at 62% 74%, rgb(245 207 131 / 60%), transparent 70%), radial-gradient(1.5px 1.5px at 78% 36%, rgb(255 184 148 / 55%), transparent 70%), radial-gradient(1px 1px at 88% 58%, rgb(247 236 220 / 50%), transparent 70%), radial-gradient(1.5px 1.5px at 22% 84%, rgb(255 155 107 / 45%), transparent 70%), radial-gradient(1px 1px at 70% 8%, rgb(245 207 131 / 55%), transparent 70%); animation: edmunds-dust 48s ease-in-out infinite alternate; }
-.edmunds-deck__ambient { width: 100%; height: 100%; object-fit: cover; transform: scale(1.25); filter: blur(46px) saturate(1.15); opacity: .3; mix-blend-mode: screen; animation: edmunds-ambient 1.4s ease-out; }
+.edmunds-deck__ambient { width: 100%; height: 100%; object-fit: cover; transform: scale(1.25); filter: blur(46px) saturate(1.15); opacity: .3; mix-blend-mode: screen; }
+/* The new light fades in OVER the previous one, which is only removed once the
+   fade has ended: the sky never drops to black between works. */
+.edmunds-deck__ambient--in { animation: edmunds-ambient 1.3s ease-out both; }
 .edmunds-deck__planet { inset: auto; left: 50%; top: 74%; width: 250vw; height: 160vh; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, #4a3120 0%, #2b1d13 14%, #17100b 36%, #0b0807 70%); box-shadow: 0 -1px 0 rgb(245 207 131 / 75%), 0 -3px 10px rgb(255 155 107 / 45%), 0 -18px 50px rgb(255 155 107 / 32%), 0 -60px 160px rgb(201 138 69 / 24%), 0 -140px 320px rgb(255 155 107 / 10%); }
 .edmunds-deck__planet::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: repeating-radial-gradient(ellipse at 50% 0%, transparent 0 46px, rgb(245 207 131 / 3%) 46px 48px); mask-image: linear-gradient(#000, transparent 55%); }
-.edmunds-deck__dune { background: linear-gradient(180deg, rgb(6 5 10 / 40%) 0%, transparent 30%, transparent 62%, rgb(16 13 11 / 55%) 92%, var(--ed-ground)), linear-gradient(90deg, rgb(6 5 10 / 62%), transparent 22%, transparent 78%, rgb(6 5 10 / 62%)); }
+.edmunds-deck__dune { background: linear-gradient(180deg, rgb(7 10 28 / 30%) 0%, transparent 30%, transparent 62%, rgb(16 13 11 / 55%) 92%, var(--ed-ground)), linear-gradient(90deg, rgb(7 10 28 / 48%), transparent 22%, transparent 78%, rgb(7 10 28 / 48%)); }
 @keyframes edmunds-drift { from { background-position-x: 0; } to { background-position-x: 70px; } }
-@keyframes edmunds-twinkle { from { opacity: .22; } to { opacity: .42; } }
+@keyframes edmunds-twinkle { from { opacity: .72; } to { opacity: .98; } }
+@keyframes edmunds-twinkle-far { from { opacity: .36; } to { opacity: .62; } }
+@keyframes edmunds-twinkle-bright { 0% { opacity: .55; } 35% { opacity: 1; } 70% { opacity: .7; } 100% { opacity: .95; } }
+@keyframes edmunds-aurora { 0% { transform: skewX(-14deg) translateX(-60px) scaleY(1); opacity: .5; } 45% { opacity: .85; } 100% { transform: skewX(-4deg) translateX(70px) scaleY(1.1); opacity: .62; } }
+@keyframes edmunds-aurora-two { 0% { transform: skewX(6deg) translateX(50px) scaleY(1.06); opacity: .3; } 55% { opacity: .58; } 100% { transform: skewX(14deg) translateX(-70px) scaleY(.96); opacity: .4; } }
 @keyframes edmunds-dust { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-24px, -36px, 0); } }
 @keyframes edmunds-ambient { from { opacity: 0; } }
 
@@ -102,7 +124,9 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
 .edmunds-view-switch button[aria-pressed="true"] { color: var(--ed-ink); background: rgb(255 155 107 / 16%); box-shadow: inset 0 0 0 1px rgb(255 155 107 / 35%); }
 
 /* ── Stage ────────────────────────────────────────────────────────────── */
-.edmunds-stage { position: relative; overflow: hidden; isolation: isolate; touch-action: pan-y pinch-zoom; min-height: 0; }
+.edmunds-stage { --step: clamp(270px, 29vw, 480px); --drag: 0; position: relative; overflow: hidden; isolation: isolate; touch-action: pan-y pinch-zoom; min-height: 0; transition: --drag .95s cubic-bezier(.22, 1, .36, 1); }
+/* While the hand is down the ring is the hand: no easing at all. */
+.edmunds-stage[data-dragging="true"] { transition: none; }
 .edmunds-stage:focus-visible { outline: 1px solid var(--ed-sand); outline-offset: -8px; }
 /* The floor lives in its own perspective, BEHIND the works: inside the works'
    3D context its near edge rose in front of the active piece and painted a
@@ -118,30 +142,31 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
 .edmunds-artworks { position: absolute; inset: 0; list-style: none; padding: 0; transform-style: preserve-3d; }
 .edmunds-artwork[data-visible="true"] { pointer-events: auto; }
 .edmunds-artwork {
-  --step: clamp(270px, 29vw, 480px);
   --depth: 270px;
   --turn: 28deg;
   --drop: 14px;
   --art-height: clamp(260px, 56vh, 620px);
+  /* Where the work IS on the ring, as a real number: its slot plus the ring's
+     drag. Depth, turn, scale, light and opacity all read this one value, so a
+     half-dragged ring is exactly halfway between two rest poses. */
+  --p: calc(var(--o) + var(--drag));
+  --pa: abs(var(--p));
   position: absolute; left: 50%; top: calc(50% - 36px);
   width: calc(var(--art-ratio) * var(--art-height));
   max-width: min(760px, 84vw);
-  /* `--drag-px` is the hand: while a drag lasts the whole ring travels with it
-     and, on release, eases from wherever it was into the next position. */
-  transform: translate(calc(-50% + var(--o) * var(--step) + var(--drag-px, 0px)), calc(-50% + var(--oa) * var(--drop))) translateZ(calc(var(--oa) * -1 * var(--depth))) rotateY(calc(var(--o) * -1 * var(--turn))) scale(calc(1.06 - min(var(--oa), 1) * .18));
-  opacity: calc(1 - var(--oa) * .22);
-  z-index: calc(10 - var(--oa));
-  filter: brightness(calc(1 - var(--oa) * .2));
+  transform: translate(calc(-50% + var(--p) * var(--step)), calc(-50% + var(--pa) * var(--drop))) translateZ(calc(var(--pa) * -1 * var(--depth))) rotateY(calc(var(--p) * -1 * var(--turn))) scale(calc(1.06 - min(var(--pa), 1) * .18));
+  opacity: calc(1 - var(--pa) * .22);
+  z-index: calc(10 - round(var(--pa)));
+  filter: brightness(calc(1 - var(--pa) * .2));
   transform-style: preserve-3d;
-  transition: transform 1.05s cubic-bezier(.22, 1, .36, 1), opacity .8s ease, filter .5s ease;
-  transition-delay: calc(var(--oa) * 30ms);
 }
-.edmunds-stage[data-dragging="true"] .edmunds-artwork { transition: none; }
 .edmunds-artwork[data-visible="false"] { display: none; }
-.edmunds-artwork[data-visible="true"]:not([data-offset="0"]):hover { filter: brightness(.95); opacity: 1; }
-/* Works emerging from the dark when they enter the visible window. */
-@starting-style { .edmunds-artwork[data-visible="true"] { opacity: 0; transform: translate(calc(-50% + var(--o) * var(--step) * 1.3), -50%) translateZ(-900px) rotateY(calc(var(--o) * -1 * var(--turn))); } }
-.edmunds-artwork figure { transform-style: preserve-3d; }
+.edmunds-artwork[data-visible="true"]:not([data-offset="0"]):hover { filter: brightness(.95); opacity: 1; transition: filter .3s, opacity .3s; }
+/* A work entering the visible window surfaces from the dark. The animation is
+   on the figure — inside the work's 3D context — so it composes with the ring's
+   own transform instead of fighting it. */
+.edmunds-artwork figure { transform-style: preserve-3d; animation: edmunds-enter .9s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes edmunds-enter { from { opacity: 0; transform: translateZ(-420px); } }
 .edmunds-artwork figure > a { position: relative; display: block; padding: 6px; border: 1px solid rgb(245 207 131 / 30%); background: linear-gradient(160deg, #2a221b, #14100d 55%, #241b14); box-shadow: 0 30px 60px -20px #000c, 0 0 0 1px #000 inset; transition: border-color .4s, box-shadow .4s; }
 /* The floor reflection only exists on the deck, and only where there is a
    pointer to hover with: on phones it is paint work nobody sees. */
@@ -247,7 +272,8 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
 /* ── Breakpoints ──────────────────────────────────────────────────────── */
 @media (min-width: 1800px) {
   .edmunds-controls, .edmunds-gallery__foot, .edmunds-gallery[data-view="grid"] .edmunds-stage { padding-inline: max(var(--page-gutter), calc((100vw - 1560px) / 2)); }
-  .edmunds-artwork { --step: 520px; --art-height: clamp(280px, 58vh, 720px); max-width: 900px; }
+  .edmunds-stage { --step: 520px; }
+  .edmunds-artwork { --art-height: clamp(280px, 58vh, 720px); max-width: 900px; }
 }
 @media (max-width: 1080px) {
   .edmunds-route { --ed-header: 63px; }
@@ -270,13 +296,15 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
   .edmunds-view-switch { align-self: flex-end; }
   .edmunds-view-switch button { min-height: 34px; padding: 5px 12px; font-size: .78rem; }
   .edmunds-stage__space { perspective: 900px; }
-  .edmunds-artwork { top: calc(50% - 28px); --step: 66vw; --depth: 150px; --turn: 30deg; --drop: 8px; --art-height: clamp(180px, 40vh, 380px); max-width: 80vw; }
+  .edmunds-stage { --step: 66vw; }
+  .edmunds-artwork { top: calc(50% - 28px); --depth: 150px; --turn: 30deg; --drop: 8px; --art-height: clamp(180px, 40vh, 380px); max-width: 80vw; }
   .edmunds-artwork:is([data-offset="3"], [data-offset="-3"]) { display: none; }
   .edmunds-deck__floor { top: 68%; }
   .edmunds-deck__planet { top: 78%; width: 320vw; }
   /* Cheaper composite on phones: a lighter blur and no drifting dust. */
   .edmunds-deck__ambient { filter: blur(28px) saturate(1.1); transform: scale(1.15); }
   .edmunds-deck__dust { animation: none; }
+  .edmunds-deck__aurora--two { display: none; }
   .edmunds-gallery__foot { gap: 12px; padding: 24px var(--page-gutter) 72px; }
   .edmunds-gallery__foot > button { min-width: 44px; min-height: 44px; padding: 6px 10px; }
   .edmunds-gallery__caption > h2 { font-size: 1.2rem; }

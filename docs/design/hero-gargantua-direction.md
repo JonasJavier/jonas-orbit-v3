@@ -158,6 +158,35 @@ contraste y se recuperan hacia el exterior. El fondo añade sólo trazas casi
 negras de navy, violeta y polvo cálido central; nunca una nebulosa púrpura de
 wallpaper.
 
+### Nebulosas lejanas visibles · 2026-09-12
+
+Petición del dueño: añadir únicamente nebulosas lejanas de fondo en las escenas
+2D y 3D, con presencia visible. Sustituye el límite de «trazas casi negras» de
+§6: dos bancos irregulares, azul frío y violeta apagado, con filamentos de gas,
+carriles de polvo oscuro y espacio negro entre ellos. Permanecen estáticos.
+
+En 2D se hornea el gas en un canvas auxiliar de lado máximo 640 px, cacheado por
+contexto y proporción de pantalla, y se pinta antes de las estrellas. El mismo
+cielo aparece con reduced-motion sin añadir un bucle. En 3D se sustituye el velo
+anterior dentro de `skySample`: una evaluación de tres octavas deforma otra de
+cuatro, sólo al escapar el rayo. Se conserva la oclusión del disco y la sombra;
+el gas se atenúa cerca del lente. Cero descargas, dependencias o draws nuevos.
+
+No cambian estrellas, cuerpos, iluminación, bloom, cámara, composición ni HUD.
+La revisión visual del dueño sigue pendiente; las capturas locales de escritorio,
+móvil y WebGL viven en `output/playwright/nebula/`.
+
+**Doble revisión · 2026-09-12:** se corrige el horneado 2D para conservar alfa:
+el negro opaco entre nubes estaba atenuando el atlas CSS situado debajo. El gas
+conserva su emisión sobre negro, pero el cielo vacío queda transparente. En GLSL,
+las envolventes usan `dot(offset, offset)` en lugar de `pow(offset, 2.0)`:
+[GLSL no define `pow` con base negativa](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.3.30.pdf),
+aunque el exponente sea dos. No se cambia intensidad ni composición. Dos tests
+protegen la transparencia y el presupuesto/reutilización del horneado al redimensionar.
+Medición local en Edge: 27–47 ms para generar el gas en móvil emulado, escritorio
+y 4K; las siguientes llamadas reutilizan el canvas. Es tiempo de CPU local, no
+una medición de FPS ni una prueba de dispositivo móvil físico.
+
 ## 7. HUD: cuatro niveles de contraste
 
 El HUD no se aclara de forma global. Usa tokens perceptuales explícitos:
@@ -923,6 +952,166 @@ arcos lensados, y esos son luz real que conserva su glow.
 cadena cuyo paso anterior gasta entre 190 y 340 pasos de integración por píxel.
 Sin `EXT_color_buffer_half_float` no hay bloom, así que tampoco se construye la
 guarda: la cadena vuelve a ser exactamente la de antes.
+
+## 14 duodecies. Pase visual final de Gargantúa (2026-09-12)
+
+Manda sobre §4 (Gargantúa), §6 y §14 undecies en **cómo se separan materia,
+luz y vacío dentro y alrededor de la sombra, cuánto blanco puede haber en el
+disco y dónde, la estructura interna de las bandas, qué es el arco inferior y
+cuánto se diferencian los dos lados**. No toca escala (`rs`), posición,
+inclinación, cámara, composición, HUD, el bloom —ni fuerza, ni radio, ni
+umbral—, el raymarch ni la geodésica. Levanta la congelación de Gargantúa por
+petición explícita del dueño, que entregó un diagnóstico de cinco puntos y
+pidió **un solo pase y parar**: «no la rehacería […] sombra central +10-15 %;
+borde de la sombra mucho más preciso; bloom blanco más localizado; bandas con
+macro + microestructura; huecos oscuros entre filamentos; arco inferior menos
+regular; asimetría luminosa ligera; nada de cambiar posición/escala/inclinación».
+
+El diagnóstico que lo resume, y que sustituye a cualquier lectura anterior de
+«el disco necesita más detalle»: **el problema no era la geometría, era la
+separación entre vacío, luz y materia.** La lectura era disco → gran área blanca
+→ borde gris difuso → agujero; tenía que ser materia → luz extrema → borde
+definido → vacío absoluto. Todo lo de abajo sirve a eso. Medido con
+`tools/gargantua-metrics.mjs`, que nace en este pase, sobre capturas de 1440 ×
+860 con el reloj clavado en 60 s.
+
+### 1. La sombra manda: el interior de la curva crítica se apaga
+
+**El diagnóstico, que no era el bloom.** Sin glow, el negro de verdad medía
+**92 px de ancho sobre una sombra de 142**: un tercio del disco de la sombra
+estaba relleno de crema lensada. Son los rayos con parámetro de impacto por
+debajo del crítico —condenados a caer— que cruzan el plano del disco antes de
+caer: a 9° de elevación los apuntados a los flancos lo cruzan a 1.6-2.6 rs,
+justo por encima del borde interior, y los de la mitad superior lo cruzan detrás
+del agujero a 2-5 rs. Físicamente ese material existe, pero es la zona de caída
+por dentro de la ISCO, y en un disco real casi no emite.
+
+**La regla.** b = |r⃗ × d⃗| es constante del rayo y se conoce ANTES de integrar,
+así que el shader sabe qué rayos viven dentro de la sombra sin costar un paso.
+Para ésos, y sólo para ésos, la emisión de un cruce se desvanece por debajo de
+2.4 rs y está entera a partir de 4.8. La banda primaria que cruza por delante de
+la mitad inferior de la sombra cruza el plano lejos y no se entera; el anillo de
+fotones y los arcos lensados viven en b > b crítico y tampoco. La rampa en b
+está abierta en el 18 % exterior del radio: lo que queda ahí es el filo, lo que
+se va es el relleno. No se tocó `DISK_INNER` (1.58 rs, hallazgo de G0) porque
+subirlo habría movido el perfil radial entero y apagado la luz extrema de fuera.
+
+**La guarda del bloom sube con ello.** Con `amount` 0.88, el 12 % residual del
+halo dejaba el centro en 18 y el flanco que mira al material brillante en 93
+sobre 255: gris con degradado, no negro. Pasa a 0.96 e `inner` de 0.72 a 0.80;
+el borde sigue abierto en el 20 % exterior y la traza sigue existiendo. Los
+órdenes altos suben un poco (`orderFade` 1.8 → 1.55) para que el filo que ahora
+separa negro de disco exista como línea: siguen cayendo exponencialmente y nadie
+cuenta aros.
+
+### 2. El blanco es de los nudos, no de una región
+
+La rodilla de altas luces baja de 9.6 a **5.8**, rompiendo a propósito la
+proporción con `DISK_GAIN`. Con 9.6 la meseta del rodillo quedaba muy por encima
+del hombro de ACES: todo lo que pasaba de ~3.4 antes del rodillo salía blanco,
+y con un beaming que llega a 6.6 eso era media mitad interior del lado que se
+acerca — una mancha sin gradiente del tamaño de la sombra, «iluminada por un
+reflector». Con 5.8 el pico sigue clipando pero la meseta cae sobre el hombro y
+la función fuente vuelve a tener pendiente. Los medios casi no se mueven porque
+el rodillo casi no los toca (material ≥ 60: 36.1 % → 35.0 %).
+
+Y se añaden **nudos y pozos**: unos pocos nudos donde el material se apelotona
+(densidad ×1.6, emisión ×2.3 en el pico) y unos pocos pozos oscuros dentro de
+las masas densas. Salen de campos ya mezclados —cero evaluaciones de ruido
+nuevas, y respetan la costura de las épocas— y con la rodilla baja son los
+únicos que llegan a clipar: el blanco puro pasa a ser una propiedad suya.
+
+### 3. Variedad estructurada, no más ruido
+
+Tres cosas, todas sobre campos que ya existían. El **carácter** del material
+cambia por sectores: el peso del grano dependía sólo del radio, así que todas
+las bandas de un mismo radio tenían la misma textura; ahora lo modula `m2`, de
+escala macro, y a igual radio unos sectores salen estriados y otros lisos y
+anchos. El **calibre** de los filamentos varía más (0.17 → 0.22). Y la
+**temperatura** deja de ser sólo función del radio: lo denso tira un poco al
+crema y lo tenue al cobre, ligero a propósito — variación, no otra paleta.
+
+### 4. El arco inferior es luz doblada, no otro disco
+
+**El diagnóstico costó dos intentos y se cerró con un render de diagnóstico**,
+no mirando: un render de sólo orden 0 y otro de sólo órdenes altos. Los arcos
+de cobre concéntricos bajo la sombra —«una segunda copia circular del disco»—
+eran **orden 0 en su totalidad**. El índice de orden sólo cuenta cruces DENTRO
+del disco: el rayo que pasa por debajo del borde cercano, o por su tramo
+exterior casi transparente, no cruza nada, dobla bajo el agujero y sube hasta
+cortar el plano detrás, y ese corte llegaba como imagen directa. Por eso subir
+el desvanecido exterior de las lensadas de 0.42 a 0.70 no cambió esos arcos en
+nada perceptible. La regla que lo arregla es geométrica: **la cámara está
+siempre por encima del plano, así que un cruce hacia arriba es, por
+construcción, luz que ha dado la vuelta por debajo** y se trata como primera
+imagen lensada.
+
+Con eso, tres cambios que antes no llegaban a ese arco: el desvanecido exterior
+entra también en la EMISIÓN, porque los rayos rasantes saturan alpha y en la
+densidad sola no hacía nada; su rampa se adelanta de (0.10, 0.55) a (0.08,
+0.42), que retira el ámbar que seguía dibujando bandas concéntricas; y el
+ablandado de la primera lensada baja de 0.18 a 0.10 para que conserve cortes y
+masas y aparezca y desaparezca por tramos. El arco se queda con el oro y el
+crema interiores y deja ver el cielo entre sus hebras. Medido: el anillo de
+1.0-1.25 R baja de 130 a 117 con glow.
+
+### 5. Presencia por lado
+
+El beaming ya repartía la luz —2.2 a 1 entre los dos lados en la imagen final—
+pero no la materia: los dos lóbulos tenían la misma densidad y el ojo los leía
+como un objeto simétrico con un lado iluminado. Un disco real no es axisimétrico
+y aquí se toma la libertad, pequeña, de anclar esa asimetría al mismo lado que
+el beaming: **12 % más de densidad hacia la cámara y 12 % menos en el lado que
+se aleja**, y ese lado tira algo más al cobre (0.46 → 0.54). Es presencia, no
+brillo, y apaga con el mismo interruptor que el Doppler.
+
+### Medido
+
+Anillos: luminancia media por anillo del radio de la sombra. Banda: la ventana
+de `disk-metrics.mjs`, sin el centro de la sombra.
+
+| | antes | ahora |
+| --- | --- | --- |
+| núcleo 0-0.35 R, con glow | 78.8 | **46.8** |
+| anillo 0.35-0.6 R, con glow | 103.7 | **71.2** |
+| píxel central, con glow | 18 | **1** |
+| flanco a 0.5 R hacia el lado brillante, con glow | 93 | **17** |
+| negro < 8 por el centro, con glow | 1 × 1 px | **76 × 65 px** |
+| negro < 8 por el centro, sin glow | 92 × 73 px | **113 × 76 px** |
+| banda ≥ 235 (blanco), con glow | 1.17 % | **0.87 %** |
+| banda ≥ 250, con glow | 0.25 % | **0.13 %** |
+| banda material ≥ 60, con glow | 36.1 % | 35.0 % |
+| luminancia izquierda / derecha de la banda | 2.22 | 2.17 |
+| anillo 1.0-1.25 R (arco inferior), con glow | 130.3 | **116.9** |
+
+El negro real sin glow crece un 23 % de ancho, que es más del 10-15 % pedido,
+sin tocar `rs`: es relleno que se va, no sombra que se pinta. El blanco cae un
+cuarto conservando el pico. Los medios no se mueven. La razón entre lados baja
+un pelo porque el lado que se acerca ya no clipa; la asimetría que el ojo lee
+sube, porque ahora es de color y de presencia, no sólo de exposición.
+
+**Y el movimiento no paga.** Los nudos y los pozos son umbrales sobre campos
+mezclados, así que podían respirar con el relevo de épocas; medido con
+`epoch-ripple.mjs` sobre el ciclo completo (reloj 60-70 s, sin acumular):
+ondulación pico a valle **1.31 %** y cierre 0.30 % con ruido de captura de
+0.15 %, contra el 6.1 % que documentó la costura de épocas cuando nació. La
+matriz de reloj (0, 60, 600, 1800 s) deja el histograma de `disk-metrics.mjs`
+en su sitio: material 35.2 / 35.0 / 34.9 / 34.7 %. `stability.mjs` da una
+razón de alta frecuencia de 1.2-1.8 contra 1.1-1.5 del shader anterior, con la
+misma dispersión entre intervalos: los nudos avanzan con el material, no
+hierven. `npm run check` completo en verde sobre un worktree limpio con sólo
+estos cambios.
+
+### Coste y lo que no se tocó
+
+Cero evaluaciones de ruido nuevas, cero uniformes, cero draws. Por rayo, una
+raíz y un `smoothstep`; por cruce, un `smoothstep` y un `step`. Posición, `rs`,
+inclinación, cámara, HUD, bloom, `DISK_INNER`/`DISK_OUTER`, épocas, antialias y
+los cinco cuerpos siguen intactos. **Las palancas, si el dueño quiere más o
+menos:** la rampa de `doomed` (0.82-0.99 del radio crítico) y el `lip` (2.4-4.8
+rs) para el tamaño del negro; `HIGHLIGHT_KNEE` para cuánto blanco; los umbrales
+de `knot` y `pit` para cuántas excepciones; la rampa de `outerFade` para el
+grosor del arco inferior; `presence` (0.12) para la asimetría.
 
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 

@@ -1,0 +1,97 @@
+
+> jonas-orbit-v3@0.1.0 check
+> npm run lint && npm run typecheck && npm run knip && npm run test && npm run build
+
+
+> jonas-orbit-v3@0.1.0 lint
+> eslint --max-warnings=0
+
+
+> jonas-orbit-v3@0.1.0 pretypecheck
+> velite
+
+[VELITE] issues:
+content/es/worlds/edmunds.mdx
+ info The content is empty  body
+
+content/es/worlds/gargantua.mdx
+ info The content is empty  body
+
+content/es/worlds/miller.mdx
+ info The content is empty  body
+
+content/es/worlds/ranger.mdx
+ info The content is empty  body
+
+content/es/worlds/tesseract.mdx
+ info The content is empty  body 
+[32m[VELITE][0m build finished in 550.64ms
+
+> jonas-orbit-v3@0.1.0 typecheck
+> tsc --noEmit
+
+
+> jonas-orbit-v3@0.1.0 knip
+> knip
+
+Configuration hints (1)
+.css    knip.json  Compiled extension excluded by project (imports not followed)
+
+> jonas-orbit-v3@0.1.0 pretest
+> velite
+
+[32m[VELITE][0m build finished in 291.85ms
+[VELITE] issues:
+content/es/worlds/edmunds.mdx
+ info The content is empty  body
+
+content/es/worlds/gargantua.mdx
+ info The content is empty  body
+
+content/es/worlds/miller.mdx
+ info The content is empty  body
+
+content/es/worlds/ranger.mdx
+ info The content is empty  body
+
+content/es/worlds/tesseract.mdx
+ info The content is empty  body 
+
+> jonas-orbit-v3@0.1.0 test
+> vitest run
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.10 C:/Users/savage/Documents/kimi/Workspaces/portafolio espacial/jonas-orbit-v3
+
+ ❯ components/edmunds-page.test.tsx (12 tests | 1 failed) 5500ms
+     × mueve el anillo como un solo número y funde la luz ambiente sin apagarla 273ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/edmunds-page.test.tsx > Edmunds · cubierta de observación > mueve el anillo como un solo número y funde la luz ambiente sin apagarla
+AssertionError: expected <img …(7)></img>
+<img …(7)></img> to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ components/edmunds-page.test.tsx:107:22
+    105|     expect(lights()[1]).toHaveClass("edmunds-deck__ambient--in");
+    106|     fireEvent.animationEnd(lights()[1]);
+    107|     expect(lights()).toHaveLength(1);
+       |                      ^
+    108|     expect(lights()[0]).toHaveAttribute("src", "/art/edmunds/diseno-ho…
+    109|     // The sky carries stars and two aurora curtains, all decorative.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 34 passed (35)
+      Tests  1 failed | 219 passed (220)
+   Start at  22:56:21
+   Duration  9.65s (transform 6.07s, setup 12.51s, import 10.95s, tests 19.01s, environment 63.79s)
+

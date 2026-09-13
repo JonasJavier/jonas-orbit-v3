@@ -30,6 +30,7 @@ export function StructuredData({
       name: SITE_PROFILE.name,
       jobTitle: SITE_PROFILE.jobTitle,
       email: `mailto:${SITE_PROFILE.email}`,
+      telephone: SITE_PROFILE.phone,
       url: home,
       address: {
         "@type": "PostalAddress",
