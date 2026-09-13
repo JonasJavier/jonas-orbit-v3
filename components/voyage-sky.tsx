@@ -30,7 +30,7 @@ const LAYER_SPEED = [0.35, 0.6, 1];
 const TINTS = ["255, 255, 255", "255, 232, 205", "196, 214, 255"];
 /** Píxeles por segundo de la capa cercana. Con 2,4 nadie veía el giro; con 7
     el dueño vio «mucho movimiento». */
-const PAN = 4;
+const PAN = 3.2;
 
 function seeded(seed: number) {
   let state = seed;
@@ -43,7 +43,7 @@ function seeded(seed: number) {
 function buildStars(width: number, height: number): Star[] {
   const random = seeded(2026);
   const span = width + 400;
-  const count = Math.round(span * 0.04);
+  const count = Math.round(span * 0.034);
   return Array.from({ length: count }, () => {
     // Distribución de magnitudes: casi todo es débil; una de cada veinte brilla.
     const magnitude = Math.pow(random(), 4.6);
@@ -92,8 +92,8 @@ export function VoyageSky({ running }: { running: boolean }) {
       context.rotate(-0.16);
       context.scale(1, 0.22);
       const band = context.createRadialGradient(0, 0, 0, 0, 0, Math.max(width * 0.45, 320));
-      band.addColorStop(0, "rgba(186, 204, 236, 0.07)");
-      band.addColorStop(0.55, "rgba(186, 204, 236, 0.03)");
+      band.addColorStop(0, "rgba(186, 204, 236, 0.04)");
+      band.addColorStop(0.55, "rgba(186, 204, 236, 0.016)");
       band.addColorStop(1, "rgba(186, 204, 236, 0)");
       context.fillStyle = band;
       context.fillRect(-width, -height * 4, width * 2, height * 8);
