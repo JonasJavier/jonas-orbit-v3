@@ -106,10 +106,12 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   // While the hand is down the ring turns with it, in positions: the works
   // are partway between two rest poses, not just shifted sideways.
   expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("true");
-  await expect.poll(() => stage.evaluate((node) => parseFloat(node.style.getPropertyValue("--drag")))).toBeGreaterThan(0.25);
+  await expect.poll(() => stage.evaluate((node) => parseFloat(node.style.getPropertyValue("--drag")))).toBeLessThan(-0.25);
   const midway = await page.locator('.edmunds-artwork[data-offset="1"]').evaluate((art) => new DOMMatrix(getComputedStyle(art).transform).m41);
   const rest = await page.locator('.edmunds-artwork[data-offset="1"]').evaluate((art) => { const stage = art.closest(".edmunds-stage") as HTMLElement; const saved = stage.style.getPropertyValue("--drag"); stage.style.setProperty("--drag", "0"); const x = new DOMMatrix(getComputedStyle(art).transform).m41; stage.style.setProperty("--drag", saved); return x; });
   expect(midway).toBeLessThan(rest - 60);
+  // A hand that pauses before letting go carries no flick: exactly one work.
+  await page.waitForTimeout(150);
   await page.mouse.up();
   await expect(page.locator(caption)).toHaveText("Hoy se come");
   expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("false");

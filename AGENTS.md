@@ -56,6 +56,19 @@ estudios y el punto de partida; cuando un curso tenga documento, la entrada se
 MUEVE a `certificates`, no se duplica. La dirección de vídeo del hero queda
 descartada. El System Map, sus cuerpos, cámara y materiales no cambian.
 
+**Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de
+`docs/design/edmunds-creatividad.md` manda en **nitidez de las obras, gesto de
+arrastre, transición del anillo y cielo de la cubierta**. Tres reglas que
+costaron verificación: **un WebP visto a 1:1 se ve blando y el mismo archivo
+reducido se ve nítido** —por eso cada contexto pide 1,5× los píxeles que pinta
+sobre seis peldaños (320-1920)—; **el anillo se mueve con UN número**,
+`--drag` en posiciones fraccionarias registrado con `@property`, y las obras
+derivan giro, profundidad y luz de `--p = --o + --drag` con `abs()`: nunca se
+vuelve a poner una transición sobre el `transform` de cada obra, ni un
+`translate` plano durante el gesto; y **la luz ambiente funde sobre la anterior**,
+no desde negro. El cielo es noche azul marino con auroras de degradado, sin
+`filter`. La curación del catálogo sigue siendo del dueño.
+
 **Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
 transiciones y presupuestos**. En todo lo demás el plan principal sigue intacto.
