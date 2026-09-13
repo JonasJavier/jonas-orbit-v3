@@ -56,6 +56,26 @@ estudios y el punto de partida; cuando un curso tenga documento, la entrada se
 MUEVE a `certificates`, no se duplica. La dirección de vídeo del hero queda
 descartada. El System Map, sus cuerpos, cámara y materiales no cambian.
 
+**Página de la Ranger — cabina de mando (2026-09-13):** la sección `Cabina de
+mando` de `docs/design/ranger-contacto.md` manda sobre el resto de ese
+documento en **composición, interacción y límites de `/es/contacto`**. El
+dueño rechazó la cabina de comunicaciones del día anterior («no me gusta la
+versión actual») y pidió algo totalmente distinto, «estar como dentro de una
+nave espacial». Ahora el visitante va sentado DENTRO de la Ranger: ventanal en
+WebGL2 propio sin ningún asset (estrellas en vuelo, nebulosa violeta y cian,
+mundo azul con nubes y atmósfera, todo con paralaje de cabeza por planos),
+casco en SVG con montante, HUD cian sobre el cristal con lecturas reales (hora
+en Santo Domingo, rumbo = `placement.phase`) y un panel ámbar con los tres
+canales como frecuencias, radar e interruptor de vuelo. La consola del
+formulario mide la potencia de señal campo a campo y sus botones de misión
+escriben en el `<select>` real. Tres reglas: **un solo estado gobierna todo lo
+que se mueve** (consentimiento, pausa, reduced-motion, perfil ligero) y sin
+WebGL2 el interruptor desaparece; **el encendido es aditivo** —nada se oculta
+antes de animarse, el HTML servido ya está completo—; y **la escena persistente
+duerme también en la Ranger** (`COVERED_WORLDS`). `public/images/ranger/` se
+retira. El System Map, sus cuerpos, cámara y materiales no cambian. Su
+valoración visual queda abierta.
+
 **Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de
 `docs/design/edmunds-creatividad.md` manda en **nitidez de las obras, gesto de
 arrastre, transición del anillo y cielo de la cubierta**. Tres reglas que
