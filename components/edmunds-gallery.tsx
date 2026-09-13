@@ -6,8 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
 import type { World } from "@/lib/worlds";
-import { useLightEffectsMode } from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { useMotionEnabled } from "@/lib/effects-mode";
 
 type Creativity = NonNullable<World["prose"]["creativity"]>;
 type Artwork = Creativity["artworks"][number];
@@ -80,10 +79,10 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
    * older, which leaves once the fade has ended. Derived during render (the
    * documented "information from previous renders" pattern), not in an effect. */
   const [ambient, setAmbient] = useState<{ previous: Artwork | null; current: Artwork | null }>({ previous: null, current: null });
-  const reduced = usePrefersReducedMotion();
-  const light = useLightEffectsMode();
-  const mode = view ?? (reduced || light ? "grid" : "space");
-  const still = reduced || light;
+  const motion = useMotionEnabled();
+  const mode = view ?? (motion ? "space" : "grid");
+  // El interruptor único de movimiento del sitio decide si la cubierta gira.
+  const still = !motion;
   const filtered = collection === "all" ? artworks : artworks.filter((art) => art.collection === collection);
   const current = filtered[active];
   const viewed = viewer === null ? null : filtered[viewer];

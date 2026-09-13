@@ -118,11 +118,6 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-dash__status { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; font: .6rem var(--font-mono); letter-spacing: .12em; color: #cdbb95; text-transform: uppercase; }
 .ranger-module--ctrl { display: flex; flex-direction: column; gap: 10px; }
 .ranger-module--ctrl > .ranger-module__label { margin-bottom: 2px; }
-.ranger-flight { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 8px 12px; border: 1px solid #ffb65c40; background: #12100b; color: #f5e6c8; font: .62rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; border-radius: 2px; box-shadow: inset 0 1px #ffffff0a; transition: border-color .2s, background .2s; }
-.ranger-flight:hover { border-color: #ffd08a; background: #1b160d; }
-.ranger-flight__switch { position: relative; flex: none; width: 34px; height: 18px; border-radius: 9px; background: #2a2215; box-shadow: inset 0 1px 3px #000; }
-.ranger-flight__switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #8a7350; transition: transform .25s, background .25s, box-shadow .25s; }
-.ranger-flight[aria-pressed="true"] .ranger-flight__switch::after { transform: translateX(16px); background: var(--rg-ember); box-shadow: 0 0 8px #ffb65c; }
 .ranger-dash__cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 8px 14px; background: linear-gradient(#ffd08a, #f2b45b); color: #1b1206; font: 700 .64rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; border-radius: 2px; box-shadow: inset 0 1px #fff8, 0 0 22px #ffb65c30; transition: filter .2s; }
 .ranger-dash__cta:hover { filter: brightness(1.08); }
 .ranger-dash__note { margin-top: auto; color: #8b93a6; font-size: .68rem; line-height: 1.6; }
@@ -257,6 +252,5 @@ body:has(.ranger-route) .scene-toggle { display: none; }
   .ranger-farewell { padding-block: 56px; }
   .ranger-neighbours > .ranger-kicker { max-width: 130px; text-align: right; line-height: 1.8; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ranger-page *, .ranger-page *::before, .ranger-page *::after { animation: none !important; transition: none !important; }
-}
+/* El interruptor único de movimiento para también el CSS de la cabina. */
+html[data-motion="off"] .ranger-page *, html[data-motion="off"] .ranger-page *::before, html[data-motion="off"] .ranger-page *::after { animation: none !important; transition: none !important; }

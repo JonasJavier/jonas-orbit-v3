@@ -12,31 +12,27 @@ import {
   type RefObject,
 } from "react";
 import { SITE_PROFILE } from "@/content/site.data";
-import { useLightEffectsMode } from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { useMotionEnabled } from "@/lib/effects-mode";
 
 /**
  * Cabina de la Ranger: el visitante va sentado dentro de la nave de enlace.
  *
  * Un solo estado gobierna todo lo que se mueve en la primera pantalla — el
  * vuelo del ventanal (WebGL2), el barrido del radar, el paralaje de cabeza y
- * el encendido de los instrumentos —: reduced-motion y el perfil ligero lo
- * dejan quieto por defecto, el interruptor «Activar vuelo» es el opt-in y
- * «Pausar vuelo» lo detiene. Los instrumentos son HTML real: canales, formulario,
- * CV y prosa se sirven sin JavaScript; sólo la animación necesita el cliente.
+ * el encendido de los instrumentos — y es el interruptor único de movimiento
+ * del sitio (la bandeja inferior derecha). Los instrumentos son HTML real:
+ * canales, formulario, CV y prosa se sirven sin JavaScript; sólo la animación
+ * necesita el cliente.
  */
 
 export type Frequency = { id: string; name: string; value: string } | null;
 type Look = { x: number; y: number };
 
 type Cockpit = {
-  /** Motion allowed by preference and not paused: flight, radar sweep, parallax. */
+  /** The site's motion switch: flight, radar sweep, parallax. */
   running: boolean;
-  preferenceBlocked: boolean;
-  paused: boolean;
-  /** False once WebGL2 is missing or the context is lost: the switch disappears. */
+  /** False once WebGL2 is missing or the context is lost: the still view stays. */
   supported: boolean;
-  toggle: () => void;
   markUnsupported: () => void;
   /** Head offset in [-1, 1], read by the viewport every frame. */
   look: RefObject<Look>;
@@ -50,10 +46,7 @@ const noop = () => {};
 /** Outside the bridge (tests, isolated instruments) everything reads as still. */
 const STANDALONE: Cockpit = {
   running: false,
-  preferenceBlocked: false,
-  paused: false,
   supported: false,
-  toggle: noop,
   markUnsupported: noop,
   look: STILL_LOOK,
   frequency: null,
@@ -75,25 +68,11 @@ function subscribeNever() {
 export function RangerCockpit({ children }: { children: ReactNode }) {
   const bridgeRef = useRef<HTMLElement>(null);
   const look = useRef<Look>({ x: 0, y: 0 });
-  const reducedMotion = usePrefersReducedMotion();
-  const lightEffects = useLightEffectsMode();
+  const running = useMotionEnabled();
   const mounted = useMounted();
-  const [paused, setPaused] = useState(false);
-  const [activated, setActivated] = useState(false);
   const [supported, setSupported] = useState(true);
   const [frequency, setFrequency] = useState<Frequency>(null);
-  const preferenceBlocked = !activated && (reducedMotion || lightEffects);
-  const running = !paused && !preferenceBlocked;
   const markUnsupported = useCallback(() => setSupported(false), []);
-
-  const toggle = () => {
-    if (preferenceBlocked) {
-      setActivated(true);
-      setPaused(false);
-    } else {
-      setPaused(!paused);
-    }
-  };
 
   function moveHead(event: PointerEvent<HTMLElement>) {
     if (!running || event.pointerType !== "mouse" || !window.matchMedia("(pointer: fine)").matches) return;
@@ -112,7 +91,7 @@ export function RangerCockpit({ children }: { children: ReactNode }) {
   }
 
   return (
-    <CockpitContext.Provider value={{ running, preferenceBlocked, paused, supported, toggle, markUnsupported, look, frequency, setFrequency }}>
+    <CockpitContext.Provider value={{ running, supported, markUnsupported, look, frequency, setFrequency }}>
       <section
         ref={bridgeRef}
         className="ranger-bridge"
@@ -125,20 +104,6 @@ export function RangerCockpit({ children }: { children: ReactNode }) {
         {children}
       </section>
     </CockpitContext.Provider>
-  );
-}
-
-/** Flight switch on the dashboard. Absent without JavaScript or WebGL2. */
-export function RangerFlightControl() {
-  const { running, preferenceBlocked, supported, toggle } = useRangerCockpit();
-  const mounted = useMounted();
-  if (!mounted || !supported) return null;
-  const label = running ? "Pausar vuelo" : preferenceBlocked ? "Activar vuelo" : "Reanudar vuelo";
-  return (
-    <button className="ranger-flight" type="button" aria-pressed={running} onClick={toggle}>
-      <span>{label}</span>
-      <i className="ranger-flight__switch" aria-hidden="true" />
-    </button>
   );
 }
 

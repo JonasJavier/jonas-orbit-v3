@@ -1,3 +1,4 @@
+import { MotionToggle } from "@/components/motion-toggle";
 import { GargantuaSystem } from "@/components/scene/gargantua-system";
 import { SiteBackdrop } from "@/components/site-backdrop";
 import { SoundtrackControl } from "@/components/soundtrack-control";
@@ -58,7 +59,14 @@ export default async function LocaleLayout({
       <SiteBackdrop routes={routes} fallbackAccent={worldsData.gargantua.accent} />
       {published ? <GargantuaSystem bodies={bodies} routes={routes} /> : null}
       {children}
-      {published ? <SoundtrackControl /> : null}
+      {/* Bandeja fija inferior derecha: el único interruptor de movimiento del
+          sitio y la banda sonora, en todas las rutas. */}
+      {published ? (
+        <div className="system-tray">
+          <MotionToggle />
+          <SoundtrackControl />
+        </div>
+      ) : null}
     </>
   );
 }

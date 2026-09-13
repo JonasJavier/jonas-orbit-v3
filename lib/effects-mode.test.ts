@@ -130,3 +130,19 @@ describe("pointerLifeEnabled — el consentimiento gobierna el conjunto", () => 
     ).toBe(true);
   });
 });
+
+/**
+ * Un solo interruptor (2026-09-13): por defecto el movimiento está encendido,
+ * `?no3d=1` sigue siendo la puerta al perfil ligero y la elección del icono
+ * se recuerda con la misma clave de siempre.
+ */
+describe("movimiento por defecto", () => {
+  it("sin URL ni recuerdo, el movimiento está encendido", () => {
+    expect(resolveLightEffectsMode("", null)).toBe(false);
+  });
+
+  it("apagarlo con el icono equivale a recordar el perfil ligero", () => {
+    expect(resolveLightEffectsMode("", "true")).toBe(true);
+    expect(resolveLightEffectsMode("?no3d=0", "true")).toBe(false);
+  });
+});

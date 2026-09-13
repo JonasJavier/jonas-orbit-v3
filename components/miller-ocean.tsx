@@ -127,7 +127,7 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string) {
 export function MillerOcean() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
-  const { running, preferenceBlocked, paused, toggle } = useMillerWater();
+  const { running } = useMillerWater();
   const [ready, setReady] = useState(false);
   const [supported, setSupported] = useState(true);
 
@@ -142,8 +142,7 @@ export function MillerOcean() {
     const fragment = gl && compile(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
     const program = gl?.createProgram();
     if (!gl || !vertex || !fragment || !program) {
-      // Sin WebGL2 la fotografía se queda quieta y el control desaparece: un
-      // botón de «pausar» sobre una imagen que no se mueve sería una mentira.
+      // Sin WebGL2 la fotografía se queda quieta.
       setSupported(false);
       return;
     }
@@ -247,8 +246,8 @@ export function MillerOcean() {
       gl.deleteProgram(program);
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);
-      // Pausar retira el canvas: se suelta el contexto para no ocupar uno de los
-      // pocos que concede el navegador mientras la imagen está quieta.
+      // Apagar el movimiento retira el canvas: se suelta el contexto para no
+      // ocupar uno de los pocos que concede el navegador mientras está quieto.
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
   }, [ready, running, supported]);
@@ -259,12 +258,6 @@ export function MillerOcean() {
       <Image src="/images/miller/ocean.webp" alt="" fill sizes="100vw" preload unoptimized onLoad={() => setReady(true)} />
       {running && ready && supported ? <canvas aria-hidden="true" ref={canvasRef} /> : null}
       <div className="miller-ocean__shade" aria-hidden="true" />
-      {ready && supported ? (
-        <button className="miller-ocean__control" type="button" aria-pressed={running} onClick={toggle}>
-          <span aria-hidden="true">{running ? "Ⅱ" : "▷"}</span>
-          {preferenceBlocked ? "Activar océano" : paused ? "Reanudar océano" : "Pausar océano"}
-        </button>
-      ) : null}
     </div>
   );
 }

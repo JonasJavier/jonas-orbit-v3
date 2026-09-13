@@ -53,8 +53,6 @@
 
 /* ── Tools: sky, CV (ES / EN), map ────────────────────────────────────── */
 .site-header--voyage .voyage-return { display: flex; align-items: center; flex: none; gap: 2px; border-left: 1px solid var(--voyage-edge); padding-left: 10px; }
-.voyage-sky-toggle { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: #819fae; font: .8rem var(--font-body); cursor: pointer; transition: color .2s; }
-.voyage-sky-toggle:hover { color: #d5f7fa; }
 .site-header--voyage .voyage-cv { position: relative; }
 .site-header--voyage .voyage-cv__summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 11px; color: #b4d9e2; font-size: .76rem; list-style: none; cursor: pointer; white-space: nowrap; transition: color .2s; }
 .site-header--voyage .voyage-cv__summary::-webkit-details-marker { display: none; }
@@ -120,6 +118,4 @@
   .site-header--voyage .voyage-wordmark { font-size: .76rem; letter-spacing: .23em; }
   .site-header.site-header--voyage .mission-nav a { gap: 7px; padding-inline: 6px; font-size: .8rem; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .site-header--voyage *, .site-header--voyage *::before, .site-header--voyage *::after { transition: none !important; }
-}
+html[data-motion="off"] .site-header--voyage *, html[data-motion="off"] .site-header--voyage *::before, html[data-motion="off"] .site-header--voyage *::after { transition: none !important; }

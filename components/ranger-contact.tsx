@@ -3,7 +3,7 @@ import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { ContactChannels } from "./contact-channels";
 import { DownloadIcon } from "./download-icon";
-import { RangerCockpit, RangerFlightControl, RangerReadouts } from "./ranger-cockpit";
+import { RangerCockpit, RangerReadouts } from "./ranger-cockpit";
 import { RangerConsole } from "./ranger-console";
 import { RangerCanopy, RangerScope, RangerTape } from "./ranger-instruments";
 import { RangerViewport } from "./ranger-viewport";
@@ -51,7 +51,6 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
             </div>
             <div className="ranger-module ranger-module--ctrl">
               <div className="ranger-module__label"><span>Mandos</span><span aria-hidden="true">Ranger / {String(world.order).padStart(2, "0")}</span></div>
-              <RangerFlightControl />
               <a className="ranger-dash__cta" href="#transmision">Abrir consola de transmisión <span aria-hidden="true">↓</span></a>
               <p className="ranger-dash__note">Sin compromiso. Una idea es un buen comienzo.</p>
             </div>

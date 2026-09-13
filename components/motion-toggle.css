@@ -1,0 +1,52 @@
+/* Bandeja inferior derecha: movimiento y banda sonora, dos instrumentos
+   iguales, siempre presentes. */
+.system-tray {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 110;
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.motion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.45rem 0.8rem;
+  appearance: none;
+  border: 1px solid var(--space-line);
+  border-radius: 2px;
+  background: #070d17ed;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+.motion-toggle:hover { color: var(--cyan); }
+.motion-toggle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.motion-toggle__icon { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; overflow: visible; }
+.motion-toggle__orbit { transform-origin: 12px 12px; transform: rotate(-24deg) scaleY(.42); }
+.motion-toggle__orbit ellipse { opacity: .55; }
+.motion-toggle__satellite { transform-origin: 12px 12px; fill: currentColor; stroke: none; }
+.motion-toggle__core { fill: currentColor; stroke: none; }
+.motion-toggle__pause { display: none; stroke-width: 1.6; }
+.motion-toggle[data-state="on"] .motion-toggle__satellite { animation: motion-toggle-orbit 5s linear infinite; }
+.motion-toggle[data-state="on"] .motion-toggle__core { filter: drop-shadow(0 0 4px currentColor); }
+.motion-toggle[data-state="off"] .motion-toggle__orbit ellipse { opacity: .3; stroke-dasharray: 2 3; }
+.motion-toggle[data-state="off"] .motion-toggle__satellite { transform: rotate(210deg); opacity: .6; }
+.motion-toggle[data-state="off"] .motion-toggle__core { opacity: .55; }
+.motion-toggle[data-state="off"] .motion-toggle__readout strong { color: var(--ink-muted); }
+.motion-toggle__readout { display: grid; gap: 0.3rem; text-align: left; text-transform: uppercase; line-height: 1; }
+.motion-toggle__readout > span { font-size: 9px; letter-spacing: 0.18em; color: var(--ink-muted); }
+.motion-toggle__readout strong { font-size: 10px; letter-spacing: 0.12em; font-weight: 600; }
+@keyframes motion-toggle-orbit { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .system-tray { gap: 0.4rem; }
+  .motion-toggle { padding: 0.45rem 0.6rem; }
+  .motion-toggle__readout { display: none; }
+}
