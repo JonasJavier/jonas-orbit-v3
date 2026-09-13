@@ -192,7 +192,8 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-dossier > div > p + p { margin-top: 10px; font-size: .84rem; color: #a5b1c8; }
 .ranger-dossier__links { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
 .ranger-dossier__links > a { display: flex; gap: 14px; align-items: center; min-height: 44px; padding: 6px 14px; border: 1px solid var(--rg-line); border-radius: 2px; font-size: .74rem; transition: border-color .2s, color .2s, background .2s; }
-.ranger-dossier__links > a > span { font: .56rem var(--font-mono); color: #8ea1b7; }
+.ranger-dossier__links > a > span { display: inline-flex; align-items: center; gap: 5px; font: .56rem var(--font-mono); color: #8ea1b7; }
+.ranger-dossier__links .download-icon { width: 13px; height: 13px; }
 .ranger-dossier__links > a:hover { color: var(--rg-cyan); border-color: #7fe5ff66; background: #7fe5ff0a; }
 .ranger-farewell { text-align: center; padding: 84px var(--page-gutter) 72px; }
 .ranger-farewell > span { color: var(--rg-violet); font-size: 2rem; }

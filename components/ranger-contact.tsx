@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { ContactChannels } from "./contact-channels";
+import { DownloadIcon } from "./download-icon";
 import { RangerCockpit, RangerFlightControl, RangerReadouts } from "./ranger-cockpit";
 import { RangerConsole } from "./ranger-console";
 import { RangerCanopy, RangerScope, RangerTape } from "./ranger-instruments";
@@ -76,8 +77,8 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
         <div className="ranger-dossier__links">
           <a href={SITE_PROFILE.github} target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
           <a href={SITE_PROFILE.linkedin} target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
-          <a download href="/cv/jonas-javier-cv-es.pdf">CV español <span>PDF ↓</span></a>
-          <a download href="/cv/jonas-javier-cv-en-ats.pdf">CV English <span>PDF ↓</span></a>
+          <a download href="/cv/jonas-javier-cv-es.pdf">CV español <span><DownloadIcon /> PDF</span></a>
+          <a download href="/cv/jonas-javier-cv-en-ats.pdf">CV English <span><DownloadIcon /> PDF</span></a>
         </div>
       </aside>
       <div className="ranger-farewell"><span aria-hidden="true">✳</span><p>{prose.closing}</p></div>

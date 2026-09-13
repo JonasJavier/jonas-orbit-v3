@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
+import { DownloadIcon } from "./download-icon";
 import { StructuredData } from "./structured-data";
 import { MillerCertificates } from "./miller-certificates";
 import { MillerOcean } from "./miller-ocean";
@@ -43,6 +44,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
           <div className="miller-hero__actions">
             <a href="#trayectoria" className="miller-button">Ver mi recorrido <span aria-hidden="true">↓</span></a>
             <a href="#certificados" className="miller-text-link">Ver certificados <span aria-hidden="true">↗</span></a>
+            <a download href="/cv/jonas-javier-cv-es.pdf" className="miller-text-link miller-text-link--cv"><DownloadIcon />Descargar CV <span aria-hidden="true">PDF</span></a>
           </div>
         </div>
         <div className="miller-hero__foot"><span>APRENDIZAJE EN MOVIMIENTO</span><span aria-hidden="true">01 — DESCENDER ↓</span></div>
