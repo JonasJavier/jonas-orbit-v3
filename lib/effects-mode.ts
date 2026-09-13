@@ -24,16 +24,23 @@ import { useEffect, useSyncExternalStore } from "react";
 
 const LIGHT_EFFECTS_PARAM = "no3d";
 const STORAGE_KEY = "jonas-orbit:reducir-efectos";
-/**
- * La activación explícita: «lo quiero todo aunque mi sistema diga que no».
- *
- * Vive AQUÍ y no dentro de la escena porque la petición no es sobre la escena,
- * es sobre los efectos. Cuando era `useState` de `GargantuaSystem`, pulsar
- * «Activar escena 3D» encendía el raymarch y dejaba apagados el cursor de
- * navegación y el polvo estelar, que leen la preferencia por su cuenta: el
- * visitante pedía una cosa y recibía media. Un solo almacén, tres lectores.
- */
-const FORCED_STORAGE_KEY = "jonas-orbit:efectos-forzados";
+/*
+  ── Un solo interruptor de movimiento (2026-09-13) ─────────────────────────
+
+  Antes había dos almacenes —el perfil ligero y la «activación forzada»— y
+  cada página añadía su propio botón (océano, vuelo, estrellas, escena 3D).
+  El dueño pidió UN icono, abajo a la derecha, siempre presente, que encienda
+  y apague todo el movimiento del sistema, y que por defecto esté encendido.
+
+  Queda un solo valor, «movimiento», con tres entradas por orden de mando:
+  la URL (`?no3d=1` es la puerta documentada al perfil ligero y se persiste),
+  lo que el visitante eligió con el icono, y si no hay nada, ENCENDIDO. La
+  preferencia del sistema `prefers-reduced-motion` ya no apaga nada por sí
+  sola: el icono es el consentimiento, visible y reversible en toda ruta.
+  `useLightEffectsMode` (= movimiento apagado) y `useForcedEffects`
+  (= movimiento encendido) se conservan como lecturas del mismo valor para
+  la escena, el fondo y el gate de capacidad.
+*/
 /** Cambios dentro de la misma pestaña: `storage` solo avisa a las OTRAS. */
 const CHANGE_EVENT = "jonas:effects-mode";
 
@@ -125,30 +132,55 @@ function getSnapshot() {
   return resolveLightEffectsMode(window.location.search, readStored(STORAGE_KEY));
 }
 
-function getForcedSnapshot() {
-  if (typeof window === "undefined") return false;
-  return readStored(FORCED_STORAGE_KEY) === "true";
-}
-
 function announce() {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 /**
- * Guarda —o retira— la activación explícita y avisa a los tres lectores en el
- * mismo tick. Se persiste por la misma razón que el perfil ligero: quien ya dijo
- * «enciéndelo» no tiene que volver a decirlo en cada ruta ni en cada visita.
+ * El interruptor. Guarda la elección y avisa a todos los lectores en el mismo
+ * tick; se persiste para que quien apagó el movimiento no tenga que volver a
+ * apagarlo en cada ruta ni en cada visita.
  */
-export function setForcedEffects(value: boolean) {
-  if (getForcedSnapshot() === value) return;
-  writeStored(FORCED_STORAGE_KEY, String(value));
+export function setMotionEnabled(enabled: boolean) {
+  // "true" = apagado; "false" = encendido a propósito (fuerza la escena).
+  writeStored(STORAGE_KEY, String(!enabled));
+  // La URL es la ENTRADA a la preferencia y manda mientras está presente: si
+  // el visitante entró por `?no3d=1` y ahora pulsa el icono, el parámetro se
+  // consume para que su gesto sea el que cuente, sin recargar ni navegar.
+  const url = new URL(window.location.href);
+  if (url.searchParams.has(LIGHT_EFFECTS_PARAM)) {
+    url.searchParams.delete(LIGHT_EFFECTS_PARAM);
+    window.history.replaceState(window.history.state, "", url);
+  }
   announce();
 }
 
 /**
- * Instantánea de servidor `false` a propósito: el HTML servido es idéntico para
- * todo el mundo y la activación se resuelve tras hidratar, sin mismatch.
+ * Movimiento encendido: lo que leen las páginas para animar o quedarse en un
+ * fotograma. Instantánea de servidor `true` —el valor por defecto— para que el
+ * HTML servido sea el mismo para todo el mundo; lo que cada canvas hace con
+ * ello ocurre después de montar, así que no hay mismatch.
  */
+export function useMotionEnabled() {
+  return !useLightEffectsMode();
+}
+
+/**
+ * Encendido EXPLÍCITO: el visitante pulsó el icono. (`?no3d=0` sólo retira el
+ * perfil ligero; no fuerza la escena en un equipo que el gate desaconseja.)
+ *
+ * Distingue «encendido porque es el defecto» de «encendido porque lo pedí».
+ * Las páginas animan en ambos casos; la escena 3D y su gate de capacidad
+ * sólo saltan por encima de reduced-motion y de las heurísticas (GPU por
+ * software, red lenta, memoria corta) con la petición explícita, igual que
+ * hacía la activación de antes. Un solo icono, dos lecturas.
+ */
+function getForcedSnapshot() {
+  if (typeof window === "undefined") return false;
+  if (readLightEffectsParam(window.location.search) === true) return false;
+  return readStored(STORAGE_KEY) === "false";
+}
+
 export function useForcedEffects() {
   return useSyncExternalStore(subscribe, getForcedSnapshot, () => false);
 }
@@ -167,10 +199,6 @@ export function useLightEffectsMode() {
     const fromUrl = readLightEffectsParam(window.location.search);
     if (fromUrl === null) return;
     writeStored(STORAGE_KEY, String(fromUrl));
-    // Pedir MENOS efectos tiene que reducirlos de verdad: una activación
-    // guardada de otra visita no puede sobrevivir a `?no3d=1` y dejar el botón
-    // «Reducir efectos» sin efecto. `?no3d=0` no la toca — ahí no hay conflicto.
-    if (fromUrl) setForcedEffects(false);
   }, [value]);
 
   return value;

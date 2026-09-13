@@ -267,7 +267,7 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
 
 /* ── Motion off ───────────────────────────────────────────────────────── */
 .edmunds-gallery[data-reduced="true"] *, .edmunds-gallery[data-reduced="true"] *::after { transition: none !important; animation: none !important; }
-@media (prefers-reduced-motion: reduce) { .edmunds-page *, .edmunds-page *::after { animation: none !important; transition: none !important; } }
+html[data-motion="off"] .edmunds-page *, html[data-motion="off"] .edmunds-page *::after { animation: none !important; transition: none !important; }
 
 /* ── Breakpoints ──────────────────────────────────────────────────────── */
 @media (min-width: 1800px) {

@@ -83,6 +83,24 @@ de rumbo sigue el mismo `yaw`, y el mundo gira bajo la nave con la distancia.
 La búsqueda de estrellas es de cuatro celdas, exacta porque ninguna mide más
 de media celda. Su valoración visual queda abierta.
 
+**UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
+anterior en consentimiento, pausa y perfil ligero:**
+`docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior
+derecha (`components/motion-toggle.tsx`, junto a la banda sonora, en todas las
+rutas) enciende y apaga TODO lo que se mueve: escena 3D y su polvo, cielo de
+la cabecera, océano y corrientes de Miller, vuelo de la Ranger, cubierta de
+Edmunds y las animaciones CSS (`html[data-motion="off"]`). **Por defecto
+encendido**; `prefers-reduced-motion` ya no apaga nada por sí solo. Quedan
+retirados «Activar animación 3D» del HUD, el `scene-toggle`, «Pausar océano»,
+«Pausar vuelo» y «Pausar estrellas»: ninguna página guarda estado de pausa.
+`lib/effects-mode.ts` tiene un solo valor con dos lecturas:
+`useMotionEnabled()` (por defecto o a propósito; las páginas) y
+`useForcedEffects()` (a propósito: icono pulsado o `?no3d=0`; sólo esa salta
+por encima de reduced-motion y de las heurísticas de capacidad para montar la
+escena). `?no3d=1` sigue siendo la puerta al perfil ligero y se persiste con
+la clave de siempre. Cualquier texto anterior que describa botones de
+consentimiento por página está obsoleto.
+
 **Cabecera — observatorio y acento por mundo (2026-09-13):** la sección
 `Observatorio y acento por mundo` de `docs/design/identity-gargantua.md`
 manda sobre el resto de ese documento en **estado activo, línea viajera, CV y

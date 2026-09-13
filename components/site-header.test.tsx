@@ -3,8 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getWorldNavItems } from "@/lib/worlds";
 import { SiteHeader } from "./site-header";
 
-vi.mock("@/lib/use-prefers-reduced-motion", () => ({ usePrefersReducedMotion: () => false }));
-vi.mock("@/lib/effects-mode", () => ({ useLightEffectsMode: () => false }));
+vi.mock("@/lib/effects-mode", () => ({ useMotionEnabled: () => true }));
 
 describe("Cabecera · observatorio", () => {
   it("nombra los seis destinos por su contenido y marca el activo con su acento", () => {

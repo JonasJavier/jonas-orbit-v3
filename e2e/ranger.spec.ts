@@ -55,17 +55,16 @@ test.describe("Ranger · cabina de mando", () => {
     });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/es/contacto");
-    const pause = page.getByRole("button", { name: "Pausar vuelo" });
+    // El único interruptor: el icono de movimiento de la bandeja.
+    const pause = page.getByRole("button", { name: "Desactivar movimiento", exact: true });
     await expect(pause).toBeVisible();
+    await expect(page.getByRole("button", { name: /vuelo/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "on");
     await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
     await pause.click();
     await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
     expect(await flightDrawsOverFrames(page)).toBe(0);
-    await page.getByRole("button", { name: "Reanudar vuelo" }).click();
-    // En móvil el panel vive bajo el ventanal: pulsar el interruptor lo saca
-    // de pantalla, y fuera de pantalla no se dibuja. Se vuelve arriba a mirar.
-    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
     await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
     await page.evaluate(() => {
       Object.defineProperty(document, "hidden", { configurable: true, value: true });
@@ -86,20 +85,24 @@ test.describe("Ranger · cabina de mando", () => {
     await expect.poll(() => flightDrawsOverFrames(page)).toBe(0);
   });
 
-  test("reduced-motion deja la cabina quieta y el vuelo se activa sólo al pedirlo", async ({ page }) => {
+  test("el interruptor único apaga la cabina entera y la vuelve a encender por teclado", async ({ page }) => {
+    // reduced-motion del sistema ya no apaga nada: el defecto es encendido.
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es/contacto");
     const bridge = page.getByRole("region", { name: "Cabina de la Ranger" });
+    await expect(bridge).toHaveAttribute("data-motion", "on");
+    await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
+    await expect(page.locator(".ranger-readouts")).toContainText(/\d{2}:\d{2}/);
+    const toggle = page.getByRole("button", { name: "Desactivar movimiento", exact: true });
+    await toggle.focus();
+    await page.keyboard.press("Enter");
     await expect(bridge).toHaveAttribute("data-motion", "off");
     await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
     expect(await page.locator(".ranger-scope__sweep").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
-    await expect(page.locator(".ranger-readouts")).toContainText(/\d{2}:\d{2}/);
-    const activate = page.getByRole("button", { name: "Activar vuelo" });
-    await activate.focus();
+    await expect(page.getByRole("button", { name: "Activar movimiento", exact: true })).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(bridge).toHaveAttribute("data-motion", "on");
     await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
-    await expect(page.getByRole("button", { name: "Pausar vuelo" })).toBeFocused();
   });
 
   test("sin JavaScript mantiene los tres canales, CV y contenido real", async ({ browser }) => {

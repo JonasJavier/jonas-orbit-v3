@@ -726,18 +726,17 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       número.
     */
     test.setTimeout(90_000);
+    // El interruptor único de movimiento (bandeja) sustituye al control del
+    // HUD y al de la escena. Se entra apagado por la URL documentada, se
+    // enciende con el icono y se vuelve a apagar con el mismo icono.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/es");
+    await page.goto("/es?no3d=1");
 
     await expect(page.locator("html")).toHaveAttribute(
       "data-pointer-life",
       "off",
     );
     await expect(page.locator("html")).toHaveAttribute("data-scene", "flat");
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-scene-reason",
-      "movimiento-reducido",
-    );
     await expect(page.locator("html")).toHaveAttribute(
       "data-starfield-motion",
       "static",
@@ -750,11 +749,12 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
 
     const effectsToggle = page.getByRole("button", {
-      name: "Activar animación 3D",
+      name: "Activar movimiento",
+      exact: true,
     });
     await expect(effectsToggle).toBeVisible();
     await expect(effectsToggle).toHaveAttribute("aria-pressed", "false");
-    await expect(page.locator(".hud__effects-toggle")).toHaveCount(1);
+    await expect(page.locator(".hud__effects-toggle")).toHaveCount(0);
     await expect(page.locator(".scene-toggle")).toHaveCount(0);
 
     await effectsToggle.click();
@@ -773,7 +773,8 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
     );
 
     const reduceToggle = page.getByRole("button", {
-      name: "Reducir movimiento y volver al mapa 2D",
+      name: "Desactivar movimiento",
+      exact: true,
     });
     await expect(reduceToggle).toHaveAttribute("aria-pressed", "true");
     await reduceToggle.click();
@@ -783,9 +784,11 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       "false",
     );
     await expect(page.locator("html")).toHaveAttribute("data-scene", "flat");
+    // El gate explica el motivo por orden de mando: con el sistema en
+    // movimiento reducido, ése; si no, el perfil ligero que el icono dejó.
     await expect(page.locator("html")).toHaveAttribute(
       "data-scene-reason",
-      "movimiento-reducido",
+      /movimiento-reducido|perfil-ligero/,
     );
     await expect(page.getByTestId("gargantua-canvas")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute(

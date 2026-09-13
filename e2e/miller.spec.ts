@@ -92,13 +92,15 @@ test("Miller: el océano pausa, reanuda y deja de dibujar fuera de pantalla o en
     } });
   });
   await page.goto("/es/formacion");
-  const pause = page.getByRole("button", { name: "Pausar océano" });
+  // El único interruptor: el icono de movimiento de la bandeja.
+  const pause = page.getByRole("button", { name: "Desactivar movimiento", exact: true });
   await expect(pause).toBeVisible();
+  await expect(page.getByRole("button", { name: /océano/ })).toHaveCount(0);
   await expect.poll(() => oceanDrawsOverFrames(page)).toBeGreaterThan(0);
   await pause.click();
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
   expect(await oceanDrawsOverFrames(page)).toBe(0);
-  await page.getByRole("button", { name: "Reanudar océano" }).click();
+  await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
   await expect.poll(() => oceanDrawsOverFrames(page)).toBeGreaterThan(0);
   await page.evaluate(() => {
     Object.defineProperty(document, "hidden", { configurable: true, value: true });
@@ -115,15 +117,18 @@ test("Miller: el océano pausa, reanuda y deja de dibujar fuera de pantalla o en
   await expect.poll(() => oceanDrawsOverFrames(page)).toBe(0);
 });
 
-test("Miller: reduced-motion conserva la imagen y el contenido sin animación", async ({ page }) => {
+test("Miller: con el movimiento apagado conserva la imagen y el contenido sin animación", async ({ page }) => {
+  // reduced-motion del sistema ya no apaga nada por sí solo: el defecto es
+  // encendido y el icono de la bandeja es el consentimiento, en los dos sentidos.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/formacion");
   await expect(page.locator(".miller-ocean img")).toBeVisible();
-  await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Pausar océano" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Activar océano" }).click();
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(1);
-  await page.getByRole("button", { name: "Pausar océano" }).click();
+  await page.getByRole("button", { name: "Desactivar movimiento", exact: true }).click();
+  await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
+  await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
+  await expect(page.locator(".miller-ocean canvas")).toHaveCount(1);
+  await page.getByRole("button", { name: "Desactivar movimiento", exact: true }).click();
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
   await expect(page.getByText(/Cursé ocho meses/)).toBeVisible();
   await expect(page.locator('.miller-archive a[href$=".pdf"]')).toHaveCount(23);
@@ -133,16 +138,17 @@ test("Miller: reduced-motion conserva la imagen y el contenido sin animación", 
 test("Miller: las corrientes comparten pausa con el océano y duermen fuera de vista", async ({ page }) => {
   await page.goto("/es/formacion?no3d=1");
   const currents = page.locator(".miller-proof .miller-currents__light");
-  const state = () => currents.evaluate((element) => getComputedStyle(element).animationPlayState);
+  // Con el movimiento apagado el CSS retira la animación entera (`animation: none`), no la pausa.
+  const state = () => currents.evaluate((element) => { const style = getComputedStyle(element); return style.animationName === "none" ? "paused" : style.animationPlayState; });
   await expect.poll(state).toBe("paused");
-  await expect(page.getByRole("button", { name: /corrientes/ })).toHaveCount(0);
-  await page.getByRole("button", { name: "Activar océano", exact: true }).click();
+  await expect(page.getByRole("button", { name: /corrientes|océano/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
   await expect.poll(state).toBe("running");
-  await page.getByRole("button", { name: "Pausar océano", exact: true }).click();
+  await page.getByRole("button", { name: "Desactivar movimiento", exact: true }).click();
   await expect.poll(state).toBe("paused");
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
-  await page.getByRole("button", { name: "Reanudar océano", exact: true }).click();
+  await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
   await expect.poll(state).toBe("running");
   await page.evaluate(() => {
@@ -157,7 +163,7 @@ test("Miller: las corrientes comparten pausa con el océano y duermen fuera de v
   await expect.poll(state).toBe("running");
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect.poll(state).toBe("paused");
-  await expect(page.getByRole("button", { name: "Pausar océano", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Desactivar movimiento", exact: true })).toBeVisible();
 });
 
 test("Miller: formación y certificados funcionan sin JavaScript", async ({ browser, baseURL }) => {
@@ -178,7 +184,8 @@ test("Miller: formación y certificados funcionan sin JavaScript", async ({ brow
 test("Miller: la escena persistente duerme detrás del océano y vuelve al mapa", async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 480 });
   await page.addInitScript(() => {
-    localStorage.setItem("jonas-orbit:efectos-forzados", "true");
+    // Encendido a propósito: sólo eso monta la escena sobre una GPU por software.
+    localStorage.setItem("jonas-orbit:reducir-efectos", "false");
     const state = window as unknown as { systemDraws: number };
     state.systemDraws = 0;
     for (const name of ["drawArrays", "drawElements"] as const) {

@@ -2,11 +2,6 @@
 
 import { useEffect, useState } from "react";
 import type { WorldId } from "@/content/worlds.data";
-import {
-  setForcedEffects,
-  useForcedEffects,
-} from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { WorldNavigationState } from "@/lib/world-navigation";
 import type { WorldNavItem } from "@/lib/worlds";
 
@@ -21,9 +16,6 @@ export function SystemHud({
   navigationState: WorldNavigationState;
 }) {
   const [sceneLevel, setSceneLevel] = useState<string | null>(null);
-  const [sceneReason, setSceneReason] = useState<string | null>(null);
-  const forcedEffects = useForcedEffects();
-  const reducedMotion = usePrefersReducedMotion();
 
   // El gate publica el nivel real en `<html data-scene>`. El HUD lo observa en
   // vez de duplicar la heurística de capacidad.
@@ -31,13 +23,12 @@ export function SystemHud({
     const root = document.documentElement;
     const read = () => {
       setSceneLevel(root.dataset.scene ?? null);
-      setSceneReason(root.dataset.sceneReason ?? null);
     };
     read();
     const observer = new MutationObserver(read);
     observer.observe(root, {
       attributes: true,
-      attributeFilter: ["data-scene", "data-scene-reason"],
+      attributeFilter: ["data-scene"],
     });
     return () => observer.disconnect();
   }, []);
@@ -52,22 +43,6 @@ export function SystemHud({
         : "STANDBY";
   const targetLabel =
     navigationState === "locked" ? "Target locked" : "Target lock";
-  const sceneUnavailable =
-    sceneReason === "sin-webgl2" || sceneReason === "escena-fallida";
-  const sceneIsLive = sceneLevel === "deep" || sceneLevel === "orbit";
-  /*
-    El HUD es la única autoridad visual del control en el System Map. El nivel
-    real —no la causa estimada— decide qué acción tiene sentido:
-
-    - `flat`: activar voluntariamente;
-    - escena forzada: volver al mapa quieto;
-    - escena normal: ofrecer el perfil ligero mediante su URL documentada.
-
-    Así una GPU modesta no recibe el absurdo «Reducir efectos» cuando ya está
-    viendo el fallback, y tampoco aparecen dos botones con la misma función.
-  */
-  const usesDirectToggle =
-    sceneLevel === "flat" || forcedEffects || reducedMotion;
 
   return (
     <div className="hud">
@@ -117,56 +92,6 @@ export function SystemHud({
         )}
       </div>
 
-      {/* Un control real, siempre reversible. Reduced-motion conserva el frame
-          plano por defecto, pero no es una cárcel: una acción inequívoca puede
-          activar la experiencia completa y el mismo lugar vuelve a reducirla. */}
-      <div
-        className="hud__controls"
-        data-effects-control={usesDirectToggle ? "primary-toggle" : "standard"}
-      >
-        {usesDirectToggle ? (
-          <button
-            aria-label={
-              sceneUnavailable
-                ? "Animación 3D no disponible"
-                : sceneIsLive
-                  ? "Reducir movimiento y volver al mapa 2D"
-                  : "Activar animación 3D"
-            }
-            aria-pressed={sceneIsLive && forcedEffects}
-            className={`hud__readout hud__readout--action hud__effects-toggle${
-              sceneIsLive ? " hud__effects-toggle--motion" : ""
-            }`}
-            disabled={sceneUnavailable}
-            onClick={() => setForcedEffects(!sceneIsLive)}
-            type="button"
-          >
-            {sceneUnavailable
-              ? "3D offline"
-              : sceneIsLive
-                ? (
-                    <>
-                      <span className="hud__motion-label">Motion</span>
-                      <span className="hud__motion-state">
-                        <b aria-hidden="true" /> Full
-                      </span>
-                    </>
-                  )
-                : "Activar 3D"}
-          </button>
-        ) : (
-          <a
-            aria-label="Reducir movimiento 3D"
-            className="hud__readout hud__readout--action hud__effects-toggle hud__effects-toggle--motion"
-            href="?no3d=1"
-          >
-            <span className="hud__motion-label">Motion</span>
-            <span className="hud__motion-state">
-              <b aria-hidden="true" /> Full
-            </span>
-          </a>
-        )}
-      </div>
     </div>
   );
 }

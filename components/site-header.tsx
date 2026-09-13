@@ -5,8 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import type { WorldNavItem } from "@/lib/worlds";
-import { useLightEffectsMode } from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { useMotionEnabled } from "@/lib/effects-mode";
 import { DownloadIcon } from "./download-icon";
 import { MissionNavigation } from "./mission-navigation";
 import { VoyageSky } from "./voyage-sky";
@@ -39,25 +38,11 @@ export function SiteHeader({
   const toggleRef = useRef<HTMLButtonElement>(null);
   const destinationsRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLDetailsElement>(null);
-  const lightEffects = useLightEffectsMode();
-  const reducedMotion = usePrefersReducedMotion();
-  const [skyPaused, setSkyPaused] = useState(false);
-  const [skyActivated, setSkyActivated] = useState(false);
+  const motion = useMotionEnabled();
   const [pageVisible, setPageVisible] = useState(false);
-  // Como el océano de Miller: reduced-motion y el perfil ligero dejan el cielo
-  // quieto por defecto, y «Activar estrellas» es el consentimiento explícito.
-  const skyBlocked = (lightEffects || reducedMotion) && !skyActivated;
-  const skyEnabled = !skyBlocked;
-  const skyRunning = skyEnabled && pageVisible && !skyPaused;
-  const skyLabel = skyBlocked ? "Activar estrellas" : skyPaused ? "Reanudar estrellas" : "Pausar estrellas";
-  const toggleSky = () => {
-    if (skyBlocked) {
-      setSkyActivated(true);
-      setSkyPaused(false);
-    } else {
-      setSkyPaused(!skyPaused);
-    }
-  };
+  // El cielo obedece al interruptor único de movimiento del sitio y duerme en
+  // segundo plano; no tiene control propio.
+  const skyRunning = motion && pageVisible;
 
   useEffect(() => {
     const syncVisibility = () => setPageVisible(!document.hidden);
@@ -131,7 +116,7 @@ export function SiteHeader({
     let frame = 0;
     const next = measure();
     const previous = lastMarker;
-    if (previous && previous.width > 0 && next.width > 0 && Math.abs(previous.x - next.x) > 1 && !reducedMotion) {
+    if (previous && previous.width > 0 && next.width > 0 && Math.abs(previous.x - next.x) > 1 && motion) {
       apply(previous, false);
       // Un cuadro con la línea en el destino anterior, y al siguiente viaja.
       frame = requestAnimationFrame(() => apply(next, true));
@@ -151,7 +136,7 @@ export function SiteHeader({
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", settle);
     };
-  }, [activeWorldId, reducedMotion]);
+  }, [activeWorldId, motion]);
 
   return (
     <header
@@ -159,12 +144,11 @@ export function SiteHeader({
       ref={headerRef}
       data-menu-open={open}
       data-sky-running={skyRunning}
-      data-sky-enabled={skyEnabled}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
     >
-      <noscript><style>{`.site-header--voyage + .miller-route { --miller-nav-clearance: 0px; } .site-header--voyage .voyage-menu-toggle, .site-header--voyage .voyage-sky-toggle { display: none; } .site-header--voyage .voyage-navigation { display: flex !important; position: static !important; max-height: none !important; box-shadow: none; } @media (max-width: 1080px) { .site-header.site-header--voyage { position: relative; } }`}</style></noscript>
+      <noscript><style>{`.site-header--voyage + .miller-route { --miller-nav-clearance: 0px; } .site-header--voyage .voyage-menu-toggle { display: none; } .site-header--voyage .voyage-navigation { display: flex !important; position: static !important; max-height: none !important; box-shadow: none; } @media (max-width: 1080px) { .site-header.site-header--voyage { position: relative; } }`}</style></noscript>
       <div className="voyage-sky" aria-hidden="true"><VoyageSky running={skyRunning} /></div>
       <div className="site-header__bar">
         <Link
@@ -195,7 +179,6 @@ export function SiteHeader({
           <i className="voyage-marker" aria-hidden="true" />
         </div>
         <div className="voyage-return">
-          <button className="voyage-sky-toggle" type="button" onClick={toggleSky} aria-label={skyLabel} title={skyLabel} aria-pressed={skyRunning}><span aria-hidden="true">{skyRunning ? "Ⅱ" : "✧"}</span></button>
           <details
             className="voyage-cv"
             ref={cvRef}

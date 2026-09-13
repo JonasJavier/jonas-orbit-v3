@@ -6,9 +6,8 @@ import { RangerReadouts } from "./ranger-cockpit";
 import { RangerConsole } from "./ranger-console";
 import { RangerContact } from "./ranger-contact";
 
-const settings = vi.hoisted(() => ({ reduced: false, light: false }));
-vi.mock("@/lib/use-prefers-reduced-motion", () => ({ usePrefersReducedMotion: () => settings.reduced }));
-vi.mock("@/lib/effects-mode", () => ({ useLightEffectsMode: () => settings.light }));
+const settings = vi.hoisted(() => ({ motion: true }));
+vi.mock("@/lib/effects-mode", () => ({ useMotionEnabled: () => settings.motion }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 /**
@@ -36,8 +35,7 @@ function stubWebGL2() {
 
 describe("Ranger · cabina de mando", () => {
   beforeEach(() => {
-    settings.reduced = false;
-    settings.light = false;
+    settings.motion = true;
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({ mode: "test", siteKey: "test" })))));
   });
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -59,29 +57,30 @@ describe("Ranger · cabina de mando", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Enviar transmisión" })).toBeEnabled());
   });
 
-  it("sin WebGL2 se queda con la vista fija: ni canvas ni interruptor de vuelo", async () => {
+  it("sin WebGL2 se queda con la vista fija, sin canvas", async () => {
     render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
-    await waitFor(() => expect(screen.queryByRole("button", { name: /vuelo/ })).not.toBeInTheDocument());
-    expect(document.querySelector(".ranger-view canvas")).toBeNull();
+    await waitFor(() => expect(document.querySelector(".ranger-view canvas")).toBeNull());
+    expect(screen.queryByRole("button", { name: /vuelo/ })).not.toBeInTheDocument();
     expect(document.querySelectorAll(".ranger-view__stars circle")).toHaveLength(170);
     expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "off");
   });
 
-  it.each(["reduced", "light"] as const)("con %s el vuelo espera consentimiento, se pausa y suelta el contexto", async (mode) => {
-    settings[mode] = true;
+  it("obedece al interruptor único de movimiento: vuela, se detiene y suelta el contexto", () => {
     const { loseContext } = stubWebGL2();
-    render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    const { rerender } = render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     const bridge = screen.getByRole("region", { name: "Cabina de la Ranger" });
-    expect(bridge).toHaveAttribute("data-motion", "off");
-    expect(document.querySelector(".ranger-view canvas")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Activar vuelo" }));
     expect(bridge).toHaveAttribute("data-motion", "on");
     expect(document.querySelector(".ranger-view canvas")).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Pausar vuelo" }));
+    // Ningún interruptor propio: el de la bandeja gobierna todo el sitio.
+    expect(screen.queryByRole("button", { name: /vuelo/ })).toBeNull();
+    settings.motion = false;
+    rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     expect(bridge).toHaveAttribute("data-motion", "off");
     expect(document.querySelector(".ranger-view canvas")).toBeNull();
     expect(loseContext).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "Reanudar vuelo" })).toBeInTheDocument();
+    settings.motion = true;
+    rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    expect(document.querySelector(".ranger-view canvas")).not.toBeNull();
   });
 
   it("apuntar una frecuencia la escribe en el HUD y soltarla lo limpia", () => {

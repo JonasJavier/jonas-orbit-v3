@@ -33,11 +33,12 @@ for (const width of [375, 1440]) {
     expect(box!.y).toBe(0);
     expect(box!.height).toBe(width < 1081 ? 63 : 67);
     await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
-    if (width < 1081) await page.getByRole("button", { name: "Explorar", exact: true }).click();
-    await page.getByRole("button", { name: "Pausar estrellas", exact: true }).click();
+    // Sin control propio: el icono de movimiento de la bandeja lo gobierna.
+    await expect(page.getByRole("button", { name: /estrellas/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Desactivar movimiento", exact: true }).click();
     await expect(header).toHaveAttribute("data-sky-running", "false");
     expect(await skyDrawsOverFrames(page)).toBe(0);
-    await page.getByRole("button", { name: "Reanudar estrellas", exact: true }).click();
+    await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
     await expect(header).toHaveAttribute("data-sky-running", "true");
     await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
     await page.evaluate(() => {
@@ -52,18 +53,17 @@ for (const width of [375, 1440]) {
     });
     await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    // reduced-motion del sistema ya no apaga nada por sí solo.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(header).toHaveAttribute("data-sky-running", "false");
-    expect(await skyDrawsOverFrames(page)).toBe(0);
+    await expect(header).toHaveAttribute("data-sky-running", "true");
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/es/formacion?no3d=1");
     await expect(header).toHaveAttribute("data-sky-running", "false");
     // Quieto sigue habiendo cielo: un fotograma del observatorio, sin bucle,
-    // y el consentimiento explícito lo enciende, como el océano de Miller.
+    // y el icono de la bandeja lo enciende.
     await expect(page.locator(".voyage-sky__canvas")).toHaveAttribute("data-ready", "true");
     expect(await skyDrawsOverFrames(page)).toBe(0);
-    if (width < 1081) await page.getByRole("button", { name: "Explorar", exact: true }).click();
-    await page.getByRole("button", { name: "Activar estrellas", exact: true }).click();
+    await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
     await expect(header).toHaveAttribute("data-sky-running", "true");
     await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
   });
@@ -138,8 +138,8 @@ test("navbar: salir con Tab cierra el menú y deja visible el foco", async ({ pa
 
 test("navbar: la línea del destino viaja entre rutas y el CV se descarga desde la barra", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/es/formacion?no3d=1");
+  // El viaje de la línea es movimiento: sin `?no3d=1`, que lo apagaría.
+  await page.goto("/es/formacion");
   const destinations = page.locator(".voyage-destinations");
   await expect(destinations).toHaveAttribute("data-marker", "ready");
   const before = await destinations.evaluate((el) => ({ x: parseFloat(el.style.getPropertyValue("--marker-x")), w: parseFloat(el.style.getPropertyValue("--marker-w")), accent: el.style.getPropertyValue("--marker-accent") }));

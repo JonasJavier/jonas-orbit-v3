@@ -192,14 +192,15 @@ describe("Edmunds · cubierta de observación", () => {
     expect(screen.getByRole("link", { name: `Ampliar: ${artworks[0].title}` })).toBeInTheDocument();
   });
 
-  it("A16: reduced-motion empieza en mosaico y permite elegir profundidad sin animación", () => {
-    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  it("A16: con el movimiento apagado empieza en mosaico y permite elegir profundidad sin animación", () => {
+    // El interruptor único de movimiento, apagado por el visitante (misma clave que el perfil ligero).
+    window.localStorage.setItem("jonas-orbit:reducir-efectos", "true");
     try {
       const { container } = render(<EdmundsGallery artworks={artworks} collections={collections} />);
       expect(screen.getByRole("button", { name: "Mosaico" })).toHaveAttribute("aria-pressed", "true");
       fireEvent.click(screen.getByRole("button", { name: "Galería 3D" }));
       expect(screen.getByRole("button", { name: "Galería 3D" })).toHaveAttribute("aria-pressed", "true");
       expect(container.querySelector(".edmunds-gallery")).toHaveAttribute("data-reduced", "true");
-    } finally { vi.unstubAllGlobals(); }
+    } finally { window.localStorage.removeItem("jonas-orbit:reducir-efectos"); }
   });
 });

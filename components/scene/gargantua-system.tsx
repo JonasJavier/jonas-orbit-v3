@@ -3,11 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
-import {
-  setForcedEffects,
-  useForcedEffects,
-  useLightEffectsMode,
-} from "@/lib/effects-mode";
+import { useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { findWorldRoute, type WorldRoute } from "@/lib/world-route";
@@ -69,27 +65,6 @@ function serverReason(): LevelReason {
   return "ok";
 }
 
-function serverCanOverride(): boolean {
-  return false;
-}
-
-/**
- * Qué se le dice al visitante cuando la escena no está.
- *
- * Una escena ausente y muda es indistinguible de una escena rota. Cada motivo
- * lleva su frase y su salida: la que se puede desmentir ofrece un botón, y la
- * que no —no hay WebGL2— lo dice y se calla, porque no habría nada que activar.
- */
-const REASON_COPY: Record<LevelReason, string | null> = {
-  ok: null,
-  "sin-webgl2": "Escena 3D no disponible en este navegador",
-  "movimiento-reducido": "Activar animación 3D",
-  "perfil-ligero": "Activar animación 3D",
-  "gpu-por-software": "Activar animación 3D",
-  "red-lenta": "Activar animación 3D",
-  "memoria-corta": "Activar animación 3D",
-};
-
 interface LabelBinding {
   update(projected: readonly ProjectedBody[]): void;
   /** Vuelve a medir las etiquetas: sus tamaños cambian al redimensionar. */
@@ -144,19 +119,9 @@ export function GargantuaSystem({
     () => readVerdict().reason,
     serverReason,
   );
-  const canOverride = useSyncExternalStore(
-    subscribeNothing,
-    () => readVerdict().canOverride,
-    serverCanOverride,
-  );
   const level: EffectsLevel = failed ? "flat" : detected;
 
   const worldId = findWorldRoute(pathname, routes)?.id ?? null;
-  // La portada contiene `SystemHud`, que es la autoridad visual del control.
-  // Las páginas de mundo no montan ese HUD, así que allí esta capa conserva
-  // una salida global. La distinción por segmentos evita confundir la portada
-  // con páginas hermanas como `/es/privacidad`.
-  const isSystemMapRoute = pathname.split("/").filter(Boolean).length === 1;
   const worldIdRef = useRef<WorldId | null>(worldId);
 
   // Publica el nivel y el motivo en el DOM. Es lo que hace auditable el gate, lo
@@ -281,62 +246,17 @@ export function GargantuaSystem({
     };
   }, [forced, level, reducedMotion]);
 
-  if (level === "flat") {
-    // Una escena que se rindió no se vuelve a ofrecer en esta visita: insistir
-    // contra una GPU que acaba de tirar el contexto solo gasta batería.
-    if (failed) return null;
-
-    // En la portada el mismo control ya vive dentro del HUD. Renderizarlo aquí
-    // también crearía dos acciones competidoras, a veces con mensajes opuestos
-    // cuando el motivo es una heurística de capacidad.
-    if (isSystemMapRoute) return null;
-
-    const copy = REASON_COPY[reason];
-    if (!copy) return null;
-
-    // El que no se puede desmentir informa y no promete nada.
-    if (!canOverride) {
-      return (
-        <p className="scene-toggle scene-toggle--nota">{copy}</p>
-      );
-    }
-
-    return (
-      <button
-        className="scene-toggle"
-        onClick={() => setForcedEffects(true)}
-        type="button"
-      >
-        {copy}
-      </button>
-    );
-  }
+  // Sin escena no hay nada que dibujar ni que ofrecer: el interruptor único
+  // de movimiento de la bandeja es el único control, en todas las rutas.
+  if (level === "flat") return null;
 
   return (
-    <>
-      <canvas
-        aria-hidden="true"
-        className="system-canvas"
-        data-testid="gargantua-canvas"
-        ref={canvasRef}
-      />
-      {!isSystemMapRoute &&
-      forced &&
-      (level === "deep" || level === "orbit") ? (
-        <button
-          aria-label="Reducir movimiento y volver al mapa 2D"
-          aria-pressed="true"
-          className="scene-toggle scene-toggle--motion"
-          onClick={() => setForcedEffects(false)}
-          type="button"
-        >
-          <span className="hud__motion-label">Motion</span>
-          <span className="hud__motion-state">
-            <b aria-hidden="true" /> Full
-          </span>
-        </button>
-      ) : null}
-    </>
+    <canvas
+      aria-hidden="true"
+      className="system-canvas"
+      data-testid="gargantua-canvas"
+      ref={canvasRef}
+    />
   );
 }
 

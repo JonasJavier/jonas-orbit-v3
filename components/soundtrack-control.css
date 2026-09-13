@@ -1,9 +1,6 @@
 /* A quiet, persistent instrument. No moving meter or playback-driven React RAF. */
 .soundtrack {
-  position: fixed;
-  right: max(1.25rem, env(safe-area-inset-right));
-  bottom: max(1.25rem, env(safe-area-inset-bottom));
-  z-index: 110;
+  position: relative;
   display: flex;
   align-items: center;
   color: var(--ink-soft);
@@ -50,30 +47,28 @@
 .soundtrack__volume-label { display: flex; justify-content: space-between; margin-top: 1.1rem; font-size: 11px; }
 .soundtrack input { display: block; width: 100%; height: 32px; margin: 0; accent-color: var(--cyan); cursor: pointer; }
 .soundtrack__mute { display: flex; gap: 0.6rem; align-items: center; padding: 0; font-size: 11px !important; }
-/* Home: pair with MOTION in the same lower-right instrument strip. */
-body:has(.system-home) .soundtrack { right: calc(clamp(1rem, 3.4vw, 3.4rem) + 5.5rem); bottom: 3.65rem; background: transparent; border-color: transparent; }
-html:not([data-scene-live="true"]) body:has(.system-home) .soundtrack { right: calc(clamp(1rem, 3.4vw, 3.4rem) + 11rem); }
-body:not(:has(.system-home)):has(.soundtrack) { padding-bottom: 8rem; }
-body:not(:has(.system-home)):has(.soundtrack) .scene-toggle { bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 3.5rem); }
+/* Home: the whole tray (motion + audio) sits where the HUD's lower-right
+   instrument strip used to be, on transparent glass. */
+body:has(.system-home) .system-tray { right: clamp(1rem, 3.4vw, 3.4rem); bottom: 3.65rem; }
+body:has(.system-home) .soundtrack, body:has(.system-home) .motion-toggle { background: transparent; border-color: transparent; }
+body:not(:has(.system-home)):has(.system-tray) { padding-bottom: 8rem; }
 @media (max-width: 60rem) {
-  .soundtrack { right: max(0.85rem, env(safe-area-inset-right)); bottom: max(0.85rem, env(safe-area-inset-bottom)); }
-  body:has(.system-home) .soundtrack,
-  html:not([data-scene-live="true"]) body:has(.system-home) .soundtrack {
-    right: auto; left: max(0.85rem, env(safe-area-inset-left)); bottom: calc(7.25rem + env(safe-area-inset-bottom));
-  }
-  html:not([data-scene-live="true"]) body:has(.system-home) .soundtrack { bottom: 9rem; }
-  body:has(.system-home) .soundtrack__panel { right: auto; left: 0; }
+  .system-tray { right: max(0.85rem, env(safe-area-inset-right)); bottom: max(0.85rem, env(safe-area-inset-bottom)); }
+  body:has(.system-home) .system-tray { right: auto; left: max(0.85rem, env(safe-area-inset-left)); bottom: calc(7.25rem + env(safe-area-inset-bottom)); }
+  html:not([data-scene-live="true"]) body:has(.system-home) .system-tray { bottom: 9rem; }
+  /* En pantallas estrechas el panel se ancla al viewport, no a la bandeja:
+     la bandeja puede estar arriba (home vertical) o junto al borde, y un
+     panel de 270 px colgado de ella se salía por un lado u otro. */
+  .soundtrack__panel { position: fixed; top: auto; left: max(0.85rem, env(safe-area-inset-left)); right: max(0.85rem, env(safe-area-inset-right)); bottom: max(0.85rem, env(safe-area-inset-bottom)); width: auto; max-width: 22rem; margin-left: auto; }
 }
 @media (max-height: 540px) and (min-aspect-ratio: 1/1) {
-  body:has(.system-home) .soundtrack,
-  html:not([data-scene-live="true"]) body:has(.system-home) .soundtrack { bottom: 4.7rem; }
+  body:has(.system-home) .system-tray { bottom: 4.7rem; }
 }
 /* In portrait the bottom band belongs to the atlas bodies and navigation.
    The empty band below the brand is stable even at 320 × 568. */
 @media (max-width: 60rem) and (max-aspect-ratio: 1/1) {
-  body:has(.system-home) .soundtrack,
-  html:not([data-scene-live="true"]) body:has(.system-home) .soundtrack { top: 3.3rem; bottom: auto; }
-  body:has(.system-home) .soundtrack__panel { top: calc(100% + 0.5rem); bottom: auto; }
+  body:has(.system-home) .system-tray,
+  html:not([data-scene-live="true"]) body:has(.system-home) .system-tray { top: 3.3rem; bottom: auto; }
 }
 @media (forced-colors: active) {
   .soundtrack, .soundtrack__panel { border: 1px solid ButtonText; background: Canvas; color: CanvasText; }

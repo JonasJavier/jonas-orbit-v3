@@ -1,21 +1,18 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { useLightEffectsMode } from "@/lib/effects-mode";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+import { useMotionEnabled } from "@/lib/effects-mode";
 
-type WaterMotion = { running: boolean; preferenceBlocked: boolean; paused: boolean; toggle: () => void };
+type WaterMotion = { running: boolean };
 const WaterContext = createContext<WaterMotion | null>(null);
 
-/** One consent and pause control for the ocean and its currents throughout Miller. */
+/**
+ * The ocean and its currents follow the site's single motion switch (the
+ * tray icon, bottom right). No consent or pause control of their own.
+ */
 export function MillerWater({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLElement>(null);
-  const reducedMotion = usePrefersReducedMotion();
-  const lightEffects = useLightEffectsMode();
-  const [paused, setPaused] = useState(false);
-  const [activated, setActivated] = useState(false);
-  const preferenceBlocked = !activated && (reducedMotion || lightEffects);
-  const running = !paused && !preferenceBlocked;
+  const running = useMotionEnabled();
 
   useEffect(() => {
     const root = rootRef.current;
@@ -33,13 +30,8 @@ export function MillerWater({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const toggle = () => {
-    if (preferenceBlocked) { setActivated(true); setPaused(false); }
-    else setPaused(!paused);
-  };
-
   return (
-    <WaterContext.Provider value={{ running, preferenceBlocked, paused, toggle }}>
+    <WaterContext.Provider value={{ running }}>
       <article ref={rootRef} className="miller-page" data-world="miller" data-water-motion={running ? "flowing" : "still"} data-page-visible="false">
         {children}
       </article>

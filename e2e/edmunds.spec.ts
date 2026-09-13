@@ -169,9 +169,11 @@ test("A14: un 404 en el visor permite reintentar y seguir explorando", async ({ 
   await expect(dialog.locator("figcaption")).toHaveText("Fuego de campamento");
 });
 
-test("Edmunds: reduced-motion conserva el archivo, evita transiciones y nunca atenúa los controles", async ({ page }) => {
+test("Edmunds: con el movimiento apagado conserva el archivo, evita transiciones y nunca atenúa los controles", async ({ page }) => {
+  // reduced-motion del sistema ya no decide: el icono único de movimiento sí.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/creatividad");
+  await page.getByRole("button", { name: "Desactivar movimiento", exact: true }).click();
   await expect(page.getByRole("button", { name: "Mosaico" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("link", { name: /^Ampliar:/ })).toHaveCount(90);
   await page.getByRole("button", { name: "Galería 3D" }).click();
@@ -249,7 +251,8 @@ test("Edmunds: touch permite pasar una obra sin abrir el visor", async ({ browse
 
 test("Edmunds: el canvas persistente se conserva cubierto y vuelve al mapa", async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 480 });
-  await page.addInitScript(() => localStorage.setItem("jonas-orbit:efectos-forzados", "true"));
+  // Encendido a propósito: sólo eso monta la escena sobre una GPU por software.
+  await page.addInitScript(() => localStorage.setItem("jonas-orbit:reducir-efectos", "false"));
   await page.goto("/es/creatividad");
   const canvas = page.getByTestId("gargantua-canvas");
   await expect(canvas).toHaveAttribute("data-covered", "true", { timeout: 30000 });
