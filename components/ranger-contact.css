@@ -1,174 +1,261 @@
-/* Ranger: an observation window above a quiet, tactile communications desk. */
+/* Ranger — cabina de mando. El visitante va sentado dentro de la nave de enlace.
+   Palette: warm amber instruments inside, cyan HUD on the glass, violet and cyan
+   nebula outside. The body's accent (#c58cff) is the world's own. */
 .ranger-route {
-  --ranger-paper: #edf3f2;
-  --ranger-muted: #a8b8c2;
-  --ranger-signal: #bcecf0;
-  --ranger-line: rgb(183 215 226 / 20%);
-  --world-accent: #bcecf0;
-  --ranger-gutter: max(var(--page-gutter), calc((100vw - 1260px) / 2));
+  --rg-void: #04060d;
+  --rg-hull: #0b0e16;
+  --rg-panel: #0f131d;
+  --rg-ink: #eef2fb;
+  --rg-muted: #98a4bd;
+  --rg-line: rgb(190 205 235 / 14%);
+  --rg-amber: #f2c879;
+  --rg-ember: #ffb65c;
+  --rg-cyan: #7fe5ff;
+  --rg-violet: #c58cff;
+  --rg-green: #8cf2c2;
+  --world-accent: #c58cff;
+  --rg-gutter: max(var(--page-gutter), calc((100vw - 1320px) / 2));
+  --rg-header: 67px;
   position: relative;
-  margin-top: -67px;
-  color: var(--ranger-paper);
-  background: #060d14;
+  margin-top: calc(-1 * var(--rg-header));
+  color: var(--rg-ink);
+  background: var(--rg-void);
 }
-body:has(.ranger-route) .site-footer { margin-top: 0; background: #060d14; }
+body:has(.ranger-route) .site-footer { margin-top: 0; background: var(--rg-void, #04060d); }
 body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-page { overflow: clip; }
-.ranger-page :is(h1, h2, h3, p) { margin: 0; }
-.ranger-page :is(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--ranger-signal); outline-offset: 5px; }
-.ranger-page button { cursor: pointer; }
-.ranger-kicker { font: .65rem/1.6 var(--font-mono); letter-spacing: .16em; color: var(--ranger-signal); }
-.ranger-led { display: inline-block; flex: none; width: 5px; height: 5px; border-radius: 50%; background: #bcecf0; box-shadow: 0 0 10px #bcecf066; }
-.ranger-deck { position: relative; isolation: isolate; min-height: min(1060px, 100svh); display: flex; flex-direction: column; }
-.ranger-view { position: absolute; inset: 0; z-index: -2; overflow: hidden; background: #08131e; }
-.ranger-view > img { object-fit: cover; object-position: right 42%; }
-.ranger-deck[data-motion="true"] .ranger-view > img { transform: translate(var(--ranger-x, 0px), var(--ranger-y, 0px)) scale(1.02); transition: transform .7s ease-out; }
-.ranger-view__shade { position: absolute; inset: 0; background: linear-gradient(90deg, #02080c80, transparent 62%), linear-gradient(0deg, #060d14 1%, #060d14ed 13%, #060d1470 30%, transparent 59%); }
-.ranger-hero__copy { padding: clamp(142px, 17vh, 190px) var(--ranger-gutter) 0; width: 100%; }
-.ranger-hero__copy > .ranger-kicker { display: flex; align-items: center; gap: 13px; color: #c7d9df; }
-.ranger-hero__copy > .ranger-kicker > span:nth-child(2) { color: #748b96; }
-.ranger-hero__copy h1 { margin-top: 20px; font: 400 clamp(6rem, 10.8vw, 10.5rem)/1.05 var(--font-display); letter-spacing: -.075em; }
-.ranger-hero__copy h1 > span { color: var(--ranger-signal); }
-.ranger-hero__line { max-width: 420px; margin-top: 18px !important; font: 400 clamp(1.25rem, 2vw, 1.65rem)/1.4 var(--font-body); letter-spacing: -.02em; text-wrap: balance; }
-.ranger-hero__intro { max-width: 360px; margin-top: 18px !important; color: #bfccd4; font-size: .95rem; line-height: 1.8; }
-.ranger-primary { display: inline-flex; gap: 38px; align-items: center; min-height: 52px; margin-top: 30px; padding: 14px 22px; border: 1px solid #d0ebea; color: #0b1a24; background: #d0e5e7; border-radius: 2px; font-size: .82rem; font-weight: 600; box-shadow: inset 0 1px #fff9; transition: background .2s, box-shadow .2s; }
-.ranger-primary > span { font-size: 1.2rem; }
-.ranger-primary:hover { background: #eefcfa; box-shadow: 0 0 30px #bcecf026; }
-.ranger-deck__caption { position: absolute; top: 19%; right: var(--ranger-gutter); display: grid; gap: 7px; text-align: right; font: .6rem/1.4 var(--font-mono); letter-spacing: .2em; color: #c6d9e3; }
-.ranger-deck__caption > span:nth-child(2) { font-size: .5rem; color: #9db5c4; }
-.ranger-deck__caption > i { width: 48px; height: 1px; margin: 6px 0 0 auto; background: #b7d9e18c; }
-.ranger-beacon { position: absolute; top: 47%; left: 77%; transform: translate(-50%, -50%); }
-.ranger-beacon__button { position: relative; display: flex; align-items: center; gap: 11px; min-height: 48px; padding: 7px 15px 7px 10px; color: #ddf6f8; background: #06111fb3; border: 1px solid #c2e4eb70; border-radius: 2px; backdrop-filter: blur(12px); font: .6rem var(--font-mono); letter-spacing: .06em; white-space: nowrap; transition: background .2s, border-color .2s; }
-.ranger-beacon__button:hover { background: #14303dd9; border-color: #d3f5fb; }
-.ranger-beacon__button[aria-disabled="true"] { cursor: wait; }
-.ranger-beacon__button > svg { width: 25px; height: 25px; stroke: currentColor; stroke-width: 1; }
-.ranger-beacon__rings { position: absolute; width: 220px; height: 220px; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-.ranger-beacon__rings > i { position: absolute; inset: 0; border: 1px solid #d6fbff; border-radius: 50%; opacity: 0; }
-[data-signal="sending"][data-motion="true"] .ranger-beacon__rings > i { animation: ranger-signal 1.5s ease-out both; }
-[data-signal="sending"] .ranger-beacon__rings > i:nth-child(2) { animation-delay: .22s; }
-[data-signal="sending"] .ranger-beacon__rings > i:nth-child(3) { animation-delay: .44s; }
-.ranger-receiver { position: relative; display: flex; align-items: center; gap: 18px; order: 1; min-height: 63px; margin: 0 var(--ranger-gutter); padding-bottom: 16px; }
-.ranger-receiver__wave { height: 32px; display: flex; gap: 3px; align-items: center; flex: none; color: #7a9eae; }
-.ranger-receiver__wave > i { width: 1px; background: currentColor; transform: scaleY(.45); }
-.ranger-receiver p { color: #a9bec9; font-size: .72rem; }
-.ranger-receiver__label { margin-left: auto; white-space: nowrap; font: .55rem var(--font-mono); letter-spacing: .12em; color: #849eac; }
-[data-signal="sending"][data-motion="true"] .ranger-receiver__wave > i { animation: ranger-wave .45s ease-in-out 3 alternate; color: #d0f6f8; }
-[data-signal="received"] .ranger-receiver__wave { color: #c9f6ec; }
-.ranger-hero__channels { margin-top: auto; padding: 100px var(--ranger-gutter) 0; }
+.ranger-page :is(h1, h2, h3, p, dl, dd) { margin: 0; }
+.ranger-page :is(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--rg-cyan); outline-offset: 5px; }
+.ranger-page button { font: inherit; cursor: pointer; }
+.ranger-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font: .64rem/1.6 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--rg-cyan); }
+.ranger-kicker > span { white-space: nowrap; }
+.ranger-kicker__sep { color: #6f86a8; }
+
+/* ── LEDs ──────────────────────────────────────────────────────────────── */
+.ranger-led { display: inline-block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #6b5230; box-shadow: inset 0 0 1px #000; transition: background .25s, box-shadow .25s; }
+.ranger-led[data-state="on"], .ranger-freq:hover .ranger-led, .ranger-freq:focus-within .ranger-led { background: var(--rg-ember); box-shadow: 0 0 10px #ffb65c99, 0 0 2px #fff6; }
+.ranger-led[data-state="ok"] { background: var(--rg-green); box-shadow: 0 0 10px #8cf2c299; }
+.ranger-led[data-state="cyan"] { background: var(--rg-cyan); box-shadow: 0 0 10px #7fe5ff99; }
+
+/* ── Bridge ────────────────────────────────────────────────────────────── */
+.ranger-bridge { --rx: 0; --ry: 0; position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: max(780px, 100svh); overflow: hidden; background: var(--rg-void); }
+
+/* The view: WebGL canvas over a still CSS/SVG sky with the same composition. */
+.ranger-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #04060d; container-type: size; }
+.ranger-view__still { position: absolute; inset: -4%; transform: translate(calc(var(--rx) * 6px), calc(var(--ry) * 4px)); transition: transform .6s ease-out; }
+.ranger-view__stars { position: absolute; inset: 0; width: 100%; height: 100%; fill: #dfe9ff; }
+.ranger-view__nebula { position: absolute; inset: 0; background: radial-gradient(54% 50% at 58% 30%, #c58cff3d, transparent 70%), radial-gradient(38% 34% at 46% 18%, #72ddff2a, transparent 70%), radial-gradient(30% 26% at 66% 36%, #ff8fa61a, transparent 70%); }
+.ranger-view__world { position: absolute; width: calc(244cqh); aspect-ratio: 1; left: calc(50% - 66cqh); top: calc(50% - 8cqh); border-radius: 50%; background: radial-gradient(circle at 76% 24%, #86adc4 0, #34648a 16%, #143753 40%, #070d19 62%); box-shadow: 0 0 34px 5px #7fe5ff48, 0 0 130px 30px #3ab8ff22, inset 12px 10px 70px #7fe5ff52; }
+.ranger-view > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ranger-view__shade { position: absolute; inset: 0; background: linear-gradient(90deg, #04060da8, #04060d40 30%, transparent 55%), linear-gradient(0deg, #04060d 0%, #04060d99 12%, transparent 38%); pointer-events: none; }
+
+/* Canopy: hull around the glass, one strut, glass reflections. Near planes
+   move against the head; the frame is the nearest of all. */
+.ranger-canopy { position: absolute; inset: 0; z-index: 2; pointer-events: none; transform: translate(calc(var(--rx) * -9px), calc(var(--ry) * -6px)); transition: transform .6s ease-out; }
+.ranger-canopy__frame { position: absolute; inset: -14px; width: calc(100% + 28px); height: calc(100% + 28px); }
+.ranger-canopy__frame--tall { display: none; }
+.ranger-canopy__hull { fill: url(#ranger-hull); }
+.ranger-canopy__bevel { fill: none; stroke: #000; stroke-opacity: .5; stroke-width: 12; vector-effect: non-scaling-stroke; }
+.ranger-canopy__edge { fill: none; stroke: url(#ranger-edge); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.ranger-canopy__strut { fill: #0a0d15; }
+.ranger-canopy__strut-edge { fill: none; stroke: #f2c87966; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ranger-canopy__glass { position: absolute; inset: 0; background: linear-gradient(112deg, transparent 28%, rgb(255 255 255 / 3.5%) 41%, transparent 55%), radial-gradient(180px 40px at 28% 93%, #ffb65c22, transparent), radial-gradient(240px 50px at 70% 95%, #ffb65c1a, transparent); mix-blend-mode: screen; transform: translate(calc(var(--rx) * 14px), calc(var(--ry) * 8px)); transition: transform .6s ease-out; }
+
+/* HUD projected on the glass. */
+.ranger-hud { position: relative; z-index: 3; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 40px; padding: calc(var(--rg-header) + 58px) var(--rg-gutter) 34px; transform: translate(calc(var(--rx) * -4px), calc(var(--ry) * -3px)); transition: transform .6s ease-out; }
+.ranger-hud__copy { position: relative; max-width: 640px; padding: 24px 28px; }
+.ranger-hud__copy::before, .ranger-hud__copy::after { content: ""; position: absolute; width: 24px; height: 24px; border: 1px solid var(--rg-cyan); opacity: .85; }
+.ranger-hud__copy::before { top: 0; left: 0; border-width: 1px 0 0 1px; }
+.ranger-hud__copy::after { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+.ranger-hud__copy h1 { margin-top: 18px; font: 350 clamp(4rem, 7.4vw, 6.6rem)/1 var(--font-display); letter-spacing: -.045em; text-shadow: 0 0 28px #7fe5ff33; }
+.ranger-hud__line { margin-top: 18px; max-width: 460px; font: 400 clamp(1.25rem, 1.9vw, 1.6rem)/1.35 var(--font-body); letter-spacing: -.02em; color: #dbe6ff; text-wrap: balance; }
+.ranger-hud__intro { margin-top: 16px; max-width: 390px; color: var(--rg-muted); font-size: .94rem; line-height: 1.8; }
+.ranger-hud__actions { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; margin-top: 28px; }
+.ranger-cta { display: inline-flex; align-items: center; gap: 34px; min-height: 50px; padding: 12px 20px; border: 1px solid #7fe5ff99; color: #eafaff; background: #0b1c2acc; font: 600 .8rem var(--font-body); letter-spacing: .02em; border-radius: 2px; box-shadow: inset 0 0 0 1px #7fe5ff14, 0 0 24px #7fe5ff14; transition: background .2s, box-shadow .2s, border-color .2s; }
+.ranger-cta:hover { background: #12344a; border-color: var(--rg-cyan); box-shadow: inset 0 0 0 1px #7fe5ff33, 0 0 30px #7fe5ff33; }
+.ranger-cta > span { color: var(--rg-cyan); }
+.ranger-hud__link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: #a9bfd6; font-size: .8rem; border-bottom: 1px solid #7fe5ff33; }
+.ranger-hud__link:hover { color: var(--rg-cyan); border-color: var(--rg-cyan); }
+.ranger-readouts { display: grid; gap: 14px; min-width: 220px; margin-top: 8px; padding: 16px 20px; border-left: 1px solid #7fe5ff55; font-family: var(--font-mono); }
+.ranger-readouts > div { display: grid; gap: 5px; }
+.ranger-readouts dt { font-size: .52rem; letter-spacing: .2em; color: #7f93b5; text-transform: uppercase; }
+.ranger-readouts dd { display: flex; align-items: center; gap: 8px; font-size: .74rem; letter-spacing: .08em; color: #c9f4ff; text-transform: uppercase; overflow-wrap: anywhere; }
+.ranger-readouts dd[data-live] { color: #fff; text-shadow: 0 0 12px #7fe5ff66; }
+.ranger-tape { grid-column: 1 / -1; position: relative; width: min(100%, 560px); height: 44px; margin: 28px auto 0; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.ranger-tape__scale { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #7fe5ff55 0 1px, transparent 1px 13px), repeating-linear-gradient(90deg, #7fe5ffaa 0 1px, transparent 1px 130px); background-size: auto 8px, auto 15px; background-repeat: repeat-x; background-position: calc(50% + 0px) bottom; transform: translateX(calc(var(--rx) * -22px)); transition: transform .6s ease-out; }
+.ranger-tape__scale > span { position: absolute; bottom: 18px; font: .52rem var(--font-mono); letter-spacing: .12em; color: #9ed9ea; transform: translateX(-50%); }
+.ranger-tape__caret { position: absolute; left: 50%; bottom: 0; width: 0; height: 0; border: 6px solid transparent; border-bottom-color: var(--rg-cyan); transform: translateX(-50%); }
+.ranger-tape__reading { position: absolute; left: 50%; top: 0; transform: translateX(-50%); font: .52rem var(--font-mono); letter-spacing: .2em; color: var(--rg-cyan); text-transform: uppercase; }
+
+/* Dashboard: the opaque panel that closes the cabin. */
+.ranger-dash { position: relative; z-index: 4; margin-top: auto; padding: 22px var(--rg-gutter) 26px; background: linear-gradient(#151a28, #0b0e16 55%, #080a10); border-top: 1px solid #ffb65c66; box-shadow: 0 -1px 0 #ffb65c22, 0 -30px 60px -20px #ff9d4d2e; overflow: hidden; }
+.ranger-dash::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, #ffd08a 30%, #ffd08a 70%, transparent); opacity: .9; }
+.ranger-dash__grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(190px, .7fr) minmax(230px, .8fr); gap: 16px; }
+.ranger-module { position: relative; min-width: 0; padding: 14px 16px; border: 1px solid #ffffff12; background: linear-gradient(#0d111b, #0a0d15); box-shadow: inset 0 1px #ffffff0a, inset 0 0 0 1px #00000066; border-radius: 3px; }
+.ranger-module__label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: .56rem var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: #a98d63; }
 .ranger-channels { position: relative; }
-.ranger-channels__heading { display: flex; justify-content: space-between; align-items: center; padding-bottom: 17px; }
-.ranger-channels__destination { font: .55rem var(--font-mono); letter-spacing: .15em; color: #9bb5c4; }
-.ranger-channels__grid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; border-top: 1px solid var(--ranger-line); border-bottom: 1px solid var(--ranger-line); background: linear-gradient(120deg, #22354280, #08162278); backdrop-filter: blur(16px); }
-.ranger-channel { position: relative; min-width: 0; transition: background .2s; }
-.ranger-channel + .ranger-channel { border-left: 1px solid var(--ranger-line); }
-.ranger-channel:hover, .ranger-channel:focus-within { background: #98ddec0c; }
-.ranger-channel > a { display: flex; flex-direction: column; padding: 23px 26px; min-height: 147px; }
-.ranger-channel__label { display: flex; align-items: center; justify-content: space-between; gap: 15px; color: #afc7d3; font: .56rem var(--font-mono); letter-spacing: .15em; }
-.ranger-channel__label > span:last-child { font-size: 1rem; transition: transform .2s; }
-.ranger-channel > a:hover .ranger-channel__label > span:last-child { transform: translate(2px, -2px); }
-.ranger-channel strong { display: block; margin-top: 17px; font: 400 clamp(.9rem, 1.45vw, 1.2rem)/1.4 var(--font-body); letter-spacing: -.015em; overflow-wrap: anywhere; }
-.ranger-channel__hint { margin-top: 10px; padding-right: 24px; color: #91a7b6; font-size: .65rem; }
-.ranger-channel > button { position: absolute; right: 12px; bottom: 8px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: transparent; color: #b9d5df; font-size: .9rem; }
-.ranger-channel > button:hover { color: #fff; background: #d3f8ff12; }
-.ranger-copy-status { position: absolute; bottom: calc(100% + 47px); left: 0; max-width: 100%; font-size: .78rem; color: #d6faf3; background: #07121f; }
-.ranger-copy-status:not(:empty) { padding: 10px 14px; border: 1px solid var(--ranger-line); }
-.ranger-transmission { scroll-margin-top: 90px; padding: 120px var(--ranger-gutter) 88px; display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(40px, 7vw, 110px); align-items: start; background: radial-gradient(ellipse at 0 30%, #10263655, transparent 57%); }
-.ranger-transmission__intro { padding-top: 25px; }
-.ranger-transmission h2 { margin-top: 24px; font: 400 clamp(2.5rem, 3.7vw, 3.6rem)/1.13 var(--font-display); letter-spacing: -.045em; }
-.ranger-transmission h2 em { color: #b4cfd8; font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
-.ranger-transmission__intro > p:not(.ranger-kicker) { max-width: 340px; margin-top: 27px; color: var(--ranger-muted); font-size: .92rem; line-height: 1.9; }
-.ranger-service-list { display: grid; gap: 15px; margin-top: 36px; color: #c2d0d6; font-size: .77rem; }
-.ranger-service-list > span { display: flex; align-items: center; gap: 12px; }
-.ranger-service-list > span::before { content: "+"; color: #698c9f; font: .8rem var(--font-mono); }
-.ranger-signature { display: flex; align-items: center; gap: 18px; margin-top: 52px; }
-.ranger-signature__mark { font: italic 3.3rem Georgia, serif; color: #c9d9de; }
-.ranger-signature > div { display: grid; gap: 7px; }
+.ranger-freq-list { display: grid; margin-top: 10px; }
+.ranger-freq { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-top: 1px solid #ffffff0c; transition: background .2s; }
+.ranger-freq:hover, .ranger-freq:focus-within { background: #ffb65c0d; }
+.ranger-freq > a { display: grid; grid-template-columns: 118px minmax(0, 1fr) 20px; align-items: center; gap: 14px; min-height: 54px; padding: 6px 4px; }
+.ranger-freq__id { display: flex; align-items: center; gap: 10px; font: .6rem var(--font-mono); letter-spacing: .14em; color: #c9a56d; }
+.ranger-freq__value { display: grid; gap: 2px; min-width: 0; }
+.ranger-freq strong { font: 400 .95rem/1.3 var(--font-body); letter-spacing: -.01em; color: #f4f1ea; overflow-wrap: anywhere; }
+.ranger-freq__hint { font-size: .64rem; color: #8b93a6; }
+.ranger-freq__arrow { color: #c9a56d; transition: transform .2s, color .2s; }
+.ranger-freq > a:hover .ranger-freq__arrow { transform: translate(2px, -2px); color: #ffd08a; }
+.ranger-freq > button { display: grid; place-items: center; width: 44px; height: 44px; margin-right: 2px; border: 1px solid transparent; background: transparent; color: #c9a56d; border-radius: 2px; transition: color .2s, border-color .2s, background .2s; }
+.ranger-freq > button:hover { color: #fff; border-color: #ffb65c55; background: #ffb65c14; }
+.ranger-freq > button[data-copied="true"] { color: var(--rg-green); }
+.ranger-copy-status { position: absolute; bottom: calc(100% + 8px); left: 0; max-width: 100%; font-size: .74rem; color: #d6faf3; background: #0b0e16; }
+.ranger-copy-status:not(:empty) { padding: 8px 12px; border: 1px solid #ffb65c44; }
+.ranger-scope { position: relative; width: 122px; aspect-ratio: 1; margin: 12px auto 0; border-radius: 50%; border: 1px solid #ffb65c40; background: radial-gradient(circle, #1a1408 0, #0a0b10 70%); box-shadow: inset 0 0 24px #000, 0 0 0 4px #0a0d15, 0 0 0 5px #ffffff10; overflow: hidden; }
+.ranger-scope::before { content: ""; position: absolute; inset: 0; background: repeating-radial-gradient(circle, transparent 0 19px, #ffb65c2a 19px 20px), linear-gradient(90deg, transparent calc(50% - .5px), #ffb65c33 calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px)), linear-gradient(0deg, transparent calc(50% - .5px), #ffb65c33 calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px)); }
+.ranger-scope__sweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, #ffb65c00 0deg, #ffb65c00 290deg, #ffb65c70 360deg); }
+.ranger-scope__blip { position: absolute; left: var(--bx); top: var(--by); width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ffd08a; box-shadow: 0 0 8px #ffd08a; opacity: .55; }
+[data-motion="on"] .ranger-scope__sweep { animation: ranger-sweep 5s linear infinite; }
+[data-motion="on"] .ranger-scope__blip { animation: ranger-blip 5s ease-out infinite; animation-delay: var(--bd); }
+.ranger-dash__status { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; font: .6rem var(--font-mono); letter-spacing: .12em; color: #cdbb95; text-transform: uppercase; }
+.ranger-module--ctrl { display: flex; flex-direction: column; gap: 10px; }
+.ranger-module--ctrl > .ranger-module__label { margin-bottom: 2px; }
+.ranger-flight { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 8px 12px; border: 1px solid #ffb65c40; background: #12100b; color: #f5e6c8; font: .62rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; border-radius: 2px; box-shadow: inset 0 1px #ffffff0a; transition: border-color .2s, background .2s; }
+.ranger-flight:hover { border-color: #ffd08a; background: #1b160d; }
+.ranger-flight__switch { position: relative; flex: none; width: 34px; height: 18px; border-radius: 9px; background: #2a2215; box-shadow: inset 0 1px 3px #000; }
+.ranger-flight__switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #8a7350; transition: transform .25s, background .25s, box-shadow .25s; }
+.ranger-flight[aria-pressed="true"] .ranger-flight__switch::after { transform: translateX(16px); background: var(--rg-ember); box-shadow: 0 0 8px #ffb65c; }
+.ranger-dash__cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 8px 14px; background: linear-gradient(#ffd08a, #f2b45b); color: #1b1206; font: 700 .64rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; border-radius: 2px; box-shadow: inset 0 1px #fff8, 0 0 22px #ffb65c30; transition: filter .2s; }
+.ranger-dash__cta:hover { filter: brightness(1.08); }
+.ranger-dash__note { margin-top: auto; color: #8b93a6; font-size: .68rem; line-height: 1.6; }
+
+/* Boot: additive only — nothing is hidden, the instruments light up over what
+   is already there. Runs once on mount when motion is allowed. */
+[data-boot="on"] .ranger-led { animation: ranger-led-boot .6s ease-out both; animation-delay: calc(var(--i, 0) * 110ms + 350ms); }
+[data-boot="on"] .ranger-dash::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 28%; background: linear-gradient(90deg, transparent, #ffd08a24, transparent); animation: ranger-scan 1.5s ease-out .2s both; pointer-events: none; }
+[data-boot="on"] .ranger-hud__copy::before, [data-boot="on"] .ranger-hud__copy::after { animation: ranger-bracket .8s var(--ease-orbit) both; }
+[data-boot="on"] .ranger-readouts { animation: ranger-fade-in .8s ease-out .3s both; }
+[data-boot="on"] .ranger-tape { animation: ranger-fade-in 1s ease-out .6s both; }
+
+/* ── Transmission console ──────────────────────────────────────────────── */
+.ranger-transmission { scroll-margin-top: 90px; position: relative; padding: 118px var(--rg-gutter) 96px; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(40px, 6vw, 96px); align-items: start; background: radial-gradient(ellipse at 8% 18%, #c58cff16, transparent 55%), radial-gradient(ellipse at 92% 85%, #ffb65c10, transparent 50%); }
+.ranger-transmission__intro { position: sticky; top: 100px; padding-top: 22px; }
+.ranger-transmission h2 { margin-top: 24px; font: 350 clamp(2.5rem, 3.8vw, 3.7rem)/1.12 var(--font-display); letter-spacing: -.045em; }
+.ranger-transmission h2 em { color: #d9c4ff; font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
+.ranger-transmission__intro > p:not(.ranger-kicker) { max-width: 360px; margin-top: 26px; color: var(--rg-muted); font-size: .94rem; line-height: 1.9; }
+.ranger-manifest { display: grid; gap: 0; margin-top: 38px; border-top: 1px solid var(--rg-line); }
+.ranger-manifest > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rg-line); }
+.ranger-manifest dt { font: .56rem var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: #a98d63; }
+.ranger-manifest dd { font-size: .9rem; color: #dfe6f4; }
+.ranger-signature { display: flex; align-items: center; gap: 18px; margin-top: 44px; }
+.ranger-signature__mark { font: italic 3.3rem Georgia, serif; color: #d9c4ff; }
+.ranger-signature > div { display: grid; gap: 6px; }
 .ranger-signature strong { font-weight: 400; font-size: .85rem; }
-.ranger-signature > div > span { color: #809aaa; font-size: .64rem; }
-.ranger-form-panel { min-width: 0; border: 1px solid var(--ranger-line); background: linear-gradient(145deg, #12233188, #08121b); border-radius: 2px; box-shadow: inset 0 1px #d5eefa0a; }
-.ranger-panel-label { display: flex; align-items: center; justify-content: space-between; padding: 17px 28px; border-bottom: 1px solid var(--ranger-line); color: #adc6d1; font: .55rem var(--font-mono); letter-spacing: .13em; }
-.ranger-panel-label > span:first-child { display: flex; align-items: center; gap: 9px; }
-.ranger-page .contact-form-shell { display: block; padding: 30px; margin: 0; border: 0; border-radius: 0; background: transparent; }
-.ranger-page .contact-form-shell__heading { margin-bottom: 25px; }
-.ranger-page .contact-form-shell__heading h3 { max-width: none; font-size: 1.4rem; line-height: 1.3; font-weight: 400; letter-spacing: -.02em; }
-.ranger-page .contact-form-shell__heading > p { margin-top: 10px; font-size: .76rem; line-height: 1.7; color: #98aebb; }
-.ranger-page .contact-form label > span:first-child:not(.privacy-check span) { color: #bacbd2; font-size: .6rem; }
-.ranger-page .contact-form input:not([type="checkbox"]):not([type="hidden"]), .ranger-page .contact-form select, .ranger-page .contact-form textarea { border-radius: 2px; border-color: #a7c9df30; background: #040d1699; color: #edf3f2; font-size: .82rem; }
+.ranger-signature > div > span { color: #8391a8; font-size: .64rem; }
+.ranger-console { min-width: 0; border: 1px solid #ffb65c33; background: linear-gradient(160deg, #141826, #0a0d15 60%); box-shadow: inset 0 1px #ffffff0a, 0 30px 60px -30px #000; border-radius: 4px; }
+.ranger-console__bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; border-bottom: 1px solid #ffb65c26; font: .56rem var(--font-mono); letter-spacing: .16em; color: #d6c39c; text-transform: uppercase; background: #0c0f17; border-radius: 4px 4px 0 0; }
+.ranger-console__bar > span:first-child { display: flex; align-items: center; gap: 9px; }
+.ranger-missions { padding: 20px 24px 4px; }
+.ranger-missions__label { font: .56rem var(--font-mono); letter-spacing: .16em; color: #a98d63; text-transform: uppercase; }
+.ranger-missions__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.ranger-mission { display: grid; gap: 4px; align-content: start; min-height: 64px; padding: 12px 14px; border: 1px solid #ffffff14; background: #0b0e16; color: #e8e4dc; text-align: left; border-radius: 3px; transition: border-color .2s, background .2s, box-shadow .2s; }
+.ranger-mission strong { font: 600 .8rem var(--font-body); }
+.ranger-mission span { font-size: .68rem; line-height: 1.5; color: #8f97aa; }
+.ranger-mission:hover { border-color: #ffb65c66; background: #14120d; }
+.ranger-mission[aria-pressed="true"] { border-color: var(--rg-ember); background: #1c1609; box-shadow: inset 0 0 0 1px #ffb65c55, 0 0 18px #ffb65c22; }
+.ranger-mission[aria-pressed="true"] strong { color: #ffd9a0; }
+.ranger-meter { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 16px 24px 0; }
+.ranger-meter__bars { display: flex; gap: 4px; }
+.ranger-meter__bars > i { width: 34px; height: 8px; background: #1e1a14; border: 1px solid #ffb65c22; transition: background .3s, box-shadow .3s; }
+.ranger-meter__bars > i[data-on="true"] { background: var(--rg-ember); box-shadow: 0 0 10px #ffb65c77; }
+.ranger-meter[data-complete="true"] .ranger-meter__bars > i { background: var(--rg-green); box-shadow: 0 0 10px #8cf2c277; }
+.ranger-meter__text { font: .6rem var(--font-mono); letter-spacing: .12em; color: #cdbb95; text-transform: uppercase; }
+.ranger-meter[data-complete="true"] .ranger-meter__text { color: var(--rg-green); }
+.ranger-page .contact-form-shell { display: block; margin: 0; padding: 22px 24px 28px; border: 0; border-radius: 0; background: transparent; }
+.ranger-page .contact-form-shell__heading { margin-bottom: 22px; }
+.ranger-page .contact-form-shell__heading h3 { max-width: none; font: 400 1.3rem/1.3 var(--font-body); letter-spacing: -.02em; }
+.ranger-page .contact-form-shell__heading > p { margin-top: 8px; font-size: .76rem; line-height: 1.7; color: #98a4bd; }
+.ranger-page .contact-form label > span:first-child:not(.privacy-check span) { color: #d6c39c; font-size: .58rem; letter-spacing: .14em; }
+.ranger-page .contact-form input:not([type="checkbox"]):not([type="hidden"]), .ranger-page .contact-form select, .ranger-page .contact-form textarea { border-radius: 2px; border-color: #ffb65c2e; background: #05070ecc; color: var(--rg-ink); font-size: .84rem; }
 .ranger-page .contact-form input:not([type="checkbox"]):not([type="hidden"]), .ranger-page .contact-form select { min-height: 47px; }
-.ranger-page .contact-form input::placeholder, .ranger-page .contact-form textarea::placeholder { color: #859ba9; }
+.ranger-page .contact-form input:focus, .ranger-page .contact-form select:focus, .ranger-page .contact-form textarea:focus { border-color: var(--rg-ember); background: #0a0c14; box-shadow: 0 0 0 3px #ffb65c1f; }
+.ranger-page .contact-form input::placeholder, .ranger-page .contact-form textarea::placeholder { color: #6f7a92; }
 .ranger-page .contact-form textarea { min-height: 130px; }
-.ranger-page .privacy-check { color: #a4b9c6; font-size: .68rem; line-height: 1.8; }
-.ranger-page .privacy-check input { accent-color: #bcecf0; }
+.ranger-page .privacy-check { color: #9aa6bf; font-size: .68rem; line-height: 1.8; }
+.ranger-page .privacy-check input { accent-color: var(--rg-ember); }
 .ranger-page .contact-form__footer { flex-direction: column; align-items: stretch; gap: 14px; padding-top: 18px; }
 .ranger-page .contact-form__status { font-size: .72rem; line-height: 1.7; }
 .ranger-page .contact-form__status:empty { display: none; }
-.ranger-page .contact-form__submit { width: 100%; min-height: 49px; border-radius: 2px; color: #10212b; background: #cde5e8; font-size: .78rem; }
-.ranger-page .contact-form__submit:hover:not(:disabled) { background: #e9fbfb; }
-.ranger-dossier { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-inline: var(--ranger-gutter); padding-block: 32px; border-block: 1px solid var(--ranger-line); }
-.ranger-dossier > div > p + p { margin-top: 10px; font-size: .83rem; color: #a8bcc7; }
-.ranger-dossier__links { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 30px; }
-.ranger-dossier__links > a { display: flex; gap: 14px; align-items: center; min-height: 44px; font-size: .73rem; }
-.ranger-dossier__links > a > span { font: .56rem var(--font-mono); color: #8ea9b7; }
-.ranger-dossier__links > a:hover { color: var(--ranger-signal); }
-.ranger-farewell { text-align: center; padding: 82px var(--page-gutter) 70px; }
-.ranger-farewell > span { color: #9dc5d2; font-size: 2rem; }
-.ranger-farewell > p { margin-top: 24px; color: #9bb3c0; font-size: .9rem; text-wrap: balance; }
-.ranger-neighbours { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-inline: var(--ranger-gutter); padding-block: 28px; border-top: 1px solid var(--ranger-line); }
+.ranger-page .contact-form__submit { width: 100%; min-height: 50px; border-color: #ffd08a; border-radius: 2px; color: #1b1206; background: linear-gradient(#ffd08a, #f2b45b); font-size: .76rem; box-shadow: inset 0 1px #fff8, 0 0 26px #ffb65c30; }
+.ranger-page .contact-form__submit:hover:not(:disabled) { background: linear-gradient(#ffe0a8, #f7bf6b); }
+
+/* ── Crew, farewell, neighbours ────────────────────────────────────────── */
+.ranger-dossier { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-inline: var(--rg-gutter); padding-block: 34px; border-block: 1px solid var(--rg-line); }
+.ranger-dossier > div > p + p { margin-top: 10px; font-size: .84rem; color: #a5b1c8; }
+.ranger-dossier__links { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+.ranger-dossier__links > a { display: flex; gap: 14px; align-items: center; min-height: 44px; padding: 6px 14px; border: 1px solid var(--rg-line); border-radius: 2px; font-size: .74rem; transition: border-color .2s, color .2s, background .2s; }
+.ranger-dossier__links > a > span { font: .56rem var(--font-mono); color: #8ea1b7; }
+.ranger-dossier__links > a:hover { color: var(--rg-cyan); border-color: #7fe5ff66; background: #7fe5ff0a; }
+.ranger-farewell { text-align: center; padding: 84px var(--page-gutter) 72px; }
+.ranger-farewell > span { color: var(--rg-violet); font-size: 2rem; }
+.ranger-farewell > p { max-width: 520px; margin: 22px auto 0; font: 350 clamp(1.5rem, 2.4vw, 2.1rem)/1.3 var(--font-display); letter-spacing: -.03em; color: #e2e8f6; text-wrap: balance; }
+.ranger-neighbours { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-inline: var(--rg-gutter); padding-block: 28px; border-top: 1px solid var(--rg-line); }
 .ranger-neighbours > a { display: flex; align-items: center; gap: 25px; padding-block: 8px; }
 .ranger-neighbours > a > span:last-child { display: grid; gap: 7px; font-size: .9rem; }
-.ranger-neighbours small { color: #829eae; font: .55rem var(--font-mono); text-transform: uppercase; letter-spacing: .13em; }
-.ranger-neighbours > .ranger-kicker { color: #7f9ba9; font-size: .52rem; }
-@keyframes ranger-signal { from { transform: scale(.15); opacity: .7; } to { transform: scale(1.8); opacity: 0; } }
-@keyframes ranger-wave { from { transform: scaleY(.2); } to { transform: scaleY(1); } }
-@media (min-width: 1800px) { .ranger-deck { min-height: min(1100px, 100svh); } .ranger-view > img { object-position: center 40%; } }
-@media (max-width: 1100px) {
-  .ranger-channel > a { padding-inline: 20px; }
-  .ranger-channel strong { font-size: 1rem; }
-  .ranger-channel__hint { max-width: 230px; line-height: 1.6; }
-  .ranger-transmission { gap: 40px; }
-  .ranger-dossier { align-items: start; flex-direction: column; }
+.ranger-neighbours > a:hover { color: var(--rg-cyan); }
+.ranger-neighbours small { color: #829ab0; font: .55rem var(--font-mono); text-transform: uppercase; letter-spacing: .13em; }
+.ranger-neighbours > .ranger-kicker { color: #6f86a8; font-size: .52rem; }
+
+@keyframes ranger-sweep { to { transform: rotate(360deg); } }
+@keyframes ranger-blip { 0% { opacity: 1; transform: scale(1.6); } 60% { opacity: .35; transform: none; } 100% { opacity: .35; transform: none; } }
+@keyframes ranger-scan { from { transform: translateX(-100%); opacity: 1; } to { transform: translateX(380%); opacity: 0; } }
+@keyframes ranger-bracket { from { transform: scale(2.4); opacity: 0; } to { transform: none; opacity: .85; } }
+@keyframes ranger-led-boot { from { filter: brightness(.2); } 55% { filter: brightness(1.9); } to { filter: none; } }
+@keyframes ranger-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (min-width: 1800px) { .ranger-bridge { min-height: max(860px, 100svh); } }
+@media (max-width: 1180px) {
+  .ranger-dash__grid { grid-template-columns: minmax(0, 1fr) minmax(220px, .55fr); }
+  .ranger-module--scope { display: none; }
+  .ranger-readouts { min-width: 190px; }
 }
-@media (max-width: 960px) { .ranger-route { margin-top: -63px; } }
+@media (max-width: 960px) { .ranger-route { --rg-header: 63px; } }
 @media (max-width: 760px) {
-  .ranger-deck { min-height: 0; }
-  .ranger-hero__copy { padding-top: 370px; }
-  .ranger-hero__copy > .ranger-kicker { position: absolute; top: 101px; left: var(--page-gutter); font-size: .6rem; }
-  .ranger-hero__copy h1 { font-size: clamp(4.5rem, 15vw, 6.5rem); margin-top: 0; }
-  .ranger-hero__line { max-width: 310px; font-size: 1.25rem; margin-top: 12px !important; }
-  .ranger-hero__intro { max-width: 350px; font-size: .85rem; }
-  .ranger-view { bottom: auto; height: 710px; }
-  .ranger-view > img { object-position: 79% top; }
-  .ranger-view__shade { background: linear-gradient(0deg, #060d14 1%, #060d14fa 13%, #060d14a3 41%, transparent 66%); }
-  .ranger-beacon { left: 68%; top: 294px; }
-  .ranger-deck__caption { top: 153px; right: var(--page-gutter); }
-  .ranger-deck__caption > span:nth-child(2) { display: none; }
-  .ranger-hero__channels { padding-top: 52px; }
-  .ranger-channels__grid { grid-template-columns: 1fr; }
-  .ranger-channel + .ranger-channel { border-left: 0; border-top: 1px solid var(--ranger-line); }
-  .ranger-channel > a { min-height: 128px; padding: 20px; }
-  .ranger-channel strong { font-size: 1.15rem; margin-top: 11px; }
-  .ranger-channel__hint { max-width: none; margin-top: 6px; }
-  .ranger-channel > button { bottom: 7px; }
-  .ranger-channels__heading { gap: 10px; }
-  .ranger-channels__heading > .ranger-kicker { font-size: .55rem; }
-  .ranger-channels__destination { font-size: .48rem; }
-  .ranger-receiver { padding-block: 18px; gap: 14px; }
-  .ranger-receiver p { font-size: .65rem; line-height: 1.6; }
-  .ranger-receiver__label { display: none; }
-  .ranger-transmission { grid-template-columns: 1fr; padding-top: 68px; padding-bottom: 56px; gap: 44px; }
-  .ranger-transmission__intro { padding-top: 0; }
-  .ranger-transmission h2 { font-size: clamp(2.3rem, 7.7vw, 3.4rem); }
-  .ranger-service-list { gap: 12px; margin-top: 25px; }
-  .ranger-signature { margin-top: 28px; }
-  .ranger-page .contact-form-shell { padding: 22px; }
+  .ranger-bridge { min-height: 0; }
+  .ranger-view, .ranger-canopy { bottom: auto; height: 640px; }
+  .ranger-view__shade { background: linear-gradient(0deg, #04060d 0%, #04060dcc 16%, #04060d55 40%, transparent 66%); }
+  .ranger-canopy__frame--wide { display: none; }
+  .ranger-canopy__frame--tall { display: block; }
+  .ranger-hud { grid-template-columns: 1fr; gap: 0; min-height: 640px; padding: calc(var(--rg-header) + 40px) var(--page-gutter) 26px; align-content: end; }
+  .ranger-hud__copy { padding: 18px 20px; }
+  .ranger-hud__copy h1 { font-size: clamp(3.6rem, 16vw, 5rem); }
+  .ranger-hud__line { font-size: 1.2rem; max-width: 320px; }
+  .ranger-hud__intro { font-size: .86rem; }
+  .ranger-hud__actions { margin-top: 22px; }
+  .ranger-readouts, .ranger-tape { display: none; }
+  .ranger-dash { padding: 16px var(--page-gutter) 22px; }
+  .ranger-dash__grid { grid-template-columns: 1fr; gap: 12px; }
+  .ranger-module--scope { display: block; }
+  .ranger-freq > a { grid-template-columns: minmax(0, 1fr) 20px; grid-template-areas: "id arrow" "value arrow"; row-gap: 4px; padding-block: 10px; }
+  .ranger-freq__id { grid-area: id; }
+  .ranger-freq__value { grid-area: value; }
+  .ranger-freq__arrow { grid-area: arrow; }
+  .ranger-freq strong { font-size: 1.05rem; }
+  .ranger-freq > button { align-self: end; margin-bottom: 6px; }
+  .ranger-scope { width: 104px; }
+  .ranger-transmission { grid-template-columns: 1fr; padding-top: 72px; padding-bottom: 56px; gap: 40px; }
+  .ranger-transmission__intro { position: static; padding-top: 0; }
+  .ranger-transmission h2 { font-size: clamp(2.3rem, 8vw, 3.2rem); }
+  .ranger-manifest > div { grid-template-columns: 110px minmax(0, 1fr); }
+  .ranger-signature { margin-top: 30px; }
+  .ranger-console__bar { padding-inline: 18px; }
+  .ranger-missions { padding-inline: 18px; }
+  .ranger-missions__grid { grid-template-columns: 1fr; }
+  .ranger-meter { padding-inline: 18px; }
+  .ranger-page .contact-form-shell { padding: 20px 18px 24px; }
   .ranger-page .contact-form__grid { grid-template-columns: 1fr; gap: 0; }
-  .ranger-panel-label { padding-inline: 22px; }
-  .ranger-dossier__links { gap: 8px 23px; }
-  .ranger-farewell { padding-block: 55px; }
-  .ranger-farewell > p { max-width: 290px; margin-inline: auto; line-height: 1.7; }
+  .ranger-dossier { flex-direction: column; align-items: start; }
+  .ranger-farewell { padding-block: 56px; }
   .ranger-neighbours > .ranger-kicker { max-width: 130px; text-align: right; line-height: 1.8; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ranger-page *, .ranger-page *::before, .ranger-page *::after { animation: none !important; transition: none !important; }
-  .ranger-deck .ranger-view > img { transform: none; }
 }
