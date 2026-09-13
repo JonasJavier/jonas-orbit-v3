@@ -86,6 +86,47 @@ cuerpo) y cian fuera, verde (`#8cf2c2`) sólo para «hecho». Todo sobre
   consentimiento, Turnstile, protección server-side, errores, reintento y
   navegación a gracias no cambian.
 
+### Vuelo (segundo pase, 2026-09-13)
+
+El dueño aprobó la cabina («me está gustando mucho el diseño») y pidió que el
+vuelo se sintiera como volar de verdad. El primer ventanal abría cuatro capas
+de estrellas desde el punto de fuga con el reloj (0,03 ciclos/s): deriva, no
+marcha. El pase cambia cuatro cosas, todas en el mismo shader y sin un draw ni
+un asset más:
+
+- **Distancia, no reloj.** El bucle integra `dist += dt · speed` y el campo de
+  vuelo se indexa por `uDist`. `speed` sube de 0 a 1 en 2,8 s con una
+  smoothstep tras cada (re)activación: los motores arrancan, no aparecen. Las
+  cinco capas de estrellas van a 0,085 ciclos por unidad (una capa nueva cada
+  2,4 s) y dos capas de **polvo cercano** a 0,3 —escasas (densidad 0,08),
+  grandes y rápidas, lo que el ojo lee como velocidad.
+- **Estelas.** `starStreaks` estira cada estrella a lo largo de la dirección
+  radial desde el punto de fuga: la distancia se comprime por `stretch`, que
+  crece con la velocidad y con el cuadrado de la fase (hasta ×17 en las
+  estrellas próximas, ×32 en el polvo). El brillo se reparte con
+  `inversesqrt(stretch)`, como en una exposición larga. Calibrado en píxeles por
+  segundo, según manda Miller: una estrella a 400 px del punto de fuga avanza
+  ~60 px/s y las del borde más de 100.
+- **La nave se mueve.** Antes de dibujar nada, `uv` gira con un alabeo de
+  ±0,7° y se desplaza ±16 px sobre dos armónicos lentos cada uno (períodos de
+  12 a 48 s): balanceo, no vibración. Como es rotación de cámara, mueve por
+  igual lo cercano y lo lejano. El mismo `yaw`, calculado en JS con las mismas
+  fórmulas, se publica como `--yaw` en la cabina y la cinta de rumbo se
+  desplaza con él (−34 px por unidad), además del paralaje del puntero.
+- **Sobrevuelo.** El mundo gira bajo la nave con la distancia (superficie
+  0,018 rad por unidad, nubes 0,03: dos velocidades, luego paralaje interno) y
+  su centro deriva ±0,05 con período de diez minutos, acotado para que nunca
+  salga del cristal. Medido a 1440 px: entre dos capturas separadas 0,8 s
+  cambia el 15,8 % del disco visible.
+
+Presupuesto: la búsqueda de estrellas pasa de 3×3 a las **cuatro celdas más
+cercanas** —exacta porque ninguna estrella mide más de media celda—, y las
+vetas de la nebulosa y la banda de polvo bajan de fbm a un solo ruido. Con
+nueve capas de estrellas y cinco fbm, el coste por píxel queda por debajo del
+del primer pase pese a tener el doble de capas. Sin vuelo (pausa,
+reduced-motion, perfil ligero, sin WebGL2) no cambia nada: la vista fija sigue
+siendo la misma composición.
+
 ### Límites
 
 - La escena persistente duerme detrás de la Ranger (`COVERED_WORLDS` en

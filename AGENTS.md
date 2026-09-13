@@ -73,8 +73,15 @@ que se mueve** (consentimiento, pausa, reduced-motion, perfil ligero) y sin
 WebGL2 el interruptor desaparece; **el encendido es aditivo** —nada se oculta
 antes de animarse, el HTML servido ya está completo—; y **la escena persistente
 duerme también en la Ranger** (`COVERED_WORLDS`). `public/images/ranger/` se
-retira. El System Map, sus cuerpos, cámara y materiales no cambian. Su
-valoración visual queda abierta.
+retira. El System Map, sus cuerpos, cámara y materiales no cambian. La
+cabina quedó aprobada por el dueño el mismo día y un **segundo pase** (sección
+`Vuelo`) hizo que el vuelo se sintiera como tal: el campo de estrellas se
+indexa por DISTANCIA recorrida —los motores arrancan en 2,8 s y las estrellas
+y el polvo cercano se estiran en estelas radiales según la velocidad—, la
+nave alabea y deriva con armónicos lentos aplicados a toda la vista, la cinta
+de rumbo sigue el mismo `yaw`, y el mundo gira bajo la nave con la distancia.
+La búsqueda de estrellas es de cuatro celdas, exacta porque ninguna mide más
+de media celda. Su valoración visual queda abierta.
 
 **Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de
 `docs/design/edmunds-creatividad.md` manda en **nitidez de las obras, gesto de
