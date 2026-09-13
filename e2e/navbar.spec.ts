@@ -103,3 +103,49 @@ test("navbar: salir con Tab cierra el menú y deja visible el foco", async ({ pa
   await expect(page.getByRole("button", { name: "Explorar", exact: true })).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("navigation", { name: "Navegación de mundos" })).toBeHidden();
 });
+
+test("navbar: la línea del destino viaja entre rutas y el CV se descarga desde la barra", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/es/formacion?no3d=1");
+  const destinations = page.locator(".voyage-destinations");
+  await expect(destinations).toHaveAttribute("data-marker", "ready");
+  const before = await destinations.evaluate((el) => ({ x: parseFloat(el.style.getPropertyValue("--marker-x")), w: parseFloat(el.style.getPropertyValue("--marker-w")), accent: el.style.getPropertyValue("--marker-accent") }));
+  expect(before.w).toBeGreaterThan(40);
+  expect(before.accent).toBe("#55d9ff");
+  // El marcador medido sustituye a la línea por enlace, y no tapa el centro de ningún destino.
+  const nav = page.getByRole("navigation", { name: "Navegación de mundos" });
+  await expect.poll(() => nav.getByRole("link", { name: "Formación", exact: true }).evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("0");
+  await nav.getByRole("link", { name: "Proyectos", exact: true }).click();
+  await expect(page).toHaveURL(/\/es\/proyectos$/);
+  await expect(destinations).toHaveAttribute("data-marker", "travel");
+  await expect.poll(() => destinations.evaluate((el) => parseFloat(el.style.getPropertyValue("--marker-x")))).toBeGreaterThan(before.x + 40);
+  expect(await destinations.evaluate((el) => el.style.getPropertyValue("--marker-accent"))).toBe("#f0bc72");
+  const cv = page.getByRole("link", { name: "Descargar CV (PDF)", exact: true });
+  await expect(cv).toBeVisible();
+  await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
+  await expect(cv).toHaveAttribute("download", "");
+  const box = await cv.boundingBox();
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+});
+
+test("navbar: con reduced-motion la línea no viaja y el CV sigue en el menú móvil", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/es/formacion?no3d=1");
+  await page.getByRole("button", { name: "Explorar", exact: true }).click();
+  const cv = page.getByRole("link", { name: "Descargar CV (PDF)", exact: true });
+  await expect(cv).toBeVisible();
+  expect((await cv.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.getByRole("navigation", { name: "Navegación de mundos" }).getByRole("link", { name: "Contacto", exact: true }).click();
+  await expect(page).toHaveURL(/\/es\/contacto$/);
+  await expect(page.locator(".voyage-destinations")).toHaveAttribute("data-marker", "ready");
+});
+
+test("Miller: el hero ofrece la descarga del CV junto a recorrido y certificados", async ({ page }) => {
+  await page.goto("/es/formacion?no3d=1");
+  const cv = page.locator(".miller-hero__actions").getByRole("link", { name: "Descargar CV", exact: true });
+  await expect(cv).toBeVisible();
+  await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
+  await expect(cv).toHaveAttribute("download", "");
+});

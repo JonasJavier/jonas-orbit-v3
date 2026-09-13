@@ -6,7 +6,59 @@ el dueño después de comparar la consola. Se conserva la marca JONÁS ØRBIT qu
 al dueño. Los iconos conservan Horizonte, por petición explícita.
 Se conservó el original anterior en `public/brand/previous-icon.svg`.
 
-## Dirección vigente — Cristal editorial (2026-09-10)
+## Dirección vigente — Instrumento de a bordo (2026-09-13)
+
+Pedido por el dueño tras aprobar la cabina de la Ranger: «que realmente se
+integre bien al proyecto, profesional, bien diseñada, pulida y acabada», con un
+icono de descarga del CV «muy minimalista» y la misma descarga en Miller. El
+estado anterior queda guardado, a petición suya, en
+`output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`
+(siete fuentes, seis capturas y `RECUPERAR.md` con el commit de origen).
+
+**Lo que no cambia**, porque lo fijó él en los pases anteriores: marca JONÁS
+ØRBIT, barra de borde a borde sin marco ni anclajes, 67/63 px adosada arriba,
+una sola fila, cielo en deriva con su control de pausa, «Mapa estelar ↑»,
+menú «Explorar» en dos columnas hasta 1080 px, blancos de 44 px, HTML servido
+con `aria-current` y sin JavaScript para navegar.
+
+**Lo que cambia:**
+
+- **Cada destino se lee como una lectura de instrumento.** El nombre del
+  contenido encima («Formación») y debajo, en mono pequeña, su índice y su
+  cuerpo («02 · MILLER»). La segunda línea va `aria-hidden`: el nombre
+  accesible del enlace sigue siendo «Formación», igual que en el raíl de la
+  home. Los seis forman un grupo compacto y centrado entre la marca y las
+  herramientas, en vez de repartirse por todo el ancho.
+- **El activo habla en el acento de su mundo.** La línea inferior y la letra
+  pequeña toman `--nav-accent` (cian en Miller, ámbar en la Endurance, violeta
+  en la Ranger…); el nombre sólo sube a blanco. Ya no todo es cian.
+- **La línea viaja entre rutas.** Cada página monta su propia cabecera, así
+  que una transición CSS no puede unir dos montajes; `site-header.tsx` guarda
+  en una variable de módulo dónde quedó la línea y la cabecera nueva la
+  arranca ahí y la lleva al destino nuevo (`--marker-x`, `--marker-w`,
+  `--marker-accent` medidos en un layout effect, antes de pintar). La línea
+  por enlace del CSS sigue existiendo para el primer pintado y para quien
+  navega sin JavaScript; en cuanto el cliente mide, se apaga. En el menú móvil
+  el nav está oculto y mide cero: ahí manda el borde izquierdo en acento.
+  Reduced-motion no viaja. El router no se entera.
+- **Herramientas a la derecha:** pausa del cielo, **CV** con el glifo de
+  descarga compartido (`components/download-icon.tsx`: bandeja y flecha en
+  trazo fino, hereda el color) y «MAPA ESTELAR ↑», ahora en mono pequeña para
+  emparejar con las lecturas. Entre 1081 y 1280 px el CV y el mapa quedan en
+  icono para que las seis lecturas quepan; en el menú móvil forman la fila
+  inferior.
+- **Miller** ofrece «Descargar CV · PDF» en las acciones del hero, junto a
+  recorrido y certificados; la Ranger usa el mismo glifo en su registro de a
+  bordo. Un solo icono de descarga en todo el sitio.
+
+Verificación: `components/site-header.test.tsx` (nombres accesibles, letra
+pequeña oculta, acento por destino, CV y mapa, marcador medido antes de pintar
+y sin destino en la home, menú móvil con Escape) y en `e2e/navbar.spec.ts` la
+línea viajera entre Formación y Proyectos con cambio de acento, el CV a 44 px
+en barra y en menú, reduced-motion sin viaje y el CV en el hero de Miller. La
+matriz 320-2560 px, alturas, cielo y teclado no cambian.
+
+## Dirección anterior — Cristal editorial (2026-09-10)
 
 **Retirada del marco:** a petición del dueño se eliminan los bordes exteriores,
 los anclajes metálicos, las esquinas redondeadas y las sombras del marco, también

@@ -10,6 +10,11 @@ import type { WorldNavItem } from "@/lib/worlds";
  * de scroll con Zustand y centraba el elemento activo con un efecto; con rutas
  * reales, `aria-current` lo dice mejor y gratis.
  *
+ * Cada destino nombra primero el CONTENIDO —que es lo que el visitante busca—
+ * y debajo, en la letra pequeña del instrumento, su índice y su cuerpo:
+ * «02 · Miller». La línea inferior va `aria-hidden` a propósito: el nombre
+ * accesible del enlace sigue siendo «Formación», igual que en el raíl.
+ *
  * `<Link>` prefetchea las 7 rutas estáticas, que es lo que §7 del pivote exige
  * para que la transición de viaje de G3 sea sensación de viaje y no una espera
  * disfrazada.
@@ -38,10 +43,10 @@ export function MissionNavigation({
                 href={world.href}
                 style={{ "--nav-accent": world.accent } as React.CSSProperties}
               >
-                <span aria-hidden="true">
-                  {String(world.order).padStart(2, "0")}
+                <span className="mission-nav__name">{world.shortLabel}</span>
+                <span className="mission-nav__meta" aria-hidden="true">
+                  {String(world.order).padStart(2, "0")} · {world.cosmicName}
                 </span>
-                {world.shortLabel}
               </Link>
             </li>
           );
