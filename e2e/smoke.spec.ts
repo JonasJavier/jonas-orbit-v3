@@ -231,7 +231,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Contacto" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Nombre")).toBeVisible();
+    await expect(page.getByLabel("Nombre", { exact: true })).toBeVisible();
   });
 
   test("la cabecera marca el mundo activo en cada ruta, sin JavaScript de estado", async ({
@@ -276,12 +276,16 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   test("A25 · Ranger envía una transmisión completa y confirma recepción", async ({
     page,
   }) => {
+    // `exact` porque la cabina tiene otros nombres accesibles que CONTIENEN
+    // estas palabras (el propio formulario se llama «Enviar un mensaje a
+    // Jonás») y el campo es el que se llama exactamente así. El select no
+    // puede ser exacto: su etiqueta arrastra el texto de las opciones.
     await page.goto("/es/contacto");
-    await page.getByLabel("Nombre").fill("Ada Lovelace");
-    await page.getByLabel("Correo").fill("ada@example.com");
+    await page.getByLabel("Nombre", { exact: true }).fill("Ada Lovelace");
+    await page.getByLabel("Correo", { exact: true }).fill("ada@example.com");
     await page.getByLabel("Tipo de misión").selectOption("product");
     await page
-      .getByLabel("Mensaje")
+      .getByLabel("Mensaje", { exact: true })
       .fill("Quiero construir una herramienta clara para nuestro equipo.");
     await page.getByLabel(/He leído la nota de privacidad/).check();
 
@@ -325,11 +329,11 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     });
 
     await page.goto("/es/contacto");
-    await page.getByLabel("Nombre").fill("Grace Hopper");
-    await page.getByLabel("Correo").fill("grace@example.com");
+    await page.getByLabel("Nombre", { exact: true }).fill("Grace Hopper");
+    await page.getByLabel("Correo", { exact: true }).fill("grace@example.com");
     await page.getByLabel("Tipo de misión").selectOption("system");
     await page
-      .getByLabel("Mensaje")
+      .getByLabel("Mensaje", { exact: true })
       .fill("Necesitamos mejorar un sistema interno y reducir pasos manuales.");
     await page.getByLabel(/He leído la nota de privacidad/).check();
     const submit = page.getByRole("button", { name: "Enviar transmisión" });
@@ -337,7 +341,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
 
     await submit.click();
     await expect(page.getByText(/Tus datos siguen aquí/)).toBeVisible();
-    await expect(page.getByLabel("Nombre")).toHaveValue("Grace Hopper");
+    await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue("Grace Hopper");
     await expect(submit).toBeEnabled();
 
     await submit.click();
@@ -396,6 +400,12 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   test("A29 · se recorren las 7 rutas y se escribe en el formulario solo con teclado", async ({
     page,
   }) => {
+    // Siete rutas con hasta treinta Tab + evaluate cada una: en escritorio
+    // ronda los 25 s a solas y comparte la CPU con los workers que dibujan
+    // WebGL por software (Miller, la cabina de la Ranger, la escena). El
+    // triple de presupuesto no relaja ninguna aserción; sólo deja de medir
+    // la carga de la máquina.
+    test.slow();
     await page.goto("/es");
 
     for (const world of WORLDS) {
@@ -436,7 +446,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     }
 
     // El último mundo es Ranger: se llega al formulario sin tocar el ratón.
-    const name = page.getByLabel("Nombre");
+    const name = page.getByLabel("Nombre", { exact: true });
     for (
       let i = 0;
       i < 80 && !(await name.evaluate((el) => el === document.activeElement));

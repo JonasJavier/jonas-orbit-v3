@@ -33,6 +33,8 @@ precision highp float;
 uniform vec2 uRes;
 uniform float uTime;
 uniform vec2 uLook;
+uniform float uDist;
+uniform float uSpeed;
 in vec2 vUv;
 out vec4 outColor;
 
@@ -55,14 +57,15 @@ float fbm(vec2 p) {
   }
   return v;
 }
-// At most one star per cell. p and radius in cell units.
+// At most one star per cell. p and radius in cell units. Stars are far
+// smaller than half a cell, so the four nearest cells are an exact search.
 float starField(vec2 p, float density, float radius, float t) {
-  vec2 cell = floor(p), f = fract(p);
+  vec2 base = floor(p - 0.5), f = p - base;
   float acc = 0.0;
-  for (int y = -1; y <= 1; y++) {
-    for (int x = -1; x <= 1; x++) {
+  for (int y = 0; y <= 1; y++) {
+    for (int x = 0; x <= 1; x++) {
       vec2 o = vec2(float(x), float(y));
-      vec2 c = cell + o;
+      vec2 c = base + o;
       float h = hash21(c);
       if (h > density) continue;
       vec2 jitter = vec2(hash21(c + 1.3), hash21(c + 2.7));
@@ -75,11 +78,39 @@ float starField(vec2 p, float density, float radius, float t) {
   }
   return acc;
 }
+// Same field, but each star is stretched along dir by stretch: the
+// motion blur of a point light passing a moving window.
+float starStreaks(vec2 p, float density, float radius, float stretch, vec2 dir, float t) {
+  vec2 base = floor(p - 0.5), f = p - base;
+  float acc = 0.0;
+  for (int y = 0; y <= 1; y++) {
+    for (int x = 0; x <= 1; x++) {
+      vec2 o = vec2(float(x), float(y));
+      vec2 c = base + o;
+      float h = hash21(c);
+      if (h > density) continue;
+      vec2 rel = o + vec2(hash21(c + 1.3), hash21(c + 2.7)) - f;
+      float along = dot(rel, dir);
+      float across = length(rel - along * dir);
+      float d = length(vec2(along / stretch, across));
+      float b = 0.35 + 0.65 * hash21(c + 5.1);
+      float twinkle = 0.85 + 0.15 * sin(t * (1.0 + 3.0 * h) + h * 40.0);
+      float q = (d * d) / (radius * radius);
+      acc += b * twinkle * (exp(-4.0 * q) + 0.1 * exp(-q * 0.35)) * inversesqrt(stretch) * 1.2;
+    }
+  }
+  return acc;
+}
 
 void main() {
   vec2 frag = vUv * uRes;
   vec2 uv = (frag - 0.5 * uRes) / uRes.y;
   float t = uTime;
+  // The ship rides, it does not sit: a slow roll and drift on two harmonics
+  // each, applied to the whole view — rotation moves near and far alike.
+  float roll = 0.012 * sin(t * 0.13 + 2.0) + 0.006 * sin(t * 0.37);
+  vec2 sway = vec2(0.018 * sin(t * 0.21) + 0.010 * sin(t * 0.53 + 1.3), 0.011 * sin(t * 0.17 + 0.7) + 0.006 * sin(t * 0.41));
+  uv = vec2(uv.x * cos(roll) - uv.y * sin(roll), uv.x * sin(roll) + uv.y * cos(roll)) + sway;
   vec3 col = vec3(0.012, 0.016, 0.03);
 
   // Deep field: two still layers, the farther one barely follows the head.
@@ -89,23 +120,37 @@ void main() {
   vec3 starCol = mix(vec3(0.72, 0.84, 1.0), vec3(1.0, 0.9, 0.78), smoothstep(0.55, 0.85, tint));
   col += vec3(0.85, 0.9, 1.0) * s1 * 0.8 + starCol * s2 * 1.05;
 
-  // Flight: four shells of stars open from the vanishing point and pass by.
+  // Flight: five shells of stars open from the vanishing point and streak
+  // past, driven by distance travelled — the engines ramp, the field follows.
   vec2 vp = vec2(0.24, 0.10);
-  for (int k = 0; k < 4; k++) {
-    float ph = fract(t * 0.03 + float(k) * 0.25);
-    float z = exp2(ph * 2.4);
-    float fade = smoothstep(0.0, 0.3, ph) * (1.0 - smoothstep(0.7, 1.0, ph));
+  vec2 dir = normalize(uv - vp + vec2(1e-4, 0.0));
+  for (int k = 0; k < 5; k++) {
+    float ph = fract(uDist * 0.085 + float(k) * 0.2);
+    float z = exp2(ph * 2.6);
+    float fade = smoothstep(0.0, 0.25, ph) * (1.0 - smoothstep(0.75, 1.0, ph));
     vec2 p = vp + (uv - vp) / z + uLook * (0.012 + 0.03 * ph) + vec2(float(k) * 4.7, float(k) * 2.3);
     float sc = 9.0;
-    float r = (1.2 + 2.4 * ph) * sc / (uRes.y * z);
-    col += vec3(0.8, 0.9, 1.0) * starField(p * sc, 0.34, r, t) * fade * 1.1;
+    float r = (1.2 + 2.6 * ph) * sc / (uRes.y * z);
+    float stretch = 1.0 + uSpeed * (2.0 + 14.0 * ph * ph);
+    col += vec3(0.8, 0.9, 1.0) * starStreaks(p * sc, 0.34, r, stretch, dir, t) * fade * (1.0 + 0.5 * ph);
+  }
+  // Two shells of near dust: sparse, fast and long — what the eye reads as speed.
+  for (int k = 0; k < 2; k++) {
+    float ph = fract(uDist * 0.3 + float(k) * 0.5 + 0.37);
+    float z = exp2(ph * 3.0);
+    float fade = smoothstep(0.0, 0.2, ph) * (1.0 - smoothstep(0.7, 1.0, ph));
+    vec2 p = vp + (uv - vp) / z + uLook * 0.05 + vec2(float(k) * 6.1 + 9.0, float(k) * 3.7 + 5.0);
+    float sc = 5.0;
+    float r = (2.0 + 3.6 * ph) * sc / (uRes.y * z);
+    float stretch = 1.0 + uSpeed * (5.0 + 26.0 * ph);
+    col += vec3(0.9, 0.9, 0.95) * starStreaks(p * sc, 0.08, r, stretch, dir, t) * fade * 1.1 * uSpeed;
   }
 
   // Nebula: violet dust with cyan veins, upper left, drifting very slowly.
   vec2 nq = uv * 1.25 + uLook * 0.015 + vec2(0.35, 0.05) + vec2(t * 0.004, t * 0.002);
   float n1 = fbm(nq * 1.5);
   float n2 = fbm(nq * 3.2 + vec2(5.0, 2.0));
-  float veins = fbm(nq * 0.8 + vec2(11.0, 3.0));
+  float veins = vnoise(nq * 1.6 + vec2(11.0, 3.0));
   float neb = smoothstep(0.36, 0.78, n1) * 0.6 + smoothstep(0.5, 0.88, n2) * 0.3;
   float ndist = length((uv - vec2(0.18, 0.2)) * vec2(0.62, 1.25));
   float nmask = smoothstep(1.25, 0.1, ndist);
@@ -116,7 +161,7 @@ void main() {
   col += nebCol * neb * nmask * 1.0;
   // A faint dust band leaning across the upper sky.
   float band = exp(-pow((uv.y - 0.12 - uv.x * 0.22) * 2.6, 2.0));
-  col += vec3(0.55, 0.62, 0.85) * band * fbm(uv * 3.0 + vec2(2.0, 7.0)) * 0.11;
+  col += vec3(0.55, 0.62, 0.85) * band * vnoise(uv * 6.0 + vec2(2.0, 7.0)) * 0.11;
   // Sun just outside the top-right corner: the warmth every surface answers to.
   col += vec3(1.0, 0.8, 0.55) * exp(-length(uv - vec2(1.0, 0.45)) * 1.9) * 0.34;
   // A second, cooler wisp low on the right, behind the world's lit rim.
@@ -125,7 +170,7 @@ void main() {
 
   // The world below: blue-grey ocean bands under a thin lit atmosphere.
   vec3 sun = normalize(vec3(0.72, 0.5, 0.42));
-  vec2 pc = vec2(0.56, -1.14);
+  vec2 pc = vec2(0.56 + 0.05 * sin(uDist * 0.01), -1.14);
   float pr = 1.22;
   vec2 rel = (uv - pc) / pr + uLook * 0.004;
   float r2 = dot(rel, rel);
@@ -134,10 +179,10 @@ void main() {
     float zz = sqrt(1.0 - r2);
     vec3 n = vec3(rel, zz);
     float diff = dot(n, sun);
-    vec2 sp = vec2(atan(n.x, n.z) * 1.1 + t * 0.005, n.y * 2.4);
+    vec2 sp = vec2(atan(n.x, n.z) * 1.1 + uDist * 0.018, n.y * 2.4);
     float f = fbm(sp * 2.6 + vec2(0.0, 3.0));
     float bands = smoothstep(0.3, 0.7, 0.5 + 0.5 * sin(n.y * 14.0 + f * 5.0 + 1.0));
-    float clouds = smoothstep(0.58, 0.86, fbm(sp * 5.0 + vec2(t * 0.012, 1.5)));
+    float clouds = smoothstep(0.58, 0.86, fbm(sp * 5.0 + vec2(uDist * 0.03, 1.5)));
     vec3 deep = vec3(0.04, 0.08, 0.17);
     vec3 sea = vec3(0.09, 0.27, 0.42);
     vec3 teal = vec3(0.17, 0.46, 0.54);
@@ -237,13 +282,19 @@ export function RangerViewport() {
       res: gl.getUniformLocation(program, "uRes"),
       time: gl.getUniformLocation(program, "uTime"),
       look: gl.getUniformLocation(program, "uLook"),
+      dist: gl.getUniformLocation(program, "uDist"),
+      speed: gl.getUniformLocation(program, "uSpeed"),
     };
+    const bridge = surface.closest<HTMLElement>(".ranger-bridge");
 
     let frame = 0;
     let visible = false;
     let lost = false;
     let previous = 0;
     let time = 0;
+    // Distance travelled: the engines ramp up over the first seconds after
+    // (re)activation and the star field follows the distance, not the clock.
+    let dist = 0;
     // The head follows the pointer with inertia: a window, not a cursor.
     let lookX = 0;
     let lookY = 0;
@@ -252,15 +303,25 @@ export function RangerViewport() {
       if (!gl || !canvas || lost) return;
       frame = requestAnimationFrame(draw);
       if (timestamp - previous < 1000 / 30) return;
-      time += Math.min((timestamp - previous) / 1000, 0.05);
+      const dt = Math.min((timestamp - previous) / 1000, 0.05);
+      time += dt;
       previous = timestamp;
+      const ramp = Math.min(1, time / 2.8);
+      const speed = ramp * ramp * (3 - 2 * ramp);
+      dist += dt * speed;
       lookX += (look.current.x - lookX) * 0.08;
       lookY += (look.current.y - lookY) * 0.08;
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uniforms.res, canvas.width, canvas.height);
       gl.uniform1f(uniforms.time, time);
       gl.uniform2f(uniforms.look, lookX, -lookY);
+      gl.uniform1f(uniforms.dist, dist);
+      gl.uniform1f(uniforms.speed, speed);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      // The same sway the shader applies, handed to the HUD so the heading
+      // tape rides with the ship (yaw in [-1, 1]).
+      const yaw = (0.018 * Math.sin(time * 0.21) + 0.01 * Math.sin(time * 0.53 + 1.3)) / 0.028;
+      bridge?.style.setProperty("--yaw", yaw.toFixed(3));
     }
 
     function sync() {
@@ -301,6 +362,7 @@ export function RangerViewport() {
       observer.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);
       document.removeEventListener("visibilitychange", sync);
+      bridge?.style.removeProperty("--yaw");
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
       gl.deleteShader(vertex);
