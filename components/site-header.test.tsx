@@ -6,32 +6,37 @@ import { SiteHeader } from "./site-header";
 vi.mock("@/lib/use-prefers-reduced-motion", () => ({ usePrefersReducedMotion: () => false }));
 vi.mock("@/lib/effects-mode", () => ({ useLightEffectsMode: () => false }));
 
-describe("Cabecera · instrumento de a bordo", () => {
-  it("nombra cada destino por su contenido y guarda índice y cuerpo como letra pequeña", () => {
+describe("Cabecera · observatorio", () => {
+  it("nombra los seis destinos por su contenido y marca el activo con su acento", () => {
     render(<SiteHeader locale="es" worlds={getWorldNavItems("es")} activeWorldId="miller" />);
     const nav = screen.getByRole("navigation", { name: "Navegación de mundos" });
     const links = within(nav).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual([
-      "Sobre mí01 · Gargantúa",
-      "Formación02 · Miller",
-      "Proyectos03 · Endurance",
-      "Creatividad04 · Edmunds",
-      "Experimentos05 · Tesseracto",
-      "Contacto06 · Ranger",
-    ]);
-    // La letra pequeña no entra en el nombre accesible: el enlace sigue siendo «Formación».
+    expect(links).toHaveLength(6);
     expect(within(nav).getByRole("link", { name: "Formación" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).queryByRole("link", { name: /Miller/ })).toBeNull();
     expect(within(nav).getByRole("link", { name: "Contacto" })).toHaveAttribute("href", "/es/contacto");
     expect(within(nav).getByRole("link", { name: "Formación" }).style.getPropertyValue("--nav-accent")).toBe("#55d9ff");
+    expect(within(nav).getByRole("link", { name: "Contacto" }).style.getPropertyValue("--nav-accent")).toBe("#c58cff");
   });
 
-  it("ofrece el CV como descarga y la vuelta al mapa", () => {
-    render(<SiteHeader locale="es" worlds={getWorldNavItems("es")} activeWorldId="ranger" />);
-    const cv = screen.getByRole("link", { name: "Descargar CV (PDF)" });
-    expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
-    expect(cv).toHaveAttribute("download");
-    expect(cv.querySelector("svg.download-icon")).not.toBeNull();
+  it("ofrece los dos CV desde un desplegable que no necesita JavaScript, y la vuelta al mapa", () => {
+    const { container } = render(<SiteHeader locale="es" worlds={getWorldNavItems("es")} activeWorldId="ranger" />);
+    const details = container.querySelector<HTMLDetailsElement>("details.voyage-cv")!;
+    expect(details.open).toBe(false);
+    expect(details.querySelector("summary")).toHaveAttribute("aria-label", "Descargar CV");
+    expect(details.querySelector("summary svg.download-icon")).not.toBeNull();
+    const links = within(details).getAllByRole("link", { hidden: true });
+    expect(links.map((link) => [link.textContent, link.getAttribute("href"), link.hasAttribute("download")])).toEqual([
+      ["Español PDF", "/cv/jonas-javier-cv-es.pdf", true],
+      ["English PDF", "/cv/jonas-javier-cv-en-ats.pdf", true],
+    ]);
+    details.open = true;
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(details.open).toBe(false);
+    expect(details.querySelector("summary")).toHaveFocus();
+    details.open = true;
+    fireEvent.pointerDown(document.body);
+    expect(details.open).toBe(false);
     expect(screen.getByRole("link", { name: "Volver al mapa" })).toHaveAttribute("href", "/es");
     expect(screen.getByRole("link", { name: "Jonás Orbit, inicio" })).toHaveAttribute("href", "/es");
   });
@@ -48,10 +53,13 @@ describe("Cabecera · instrumento de a bordo", () => {
     expect(home.style.getPropertyValue("--marker-accent")).toBe("var(--voyage-signal)");
   });
 
-  it("el menú móvil abre, cierra con Escape y devuelve el foco", () => {
+  it("monta el observatorio sobre la textura y el menú móvil cierra con Escape", () => {
     render(<SiteHeader locale="es" worlds={getWorldNavItems("es")} activeWorldId="miller" />);
+    // jsdom no tiene canvas 2D: el observatorio se queda en silencio y la
+    // textura SVG del CSS sigue siendo el cielo. Sin errores.
+    expect(document.querySelector(".voyage-sky canvas.voyage-sky__canvas")).not.toBeNull();
+    expect(document.querySelector(".voyage-sky__canvas")).not.toHaveAttribute("data-ready");
     const toggle = screen.getByRole("button", { name: "Explorar" });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(toggle);
     expect(screen.getByRole("button", { name: "Cerrar" })).toHaveAttribute("aria-expanded", "true");
     fireEvent.keyDown(document, { key: "Escape" });

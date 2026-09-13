@@ -1,39 +1,67 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function skyDrawsOverFrames(page: Page) {
+  return page.evaluate(async () => {
+    const state = window as unknown as { skyDraws: number };
+    // Dos cuadros de margen: un cambio de estado dibuja UN fotograma quieto.
+    for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame);
+    const before = state.skyDraws;
+    for (let i = 0; i < 12; i++) await new Promise(requestAnimationFrame);
+    return state.skyDraws - before;
+  });
+}
 
 for (const width of [375, 1440]) {
-  test(`navbar: cielo discreto, pausa y preferencias a ${width}px`, async ({ page }) => {
+  test(`navbar: observatorio vivo, pausa y preferencias a ${width}px`, async ({ page }) => {
+    await page.addInitScript(() => {
+      const state = window as unknown as { skyDraws: number };
+      state.skyDraws = 0;
+      // Sólo el cielo de la cabecera: el campo estelar plano de la escena también es un canvas 2D.
+      const original = CanvasRenderingContext2D.prototype.clearRect;
+      Object.defineProperty(CanvasRenderingContext2D.prototype, "clearRect", { configurable: true, value: function (this: CanvasRenderingContext2D, ...args: number[]) {
+        if (this.canvas.closest(".voyage-sky")) state.skyDraws++;
+        return Reflect.apply(original, this, args);
+      } });
+    });
     await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/es/formacion?no3d=0");
     const header = page.getByRole("banner");
-    const sky = page.locator(".voyage-sky");
-    const animationState = () => sky.evaluate((element) => getComputedStyle(element, "::before").animationPlayState);
     await expect(header).toHaveAttribute("data-sky-running", "true");
+    await expect(page.locator(".voyage-sky__canvas")).toHaveAttribute("data-ready", "true");
     const box = await header.boundingBox();
     expect(box!.y).toBe(0);
     expect(box!.height).toBe(width < 1081 ? 63 : 67);
+    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
     if (width < 1081) await page.getByRole("button", { name: "Explorar", exact: true }).click();
     await page.getByRole("button", { name: "Pausar estrellas", exact: true }).click();
-    await expect.poll(animationState).toBe("paused");
+    await expect(header).toHaveAttribute("data-sky-running", "false");
+    expect(await skyDrawsOverFrames(page)).toBe(0);
     await page.getByRole("button", { name: "Reanudar estrellas", exact: true }).click();
-    await expect.poll(animationState).toBe("running");
+    await expect(header).toHaveAttribute("data-sky-running", "true");
+    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
     await page.evaluate(() => {
       Object.defineProperty(document, "hidden", { configurable: true, value: true });
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    await expect.poll(animationState).toBe("paused");
+    await expect(header).toHaveAttribute("data-sky-running", "false");
+    expect(await skyDrawsOverFrames(page)).toBe(0);
     await page.evaluate(() => {
       Reflect.deleteProperty(document, "hidden");
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    await expect.poll(animationState).toBe("running");
+    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(header).toHaveAttribute("data-sky-running", "false");
-    expect(await sky.evaluate((element) => getComputedStyle(element, "::before").animationName)).toBe("none");
+    expect(await skyDrawsOverFrames(page)).toBe(0);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/es/formacion?no3d=1");
     await expect(header).toHaveAttribute("data-sky-running", "false");
     await expect(page.getByRole("button", { name: "Pausar estrellas", exact: true })).toBeHidden();
+    // Quieto sigue habiendo cielo: un fotograma del observatorio, sin bucle.
+    await expect(page.locator(".voyage-sky__canvas")).toHaveAttribute("data-ready", "true");
+    expect(await skyDrawsOverFrames(page)).toBe(0);
   });
 }
 
@@ -121,12 +149,21 @@ test("navbar: la línea del destino viaja entre rutas y el CV se descarga desde 
   await expect(destinations).toHaveAttribute("data-marker", "travel");
   await expect.poll(() => destinations.evaluate((el) => parseFloat(el.style.getPropertyValue("--marker-x")))).toBeGreaterThan(before.x + 40);
   expect(await destinations.evaluate((el) => el.style.getPropertyValue("--marker-accent"))).toBe("#f0bc72");
-  const cv = page.getByRole("link", { name: "Descargar CV (PDF)", exact: true });
-  await expect(cv).toBeVisible();
-  await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
-  await expect(cv).toHaveAttribute("download", "");
-  const box = await cv.boundingBox();
-  expect(box!.height).toBeGreaterThanOrEqual(44);
+  const summary = page.locator("summary.voyage-cv__summary");
+  await expect(summary).toBeVisible();
+  expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByRole("link", { name: "Español PDF", exact: true })).toBeHidden();
+  await summary.click();
+  for (const [name, href] of [["Español PDF", "/cv/jonas-javier-cv-es.pdf"], ["English PDF", "/cv/jonas-javier-cv-en-ats.pdf"]]) {
+    const link = page.getByRole("link", { name, exact: true });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", href);
+    await expect(link).toHaveAttribute("download", "");
+    expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("link", { name: "Español PDF", exact: true })).toBeHidden();
+  await expect(summary).toBeFocused();
 });
 
 test("navbar: con reduced-motion la línea no viaja y el CV sigue en el menú móvil", async ({ page }) => {
@@ -134,9 +171,13 @@ test("navbar: con reduced-motion la línea no viaja y el CV sigue en el menú m�
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/formacion?no3d=1");
   await page.getByRole("button", { name: "Explorar", exact: true }).click();
-  const cv = page.getByRole("link", { name: "Descargar CV (PDF)", exact: true });
-  await expect(cv).toBeVisible();
-  expect((await cv.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  const summary = page.locator("summary.voyage-cv__summary");
+  await expect(summary).toBeVisible();
+  await summary.click();
+  const english = page.getByRole("link", { name: "English PDF", exact: true });
+  await expect(english).toBeVisible();
+  expect((await english.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("navigation", { name: "Navegación de mundos" }).getByRole("link", { name: "Contacto", exact: true }).click();
   await expect(page).toHaveURL(/\/es\/contacto$/);
   await expect(page.locator(".voyage-destinations")).toHaveAttribute("data-marker", "ready");
