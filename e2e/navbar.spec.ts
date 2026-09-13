@@ -58,10 +58,14 @@ for (const width of [375, 1440]) {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/es/formacion?no3d=1");
     await expect(header).toHaveAttribute("data-sky-running", "false");
-    await expect(page.getByRole("button", { name: "Pausar estrellas", exact: true })).toBeHidden();
-    // Quieto sigue habiendo cielo: un fotograma del observatorio, sin bucle.
+    // Quieto sigue habiendo cielo: un fotograma del observatorio, sin bucle,
+    // y el consentimiento explícito lo enciende, como el océano de Miller.
     await expect(page.locator(".voyage-sky__canvas")).toHaveAttribute("data-ready", "true");
     expect(await skyDrawsOverFrames(page)).toBe(0);
+    if (width < 1081) await page.getByRole("button", { name: "Explorar", exact: true }).click();
+    await page.getByRole("button", { name: "Activar estrellas", exact: true }).click();
+    await expect(header).toHaveAttribute("data-sky-running", "true");
+    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
   });
 }
 
