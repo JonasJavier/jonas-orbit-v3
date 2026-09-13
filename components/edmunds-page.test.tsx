@@ -103,9 +103,10 @@ describe("Edmunds · cubierta de observación", () => {
     const lights = () => container.querySelectorAll(".edmunds-deck__ambient");
     expect(lights()).toHaveLength(2);
     expect(lights()[1]).toHaveClass("edmunds-deck__ambient--in");
-    fireEvent.animationEnd(lights()[1]);
-    expect(lights()).toHaveLength(1);
-    expect(lights()[0]).toHaveAttribute("src", "/art/edmunds/diseno-hot-summer-480.webp");
+    expect(lights()[0]).toHaveAttribute("src", "/art/edmunds/diseno-fantasia-480.webp");
+    expect(lights()[1]).toHaveAttribute("src", "/art/edmunds/diseno-hot-summer-480.webp");
+    // The older light leaves when the fade ends; jsdom has no AnimationEvent, so
+    // React never hears `animationend` here — the E2E suite covers the removal.
     // The sky carries stars and two aurora curtains, all decorative.
     expect(container.querySelectorAll(".edmunds-deck__aurora")).toHaveLength(2);
     expect(container.querySelector(".edmunds-deck__sky")).toHaveAttribute("aria-hidden", "true");

@@ -35,6 +35,79 @@ título entra con un fundido. Un detalle que costó una vuelta: `scroll-padding`
 global del sitio (8 rem) hacía aterrizar el ancla 195 px por debajo; la ruta
 lo fija a la altura de la barra. Dirección pendiente de su valoración visual.
 
+**Sexto pase (2026-09-12): nitidez, arrastre, transición y noche.** Cuatro
+peticiones del dueño con una verificación previa cada una.
+
+- **«Algunas imágenes salen en baja calidad en mosaico y galería 3D, pero al
+  ampliar se ven muy bien.»** La hipótesis anotada —`sizes` pidiendo un
+  archivo menor que lo pintado— se descartó con números: a DPR 1, 1,5 y 2 la
+  cubierta y el mosaico servían el `-960.webp` REDUCIDO a un 30-87 % de su
+  tamaño, nunca ampliado. La causa real es otra: un WebP a calidad 79 visto
+  cerca de 1:1 se ve blando, y el visor se veía bien porque REDUCÍA el `-1920`.
+  Medido a DPR 1,25 sobre «Entre montañas»: nitidez (varianza laplaciana) 331
+  en la cubierta contra 979 en el visor a la misma escala. La respuesta tiene
+  dos partes. `tools/prepare-edmunds.mjs` genera **seis peldaños** —320, 480,
+  640, 960, 1280 y 1920— a calidad 84/85/86 (540 archivos, 82,5 MiB). Y cada
+  contexto pide **1,5 veces los píxeles que pinta**: la cubierta calcula sus
+  `sizes` por obra con la misma fórmula del CSS (relación de aspecto × altura
+  de obra por breakpoint, con tope) y el mosaico con el ancho de sus columnas.
+  Al entrar a 1280 × 720 y DPR 1 la obra activa toma el `-960`, no el `-1920`;
+  el E2E comprueba que el archivo servido supera en ≥ 1,2× lo pintado.
+- **«Quiero deslizar las obras con el cursor y que se vea bien; la transición
+  es muy brusca, con arrastre y con flechas.»** El anillo se movía con
+  `--drag-px`: una traslación plana de todas las obras mientras duraba el
+  gesto y, al soltar, una transición por obra sobre `transform` con retardo
+  escalonado. Dos defectos: durante el arrastre las obras se DESPLAZABAN en
+  vez de GIRAR, y al soltar cada obra arrancaba su propia transición desde una
+  pose que no existía en el anillo. Ahora todo movimiento es UN número:
+  `--drag`, el desplazamiento fraccionario del anillo en posiciones, registrado
+  con `@property` en el escenario y heredado por las obras. Cada obra calcula
+  su posición real `--p = --o + --drag` y con `abs()` de CSS deriva de ella
+  profundidad, giro, escala, luz y opacidad: a medio arrastre está exactamente
+  a medio camino entre dos poses de reposo. Al soltar —y con flechas, teclas y
+  saltos de sector— el índice activo cambia y `--drag` absorbe la diferencia en
+  el mismo fotograma (`flushSync`), así que nada se mueve; luego UNA transición
+  de 0,95 s con curva expo lleva `--drag` a 0 y el anillo gira como un cuerpo
+  rígido. Las obras ya no transicionan su `transform`. El gesto gana impulso:
+  el recorrido se redondea a posiciones y una velocidad de suelta mayor que
+  0,55 px/ms añade una más, con tope de tres; una mano que se detiene más de
+  80 ms antes de soltar, o un puntero que salta de golpe sin dos muestras de
+  movimiento, no lleva impulso. El signo importa y costó tres pruebas: `--drag`
+  es cuánto han ido las obras EN LA DIRECCIÓN DE LA MANO (`dx / paso`), y el
+  recorrido al soltar es `-round(--drag)`; con el signo al revés las obras
+  giraban contra la mano y la compensación al soltar dejaba de ser continua. Las obras que entran en la
+  ventana visible emergen del fondo con una animación sobre su `figure`, dentro
+  del contexto 3D, para no pelear con el transform del anillo. Un tercer
+  defecto que nadie había nombrado: la luz ambiente se REMONTABA con `key` y
+  fundía desde negro en cada cambio, un parpadeo del cielo. Ahora la luz nueva
+  funde SOBRE la anterior, que sólo se retira al terminar el fundido.
+- **«El fondo más como la noche, que se vean mejor las estrellas, con auroras
+  boreales y una animación leve.»** El cielo pasa de casi negro (`#040308`) a
+  un azul marino que se hace más profundo arriba y se calienta hacia el
+  planeta. Las estrellas suben de opacidad (0,62 → 0,95 y 0,32 → 0,55), ambas
+  capas centellean y entra una tercera de doce estrellas brillantes con núcleo
+  suave y su propio parpadeo. Dos cortinas de aurora —verde con orla violeta—
+  hechas SÓLO con degradados repetidos y máscaras, sin `filter`, para que lo
+  único animado sea un `transform` compuesto: derivan en sentidos contrarios y
+  respiran en ciclos de 26 y 33 s. En móvil queda una cortina; con
+  reduced-motion no se mueve nada, como todo lo demás.
+- **Verificación del pase.** `components/edmunds-page.test.tsx` gana dos
+  pruebas (seis peldaños y `sizes` por contexto; anillo como un solo número y
+  crossfade de la luz) y `e2e/edmunds.spec.ts` comprueba giro real a mitad de
+  arrastre, `--drag` de vuelta a 0 al soltar, dos luces durante el fundido y
+  una después, auroras animadas en la cubierta y quietas con reduced-motion, y
+  archivo servido ≥ 1,2× lo pintado. Resultado: 12 unitarios, build y **30 E2E**
+  en Chromium de escritorio y móvil. Capturas de Playwright a 1440 × 900 y
+  375 × 812: reposo, mitad de arrastre, 250 ms tras soltar, 300 ms tras flecha
+  y modo cine.
+- **Reorganización y foto nueva de Diseño.** No se movió ninguna obra: la
+  curación es del dueño. La propuesta va en la entrega: cuatro obras de
+  Retratos que son figuras en el paisaje, no retratos, y una observación sobre
+  las imágenes generadas mezcladas con fotografías. La foto nueva del sector
+  Diseño aún no está en `Disenos/`; cuando llegue: entrada en el MDX con
+  `medium`, `caption`, dimensiones reales y `source`, `npm run content` y
+  `node tools/prepare-edmunds.mjs`.
+
 ## Qué cambia y por qué
 
 La primera versión tenía la galería como una franja entre una portada editorial
@@ -227,8 +300,8 @@ identidades, fechas ni datos de cámara.
 
 ## Recursos y presupuesto
 
-`tools/prepare-edmunds.mjs` genera 270 WebP (90 × 480/960/1920) que ocupan
-46,27 MiB en disco. En pantallas táctiles o estrechas no hay reflejos, el
+`tools/prepare-edmunds.mjs` genera 540 WebP (90 × 320/480/640/960/1280/1920)
+que ocupan 82,48 MiB en disco (antes 270 y 46,27 MiB). En pantallas táctiles o estrechas no hay reflejos, el
 desenfoque ambiental baja de 46 a 28 px y el polvo no deriva: el compuesto
 más caro se reserva para escritorio con puntero. Al entrar en la cubierta se piden como máximo **16**
 recursos de obra: las siete del anillo, la copia ambiente de la activa (480 px,

@@ -90,7 +90,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-  const dragRef = useRef<{ x: number; y: number; pointer: number; engaged: boolean; lastX: number; lastT: number; velocity: number } | null>(null);
+  const dragRef = useRef<{ x: number; y: number; pointer: number; engaged: boolean; lastX: number; lastT: number; velocity: number; samples: number } | null>(null);
   const frame = useRef(0);
   const idleTimer = useRef(0);
   const suppressClick = useRef(false);
@@ -217,13 +217,15 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
     if (!stage) return;
     cancelAnimationFrame(frame.current);
     const horizontal = Math.abs(dx) > Math.abs(dy);
-    const positions = -dx / stepWidth();
-    // How far the hand carried the ring, plus one more for a flick.
-    let travel = horizontal ? Math.round(positions) : 0;
+    // Where the ring is, in positions: a hand moving right carries the works
+    // right, which brings the PREVIOUS work toward the centre.
+    const drag = dx / stepWidth();
+    let travel = horizontal ? -Math.round(drag) : 0;
     if (horizontal && !travel && Math.abs(dx) > DRAG_THRESHOLD) travel = dx < 0 ? 1 : -1;
+    // One more for a flick, in the flick's direction.
     if (horizontal && Math.abs(velocity) > FLICK) travel += velocity < 0 ? 1 : -1;
     travel = Math.max(-MAX_TRAVEL, Math.min(MAX_TRAVEL, travel));
-    if (travel) { suppressClick.current = true; go(active + travel, still ? 0 : positions - travel); }
+    if (travel) { suppressClick.current = true; go(active + travel, still ? 0 : drag); }
     else { stage.dataset.dragging = "false"; stage.style.setProperty("--drag", "0"); }
   };
 
@@ -285,7 +287,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
             else if (event.key === "PageDown" || event.key === "PageUp") stepSector(event.key === "PageDown" ? 1 : -1);
             else step(event.key === "ArrowRight" ? 1 : -1);
           }}
-          onPointerDown={(event) => { if (mode === "space" && event.isPrimary && event.button === 0) { dragRef.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId, engaged: false, lastX: event.clientX, lastT: event.timeStamp, velocity: 0 }; suppressClick.current = false; } }}
+          onPointerDown={(event) => { if (mode === "space" && event.isPrimary && event.button === 0) { dragRef.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId, engaged: false, lastX: event.clientX, lastT: event.timeStamp, velocity: 0, samples: 0 }; suppressClick.current = false; } }}
           onPointerMove={(event) => {
             const start = dragRef.current;
             if (start && start.pointer === event.pointerId) {
@@ -299,9 +301,10 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
               if (!start.engaged) return;
               // Recent speed, for the flick on release.
               const elapsed = event.timeStamp - start.lastT;
-              if (elapsed > 0) { start.velocity = 0.6 * start.velocity + 0.4 * ((event.clientX - start.lastX) / elapsed); start.lastX = event.clientX; start.lastT = event.timeStamp; }
-              // The ring turns with the hand, position by position, while the drag lasts.
-              write({ "--drag": still ? "0" : (-dx / stepWidth()).toFixed(4) });
+              if (elapsed > 0) { start.velocity = 0.6 * start.velocity + 0.4 * ((event.clientX - start.lastX) / elapsed); start.lastX = event.clientX; start.lastT = event.timeStamp; start.samples += 1; }
+              // The ring turns with the hand, position by position, while the drag
+              // lasts: `--drag` is how far the works have gone, in the hand's direction.
+              write({ "--drag": still ? "0" : (dx / stepWidth()).toFixed(4) });
               return;
             }
             if (!parallax) return;
@@ -314,8 +317,9 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
             dragRef.current = null;
             if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
             if (!start || start.pointer !== event.pointerId) return;
-            // A hand that stopped before letting go carries no flick.
-            const velocity = event.timeStamp - start.lastT > 80 ? 0 : start.velocity;
+            // A hand that stopped before letting go carries no flick, and a single
+            // jump of the pointer is not a gesture with a speed.
+            const velocity = event.timeStamp - start.lastT > 80 || start.samples < 2 ? 0 : start.velocity;
             endDrag(event.clientX - start.x, event.clientY - start.y, start.engaged ? velocity : 0);
           }}
           onPointerCancel={() => { dragRef.current = null; suppressClick.current = false; endDrag(0, 0, 0); }}
