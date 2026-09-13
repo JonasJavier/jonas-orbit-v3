@@ -39,6 +39,16 @@ export interface SceneBodyDescriptor {
 }
 
 /** Atributo que enlaza el proxy DOM dedicado con su cuerpo en la escena. */
+/**
+ * Mundos cuya página cubre la escena persistente con un lienzo propio (Miller
+ * y Edmunds) o con un contexto WebGL2 propio (Miller, Ranger). Mientras el
+ * visitante está en ellos la escena duerme: nunca hay dos contextos dibujando.
+ */
+const COVERED_WORLDS: readonly WorldId[] = ["miller", "edmunds", "ranger"];
+function isCoveredRoute(worldId: WorldId | null): boolean {
+  return worldId !== null && COVERED_WORLDS.includes(worldId);
+}
+
 const BODY_ATTRIBUTE = "data-system-body";
 
 /**
@@ -194,7 +204,7 @@ export function GargantuaSystem({
           },
         });
         handleRef.current = handle;
-        handle.setCovered(worldIdRef.current === "miller" || worldIdRef.current === "edmunds");
+        handle.setCovered(isCoveredRoute(worldIdRef.current));
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -240,7 +250,7 @@ export function GargantuaSystem({
   useEffect(() => {
     worldIdRef.current = worldId;
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
-    handleRef.current?.setCovered(worldId === "miller" || worldId === "edmunds");
+    handleRef.current?.setCovered(isCoveredRoute(worldId));
   }, [worldId]);
 
   // Paralaje aditivo del puntero, acotado a 2° dentro de la escena (§3). La
