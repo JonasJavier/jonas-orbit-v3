@@ -164,7 +164,9 @@ const SHADOW_IMPACT = (Math.sqrt(27) / 2) * GARGANTUA_RS;
   borde sigue abierto en el 20 % exterior del radio.
 */
 const SHADOW_GUARD = {
-  inner: 0.8,
+  // 0.80 → 0.85 en la ronda final del pase: el borde queda abierto en el 15 %
+  // exterior, que sigue sin ser una circunferencia y afila el negro un pelo.
+  inner: 0.85,
   amount: 0.96,
   darkGate: [0.006, 0.075] as const,
 };

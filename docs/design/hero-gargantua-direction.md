@@ -1102,16 +1102,52 @@ misma dispersión entre intervalos: los nudos avanzan con el material, no
 hierven. `npm run check` completo en verde sobre un worktree limpio con sólo
 estos cambios.
 
+### Ronda final (mismo día): cuatro retoques y se para
+
+El dueño revisó el resultado —«ya está cerca de convertirse en la versión
+final […] pulir 2 o 3 cosas concretas y parar»— y pidió exactamente cuatro
+cosas. Se hicieron ésas y ninguna más.
+
+1. **El arco inferior se rompe.** Tratado como envés ya era fino y crema, pero
+   seguía siendo un aro continuo. Ahora una máscara sobre los mismos campos que
+   cortan la banda primaria —tejido y masas— lo apaga donde la materia falta,
+   con un 18 % de traza para que se insinúe en vez de cortarse a tajo; su
+   grosor varía con el campo grueso a lo largo del arco; emite un 20 % menos; y
+   la banda frontal lo tapa algo más (camino óptico de la imagen directa 0.52 →
+   0.57). Anillo 1.0-1.25 R con glow: 116.9 → 113.7; sin glow 80.3 → 76.0.
+2. **El borde del negro se afila.** La rampa de rayos condenados pasa del 18 %
+   al 13 % exterior del radio crítico, el labio de 2.4-4.8 a 2.6-4.6 rs, la
+   guarda del bloom abre en el 15 % exterior (`inner` 0.85) y los órdenes altos
+   suben otro poco (`orderFade` 1.55 → 1.3) para que el filo sea una línea.
+   Negro < 8 con glow: 76 × 65 → 80 × 69 px; sin glow 113 × 76 → 114 × 78.
+3. **Más estructura en la masa crema.** Rodilla 5.8 → 5.5, carriles que emiten
+   menos dentro de la banda (0.34/0.48 → 0.30/0.40) y pozos más hondos (0.65 →
+   0.72). Banda ≥ 235: 0.87 % → 0.84 %; los medios siguen en su sitio (34.7 %).
+4. **Microvariación en el lado que se aleja.** Con el beaming en su suelo, ese
+   lado llega al tone mapping sin rango y se leía liso. No lleva más ruido: el
+   contraste del mismo tejido sube un 35 % y el calibre varía un 30 % más allí,
+   ligado a mu y al interruptor del Doppler, y los pozos pesan la mitad más.
+
+Ni un campo de ruido, uniforme ni draw nuevos: dos `step`/`smoothstep` y una
+máscara sobre campos ya mezclados. Medido igual que la primera mitad:
+ondulación de épocas 2.07 % en ciclo completo (cierre 0.31 %) —sube desde 1.31
+porque la máscara del arco y el contraste del lado lejano son umbrales, y
+sigue a un tercio del 6.1 % histórico—; histograma estable a reloj 0/60/600/1800
+(material 34.9 / 34.7 / 34.7 / 34.4 %); estabilidad 1.4-1.6, la del shader
+anterior; `npm run check` en verde en worktree limpio (227 tests, build).
+
 ### Coste y lo que no se tocó
 
 Cero evaluaciones de ruido nuevas, cero uniformes, cero draws. Por rayo, una
 raíz y un `smoothstep`; por cruce, un `smoothstep` y un `step`. Posición, `rs`,
 inclinación, cámara, HUD, bloom, `DISK_INNER`/`DISK_OUTER`, épocas, antialias y
 los cinco cuerpos siguen intactos. **Las palancas, si el dueño quiere más o
-menos:** la rampa de `doomed` (0.82-0.99 del radio crítico) y el `lip` (2.4-4.8
+menos:** la rampa de `doomed` (0.87-0.99 del radio crítico) y el `lip` (2.6-4.6
 rs) para el tamaño del negro; `HIGHLIGHT_KNEE` para cuánto blanco; los umbrales
-de `knot` y `pit` para cuántas excepciones; la rampa de `outerFade` para el
-grosor del arco inferior; `presence` (0.12) para la asimetría.
+de `knot` y `pit` para cuántas excepciones; la rampa de `outerFade` y la ventana
+de `arcMask` para el grosor y la continuidad del arco inferior; `presence`
+(0.12) para la asimetría y `receding` (0.35) para el contraste del lado que se
+aleja.
 
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 

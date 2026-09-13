@@ -388,8 +388,12 @@ debajo; y **el desvanecido de las lensadas tiene que entrar en la emisión**,
 porque los rayos rasantes saturan alpha y en la densidad sola no hace nada. La
 guarda del bloom sube a `inner` 0.80 / `amount` 0.96. `tools/gargantua-metrics.mjs`
 nace en este pase para medir anillos de la sombra, negro real, recorte blanco y
-asimetría. Cero evaluaciones de ruido, uniformes o draws nuevos. La revisión
-visual del dueño queda abierta.
+asimetría. Cero evaluaciones de ruido, uniformes o draws nuevos. El dueño
+revisó el primer resultado («8.9-9/10 […] pulir 2 o 3 cosas concretas y parar»)
+y la **ronda final** hizo exactamente sus cuatro retoques —arco inferior roto
+por máscara sobre tejido y masas, borde del negro más apretado, algo más de
+estructura en la masa crema y contraste extra en el lado que se aleja— y se
+detuvo ahí. El pase queda cerrado salvo veredicto contrario.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
