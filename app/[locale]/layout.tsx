@@ -2,6 +2,7 @@ import { MotionToggle } from "@/components/motion-toggle";
 import { GargantuaSystem } from "@/components/scene/gargantua-system";
 import { SiteBackdrop } from "@/components/site-backdrop";
 import { SoundtrackControl } from "@/components/soundtrack-control";
+import { VoyageLayer } from "@/components/voyage-layer";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
 import { getWorlds } from "@/lib/worlds";
@@ -59,6 +60,9 @@ export default async function LocaleLayout({
       <SiteBackdrop routes={routes} fallbackAccent={worldsData.gargantua.accent} />
       {published ? <GargantuaSystem bodies={bodies} routes={routes} /> : null}
       {children}
+      {/* La luz del cruce de la travesía: persiste como el canvas y avisa de
+          la llegada al cambiar el pathname. */}
+      {published ? <VoyageLayer /> : null}
       {/* Bandeja fija inferior derecha: el único interruptor de movimiento del
           sitio y la banda sonora, en todas las rutas. */}
       {published ? (

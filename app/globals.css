@@ -4813,3 +4813,124 @@ html[data-scene-live="true"]
     padding: 0.46rem 0.18rem !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Travesía espacio-temporal (docs/design/travesia-espaciotemporal.md)
+
+   El controlador publica en <html> `data-voyage` (depart · flash · arrive),
+   `data-voyage-mode` (full · short), `data-voyage-world` y las variables
+   `--voyage-x/--voyage-y` (dónde estaba el destino, en %) y `--voyage-tint`.
+   El shader de la escena hace el viaje; aquí se retira la instrumentación,
+   se enciende la luz sobre el cambio de página y emerge la página nueva.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Mientras se viaja el mapa no recibe puntero: ni hover ni segundo clic. El
+   raíl se devuelve el puntero a sí mismo en reposo; aquí se le quita. */
+html[data-voyage] .system-map,
+html[data-voyage] .system-map .nav-rail {
+  pointer-events: none;
+}
+
+/* ── Despegue completo: la instrumentación se retira mientras el espacio se
+   dobla. Los rótulos ajenos primero; el del destino aguanta hasta el pico. ── */
+html[data-voyage="depart"][data-voyage-mode="full"] :is(.hud__top, .hud__glass, .nav-rail),
+html[data-voyage="flash"][data-voyage-mode="full"] :is(.hud__top, .hud__glass, .nav-rail) {
+  opacity: 0;
+  transition: opacity 0.7s ease 0.35s;
+}
+
+html[data-voyage][data-voyage-mode="full"]
+  .system-map__slot:not([data-target-state="locked"]) .system-map__body {
+  opacity: 0;
+  transition: opacity 0.4s ease 0.05s;
+}
+
+html[data-voyage][data-voyage-mode="full"]
+  .system-map__slot[data-target-state="locked"] .system-map__body {
+  opacity: 0;
+  transition: opacity 0.5s ease 0.9s;
+}
+
+html[data-voyage][data-voyage-mode="full"] .hud__target {
+  opacity: 0;
+  transition: opacity 0.5s ease 1.2s;
+}
+
+/* ── Versión reducida (sin escena viva): zoom leve hacia el destino y fundido.
+   Es lo que ve quien tiene el movimiento apagado o el perfil ligero. ── */
+html[data-voyage][data-voyage-mode="short"] .system-map__field {
+  transform-origin: var(--voyage-x, 50%) var(--voyage-y, 50%);
+  transform: scale(1.06);
+  opacity: 0;
+  transition:
+    transform 0.32s cubic-bezier(0.4, 0, 0.8, 0.4),
+    opacity 0.28s ease-in 0.04s;
+}
+
+html[data-voyage][data-voyage-mode="short"] :is(.hud__top, .hud__target, .nav-rail) {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+/* ── La luz del cruce ─────────────────────────────────────────────────────
+   Un solo nodo fijo. Se enciende 200 ms antes del pico, cubre el cambio de
+   página y se retira expandiéndose desde donde estaba el destino. */
+.voyage-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--voyage-x, 50%) var(--voyage-y, 50%),
+    #ffffff 0,
+    color-mix(in srgb, var(--voyage-tint, #7fe5ff) 42%, #ffffff) 16%,
+    color-mix(in srgb, var(--voyage-tint, #7fe5ff) 34%, #06101c) 58%,
+    #02060d 100%
+  );
+  transform: scale(1);
+  will-change: opacity, transform;
+}
+
+html[data-voyage="flash"] .voyage-flash {
+  opacity: 1;
+  transition: opacity 0.2s ease-in;
+}
+
+html[data-voyage="flash"][data-voyage-mode="short"] .voyage-flash {
+  opacity: 0.86;
+  transition-duration: 0.14s;
+}
+
+html[data-voyage="arrive"] .voyage-flash {
+  opacity: 0;
+  transform: scale(1.75);
+  transition:
+    opacity 0.55s cubic-bezier(0.2, 0.6, 0.3, 1),
+    transform 0.55s cubic-bezier(0.2, 0.6, 0.3, 1);
+}
+
+html[data-voyage="arrive"][data-voyage-mode="short"] .voyage-flash {
+  transition-duration: 0.22s;
+}
+
+/* ── La página nueva emerge al otro lado ──────────────────────────────────
+   Sólo opacidad, a propósito: un transform o un filter en <main> convertiría
+   a ese elemento en bloque contenedor de todo lo `position: fixed` que hay
+   dentro (cabina de la Ranger, cubierta de Edmunds…) y lo descolocaría. */
+@keyframes voyage-emerge {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+html[data-voyage="arrive"] :is(main, .site-header, .site-footer) {
+  animation: voyage-emerge 0.55s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+
+html[data-voyage="arrive"][data-voyage-mode="short"] :is(main, .site-header, .site-footer) {
+  animation-duration: 0.22s;
+}

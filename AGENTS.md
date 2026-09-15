@@ -6,6 +6,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**Sobre mí — constelación personal (2026-09-14):**
+`docs/design/sobre-mi-constelacion.md` manda en contenido y composición de
+`/es/sobre-mi`. El dueño aprobó la maqueta y pidió construir conservando la
+navbar. Seis constelaciones, F40 como retrato central y F28 en Cómo soy,
+fondo generado de cielo/montañas, fotos reales y textos breves. SiteShell y
+navbar originales intactos; movimiento conectado al interruptor global. La
+escena persistente duerme también en Gargantúa porque ahora la cubre el álbum.
+No convertir las aficiones en CV ni publicar los detalles privados del sueño.
+La autorización de publicación de E03/Bonao City sigue pendiente; ver las fuentes.
+
 **Fuente de verdad:** `docs/plans/jonas-orbit-v3-mission-endurance.md` (plan
 aprobado con eng review CLEAR). No abras decisiones arquitectónicas nuevas sin
 pasar por ese documento. La matriz de tests vive en su Appendix A.
@@ -100,6 +110,32 @@ por encima de reduced-motion y de las heurísticas de capacidad para montar la
 escena). `?no3d=1` sigue siendo la puerta al perfil ligero y se persiste con
 la clave de siempre. Cualquier texto anterior que describa botones de
 consentimiento por página está obsoleto.
+
+**Travesía espacio-temporal (2026-09-14) — manda sobre el §7 del pivote en
+duración, fases, momento del cambio de ruta y versión reducida de la
+transición de aproximación:** `docs/design/travesia-espaciotemporal.md`. Al
+activar un destino desde el System Map (proxy o raíl, clic o Enter) la
+navegación es una travesía cinematográfica de 2,6 s en cuatro fases —bloqueo
+de objetivo (0–0,4 s), aceleración con easing de potencia y campo de 35° a
+50° (0,4–1,35 s), distorsión del espacio-tiempo alrededor del destino
+PROYECTADO (1,05–2,05 s: lente de masa puntual con anillo de Einstein fuera
+del limbo, centro comprimido, imagen duplicada, arcos rotos sobre borde
+oscuro, aberración mínima) y cruce con compresión luminosa (1,85–2,6 s)—; no
+es un túnel de hiperespacio. `lib/voyage.ts` es la línea de tiempo pura
+(`sampleVoyage(t)` → `lock/approach/warp/flash`) y las huellas por mundo;
+`lib/voyage-controller.ts` decide CUÁNDO navega el router —**por temporizador
+en el pico, nunca desde un fotograma** (G10), cualquier tecla/clic/gesto
+corta (G9), tope de llegada de 1,4 s— y publica `data-voyage` en `<html>`;
+`components/scene/voyage-pass.ts` es el `ShaderPass` (deshabilitado en
+reposo) y la escena mueve la cámara SOBRE la pose sin escribir en ella
+(`setPose` termina la travesía). `components/voyage-layer.tsx` (layout) lleva
+la luz del cruce y avisa de la llegada al cambiar el pathname. Sin escena
+viva va la **versión reducida** de medio segundo en el DOM, que sustituye al
+crossfade de 120 ms del §7 por decisión del dueño. Tres reglas que costaron
+una prueba: **el anillo se mide sobre el limbo ya ampliado** por la
+compresión del centro; **poco refuerzo al destino** (+15 % luz, +40 %
+emisión) o sale lavado; **las trazas orbitales se retiran al caer**. Su
+valoración visual queda abierta.
 
 **Cabecera — observatorio y acento por mundo (2026-09-13):** la sección
 `Observatorio y acento por mundo` de `docs/design/identity-gargantua.md`

@@ -6,6 +6,7 @@ import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
 import { useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { readVoyageDeparture, subscribeVoyage } from "@/lib/voyage-controller";
 import { findWorldRoute, type WorldRoute } from "@/lib/world-route";
 import {
   evaluateCapabilities,
@@ -36,11 +37,11 @@ export interface SceneBodyDescriptor {
 
 /** Atributo que enlaza el proxy DOM dedicado con su cuerpo en la escena. */
 /**
- * Mundos cuya página cubre la escena persistente con un lienzo propio (Miller
- * y Edmunds) o con un contexto WebGL2 propio (Miller, Ranger). Mientras el
+ * Mundos cuya página cubre la escena persistente con un lienzo propio (Sobre
+ * mí, Miller y Edmunds) o con un contexto WebGL2 propio (Miller, Ranger). Mientras el
  * visitante está en ellos la escena duerme: nunca hay dos contextos dibujando.
  */
-const COVERED_WORLDS: readonly WorldId[] = ["miller", "edmunds", "ranger"];
+const COVERED_WORLDS: readonly WorldId[] = ["gargantua", "miller", "edmunds", "ranger"];
 function isCoveredRoute(worldId: WorldId | null): boolean {
   return worldId !== null && COVERED_WORLDS.includes(worldId);
 }
@@ -124,6 +125,20 @@ export function GargantuaSystem({
   const worldId = findWorldRoute(pathname, routes)?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
 
+  /**
+   * La travesía hacia un destino. El controlador (`voyage-controller`) es el
+   * dueño del reloj y del router; la escena sólo recibe el despegue —id e
+   * instante de salida— y muestrea la línea de tiempo por su cuenta. El
+   * despegue es el mismo objeto mientras dura, así que esto no re-renderiza
+   * por fotograma: cambia dos veces por viaje, al salir y al pedir la ruta.
+   */
+  const departure = useSyncExternalStore(
+    subscribeVoyage,
+    readVoyageDeparture,
+    () => null,
+  );
+  const departureRef = useRef(departure);
+
   // Publica el nivel y el motivo en el DOM. Es lo que hace auditable el gate, lo
   // que permite que el CSS retire el fondo 2D cuando la escena está viva, y lo
   // que convierte «no se ve nada» en un diagnóstico de una sola línea.
@@ -170,6 +185,10 @@ export function GargantuaSystem({
         });
         handleRef.current = handle;
         handle.setCovered(isCoveredRoute(worldIdRef.current));
+        const current = departureRef.current;
+        if (current) {
+          handle.setVoyage({ id: current.id, startedAt: current.startedAt });
+        }
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -217,6 +236,16 @@ export function GargantuaSystem({
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
     handleRef.current?.setCovered(isCoveredRoute(worldId));
   }, [worldId]);
+
+  // El despegue va a la escena tal cual llega: un objeto con id e instante, o
+  // null cuando el router ya tiene la ruta. La pose de la ruta nueva llega por
+  // el efecto de arriba y también termina el viaje por su cuenta.
+  useEffect(() => {
+    departureRef.current = departure;
+    handleRef.current?.setVoyage(
+      departure ? { id: departure.id, startedAt: departure.startedAt } : null,
+    );
+  }, [departure]);
 
   // Paralaje aditivo del puntero, acotado a 2° dentro de la escena (§3). La
   // preferencia del sistema lo apaga por defecto; el consentimiento explícito

@@ -13,6 +13,13 @@ import {
 import type { CameraPose } from "@/lib/scene-poses";
 import { readVisualBench } from "@/lib/visual-bench";
 import {
+  sampleVoyage,
+  voyageFlavourFor,
+  voyageTintFor,
+  type VoyageFlavour,
+  type VoyageSample,
+} from "@/lib/voyage";
+import {
   DISK_INNER,
   DISK_OUTER,
   DISPLAY_FRAGMENT,
@@ -28,6 +35,7 @@ import {
   type SceneBody,
   type SceneBodyInput,
 } from "./bodies";
+import { createVoyagePass } from "./voyage-pass";
 
 /**
  * El Sistema Gargantúa.
@@ -77,6 +85,12 @@ export interface SceneHandle {
   /** An opaque destination covers the scene; retain its context without drawing. */
   setCovered(covered: boolean): void;
   setFocus(id: WorldId | null): void;
+  /**
+   * La travesía hacia un destino. La escena muestrea la línea de tiempo por su
+   * cuenta desde `startedAt` (`performance.now()`); `null` la termina. Cambiar
+   * de pose también la termina: la ruta manda.
+   */
+  setVoyage(voyage: { id: WorldId; startedAt: number } | null): void;
   /** Paralaje aditivo del puntero, en el rango −1..1. */
   setParallax(x: number, y: number): void;
   resize(): void;
@@ -131,6 +145,36 @@ const BLOOM: Record<QualityTier, { strength: number; radius: number; scale: numb
 const BASE_EXPOSURE = 0.95;
 const BLOOM_THRESHOLD = 2.0;
 const TEMPORAL_BLEND = 0.18;
+
+/*
+  ── La travesía ─────────────────────────────────────────────────────────────
+
+  Durante el viaje la cámara SÍ se mueve, y la acumulación temporal del
+  raymarch deja de ser válida fotograma a fotograma. El pivote (§G3) fija la
+  respuesta: no se reproyecta —eso es TAA de motor de juego— sino que se
+  sostiene alto el peso de la mezcla mientras dura el movimiento. 0.55 deja
+  algo de suavizado sin dejar estela.
+*/
+const VOYAGE_TEMPORAL_BLEND = 0.55;
+/**
+ * Campo de visión al final de la aceleración. La pose de la home es un
+ * teleobjetivo de 35°; abrirlo a 50° mientras la cámara cae es lo que hace
+ * que los laterales parezcan envolver al observador y que el cuerpo crezca
+ * más deprisa de lo que la distancia sola justificaría.
+ */
+const VOYAGE_FOV = 50;
+/**
+ * A cuántos radios del cuerpo se detiene la caída. A 3.2 radios y 50° el
+ * diámetro del destino ronda dos tercios del alto del cuadro, y la
+ * compresión del centro que hace el shader durante la distorsión lo lleva al
+ * 93 %: ocupa gran parte del viewport sin que el visitante pierda de vista qué
+ * es, y el anillo de luz queda todavía dentro del cuadro.
+ */
+const VOYAGE_STOP_RADII = 3.2;
+/** Con Gargantúa se para al borde del disco: el destino es la propia sombra. */
+const VOYAGE_GARGANTUA_STOP = DISK_OUTER * 1.35;
+/** Muestras del desenfoque radial por nivel. Ver `createVoyagePass`. */
+const VOYAGE_TAPS: Record<QualityTier, number> = { orbit: 8, deep: 12 };
 
 /**
  * Radio aparente de la sombra, en unidades del integrador.
@@ -480,6 +524,13 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     composer.addPass(shadowGuardPass);
   }
 
+  // La travesía dobla la imagen ENTERA —raymarch, cuerpos y halo— en lineal,
+  // antes del tone mapping. Deshabilitado en reposo: cuesta cero.
+  const { pass: voyagePass, uniforms: voyageUniforms } = createVoyagePass(
+    VOYAGE_TAPS[tier],
+  );
+  composer.addPass(voyagePass);
+
   composer.addPass(new OutputPass());
 
   // === Cámara ==============================================================
@@ -530,6 +581,24 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    */
   let parallaxHeld = false;
   let frameDistance = 120;
+
+  /**
+   * La travesía en curso. Mientras existe, la cámara se orienta en cada
+   * fotograma a partir de la muestra de la línea de tiempo: primero se vuelve
+   * hacia el destino (lock), después cae hacia él abriendo el campo
+   * (approach), y el paso de post-proceso dobla el espacio a su alrededor
+   * (warp, flash). Es una transición guionada sobre la pose de la ruta —§3,
+   * regla 2—, no un controlador: nadie escribe en `pose`.
+   */
+  let voyage: { id: WorldId; startedAt: number; flavour: VoyageFlavour } | null =
+    null;
+  let voyageSample: VoyageSample | null = null;
+  let voyageTarget: SceneBody | null = null;
+  const voyageTargetPosition = new THREE.Vector3();
+  const voyageDirection = new THREE.Vector3();
+  let voyageTargetRadius = 0;
+  /** Campo de visión efectivo: el de la pose, salvo durante la caída. */
+  let currentFov = pose.fov;
   let cssWidth = 1;
   let cssHeight = 1;
   let pixelWidth = 1;
@@ -723,6 +792,11 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     return tight * 1.04;
   }
 
+  /** Las trazas orbitales sólo se dibujan en apaisado (ver `applyPose`). */
+  function orbitsFitViewport(aspect: number): boolean {
+    return aspect >= PORTRAIT_ASPECT;
+  }
+
   /**
    * Encuadre y orientación, separados a propósito.
    *
@@ -746,7 +820,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       // En vertical los cuerpos se recomponen en el plano de cámara; esconder
       // estas guías GHOST evita dibujar una trayectoria que ya no pasaría por
       // su destino. Brackets, TARGET y raíl siguen íntegros.
-      body.orbit.visible = aspect >= PORTRAIT_ASPECT;
+      body.orbit.visible = orbitsFitViewport(aspect);
       for (const material of body.materials) {
         if (material.uniforms.uWidth) material.uniforms.uWidth.value = orbitWidth;
       }
@@ -887,15 +961,44 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
     up.crossVectors(right, forward).normalize();
 
-    const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
-    const halfWidth = frameDistance * tanHalfFov * aspect;
-    const halfHeight = frameDistance * tanHalfFov;
+    const tanHalfPose = Math.tan((pose.fov * Math.PI) / 360);
+    const halfWidth = frameDistance * tanHalfPose * aspect;
+    const halfHeight = frameDistance * tanHalfPose;
     // Mirar a la IZQUIERDA del agujero negro lo empuja a la derecha del cuadro,
     // y mirar por ENCIMA lo empuja hacia abajo.
     cameraTarget
       .copy(right)
       .multiplyScalar(-halfWidth * pose.targetShiftFraction)
       .addScaledVector(up, halfHeight * pose.targetShiftYFraction);
+
+    /*
+      La travesía, encima de la pose y sin tocarla.
+
+      La mirada se lleva al centro del destino durante el bloqueo, y después
+      la cámara cae por la recta que la une con él hasta detenerse a unos
+      radios de su superficie, mientras el campo se abre. Cuando `voyage` es
+      null nada de esto existe y la cámara es exactamente la de la pose.
+    */
+    let fov = pose.fov;
+    if (voyage && voyageSample) {
+      cameraTarget.lerp(voyageTargetPosition, voyageSample.lock);
+      voyageDirection.subVectors(voyageTargetPosition, cameraPosition);
+      const distance = voyageDirection.length();
+      if (distance > 1e-6) {
+        voyageDirection.divideScalar(distance);
+        const stop =
+          voyage.id === "gargantua"
+            ? VOYAGE_GARGANTUA_STOP
+            : Math.max(voyageTargetRadius * VOYAGE_STOP_RADII, 1);
+        cameraPosition.addScaledVector(
+          voyageDirection,
+          Math.max(0, distance - stop) * voyageSample.approach,
+        );
+      }
+      fov += (VOYAGE_FOV - pose.fov) * voyageSample.approach;
+    }
+    currentFov = fov;
+    const tanHalfFov = Math.tan((fov * Math.PI) / 360);
 
     // Base definitiva, ya con la mirada corrida.
     forward.copy(cameraTarget).sub(cameraPosition).normalize();
@@ -927,7 +1030,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     bodyCamera.position.copy(cameraPosition);
     basis.makeBasis(rolledRight, rolledUp, scratch.copy(forward).negate());
     bodyCamera.quaternion.setFromRotationMatrix(basis);
-    bodyCamera.fov = pose.fov;
+    bodyCamera.fov = fov;
     bodyCamera.aspect = aspect;
     bodyCamera.near = Math.max(0.1, frameDistance * 0.02);
     bodyCamera.far = frameDistance * 4;
@@ -995,6 +1098,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   let accumulated = 0;
   function resetAccumulation() {
     accumulated = 0;
+  }
+
+  function endVoyage() {
+    voyage = null;
+    voyageSample = null;
+    voyageTarget = null;
+    voyagePass.enabled = false;
+    currentFov = pose.fov;
   }
 
   function resize() {
@@ -1108,7 +1219,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // alrededor de un punto. El tamaño del blanco lo resuelve el CSS con
     // relleno; aquí se dice la verdad sobre el cuerpo.
     const distance = cameraPosition.distanceTo(body.position);
-    const tanHalfFov = Math.tan((pose.fov * Math.PI) / 360);
+    const tanHalfFov = Math.tan((currentFov * Math.PI) / 360);
     const radius =
       (body.radius / Math.max(distance, 1)) * (cssHeight / (2 * tanHalfFov));
 
@@ -1136,6 +1247,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   function updateBodies(seconds: number) {
     const position = new THREE.Vector3();
     projected.length = 0;
+    const orbitsVisible =
+      orbitsFitViewport(cssWidth / cssHeight) &&
+      (voyageSample?.approach ?? 0) < 0.02;
 
     for (const body of bodies) {
       /*
@@ -1191,6 +1305,24 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         Math.max(1.08, (25 / Math.max(body.placement.orbitRadius, 1)) * 1.36),
       );
 
+      /*
+        Bloqueo de objetivo (travesía): el destino gana luz y emisión, los
+        demás bajan un poco de intensidad. Es lo que dice «vamos hacia ahí»
+        antes de que la cámara se mueva, y se hace con los uniformes que ya
+        existen — ni un draw ni un uniforme nuevos.
+      */
+      const lock = voyageSample?.lock ?? 0;
+      const travelling = voyage !== null && voyage.id === body.id;
+      // Poco, a propósito: el destino ya lleva el foco de navegación y va a
+      // llenar el cuadro. Con 0.35 de luz y 0.8 de emisión Miller salía lavado.
+      const lightScale = travelling ? 1 + 0.15 * lock : 1 - 0.38 * lock;
+      const emissionScale = travelling ? 1 + 0.4 * lock : 1 - 0.3 * lock;
+
+      // Las trazas orbitales se retiran en cuanto la cámara empieza a caer:
+      // una cinta que pasa a un radio de la cámara es un garabato de un píxel
+      // de ancho cruzando el cuadro entero.
+      body.orbit.visible = orbitsVisible;
+
       // Un cuerpo lleva ahora hasta dos materiales —superficie y halo— y no
       // comparten uniformes: el halo no sabe nada de cámara ni de luz. Se
       // escribe lo que cada uno declara y punto.
@@ -1198,7 +1330,12 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         const uniforms = material.uniforms;
         uniforms.uTime.value = seconds;
         uniforms.uCamPos?.value.copy(cameraPosition);
-        if (uniforms.uLightIntensity) uniforms.uLightIntensity.value = light;
+        if (uniforms.uLightIntensity) {
+          uniforms.uLightIntensity.value = light * lightScale;
+        }
+        if (uniforms.uEmission) {
+          uniforms.uEmission.value = bench.emission * emissionScale;
+        }
       }
 
       let hitScaleX = 1;
@@ -1259,6 +1396,23 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       resize();
     }
 
+    if (voyage) {
+      /*
+        La travesía se muestrea por reloj real, no por fotograma: si el equipo
+        va a 30 fps la caída dura lo mismo, sólo se ve con menos muestras. Y la
+        cámara se orienta en CADA fotograma, porque aquí sí se mueve.
+      */
+      voyageSample = sampleVoyage((timestamp - voyage.startedAt) / 1000);
+      if (voyageTarget) {
+        voyageTargetPosition.copy(voyageTarget.object.position);
+        voyageTargetRadius = voyageTarget.radius;
+      } else {
+        voyageTargetPosition.set(0, 0, 0);
+        voyageTargetRadius = centreRadii.get(voyage.id) ?? 2.6;
+      }
+      orientCamera(width / Math.max(height, 1));
+    }
+
     if (pose.animated) {
       elapsed += delta;
 
@@ -1274,7 +1428,10 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       const k = 1 - Math.exp(-delta / PARALLAX_TAU);
       const nextX = parallaxX + (parallaxTargetX - parallaxX) * k;
       const nextY = parallaxY + (parallaxTargetY - parallaxY) * k;
-      if (Math.abs(nextX - parallaxX) > 1e-4 || Math.abs(nextY - parallaxY) > 1e-4) {
+      if (
+        !voyage &&
+        (Math.abs(nextX - parallaxX) > 1e-4 || Math.abs(nextY - parallaxY) > 1e-4)
+      ) {
         parallaxX = nextX;
         parallaxY = nextY;
         // Sólo orientar: la distancia de encuadre no depende del paralaje.
@@ -1300,12 +1457,37 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     marchMaterial.uniforms.uTime.value = clock;
     updateBodies(clock);
 
+    if (voyage && voyageSample) {
+      // El centro de la distorsión es el destino PROYECTADO, no el centro de
+      // la pantalla: la realidad se dobla hacia donde está el cuerpo y la
+      // cámara va corrigiendo hasta centrarlo.
+      const destination = voyage.id;
+      const hit = projected.find((entry) => entry.id === destination);
+      if (hit) {
+        voyageUniforms.uCentre.value.set(hit.x / cssWidth, 1 - hit.y / cssHeight);
+        const radius =
+          destination === "gargantua"
+            ? hit.radius * 1.4
+            : Math.max(hit.hitRadiusX ?? 0, hit.hitRadiusY ?? 0, hit.radius);
+        voyageUniforms.uRadius.value = radius / cssHeight;
+      }
+      voyageUniforms.uAspect.value = cssWidth / cssHeight;
+      voyageUniforms.uLock.value = voyageSample.lock;
+      voyageUniforms.uApproach.value = voyageSample.approach;
+      voyageUniforms.uWarp.value = voyageSample.warp;
+      voyageUniforms.uFlash.value = voyageSample.flash;
+      voyageUniforms.uTime.value = clock;
+      voyagePass.enabled = true;
+    } else {
+      voyagePass.enabled = false;
+    }
+
     try {
       if (canAccumulate) {
         const [jx, jy] = JITTER[accumulated % JITTER.length];
         marchMaterial.uniforms.uJitter.value.set(jx / pixelWidth, jy / pixelHeight);
         marchMaterial.uniforms.uBlend.value = Math.max(
-          TEMPORAL_BLEND,
+          voyage ? VOYAGE_TEMPORAL_BLEND : TEMPORAL_BLEND,
           1 / (accumulated + 1),
         );
         marchMaterial.uniforms.tHistory.value = historyRead.texture;
@@ -1375,6 +1557,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       ].join(" · ");
     },
     setPose(next) {
+      // Cambiar de pose termina cualquier travesía: la ruta ya cambió y su
+      // pose manda. Es la mitad de «la animación nunca es dueña del router».
+      endVoyage();
       const wasAnimated = pose.animated;
       pose = next;
       applyPose(cssWidth / cssHeight);
@@ -1384,6 +1569,11 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       if (!wasAnimated && next.animated) lastFrozenDraw = 0;
     },
     setFocus(id) {
+      // Con una travesía en marcha el destino es dueño del foco: el mapa deja
+      // de recibir puntero y el `pointerleave` que eso provoca no puede apagar
+      // el cuerpo al que se está viajando.
+      if (voyage) return;
+
       for (const body of bodies) {
         const focus = body.id === id ? 1 : 0;
         for (const material of body.materials) {
@@ -1399,6 +1589,48 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         parallaxTargetY = parallaxY;
       }
       parallaxHeld = held;
+    },
+    setVoyage(next) {
+      if (next === null) {
+        if (!voyage) return;
+        endVoyage();
+        // Los cuerpos vuelven a su luz y el foco lo decide otra vez el DOM.
+        for (const body of bodies) {
+          body.orbit.visible = orbitsFitViewport(cssWidth / cssHeight);
+          for (const material of body.materials) {
+            material.uniforms.uFocus.value = 0;
+          }
+        }
+        parallaxHeld = false;
+        orientCamera(cssWidth / cssHeight);
+        return;
+      }
+
+      voyage = {
+        id: next.id,
+        startedAt: next.startedAt,
+        flavour: voyageFlavourFor(next.id),
+      };
+      voyageTarget = bodies.find((body) => body.id === next.id) ?? null;
+      voyageSample = sampleVoyage(0);
+
+      const tint = voyageTintFor(next.id).linear;
+      voyageUniforms.uTint.value.set(tint[0], tint[1], tint[2]);
+      const { lens, liquid, grid, dark } = voyage.flavour;
+      voyageUniforms.uFlavour.value.set(lens, liquid, grid, dark);
+
+      // El destino se queda con el foco y el paralaje se congela donde esté:
+      // desde aquí la cámara sólo obedece a la línea de tiempo.
+      for (const body of bodies) {
+        const focus = body.id === next.id ? 1 : 0;
+        for (const material of body.materials) {
+          material.uniforms.uFocus.value = focus;
+        }
+      }
+      parallaxTargetX = parallaxX;
+      parallaxTargetY = parallaxY;
+      parallaxHeld = true;
+      lastFrozenDraw = 0;
     },
     setParallax(x, y) {
       if (!pose.animated || parallaxHeld) return;
@@ -1432,6 +1664,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       fallbackTarget?.dispose();
       savePass?.dispose();
       shadowGuardPass?.dispose();
+      voyagePass.dispose();
       bloomPass.dispose();
       composer.dispose();
       renderer.dispose();
