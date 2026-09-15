@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import type { WorldId } from "@/content/worlds.data";
+import { startVoyage } from "./voyage-controller";
+import type { VoyageMode } from "./voyage";
 
 /**
  * La costura entre el Hero y la forma de viajar a un mundo.
@@ -61,19 +63,43 @@ export function shouldNavigateToWorld(
   );
 }
 
+/**
+ * Qué versión de la travesía le toca a este visitante.
+ *
+ * La completa —2,6 s de cámara y shader— sólo existe si la escena WebGL está
+ * viva y dibujando, que es lo que `data-scene-live` publica con su primera
+ * proyección. En cualquier otro caso (movimiento apagado, perfil ligero,
+ * reduced-motion sin activación, sin WebGL2, escena aún cargando) va la
+ * reducida: medio segundo de zoom y fundido en el DOM. Así el interruptor de
+ * movimiento tiene sentido también al navegar.
+ */
+export function voyageModeFor(root: { dataset: DOMStringMap }): VoyageMode {
+  return root.dataset.sceneLive === "true" ? "full" : "short";
+}
+
 export function useWorldNavigation() {
   const router = useRouter();
 
   return useCallback(
     (destination: WorldDestination) => {
       /*
-        Fase actual: navegación por ruta.
+        Fase actual: navegación por ruta, con la travesía delante.
+
+        El router sigue siendo quien cambia la página; lo que hace la travesía
+        es decidir CUÁNDO —en el pico de la distorsión, por temporizador— y
+        cortarse con cualquier tecla o gesto. Si ya hay un viaje en marcha, el
+        que va, va.
 
         Cuando llegue el viaje continuo, lo único que cambia es este cuerpo —
         pasará a `document.getElementById(id)?.scrollIntoView(...)` y el store
         de progreso hará el resto. La firma se queda como está a propósito.
       */
-      router.push(destination.href);
+      startVoyage({
+        id: destination.id,
+        href: destination.href,
+        mode: voyageModeFor(document.documentElement),
+        navigate: (href) => router.push(href),
+      });
     },
     [router],
   );

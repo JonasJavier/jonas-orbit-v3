@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
   El raíl navega a través de `useWorldNavigation`, la costura que aísla al Hero
@@ -12,15 +12,30 @@ const routerPush = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: routerPush, replace: vi.fn(), prefetch: vi.fn() }),
 }));
+import { VOYAGE_SHORT } from "@/lib/voyage";
+import { cancelVoyage } from "@/lib/voyage-controller";
 import { getWorldNavItems } from "@/lib/worlds";
 import { SystemMap } from "./system-map";
 
 const worlds = getWorldNavItems("es");
 const MAP_LABEL = "Destinos del Sistema Gargantúa";
 
+/*
+  El clic ya no navega en el mismo tick: arranca la travesía y el router
+  recibe la ruta en el pico, por temporizador. Sin escena viva —que es el caso
+  de jsdom— va la versión reducida, así que avanzar ese tiempo basta.
+*/
+const SHORT_PUSH_MS = Math.round(VOYAGE_SHORT.push * 1000) + 1;
+
 describe("SystemMap — el contrato entre el HTML y la escena", () => {
   beforeEach(() => {
     routerPush.mockClear();
+    cancelVoyage();
+  });
+
+  afterEach(() => {
+    cancelVoyage();
+    vi.useRealTimers();
   });
 
   it("expone la marca mínima y un TARGET en reposo sin copy personal", () => {
@@ -281,6 +296,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("clic principal bloquea el destino y navega por la abstracción", () => {
+    vi.useFakeTimers();
     const { container } = render(<SystemMap worlds={worlds} />);
     const endurance = screen.getByRole("link", {
       name: /^Proyectos Endurance$/i,
@@ -288,13 +304,35 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
     fireEvent.click(endurance, { button: 0 });
 
-    expect(routerPush).toHaveBeenCalledTimes(1);
-    expect(routerPush).toHaveBeenCalledWith("/es/proyectos");
+    // El bloqueo es inmediato; la travesía arranca en modo reducido (sin
+    // escena viva) y el router recibe la ruta en su pico, no antes.
     expect(endurance).toHaveAttribute("data-target-state", "locked");
     const target = container.querySelector(".hud__target");
     expect(target).toHaveAttribute("data-target-state", "locked");
     expect(target).toHaveTextContent(/Target locked/i);
     expect(target).not.toHaveTextContent(/\[ Enter \]/i);
+    expect(document.documentElement.dataset.voyage).toBe("depart");
+    expect(document.documentElement.dataset.voyageMode).toBe("short");
+    expect(document.documentElement.dataset.voyageWorld).toBe("endurance");
+    expect(routerPush).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(SHORT_PUSH_MS);
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith("/es/proyectos");
+  });
+
+  it("G9 · una tecla durante la travesía pide la ruta al instante", () => {
+    vi.useFakeTimers();
+    render(<SystemMap worlds={worlds} />);
+    const miller = screen.getByRole("link", { name: /^Formación Miller$/i });
+
+    fireEvent.click(miller, { button: 0 });
+    expect(routerPush).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith("/es/formacion");
+    expect(document.documentElement.dataset.voyageSkipped).toBe("true");
   });
 
   it("un clic modificado conserva el comportamiento nativo del enlace", () => {
@@ -321,6 +359,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("el proxy visual comparte lock y respeta clicks modificados", () => {
+    vi.useFakeTimers();
     const { container } = render(<SystemMap worlds={worlds} />);
     const millerProxy = container.querySelector<HTMLElement>(
       '[data-hitbox-proxy="miller"]',
@@ -331,10 +370,13 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
       once: true,
     });
     fireEvent.click(millerProxy as HTMLElement, { button: 0, metaKey: true });
+    vi.advanceTimersByTime(SHORT_PUSH_MS);
     expect(routerPush).not.toHaveBeenCalled();
     expect(millerProxy).toHaveAttribute("data-target-state", "idle");
+    expect(document.documentElement.dataset.voyage).toBeUndefined();
 
     fireEvent.click(millerProxy as HTMLElement, { button: 0 });
+    vi.advanceTimersByTime(SHORT_PUSH_MS);
     expect(routerPush).toHaveBeenCalledWith("/es/formacion");
     expect(millerProxy).toHaveAttribute("data-target-state", "locked");
     expect(container.querySelector(".hud__target")).toHaveTextContent(

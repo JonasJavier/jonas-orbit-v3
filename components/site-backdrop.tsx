@@ -65,12 +65,15 @@ export function SiteBackdrop({
   // Una activación explícita recupera el conjunto entero —escena, cursor,
   // polvo, paralaje y deriva—. Sin esa acción, reduced-motion conserva el cielo
   // congelado como primer frame deliberado.
-  const pointerLifeDisabled = !pointerLifeEnabled({
+  const route = findWorldRoute(pathname, routes);
+  // The personal album has an opaque landscape and its own tiny CSS stars.
+  // Do not run the hidden starfield or pointer trail beneath it.
+  const pointerLifeDisabled = route?.id === "gargantua" || !pointerLifeEnabled({
     reducedMotion,
     lightEffects,
     forcedEffects,
   });
-  const accent = findWorldRoute(pathname, routes)?.accent ?? fallbackAccent;
+  const accent = route?.accent ?? fallbackAccent;
 
   useEffect(() => {
     const idleWindow = window as IdleWindow;

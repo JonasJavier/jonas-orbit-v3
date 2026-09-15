@@ -1,0 +1,363 @@
+[
+  {
+    "id": "F01",
+    "seccion": "retrato",
+    "prioridad": "alternativa",
+    "observacion": "Retrato con traje y fondo liso. Buen archivo, pero el tono resulta más formal para esta página personal.",
+    "por_confirmar": "¿Quieres conservar esta faceta en la presentación?"
+  },
+  {
+    "id": "F02",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Grupo al aire libre. Versión amplia de la escena de F27; preferible por resolución y contexto.",
+    "por_confirmar": "Personas, lugar y recuerdo; no deducir la fecha por el nombre del archivo."
+  },
+  {
+    "id": "F03",
+    "seccion": "como-soy",
+    "prioridad": "prioritaria",
+    "observacion": "Retrato con máscara de personaje y gesto informal. Puede aportar humor y contraste con las fotografías solemnes.",
+    "por_confirmar": "¿Es una broma, un gusto personal o un recuerdo particular? No asumir afición por el personaje."
+  },
+  {
+    "id": "F04",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "observacion": "Confirmado por Jonás: sus abuelos maternos. Pasó gran parte de su infancia trabajando con su abuelo, quien le enseñó agricultura, ganadería y a montar a caballo. Recuerda esa época felizmente y a su abuela como sabia y chistosa.",
+    "por_confirmar": "Contexto suficiente para un recuerdo breve. El vínculo con el sueño de la granja está confirmado, pero es contexto privado y no se añade al texto público.",
+    "confirmado_por_jonas": "Parentesco y recuerdos confirmados en conversación."
+  },
+  {
+    "id": "F05",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Dos personas junto al agua con ciudad iluminada de fondo. Encuentro y viaje en una misma imagen.",
+    "por_confirmar": "Quiénes aparecen y dónde fue. No inferir parentesco ni relación sentimental."
+  },
+  {
+    "id": "F06",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "apoyo",
+    "observacion": "Paseo de grupo en un sendero arbolado con colores otoñales. Combina naturaleza y compañía.",
+    "por_confirmar": "Lugar, participantes y recuerdo."
+  },
+  {
+    "id": "F07",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "observacion": "Dos personas con casco y chaleco dentro del agua. Expresa aventura y actividad con claridad.",
+    "por_confirmar": "Actividad exacta, lugar, personas y por qué fue especial."
+  },
+  {
+    "id": "F08",
+    "seccion": "mi-gente",
+    "prioridad": "reserva",
+    "observacion": "Collage de videollamadas con márgenes negros. Puede tener valor afectivo; resolución limitada para protagonismo.",
+    "por_confirmar": "Historia compartida y si existen fotos originales de esos encuentros."
+  },
+  {
+    "id": "F09",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "observacion": "Confirmado por Jonás: él y su mejor amigo de niños, hablando de metas como ir a Betel. Los llamaron aproximadamente al mismo tiempo y llegaron a compartir habitación. Foto de pantalla con valor narrativo central, aunque de calidad limitada.",
+    "por_confirmar": "Pareja narrativa resuelta con F29, confirmada en Betel. No hace falta ampliar el relato.",
+    "confirmado_por_jonas": "Personas y recuerdo confirmados en conversación; fechas no aportadas."
+  },
+  {
+    "id": "F10",
+    "seccion": "mi-gente",
+    "prioridad": "alternativa",
+    "observacion": "Dos personas tomadas de las manos, sonriendo. Buena alternativa de gesto espontáneo a F04, si la historia lo justifica.",
+    "por_confirmar": "Personas y ocasión; no identificar por parecido con otras fotos."
+  },
+  {
+    "id": "F11",
+    "seccion": "mi-camino",
+    "prioridad": "prioritaria",
+    "observacion": "Confirmado por Jonás: voluntariado de mantenimiento. Grupo junto a un muro, varias personas con chalecos de trabajo. Candidata para narrar experiencias de servicio.",
+    "por_confirmar": "Contexto suficiente para un pie breve. Lugar, fecha y tarea específica no aportados; no etiquetar como Betel.",
+    "confirmado_por_jonas": "Confirma que F11, F13 y F36 pertenecen a su voluntariado de mantenimiento.",
+    "seleccion_editorial": "Alternativa a F13."
+  },
+  {
+    "id": "F12",
+    "seccion": "como-soy",
+    "prioridad": "apoyo",
+    "observacion": "Tres personas con ropa formal; señal JW.ORG visible al fondo. Contexto exacto pendiente.",
+    "por_confirmar": "Qué encuentro fue y qué representa para ti; no atribuir afiliación a los demás por su presencia."
+  },
+  {
+    "id": "F13",
+    "seccion": "mi-camino",
+    "prioridad": "prioritaria",
+    "observacion": "Confirmado por Jonás: voluntariado de mantenimiento. Grupo amplio en un espacio cubierto, con ropa y chalecos de trabajo. Permite contar la dimensión colectiva de una experiencia.",
+    "por_confirmar": "Contexto suficiente para un pie breve. Lugar, fecha y tarea específica no aportados; no etiquetar como Betel.",
+    "confirmado_por_jonas": "Confirma que F11, F13 y F36 pertenecen a su voluntariado de mantenimiento.",
+    "seleccion_editorial": "Principal: equipo reunido."
+  },
+  {
+    "id": "F14",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Grupo sosteniendo un marco fotográfico de encuentro. Tiene espontaneidad y contexto compartido.",
+    "por_confirmar": "Quiénes son y qué estaba ocurriendo."
+  },
+  {
+    "id": "F15",
+    "seccion": "mi-gente",
+    "prioridad": "reserva",
+    "observacion": "Collage de varias videollamadas con textos y decoración ya incrustados. Conservar por su posible valor personal; visualmente denso.",
+    "por_confirmar": "Significado del collage y disponibilidad de originales. No ampliar textos pequeños."
+  },
+  {
+    "id": "F16",
+    "seccion": "mi-camino",
+    "prioridad": "apoyo",
+    "observacion": "Fotografía de un adulto y tres niños, con tratamiento sepia. Posible recuerdo de infancia.",
+    "por_confirmar": "Identidades, año aproximado y por qué este momento te marcó."
+  },
+  {
+    "id": "F17",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "observacion": "Tres personas junto al río. Imagen espontánea; similar en función narrativa a F19, F21 y F23.",
+    "por_confirmar": "Qué recuerdo la diferencia de las otras salidas."
+  },
+  {
+    "id": "F18",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "reserva",
+    "observacion": "Persona de espaldas mirando una cascada. Archivo de 720×1280 y foco blando: mejor recuerdo pequeño que escena grande.",
+    "por_confirmar": "Valor del momento. F44 ofrece una opción visual más sólida de cascada."
+  },
+  {
+    "id": "F19",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "observacion": "Grupo en un río con paisaje abierto. Buena resolución y contexto natural.",
+    "por_confirmar": "Lugar, compañía e historia propia frente a F23."
+  },
+  {
+    "id": "F20",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "apoyo",
+    "observacion": "Personas con chalecos y moto acuática. Aporta una actividad diferente al senderismo.",
+    "por_confirmar": "Actividad, lugar y recuerdo; no presentar como hábito sin confirmación."
+  },
+  {
+    "id": "F21",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "observacion": "Tres personas en entorno de río y árboles. Similar en tema a otras salidas.",
+    "por_confirmar": "Si esta salida tiene un significado especial."
+  },
+  {
+    "id": "F22",
+    "seccion": "mis-raices",
+    "prioridad": "prioritaria",
+    "observacion": "Fotografía de una foto enmarcada con dos niños. El marco y la textura aportan memoria familiar; el tamaño digital no equivale a detalle del original.",
+    "por_confirmar": "Quiénes aparecen, edad aproximada y lugar. Clasificación en raíces provisional."
+  },
+  {
+    "id": "F23",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "observacion": "Grupo con una cascada claramente visible. Reúne compañía, agua y naturaleza en una imagen amplia.",
+    "por_confirmar": "Lugar y anécdota que quieras compartir."
+  },
+  {
+    "id": "F24",
+    "seccion": "retrato",
+    "prioridad": "reserva",
+    "observacion": "Retrato formal con fondo azul, 576×771. Útil como archivo de una etapa; limitado para retrato central grande.",
+    "por_confirmar": "Qué etapa representa."
+  },
+  {
+    "id": "F25",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "apoyo",
+    "observacion": "Grupo junto a un lago con montañas. Buen contexto de viaje compartido.",
+    "por_confirmar": "Lugar y personas. No asumir que es un destino futuro ni que aparece en otras fotos."
+  },
+  {
+    "id": "F26",
+    "seccion": "mis-raices",
+    "prioridad": "apoyo",
+    "observacion": "Foto pequeña de una persona con bicicleta en una vía rodeada de árboles. Puede aportar un recuerdo temprano.",
+    "por_confirmar": "Quién aparece, lugar y edad aproximada. No afirmar que sea Bonao."
+  },
+  {
+    "id": "F27",
+    "seccion": "mi-gente",
+    "prioridad": "reserva",
+    "observacion": "Recorte cuadrado de la misma escena de F02; menor resolución y menos contexto. Guardar ambas, preferir F02 para trabajar.",
+    "por_confirmar": "Si prefieres este encuadre por algún motivo personal."
+  },
+  {
+    "id": "F28",
+    "seccion": "retrato",
+    "prioridad": "prioritaria",
+    "observacion": "Archivo jonas photo1.jpeg: retrato lateral junto al mar, con buena luz y espacio horizontal. Propuesta de retrato secundario; Jonás eligió F40 para el centro.",
+    "por_confirmar": "Ubicación secundaria si se incorpora."
+  },
+  {
+    "id": "F29",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "observacion": "Confirmado por Jonás: él y su mejor amigo durante su etapa en Betel. Se empareja con F09, donde de niños hablaban de ir allí; después fueron compañeros de habitación.",
+    "por_confirmar": "Contexto suficiente para el relato breve. Nombre y fecha opcionales; no son requisitos.",
+    "confirmado_por_jonas": "Personas y etapa de Betel confirmadas en conversación."
+  },
+  {
+    "id": "F30",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Archivo Me-bestFriend2.jpg: dos personas al aire libre. Más informal; alternativa o pareja narrativa de F29.",
+    "por_confirmar": "Qué recuerdo cuenta y cuál de las dos prefieres."
+  },
+  {
+    "id": "F31",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Archivo More-family.jpg: grupo en una cocina. El entorno doméstico aporta cotidianeidad.",
+    "por_confirmar": "Parentescos, ocasión y si aquí aparece tu tía o tu abuelo. No deducir quién vive en esta casa."
+  },
+  {
+    "id": "F32",
+    "seccion": "reserva",
+    "prioridad": "reserva",
+    "observacion": "Fotografía bajo el agua con desenfoque fuerte. Conservar como recuerdo; no priorizar para presentación pública.",
+    "por_confirmar": "Si hay una historia irremplazable detrás."
+  },
+  {
+    "id": "F33",
+    "seccion": "como-soy",
+    "prioridad": "apoyo",
+    "observacion": "Grupo posando de forma lúdica con accesorios. Candidata para mostrar humor y espontaneidad.",
+    "por_confirmar": "Qué estaban haciendo y qué cuenta de ti."
+  },
+  {
+    "id": "F34",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Grupo en un jardín o espacio arbolado, algunas personas sentadas. Buen registro informal de convivencia.",
+    "por_confirmar": "Lugar, personas y si corresponde a alguna etapa que quieras narrar."
+  },
+  {
+    "id": "F35",
+    "seccion": "como-soy",
+    "prioridad": "prioritaria",
+    "observacion": "Persona junto a una cita bíblica visible sobre mantenerse firme en la fe. Posible imagen para acompañar tu testimonio personal.",
+    "por_confirmar": "Quién aparece, dónde fue y significado personal. No afirmar que sea Betel por la imagen."
+  },
+  {
+    "id": "F36",
+    "seccion": "mi-camino",
+    "prioridad": "apoyo",
+    "observacion": "Confirmado por Jonás: voluntariado de mantenimiento. Tres personas en una plataforma de trabajo dentro de un espacio cubierto. Aporta una actividad concreta frente al retrato de grupo.",
+    "por_confirmar": "Contexto suficiente para un pie breve. Lugar, fecha y tarea específica no aportados; no etiquetar como Betel.",
+    "confirmado_por_jonas": "Confirma que F11, F13 y F36 pertenecen a su voluntariado de mantenimiento.",
+    "seleccion_editorial": "Apoyo: momento de actividad."
+  },
+  {
+    "id": "F37",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "observacion": "Persona en un sendero nevado entre árboles. Representa bien tu gusto declarado por el invierno y los bosques.",
+    "por_confirmar": "Lugar, quién aparece y recuerdo."
+  },
+  {
+    "id": "F38",
+    "seccion": "como-soy",
+    "prioridad": "apoyo",
+    "observacion": "Detalle de un objeto azul con JW.ORG en un camino exterior. Recurso secundario de contexto; una vivencia personal debe llevar el relato.",
+    "por_confirmar": "Qué representa el objeto y dónde se tomó."
+  },
+  {
+    "id": "F39",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Cuatro personas juntas en un interior. Cercanía y gesto espontáneo.",
+    "por_confirmar": "Quiénes son y qué momento recuerda."
+  },
+  {
+    "id": "F40",
+    "seccion": "retrato",
+    "prioridad": "prioritaria",
+    "observacion": "Retrato central elegido por Jonás el 14 de septiembre de 2026. Sonrisa frontal, abrigo amarillo y fondo de luces. Composición prevista: rostro y hombros dentro del círculo.",
+    "por_confirmar": "Ninguna confirmación de selección pendiente; ajustar el recorte al diseñar. No deducir celebraciones de la decoración.",
+    "confirmado_por_jonas": "F40 como retrato principal de la constelación."
+  },
+  {
+    "id": "F41",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "observacion": "Dos personas con ropa de invierno en una calle iluminada. Puede aportar un recuerdo compartido.",
+    "por_confirmar": "Quiénes son y vínculo que quieras mencionar; no inferir relación sentimental."
+  },
+  {
+    "id": "F42",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "observacion": "Persona frente a una entrada de hielo con arco. Actividad invernal visualmente distinta.",
+    "por_confirmar": "Quién aparece, lugar y contexto. No atribuir significado religioso al arco."
+  },
+  {
+    "id": "F43",
+    "seccion": "mi-gente",
+    "prioridad": "alternativa",
+    "observacion": "Tira de tres fotografías de personas al aire libre. Puede funcionar como recuerdo pequeño dentro de una historia.",
+    "por_confirmar": "Quiénes aparecen y disponibilidad de las fotos separadas."
+  },
+  {
+    "id": "F44",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "observacion": "Cascada vertical con vegetación y una figura pequeña. Gran presencia visual, sensación de escala y detalle suficiente para una sección protagonista.",
+    "por_confirmar": "Lugar, quién aparece y quién hizo la foto. Mantener el formato vertical en lugar de forzar una panorámica."
+  },
+  {
+    "id": "F45",
+    "seccion": "lo-que-sueno",
+    "prioridad": "prioritaria",
+    "observacion": "Figura de espaldas ante lago y montañas. Candidata para acompañar una aspiración general a una vida sencilla y cercana a la naturaleza. Los detalles del sueño compartido por Jonás quedan como contexto privado.",
+    "por_confirmar": "Lugar y quién aparece, si se selecciona. No pedir más detalles del sueño ni presentar esta imagen como una futura vivienda."
+  },
+  {
+    "id": "F46",
+    "seccion": "mis-raices",
+    "prioridad": "apoyo",
+    "observacion": "Captura de pantalla con fotografía junto al agua y una atracción al fondo. Archivo de recuerdo con interfaz incrustada.",
+    "por_confirmar": "Quién aparece, lugar y edad. Buscar original si se elige; no usar la fecha de captura como fecha de la experiencia."
+  },
+  {
+    "id": "F47",
+    "seccion": "mis-raices",
+    "prioridad": "apoyo",
+    "observacion": "Captura de una fotografía grupal antigua con interfaz de red social. Posible recuerdo de infancia.",
+    "por_confirmar": "Personas, evento, lugar y año aproximado. No inferir la ocasión por la ropa."
+  },
+  {
+    "id": "F48",
+    "seccion": "reserva",
+    "prioridad": "duplicado",
+    "observacion": "Duplicado exacto de F47 verificado por SHA-256. Se conserva, pero no entra dos veces en la selección.",
+    "por_confirmar": "Nada técnico; misma historia que F47."
+  },
+  {
+    "id": "F49",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "observacion": "Archivo Yo-hermana.jpg: fotografía de dos personas en espejo. Según el nombre, candidata para la historia con tu hermana.",
+    "por_confirmar": "Ocasión sólo si aporta. Jonás ya describe a su hermana como compañera y amiga; no necesita otro relato largo."
+  },
+  {
+    "id": "F50",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "observacion": "Confirmado por Jonás: su familia en una asamblea internacional. Describe a su madre como alegre y positiva, a su padre como trabajador y buena persona, y a su hermana como compañera y amiga. Texto breve junto a la foto.",
+    "por_confirmar": "Contexto suficiente para esta sección. Evitar asignar posiciones individuales sin confirmación; no hace falta pedir más anécdotas.",
+    "confirmado_por_jonas": "Familia y ocasión confirmadas en conversación."
+  }
+]

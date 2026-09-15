@@ -1,0 +1,402 @@
+[
+  {
+    "id": "F01",
+    "original": "1727373840614.jpg",
+    "copia": "retrato/F01__1727373840614.jpg",
+    "seccion": "retrato",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F02",
+    "original": "20200106_123131.jpg",
+    "copia": "Migente/F02__20200106_123131.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F03",
+    "original": "20241008_222723.jpg",
+    "copia": "como-soy/F03__20241008_222723.jpg",
+    "seccion": "como-soy",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F04",
+    "original": "abuelos.jpg",
+    "copia": "Migente/F04__abuelos.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F05",
+    "original": "AGC_20241010_191324840.jpg",
+    "copia": "Migente/F05__AGC_20241010_191324840.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F06",
+    "original": "AGC_20241013_172631539.jpg",
+    "copia": "lo-que-disfruto/F06__AGC_20241013_172631539.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F07",
+    "original": "AGC_20251110_131200627.RAW-01.COVER.jpg",
+    "copia": "lo-que-disfruto/F07__AGC_20251110_131200627.RAW-01.COVER.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F08",
+    "original": "Friends.jpg",
+    "copia": "Migente/F08__Friends.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "reserva",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F09",
+    "original": "IMG-20210731-WA0024.jpg",
+    "copia": "Migente/F09__IMG-20210731-WA0024.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F10",
+    "original": "IMG-20221119-WA0010.jpg",
+    "copia": "Migente/F10__IMG-20221119-WA0010.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F11",
+    "original": "IMG-20250103-WA0060.jpg",
+    "copia": "mi-camino/F11__IMG-20250103-WA0060.jpg",
+    "seccion": "mi-camino",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F12",
+    "original": "IMG-20250121-WA0001.jpg",
+    "copia": "como-soy/F12__IMG-20250121-WA0001.jpg",
+    "seccion": "como-soy",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F13",
+    "original": "IMG-20250124-WA0011.jpg",
+    "copia": "mi-camino/F13__IMG-20250124-WA0011.jpg",
+    "seccion": "mi-camino",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F14",
+    "original": "IMG-20250309-WA0042.jpg",
+    "copia": "Migente/F14__IMG-20250309-WA0042.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F15",
+    "original": "IMG-20250323-WA0026.jpg",
+    "copia": "Migente/F15__IMG-20250323-WA0026.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "reserva",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F16",
+    "original": "IMG-20250325-WA0007.jpg",
+    "copia": "mi-camino/F16__IMG-20250325-WA0007.jpg",
+    "seccion": "mi-camino",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F17",
+    "original": "IMG-20251011-WA0006.jpg",
+    "copia": "lo-que-disfruto/F17__IMG-20251011-WA0006.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F18",
+    "original": "IMG-20251130-WA0036.jpg",
+    "copia": "lo-que-disfruto/F18__IMG-20251130-WA0036.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "reserva",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F19",
+    "original": "IMG-20251221-WA0014.jpg",
+    "copia": "lo-que-disfruto/F19__IMG-20251221-WA0014.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F20",
+    "original": "IMG-20260411-WA0027.jpg",
+    "copia": "lo-que-disfruto/F20__IMG-20260411-WA0027.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F21",
+    "original": "IMG-20260414-WA0043.jpg",
+    "copia": "lo-que-disfruto/F21__IMG-20260414-WA0043.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F22",
+    "original": "IMG-20260510-WA0016.jpg",
+    "copia": "mis-raices/F22__IMG-20260510-WA0016.jpg",
+    "seccion": "mis-raices",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F23",
+    "original": "IMG-20260614-WA0093.jpg",
+    "copia": "lo-que-disfruto/F23__IMG-20260614-WA0093.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F24",
+    "original": "IMG-20260802-WA0045.jpg",
+    "copia": "retrato/F24__IMG-20260802-WA0045.jpg",
+    "seccion": "retrato",
+    "prioridad": "reserva",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F25",
+    "original": "IMG-20260813-WA0135.jpg",
+    "copia": "lo-que-disfruto/F25__IMG-20260813-WA0135.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F26",
+    "original": "IMG_20181021_195046_016.jpg",
+    "copia": "mis-raices/F26__IMG_20181021_195046_016.jpg",
+    "seccion": "mis-raices",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F27",
+    "original": "IMG_20200106_173606_653.jpg",
+    "copia": "Migente/F27__IMG_20200106_173606_653.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "reserva",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F28",
+    "original": "jonas photo1.jpeg",
+    "copia": "retrato/F28__jonas photo1.jpeg",
+    "seccion": "retrato",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F29",
+    "original": "Me-bestFriend.jpg",
+    "copia": "Migente/F29__Me-bestFriend.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F30",
+    "original": "Me-bestFriend2.jpg",
+    "copia": "Migente/F30__Me-bestFriend2.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F31",
+    "original": "More-family.jpg",
+    "copia": "Migente/F31__More-family.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F32",
+    "original": "PXL_20220826_192917087.PORTRAIT.jpg",
+    "copia": "_reserva/F32__PXL_20220826_192917087.PORTRAIT.jpg",
+    "seccion": "reserva",
+    "prioridad": "reserva",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F33",
+    "original": "PXL_20230218_014528228.PORTRAIT.jpg",
+    "copia": "como-soy/F33__PXL_20230218_014528228.PORTRAIT.jpg",
+    "seccion": "como-soy",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F34",
+    "original": "PXL_20241013_203653963.RAW-01.COVER.jpg",
+    "copia": "Migente/F34__PXL_20241013_203653963.RAW-01.COVER.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F35",
+    "original": "PXL_20241023_162337129.jpg",
+    "copia": "como-soy/F35__PXL_20241023_162337129.jpg",
+    "seccion": "como-soy",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F36",
+    "original": "PXL_20250103_214010068.jpg",
+    "copia": "mi-camino/F36__PXL_20250103_214010068.jpg",
+    "seccion": "mi-camino",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F37",
+    "original": "PXL_20250131_202555864.RAW-01.COVER.jpg",
+    "copia": "lo-que-disfruto/F37__PXL_20250131_202555864.RAW-01.COVER.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F38",
+    "original": "PXL_20250814_172451023.jpg",
+    "copia": "como-soy/F38__PXL_20250814_172451023.jpg",
+    "seccion": "como-soy",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F39",
+    "original": "PXL_20251222_204235158.jpg",
+    "copia": "Migente/F39__PXL_20251222_204235158.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F40",
+    "original": "PXL_20251225_234120408.PORTRAIT.jpg",
+    "copia": "retrato/F40__PXL_20251225_234120408.PORTRAIT.jpg",
+    "seccion": "retrato",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F41",
+    "original": "PXL_20251225_234416777.PORTRAIT.jpg",
+    "copia": "Migente/F41__PXL_20251225_234416777.PORTRAIT.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F42",
+    "original": "PXL_20251228_202853307.PORTRAIT.jpg",
+    "copia": "lo-que-disfruto/F42__PXL_20251228_202853307.PORTRAIT.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F43",
+    "original": "PXL_20260412_182124139-COLLAGE.jpg",
+    "copia": "Migente/F43__PXL_20260412_182124139-COLLAGE.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "alternativa",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F44",
+    "original": "PXL_20260413_220051050.NIGHT.jpg",
+    "copia": "lo-que-disfruto/F44__PXL_20260413_220051050.NIGHT.jpg",
+    "seccion": "lo-que-disfruto",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F45",
+    "original": "PXL_20260813_020411550.PORTRAIT.jpg",
+    "copia": "mis-suenos/F45__PXL_20260813_020411550.PORTRAIT.jpg",
+    "seccion": "lo-que-sueno",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F46",
+    "original": "Screenshot_20180213-170135.png",
+    "copia": "mis-raices/F46__Screenshot_20180213-170135.png",
+    "seccion": "mis-raices",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F47",
+    "original": "Screenshot_20180214-093016 (1).png",
+    "copia": "mis-raices/F47__Screenshot_20180214-093016 (1).png",
+    "seccion": "mis-raices",
+    "prioridad": "apoyo",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F48",
+    "original": "Screenshot_20180214-093016.png",
+    "copia": "_reserva/F48__Screenshot_20180214-093016.png",
+    "seccion": "reserva",
+    "prioridad": "duplicado",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F49",
+    "original": "Yo-hermana.jpg",
+    "copia": "Migente/F49__Yo-hermana.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  },
+  {
+    "id": "F50",
+    "original": "Yo-padre-madre-hermana.jpg",
+    "copia": "Migente/F50__Yo-padre-madre-hermana.jpg",
+    "seccion": "mi-gente",
+    "prioridad": "prioritaria",
+    "estado": "provisional; no publicado"
+  }
+]

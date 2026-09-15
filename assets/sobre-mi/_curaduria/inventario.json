@@ -1,0 +1,452 @@
+[
+  {
+    "id": "F01",
+    "archivo": "1727373840614.jpg",
+    "ancho": 2913,
+    "alto": 2186,
+    "bytes": 235348,
+    "sha256": "04efc25b79003d67499f22ff11fac51a9c1b7a93c435e33c3829ad3966b6da0f",
+    "miniatura": "miniaturas/F01.jpg"
+  },
+  {
+    "id": "F02",
+    "archivo": "20200106_123131.jpg",
+    "ancho": 2560,
+    "alto": 1440,
+    "bytes": 2902899,
+    "sha256": "b9a43780aa8f3a369d7522c2898514b2a63a8a24f303d98b5f123fef318567f9",
+    "miniatura": "miniaturas/F02.jpg"
+  },
+  {
+    "id": "F03",
+    "archivo": "20241008_222723.jpg",
+    "ancho": 2252,
+    "alto": 4000,
+    "bytes": 2654158,
+    "sha256": "036d0f14c4aaaa7a1a4da59a998a312bb5d02335836d12f8a4d7aabe2c7e7d12",
+    "miniatura": "miniaturas/F03.jpg"
+  },
+  {
+    "id": "F04",
+    "archivo": "abuelos.jpg",
+    "ancho": 1200,
+    "alto": 1600,
+    "bytes": 255494,
+    "sha256": "5b637ec6e1a335bc4960944036c433060ecdd5e69732ec4e34032881d801274e",
+    "miniatura": "miniaturas/F04.jpg"
+  },
+  {
+    "id": "F05",
+    "archivo": "AGC_20241010_191324840.jpg",
+    "ancho": 3264,
+    "alto": 2448,
+    "bytes": 5785954,
+    "sha256": "eaacdc5136ca3b11e93c33d8962e755b9f40f58f0795b8a3a43b3acbf6923937",
+    "miniatura": "miniaturas/F05.jpg"
+  },
+  {
+    "id": "F06",
+    "archivo": "AGC_20241013_172631539.jpg",
+    "ancho": 3264,
+    "alto": 2448,
+    "bytes": 4164738,
+    "sha256": "9240e80ba4e18a05be10f0623b1c34b2e49b65b80f0a1564a76acdf14c16e979",
+    "miniatura": "miniaturas/F06.jpg"
+  },
+  {
+    "id": "F07",
+    "archivo": "AGC_20251110_131200627.RAW-01.COVER.jpg",
+    "ancho": 3072,
+    "alto": 4096,
+    "bytes": 3705433,
+    "sha256": "72fccdaf60c37d8f0572e4bd281c066ba348217d9929d4a3f80aa9cb9e7c3503",
+    "miniatura": "miniaturas/F07.jpg"
+  },
+  {
+    "id": "F08",
+    "archivo": "Friends.jpg",
+    "ancho": 1280,
+    "alto": 719,
+    "bytes": 127682,
+    "sha256": "c60194796ca85859635842b2093a4d3d1a5d0c8e7b82e072fbbeccbad04759e7",
+    "miniatura": "miniaturas/F08.jpg"
+  },
+  {
+    "id": "F09",
+    "archivo": "IMG-20210731-WA0024.jpg",
+    "ancho": 1024,
+    "alto": 768,
+    "bytes": 83052,
+    "sha256": "228c19cf47244ebdec97b61d4d3a6b1631055a5691041c1f75cec8d8437e65da",
+    "miniatura": "miniaturas/F09.jpg"
+  },
+  {
+    "id": "F10",
+    "archivo": "IMG-20221119-WA0010.jpg",
+    "ancho": 1600,
+    "alto": 1066,
+    "bytes": 113868,
+    "sha256": "6122119bd6799f550778704d6c7b9de5d76322eb0d2e62310ee13db0bb822bc1",
+    "miniatura": "miniaturas/F10.jpg"
+  },
+  {
+    "id": "F11",
+    "archivo": "IMG-20250103-WA0060.jpg",
+    "ancho": 4032,
+    "alto": 3024,
+    "bytes": 1756547,
+    "sha256": "671475f73680445c3f697b7605efe417c740ec1004db8df659dd915550eb1c56",
+    "miniatura": "miniaturas/F11.jpg"
+  },
+  {
+    "id": "F12",
+    "archivo": "IMG-20250121-WA0001.jpg",
+    "ancho": 1080,
+    "alto": 1745,
+    "bytes": 120458,
+    "sha256": "2a99f1b94c79d5dcfd5258e1ced5245c143b579ce05b53d144b91e704d550f4f",
+    "miniatura": "miniaturas/F12.jpg"
+  },
+  {
+    "id": "F13",
+    "archivo": "IMG-20250124-WA0011.jpg",
+    "ancho": 4160,
+    "alto": 2340,
+    "bytes": 1240799,
+    "sha256": "a8c5bb6ece4fa544f926fed96c9e06a98fa8dbe199e4ab77df0d6f030bbbb730",
+    "miniatura": "miniaturas/F13.jpg"
+  },
+  {
+    "id": "F14",
+    "archivo": "IMG-20250309-WA0042.jpg",
+    "ancho": 4032,
+    "alto": 3024,
+    "bytes": 1046048,
+    "sha256": "c2397ed0145e790f1f7edc74d91b8dd1a2608919131010fbe786db81c2845bb0",
+    "miniatura": "miniaturas/F14.jpg"
+  },
+  {
+    "id": "F15",
+    "archivo": "IMG-20250323-WA0026.jpg",
+    "ancho": 1600,
+    "alto": 900,
+    "bytes": 337703,
+    "sha256": "b237a4ce6da2569fab302d545032afa741d3fcf324c9f16e24d884a88b40f234",
+    "miniatura": "miniaturas/F15.jpg"
+  },
+  {
+    "id": "F16",
+    "archivo": "IMG-20250325-WA0007.jpg",
+    "ancho": 1600,
+    "alto": 1200,
+    "bytes": 184034,
+    "sha256": "27d5e6904a52dd9fe6092ed71bc49cef595c0ed5b2b7ef8ce174a1b19397c03f",
+    "miniatura": "miniaturas/F16.jpg"
+  },
+  {
+    "id": "F17",
+    "archivo": "IMG-20251011-WA0006.jpg",
+    "ancho": 1280,
+    "alto": 961,
+    "bytes": 131194,
+    "sha256": "e359ce431d3e0ba88911276ec7d733d82bcd2f3662d85bc4ac81ba369ea7b622",
+    "miniatura": "miniaturas/F17.jpg"
+  },
+  {
+    "id": "F18",
+    "archivo": "IMG-20251130-WA0036.jpg",
+    "ancho": 720,
+    "alto": 1280,
+    "bytes": 53060,
+    "sha256": "0447baecd4904cd7f29753a3338a4db4a02ea10d8f748b24ed037fdb115f2bb2",
+    "miniatura": "miniaturas/F18.jpg"
+  },
+  {
+    "id": "F19",
+    "archivo": "IMG-20251221-WA0014.jpg",
+    "ancho": 3280,
+    "alto": 2464,
+    "bytes": 800955,
+    "sha256": "4666b52b0386692cfe30a48ee6cd742803565974342db0f40b7e845ddf598616",
+    "miniatura": "miniaturas/F19.jpg"
+  },
+  {
+    "id": "F20",
+    "archivo": "IMG-20260411-WA0027.jpg",
+    "ancho": 1280,
+    "alto": 960,
+    "bytes": 726751,
+    "sha256": "a57c18448f1fb8af5ebe642b9825c8446547f08c95ef1f8991e631faa7b4c8e2",
+    "miniatura": "miniaturas/F20.jpg"
+  },
+  {
+    "id": "F21",
+    "archivo": "IMG-20260414-WA0043.jpg",
+    "ancho": 1280,
+    "alto": 960,
+    "bytes": 215746,
+    "sha256": "9da02fbd7f60217e0fc3fb6097c09af75bc49b301b53ea18af1dfeb3a860014e",
+    "miniatura": "miniaturas/F21.jpg"
+  },
+  {
+    "id": "F22",
+    "archivo": "IMG-20260510-WA0016.jpg",
+    "ancho": 4080,
+    "alto": 3072,
+    "bytes": 638479,
+    "sha256": "b678557bddb5771e022e37c79baf0f3e52691f88d572041dc73f35a5b9c805fe",
+    "miniatura": "miniaturas/F22.jpg"
+  },
+  {
+    "id": "F23",
+    "archivo": "IMG-20260614-WA0093.jpg",
+    "ancho": 3648,
+    "alto": 2736,
+    "bytes": 1319811,
+    "sha256": "1448ce5548d931a38d4f0e205650f96088eb632ede63b5b9420ac6356aa4fcd8",
+    "miniatura": "miniaturas/F23.jpg"
+  },
+  {
+    "id": "F24",
+    "archivo": "IMG-20260802-WA0045.jpg",
+    "ancho": 576,
+    "alto": 771,
+    "bytes": 265621,
+    "sha256": "f1c2451f61e975ce94d1a09c2c11298c525ed5706a0c289b528f960d277af5af",
+    "miniatura": "miniaturas/F24.jpg"
+  },
+  {
+    "id": "F25",
+    "archivo": "IMG-20260813-WA0135.jpg",
+    "ancho": 4032,
+    "alto": 3024,
+    "bytes": 1249789,
+    "sha256": "98a835cae49d5900938a978d201c1bc08c2c845cd20efb4439560ac0736cb879",
+    "miniatura": "miniaturas/F25.jpg"
+  },
+  {
+    "id": "F26",
+    "archivo": "IMG_20181021_195046_016.jpg",
+    "ancho": 704,
+    "alto": 704,
+    "bytes": 154456,
+    "sha256": "d177162b739293f3fcc0cc02f5cf82e434415a1eda91fc5572e80516a55fc86f",
+    "miniatura": "miniaturas/F26.jpg"
+  },
+  {
+    "id": "F27",
+    "archivo": "IMG_20200106_173606_653.jpg",
+    "ancho": 1080,
+    "alto": 1080,
+    "bytes": 170591,
+    "sha256": "f4224bd34b8465ff1b469f794239d222edabed800d928cccdc536aa6c0b9f0c6",
+    "miniatura": "miniaturas/F27.jpg"
+  },
+  {
+    "id": "F28",
+    "archivo": "jonas photo1.jpeg",
+    "ancho": 4032,
+    "alto": 2268,
+    "bytes": 3985125,
+    "sha256": "d67be0b7632b8695f395505242cc222a4e841ed281d3b9d2b24397105029ee30",
+    "miniatura": "miniaturas/F28.jpg"
+  },
+  {
+    "id": "F29",
+    "archivo": "Me-bestFriend.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 578970,
+    "sha256": "27984942f6dc64e0c57e85b0c8f51217ae517c40a8d01e06828ee21f2eac9990",
+    "miniatura": "miniaturas/F29.jpg"
+  },
+  {
+    "id": "F30",
+    "archivo": "Me-bestFriend2.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 1061811,
+    "sha256": "755b776baa3737b15dc826546dbc7d8182694a1c066ee9a2e0e0f8837d43d702",
+    "miniatura": "miniaturas/F30.jpg"
+  },
+  {
+    "id": "F31",
+    "archivo": "More-family.jpg",
+    "ancho": 4080,
+    "alto": 3072,
+    "bytes": 2750568,
+    "sha256": "e251ac8049bd4223ed8dbd622cb1453891ce1dabe3152775073d7b2393dc3b20",
+    "miniatura": "miniaturas/F31.jpg"
+  },
+  {
+    "id": "F32",
+    "archivo": "PXL_20220826_192917087.PORTRAIT.jpg",
+    "ancho": 4032,
+    "alto": 2268,
+    "bytes": 1844238,
+    "sha256": "d907dd65548cac6abcc5813390cfc94f990a431392b4e3fb04c83dbd1242fd4d",
+    "miniatura": "miniaturas/F32.jpg"
+  },
+  {
+    "id": "F33",
+    "archivo": "PXL_20230218_014528228.PORTRAIT.jpg",
+    "ancho": 2268,
+    "alto": 4032,
+    "bytes": 4453497,
+    "sha256": "f2a55ae987f14769321ae17ca2080db22fa79513b9b2b87b618b0bb8b41e7756",
+    "miniatura": "miniaturas/F33.jpg"
+  },
+  {
+    "id": "F34",
+    "archivo": "PXL_20241013_203653963.RAW-01.COVER.jpg",
+    "ancho": 3280,
+    "alto": 2464,
+    "bytes": 2442478,
+    "sha256": "0d10a93dabd8e76c1c0cea86d35eba380b40c832b5b7cb9528061fa4773bd220",
+    "miniatura": "miniaturas/F34.jpg"
+  },
+  {
+    "id": "F35",
+    "archivo": "PXL_20241023_162337129.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 1939754,
+    "sha256": "a9fc2644028ddf3b40c81ed7937e03c2bbb7787cb46764b379a4f0c43b003c97",
+    "miniatura": "miniaturas/F35.jpg"
+  },
+  {
+    "id": "F36",
+    "archivo": "PXL_20250103_214010068.jpg",
+    "ancho": 4080,
+    "alto": 3072,
+    "bytes": 3200657,
+    "sha256": "a02f161f203f6fcc2c50f2ad0dd888d40ba5feb754d15accc72882a813691768",
+    "miniatura": "miniaturas/F36.jpg"
+  },
+  {
+    "id": "F37",
+    "archivo": "PXL_20250131_202555864.RAW-01.COVER.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 5965188,
+    "sha256": "b36bd590e6724f087f2e3badc156c5b6359c06edc681ff5120f45f4d4fe1cf6e",
+    "miniatura": "miniaturas/F37.jpg"
+  },
+  {
+    "id": "F38",
+    "archivo": "PXL_20250814_172451023.jpg",
+    "ancho": 2809,
+    "alto": 3732,
+    "bytes": 5587912,
+    "sha256": "afd64ed89df56bdcba0b550e5d63dd1d5628d9f2f3d81cfc8a52f43da59298f2",
+    "miniatura": "miniaturas/F38.jpg"
+  },
+  {
+    "id": "F39",
+    "archivo": "PXL_20251222_204235158.jpg",
+    "ancho": 3648,
+    "alto": 2736,
+    "bytes": 1795703,
+    "sha256": "aa2b0887c77faf9e32d3e0863aeb9dfc2a72ee3c508fb186452a0bf75eeda48b",
+    "miniatura": "miniaturas/F39.jpg"
+  },
+  {
+    "id": "F40",
+    "archivo": "PXL_20251225_234120408.PORTRAIT.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 4072145,
+    "sha256": "1db380fa6f3e704253a347d1adaa8f6278674934d3ddb135b4a8d1ca38e0a5bd",
+    "miniatura": "miniaturas/F40.jpg"
+  },
+  {
+    "id": "F41",
+    "archivo": "PXL_20251225_234416777.PORTRAIT.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 4137152,
+    "sha256": "84f8b6f98074a1feb98461aa06b0b61dd243405d272be8c584b21b7d0eed37ef",
+    "miniatura": "miniaturas/F41.jpg"
+  },
+  {
+    "id": "F42",
+    "archivo": "PXL_20251228_202853307.PORTRAIT.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 5195135,
+    "sha256": "5bffaee9642edb7ae4f343b4cb866ce19eb14d0f59157d35f8440656842341cb",
+    "miniatura": "miniaturas/F42.jpg"
+  },
+  {
+    "id": "F43",
+    "archivo": "PXL_20260412_182124139-COLLAGE.jpg",
+    "ancho": 2160,
+    "alto": 3840,
+    "bytes": 1622943,
+    "sha256": "621545814ae137e2fed68f69ecbf40da04507d96517d4da57c716c8488a25f8f",
+    "miniatura": "miniaturas/F43.jpg"
+  },
+  {
+    "id": "F44",
+    "archivo": "PXL_20260413_220051050.NIGHT.jpg",
+    "ancho": 3025,
+    "alto": 4018,
+    "bytes": 8255053,
+    "sha256": "c2dfabcf847980a6e9c8e1334319667fab13e7ea216b6f25b42aa2925175038b",
+    "miniatura": "miniaturas/F44.jpg"
+  },
+  {
+    "id": "F45",
+    "archivo": "PXL_20260813_020411550.PORTRAIT.jpg",
+    "ancho": 2962,
+    "alto": 3936,
+    "bytes": 4913871,
+    "sha256": "16eb459023cfd59c1691bba589e150c984b864eb0bae026f88412de1cc68ad36",
+    "miniatura": "miniaturas/F45.jpg"
+  },
+  {
+    "id": "F46",
+    "archivo": "Screenshot_20180213-170135.png",
+    "ancho": 720,
+    "alto": 1280,
+    "bytes": 505323,
+    "sha256": "b3bd74d16df4ec810a7768953330f433ea8c7f42b6b7be51618a7745ae9d72d1",
+    "miniatura": "miniaturas/F46.jpg"
+  },
+  {
+    "id": "F47",
+    "archivo": "Screenshot_20180214-093016 (1).png",
+    "ancho": 720,
+    "alto": 1280,
+    "bytes": 633001,
+    "sha256": "5ae760f042382355f4b81104fe0283096c5e793945121950315ac52095a3dca2",
+    "miniatura": "miniaturas/F47.jpg"
+  },
+  {
+    "id": "F48",
+    "archivo": "Screenshot_20180214-093016.png",
+    "ancho": 720,
+    "alto": 1280,
+    "bytes": 633001,
+    "sha256": "5ae760f042382355f4b81104fe0283096c5e793945121950315ac52095a3dca2",
+    "miniatura": "miniaturas/F48.jpg"
+  },
+  {
+    "id": "F49",
+    "archivo": "Yo-hermana.jpg",
+    "ancho": 3072,
+    "alto": 4080,
+    "bytes": 3108132,
+    "sha256": "3c891fc89773f2a17574fdb778160dcb895cb17444d06c4606032ee887f7f831",
+    "miniatura": "miniaturas/F49.jpg"
+  },
+  {
+    "id": "F50",
+    "archivo": "Yo-padre-madre-hermana.jpg",
+    "ancho": 4080,
+    "alto": 3072,
+    "bytes": 5132191,
+    "sha256": "4e5105c136c0531b2fc137a425bbb85b2c757138ebbff16f967b2f96e794e978",
+    "miniatura": "miniaturas/F50.jpg"
+  }
+]
