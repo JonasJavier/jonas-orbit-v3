@@ -26,8 +26,19 @@
  *     cualquier rótulo que lo contenga — la misma trampa que costó una entrega
  *     en los tests de la Ranger.
  *
+ * ── El barrido de ciclo ─────────────────────────────────────────────────────
+ *
+ * `--ciclo=N` hace otra cosa distinta: en vez del recorrido, captura N
+ * fotogramas repartidos por el ciclo de animación del espécimen, todos en la
+ * pose del preset. Existe porque «cuánto ocupa el espécimen» NO es un número
+ * en el Tesseracto — su silueta encoge y crece con la reconfiguración 4D, y
+ * medida sobre una captura suelta la cifra sale entre el 57 % y el 70 % según
+ * el instante que toque. Calibrar el encuadre contra un fotograma es calibrar
+ * contra el azar.
+ *
  * Uso:
  *   node tools/observatory-shot.mjs <carpeta-destino> [objeto] [url-base]
+ *   node tools/observatory-shot.mjs <carpeta-destino> [objeto] --ciclo=12
  *
  * Ejemplo:
  *   npm run dev
@@ -47,9 +58,19 @@ if (!OUT) {
   process.exit(1);
 }
 
-const OBJETO = process.argv[3] ?? "tesseracto";
-const BASE = process.argv[4] ?? "http://localhost:3000";
+const args = process.argv.slice(3);
+const sueltos = args.filter((a) => !a.startsWith("--"));
+const cicloFlag = args.find((a) => a.startsWith("--ciclo="));
+/** Fotogramas del barrido de ciclo, o 0 para el recorrido normal. */
+const CICLO = cicloFlag ? Number(cicloFlag.split("=")[1]) : 0;
+
+const OBJETO = sueltos[0] ?? "tesseracto";
+const BASE = sueltos[1] ?? "http://localhost:3000";
 const URL = `${BASE}/es/experimentos/observatorio/${OBJETO}`;
+
+/** El circuito euleriano del Tesseracto recorre sus 32 aristas en 18 s, y la
+ *  reconfiguración interior comparte ese reloj. Un ciclo = 18 s. */
+const CICLO_MS = 18_000;
 
 mkdirSync(OUT, { recursive: true });
 
@@ -84,6 +105,25 @@ const paso = async (nombre, espera = 900) => {
   await page.waitForTimeout(espera);
   await page.screenshot({ path: join(OUT, `${nombre}.png`) });
 };
+
+if (CICLO > 0) {
+  /*
+    Barrido de ciclo: la misma pose de cámara, N instantes de la animación.
+
+    Nada de tocar la cámara ni los instrumentos — lo único que cambia entre dos
+    capturas es el reloj del espécimen, que es justo la variable que confunde
+    cualquier medida de encuadre hecha sobre un fotograma suelto.
+  */
+  for (let i = 0; i < CICLO; i++) {
+    await paso(`ciclo-${String(i).padStart(2, "0")}`, CICLO_MS / CICLO);
+  }
+  await context.close();
+  await browser.close();
+  console.log(
+    `Observatorio · ${OBJETO}: ${CICLO} fotogramas de un ciclo en ${OUT}`,
+  );
+  process.exit(0);
+}
 
 // 1 · Reposo. Sin tocar nada, el modo cine ya ha atenuado la instrumentación:
 //     es la vista que debería sentirse como un laboratorio y no como un visor.
@@ -127,6 +167,31 @@ await boton("Material").click();
 // 8 · Reajustar: vuelta exacta a la pose del preset.
 await boton("Reajustar").click();
 await paso("08-reajustada", 1_200);
+
+/*
+  9 y 10 · El A/B de verdad, con el reloj congelado.
+
+  Los pasos 4 y 6 de arriba NO sirven para comparar bloom encendido contra
+  apagado: entre uno y otro el Tesseracto sigue reconfigurándose, así que son
+  dos poses 4D distintas y la diferencia medida mezcla las dos cosas. Es
+  exactamente la trampa que documenta `body-metrics.mjs` para un cuerpo que
+  gira — «para aislar lo que decide el material, compara dos renders del MISMO
+  instante».
+
+  El Observatorio no tiene `--reloj` como `shot.mjs`, pero tiene algo mejor: el
+  interruptor global de movimiento congela `elapsed` sin tocar la cámara ni la
+  mano del visitante. Apagarlo deja las dos capturas en el mismo fotograma de
+  la animación y con el mismo encuadre, que es la única forma de que la resta
+  signifique algo.
+*/
+const movimiento = page.getByRole("button", { name: "Desactivar movimiento" });
+if (await movimiento.count()) {
+  await movimiento.first().click();
+  await paso("09-ab-bloom", 1_400);
+  await boton("Bloom").click();
+  await paso("10-ab-sin-bloom", 900);
+  await boton("Bloom").click();
+}
 
 // El vídeo sólo se escribe al cerrar el contexto, y con un nombre de hash.
 await context.close();

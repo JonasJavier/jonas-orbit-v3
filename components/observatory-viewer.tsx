@@ -143,88 +143,104 @@ export function ObservatoryViewer({
         <canvas aria-hidden="true" className="observatory__canvas" ref={canvasRef} />
       )}
 
+      {/*
+        Dos bloques y nada en medio: la identidad arriba y TODA la
+        instrumentación en la banda inferior. El centro del cuadro queda libre
+        para el espécimen, que es el único sitio donde puede estar.
+
+        Antes había tres bloques repartidos con `space-between`, así que la
+        pista y `Reajustar` caían a media altura — encima de la figura, que es
+        exactamente donde no pueden estar en un instrumento de observación.
+      */}
       <div className="observatory__chrome">
         <p className="observatory__specimen">{name}</p>
 
-        <div className="observatory__controls">
-          <p className="observatory__hint">
-            Arrastra para girar · rueda para acercar
-          </p>
-          <button
-            type="button"
-            className="observatory__button"
-            onClick={() => handleRef.current?.reset()}
-          >
-            Reajustar
-          </button>
-        </div>
+        <div className="observatory__foot">
+          <div className="observatory__controls">
+            <p className="observatory__hint">
+              Arrastra para girar · rueda para acercar
+            </p>
+            <button
+              type="button"
+              className="observatory__button"
+              onClick={() => handleRef.current?.reset()}
+            >
+              Reajustar
+            </button>
+          </div>
 
-        <div className="observatory__inspect">
-          <p className="observatory__legend">Inspeccionar</p>
-          <button
-            type="button"
-            className="observatory__toggle"
-            aria-pressed={!bloom}
-            onClick={() => setBloom((on) => !on)}
-          >
-            Bloom
-          </button>
-          <button
-            type="button"
-            className="observatory__toggle"
-            aria-pressed={!emission}
-            onClick={() => setEmission((on) => !on)}
-          >
-            Material
-          </button>
-          <button
-            type="button"
-            className="observatory__toggle"
-            aria-pressed={details}
-            onClick={() => setDetails((on) => !on)}
-          >
-            Datos
-          </button>
-        </div>
-
-        {details && contract ? (
-          <div className="observatory__data">
-            {/* Dos familias, y la separación importa: lo que cuesta DIBUJAR el
-                espécimen no es lo que ES la figura. Juntas, «vértices» aparecía
-                dos veces con valores distintos. */}
-            <section>
-              <h2 className="observatory__legend">Dibujo</h2>
-              <dl>
-                <div>
-                  <dt>{RENDER_LABELS.draws}</dt>
-                  <dd>{contract.draws}</dd>
-                </div>
-                <div>
-                  <dt>{RENDER_LABELS.materials}</dt>
-                  <dd>{contract.materials}</dd>
-                </div>
-                <div>
-                  <dt>{RENDER_LABELS.vertices}</dt>
-                  <dd>{contract.vertices.toLocaleString("es-DO")}</dd>
-                </div>
-              </dl>
-            </section>
-
-            {contract.architecture ? (
+          {/* El panel se abre HACIA ARRIBA, sobre la fila que lo enciende: la
+              bandeja se queda anclada abajo y los datos crecen hacia el hueco,
+              no hacia fuera del cuadro. */}
+          {details && contract ? (
+            <div className="observatory__data">
+              {/* Dos familias, y la separación importa: lo que cuesta DIBUJAR
+                  el espécimen no es lo que ES la figura. Juntas, «vértices»
+                  aparecía dos veces con valores distintos. */}
               <section>
-                <h2 className="observatory__legend">Figura</h2>
+                <h2 className="observatory__legend">Dibujo</h2>
                 <dl>
-                  {Object.entries(contract.architecture).map(([key, value]) => (
-                    <div key={key}>
-                      <dt>{architectureLabel(key)}</dt>
-                      <dd>{value}</dd>
-                    </div>
-                  ))}
+                  <div>
+                    <dt>{RENDER_LABELS.draws}</dt>
+                    <dd>{contract.draws}</dd>
+                  </div>
+                  <div>
+                    <dt>{RENDER_LABELS.materials}</dt>
+                    <dd>{contract.materials}</dd>
+                  </div>
+                  <div>
+                    <dt>{RENDER_LABELS.vertices}</dt>
+                    <dd>{contract.vertices.toLocaleString("es-DO")}</dd>
+                  </div>
                 </dl>
               </section>
-            ) : null}
+
+              {contract.architecture ? (
+                <section>
+                  <h2 className="observatory__legend">Figura</h2>
+                  <dl>
+                    {Object.entries(contract.architecture).map(
+                      ([key, value]) => (
+                        <div key={key}>
+                          <dt>{architectureLabel(key)}</dt>
+                          <dd>{value}</dd>
+                        </div>
+                      ),
+                    )}
+                  </dl>
+                </section>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="observatory__inspect">
+            <p className="observatory__legend">Inspeccionar</p>
+            <button
+              type="button"
+              className="observatory__toggle"
+              aria-pressed={!bloom}
+              onClick={() => setBloom((on) => !on)}
+            >
+              Bloom
+            </button>
+            <button
+              type="button"
+              className="observatory__toggle"
+              aria-pressed={!emission}
+              onClick={() => setEmission((on) => !on)}
+            >
+              Material
+            </button>
+            <button
+              type="button"
+              className="observatory__toggle"
+              aria-pressed={details}
+              onClick={() => setDetails((on) => !on)}
+            >
+              Datos
+            </button>
           </div>
-        ) : null}
+        </div>
       </div>
     </div>
   );

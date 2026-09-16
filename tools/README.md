@@ -19,7 +19,8 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | script | para qué |
 | --- | --- |
 | `shot.mjs` | captura 1440×860 del hero con WebGL por software y los efectos forzados |
-| `observatory-shot.mjs` | recorrido del Observatorio: ocho capturas y un vídeo del gesto y los instrumentos |
+| `observatory-shot.mjs` | recorrido del Observatorio: diez capturas y un vídeo del gesto y los instrumentos |
+| `observatory-fill.mjs` | cuánto del cuadro ocupa el espécimen y cuánto blanco satura, leído del PNG |
 | `composition.mjs` | dónde cae cada destino en pantalla, en píxeles y en % del cuadro |
 | `crop.mjs` | recorta y amplía una zona de una captura |
 | `stability.mjs` | mide si el disco avanza o hierve entre fotogramas |
@@ -178,6 +179,38 @@ segundo 4 y el 10 seguía siendo 11.7 de media y el 46 % del disco, porque la
 rotación rígida cambia todos los píxeles. Para aislar lo que decide el material,
 compara dos renders **del mismo instante** que difieran sólo en el término que
 investigas.
+
+## El Observatorio: dos trampas que costaron una medida cada una
+
+`observatory-shot.mjs` hace el recorrido y `observatory-fill.mjs` lo mide. Las
+dos trampas salieron en el primer pase visual del Tesseracto y las dos dan
+números que parecen buenos y no significan nada.
+
+**El espécimen sigue animándose entre capturas.** Comparar el paso `04-zoom`
+con el `06-sin-bloom` para juzgar el bloom es comparar dos poses 4D distintas,
+así que la diferencia mezcla el post-proceso con la forma — la misma trampa que
+`body-metrics.mjs` documenta para un cuerpo que gira. El recorrido termina con
+un A/B de verdad, pasos `09` y `10`, tomado con el **interruptor global de
+movimiento apagado**: congela `elapsed` sin tocar la cámara, así que las dos
+capturas son el mismo fotograma con y sin halo.
+
+**Un muestreo no acota una figura cuasiperiódica.** `--ciclo=N` reparte N
+capturas por el ciclo de 18 s del trazo, y sirve para ver el ritmo; pero la
+FORMA del Tesseracto la deciden tres rotaciones 4D a ritmos inconmensurables y
+no se repite nunca. Doce capturas daban «media 71 %» con aire de cifra cerrada
+y lo que medían era doce instantes. Para acotar de verdad —«¿toca el borde
+alguna vez?»— la medida vive en `components/scene/observatory-framing.test.ts`,
+que proyecta la geometría real sobre 12 000 instantes.
+
+```bash
+node tools/observatory-shot.mjs .shots/obs tesseracto http://localhost:3100
+node tools/observatory-fill.mjs obs/01-limpia obs/09-ab-bloom obs/10-ab-sin-bloom
+```
+
+Y un aviso sobre qué mide cada cifra de `observatory-fill.mjs`: el **alto
+ocupado** es el encuadre, y el **núcleo ≥250** es el bloom. La luz total no
+sirve para juzgar un halo — bajar la fuerza del bloom un 57 % movió el total un
+13 %, porque casi todo lo pone la figura, que no bloomea.
 
 ## `composition.mjs` LEE la escena, no la reimplementa
 
