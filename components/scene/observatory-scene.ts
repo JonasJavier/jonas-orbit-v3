@@ -41,17 +41,94 @@ import { specimenContract, type SpecimenContract } from "./specimen-contract";
  * regla del §6 hecha interacción.
  */
 
-/** Los mismos valores del System Map: el espécimen no puede verse «mejor
- *  expuesto» aquí que en su sitio, o dejaría de ser él. */
+/**
+ * La exposición sí es la del System Map, y lo es a propósito: el tone mapping
+ * es una función por píxel, así que da el MISMO valor de salida para el mismo
+ * valor de entrada mida el espécimen 46 px o 700 px. Copiarla es lo que
+ * garantiza que el material se lea igual aquí que en su sitio.
+ */
 const BASE_EXPOSURE = 0.95;
-const BLOOM_STRENGTH = 0.6;
-const BLOOM_RADIUS = 0.57;
+
+/**
+ * El bloom NO se copia, y ésta es la corrección del primer pase visual.
+ *
+ * ── Por qué las constantes del mapa no valen aquí ───────────────────────────
+ *
+ * `UnrealBloomPass` trabaja en ESPACIO DE PANTALLA: construye cinco mips y los
+ * desenfoca con un kernel medido en píxeles del cuadro, no en unidades del
+ * objeto. El kernel no cambia cuando el espécimen crece; el ÁREA DE FUENTE sí,
+ * y va con el cuadrado. La punta del trazo euleriano mide un par de píxeles en
+ * el mapa y unos setenta aquí, o sea del orden de mil veces más área brillante
+ * alimentando el mismo filtro. Con los mismos números salía lo que Jonás
+ * describió: no un material sofisticado, «una lamparita blanca pegada al
+ * Tesseracto» viajando por las aristas.
+ *
+ * Y hay un multiplicador que lo agrava: la capa del trazo es aditiva y sin
+ * prueba de profundidad, así que los seis lados del tubo —delanteros y
+ * traseros— se suman. En la punta eso deja radiancias del orden de 17 contra un
+ * umbral de 2.
+ *
+ * ── Qué se toca y qué no ────────────────────────────────────────────────────
+ *
+ * El umbral se queda en 2 justamente porque ahí está la frontera que mantiene
+ * la figura limpia: por debajo sólo vive la punta, y bajarlo metería toda la
+ * arista en el halo y convertiría el Tesseracto en niebla. Lo que cambia son
+ * las dos palancas que sí describen el carácter del halo:
+ *
+ *  · `STRENGTH` escala la energía total. 0.6 → 0.26 es el «≈ 40 %» que pidió
+ *    la dirección.
+ *  · `RADIUS` REPARTE esa energía entre los mips sin cambiar su total —la suma
+ *    de pesos de la pasada es 3.0 para cualquier radio—, así que subirlo mueve
+ *    el halo de los mips finos a los gruesos. Es la diferencia exacta entre un
+ *    flare puntual y un halo ambiental, que es la petición literal.
+ *
+ * ⏳ Calibración visual pendiente de veredicto sobre captura.
+ */
+const BLOOM_STRENGTH = 0.26;
+const BLOOM_RADIUS = 0.74;
 const BLOOM_THRESHOLD = 2;
 
-const FOV = 40;
-/** Qué fracción del alto del cuadro ocupa el espécimen en la pose inicial. El
- *  §5 pide entre 70 % y 85 %: todo lo demás es instrumentación. */
-const FRAME_FILL = 0.78;
+export const FOV = 40;
+/**
+ * Qué fracción del alto del cuadro ocupa la ESFERA ENVOLVENTE del espécimen.
+ *
+ * El nombre importa, y el anterior —`FRAME_FILL`— mentía. El §5 pide que el
+ * espécimen llene entre el 70 % y el 85 % del cuadro, y la constante valía 0.78
+ * como si una cosa fuera la otra. Pero la fórmula de abajo parte de
+ * `body.radius`, que es el radio de la ENVOLVENTE: un 4-cubo en alambre toca su
+ * esfera envolvente en ocho vértices y en ningún sitio más, así que su silueta
+ * ocupa bastante menos que el disco de esa esfera.
+ *
+ * ── Y no es un número, es un rango ──────────────────────────────────────────
+ *
+ * La reconfiguración 4D encoge y estira la silueta, así que medir la ocupación
+ * sobre UNA captura da cualquier cosa entre el 54 % y el 86 %. Todas son
+ * ciertas y ninguna sirve para calibrar.
+ *
+ * Peor: no se puede arreglar promediando un ciclo, porque el Tesseracto no
+ * tiene ciclo. Su trazo sí —32 aristas en 18 s— pero su FORMA la deciden tres
+ * rotaciones 4D a ritmos inconmensurables, así que la pose es cuasiperiódica y
+ * no se repite nunca. Esa fue la corrección del primer pase visual: el barrido
+ * de doce capturas daba media 71-72 % y parecía cerrado, y lo que medía era
+ * doce instantes.
+ *
+ * La cifra buena la da `observatory-framing.test.ts`, que proyecta la geometría
+ * de verdad sobre 12 000 instantes:
+ *
+ *   0.78 → media 58.5 %   (min 45.2, max 73.3)
+ *   0.91 → media 69.0 %   (min 54.2, max 85.6)   ← +17.9 %
+ *
+ * Es el «+15-20 % de tamaño percibido» que pidió la dirección. La media queda a
+ * un pelo por debajo del suelo del 70 % del §5 y el máximo a un pelo por encima
+ * de su techo del 85 %, y eso está dicho en el test: una banda de quince puntos
+ * no puede contener una figura que respira treinta y uno.
+ *
+ * ⏳ Calibración visual pendiente de veredicto. Y cuando entren los otros cinco,
+ * este número NO se hereda: la relación entre envolvente y silueta es propia de
+ * cada figura —Miller es una esfera y no tiene desfase; la Endurance lo tendrá
+ * enorme, porque su envolvente la fijan las puntas de los radiadores—.
+ */
+export const BOUNDS_FILL = 0.91;
 
 /** Topes del zoom, en múltiplos de la distancia de encuadre inicial. Acotado a
  *  propósito: esto es un instrumento de observación, no un vuelo libre. */
@@ -111,12 +188,12 @@ export function createObservatoryScene(
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 4000);
 
   /*
-    El encuadre: a `d = r / sin(fov/2)` el espécimen llena el alto exacto. Se
-    divide por `FRAME_FILL` para dejarle aire alrededor — un objeto que toca los
-    bordes se lee como un recorte, no como una muestra.
+    El encuadre: a `d = r / sin(fov/2)` la ENVOLVENTE llena el alto exacto. Se
+    divide por `BOUNDS_FILL` para dejarle aire alrededor — un objeto que toca
+    los bordes se lee como un recorte, no como una muestra.
   */
   const framing =
-    body.radius / (FRAME_FILL * Math.sin(((FOV / 2) * Math.PI) / 180));
+    body.radius / (BOUNDS_FILL * Math.sin(((FOV / 2) * Math.PI) / 180));
   const placement = observationPlacement(
     world.id as Exclude<WorldId, "gargantua">,
     body.radius,

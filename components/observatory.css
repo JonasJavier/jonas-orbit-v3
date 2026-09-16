@@ -31,7 +31,13 @@
 
 /* El cromo NO recibe el puntero: sólo sus controles. Es la regla que costó una
    entrega en Edmunds — un contenedor a pantalla completa por delante del objeto
-   se traga el arrastre y el visor parece roto. */
+   se traga el arrastre y el visor parece roto.
+
+   Ahora la regla es MÁS estrecha que antes, y tiene que serlo: con la
+   instrumentación agrupada en una banda inferior, un `pointer-events: auto`
+   sobre los contenedores dejaría toda esa franja sorda al arrastre aunque esté
+   casi vacía. Sólo lo reciben los elementos con los que de verdad se
+   interactúa — los rótulos son texto y no necesitan puntero. */
 .observatory__chrome {
   position: absolute;
   inset: 0;
@@ -40,18 +46,42 @@
   justify-content: space-between;
   padding: clamp(1rem, 3vw, 2.5rem);
   pointer-events: none;
-  transition: opacity 420ms ease;
 }
 
-.observatory__chrome > *,
-.observatory__chrome button {
+.observatory__button,
+.observatory__toggle,
+.observatory__data {
   pointer-events: auto;
 }
 
-/* Modo cine: 3,5 s sin entrada y la instrumentación se va. Vuelve con cualquier
-   gesto. No se aplica con puntero grueso — sin hover no habría cómo recuperarla. */
-.observatory[data-idle="true"] .observatory__chrome {
-  opacity: 0.08;
+/*
+  La banda inferior: TODA la instrumentación junta, anclada abajo.
+
+  El centro queda libre por construcción y no por márgenes — el cromo sólo
+  tiene dos hijos, así que `space-between` no puede dejar nada a media altura.
+*/
+.observatory__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.9rem;
+  transition: opacity 420ms ease;
+}
+
+/*
+  Modo cine, en DOS niveles. El anterior atenuaba el cromo entero al 8 % y con
+  él se iba también el nombre del espécimen: la página pasaba a leerse como una
+  geometría flotando en negro, sin decir qué se está mirando.
+
+  La identidad se queda tenue pero legible; los controles sí pueden
+  desaparecer, porque nadie necesita leer «Reajustar» mientras observa.
+*/
+.observatory[data-idle="true"] .observatory__foot {
+  opacity: 0.06;
+}
+
+.observatory[data-idle="true"] .observatory__specimen {
+  opacity: 0.3;
 }
 
 .observatory__specimen {
@@ -61,11 +91,15 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #eaf6ff;
+  transition: opacity 420ms ease;
 }
 
+/* Pista a la izquierda, `Reajustar` al extremo derecho: la fila ocupa el ancho
+   y deja el hueco en medio, en vez de apelotonarse en una esquina. */
 .observatory__controls {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1.25rem;
   flex-wrap: wrap;
 }
@@ -123,8 +157,10 @@
 .observatory__data {
   display: flex;
   flex-wrap: wrap;
+  /* Se ciñe a su contenido: dentro de una banda `stretch`, sin esto el panel
+     se estiraría hasta el ancho del cuadro y dejaría de leerse como una ficha. */
+  align-self: flex-start;
   gap: 1.5rem 2.5rem;
-  margin: 1rem 0 0;
   padding: 1rem 1.25rem;
   border: 1px solid rgb(127 229 255 / 0.2);
   border-radius: 0.5rem;
@@ -170,7 +206,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .observatory__chrome {
+  .observatory__foot,
+  .observatory__specimen {
     transition: none;
   }
 }

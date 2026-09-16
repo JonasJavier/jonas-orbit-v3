@@ -1216,6 +1216,42 @@ del que yo creía —el giro existe y hay que apagarlo, y eso obliga a un reloj
 propio—; la 4 y la 5 resultaron **más fáciles** de lo previsto, porque
 `resetAccumulation()` y `uEmission` ya existen.
 
+### Primer pase visual del Tesseracto (2026-09-16)
+
+Jonás vio el Tesseracto montado y dictó tres correcciones. Su veredicto del
+checkpoint: *«la idea funciona»*, con el encargo explícito de **no tocar
+geometría ni materiales** y de no avanzar a los otros cinco especímenes.
+
+| # | Qué corrige | Dónde |
+| --- | --- | --- |
+| 12 | El bloom **deja de copiarse del System Map**. Fuerza 0.6 → 0.26 y radio 0.57 → 0.74; el umbral no se toca. Motivo: `UnrealBloomPass` mide su kernel en píxeles de PANTALLA, así que las mismas constantes sobre un espécimen mil veces más grande en área convierten la punta del trazo en una lámpara | §6, `observatory-scene.ts` |
+| 13 | `FRAME_FILL` pasa a `BOUNDS_FILL` y de 0.78 a 0.91. El nombre anterior mentía: la fórmula parte de la esfera ENVOLVENTE, y un 4-cubo en alambre la toca en ocho vértices. Medido: ocupación media 58.5 % → 69.0 % (+17.9 %) | §5, `observatory-scene.ts` |
+| 14 | Toda la instrumentación se agrupa en una **banda inferior** y el modo cine se parte en dos niveles: la identidad se queda al 30 % y los controles bajan al 6 %. El centro del cuadro queda libre por construcción, no por márgenes | §5, `observatory.css` |
+
+**La banda del 70-85 % del §5 no puede cumplirse como está escrita, y es un
+hallazgo, no un incumplimiento.** El Tesseracto no tiene ciclo: su trazo sí
+—32 aristas en 18 s— pero su forma la deciden tres rotaciones 4D a ritmos
+inconmensurables, así que la pose es cuasiperiódica. Su silueta respira un 31 %
+entre el instante más estrecho y el más ancho, de modo que ninguna banda de
+quince puntos la contiene entera. Medido sobre 12 000 instantes con
+`BOUNDS_FILL = 0.91`: **media 69.0 %, mínimo 54.2 %, máximo 85.6 %** — la media
+roza el suelo por abajo y el máximo el techo por arriba. Queda como decisión
+abierta de Jonás: o se acepta el desbordamiento de los extremos, o se baja la
+constante a costa de presencia media. La única promesa dura que sí está cerrada
+es que **nunca toca el borde**, y la sostiene `observatory-framing.test.ts`.
+
+Y una corrección de lo que yo había reportado en el checkpoint anterior: dije
+que la leyenda `INSPECCIONAR` chocaba con «el avatar de la bandeja». No hay tal
+avatar en el proyecto — era el indicador de desarrollo de Next, que no existe
+en el build. Las capturas de este pase se toman contra `next start` por eso.
+
+**Deuda anotada, a petición de Jonás:** los controles siguen siendo píldoras
+genéricas. El siguiente pase los lleva a un lenguaje instrumental propio —líneas
+finas, divisores, corchetes, estados tipográficos— y sólo entonces se juzga la
+atmósfera mínima (campo espacial tenue, halo óptico ambiental, instrumentación
+de borde). Ninguna de las dos cosas se toca hasta que bloom y encuadre tengan
+veredicto.
+
 ### Apéndice — una discrepancia encontrada de paso
 
 No afecta al Observatorio, pero conviene registrarla donde se vea:
