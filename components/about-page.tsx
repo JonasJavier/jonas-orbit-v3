@@ -6,6 +6,7 @@ import { getWorldPath } from "@/lib/worlds";
 import { StructuredData } from "./structured-data";
 import { AboutExperience } from "./about-experience";
 import { AboutImage, aboutPhotoPath } from "./about-image";
+import { AboutShelf } from "./about-shelf";
 import "./about-page.css";
 
 export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
@@ -47,18 +48,12 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
         <div className="about-wrap">
           <div className="about-intro">
             <span className="about-eyebrow">01 / SOBRE MÍ</span>
-            <h1>
+            <h1 tabIndex={-1}>
               <span className="visually-hidden">Sobre mí. </span>Mi pequeño
               universo.
             </h1>
-            <p>
-              Personas, lugares, ideas y momentos
-              <br />
-              que me hacen ser yo.
-            </p>
             <p className="about-intro-note">
-              Misma persona,
-              <br />
+              Misma persona, <br />
               distintos cielos.
             </p>
           </div>
@@ -101,19 +96,19 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
               <h2>Jonás</h2>
               <small>BONAO · REPÚBLICA DOMINICANA</small>
             </div>
-            <a className="about-node about-node-roots" href="#raices">
+            <a className="about-node about-node-roots" href="#mis-raices">
               <div className="about-node-image">
                 <AboutImage
-                  id="E03"
+                  id="F23"
                   alt="Río rodeado de vegetación en Bonao"
                   sizes="(max-width: 700px) 43vw, 240px"
                   eager
                 />
               </div>
               <h3>Mis raíces</h3>
-              <p>Entre ríos y montañas.</p>
+              <p>Donde empezó todo.</p>
             </a>
-            <a className="about-node about-node-people" href="#gente">
+            <a className="about-node about-node-people" href="#mi-gente">
               <div className="about-node-image">
                 <AboutImage
                   id="F50"
@@ -123,9 +118,9 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 />
               </div>
               <h3>Mi gente</h3>
-              <p>Con quienes comparto la vida.</p>
+              <p>Las personas que hacen hogar.</p>
             </a>
-            <a className="about-node about-node-self" href="#soy">
+            <a className="about-node about-node-self" href="#como-soy">
               <div className="about-node-image">
                 <AboutImage
                   id="F28"
@@ -135,9 +130,9 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 />
               </div>
               <h3>Cómo soy</h3>
-              <p>Curioso por naturaleza.</p>
+              <p>Todavía aprendiendo.</p>
             </a>
-            <a className="about-node about-node-enjoy" href="#disfruto">
+            <a className="about-node about-node-enjoy" href="#lo-que-disfruto">
               <div className="about-node-image">
                 <AboutImage
                   id="F44"
@@ -147,21 +142,21 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 />
               </div>
               <h3>Lo que disfruto</h3>
-              <p>Salir, observar y descubrir.</p>
+              <p>Curiosidad, naturaleza y buenas historias.</p>
             </a>
-            <a className="about-node about-node-path" href="#camino">
+            <a className="about-node about-node-path" href="#mi-camino">
               <div className="about-node-image">
                 <AboutImage
-                  id="F13"
-                  alt="Equipo de voluntariado de mantenimiento"
+                  id="F11"
+                  alt="Un momento compartido durante el voluntariado de mantenimiento"
                   sizes="(max-width: 700px) 43vw, 240px"
                   eager
                 />
               </div>
               <h3>Mi camino</h3>
-              <p>Experiencias que llevo conmigo.</p>
+              <p>Servir, aprender y compartir.</p>
             </a>
-            <a className="about-node about-node-dream" href="#sueno">
+            <a className="about-node about-node-dream" href="#lo-que-sueno">
               <div className="about-node-image">
                 <AboutImage
                   id="F45"
@@ -171,453 +166,572 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 />
               </div>
               <h3>Lo que sueño</h3>
-              <p>Una vida sencilla. Mucho por explorar.</p>
+              <p>Una vida sencilla. Mucho por descubrir.</p>
             </a>
           </nav>
           <div className="about-hero-bottom">
-            <a href="#raices">↓   Elige una estrella o sigue bajando</a>
-            <small>
-              SEIS CONSTELACIONES.
-              <br />
-              UNA MISMA PERSONA.
-            </small>
+            <p className="about-invitation">
+              <span aria-hidden="true">✧</span> Elige una constelación
+              <span className="about-invitation-line" aria-hidden="true" />
+            </p>
           </div>
         </div>
       </header>
-      <nav className="about-journey-nav" aria-label="Tu lugar en la historia">
-        <div className="about-wrap">
-          <a
-            className="about-back-map"
-            href="#constelacion"
-            aria-label="Volver a la constelación"
-          >
-            ✧
-          </a>
-          <a href="#raices">
-            <span>01</span>Mis raíces
-          </a>
-          <a href="#gente">
-            <span>02</span>Mi gente
-          </a>
-          <a href="#soy">
-            <span>03</span>Cómo soy
-          </a>
-          <a href="#disfruto">
-            <span>04</span>Lo que disfruto
-          </a>
-          <a href="#camino">
-            <span>05</span>Mi camino
-          </a>
-          <a href="#sueno">
-            <span>06</span>Lo que sueño
-          </a>
-        </div>
-      </nav>
-      <section
-        className="about-chapter about-roots about-wrap"
-        id="raices"
-        aria-labelledby="roots-title"
-      >
-        <div className="about-roots-head">
-          <div>
-            <span className="about-eyebrow">01 / EL PUNTO DE PARTIDA</span>
-            <h2 id="roots-title">Mis raíces.</h2>
+      <div className="about-detail">
+        <nav className="about-journey-nav" aria-label="Tu lugar en la historia">
+          <div className="about-wrap">
+            <a
+              className="about-back-map"
+              href="#constelacion"
+              aria-label="Volver a la constelación"
+            >
+              ✧
+            </a>
+            <a href="#mis-raices">
+              <span>01</span>Mis raíces
+            </a>
+            <a href="#mi-gente">
+              <span>02</span>Mi gente
+            </a>
+            <a href="#como-soy">
+              <span>03</span>Cómo soy
+            </a>
+            <a href="#lo-que-disfruto">
+              <span>04</span>Lo que disfruto
+            </a>
+            <a href="#mi-camino">
+              <span>05</span>Mi camino
+            </a>
+            <a href="#lo-que-sueno">
+              <span>06</span>Lo que sueño
+            </a>
           </div>
-          <p className="about-place">Bonao, República Dominicana.</p>
-        </div>
-        <div className="about-roots-landscape">
-          <AboutImage
-            id="E03"
-            alt="Paisaje del río Yuna publicado por Bonao City"
-            sizes="(max-width: 1400px) 94vw, 1400px"
-          />
-          <p className="about-roots-words">
-            Crecí entre ríos
-            <br />y montañas.
-          </p>
-        </div>
-        <div className="about-roots-credit about-caption">
-          <span>El paisaje de donde vengo.</span>
-          <a
-            href="https://bonaocity.com.do/bonao-monsenor-nouel-es-un-paraiso-para-disfrutar-a-plenitud-de-sus-rios/"
-            target="_blank"
-            rel="noopener noreferrer"
+        </nav>
+        <div className="about-slot">
+          <section
+            className="about-chapter about-roots about-wrap"
+            id="mis-raices"
+            aria-labelledby="roots-title"
           >
-            Referencia fotográfica: Bonao City ↗
-          </a>
-        </div>
-        <a className="about-section-end" href="#gente">
-          Y LAS PERSONAS QUE ME ACOMPAÑAN
-        </a>
-      </section>
-      <section
-        className="about-chapter about-people"
-        id="gente"
-        aria-labelledby="people-title"
-        data-about-sky=""
-      >
-        <div className="about-wrap">
-          <div className="about-people-opening">
-            <div className="about-people-copy">
-              <span className="about-eyebrow">02 / MIS VÍNCULOS</span>
-              <h2 id="people-title">Mi gente.</h2>
-              <div className="about-section-lead">La vida, compartida.</div>
-              <p>
-                Mi madre, siempre alegre y positiva. Mi padre, trabajador y
-                buena persona. Mi hermana, mi compañera y amiga.
-              </p>
-            </div>
-            <figure className="about-paper">
-              <a
-                className="about-photo-button"
-                data-photo="F50"
-                data-title="Mi familia"
-                data-caption="Juntos en una asamblea internacional."
-                aria-label="Ampliar fotografía de mi familia"
-                href={aboutPhotoPath("F50")}
-              >
-                <AboutImage
-                  id="F50"
-                  alt="Jonás y su familia en el auditorio de una asamblea internacional"
-                  sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                />
-              </a>
-              <figcaption className="about-caption">
-                Juntos en una asamblea internacional.
-              </figcaption>
-            </figure>
-          </div>
-          <div className="about-people-stories">
-            <article className="about-story">
-              <div className="about-friend-pair">
-                <a
-                  className="about-photo-button about-childhood"
-                  data-photo="F09"
-                  data-title="Desde pequeños"
-                  data-caption="Aquí hablábamos de nuestras metas, entre ellas ir a Betel."
-                  aria-label="Ampliar recuerdo de infancia con mi mejor amigo"
-                  href={aboutPhotoPath("F09")}
-                >
-                  <AboutImage
-                    id="F09"
-                    alt="Jonás y su mejor amigo de niños, frente a unas filas de asientos"
-                    sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                  />
-                </a>
-                <a
-                  className="about-photo-button about-betel"
-                  data-photo="F29"
-                  data-title="Un sueño compartido"
-                  data-caption="Con mi mejor amigo durante nuestra etapa en Betel."
-                  aria-label="Ampliar fotografía de los dos amigos en Betel"
-                  href={aboutPhotoPath("F29")}
-                >
-                  <AboutImage
-                    id="F29"
-                    alt="Jonás y su mejor amigo en Betel"
-                    sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                  />
-                </a>
+            <div className="about-roots-head">
+              <div>
+                <span className="about-eyebrow">01 / EL PUNTO DE PARTIDA</span>
+                <h2 tabIndex={-1} id="roots-title">
+                  Mis raíces.
+                </h2>
               </div>
-              <span className="about-eyebrow">DE PEQUEÑOS → EN BETEL</span>
-              <h3>
-                De hablar de un sueño
-                <br />a compartirlo.
-              </h3>
-              <p>
-                De pequeños hablábamos de ir a Betel. Años después nos llamaron
-                casi al mismo tiempo y terminamos compartiendo habitación. Mi
-                mejor amigo, desde la infancia hasta hoy.
-              </p>
-            </article>
-            <article className="about-story about-grandparents">
-              <figure>
+              <p className="about-place">Bonao, República Dominicana.</p>
+            </div>
+            <div className="about-roots-landscape">
+              <AboutImage
+                id="F23"
+                alt="Jonás con sus amigos frente a una cascada rodeada de vegetación"
+                sizes="(max-width: 1400px) 94vw, 1400px"
+              />
+            </div>
+            <h3 className="about-roots-words">Crecí entre ríos y montañas.</h3>
+            <p className="about-roots-story">
+              Bonao es mi punto de partida. Crecer rodeado de montañas, ríos y
+              tanto verde dejó algo en mí: todavía busco esos lugares cuando
+              quiero desconectarme, pensar o simplemente mirar. De ahí viene
+              buena parte de mi gusto por explorar.
+            </p>
+            <a className="about-section-end" href="#mi-gente">
+              Y LAS PERSONAS QUE ME ACOMPAÑAN
+            </a>
+          </section>
+          <section
+            className="about-chapter about-people"
+            id="mi-gente"
+            aria-labelledby="people-title"
+            data-about-sky=""
+          >
+            <div className="about-wrap">
+              <div className="about-people-opening">
+                <div className="about-people-copy">
+                  <span className="about-eyebrow">02 / MIS VÍNCULOS</span>
+                  <h2 tabIndex={-1} id="people-title">
+                    Mi gente.
+                  </h2>
+                  <div className="about-section-lead">La vida, compartida.</div>
+                  <p>
+                    Mi familia es mi primer hogar. Mi madre tiene una alegría
+                    difícil de ignorar; de mi padre admiro su capacidad de
+                    trabajar y cuidar de los suyos; y en mi hermana tengo una
+                    compañera y amiga.
+                  </p>
+                </div>
+                <figure className="about-paper">
+                  <a
+                    className="about-photo-button"
+                    data-photo="F50"
+                    data-title="Mi familia"
+                    data-caption="Juntos en una asamblea internacional."
+                    aria-label="Ampliar fotografía de mi familia"
+                    href={aboutPhotoPath("F50")}
+                  >
+                    <AboutImage
+                      id="F50"
+                      alt="Jonás y su familia en el auditorio de una asamblea internacional"
+                      sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
+                    />
+                  </a>
+                  <figcaption className="about-caption">
+                    Juntos en una asamblea internacional.
+                  </figcaption>
+                </figure>
+              </div>
+              <div className="about-people-stories">
+                <article className="about-story">
+                  <div className="about-friend-pair">
+                    <a
+                      className="about-photo-button about-childhood"
+                      data-photo="F09"
+                      data-title="Desde pequeños"
+                      data-caption="Aquí hablábamos de nuestras metas, entre ellas ir a Betel."
+                      aria-label="Ampliar recuerdo de infancia con mi mejor amigo"
+                      href={aboutPhotoPath("F09")}
+                    >
+                      <AboutImage
+                        id="F09"
+                        alt="Jonás y su mejor amigo de niños, frente a unas filas de asientos"
+                        sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
+                      />
+                    </a>
+                    <a
+                      className="about-photo-button about-betel"
+                      data-photo="F29"
+                      data-title="Un sueño compartido"
+                      data-caption="Con mi mejor amigo durante nuestra etapa en Betel."
+                      aria-label="Ampliar fotografía de los dos amigos en Betel"
+                      href={aboutPhotoPath("F29")}
+                    >
+                      <AboutImage
+                        id="F29"
+                        alt="Jonás y su mejor amigo en Betel"
+                        sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
+                      />
+                    </a>
+                  </div>
+                  <p className="about-memory-line">
+                    Mi mejor amigo y yo, cumpliendo metas y sueños juntos.
+                  </p>
+                </article>
+                <article className="about-story about-grandparents">
+                  <figure>
+                    <a
+                      className="about-photo-button"
+                      data-photo="F04"
+                      data-title="Mis abuelos"
+                      data-caption="Lo que aprendí a su lado."
+                      aria-label="Ampliar fotografía de mis abuelos maternos"
+                      href={aboutPhotoPath("F04")}
+                    >
+                      <AboutImage
+                        id="F04"
+                        alt="Los abuelos maternos de Jonás juntos en una mesa"
+                        sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
+                      />
+                    </a>
+                  </figure>
+                  <div>
+                    <span className="about-eyebrow">MIS ABUELOS</span>
+                    <p className="about-memory-line">
+                      De mis abuelos me llevo el cariño, la sabiduría y tantos
+                      recuerdos juntos.
+                    </p>
+                  </div>
+                </article>
+              </div>
+              <div className="about-chosen-family">
+                <div>
+                  <span className="about-eyebrow">AMIGOS, CASI FAMILIA</span>
+                  <h3>También hacen hogar.</h3>
+                </div>
+                <div className="about-friends-album">
+                  <figure className="about-paper">
+                    <a
+                      className="about-photo-button"
+                      data-photo="F34"
+                      data-title="Amigos, casi familia"
+                      data-caption="Amigos que se sienten como familia."
+                      aria-label="Ampliar fotografía: Amigos, casi familia"
+                      href={aboutPhotoPath("F34")}
+                    >
+                      <AboutImage
+                        id="F34"
+                        alt="Amigos compartiendo un rato al aire libre, entre árboles y sillas de jardín"
+                      />
+                    </a>
+                    <figcaption className="about-caption">
+                      Amigos que se sienten como familia.
+                    </figcaption>
+                  </figure>
+                  <figure className="about-paper about-collage">
+                    <a
+                      className="about-photo-button"
+                      data-photo="F15"
+                      data-title="Recuerdos compartidos"
+                      data-caption="Cerca, también a través de una pantalla."
+                      aria-label="Ampliar fotografía: Recuerdos compartidos"
+                      href={aboutPhotoPath("F15")}
+                    >
+                      <AboutImage
+                        id="F15"
+                        alt="Collage de videollamadas con amigos, con un marco de hojas y mensajes"
+                      />
+                    </a>
+                    <figcaption className="about-caption">
+                      Cerca, también a través de una pantalla.
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+              <a className="about-section-end" href="#como-soy">
+                UN POCO MÁS DE MÍ
+              </a>
+            </div>
+          </section>
+          <section
+            className="about-chapter about-wrap"
+            id="como-soy"
+            aria-labelledby="self-title"
+          >
+            <div className="about-self-layout">
+              <figure className="about-self-photo">
                 <a
                   className="about-photo-button"
-                  data-photo="F04"
-                  data-title="Mis abuelos"
-                  data-caption="Lo que aprendí a su lado."
-                  aria-label="Ampliar fotografía de mis abuelos maternos"
-                  href={aboutPhotoPath("F04")}
+                  data-photo="F28"
+                  data-title="Junto al mar"
+                  data-caption="Un momento al aire libre."
+                  aria-label="Ampliar retrato junto al mar"
+                  href={aboutPhotoPath("F28")}
                 >
                   <AboutImage
-                    id="F04"
-                    alt="Los abuelos maternos de Jonás juntos en una mesa"
+                    id="F28"
+                    alt="Retrato de Jonás de perfil junto al mar"
                     sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
                   />
                 </a>
               </figure>
-              <div>
-                <span className="about-eyebrow">MIS ABUELOS</span>
-                <h3>
-                  Lo que aprendí
-                  <br />a su lado.
-                </h3>
+              <div className="about-self-copy">
+                <span className="about-eyebrow">03 / MI FORMA DE SER</span>
+                <h2 tabIndex={-1} id="self-title">
+                  Cómo soy.
+                </h2>
+                <div className="about-section-lead">Todavía aprendiendo.</div>
                 <p>
-                  Con mi abuelo aprendí a cultivar, cuidar animales y montar a
-                  caballo. De mi abuela recuerdo su sabiduría y su humor.
+                  Soy curioso por naturaleza. Me gusta conocer personas,
+                  entender cómo funcionan las cosas y aprender algo nuevo casi
+                  todo el tiempo. Antes era bastante tímido; con los años he
+                  aprendido a abrirme más, aunque sigo disfrutando mucho mis
+                  ratos a solas.
+                </p>
+                <p>
+                  Mis amigos suelen describirme como alguien tranquilo,
+                  auténtico, amable y servicial. Mi fe también ocupa un lugar
+                  importante en mi vida y orienta muchas de las decisiones que
+                  tomo.
+                </p>
+                <p className="about-script">
+                  También le doy demasiadas vueltas a algunas cosas. Estoy
+                  trabajando en eso.
                 </p>
               </div>
-            </article>
-          </div>
-          <a className="about-section-end" href="#soy">
-            UN POCO MÁS DE MÍ
-          </a>
-        </div>
-      </section>
-      <section
-        className="about-chapter about-wrap"
-        id="soy"
-        aria-labelledby="self-title"
-      >
-        <div className="about-self-layout">
-          <figure className="about-self-photo">
-            <a
-              className="about-photo-button"
-              data-photo="F28"
-              data-title="Junto al mar"
-              data-caption="Un momento al aire libre."
-              aria-label="Ampliar retrato junto al mar"
-              href={aboutPhotoPath("F28")}
-            >
-              <AboutImage
-                id="F28"
-                alt="Retrato de Jonás de perfil junto al mar"
-                sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-              />
+            </div>
+            <a className="about-section-end" href="#lo-que-disfruto">
+              LAS COSAS QUE DISFRUTO
             </a>
-          </figure>
-          <div className="about-self-copy">
-            <span className="about-eyebrow">03 / MI FORMA DE SER</span>
-            <h2 id="self-title">Cómo soy.</h2>
-            <div className="about-section-lead">Todavía aprendiendo.</div>
-            <p>
-              Mis amigos me describen como alguien auténtico, tranquilo,
-              humilde, amable y servicial.
-            </p>
-            <p>
-              Soy testigo de Jehová; mi fe es una parte importante de mi vida.
-              Me gusta ayudar y siempre tengo curiosidad por aprender algo
-              nuevo.
-            </p>
-            <p className="about-script">
-              También le doy muchas vueltas a las cosas. Estoy intentando
-              sobrepensar menos.
-            </p>
-          </div>
-        </div>
-        <a className="about-section-end" href="#disfruto">
-          LAS COSAS QUE DISFRUTO
-        </a>
-      </section>
-      <section
-        className="about-chapter about-enjoy"
-        id="disfruto"
-        aria-labelledby="enjoy-title"
-      >
-        <div className="about-wrap">
-          <div className="about-enjoy-head">
-            <span className="about-eyebrow">04 / FUERA DE LA RUTINA</span>
-            <h2 id="enjoy-title">Lo que disfruto.</h2>
-            <p className="about-section-lead">
-              Siempre hay algo por descubrir.
-            </p>
-          </div>
-          <div className="about-enjoy-grid">
-            <figure className="about-waterfall">
-              <a
-                className="about-photo-button"
-                data-photo="F44"
-                data-title="Explorar"
-                data-caption="Montañas, ríos y tiempo al aire libre."
-                aria-label="Ampliar fotografía de la cascada"
-                href={aboutPhotoPath("F44")}
-              >
-                <AboutImage
-                  id="F44"
-                  alt="Una persona al pie de una gran cascada cubierta de vegetación"
-                  sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                />
-              </a>
-              <figcaption>
-                <span className="about-eyebrow">EXPLORAR</span>
-                <h3>Mis planes favoritos.</h3>
-                <p className="about-muted" style={{ marginTop: 16 }}>
-                  Caminar entre montañas, pasar el día en un río y compartir con
-                  mis amigos.
+          </section>
+          <section
+            className="about-chapter about-enjoy"
+            id="lo-que-disfruto"
+            aria-labelledby="enjoy-title"
+          >
+            <div className="about-wrap">
+              <div className="about-enjoy-head">
+                <span className="about-eyebrow">04 / LO QUE DISFRUTO</span>
+                <h2 tabIndex={-1} id="enjoy-title">
+                  Lo que disfruto.
+                </h2>
+                <p className="about-section-lead">
+                  Siempre hay algo por descubrir.
                 </p>
-              </figcaption>
-            </figure>
-            <div className="about-enjoy-side">
-              <div className="about-winter-row">
+              </div>
+              <div className="about-enjoy-grid">
+                <figure className="about-waterfall">
+                  <a
+                    className="about-photo-button"
+                    data-photo="F44"
+                    data-title="Explorar"
+                    data-caption="Montañas, ríos y tiempo al aire libre."
+                    aria-label="Ampliar fotografía de la cascada"
+                    href={aboutPhotoPath("F44")}
+                  >
+                    <AboutImage
+                      id="F44"
+                      alt="Una persona al pie de una gran cascada cubierta de vegetación"
+                      sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
+                    />
+                  </a>
+                </figure>
+                <div className="about-enjoy-side">
+                  <div className="about-photography-copy">
+                    <div>
+                      <span className="about-eyebrow">FOTOGRAFÍA</span>
+                      <h3>
+                        Mirar. Detenerme.
+                        <br />
+                        Recordar.
+                      </h3>
+                      <p>
+                        Fotografío para guardar paisajes, pequeños detalles y
+                        buenos momentos.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="about-adventures">
+                    <div>
+                      <span className="about-eyebrow">EN BUENA COMPAÑÍA</span>
+                      <h3>Y si es con amigos, mejor.</h3>
+                    </div>
+                    <div className="about-adventure-photos">
+                      <figure className="">
+                        <a
+                          className="about-photo-button"
+                          data-photo="F20"
+                          data-title="Un día con amigos"
+                          data-caption="Buenos momentos con mis amigos."
+                          aria-label="Ampliar fotografía: Un día con amigos"
+                          href={aboutPhotoPath("F20")}
+                        >
+                          <AboutImage
+                            id="F20"
+                            alt="Amigos con chalecos salvavidas junto a una moto acuática"
+                          />
+                        </a>
+                        <figcaption className="about-caption">
+                          Buenos momentos con mis amigos.
+                        </figcaption>
+                      </figure>
+                      <figure className="">
+                        <a
+                          className="about-photo-button"
+                          data-photo="F07"
+                          data-title="Dentro del agua"
+                          data-caption="Salir a descubrir, juntos."
+                          aria-label="Ampliar fotografía: Dentro del agua"
+                          href={aboutPhotoPath("F07")}
+                        >
+                          <AboutImage
+                            id="F07"
+                            alt="Dos personas con casco y chaleco dentro del agua, entre paredes de roca"
+                          />
+                        </a>
+                        <figcaption className="about-caption">
+                          Salir a descubrir, juntos.
+                        </figcaption>
+                      </figure>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="about-plans">
+                <div>
+                  <span className="about-eyebrow">EXPLORAR</span>
+                  <h3>Mis planes favoritos.</h3>
+                </div>
+                <p>Montañas, ríos, lugares nuevos y tiempo con amigos.</p>
+              </div>
+              <div className="about-listening-room">
+                <article className="about-taste">
+                  <span className="about-eyebrow">MÚSICA</span>
+                  <h3>La música que me acompaña.</h3>
+                  <p>
+                    Bandas sonoras, synthwave y canciones con un poco de
+                    nostalgia.
+                  </p>
+                  <AboutShelf group="music" />
+                </article>
+                <article className="about-taste">
+                  <span className="about-eyebrow">HISTORIAS</span>
+                  <h3>Después de los créditos.</h3>
+                  <p>Cine, anime y series para seguir pensando un rato más.</p>
+                  <AboutShelf group="stories" />
+                </article>
+              </div>
+              <a className="about-section-end" href="#mi-camino">
+                EXPERIENCIAS QUE ME HAN FORMADO
+              </a>
+            </div>
+          </section>
+          <section
+            className="about-chapter about-wrap"
+            id="mi-camino"
+            aria-labelledby="path-title"
+          >
+            <div className="about-path-head">
+              <div>
+                <span className="about-eyebrow">
+                  05 / EXPERIENCIAS QUE ME HAN FORMADO
+                </span>
+                <h2 tabIndex={-1} id="path-title">
+                  Mi camino.
+                </h2>
+                <p className="about-section-lead">
+                  Servir. Aprender. Compartir.
+                </p>
+              </div>
+            </div>
+            <article className="about-service-story">
+              <div className="about-service-copy">
+                <span className="about-eyebrow">PREDICAR · UNA CONSTANTE</span>
+                <h3>Aprender a escuchar.</h3>
+                <p>
+                  Predicar desde joven me ayudó a conocer personas muy distintas
+                  y a dejar atrás parte de mi timidez.
+                </p>
+              </div>
+              <div className="about-preaching-photos">
+                <figure className="">
+                  <a
+                    className="about-photo-button"
+                    data-photo="F02"
+                    data-title="Predicar, en compañía"
+                    data-caption="Predicar · En compañía."
+                    aria-label="Ampliar fotografía: Predicar, en compañía"
+                    href={aboutPhotoPath("F02")}
+                  >
+                    <AboutImage
+                      id="F02"
+                      alt="Un grupo de distintas edades al aire libre durante la predicación"
+                    />
+                  </a>
+                  <figcaption className="about-caption">
+                    Predicar · En compañía.
+                  </figcaption>
+                </figure>
+                <figure className="about-preaching-memory">
+                  <a
+                    className="about-photo-button"
+                    data-photo="F16"
+                    data-title="Desde pequeño"
+                    data-caption="Un recuerdo de cuando era pequeño."
+                    aria-label="Ampliar fotografía: Desde pequeño"
+                    href={aboutPhotoPath("F16")}
+                  >
+                    <AboutImage
+                      id="F16"
+                      alt="Un adulto y tres niños compartiendo un momento de la etapa de predicación"
+                    />
+                  </a>
+                  <figcaption className="about-caption">
+                    Un recuerdo de cuando era pequeño.
+                  </figcaption>
+                </figure>
+              </div>
+            </article>
+            <article className="about-service-story about-betel-story">
+              <div className="about-service-copy">
+                <span className="about-eyebrow">
+                  BETEL · UNA ETAPA ESPECIAL
+                </span>
+                <h3>Crecer junto a otros.</h3>
+                <p>
+                  En Betel, un centro de voluntarios de los testigos de Jehová,
+                  compartí trabajo, aprendizajes y amistades que siguen conmigo.
+                </p>
+              </div>
+              <div className="about-volunteer-album">
+                <span className="about-eyebrow">
+                  RECUERDOS DEL VOLUNTARIADO DE MANTENIMIENTO
+                </span>
+                <div className="about-path-photos">
+                  <figure className="">
+                    <a
+                      className="about-photo-button"
+                      data-photo="F11"
+                      data-title="Voluntariado de mantenimiento"
+                      data-caption="Voluntariado de mantenimiento · Un momento compartido."
+                      aria-label="Ampliar fotografía: Voluntariado de mantenimiento"
+                      href={aboutPhotoPath("F11")}
+                    >
+                      <AboutImage
+                        id="F11"
+                        alt="Voluntarios de mantenimiento junto a un muro, varios con chalecos de trabajo"
+                      />
+                    </a>
+                    <figcaption className="about-caption">
+                      Voluntariado de mantenimiento · Un momento compartido.
+                    </figcaption>
+                  </figure>
+                  <figure className="">
+                    <a
+                      className="about-photo-button"
+                      data-photo="F36"
+                      data-title="En plena actividad"
+                      data-caption="Voluntariado de mantenimiento · En plena actividad."
+                      aria-label="Ampliar fotografía: En plena actividad"
+                      href={aboutPhotoPath("F36")}
+                    >
+                      <AboutImage
+                        id="F36"
+                        alt="Tres voluntarios sobre una plataforma de trabajo"
+                      />
+                    </a>
+                    <figcaption className="about-caption">
+                      Voluntariado de mantenimiento · En plena actividad.
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+            </article>
+            <a className="about-section-end" href="#lo-que-sueno">
+              Y TODAVÍA QUEDA CAMINO
+            </a>
+          </section>
+          <section
+            className="about-chapter about-wrap"
+            id="lo-que-sueno"
+            aria-labelledby="dream-title"
+          >
+            <div className="about-dream-layout">
+              <div className="about-dream-copy">
+                <span className="about-eyebrow">06 / HACIA DONDE MIRO</span>
+                <h2 tabIndex={-1} id="dream-title">
+                  Lo que sueño.
+                </h2>
+                <p>
+                  Una vida sencilla, cerca de la naturaleza, con tiempo para la
+                  gente que quiero, trabajo que me entusiasme y lugares que
+                  todavía no conozco.
+                </p>
+                <p className="about-script">
+                  Todavía queda mucho
+                  <br />
+                  por descubrir.
+                </p>
+              </div>
+              <figure>
                 <a
                   className="about-photo-button"
-                  data-photo="F42"
-                  data-title="Disfrutar del invierno"
-                  data-caption="Otra forma de salir a descubrir."
-                  aria-label="Ampliar fotografía del entorno de hielo"
-                  href={aboutPhotoPath("F42")}
+                  data-photo="F45"
+                  data-title="Lo que sueño"
+                  data-caption="Una vida sencilla, cerca de la naturaleza."
+                  aria-label="Ampliar fotografía junto al lago"
+                  href={aboutPhotoPath("F45")}
                 >
                   <AboutImage
-                    id="F42"
-                    alt="Retrato en una entrada rodeada de hielo azul"
+                    id="F45"
+                    alt="Una persona de espaldas mirando un lago y las montañas"
                     sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
                   />
                 </a>
-                <div>
-                  <span className="about-eyebrow">OBSERVAR</span>
-                  <h3>
-                    Mirar. Detenerme.
-                    <br />
-                    Recordar.
-                  </h3>
-                  <p>
-                    Me gusta fotografiar la naturaleza, fijarme en los detalles
-                    y guardar un buen momento con las personas.
-                  </p>
-                </div>
-              </div>
-              <article className="about-taste">
-                <span className="about-eyebrow">ESCUCHAR</span>
-                <h3>La música que me acompaña.</h3>
-                <p>
-                  Entre lo cinematográfico, lo nostálgico y lo electrónico. Hans
-                  Zimmer, Beach House y el synthwave comparten espacio en lo que
-                  escucho.
-                </p>
-                <details>
-                  <summary>Algunos nombres de mi música</summary>
-                  <p>
-                    Imagine Dragons · Coldplay · AURORA · Tom Odell · Narvent ·
-                    Cigarettes After Sex · Kodaline · Goo Goo Dolls
-                  </p>
-                </details>
-              </article>
-              <article className="about-taste">
-                <span className="about-eyebrow">HISTORIAS</span>
-                <h3>Después de los créditos.</h3>
-                <p>
-                  Interstellar, Arrival, Batman y Spider-Man están entre mis
-                  gustos. <strong>Smallville es mi serie favorita</strong>; Dark
-                  me gusta mucho y también disfruto del anime.
-                </p>
-                <details>
-                  <summary>Más historias que disfruto</summary>
-                  <p>
-                    Cine: Inception · The Lion King · The Dark Knight
-                    <br />
-                    <br />
-                    Anime: Hunter × Hunter · Vinland Saga · Violet Evergarden ·
-                    Psycho-Pass · Fullmetal Alchemist
-                  </p>
-                </details>
-              </article>
+              </figure>
             </div>
-          </div>
-          <a className="about-section-end" href="#camino">
-            EXPERIENCIAS QUE ME HAN FORMADO
-          </a>
+          </section>
         </div>
-      </section>
-      <section
-        className="about-chapter about-wrap"
-        id="camino"
-        aria-labelledby="path-title"
-      >
-        <div className="about-path-head">
-          <div>
-            <span className="about-eyebrow">05 / EXPERIENCIAS COMPARTIDAS</span>
-            <h2 id="path-title">Mi camino.</h2>
-            <p className="about-section-lead">Servir. Conocer. Compartir.</p>
-          </div>
-          <p>
-            El voluntariado en mantenimiento y el tiempo que viví en Betel son
-            parte de mi historia. Recuerdo la alegría de trabajar para Jehová
-            junto a los hermanos, conocer personas maravillosas y formar
-            amistades que quiero conservar toda la vida.
-          </p>
-        </div>
-        <div className="about-path-photos">
-          <figure>
-            <a
-              className="about-photo-button"
-              data-photo="F13"
-              data-title="Voluntariado de mantenimiento"
-              data-caption="Compartir el trabajo con los hermanos."
-              aria-label="Ampliar fotografía del equipo de mantenimiento"
-              href={aboutPhotoPath("F13")}
-            >
-              <AboutImage
-                id="F13"
-                alt="Grupo de voluntarios de mantenimiento reunidos en un salón"
-                sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-              />
-            </a>
-            <figcaption className="about-caption">
-              Voluntariado de mantenimiento · El equipo.
-            </figcaption>
-          </figure>
-          <figure>
-            <a
-              className="about-photo-button"
-              data-photo="F36"
-              data-title="Voluntariado de mantenimiento"
-              data-caption="Un momento de trabajo compartido."
-              aria-label="Ampliar fotografía de la actividad de mantenimiento"
-              href={aboutPhotoPath("F36")}
-            >
-              <AboutImage
-                id="F36"
-                alt="Voluntarios trabajando sobre una plataforma"
-                sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-              />
-            </a>
-            <figcaption className="about-caption">
-              Voluntariado de mantenimiento · En plena actividad.
-            </figcaption>
-          </figure>
-        </div>
-        <a className="about-section-end" href="#sueno">
-          Y TODAVÍA QUEDA CAMINO
-        </a>
-      </section>
-      <section
-        className="about-chapter about-wrap"
-        id="sueno"
-        aria-labelledby="dream-title"
-      >
-        <div className="about-dream-layout">
-          <div className="about-dream-copy">
-            <span className="about-eyebrow">06 / HACIA DONDE MIRO</span>
-            <h2 id="dream-title">Lo que sueño.</h2>
-            <p>
-              Una vida sencilla, cerca de la naturaleza, con tiempo para
-              disfrutar de lo cotidiano y seguir explorando el mundo.
-            </p>
-            <p className="about-script">
-              Todavía queda mucho
-              <br />
-              por descubrir.
-            </p>
-          </div>
-          <figure>
-            <a
-              className="about-photo-button"
-              data-photo="F45"
-              data-title="Lo que sueño"
-              data-caption="Una vida sencilla, cerca de la naturaleza."
-              aria-label="Ampliar fotografía junto al lago"
-              href={aboutPhotoPath("F45")}
-            >
-              <AboutImage
-                id="F45"
-                alt="Una persona de espaldas mirando un lago y las montañas"
-                sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-              />
-            </a>
-          </figure>
-        </div>
-      </section>
+      </div>
       <footer className="about-ending">
         <span className="about-eyebrow">ESTO ES LO QUE LLEVO CONMIGO</span>
         <h2>
