@@ -16,6 +16,31 @@ escena persistente duerme también en Gargantúa porque ahora la cubre el álbum
 No convertir las aficiones en CV ni publicar los detalles privados del sueño.
 La autorización de publicación de E03/Bonao City sigue pendiente; ver las fuentes.
 
+**Sobre mí — explorar una constelación (2026-09-15):** el apartado `Pase de
+exploración` de `docs/design/sobre-mi-constelacion.md` manda en navegación,
+copy, fotos y encaje del hero. Entrada sin capítulo abierto; un único slot,
+índice contextual y seis hashes canónicos, también sin JS vía CSS `:target`.
+Transición de 340 ms/10 px que obedece al interruptor global y, en esta página,
+a reduced-motion por petición explícita. F02/F16 confirmadas como predicación;
+F34/F15 en Mi gente; F20/F07 en disfrute; F11 sustituye a F13, retirada también
+de public. Mantenimiento no se etiqueta como Betel: nuevas fotos pendientes.
+Dos carruseles pequeños de portadas sin autoplay. Navbar, cierre y footer
+conservados. Aprobación visual del pase pendiente del dueño.
+
+**Sobre mí — revisión editorial (2026-09-15):** el apartado `Revisión editorial
+del pase` de `docs/design/sobre-mi-constelacion.md` sustituye el pase inicial en
+hero, fondos y carruseles. Título compacto sin subtítulo ni frase duplicada;
+F23 mejorada de miniaturas sustituye a E03 (retirada de public); fuera F42/hielo
+y desplegables redundantes. Cielo detrás de todos los capítulos. Carruseles
+ampliados con autoplay de 5,5 s solicitado por el dueño: sólo visibles, pausa
+al interactuar, interruptor global y reduced-motion. Retrato real de Zimmer con
+crédito. Betel explicado. Navbar/cierre/footer intactos; aprobación visual pendiente.
+
+**Sobre mí — simplificación (2026-09-15):** `Simplificación de recuerdos` en
+`docs/design/sobre-mi-constelacion.md` manda en copy de vínculos, disfrute y
+camino: frases breves, abuelos con foto mayor y planes a todo el ancho bajo las
+fotos. No recuperar los párrafos retirados. Aprobación visual pendiente.
+
 **Fuente de verdad:** `docs/plans/jonas-orbit-v3-mission-endurance.md` (plan
 aprobado con eng review CLEAR). No abras decisiones arquitectónicas nuevas sin
 pasar por ese documento. La matriz de tests vive en su Appendix A.

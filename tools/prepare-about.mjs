@@ -1,5 +1,5 @@
 /** Responsive, metadata-free copies. Personal originals remain untouched. */
-import { readFile, mkdir, copyFile, writeFile } from "node:fs/promises";
+import { readFile, mkdir, copyFile, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
@@ -18,17 +18,36 @@ const ids = [
   "F29",
   "F04",
   "F44",
-  "F42",
-  "F13",
+  "F23",
+  "F11",
+  "F02",
+  "F16",
+  "F34",
+  "F15",
+  "F20",
+  "F07",
   "F36",
   "F45",
 ];
 const manifest = {};
+// Withdrawn by the owner: the large team cannot remain publicly addressable.
+// Keep the private original; remove only the four generated publication copies.
+for (const width of [320, 640, 960, 1600]) {
+  await unlink(path.join(output, `F13-${width}.webp`)).catch((error) => {
+    if (error.code !== "ENOENT") throw error;
+  });
+}
 for (const id of ids) {
   const entry = inventory.find((photo) => photo.id === id);
-  const source = path.join(archive, entry.archivo);
-  const widths = [...new Set([320, 640, 960, Math.min(1600, entry.ancho)])]
-    .filter((width) => width <= entry.ancho)
+  const source = path.join(
+    archive,
+    id === "F23" ? "_curaduria/miniaturas/F23.jpg" : entry.archivo,
+  );
+  const metadata = await sharp(source).rotate().metadata();
+  const photoWidth = metadata.autoOrient.width;
+  const photoHeight = metadata.autoOrient.height;
+  const widths = [...new Set([320, 640, 960, Math.min(1600, photoWidth)])]
+    .filter((width) => width <= photoWidth)
     .sort((a, b) => a - b);
   for (const width of widths)
     await sharp(source)
@@ -36,37 +55,16 @@ for (const id of ids) {
       .resize({ width })
       .webp({ quality: 86 })
       .toFile(path.join(output, `${id}-${width}.webp`));
-  manifest[id] = { width: entry.ancho, height: entry.alto, widths };
+  manifest[id] = { width: photoWidth, height: photoHeight, widths };
 }
-// E03 is the owner's selected visual reference, not a claim of photographic authorship.
-// The permission to publish this third-party photograph is documented separately.
-const riverPath = path.join(
-  archive,
-  "mis-raices/referencias-externas/E03-rio-yuna.jpg",
+// The owner replaced the external river reference with their improved F23.
+const previous = JSON.parse(
+  await readFile("content/about-photos.data.json", "utf8"),
 );
-try {
-  await readFile(riverPath);
-} catch {
-  const response = await fetch(
-    "https://bonaocity.com.do/wp-content/uploads/2024/06/Rio-Yuna.jpg",
-  );
-  if (!response.ok) throw new Error(`Bonao image: ${response.status}`);
-  await writeFile(riverPath, Buffer.from(await response.arrayBuffer()));
-}
-const river = await sharp(riverPath).metadata();
-const riverWidths = [...new Set([320, 640, 960, Math.min(1600, river.width)])]
-  .filter((width) => width <= river.width)
-  .sort((a, b) => a - b);
-for (const width of riverWidths)
-  await sharp(riverPath)
-    .resize({ width })
-    .webp({ quality: 86 })
-    .toFile(path.join(output, `E03-${width}.webp`));
-manifest.E03 = {
-  width: river.width,
-  height: river.height,
-  widths: riverWidths,
-};
+for (const width of previous.E03?.widths ?? [])
+  await unlink(path.join(output, `E03-${width}.webp`)).catch((error) => {
+    if (error.code !== "ENOENT") throw error;
+  });
 const backgroundSource =
   process.argv[2] || path.join(archive, "_curaduria/fondo-generado-v1.png");
 if (process.argv[2])

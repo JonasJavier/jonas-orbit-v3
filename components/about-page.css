@@ -1171,22 +1171,34 @@ body:has(.about-route) .site-footer {
   filter: drop-shadow(0 0 5px #ffe1a6);
 }
 .about-page
-  .about-constellation:has(.about-node-roots:is(:hover, :focus-visible))
+  .about-constellation:has(
+    .about-node-roots:is(:hover, :focus-visible, [aria-current])
+  )
   [data-for="raices"],
 .about-page
-  .about-constellation:has(.about-node-people:is(:hover, :focus-visible))
+  .about-constellation:has(
+    .about-node-people:is(:hover, :focus-visible, [aria-current])
+  )
   [data-for="gente"],
 .about-page
-  .about-constellation:has(.about-node-self:is(:hover, :focus-visible))
+  .about-constellation:has(
+    .about-node-self:is(:hover, :focus-visible, [aria-current])
+  )
   [data-for="soy"],
 .about-page
-  .about-constellation:has(.about-node-enjoy:is(:hover, :focus-visible))
+  .about-constellation:has(
+    .about-node-enjoy:is(:hover, :focus-visible, [aria-current])
+  )
   [data-for="disfruto"],
 .about-page
-  .about-constellation:has(.about-node-path:is(:hover, :focus-visible))
+  .about-constellation:has(
+    .about-node-path:is(:hover, :focus-visible, [aria-current])
+  )
   [data-for="camino"],
 .about-page
-  .about-constellation:has(.about-node-dream:is(:hover, :focus-visible))
+  .about-constellation:has(
+    .about-node-dream:is(:hover, :focus-visible, [aria-current])
+  )
   [data-for="sueno"] {
   stroke: #ffe1a6;
   stroke-width: 1.7;
@@ -1441,5 +1453,649 @@ body:has(.about-route) .site-footer {
   }
   .about-page .about-neighbours {
     padding-inline: 0;
+  }
+}
+
+/* Exploration pass: one shared reading slot, including without JavaScript.
+   :target is the no-JS selector; enhancement adds history, focus and transitions.
+   All six semantic stories remain in the server response. */
+.about-page .about-detail,
+.about-page .about-chapter {
+  display: none;
+}
+.about-page:not([data-enhanced]):has(.about-chapter:target) .about-detail,
+.about-page:not([data-enhanced]) .about-chapter:target,
+.about-page[data-enhanced][data-active]:not([data-active=""]) .about-detail,
+.about-page[data-enhanced] .about-chapter[data-open="true"] {
+  display: block;
+}
+.about-page .about-slot {
+  min-height: calc(100svh - 130px);
+  overflow-anchor: none;
+}
+.about-page .about-chapter {
+  padding-block: 64px 80px;
+  border-top: 0;
+}
+.about-page .about-chapter h2:focus-visible,
+.about-page h1:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 8px;
+}
+.about-page .about-node[aria-current] h3 {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 1px;
+}
+.about-page .about-node[aria-current] .about-node-image {
+  border-color: var(--ink);
+}
+.about-page .about-journey-nav a {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.about-page .about-hero-bottom p {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.about-page .about-roots-story {
+  margin-top: 30px;
+  max-width: 74ch;
+  color: var(--muted);
+}
+.about-page .about-chosen-family,
+.about-page .about-adventures {
+  margin-top: 64px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+}
+.about-page .about-friends-album,
+.about-page .about-adventure-photos {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  align-items: center;
+  gap: 48px;
+}
+.about-page .about-friends-album .about-paper:first-child {
+  transform: rotate(-1.5deg);
+}
+.about-page .about-collage .about-photo-button {
+  aspect-ratio: 16/9;
+}
+.about-page .about-collage img {
+  object-fit: contain;
+}
+.about-page .about-adventure-photos {
+  grid-template-columns: 1.4fr 1fr;
+  gap: 36px;
+}
+.about-page .about-adventure-photos figure:first-child .about-photo-button {
+  aspect-ratio: 4/3;
+}
+.about-page .about-adventure-photos figure:last-child {
+  max-width: 340px;
+  justify-self: end;
+}
+.about-page .about-adventure-photos figure:last-child .about-photo-button {
+  aspect-ratio: 3/4;
+}
+.about-page .about-service-story {
+  border-top: 1px solid var(--line);
+  padding-top: 40px;
+  margin-top: 50px;
+}
+.about-page .about-service-copy {
+  max-width: 72ch;
+}
+.about-page .about-service-copy p {
+  max-width: none;
+  color: var(--muted);
+  margin-top: 20px;
+}
+.about-page .about-preaching-photos {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 36px;
+  align-items: end;
+  margin-top: 30px;
+}
+.about-page .about-preaching-memory {
+  padding: 8px 8px 16px;
+  background: #e6dfcf;
+  transform: rotate(2deg);
+}
+.about-page .about-preaching-memory .about-caption {
+  color: #3d4549;
+}
+.about-page .about-volunteer-album {
+  margin-top: 36px;
+}
+.about-page .about-path-photos {
+  grid-template-columns: 1.35fr 1fr;
+}
+.about-page .about-path-photos .about-photo-button {
+  aspect-ratio: 4/3;
+}
+@media (min-width: 901px) {
+  .about-page .about-hero {
+    min-height: 0;
+    height: max(760px, calc(100svh - 67px));
+  }
+  .about-page .about-hero > .about-wrap {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .about-page .about-intro {
+    padding-top: 26px;
+  }
+  .about-page .about-intro .about-eyebrow {
+    margin-bottom: 10px;
+  }
+  .about-page .about-intro h1 {
+    font-size: clamp(48px, 4.8vw, 72px);
+  }
+  .about-page .about-intro > p {
+    font-size: 20px;
+    margin-top: 12px;
+  }
+  .about-page .about-intro .about-intro-note {
+    top: 45px;
+  }
+  .about-page .about-constellation {
+    width: 100%;
+    height: 100%;
+    max-width: 1130px;
+    margin: 0 auto;
+  }
+  .about-page .about-node {
+    width: 200px;
+  }
+  .about-page .about-node-image {
+    height: 104px;
+  }
+  .about-page .about-node h3 {
+    font-size: 23px;
+    margin-top: 8px;
+  }
+  .about-page .about-node p {
+    min-height: 34px;
+  }
+  .about-page .about-node-roots {
+    left: 23%;
+    top: 18%;
+  }
+  .about-page .about-node-people {
+    left: 77%;
+    top: 18%;
+  }
+  .about-page .about-node-self {
+    left: 15%;
+    top: 51%;
+  }
+  .about-page .about-node-enjoy {
+    left: 85%;
+    top: 51%;
+  }
+  .about-page .about-node-path {
+    left: 29%;
+    top: 82%;
+  }
+  .about-page .about-node-dream {
+    left: 71%;
+    top: 82%;
+  }
+  .about-page .about-portrait {
+    top: 48%;
+  }
+  .about-page .about-portrait-ring {
+    width: 186px;
+    height: 186px;
+  }
+  .about-page .about-portrait h2 {
+    margin-top: 15px;
+    font-size: 29px;
+  }
+  .about-page .about-hero-bottom {
+    padding: 12px 310px 20px 0;
+  }
+}
+@media (min-width: 701px) and (max-width: 900px) {
+  .about-page .about-hero {
+    min-height: 0;
+  }
+  .about-page .about-hero-bottom {
+    padding-right: 0;
+  }
+  .about-page .about-constellation {
+    height: 590px;
+  }
+  .about-page .about-node-path,
+  .about-page .about-node-dream {
+    top: 84%;
+  }
+}
+@media (max-width: 700px) {
+  .about-page .about-intro {
+    padding-top: 28px;
+  }
+  .about-page .about-intro > p {
+    font-size: 17px;
+    margin-top: 14px;
+  }
+  .about-page .about-intro .about-intro-note {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .about-page .about-portrait-ring {
+    width: 142px;
+    height: 142px;
+  }
+  .about-page .about-portrait {
+    margin-bottom: 4px;
+  }
+  .about-page .about-portrait h2 {
+    margin-top: 15px;
+  }
+  .about-page .about-constellation {
+    gap: 24px 20px;
+  }
+  .about-page .about-node h3 {
+    font-size: 21px;
+  }
+  .about-page .about-node p {
+    font-size: 12px;
+  }
+  .about-page .about-journey-nav > .about-wrap {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 18px;
+    width: 100%;
+    padding: 8px 20px;
+    min-height: 62px;
+    scrollbar-width: thin;
+    scroll-padding-inline: 20px;
+  }
+  .about-page .about-journey-nav a {
+    flex: 0 0 auto;
+  }
+  .about-page .about-chapter {
+    padding-block: 40px 60px;
+  }
+  .about-page .about-chapter {
+    scroll-margin-top: 0;
+  }
+  .about-page .about-friends-album,
+  .about-page .about-adventure-photos,
+  .about-page .about-preaching-photos,
+  .about-page .about-path-photos {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .about-page .about-preaching-memory {
+    width: 75%;
+    justify-self: end;
+  }
+  .about-page .about-friends-album .about-collage {
+    margin-top: 14px;
+  }
+  .about-page .about-adventure-photos figure:last-child {
+    width: 78%;
+  }
+  .about-page .about-chosen-family,
+  .about-page .about-adventures {
+    margin-top: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has(.about-page) {
+    scroll-behavior: auto !important;
+  }
+  .about-page .about-node img,
+  .about-page .about-photo-button img {
+    transition: none;
+  }
+}
+.about-page .about-shelf {
+  margin-top: 22px;
+  min-width: 0;
+}
+.about-page .about-enjoy-side {
+  min-width: 0;
+}
+.about-page .about-shelf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.about-page .about-shelf-toolbar > span {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+.about-page .about-shelf-controls {
+  display: none;
+  gap: 6px;
+}
+.about-page[data-enhanced] .about-shelf-controls {
+  display: flex;
+}
+.about-page .about-shelf-controls button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  background: transparent;
+}
+.about-page .about-shelf-controls button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.about-page .about-shelf-track {
+  list-style: none;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  margin: 8px 0 0;
+  padding: 8px 4px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  scroll-snap-type: x proximity;
+}
+.about-page .about-shelf-track:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.about-page .about-shelf-track li {
+  flex: 0 0 148px;
+  scroll-snap-align: start;
+}
+.about-page .about-shelf-track a {
+  display: block;
+}
+.about-page .about-cover {
+  display: flex;
+  align-items: center;
+  background: #17212c;
+  aspect-ratio: 1;
+  border: 1px solid #ffffff1a;
+}
+.about-page .about-cover img {
+  height: 100%;
+  object-fit: contain;
+}
+.about-page .about-shelf-track strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+.about-page .about-shelf-track strong span {
+  color: var(--gold);
+}
+.about-page .about-shelf-note {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.about-page .about-enjoy-side > * {
+  min-width: 0;
+}
+
+/* Editorial revision: the same sky carries every story, with a quiet reading
+   veil. The static backdrop fills the selected chapter without a new asset. */
+.about-page .about-slot {
+  position: relative;
+  isolation: isolate;
+  display: flow-root;
+}
+.about-page .about-slot::before {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #07121be8, #07121bb3 55%, #07121bd4),
+    url("/images/sobre-mi/cielo-montanas-1536.webp") center / cover;
+}
+.about-page .about-enjoy {
+  background: transparent;
+}
+.about-page .about-intro h1 {
+  font-size: clamp(34px, 3.4vw, 50px);
+}
+.about-page .about-intro {
+  padding-top: 24px;
+}
+.about-page .about-intro .about-intro-note {
+  top: 25px;
+  font-size: 19px;
+}
+.about-page .about-hero-bottom {
+  padding: 12px 310px 22px 0;
+}
+.about-page .about-hero-bottom .about-invitation {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: #f4d89f;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 8px #000;
+}
+.about-page .about-invitation > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d3b47785;
+  border-radius: 50%;
+  font-size: 28px;
+  background: #07121b80;
+}
+.about-page .about-invitation-line {
+  width: 55px;
+  height: 1px;
+  background: linear-gradient(90deg, #d3b477, transparent);
+}
+.about-page .about-roots-landscape {
+  min-height: 0;
+  background: transparent;
+}
+.about-page .about-roots-landscape > img {
+  position: static;
+  height: auto;
+  max-height: 680px;
+  object-fit: contain;
+}
+.about-page .about-roots-landscape::after {
+  content: none;
+}
+.about-page .about-roots-words {
+  padding: 0;
+  margin-top: 32px;
+  max-width: none;
+  font-size: clamp(28px, 3vw, 42px);
+}
+.about-page .about-roots-story {
+  margin-top: 20px;
+}
+.about-page .about-enjoy-grid {
+  gap: 48px;
+  align-items: center;
+}
+.about-page .about-photography-copy p {
+  color: var(--muted);
+  margin-top: 20px;
+  font-size: 17px;
+}
+.about-page .about-enjoy-side .about-adventures {
+  margin-top: 10px;
+  padding-top: 28px;
+}
+.about-page .about-enjoy-side .about-adventure-photos {
+  gap: 18px;
+  margin-top: 24px;
+}
+.about-page .about-listening-room {
+  display: grid;
+  gap: 60px;
+  margin-top: 65px;
+}
+.about-page .about-listening-room .about-taste {
+  padding-top: 36px;
+  min-width: 0;
+}
+.about-page .about-listening-room .about-taste > p {
+  max-width: 800px;
+  font-size: 17px;
+}
+.about-page .about-shelf-track {
+  gap: 24px;
+}
+.about-page .about-shelf-track li {
+  flex-basis: 200px;
+}
+.about-page .about-shelf[data-group="stories"] .about-cover {
+  aspect-ratio: 4/3;
+}
+.about-page .about-shelf-credit {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.about-page .about-shelf-credit a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .about-page .about-hero-bottom {
+    padding-right: 0;
+  }
+  .about-page .about-intro .about-intro-note {
+    position: static;
+    margin-top: 14px;
+  }
+  .about-page .about-intro-note br {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .about-page .about-intro h1 {
+    font-size: 36px;
+  }
+  .about-page .about-hero-bottom {
+    padding-bottom: 28px;
+  }
+  .about-page .about-invitation-line {
+    width: 25px;
+  }
+  .about-page .about-enjoy-grid {
+    gap: 36px;
+  }
+  .about-page .about-listening-room {
+    gap: 42px;
+    margin-top: 42px;
+  }
+  .about-page .about-shelf-track {
+    gap: 16px;
+  }
+  .about-page .about-shelf-track li {
+    flex-basis: 164px;
+  }
+}
+/* CSS-only navigation retains an active cue before hydration and without JS. */
+.about-page:not([data-enhanced]):has(#mis-raices:target) a[href="#mis-raices"],
+.about-page:not([data-enhanced]):has(#mi-gente:target) a[href="#mi-gente"],
+.about-page:not([data-enhanced]):has(#como-soy:target) a[href="#como-soy"],
+.about-page:not([data-enhanced]):has(#lo-que-disfruto:target)
+  a[href="#lo-que-disfruto"],
+.about-page:not([data-enhanced]):has(#mi-camino:target) a[href="#mi-camino"],
+.about-page:not([data-enhanced]):has(#lo-que-sueno:target)
+  a[href="#lo-que-sueno"] {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.about-page .about-shelf-track {
+  scroll-padding-inline: 4px;
+}
+
+.about-page .about-node-roots img {
+  object-position: center bottom;
+}
+.about-page .about-taste .about-shelf-credit {
+  font-size: 11px;
+}
+
+/* Short memories and a full-width caption beneath the photo composition. */
+.about-page .about-story .about-memory-line {
+  font:
+    22px/1.45 Georgia,
+    serif;
+  color: var(--ink);
+  max-width: 32ch;
+}
+.about-page .about-grandparents {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding-top: 0;
+}
+.about-page .about-grandparents > figure {
+  width: 100%;
+  max-width: none;
+}
+.about-page .about-grandparents .about-memory-line {
+  font-size: 20px;
+  margin-top: 12px;
+}
+.about-page .about-plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 32px;
+  padding: 32px 0;
+  margin-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.about-page .about-plans p {
+  color: var(--muted);
+  font-size: 19px;
+}
+.about-page .about-plans h3 {
+  font-size: 32px;
+}
+.about-page .about-plans + .about-listening-room {
+  margin-top: 12px;
+}
+.about-page .about-path-head {
+  display: block;
+}
+@media (max-width: 900px) {
+  .about-page .about-grandparents {
+    grid-template-columns: 1fr;
+  }
+  .about-page .about-grandparents > figure {
+    max-width: 280px;
+  }
+}
+@media (max-width: 700px) {
+  .about-page .about-plans {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .about-page .about-plans h3 {
+    font-size: 28px;
+  }
+  .about-page .about-plans p {
+    font-size: 17px;
   }
 }

@@ -1,30 +1,48 @@
 import { expect, test } from "@playwright/test";
 
-test("Sobre mí: navbar, índice, visor por teclado y gustos", async ({
+const chapters = [
+  "mis-raices",
+  "mi-gente",
+  "como-soy",
+  "lo-que-disfruto",
+  "mi-camino",
+  "lo-que-sueno",
+];
+const openPage = async (page: import("@playwright/test").Page, hash = "") => {
+  await page.goto(`/es/sobre-mi?no3d=1${hash}`);
+  await expect(page.locator(".about-page")).toHaveAttribute(
+    "data-enhanced",
+    "true",
+  );
+};
+const current = (page: import("@playwright/test").Page) =>
+  page.locator(".about-chapter:visible");
+const navLink = (page: import("@playwright/test").Page, id: string) =>
+  page.locator(`.about-journey-nav a[href="#${id}"]`);
+
+test("hero cerrado, seis estados, foco, visor por teclado y carruseles", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/es/sobre-mi?no3d=1");
+  await openPage(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     /Sobre mí.*Mi pequeño universo/,
   );
   await expect(page.locator(".site-header")).toBeVisible();
-  const index = page.getByRole("navigation", {
-    name: "Explora las seis constelaciones",
-  });
-  await expect(index.getByRole("link")).toHaveCount(6);
-  await expect(
-    index.getByRole("img", { name: "Jonás junto al mar" }),
-  ).toBeVisible();
-  await index.getByRole("link", { name: /Mi gente/ }).click();
-  await expect(page).toHaveURL(/#gente$/);
-  const progress = page.getByRole("navigation", {
-    name: "Tu lugar en la historia",
-  });
-  await expect(
-    progress.getByRole("link", { name: /Mi gente/ }),
-  ).toHaveAttribute("aria-current", "location");
+  await expect(current(page)).toHaveCount(0);
+  await expect(page.locator(".about-journey-nav")).toBeHidden();
+  await expect(page.locator(".about-node")).toHaveCount(6);
+  const people = page.locator('.about-node[href="#mi-gente"]');
+  await people.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#mi-gente$/);
+  await expect(current(page)).toHaveCount(1);
+  await expect(page.locator("#people-title")).toBeFocused();
+  await expect(navLink(page, "mi-gente")).toHaveAttribute(
+    "aria-current",
+    "location",
+  );
   const family = page.getByRole("link", {
     name: "Ampliar fotografía de mi familia",
   });
@@ -33,12 +51,53 @@ test("Sobre mí: navbar, índice, visor por teclado y gustos", async ({
   const viewer = page.getByRole("dialog", { name: "Mi familia" });
   await expect(viewer).toBeVisible();
   await expect(viewer.getByRole("button", { name: "Cerrar ×" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  // The native modal may move Tab to browser chrome, never to the inert page.
+  expect(
+    await page.evaluate(
+      () =>
+        document.activeElement === document.body ||
+        !!document.activeElement?.closest("dialog"),
+    ),
+  ).toBe(true);
+  await page.keyboard.press("Shift+Tab");
+  await expect(viewer.getByRole("button", { name: "Cerrar ×" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(viewer).toHaveCount(0);
   await expect(family).toBeFocused();
-  await progress.getByRole("link", { name: /Lo que disfruto/ }).click();
-  await page.getByText("Algunos nombres de mi música", { exact: true }).click();
-  await expect(page.getByText(/Imagine Dragons · Coldplay/)).toBeVisible();
+  for (const id of chapters) {
+    await navLink(page, id).click();
+    await expect(current(page)).toHaveCount(1);
+    await expect(current(page)).toHaveAttribute("id", id);
+    await expect(current(page).locator("h2").first()).toBeFocused();
+    await expect(navLink(page, id)).toHaveAttribute("aria-current", "location");
+    const top = await current(page).evaluate(
+      (el) => el.getBoundingClientRect().top,
+    );
+    expect(top).toBeGreaterThanOrEqual(120);
+    expect(top).toBeLessThan(170);
+  }
+  await navLink(page, "lo-que-disfruto").click();
+  await expect(page.locator(".about-taste details")).toHaveCount(0);
+  await expect(page.locator("#about-shelf-music > li")).toHaveCount(10);
+  const track = page.locator("#about-shelf-music");
+  await page
+    .getByRole("button", { name: "Selección de música: siguientes" })
+    .click();
+  await expect
+    .poll(() => track.evaluate((el) => el.scrollLeft))
+    .toBeGreaterThan(10);
+  await page
+    .getByRole("button", { name: "Selección de música: anteriores" })
+    .click();
+  await expect
+    .poll(() => track.evaluate((el) => el.scrollLeft))
+    .toBeLessThan(3);
+  await track.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect
+    .poll(() => track.evaluate((el) => el.scrollLeft))
+    .toBeGreaterThan(0);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     /\/es\/sobre-mi$/,
@@ -46,47 +105,143 @@ test("Sobre mí: navbar, índice, visor por teclado y gustos", async ({
   expect(errors).toEqual([]);
 });
 
-test("Sobre mí: único control de movimiento y composición adaptable", async ({
+test("enlaces directos, recarga, atrás/adelante y hash desconocido", async ({
   page,
 }) => {
-  await page.goto("/es/sobre-mi?no3d=1");
-  const content = page.locator(".about-page");
-  await expect(content).toHaveAttribute("data-about-motion", "off");
+  for (const id of chapters) {
+    await openPage(page, `#${id}`);
+    await expect(current(page)).toHaveCount(1);
+    await expect(current(page)).toHaveAttribute("id", id);
+  }
+  await page.reload();
+  await expect(current(page)).toHaveAttribute("id", "lo-que-sueno");
+  await openPage(page);
+  await page.locator('.about-node[href="#mi-gente"]').click();
+  await navLink(page, "como-soy").click();
+  await page.goBack();
+  await expect(current(page)).toHaveAttribute("id", "mi-gente");
+  await page.goBack();
+  await expect(current(page)).toHaveCount(0);
+  await expect(page.locator(".about-journey-nav")).toBeHidden();
+  await page.goForward();
+  await expect(current(page)).toHaveAttribute("id", "mi-gente");
+  await page.goForward();
+  await expect(current(page)).toHaveAttribute("id", "como-soy");
+  await page.locator('.about-ending a[href="#constelacion"]').click();
+  await expect(current(page)).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  await openPage(page, "#desconocido");
+  await expect(current(page)).toHaveCount(0);
+});
+
+test("carrusel automático visible, pausa al leer y control global de movimiento", async ({
+  page,
+}) => {
+  test.setTimeout(65_000);
+  await openPage(page, "#lo-que-disfruto");
+  const track = page.locator("#about-shelf-music");
+  const x = () => track.evaluate((el) => el.scrollLeft);
+  const show = async () => {
+    await track.evaluate((el) =>
+      el.scrollIntoView({ block: "center", behavior: "instant" }),
+    );
+    await page.mouse.move(0, 0);
+  };
   await page
     .getByRole("button", { name: "Activar movimiento", exact: true })
     .click();
-  await expect(content).toHaveAttribute("data-about-motion", "on");
-  await expect(page.locator(".about-stars i").first()).toHaveCSS(
-    "animation-play-state",
-    "running",
-  );
+  await show();
+  await expect.poll(x, { timeout: 9000 }).toBeGreaterThan(100);
+  await track.hover();
+  const hovered = await x();
+  await page.waitForTimeout(6000);
+  expect(await x()).toBeCloseTo(hovered, 0);
+  await page.mouse.move(0, 0);
+  await track.focus();
+  await page.locator("#enjoy-title").focus();
+  const focused = await x();
+  await page.waitForTimeout(6000);
+  expect(await x()).toBeCloseTo(focused, 0);
   await page
     .getByRole("button", { name: "Desactivar movimiento", exact: true })
     .click();
-  await expect(page.locator(".about-stars i").first()).toHaveCSS(
-    "animation-play-state",
-    "paused",
+  await show();
+  const off = await x();
+  await page.waitForTimeout(6000);
+  expect(await x()).toBeCloseTo(off, 0);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page
+    .getByRole("button", { name: "Activar movimiento", exact: true })
+    .click();
+  await show();
+  await page.waitForTimeout(6000);
+  expect(await x()).toBeCloseTo(off, 0);
+});
+
+test("transición discreta, selección rápida y reduced-motion incluso con interruptor encendido", async ({
+  page,
+}) => {
+  await openPage(page, "#mi-gente");
+  await page
+    .getByRole("button", { name: "Activar movimiento", exact: true })
+    .click();
+  await navLink(page, "como-soy").click();
+  await expect(current(page)).toHaveAttribute("id", "como-soy");
+  await navLink(page, "mi-camino").click();
+  await navLink(page, "mis-raices").click();
+  await expect(current(page)).toHaveCount(1);
+  await expect(current(page)).toHaveAttribute("id", "mis-raices");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await navLink(page, "lo-que-sueno").click();
+  await expect(current(page)).toHaveAttribute("id", "lo-que-sueno");
+  expect(await current(page).evaluate((el) => el.getAnimations().length)).toBe(
+    0,
   );
-  for (const width of [320, 390, 768, 1440, 1920]) {
-    await page.setViewportSize({ width, height: 900 });
+  await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
+  await page
+    .getByRole("button", { name: "Desactivar movimiento", exact: true })
+    .click();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await navLink(page, "como-soy").click();
+  expect(await current(page).evaluate((el) => el.getAnimations().length)).toBe(
+    0,
+  );
+});
+
+test("composición: desktop completo, tablet, móvil y blancos alcanzables", async ({
+  page,
+}) => {
+  await openPage(page);
+  for (const viewport of [
+    { width: 1440, height: 860 },
+    { width: 1536, height: 864 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+    { width: 320, height: 812 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
-    ).toBeLessThanOrEqual(width);
-    // This is a scrolling document, not the viewport-locked System Map. Bring
-    // each target into the reading area, clear of the site's fixed audio tray.
-    const nodes = page.locator(".about-node");
-    for (const node of await nodes.all()) {
-      await node.evaluate((element) =>
-        element.scrollIntoView({ block: "center", behavior: "instant" }),
-      );
+    ).toBeLessThanOrEqual(viewport.width);
+    for (const node of await page.locator(".about-node").all()) {
+      const box = (await node.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+      if (viewport.width > 900) {
+        expect(box.y).toBeGreaterThanOrEqual(67);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 40);
+      } else
+        await node.evaluate((el) =>
+          el.scrollIntoView({ block: "center", behavior: "instant" }),
+        );
       expect(
-        await node.evaluate((element) => {
-          const box = element.getBoundingClientRect();
-          return element.contains(
-            document.elementFromPoint(
-              box.left + box.width / 2,
-              box.top + box.height / 2,
-            ),
+        await node.evaluate((el) => {
+          const b = el.getBoundingClientRect();
+          return el.contains(
+            document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2),
           );
         }),
       ).toBe(true);
@@ -94,24 +249,62 @@ test("Sobre mí: único control de movimiento y composición adaptable", async (
   }
 });
 
-test("Sobre mí sin JavaScript: historia, fotos y navegación completas", async ({
+test("fotos inactivas diferidas y foto del equipo retirada", async ({
+  page,
+  request,
+}) => {
+  const images: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "image") images.push(request.url());
+  });
+  await openPage(page);
+  await page
+    .locator(".about-node img")
+    .last()
+    .evaluate((img: HTMLImageElement) => img.decode());
+  expect(images.some((url) => /F04-|F15-|F20-|gustos\//.test(url))).toBe(false);
+  expect((await request.get("/images/sobre-mi/F13-1600.webp")).status()).toBe(
+    404,
+  );
+  const response = await request.get("/es/sobre-mi");
+  const html = await response.text();
+  for (const id of chapters) expect(html).toContain(`id="${id}"`);
+  expect(html).toContain("Predicar desde joven");
+  await page.locator('.about-node[href="#mi-gente"]').click();
+  await page.locator('a[data-photo="F04"]').scrollIntoViewIfNeeded();
+  await expect.poll(() => images.some((url) => /F04-/.test(url))).toBe(true);
+});
+
+test("sin JavaScript: selector, un solo capítulo, hashes y fotos reales", async ({
   browser,
 }) => {
-  const context = await browser.newContext({ javaScriptEnabled: false });
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: { width: 390, height: 844 },
+  });
   const page = await context.newPage();
   await page.goto("/es/sobre-mi?no3d=1");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  const index = page.getByRole("navigation", {
-    name: "Explora las seis constelaciones",
-  });
-  await index.getByRole("link", { name: /Cómo soy/ }).click();
-  await expect(page).toHaveURL(/#soy$/);
-  await expect(page.getByText(/Soy testigo de Jehová/)).toBeVisible();
-  const image = page.getByRole("link", {
-    name: "Ampliar retrato junto al mar",
-  });
-  await expect(image).toHaveAttribute("href", /F28-1600\.webp$/);
-  await image.click();
+  await expect(current(page)).toHaveCount(0);
+  await expect(page.locator(".about-journey-nav")).toBeHidden();
+  await page.locator('.about-node[href="#como-soy"]').click();
+  await expect(current(page)).toHaveCount(1);
+  await expect(
+    page.getByText(/Mi fe también ocupa un lugar importante/),
+  ).toBeVisible();
+  await navLink(page, "lo-que-disfruto").click();
+  await expect(current(page)).toHaveAttribute("id", "lo-que-disfruto");
+  await expect(page.locator("#about-shelf-stories")).toBeVisible();
+  await expect(page.locator("#about-shelf-stories")).toContainText(
+    "Hunter × Hunter",
+  );
+  await page.goBack();
+  await expect(current(page)).toHaveAttribute("id", "como-soy");
+  await page
+    .getByRole("link", { name: "Ampliar retrato junto al mar" })
+    .click();
   await expect(page).toHaveURL(/F28-1600\.webp$/);
+  await page.goto("/es/sobre-mi#mi-camino");
+  await expect(current(page)).toHaveAttribute("id", "mi-camino");
   await context.close();
 });

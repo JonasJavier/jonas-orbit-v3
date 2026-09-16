@@ -6,6 +6,142 @@ fondo semejante a la referencia de cielo y montañas, pulir y conservar la navba
 Este documento manda sobre las propuestas previas de Sobre mí en composición
 y contenido personal. No altera la arquitectura de rutas ni la cámara.
 
+## Simplificación de recuerdos · 2026-09-15 (vigente)
+
+Petición del dueño tras revisar las capturas: menos explicación, frases cortas
+junto a las imágenes. Sustituye los textos largos de vínculos, aficiones y camino.
+
+- Amistad: «Mi mejor amigo y yo, cumpliendo metas y sueños juntos». Sin el
+  encabezado ni el relato anterior de infancia y habitación compartida.
+- Abuelos: una frase de cariño, sabiduría y recuerdos; imagen ampliada de 180 px
+  a aproximadamente 270 px en escritorio y hasta 280 px en móvil.
+- Fotografía, música e historias: una frase de apoyo, con las fotos y los
+  carruseles como contenido principal. Smallville conserva «Mi serie favorita»
+  en su tarjeta, sin duplicarlo en el párrafo.
+- «Mis planes favoritos» ocupa el ancho completo DEBAJO de la composición
+  fotográfica, fuera de la columna de la cascada. Una fila en escritorio,
+  dos bloques breves en móvil.
+- Mi camino: sin introducción larga; una frase para predicación y otra para
+  Betel, conservando una explicación sencilla de ese centro de voluntarios.
+  Fotos y captions de mantenimiento siguen diferenciados de Betel.
+- Hero, selección, fondos, autoplay, fotos, cierre y footer conservados.
+
+Capturas y validación en `output/playwright/sobre-mi-simplificado.md`.
+Aprobación visual pendiente del dueño.
+
+## Revisión editorial del pase · 2026-09-15 (vigente)
+
+Sustituye los puntos de contenido, fondos y carruseles del pase inferior por
+petición del dueño tras revisar las capturas. La aprobación visual sigue abierta.
+
+- Hero: título más compacto (34–50 px), sin subtítulo; se conserva sólo
+  «Misma persona, distintos cielos» y se retira «Seis constelaciones / una misma
+  persona». Invitación dorada con estrella y línea, sin flecha; es una indicación,
+  los seis enlaces fotográficos siguen siendo los controles.
+- F23 sustituye a E03 en el nodo y en Mis raíces. La fuente vigente es
+  `assets/sobre-mi/_curaduria/miniaturas/F23.jpg`, reemplazada por el dueño.
+  No volver al original antiguo al preparar fotos. Se leen las dimensiones reales
+  de esta versión y no se amplía. Foto completa en el capítulo, con el título
+  debajo para no tapar caras. Sin atribuirle una ubicación no confirmada.
+  Las cuatro copias públicas de E03 se retiran; la referencia privada se conserva.
+- El cielo existente continúa detrás de TODOS los capítulos, con velo oscuro
+  estático para lectura. Mi gente conserva su tratamiento. No hay nuevas imágenes
+  generadas, partículas ni contextos gráficos.
+- Lo que disfruto: fuera F42/hielo; fotografía + F20/F07 junto a la cascada.
+  Carruseles en filas propias de ancho completo, evitando que su altura deje un
+  hueco bajo Mis planes favoritos. Se eliminan los dos desplegables redundantes.
+- Diez artistas y once títulos de cine, anime y televisión, tomados de
+  `GUSTOS-REFERENCIA.md`. Las cubiertas de álbum identifican artistas, no afirman
+  que Jonás haya señalado esos discos como favoritos. Se incorpora Dark junto a
+  Smallville. Ninguna selección adjudica una adaptación de Fullmetal Alchemist.
+- Autoplay pedido explícitamente: una tarjeta cada 5,5 s, sólo con al menos 60 %
+  del carrusel visible, pestaña activa, sin visor y movimiento global encendido.
+  Reduced-motion lo impide incluso con el interruptor activo. Hover pausa;
+  teclado, tacto o rueda entregan el control al visitante hasta reiniciar el
+  movimiento global. Flechas y desplazamiento nativo siguen disponibles.
+  El control global es también la pausa; no aparece otro interruptor local.
+  Sólo temporizadores acotados, sin RAF continuo ni dependencias nuevas.
+- Retrato de Hans Zimmer por ColliderVideo, CC BY 3.0, con atribución visible,
+  enlace a fuente/licencia y nota de adaptación. Sustituye a la portada de
+  Interstellar. Fuentes de las otras miniaturas: Apple Music/TV y Netflix.
+- Betel se explica al mencionarlo en Mi gente y Mi camino: centro de los testigos
+  de Jehová donde viven y colaboran voluntarios. Contexto contrastado con
+  [¿Qué es Betel?](https://www.jw.org/es/biblioteca/folletos/voluntad-de-Jehov%C3%A1/qu%C3%A9-es-betel/).
+  F11/F36 siguen identificadas como mantenimiento. Nuevas fotos de Betel pendientes.
+- Se mantienen slot único, hashes, SSR/no-JS, gestión de foco, navbar y footer.
+
+Validación: `npm run check` (265 pruebas en 40 archivos), 114 E2E de Sobre mí,
+navbar, movimiento y smoke. Capturas de producción a 1440×860, 1536×864,
+768×1024 y 390×844. Incluyen hero y seis capítulos en escritorio/móvil.
+Dossier: `output/playwright/sobre-mi-revision.md`. Delta de scripts frente a
+Privacidad: 22 884 bytes gzip; incluye el grupo compartido de páginas de mundo.
+
+## Pase de exploración · 2026-09-15 (vigente)
+
+Petición explícita del dueño: conservar la identidad visual y convertir las
+seis constelaciones en navegación real. Este apartado sustituye el documento
+anterior en navegación, copy, selección fotográfica y composición del hero.
+La aprobación visual de este pase queda pendiente del dueño.
+
+- Entrada sin hash: sólo hero, cierre y footer; ningún capítulo ni índice de
+  lectura abierto. Los seis nodos caben completos en 1440×860 y 1536×864.
+- Un único espacio de lectura bajo el hero, con índice sticky bajo el header.
+  Elegir otro destino sustituye el capítulo, nunca acumula historias.
+- Hashes canónicos: `#mis-raices`, `#mi-gente`, `#como-soy`,
+  `#lo-que-disfruto`, `#mi-camino`, `#lo-que-sueno`.
+- El HTML sirve las seis historias como Server Components. CSS `:target`
+  permite seleccionar exactamente una sin JavaScript, incluso al entrar por
+  enlace directo; imágenes de capítulos y portadas con `loading="lazy"`.
+  `AboutExperience` mantiene la única frontera cliente y añade `pushState`,
+  restauración de historial, foco sin scroll implícito y visor nativo.
+- Salida de 160 ms + entrada de 180 ms, opacidad y 10 px. El hash se actualiza
+  al elegir; la sustitución no depende de un evento de animación. Un mínimo
+  temporal conserva el alto saliente durante el desplazamiento al inicio.
+  Selecciones rápidas cancelan la transición previa.
+- El interruptor global apaga también esta transición. Por petición específica
+  de este pase, `prefers-reduced-motion` elimina transición y smooth scroll
+  aunque el interruptor esté encendido; no altera la política de otros mundos.
+- Móvil: retrato y seis fotos en dos columnas, con scroll vertical natural;
+  no se miniaturiza el diagrama orbital para encajarlo en una sola pantalla.
+  Índice horizontal con blancos de 44 px y opción activa visible.
+
+### Contenido y fotografías
+
+Se integra el copy completo aportado por el dueño: convicciones en el hero,
+voz personal en Cómo soy y relación entre el paisaje y su curiosidad en Raíces.
+Se conservan F40, F28, E03, las fotos anteriores de vínculos y las composiciones
+de cascada/lago. Se añade F34 (amigos que son casi familia) y F15 (collage
+completo, sin recortar) a Mi gente; F20 y F07 a Lo que disfruto.
+
+Mi camino incorpora Predicar y Betel. **El dueño confirmó F02 y F16 como
+fotografías de predicación durante este pase**: F02 principal y F16 recuerdo
+pequeño, sin inferir nombres, fechas ni lugares. F11 sustituye a F13 en hero
+y voluntariado. F13 se retira de la página, manifiesto y copias públicas por
+petición del dueño; su original privado se conserva. F11/F36 siguen rotuladas
+como mantenimiento: no se atribuyen a Betel. Las nuevas fotos de Betel se
+añadirán cuando el dueño las envíe; no hay placeholders públicos.
+
+Dos pequeños carruseles manuales dentro de Lo que disfruto: música e historias.
+`AboutShelf` se sirve en el servidor y `AboutExperience` mejora el desplazamiento.
+Flechas reales de 44 px, extremos deshabilitados, lista desplazable por teclado
+y tacto sin autoplay. Cada miniatura enlaza a su ficha externa, sin audio ni
+reproductor. Fuentes en `content/about-tastes.data.json`, preparación explícita
+en `tools/prepare-about-tastes.mjs`; nada se consulta en tiempo de ejecución.
+Las portadas pertenecen a sus titulares; las fichas de Apple Music/TV son
+referencias de procedencia, no una licencia de propiedad ni autoría de Jonás.
+
+**SiteShell, navbar, cierre y footer conservados.** E03 sigue con la autorización
+de publicación pendiente documentada abajo. Este pase no despliega el sitio.
+
+### Validación del pase
+
+Extiende Appendix A A15–A17, A22–A24, A28–A29 y A32 con los flujos de
+`e2e/about.spec.ts`: entrada cerrada, un capítulo, seis enlaces directos,
+recarga, atrás/adelante, teclado/foco/visor, movimiento reducido, cambio rápido,
+carruseles, SSR, no-JS, imágenes diferidas, retirada de F13 y geometría.
+Pruebas de componente mantienen hechos, recursos existentes y exclusión de
+detalles privados. Capturas reales y resultados en `output/playwright/`.
+
 ## Implementación
 
 `/es/sobre-mi` sigue siendo Gargantúa. `AboutPage` ocupa el contenido dentro del
@@ -94,3 +230,11 @@ Revisión visual en Edge a 1440 y 390 px; geometría comprobada entre 320 y 1920
 Los 50 originales conservan sus hashes y las 50 copias WebP no contienen EXIF.
 El fondo de escritorio pesa 214 KB. Las capturas finales están en
 `output/playwright/sobre-mi-real-*.png`.
+
+Resultado del pase: `npm run check` correcto (40 archivos de pruebas,
+265 pruebas, lint/tipos/Knip y build); 112 E2E correctos en Chromium escritorio
+y móvil para Sobre mí, navbar, movimiento y smoke. Diferencia de scripts
+comprimidos frente a Privacidad: 22 529 bytes (incluye el grupo de páginas de
+mundo, por debajo de 40 KiB). Cierre y shell comparados con HEAD sin cambios.
+Capturas finales tomadas del build de producción en 1440×860, 1536×864,
+768×1024 y 390×844. Dossier: `output/playwright/sobre-mi-revision.md`.
