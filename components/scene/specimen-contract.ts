@@ -152,7 +152,6 @@ function architectureFor(
   return {
     vertices,
     edges: TESSERACT_PATH.length,
-    facets: TESSERACT_FACETS.length,
     /*
       `renderedFacets`, no `facets`, y el nombre es la corrección.
 
