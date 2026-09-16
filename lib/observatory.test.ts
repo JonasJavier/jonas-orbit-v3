@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { WORLD_IDS, worldsData, type WorldId } from "@/content/worlds.data";
 import {
+  cameraBasis,
+  keyScreenDirection,
   OBSERVATION_PRESETS,
   ORIGIN_DISTANCE_RADII,
+  PENDING_VISUAL_CALIBRATION,
   observationLightIntensity,
   observationPlacement,
   type ObservationInstrument,
@@ -62,7 +65,7 @@ describe("presets de observación", () => {
     */
     const allowed = new Set<keyof ObservationPreset>([
       "keyAngle",
-      "keyRoll",
+      "keyAzimuth",
       "environment",
       "rim",
       "instruments",
@@ -205,6 +208,105 @@ describe("colocación", () => {
       const second = observationPlacement(id, RADIUS, FRAMING);
       expect(second).toEqual(first);
     }
+  });
+});
+
+describe("base de cámara", () => {
+  const RADIUS = 2.4;
+  const FRAMING = RADIUS * 2.9;
+
+  it("es ortonormal para los cinco presets", () => {
+    // Sin un `up` válido el encuadre no está determinado y «dónde cae la luz en
+    // pantalla» no significa nada.
+    for (const id of SOLIDS) {
+      const { body, camera, up } = observationPlacement(id, RADIUS, FRAMING);
+      const forward = unit(sub(body, camera));
+      expect(norm(up), id).toBeCloseTo(1, 12);
+      expect(dot(up, forward), id).toBeCloseTo(0, 12);
+    }
+  });
+
+  it("sobrevive a la mirada alineada con el eje vertical del mundo", () => {
+    /*
+      No es un caso de laboratorio: `keyAngle 90` con `keyAzimuth 90` lo produce
+      EXACTO, y la Ranger ya está en `keyAngle 90`. Sin eje de reserva el
+      producto vectorial se anula y la base sale con NaN.
+
+      Se prueba por aquí y no por un preset porque ninguno lo toca hoy — y una
+      salvaguarda que no se puede ejercitar es una salvaguarda que nadie sabe si
+      funciona.
+    */
+    for (const forward of [[0, 1, 0], [0, -1, 0]] as const) {
+      const { right, up } = cameraBasis(forward);
+      for (const component of [...right, ...up]) {
+        expect(Number.isFinite(component)).toBe(true);
+      }
+      expect(norm(right)).toBeCloseTo(1, 12);
+      expect(norm(up)).toBeCloseTo(1, 12);
+      expect(dot(right, forward)).toBeCloseTo(0, 12);
+    }
+  });
+});
+
+describe("dónde cae la luz en pantalla", () => {
+  const RADIUS = 2.4;
+  const FRAMING = RADIUS * 2.9;
+
+  it("su magnitud es el seno del ángulo de clave", () => {
+    /*
+      Invariante estructural, y a propósito NO se fijan los valores concretos:
+      `keyAzimuth` está pendiente de calibración visual y clavar aquí «la luz
+      cae a −0.76» convertiría cada ajuste artístico en un test roto.
+
+      Lo que sí se puede afirmar siempre: la componente de la luz perpendicular
+      al eje de cámara mide `sin(keyAngle)`. Si esto se rompe, la
+      parametrización cambió sin que nadie lo dijera.
+    */
+    for (const id of SOLIDS) {
+      const placement = observationPlacement(id, RADIUS, FRAMING);
+      const { right, up } = keyScreenDirection(placement);
+      const expected = Math.abs(
+        Math.sin((placement.preset.keyAngle * Math.PI) / 180),
+      );
+      expect(Math.hypot(right, up), id).toBeCloseTo(expected, 12);
+      expect(Math.abs(right), id).toBeLessThanOrEqual(1);
+      expect(Math.abs(up), id).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("responde la pregunta que `keyAzimuth` no responde", () => {
+    /*
+      El error de la primera versión fue documentar `keyAzimuth` como si situara
+      la luz «a la derecha del cuadro». No lo hace: medido, con `keyAngle 90` y
+      azimut 0 la luz cae completamente a la IZQUIERDA.
+
+      Este test fija la única afirmación que sí se sostiene hoy: los cinco
+      presets dejan la luz en el lado izquierdo del cuadro. Cuando se calibre y
+      alguien pida «arriba a la derecha», tendrá que cambiar y eso es correcto —
+      lo que no puede pasar es que nadie se entere de que hoy es así.
+    */
+    for (const id of SOLIDS) {
+      const { right } = keyScreenDirection(
+        observationPlacement(id, RADIUS, FRAMING),
+      );
+      expect(right, `${id} ya no tiene la luz a la izquierda`).toBeLessThan(0);
+    }
+  });
+});
+
+describe("estado de calibración", () => {
+  it("ninguna palanca visual está aprobada todavía", () => {
+    /*
+      CONTRATO VERIFICADO ✅ / CALIBRACIÓN VISUAL ⏳.
+
+      Los tests de arriba demuestran que si un preset dice 55°, la geometría
+      produce 55°. NO demuestran que 55° sea el ángulo correcto para la
+      Endurance. Esta lista se vacía a medida que Jonás aprueba cada palanca
+      sobre una captura; mientras tenga entradas, nadie puede dar los valores
+      por buenos porque la suite esté verde.
+    */
+    expect(PENDING_VISUAL_CALIBRATION.length).toBeGreaterThan(0);
+    expect([...PENDING_VISUAL_CALIBRATION]).toContain("ORIGIN_DISTANCE_RADII");
   });
 });
 
