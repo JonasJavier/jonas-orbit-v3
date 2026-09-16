@@ -274,22 +274,31 @@ describe("dónde cae la luz en pantalla", () => {
     }
   });
 
-  it("responde la pregunta que `keyAzimuth` no responde", () => {
+  it("devuelve una dirección de pantalla utilizable para calibrar", () => {
     /*
-      El error de la primera versión fue documentar `keyAzimuth` como si situara
-      la luz «a la derecha del cuadro». No lo hace: medido, con `keyAngle 90` y
-      azimut 0 la luz cae completamente a la IZQUIERDA.
+      Aquí NO se fija en qué lado cae la luz.
 
-      Este test fija la única afirmación que sí se sostiene hoy: los cinco
-      presets dejan la luz en el lado izquierdo del cuadro. Cuando se calibre y
-      alguien pida «arriba a la derecha», tendrá que cambiar y eso es correcto —
-      lo que no puede pasar es que nadie se entere de que hoy es así.
+      Hubo una versión de este test que exigía que los cinco presets la
+      dejasen a la izquierda. Era un error de categoría: dónde cae la luz en
+      pantalla es una decisión visual sin aprobar —está en
+      `PENDING_VISUAL_CALIBRATION`— y convertirla en test la habría blindado
+      por accidente. El primer «quiero la luz arriba a la derecha» habría
+      llegado con un test rojo defendiendo el estado provisional.
+
+      Lo único que se afirma es que la función sirve para lo que existe: dar
+      dos números finitos, en rango, con los que juzgar una captura.
     */
     for (const id of SOLIDS) {
-      const { right } = keyScreenDirection(
+      const { right, up } = keyScreenDirection(
         observationPlacement(id, RADIUS, FRAMING),
       );
-      expect(right, `${id} ya no tiene la luz a la izquierda`).toBeLessThan(0);
+      for (const [name, value] of [
+        ["right", right],
+        ["up", up],
+      ] as const) {
+        expect(Number.isFinite(value), `${id}.${name}`).toBe(true);
+        expect(Math.abs(value), `${id}.${name}`).toBeLessThanOrEqual(1);
+      }
     }
   });
 });

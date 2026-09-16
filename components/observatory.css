@@ -1,0 +1,176 @@
+/*
+  El Observatorio: el espécimen se queda con la pantalla, la instrumentación se
+  quita de en medio.
+
+  Regla de composición del §5: el espécimen ocupa entre el 70 % y el 85 % del
+  cuadro y todo lo demás flota encima sin robarle ancho. Por eso no hay columnas
+  —ni sidebar de objetos ni panel de ficha permanente—: ése fue el fallo de las
+  maquetas de concepto.
+*/
+
+.observatory {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.observatory__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* El gesto vive en el canvas: sin esto el navegador se queda el arrastre
+     vertical para hacer scroll de la página y el espécimen no gira. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.observatory__canvas:active {
+  cursor: grabbing;
+}
+
+/* El cromo NO recibe el puntero: sólo sus controles. Es la regla que costó una
+   entrega en Edmunds — un contenedor a pantalla completa por delante del objeto
+   se traga el arrastre y el visor parece roto. */
+.observatory__chrome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.observatory__chrome > *,
+.observatory__chrome button {
+  pointer-events: auto;
+}
+
+/* Modo cine: 3,5 s sin entrada y la instrumentación se va. Vuelve con cualquier
+   gesto. No se aplica con puntero grueso — sin hover no habría cómo recuperarla. */
+.observatory[data-idle="true"] .observatory__chrome {
+  opacity: 0.08;
+}
+
+.observatory__specimen {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #eaf6ff;
+}
+
+.observatory__controls {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.observatory__hint,
+.observatory__legend {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.5);
+}
+
+.observatory__button,
+.observatory__toggle {
+  appearance: none;
+  border: 1px solid rgb(127 229 255 / 0.35);
+  border-radius: 999px;
+  background: rgb(8 16 24 / 0.55);
+  color: #d7f1ff;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.observatory__button:hover,
+.observatory__toggle:hover,
+.observatory__button:focus-visible,
+.observatory__toggle:focus-visible {
+  border-color: rgb(127 229 255 / 0.8);
+  background: rgb(14 28 40 / 0.75);
+}
+
+/* Instrumento activo = canal aislado. Se marca en ámbar y no en cian para que
+   no se confunda con el estado normal: estás mirando un modo de inspección, no
+   la apariencia canónica del espécimen. */
+.observatory__toggle[aria-pressed="true"] {
+  border-color: rgb(255 194 122 / 0.8);
+  color: #ffd9a8;
+}
+
+.observatory__inspect {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.observatory__data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2.5rem;
+  margin: 1rem 0 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(127 229 255 / 0.2);
+  border-radius: 0.5rem;
+  background: rgb(6 12 20 / 0.72);
+  max-width: 46rem;
+}
+
+.observatory__data section {
+  min-width: 14rem;
+  flex: 1 1 14rem;
+}
+
+.observatory__data h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.observatory__data dl {
+  display: grid;
+  gap: 0.35rem 1.5rem;
+  margin: 0;
+}
+
+.observatory__data dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.observatory__data dt {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.5);
+}
+
+.observatory__data dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #d7f1ff;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .observatory__chrome {
+    transition: none;
+  }
+}

@@ -93,7 +93,24 @@ describe("contrato del espécimen", () => {
     const { architecture } = contractFor("tesseract");
     expect(architecture?.edges).toBe(TESSERACT_PATH.length);
     expect(architecture?.vertices).toBe(16);
-    expect(architecture?.facets).toBeGreaterThan(0);
+  });
+
+  it("distingue las facetas RENDERIZADAS de las caras del 4-cubo", () => {
+    /*
+      Las seis de `TESSERACT_FACETS` son las que se rellenan de vidrio, seis de
+      las veinticuatro caras cuadradas del hipercubo. Presentarlas como «6 caras
+      del Tesseracto» convertiría una decisión de nuestra representación en una
+      afirmación sobre la geometría matemática.
+
+      El nombre del campo es el que impide ese error, así que se vigila el
+      nombre: `vertices` y `edges` describen el 4-cubo, `renderedFacets`
+      describe lo que dibujamos.
+    */
+    const { architecture } = contractFor("tesseract");
+    expect(Object.keys(architecture ?? {})).toContain("renderedFacets");
+    expect(Object.keys(architecture ?? {})).not.toContain("facets");
+    expect(architecture?.renderedFacets).toBeGreaterThan(0);
+    expect(architecture?.renderedFacets).toBeLessThan(24);
   });
 
   it("Miller y Edmunds no tienen arquitectura, y eso es una conclusión", () => {

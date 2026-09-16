@@ -18,6 +18,18 @@ import type { SceneBody } from "./bodies";
  * el objeto real, y `architecture` sale de quien ya posee esos números — el
  * `userData` que publica el propio modelo, o el módulo que define la figura.
  * Este archivo no declara ni una constante de conteo.
+ *
+ * ── Dónde se enseña esto, que no es lo mismo que poder medirlo ──────────────
+ *
+ * Nada de lo que devuelve este módulo va en la vista normal del Observatorio.
+ * `draws`, `materials` y `vertices` viven dentro de `INSPECCIONAR / DATOS`, y
+ * sólo aparecen si el visitante los pide.
+ *
+ * La jerarquía de la página es: **primero el objeto, después el significado del
+ * experimento, y sólo entonces las métricas.** Un `4 draws · 4 materiales ·
+ * 1688 vértices` compitiendo con el espécimen convertiría un laboratorio en el
+ * profiler de three.js, que es justo lo contrario de lo que esta página
+ * pretende. Poder medir algo no es motivo para enseñarlo.
  */
 
 export interface SpecimenContract {
@@ -141,5 +153,23 @@ function architectureFor(
     vertices,
     edges: TESSERACT_PATH.length,
     facets: TESSERACT_FACETS.length,
+    /*
+      `renderedFacets`, no `facets`, y el nombre es la corrección.
+
+      `TESSERACT_FACETS` son SEIS de las veinticuatro caras cuadradas del
+      4-cubo: las que se rellenan de vidrio, porque «el vacío sigue siendo la
+      superficie dominante» y la figura se lee por el canto. Llamar a ese 6
+      «caras del Tesseracto» convertiría una decisión de nuestra representación
+      en una afirmación sobre la geometría matemática — que es exactamente la
+      clase de dato engañoso que este módulo existe para impedir, sólo que más
+      difícil de detectar que «8 radiadores».
+
+      Los vértices y las aristas sí son del 4-cubo: 16 y 32 son sus conteos
+      reales, y aquí se deducen del circuito euleriano. El veinticuatro NO se
+      publica desde aquí: no está en el código como dato, vive en la prosa de
+      `lib/tesseract.ts`, y por la regla del §8 lo que es una decisión se cita,
+      no se mide.
+    */
+    renderedFacets: TESSERACT_FACETS.length,
   };
 }
