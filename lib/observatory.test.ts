@@ -1,0 +1,246 @@
+import { describe, expect, it } from "vitest";
+import { WORLD_IDS, worldsData, type WorldId } from "@/content/worlds.data";
+import {
+  OBSERVATION_PRESETS,
+  ORIGIN_DISTANCE_RADII,
+  observationLightIntensity,
+  observationPlacement,
+  type ObservationInstrument,
+  type ObservationPreset,
+  type Vec3,
+} from "./observatory";
+
+/**
+ * O3 de la matriz del Observatorio: cada `WorldId` tiene preset de observación y
+ * ninguno escribe un parámetro de material.
+ *
+ * Y, sobre todo, la garantía que hace que la columna `KEY` de la tabla del §6
+ * sea un DATO y no una descripción literaria: el ángulo que promete cada preset
+ * es el que sale de la geometría.
+ */
+
+const SOLIDS = WORLD_IDS.filter(
+  (id): id is Exclude<WorldId, "gargantua"> => id !== "gargantua",
+);
+
+function sub(a: Vec3, b: Vec3): Vec3 {
+  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+
+function norm(v: Vec3): number {
+  return Math.hypot(v[0], v[1], v[2]);
+}
+
+function unit(v: Vec3): Vec3 {
+  const n = norm(v);
+  return [v[0] / n, v[1] / n, v[2] / n];
+}
+
+function dot(a: Vec3, b: Vec3): number {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+const ORIGIN: Vec3 = [0, 0, 0];
+
+describe("presets de observación", () => {
+  it("cubre los cinco sólidos y deja fuera a Gargantúa", () => {
+    // La ausencia de Gargantúa es la misma que en `createBody`, que devuelve
+    // `null` para ella: no tiene malla y no recibe ninguna luz añadida. Se
+    // observa por vistas curadas, que son otro contrato.
+    expect(Object.keys(OBSERVATION_PRESETS).sort()).toEqual([...SOLIDS].sort());
+    expect(SOLIDS).toHaveLength(5);
+    expect(Object.keys(OBSERVATION_PRESETS)).not.toContain("gargantua");
+  });
+
+  it("ningún preset puede escribir un parámetro de material", () => {
+    /*
+      La regla del §6: el Observatorio cambia las condiciones de observación,
+      nunca la identidad material. Eso se garantiza aquí por FORMA — si algún
+      día alguien añade `albedo`, `nightFloor` o `diffuseExponent` a un preset
+      para «que se vea mejor aislado», este test cae antes de que el cambio
+      llegue a una captura.
+    */
+    const allowed = new Set<keyof ObservationPreset>([
+      "keyAngle",
+      "keyRoll",
+      "environment",
+      "rim",
+      "instruments",
+    ]);
+    for (const id of SOLIDS) {
+      for (const key of Object.keys(OBSERVATION_PRESETS[id])) {
+        expect(allowed.has(key as keyof ObservationPreset), `${id}.${key}`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it("sólo ofrece MATERIAL donde el cuerpo tiene emisión que apagar", () => {
+    /*
+      Verificado en el shader: `emissive` sólo se escribe dentro de la rama
+      `uKind == 8`, que sale por `return`. Miller, Edmunds, los cascos, la
+      estructura y el servicio no tienen término emisivo, así que un instrumento
+      de «apagar la emisión» no cambiaría un solo píxel sobre ellos.
+
+      El laboratorio adapta sus instrumentos a la muestra: un botón que no hace
+      nada es peor que un botón ausente.
+    */
+    const withMaterial = SOLIDS.filter((id) =>
+      OBSERVATION_PRESETS[id].instruments.includes("material"),
+    );
+    expect(withMaterial.sort()).toEqual(["endurance", "ranger", "tesseract"]);
+  });
+
+  it("no ofrece más instrumentos que los tres de la V1", () => {
+    /*
+      `ESTRUCTURA` (alambre / normales) sale de la V1 como deuda: es el único
+      que exige construir un sistema entero desde cero —no hay alambre ni
+      normales en el repositorio— y la V1 no tiene por qué demostrar la visión
+      completa de una vez.
+
+      La lista se escribe aquí con su tipo para que añadir un instrumento nuevo
+      sea una decisión consciente y no un `push` suelto en la tabla: cualquier
+      valor fuera de ella cae aquí, incluido un simple error de escritura.
+    */
+    const V1: readonly ObservationInstrument[] = ["bloom", "material", "datos"];
+    for (const id of SOLIDS) {
+      const { instruments } = OBSERVATION_PRESETS[id];
+      expect(instruments.length, id).toBeGreaterThan(0);
+      for (const instrument of instruments) {
+        expect(V1, `${id}: ${instrument}`).toContain(instrument);
+      }
+      expect(new Set(instruments).size, `${id} repite instrumento`).toBe(
+        instruments.length,
+      );
+    }
+  });
+
+  it("sólo el Tesseracto lleva rim, y es sutil", () => {
+    // Excepción declarada: cristal casi negro, fuera del material común, contra
+    // fondo oscuro y sin vecinos. Si el rim llega a leerse como una luz, está
+    // mal calibrado.
+    for (const id of SOLIDS) {
+      const { rim } = OBSERVATION_PRESETS[id];
+      if (id === "tesseract") {
+        expect(rim).toBeGreaterThan(0);
+        expect(rim).toBeLessThan(0.25);
+      } else {
+        expect(rim, id).toBe(0);
+      }
+    }
+  });
+
+  it("el ambiente existe pero no puede levantar el terminador", () => {
+    // Es ambiente, no un fill. Un valor alto borraría la cara noche, que es
+    // justo lo que cada material decide por su cuenta.
+    for (const id of SOLIDS) {
+      const { environment } = OBSERVATION_PRESETS[id];
+      expect(environment, id).toBeGreaterThan(0);
+      expect(environment, id).toBeLessThanOrEqual(0.1);
+    }
+  });
+});
+
+describe("colocación", () => {
+  const RADIUS = 2.4;
+  const FRAMING = RADIUS * 2.9; // ~40° de campo
+
+  it("el ángulo de luz que promete el preset es el que sale de la geometría", () => {
+    /*
+      ÉSTA es la garantía del módulo. La luz no es configurable: es el origen
+      del mundo. Así que el ángulo entre «hacia la luz» y «hacia la cámara»,
+      medido EN el espécimen, tiene que ser exactamente `keyAngle` — si no, la
+      columna KEY de la tabla del §6 no significa nada.
+    */
+    for (const id of SOLIDS) {
+      const { body, camera, preset } = observationPlacement(id, RADIUS, FRAMING);
+      const toLight = unit(sub(ORIGIN, body));
+      const toCamera = unit(sub(camera, body));
+      const degrees = (Math.acos(dot(toLight, toCamera)) * 180) / Math.PI;
+      expect(degrees, id).toBeCloseTo(preset.keyAngle, 6);
+    }
+  });
+
+  it("el espécimen nunca se coloca en el origen", () => {
+    /*
+      La trampa que decide todo el módulo: en el origen, `toLight = -normal` y
+      `ndl = -1` en todo el disco. El cuerpo queda a oscuras y `uLightIntensity`
+      no lo arregla, porque multiplica una clave que no llega.
+    */
+    for (const id of SOLIDS) {
+      const { body } = observationPlacement(id, RADIUS, FRAMING);
+      expect(norm(body), id).toBeGreaterThan(RADIUS);
+    }
+  });
+
+  it("la luz llega tan paralela como en el System Map", () => {
+    // Si el origen queda cerca, la luz se abre en abanico sobre el cuerpo y el
+    // material deja de comportarse como el del mapa. La razón de allí va de ~6
+    // a ~13 radios.
+    for (const id of SOLIDS) {
+      const { body } = observationPlacement(id, RADIUS, FRAMING);
+      expect(norm(body) / RADIUS, id).toBeCloseTo(ORIGIN_DISTANCE_RADII, 6);
+    }
+    expect(ORIGIN_DISTANCE_RADII).toBeGreaterThanOrEqual(6);
+    expect(ORIGIN_DISTANCE_RADII).toBeLessThanOrEqual(13);
+  });
+
+  it("la cámara nunca cruza el origen ni se mete entre la luz y el espécimen", () => {
+    // Con `keyAngle` pequeño la cámara avanza hacia el origen. Si lo pasara, la
+    // única fuente del mundo quedaría a su espalda y por delante del cuerpo.
+    for (const id of SOLIDS) {
+      const { body, camera } = observationPlacement(id, RADIUS, FRAMING);
+      expect(norm(camera), id).toBeGreaterThan(0);
+      expect(norm(sub(camera, body)), id).toBeCloseTo(FRAMING, 6);
+      // El origen se queda por detrás de la cámara, nunca entre ella y el cuerpo.
+      expect(norm(body), id).toBeGreaterThan(FRAMING);
+    }
+  });
+
+  it("es una función pura: misma entrada, misma salida", () => {
+    for (const id of SOLIDS) {
+      const first = observationPlacement(id, RADIUS, FRAMING);
+      observationPlacement("miller", 9, 9);
+      const second = observationPlacement(id, RADIUS, FRAMING);
+      expect(second).toEqual(first);
+    }
+  });
+});
+
+describe("intensidad de clave", () => {
+  it("reproduce la ley del System Map para cada cuerpo", () => {
+    /*
+      Se copia a propósito en vez de elegir un valor bonito para el visor: dice
+      «a qué distancia del disco vive este cuerpo» y es parte de su identidad.
+      Cambiarla sería alterar cómo se ve el material — lo que el §6 prohíbe.
+    */
+    for (const id of SOLIDS) {
+      const { orbitRadius } = worldsData[id].placement;
+      const expected = Math.min(
+        1.66,
+        Math.max(1.08, (25 / Math.max(orbitRadius, 1)) * 1.36),
+      );
+      expect(observationPlacement(id, 2, 5).lightIntensity, id).toBe(expected);
+    }
+  });
+
+  it("se queda dentro de la banda del sistema", () => {
+    // El suelo 1.08 existe porque un destino que no se ve es un enlace que no
+    // existe; el techo 1.66 porque el interior no puede quemarse.
+    for (const id of SOLIDS) {
+      const value = observationLightIntensity(
+        worldsData[id].placement.orbitRadius,
+      );
+      expect(value, id).toBeGreaterThanOrEqual(1.08);
+      expect(value, id).toBeLessThanOrEqual(1.66);
+    }
+  });
+
+  it("el cuerpo más interior recibe más luz que el más exterior", () => {
+    // Endurance a 25 rs contra el Tesseracto a 32: es lo que ordena las capas.
+    expect(observationLightIntensity(25)).toBeGreaterThan(
+      observationLightIntensity(32),
+    );
+  });
+});
