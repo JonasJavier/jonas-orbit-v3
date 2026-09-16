@@ -41,7 +41,7 @@ export interface SceneBodyDescriptor {
  * mí, Miller y Edmunds) o con un contexto WebGL2 propio (Miller, Ranger). Mientras el
  * visitante está en ellos la escena duerme: nunca hay dos contextos dibujando.
  */
-const COVERED_WORLDS: readonly WorldId[] = ["gargantua", "miller", "edmunds", "ranger"];
+const COVERED_WORLDS: readonly WorldId[] = ["gargantua", "miller", "edmunds", "ranger", "tesseract"];
 function isCoveredRoute(worldId: WorldId | null): boolean {
   return worldId !== null && COVERED_WORLDS.includes(worldId);
 }

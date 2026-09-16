@@ -19,6 +19,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | script | para qué |
 | --- | --- |
 | `shot.mjs` | captura 1440×860 del hero con WebGL por software y los efectos forzados |
+| `observatory-shot.mjs` | recorrido del Observatorio: ocho capturas y un vídeo del gesto y los instrumentos |
 | `composition.mjs` | dónde cae cada destino en pantalla, en píxeles y en % del cuadro |
 | `crop.mjs` | recorta y amplía una zona de una captura |
 | `stability.mjs` | mide si el disco avanza o hierve entre fotogramas |
