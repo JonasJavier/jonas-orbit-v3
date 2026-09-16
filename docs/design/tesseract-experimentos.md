@@ -595,6 +595,37 @@ que el valor por defecto reproduce `-vPositionW` bit a bit. No se hace.
 Ranger — los tres que se leen por construcción. No Miller ni Edmunds, que son
 superficie.)*
 
+### CONTRATO VERIFICADO ✅ · CALIBRACIÓN VISUAL ⏳
+
+Esta tabla ya es código —`lib/observatory.ts`— y sus tests demuestran que **si un
+preset dice 55°, la geometría produce exactamente 55°**. Eso es todo lo que
+demuestran.
+
+**No demuestran que 55° sea el ángulo correcto para la Endurance.** Los valores
+de `keyAngle`, `keyAzimuth`, `environment`, `rim` y `ORIGIN_DISTANCE_RADII` son
+puntos de partida técnicamente válidos, **no dirección de arte aprobada**.
+Cuando se monte el primer espécimen puede resultar que 55 deba ser 47, o que
+Miller funcione mejor a 18: eso no sería un fallo de la arquitectura, sería el
+pase visual haciendo su trabajo. La lista vive en
+`PENDING_VISUAL_CALIBRATION` y sólo se vacía sobre capturas aprobadas por
+Jonás, nunca porque la suite esté verde.
+
+**`ORIGIN_DISTANCE_RADII = 10` en particular no se congela.** «Está dentro de la
+banda 6-13 del System Map» no implica «el material se verá igual»: la Endurance
+vive cerca de 6 radios y es una estructura grande, así que la divergencia de la
+luz a 10 radios puede leerse distinta. Antes de darlo por bueno hay un A/B sobre
+al menos dos cuerpos: System Map original contra Observatorio a 6, 10 y 13
+radios, y se juzga cuál conserva el carácter.
+
+**Corrección de nombre.** La columna se llamaba `keyRoll` y estaba mal descrita
+como «roll alrededor del eje de mirada, 0° sitúa la luz a la derecha». Medido:
+es un **azimut alrededor del eje de luz**, y con `keyAngle 90` y azimut 0 la luz
+cae completamente a la **izquierda**. Dónde acaba la luz en pantalla depende
+además del `up` de la cámara, así que se calcula aparte —`keyScreenDirection`—
+y es ahí donde se mira al calibrar. De paso apareció una mina: `keyAngle 90` con
+azimut 90 degenera la base de cámara, y la Ranger ya está en `keyAngle 90`.
+Salvada con eje de reserva y con test propio.
+
 **¹ Excepción declarada — Tesseracto.** Es cristal casi negro y salió del
 material común de los cuerpos. Contra fondo oscuro y sin vecinos, la silueta se
 pierde: en el System Map no ocurre porque hay disco, estrellas y cinco cuerpos
@@ -777,6 +808,40 @@ publicado igual y vigilado igual:
 
 Es la parte menos vistosa del trabajo y la que hace que el resto sea verdad.
 
+### Lo que salió al construirlo, y revisa esta tabla
+
+`components/scene/specimen-contract.ts` mide el modelo ya construido: `draws`,
+`materials` y `vertices` se cuentan recorriendo el objeto real, con el mismo
+criterio que el presupuesto de `bodies.test.ts` para que los dos números se
+puedan comparar. No declara ni una constante de conteo. Medido:
+
+| Espécimen | draws | materiales | vértices | arquitectura propia |
+| --- | --- | --- | --- | --- |
+| Tesseracto | 4 | 4 | 1 688 | vértices 16 · aristas 32 · caras 6 |
+| Endurance | 4 | 4 | 11 843 | los 14 campos de `enduranceArchitecture` |
+| Ranger | 3 | 3 | 2 012 | — |
+| Miller | 1 | 1 | 1 107 | — |
+| Edmunds | 1 | 1 | 1 107 | — |
+
+Dos cosas que la tabla de arriba no preveía:
+
+**El Tesseracto no necesita `userData`.** Su topología ya la posee
+`lib/tesseract.ts`, y duplicarla dentro de la malla sería crear una segunda
+verdad. El contrato la deduce del circuito euleriano —el índice más alto que
+recorre, más uno—, así que ni el 16 está escrito en ninguna parte.
+
+**Miller y Edmunds no tienen arquitectura que publicar, y es una conclusión, no
+una carencia.** Son **una esfera con un material**. Toda su identidad vive en
+parámetros de shader —sitios de FBM, exponente de la ley difusa, suelo nocturno,
+escalas de oleaje— que son texto GLSL, no datos en ejecución. Copiarlos a una
+tabla de runtime sería exactamente el «8 radiadores» otra vez, con más pasos.
+
+Así que sus lecturas específicas **entran como CONTENIDO**: prosa en MDX citando
+`world-visual-language.md`, presentadas como lo que son —decisiones de diseño
+documentadas— y nunca disfrazadas de medición. La regla del §8 no se debilita;
+se precisa: *lo que se presenta como medido, se mide; lo que es una decisión, se
+cita.*
+
 ### Lecturas comunes
 
 De `worlds.data.ts` y `placement`: radio orbital en `rs`, fase, inclinación,
@@ -797,7 +862,7 @@ sin una heurística nueva:
 
 | Nivel | Qué recibe el Observatorio |
 | --- | --- |
-| `deep` | Todo: espécimen, órbita libre, los cuatro instrumentos. |
+| `deep` | Todo: espécimen, órbita libre y los **tres** instrumentos de la V1. |
 | `orbit` | Igual, con el conteo de pasos y el bloom del perfil `orbit`. |
 | `flat` | **Sin canvas.** Espécimen en SVG grande + ficha completa. |
 
@@ -913,7 +978,10 @@ señales verdes, no ausencia de rojas. Decisiones propias del móvil:
   tocarlos. Después el Observatorio consume esa API. La primera entrega no
   cambia ni un píxel: sólo abre la puerta arquitectónica. Reordenar, renombrar o
   «limpiar» el archivo es otra tarea y no entra aquí.
-- La recepción no carga nada de `three`.
+- La recepción **no crea un contexto WebGL propio**. Y no, tampoco «no carga
+  `three`»: `GargantuaSystem` vive en el layout de todas las rutas, así que en
+  un equipo capaz el chunk ya está cargado cuando se llega a ella, igual que en
+  Miller o en Sobre mí (§1).
 - Las capturas del índice: seis peldaños (320-1920) a 1,5× los píxeles pintados,
   WebP, `loading="lazy"` salvo la primera. El molde ya existe —`tools/shot.mjs`
   para capturar y `tools/prepare-*.mjs` + `sharp` para los peldaños—, pero
@@ -952,7 +1020,7 @@ suelto tarda segundos — correrlo antes.
 | --- | --- | --- | --- |
 | O1 | La recepción no crea un contexto WebGL **propio** y la escena persistente **no dibuja** en ella | El índice engorda hasta ser otro System Map | E2E |
 | O2 | En el Observatorio el contexto persistente **está liberado, no sólo pausado**; en la recepción basta con que no dibuje | Creer que congelar libera VRAM — el error real del §3 | E2E |
-| O3 | Cada `WorldId` tiene preset de observación, y ninguno escribe un parámetro de material | Rigs a mano por objeto | Unit |
+| O3 | Cada cuerpo **sólido** tiene preset de observación y ninguno escribe un parámetro de material; **Gargantúa queda fuera a propósito** y usa el contrato de vistas curadas | Rigs a mano por objeto, o una luz añadida a Gargantúa por descuido | Unit ✅ |
 | O4 | Las lecturas salen del contrato del modelo, no de literales | El «8 radiadores» otra vez | Unit |
 | O5 | Gargantúa no expone órbita libre ni recibe luz añadida | La deuda de §7 aplicada por descuido | Unit |
 | O6 | Con movimiento apagado: sin giro en reposo, transiciones instantáneas, manipulación viva | Un laboratorio inerte o un control de pausa nuevo | E2E |
@@ -1161,6 +1229,34 @@ código.
 
 ---
 
+## 16. Estado de construcción
+
+**Entrega 1 — hecha (2026-09-16).** `lib/observatory.ts` y su test: la tabla del
+§6 como dato, la matemática de colocación que sale del hallazgo de la luz, la
+base de cámara con su salvaguarda y `keyScreenDirection`. 19 tests propios;
+`npm run check` verde con 279 tests en 41 archivos. **Ni un archivo existente
+modificado** — y la razón por la que no cambia un píxel no es que `git diff`
+salga vacío, que con ficheros sin rastrear no demuestra nada: es que **ningún
+módulo de la aplicación los importa todavía**.
+
+**Siguiente — el driver de uniformes y los contratos de datos.** La extracción
+geométrica de `bodies.ts` que este documento anunciaba como primer paso resultó
+ser casi un no-op (§13.1): `createBody` ya devuelve el espécimen aislado. El
+trabajo real es escribir `uTime`, `uCamPos`, `uLightIntensity` y `uEmission` por
+fotograma —y `uFocus` por evento— desde el bucle del Observatorio, y publicar
+`userData` de contrato en los cinco cuerpos que no lo tienen (§8), que sí toca
+`bodies.ts` de forma aditiva.
+
+**Y después se PARA.** Con el primer espécimen montado —el Tesseracto— hay
+captura y pase visual con Jonás antes de seguir. Ninguna palanca de §6 se
+calibra a ojo de número: `keyAngle`, `keyAzimuth`, `environment`, `rim` y
+`ORIGIN_DISTANCE_RADII` están declarados como pendientes en
+`PENDING_VISUAL_CALIBRATION`, y esa lista sólo se vacía sobre capturas. La
+pregunta que queda no la responde Vitest: *¿se siente como entrar a un
+laboratorio espacial a estudiar un objeto de Jonás Orbit?*
+
+---
+
 *Estado: **aprobado con enmiendas** por Jonás el 2026-09-16, once enmiendas en
-dos rondas, todas incorporadas. Nada implementado. Siguiente paso: la extracción
-mínima de `bodies.ts` descrita en §13.*
+dos rondas más cuatro ajustes de precisión, todas incorporadas. Entrega 1 en
+verde; el resto sin implementar.*
