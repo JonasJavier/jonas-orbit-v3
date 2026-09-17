@@ -244,6 +244,28 @@ node tools/observatory-shot.mjs .shots/atmosfera tesseracto http://localhost:310
 node tools/observatory-atmosfera.mjs .shots/atmosfera
 ```
 
+### `--orbita` y `--movimiento`: lo que una imagen fija no puede contestar
+
+Un cielo infinito es **rotación pura y traslación cero**, y eso son dos
+comportamientos opuestos: al orbitar el campo tiene que BARRER el cuadro, y al
+hacer zoom no puede moverse ni escalar. Hay que comprobar los dos, porque cada
+uno solo se puede falsear — un fondo pegado a la pantalla también da cero en el
+zoom.
+
+```bash
+node tools/observatory-shot.mjs .shots/orbita tesseracto http://localhost:3100 --orbita
+node tools/observatory-atmosfera.mjs .shots/orbita --movimiento
+```
+
+Cada mitad se mide con la herramienta que le toca, y mezclarlas costó una falsa
+alarma: la órbita por correlación —hay que averiguar cuánto se movió— y el zoom
+por resta píxel a píxel, porque ahí la respuesta correcta es «nada» y una
+correlación sobre un cuadro donde el espécimen ha crecido acaba siguiendo al
+espécimen. Ése es el patrón que repitieron las tres medidas que fallaron:
+**cualquier medida sobre una escena donde el objeto cambia de tamaño acaba
+midiendo el objeto.** El contacto va en pasos de 40 px —10° de cámara— porque
+con saltos grandes no queda nada que correlacionar.
+
 Las tres capturas tienen que venir de la misma pasada con el reloj clavado:
 mismo instante, misma pose, mismo cromo. Si no, la comparación de jerarquía 4D
 está midiendo dos figuras distintas.

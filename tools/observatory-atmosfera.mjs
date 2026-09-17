@@ -65,6 +65,8 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const carpeta = resolve(process.argv[2] ?? ".shots/atmosfera");
+/** Modo movimiento: lee el contacto de `--orbita` en vez del A/B/C. */
+const MOVIMIENTO = process.argv.includes("--movimiento");
 
 const CAPAS = [
   ["A", "A-negro"],
@@ -104,6 +106,234 @@ const percentil = (xs, q) => {
   const s = Float64Array.from(xs).sort();
   return s[Math.min(s.length - 1, Math.floor(q * s.length))];
 };
+
+/*
+  ── Modo movimiento ─────────────────────────────────────────────────────────
+
+  La pregunta que ninguna imagen fija puede contestar: ¿el cielo se comporta
+  como espacio o está pegado a la pantalla?
+
+  La respuesta tiene dos mitades y son opuestas, y por eso hace falta medir las
+  dos. Un cielo infinito es **rotación pura y traslación cero**:
+
+   · Al ORBITAR, la cámara rota contra una cáscara que no rota, así que el campo
+     tiene que BARRER el cuadro. Barrido cero = papel pintado.
+   · Al hacer ZOOM, la cáscara se traslada CON la cámara, así que el campo NO
+     puede moverse ni cambiar de escala. Movimiento = fondo a distancia finita,
+     que es lo que se lee como el interior de una habitación.
+
+  Cada mitad se mide con la herramienta que le toca, y mezclarlas costó una
+  falsa alarma: la órbita por correlación —hay que encontrar CUÁNTO se movió— y
+  el zoom por resta píxel a píxel, porque ahí la respuesta correcta es «nada» y
+  una correlación sobre un cuadro donde el espécimen ha crecido acaba siguiendo
+  al espécimen.
+
+  Y hay que leer las dos juntas. Un cielo pegado a la pantalla también daría
+  cero en el zoom; lo que lo delata es que entonces la órbita daría cero
+  también. Sólo **barrido grande en la órbita + inmovilidad exacta en el zoom**
+  es un cielo infinito; cualquier otra combinación es otra cosa.
+*/
+function registro(X, y0, y1, x0, x1) {
+  const filas = [];
+  for (let y = y0; y < y1; y += 3) {
+    const fila = [];
+    for (let x = x0; x < x1; x += 2) {
+      // Recortado: las aristas vivas del espécimen valen más de 200 y
+      // dominarían la suma, y lo que se quiere correlacionar es el CIELO.
+      fila.push(Math.min(60, X.luma[y * X.width + x]));
+    }
+    filas.push(fila);
+  }
+  return filas;
+}
+
+/** El desplazamiento que mejor superpone dos registros, en píxeles de pantalla. */
+function desplazamiento(a, b, maxDx = 400) {
+  let mejor = { dx: 0, dy: 0, coste: Infinity, enCero: 0, confianza: 0 };
+  const alto = a.length;
+  const ancho = a[0].length;
+  for (let dy = -6; dy <= 6; dy += 2) {
+    for (let px = -maxDx; px <= maxDx; px += 2) {
+      const dx = px / 2;
+      let coste = 0;
+      let n = 0;
+      for (let r = 0; r < alto; r++) {
+        const rb = r + dy;
+        if (rb < 0 || rb >= alto) continue;
+        for (let c = 0; c < ancho; c++) {
+          const cb = c + dx;
+          if (cb < 0 || cb >= ancho) continue;
+          coste += Math.abs(a[r][c] - b[rb][cb]);
+          n++;
+        }
+      }
+      if (n < ancho * alto * 0.5) continue;
+      const medio = coste / n;
+      if (px === 0 && dy === 0) mejor.enCero = medio;
+      if (medio < mejor.coste) {
+        mejor.dx = px;
+        mejor.dy = dy * 3;
+        mejor.coste = medio;
+      }
+    }
+  }
+  /*
+    La CONFIANZA, y hace falta. Cuando el halo ya ha barrido fuera de la banda y
+    sólo queda negro, la superficie de coste es plana: el mínimo cae donde sea y
+    el script informa de un desplazamiento de cero con el mismo aplomo que de
+    uno de doscientos. Eso pasó en los tres últimos pasos del primer contacto y
+    parecía un cambio de comportamiento del cielo; era falta de señal.
+
+    Se mide como cuánto mejora el mejor encaje respecto de no desplazar nada. Si
+    la mejora es pequeña, no hay nada que seguir y el paso no cuenta.
+  */
+  mejor.confianza =
+    mejor.enCero > 0 ? 1 - mejor.coste / mejor.enCero : 0;
+  return mejor;
+}
+
+if (MOVIMIENTO) {
+  const { readdirSync } = await import("node:fs");
+  const nombres = readdirSync(carpeta)
+    .filter((f) => /^orbita-\d+\.png$/.test(f))
+    .sort();
+  if (nombres.length < 2) {
+    console.error(`Faltan los fotogramas de contacto en ${carpeta}. Genera el clip:
+  node tools/observatory-shot.mjs ${carpeta} tesseracto --orbita`);
+    process.exit(1);
+  }
+
+  const cuadros = [];
+  for (const n of nombres) cuadros.push(await leer(n.replace(/\.png$/, "")));
+
+  console.log(`
+═══ Movimiento del cielo · ${carpeta}`);
+  console.log(
+    `    ${cuadros.length} fotogramas, 40 px de arrastre = 10° de cámara
+`,
+  );
+
+  // La banda alta: casi todo cielo en cualquier pose, y es donde el campo tiene
+  // más estructura para correlacionar.
+  const banda = (X) => registro(X, 70, 250, 0, X.width);
+
+  console.log("── BARRIDO EN ÓRBITA ────────────────────────────────────────");
+  const barridos = [];
+  for (let i = 1; i < cuadros.length; i++) {
+    const d = desplazamiento(banda(cuadros[i - 1]), banda(cuadros[i]));
+    /*
+      Un cuarto de mejora. Con el listón en 0.06 entraba un paso al 14 % que
+      valía −40 px y hundía la media hasta 191; con 0.25 entran los seis pasos
+      sólidos y la media sale 217, que es a un 4 % de los 225 px que predice la
+      geometría (10° de cámara ÷ 0.000776 rad por píxel). Cuando la medida y la
+      trigonometría coinciden así, el listón está donde toca.
+    */
+    const fiable = d.confianza > 0.25;
+    if (fiable) barridos.push(Math.abs(d.dx));
+    console.log(
+      `paso ${String(i).padStart(2, "0")}   ${String(d.dx).padStart(5)} px` +
+        `   mejora ${(100 * d.confianza).toFixed(0)} %` +
+        (fiable ? "" : "   (sin estructura que seguir: no cuenta)"),
+    );
+  }
+  const medio = barridos.reduce((a, b) => a + b, 0) / Math.max(1, barridos.length);
+  console.log(
+    `\nbarrido medio  ${medio.toFixed(0)} px por cada 10° de cámara ` +
+      `(${barridos.length} de ${cuadros.length - 1} pasos con señal)` +
+      (medio > 60
+        ? "\n               ✓ el cielo NO está pegado a la pantalla"
+        : "\n               ⚠ papel pintado"),
+  );
+
+  // Las marcas de borde son CSS: tienen que quedarse clavadas mientras todo lo
+  // demás gira. Es la otra mitad de «instrumento quieto, espécimen en marcha».
+  const primera = cuadros[0];
+  const ultima = cuadros[cuadros.length - 1];
+  /*
+    Medir la franja del calibre a secas no dice nada: DETRÁS de las marcas está
+    el cielo, que durante la órbita cambia entero. La primera versión de esto
+    informaba de «21.66 niveles de deriva» y lo que medía era el halo pasando
+    por debajo.
+
+    Hace falta un CONTROL: la misma medida sobre una franja vecina sin marcas.
+    Si las dos cambian lo mismo, todo el cambio es del cielo y las marcas no se
+    han movido; si la franja con marcas cambia bastante más, algo las arrastró.
+  */
+  const franja = (x0, x1) => {
+    let suma = 0;
+    let n = 0;
+    for (let y = 250; y < 650; y++) {
+      for (let x = x0; x < x1; x++) {
+        const i = y * primera.width + x;
+        suma += Math.abs(primera.luma[i] - ultima.luma[i]);
+        n++;
+      }
+    }
+    return suma / n;
+  };
+  const conMarcas = franja(14, 34);
+  const control = franja(46, 66);
+  console.log(
+    "\n── MARCAS DE BORDE ──────────────────────────────────────────\n" +
+      `franja del calibre   ${conMarcas.toFixed(2)} niveles de cambio\n` +
+      `franja de control    ${control.toFixed(2)} niveles de cambio  (mismo cielo, sin marcas)` +
+      (Math.abs(conMarcas - control) < Math.max(2, control * 0.35)
+        ? "\n                     ✓ todo el cambio es del cielo: las marcas siguen clavadas"
+        : "\n                     ⚠ la franja con marcas cambia de más"),
+  );
+
+  // El zoom, si el clip lo trae.
+  const zoom = ["zoom-00-antes", "zoom-01-cerca", "zoom-02-lejos"].filter((n) =>
+    existsSync(join(carpeta, `${n}.png`)),
+  );
+  if (zoom.length >= 2) {
+    /*
+      El zoom NO se mide por correlación, y eso costó una falsa alarma.
+
+      La primera versión buscaba el desplazamiento en un parche izquierdo y otro
+      derecho, y anunciaba «el cielo se mueve con el zoom: 160 px». Lo que
+      pasaba es que al acercarse el espécimen crece hasta tragarse el parche, así
+      que la correlación dejaba de seguir al cielo y seguía al Tesseracto.
+
+      Para este caso hay una medida mucho mejor y sin interpretación posible: si
+      la cáscara viaja con la cámara, dos niveles de zoom tienen que dar un
+      cielo **idéntico píxel a píxel**. No parecido: idéntico. Así que se resta
+      y se toma la MEDIANA del cuadro entero — robusta mientras el espécimen no
+      ocupe la mitad, que no la ocupa— junto con el porcentaje de píxeles que no
+      se mueven ni un nivel.
+
+      Un fondo a distancia finita escalaría y casi ningún píxel coincidiría; uno
+      pegado a la pantalla también daría cero aquí, pero entonces el barrido de
+      la órbita habría dado cero también. Las dos medidas juntas son las que
+      definen «infinitamente lejos»; ninguna de las dos lo hace sola.
+    */
+    console.log("\n── ZOOM · el cielo no puede seguir a la cámara ──────────────");
+    const antes = await leer(zoom[0]);
+    for (const n of zoom.slice(1)) {
+      const despues = await leer(n);
+      const diffs = [];
+      let iguales = 0;
+      let total = 0;
+      for (let i = 0; i < antes.luma.length; i += 7) {
+        const d = Math.abs(antes.luma[i] - despues.luma[i]);
+        diffs.push(d);
+        if (d <= 1) iguales++;
+        total++;
+      }
+      const med = mediana(diffs);
+      console.log(
+        `${zoom[0]} → ${n.padEnd(14)} mediana ${med.toFixed(2)} niveles · ` +
+          `${pct(iguales, total)} del cuadro sin cambiar` +
+          (med <= 1
+            ? "   ✓ el cielo no se movió ni escaló"
+            : "   ⚠ el cielo sigue a la cámara"),
+      );
+    }
+  }
+
+  console.log();
+  process.exit(0);
+}
 
 const [A, B, C] = await Promise.all(CAPAS.map(([, f]) => leer(f)));
 const { width, height } = A;

@@ -1525,6 +1525,110 @@ silueta y entonces sí habría que elegir entre atmósfera y jerarquía.
 
 ---
 
+### Atmósfera aprobada, y la prueba en movimiento (2026-09-17)
+
+Jonás aprobó la dirección —*«ya no tengo que buscar el efecto: se siente
+inmediatamente que el Tesseracto está suspendido en un espacio profundo
+observado mediante un instrumento»*— con una instrucción tan importante como la
+aprobación: **no seguir subiendo la intensidad.** Y congeló geometría, bloom,
+encuadre, cromo y campo estelar.
+
+Quedaron dos cosas: un micro A/B del reparto del azul, y la única pregunta que
+una imagen fija no puede contestar.
+
+#### El micro A/B: menos «foco azul», mismo pico
+
+El diagnóstico fue que la masa rozaba por momentos la sensación de *«una luz
+azul entrando desde una esquina»* en vez de *«un medio espacial detrás de la
+muestra»*. Tres palancas, ninguna de intensidad:
+
+| | Actual | Variante |
+| --- | --- | --- |
+| Perfil del lóbulo ancho | `s²` | `s^1.5` |
+| Pico del halo | 0.105 | 0.098 |
+| Núcleo de petróleo | 0.052 | 0.042 |
+| Tinte ancho / núcleo | (0.20, 0.46, 0.90) / (0.06, 0.58, 0.74) | (0.28, 0.46, 0.80) / (0.22, 0.48, 0.62) |
+
+El exponente es la pieza clave y no es intensidad: bajar de 2 a 1.5 **no mueve
+el pico** —en el máximo el `smoothstep` vale 1 y 1 elevado a cualquier cosa
+sigue siendo 1— ni mueve el cero, porque el radio exterior no cambia. Lo único
+que hace es engordar el cuerpo del degradado entre los dos extremos. Medido:
+
+| Mediana de luma del fondo | Actual | Variante |
+| --- | --- | --- |
+| Pico (esquina superior izquierda) | 45.9 | **44.8** |
+| Centro del cuadro | 19.0 | **22.9** |
+| Columna derecha, franja media | 4.8 | **9.4** |
+| Extremo inferior derecho | 0.1 | **1.0** |
+| Saturación media en el pico | 79.9 % | **57.2 %** |
+
+O sea: el pico baja un punto, la masa se extiende hacia el centro y la derecha,
+el extremo inferior derecho sigue siendo negro real (1 de 255) y el cian del
+pico cae veintitrés puntos. La relación pico/centro pasa de 2.38 a 1.95, que es
+exactamente la diferencia entre «foco» y «medio».
+
+#### La prueba en movimiento
+
+> «Si las estrellas están screen-locked de una manera que el ojo detecte durante
+> la órbita, la ilusión se rompe.»
+
+Un cielo infinito es **rotación pura y traslación cero**, y eso son dos
+comportamientos OPUESTOS que hay que comprobar por separado. Al orbitar, la
+cámara rota contra una cáscara que no rota, así que el campo tiene que barrer el
+cuadro. Al hacer zoom, la cáscara se traslada CON la cámara, así que el campo no
+puede moverse ni escalar. Cualquiera de las dos sola se puede falsear: un fondo
+pegado a la pantalla también da cero en el zoom.
+
+`tools/observatory-shot.mjs --orbita` graba el clip sin tocar un solo
+instrumento y deja diez fotogramas de contacto a 10° de cámara;
+`observatory-atmosfera.mjs --movimiento` los mide.
+
+    barrido en órbita    217 px por cada 10° de cámara (6 de 9 pasos con señal)
+    marcas de borde      21.66 niveles de cambio · control sin marcas 22.29
+    zoom                 mediana 0.00 niveles · 88.5 % del cuadro sin cambiar
+
+**217 px medidos contra 225 px que predice la trigonometría** (10° ÷ 0.000776
+rad por píxel): un 4 % de diferencia, o sea que el cielo se mueve exactamente lo
+que se mueve el espacio. En el zoom no cambia ni un nivel en el 88.5 % del
+cuadro. Y las marcas de borde cambian lo mismo que una franja vecina SIN marcas
+—21.66 contra 22.29—, así que todo ese cambio es el halo pasando por debajo:
+siguen clavadas mientras el espécimen gira.
+
+#### Tres métricas mías que dijeron lo que no era
+
+Las tres daban un veredicto rotundo y las tres estaban mal planteadas. Van aquí
+porque el patrón se repite y es el mismo: **una medida sobre una escena donde el
+espécimen cambia de tamaño acaba midiendo el espécimen.**
+
+1. **«El cielo se mueve con el zoom: 160 px».** La correlación buscaba el
+   desplazamiento en un parche lateral; al acercarse, el Tesseracto crece hasta
+   tragarse ese parche y la correlación pasa a seguirlo a él. La medida correcta
+   para el zoom no es correlacionar sino RESTAR: la respuesta esperada es
+   «idéntico», y eso se comprueba píxel a píxel.
+2. **«Las marcas derivan 21.66 niveles».** Detrás de las marcas está el cielo,
+   que durante la órbita cambia entero. Sin una franja de control la cifra no
+   significa nada.
+3. **«El barrido se detiene en el paso 7».** No se detiene: el halo ya había
+   barrido fuera de la banda de muestreo y sólo quedaba negro, así que la
+   superficie de coste era plana y el mínimo caía donde fuera. Ahora cada paso
+   informa de cuánto mejora el mejor encaje respecto de no desplazar nada, y por
+   debajo de un cuarto no cuenta.
+
+#### Lo que el clip deja ver, y que no es un defecto
+
+Al orbitar más de unos 60° desde la pose del preset, la masa fría sale de cuadro
+y el fondo se queda casi en negro con estrellas. Es la consecuencia directa del
+anclaje a la luz —y la que hace que el halo se comporte como una cosa del
+espacio en vez de como una viñeta—, pero significa que la atmósfera no está
+presente desde todos los ángulos. Queda anotado para el veredicto: si molesta,
+la respuesta no es subir el halo sino darle un suelo independiente de la
+dirección de la luz, y eso es un ingrediente nuevo que hoy está vetado.
+
+*Estado: dirección aprobada. Pendiente elegir entre halo actual y variante, y el
+veredicto sobre el clip.*
+
+---
+
 ### Apéndice — una discrepancia encontrada de paso
 
 No afecta al Observatorio, pero conviene registrarla donde se vea:

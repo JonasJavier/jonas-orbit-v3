@@ -64,6 +64,8 @@ const cicloFlag = args.find((a) => a.startsWith("--ciclo="));
 const relojFlag = args.find((a) => a.startsWith("--reloj="));
 /** Modo A/B/C de atmósfera: tres cargas, un reloj, cero diferencias más. */
 const ATMOSFERA = args.includes("--atmosfera");
+/** Modo órbita: sólo cámara. Ni un instrumento, ni un interruptor. */
+const ORBITA = args.includes("--orbita");
 /**
  * El instante que se clava. 16.5 s no es arbitrario: `lib/tesseract.ts` lo
  * documenta como una de las poses que el dueño marcó como BUENAS cuando se
@@ -163,6 +165,82 @@ if (ATMOSFERA) {
   await browser.close();
   console.log(
     `Observatorio · ${OBJETO}: A/B/C de atmósfera en ${OUT}, reloj clavado en ${RELOJ} s`,
+  );
+  process.exit(0);
+}
+
+if (ORBITA) {
+  /*
+    El clip de órbita, y por qué no reutiliza el recorrido normal.
+
+    Lo que hay que juzgar aquí es una sola pregunta: **¿el cielo se comporta
+    como espacio o como un fondo pegado a la pantalla?** Eso no se ve en una
+    imagen fija y se contamina con cualquier otra cosa que pase en el cuadro,
+    así que este modo no toca un solo instrumento: ni DATOS, ni BLOOM, ni
+    MATERIAL, ni el interruptor de movimiento. Sólo la mano sobre el lienzo.
+
+    Dos tramos, y cada uno responde a una mitad de la pregunta:
+
+     · ÓRBITA. La cámara rota alrededor del espécimen. La cáscara del cielo
+       viaja con la cámara pero NO rota, así que el campo tiene que barrer el
+       cuadro. Si se quedara quieto sería papel pintado.
+     · ZOOM. La cámara se acerca y se aleja. Ahora la cáscara se traslada CON
+       ella, así que el cielo no puede cambiar de escala ni moverse. Un fondo a
+       distancia finita sí lo haría, y eso se lee como el interior de una sala.
+
+    Las dos cosas juntas son la definición de «infinitamente lejos», y las dos
+    se pueden medir sobre el contacto: `observatory-atmosfera.mjs --movimiento`.
+
+    El contacto va en pasos PEQUEÑOS y regulares —40 px de arrastre, o sea 10°
+    de cámara— porque la medida de barrido correlaciona dos fotogramas
+    consecutivos: con saltos grandes el campo sale entero de cuadro entre uno y
+    otro y no hay nada que correlacionar.
+  */
+  const CX = 720;
+  const CY = 450;
+  const PASOS = 10;
+  const PASO_PX = 40;
+
+  await page.waitForTimeout(2_000);
+
+  // Tramo 1 · órbita en pasos medibles, con el contacto de fotogramas.
+  await page.mouse.move(CX, CY);
+  await page.mouse.down();
+  for (let i = 0; i < PASOS; i++) {
+    await paso(`orbita-${String(i).padStart(2, "0")}`, 260);
+    await page.mouse.move(CX + (i + 1) * PASO_PX, CY);
+  }
+  await page.mouse.up();
+
+  // Tramo 2 · órbita continua, sólo para el vídeo: lo que vería un visitante.
+  await page.mouse.move(CX, CY);
+  await page.mouse.down();
+  for (let i = 1; i <= 90; i++) {
+    await page.mouse.move(CX - i * 8, CY + Math.sin(i / 14) * 70);
+    await page.waitForTimeout(28);
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+
+  // Tramo 3 · zoom. El cielo NO puede seguirlo.
+  await paso("zoom-00-antes", 400);
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, -240);
+    await page.waitForTimeout(160);
+  }
+  await paso("zoom-01-cerca", 700);
+  for (let i = 0; i < 10; i++) {
+    await page.mouse.wheel(0, 240);
+    await page.waitForTimeout(160);
+  }
+  await paso("zoom-02-lejos", 700);
+
+  await context.close();
+  await browser.close();
+  const clip = readdirSync(OUT).find((name) => name.endsWith(".webm"));
+  if (clip) renameSync(join(OUT, clip), join(OUT, "00-orbita.webm"));
+  console.log(
+    `Observatorio · ${OBJETO}: clip de órbita y ${PASOS} fotogramas de contacto en ${OUT}`,
   );
   process.exit(0);
 }
