@@ -61,6 +61,15 @@ if (!OUT) {
 const args = process.argv.slice(3);
 const sueltos = args.filter((a) => !a.startsWith("--"));
 const cicloFlag = args.find((a) => a.startsWith("--ciclo="));
+const relojFlag = args.find((a) => a.startsWith("--reloj="));
+/** Modo A/B/C de atmósfera: tres cargas, un reloj, cero diferencias más. */
+const ATMOSFERA = args.includes("--atmosfera");
+/**
+ * El instante que se clava. 16.5 s no es arbitrario: `lib/tesseract.ts` lo
+ * documenta como una de las poses que el dueño marcó como BUENAS cuando se
+ * calibró el ritmo de la figura.
+ */
+const RELOJ = relojFlag ? Number(relojFlag.split("=")[1]) : 16.5;
 /** Fotogramas del barrido de ciclo, o 0 para el recorrido normal. */
 const CICLO = cicloFlag ? Number(cicloFlag.split("=")[1]) : 0;
 
@@ -105,6 +114,58 @@ const paso = async (nombre, espera = 900) => {
   await page.waitForTimeout(espera);
   await page.screenshot({ path: join(OUT, `${nombre}.png`) });
 };
+
+if (ATMOSFERA) {
+  /*
+    Las tres capturas del pase de atmósfera, y la razón de que sean tres CARGAS
+    y no tres pulsaciones.
+
+    El requisito es «mismo frame, mismo instante y mismo estado de chrome». La
+    tentación es quedarse en la misma página y conmutar en caliente, pero eso
+    sólo garantiza el instante DENTRO de esa ejecución: el `elapsed` congelado
+    es el que tocó ese día, así que las mismas tres capturas la semana que
+    viene son otra pose y la comparación no se puede rehacer.
+
+    El determinismo no sale de quedarse en la página, sale de NOMBRAR el
+    instante. `sampleTesseract` es una función pura de los segundos —y el trazo
+    euleriano también—, así que con `reloj` clavado el mismo número da los
+    mismos dieciséis vértices bit a bit, hoy, la semana que viene y en otra
+    máquina. Lo que no puede darlo es `elapsed`, que se acumula de deltas de
+    rAF: su valor a los diez segundos depende de cuántos fotogramas haya
+    conseguido la GPU.
+
+    Todo lo demás se mantiene solo: nadie toca el arrastre ni la rueda, así que
+    la cámara sale de la pose del preset en las tres; y nadie mueve el puntero,
+    así que el modo cine ha atenuado igual en las tres.
+  */
+  const capas = [
+    ["A-negro", { estrellas: false, halo: false, marcas: false }],
+    ["B-estrellas", { estrellas: true, halo: false, marcas: false }],
+    ["C-completa", { estrellas: true, halo: true, marcas: true }],
+  ];
+
+  for (const [nombre, atmosfera] of capas) {
+    await page.evaluate(
+      ([atmosfera, reloj]) => {
+        localStorage.setItem(
+          "jonas-orbit:banco-visual",
+          JSON.stringify({ reloj, atmosfera }),
+        );
+      },
+      [atmosfera, RELOJ],
+    );
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForSelector(".observatory__canvas", { timeout: 30_000 });
+    await paso(nombre, 7_000);
+  }
+
+  await context.close();
+  await browser.close();
+  console.log(
+    `Observatorio · ${OBJETO}: A/B/C de atmósfera en ${OUT}, reloj clavado en ${RELOJ} s`,
+  );
+  process.exit(0);
+}
 
 if (CICLO > 0) {
   /*

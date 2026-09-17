@@ -5,7 +5,9 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
 import { observationPlacement } from "@/lib/observatory";
+import { readVisualBench } from "@/lib/visual-bench";
 import { createBody, disposeBody, type SceneBodyInput } from "./bodies";
+import { createObservatorySky } from "./observatory-sky";
 import { specimenContract, type SpecimenContract } from "./specimen-contract";
 
 /**
@@ -214,6 +216,30 @@ export function createObservatoryScene(
   const homeSpherical = spherical.clone();
   const up = new THREE.Vector3(...placement.up);
 
+  /*
+    La atmósfera. Va en `scene` y NUNCA colgada de `body.object`, aunque ahí
+    parecería más ordenado: `specimenContract` recorre `body.object` para medir
+    el espécimen, así que el cielo subiría las «Llamadas de dibujo» del panel
+    DATOS de 4 a 5 y el panel mentiría sobre la figura. El contrato mide lo que
+    ES el espécimen, y el espacio de detrás no lo es.
+
+    La dirección de la luz sale de la misma verdad que todo lo demás aquí: la
+    luz es el origen del mundo, así que vista desde el espécimen está en
+    `normalize(-target)`.
+  */
+  const sky = createObservatorySky(target.clone().negate());
+  scene.add(sky.object);
+
+  /*
+    El banco visual, leído UNA vez al montar — no es reactivo, igual que en el
+    System Map. El Observatorio era la única escena del proyecto que dibuja
+    cuerpos sin honrarlo, y eso costaba dos cosas: no tenía `--reloj`, que su
+    propia herramienta de captura reconocía como deuda, y no había forma de
+    apagar una atmósfera cuyo mérito es justamente no notarse.
+  */
+  const bench = readVisualBench();
+  sky.setLayers(bench.atmosphere);
+
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   const bloomPass = new UnrealBloomPass(
@@ -241,6 +267,10 @@ export function createObservatoryScene(
     camera.position.setFromSpherical(spherical).add(target);
     camera.up.copy(up);
     camera.lookAt(target);
+    // La cáscara viaja con la cámara y no rota: rotación pura, traslación cero.
+    // Eso es lo que la hace infinita — y lo que hace que no cueste un solo
+    // redibujado extra, porque sólo cambia cuando ya se estaba redibujando.
+    sky.follow(camera);
   }
 
   function resize(): boolean {
@@ -253,8 +283,19 @@ export function createObservatoryScene(
     renderer.setPixelRatio(dpr);
     composer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
+    /*
+      `composer.setSize` ya propaga a cada pasada el tamaño EFECTIVO —píxeles
+      CSS por el dpr—, así que llamar después a `bloomPass.setSize(w, h)` lo
+      pisaba con píxeles CSS y a dpr 2 los mips del bloom se construían a la
+      mitad de la resolución que les toca: el kernel salía del doble de ancho
+      en pantalla.
+
+      No se veía porque `tools/observatory-shot.mjs` fija `deviceScaleFactor: 1`
+      — la misma clase de coincidencia que escondió durante meses el marco del
+      overlay a 1440 px. En una pantalla retina el bloom no era el de las
+      capturas sobre las que se calibró.
+    */
     composer.setSize(w, h);
-    bloomPass.setSize(w, h);
     camera.aspect = h > 0 ? w / h : 1;
     camera.updateProjectionMatrix();
     return true;
@@ -271,7 +312,8 @@ export function createObservatoryScene(
   function writeUniforms() {
     for (const material of body!.materials) {
       const uniforms = material.uniforms;
-      uniforms.uTime.value = elapsed;
+      // Mismo reloj que la figura, o la pose y el trazo se desincronizan.
+      uniforms.uTime.value = bench.clock ?? elapsed;
       uniforms.uCamPos?.value.copy(camera.position);
       if (uniforms.uLightIntensity) {
         uniforms.uLightIntensity.value = placement.lightIntensity;
@@ -296,7 +338,16 @@ export function createObservatoryScene(
       la animación —ahí `spinAt` hace las dos cosas con el mismo reloj—, y ése
       es el motivo por el que el Observatorio lleva reloj propio.
     */
-    if (motion) {
+    /*
+      Con el reloj del banco clavado la figura NO avanza: `sampleTesseract` es
+      función pura de los segundos, así que el mismo número da los mismos
+      dieciséis vértices bit a bit, hoy y la semana que viene, en esta máquina
+      y en otra. Es lo que hace comparables tres capturas tomadas en tres
+      cargas distintas — y `elapsed`, que se acumula de deltas de rAF, no puede
+      darlo: su valor a los diez segundos depende de cuántos fotogramas haya
+      conseguido la GPU.
+    */
+    if (motion && bench.clock === null) {
       elapsed += delta;
       body!.spinAt(elapsed);
       dirty = true;
@@ -370,7 +421,7 @@ export function createObservatoryScene(
 
   resize();
   applyCamera();
-  body.spinAt(0);
+  body.spinAt(bench.clock ?? 0);
   frame = requestAnimationFrame(renderFrame);
 
   return {
@@ -403,6 +454,7 @@ export function createObservatoryScene(
       canvas.removeEventListener("pointercancel", endDrag);
       canvas.removeEventListener("wheel", onWheel);
       disposeBody(body);
+      sky.dispose();
       bloomPass.dispose();
       composer.dispose();
       renderer.dispose();

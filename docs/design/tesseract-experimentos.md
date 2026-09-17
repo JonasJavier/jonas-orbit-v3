@@ -1249,8 +1249,115 @@ en el build. Las capturas de este pase se toman contra `next start` por eso.
 genéricas. El siguiente pase los lleva a un lenguaje instrumental propio —líneas
 finas, divisores, corchetes, estados tipográficos— y sólo entonces se juzga la
 atmósfera mínima (campo espacial tenue, halo óptico ambiental, instrumentación
-de borde). Ninguna de las dos cosas se toca hasta que bloom y encuadre tengan
-veredicto.
+de borde).
+
+### Pase de cromo instrumental (2026-09-16)
+
+La deuda de arriba, saldada. Jonás dio la dirección con un boceto —`INSPECCIONAR`
+sobre `[BLOOM] MATERIAL DATOS` con una regla bajo el activo— y el diagnóstico
+literal: «visor Three.js premium más que instrumento de JONAS ORBIT […]
+especialmente por los botones tipo píldora».
+
+El dato que respaldaba su lectura, verificado: `border-radius: 999px` sobre un
+control **vivo** no existía en ningún otro sitio del repositorio. Las otras tres
+apariciones son una lista de etiquetas no interactiva, una insignia y CSS
+muerto. Ésta era la única píldora del proyecto.
+
+| # | Qué corrige | Dónde |
+| --- | --- | --- |
+| 15 | Los mandos pierden la caja. Cuatro signos en su lugar, ninguno inventado: corchete que se abre (`system-hud.tsx:81`, el `[ Enter ]`), regla de 1 px que se TRAZA con `scaleX`, pica de 1 × 0.7rem entre palabras, y el peso de la letra | §5, `observatory.css` |
+| 16 | El pie pasa entero a `--font-mono`. Era el único rótulo de instrumento del sitio en tipografía de interfaz, y de ahí salía buena parte de la sensación de componente genérico | §5 |
+| 17 | `INSPECCIONAR` deja de ser rótulo suelto y pasa a cabecera de aparato: la palabra y detrás una regla que se desvanece hasta el borde de la banda | §5 |
+
+**El corchete tiene que verse y no oírse, y eso es contrato.** Va en spans
+`aria-hidden` dentro del botón, nunca en un `::before`: el `content` de un
+pseudoelemento SÍ entra en el cálculo del nombre accesible en Chromium, y el
+mando pasaría a llamarse «[Bloom]» — lo leería así un lector de pantalla y
+`tools/observatory-shot.mjs` dejaría de encontrarlo, sin que nada diera error en
+un build. Lo fija `components/observatory-chrome.test.tsx`, que comprueba a la
+vez que el texto visible es `[Bloom]` y que el nombre accesible es `Bloom`.
+
+**El estado se lee sin color.** El ámbar sobrevive y sigue significando «canal
+aislado», pero ya no es la señal: la señal son tres cambios de geometría
+—corchetes, regla y peso de 400 a 650— que sobreviven a una captura en escala de
+grises. Verificado desaturando la captura, no prometido. Y el peso es gratis en
+ancho porque la tinta es monoespaciada, que es el motivo real de la enmienda 16.
+
+**Dónde NO se quitó la caja: la ficha de `DATOS`.** Conserva su fondo a
+propósito, contra la propuesta que ganó el panel. No es cromo, es una superficie
+de lectura, y sólo existe mientras el instrumento está abierto; quitarle el
+fondo pondría seis números claros sobre las aristas del espécimen justo en la
+esquina por la que la figura se acerca al abrirse. La petición era retirar la
+píldora de los MANDOS.
+
+Dos hallazgos de paso: el bloque de 44 px de activación nunca dependió del
+borde sino del `min-height` —medido en vivo, 44 × 104 px sin un píxel de tinta—,
+y el visor era el único componente del repositorio que llamaba a
+`window.matchMedia` sin guarda. Ahora lleva la misma que la galería de Edmunds,
+y sin `matchMedia` no hay modo cine: la duda se resuelve dejando los controles
+a la vista.
+
+**Sigue pendiente y sin tocar:** la atmósfera mínima (campo espacial tenue, halo
+óptico ambiental, instrumentación de borde), que Jonás dejó explícitamente para
+después de aprobar objeto y UI.
+
+### Pase de atmósfera mínima (2026-09-17)
+
+Tres ingredientes y una lista de vetos, los dos dictados por Jonás: campo
+estelar extremadamente tenue, halo ambiental frío casi imperceptible, y unas
+pocas marcas de borde de 1 px. Nada de nebulosa, campo denso, rejilla,
+coordenadas, círculos, retículas ni HUD. Su tesis, que es la que gobierna el
+resultado: **el laboratorio no es una sala** — es la cámara, las herramientas y
+la forma de inspeccionar, y el espacio puede seguir siendo infinito.
+
+| # | Qué añade | Dónde |
+| --- | --- | --- |
+| 18 | `observatory-sky.ts`: cáscara **pegada a la cámara** —rotación pura, traslación cero— con campo estelar procedural y halo. Ni un uniforme de tiempo: el bucle es bajo demanda y el único movimiento que el cielo se permite es el de la mano | §3, §5 |
+| 19 | Cuatro escuadras de 1 px en las esquinas, hermanas del cromo y no hijas. Sin texto: cualquier rótulo sería un dato inventado o el raíl de seis entrando por la puerta de atrás | §5 |
+| 20 | El Observatorio pasa a honrar `lib/visual-bench.ts`, que gana el eje `atmosfera`. Con ello gana `--reloj`, la deuda que su propia herramienta reconocía | §12 |
+
+**El determinismo no sale de quedarse en la página, sale de nombrar el
+instante.** Las tres capturas A/B/C se toman en tres cargas con el reloj clavado
+en 16.5 s, una de las poses que `lib/tesseract.ts` documenta como buenas.
+`sampleTesseract` es función pura de los segundos, así que el mismo número da
+los mismos dieciséis vértices bit a bit — hoy, la semana que viene y en otra
+máquina. `elapsed` no puede darlo: se acumula de deltas de rAF. Medido sobre las
+capturas entregadas: **el espécimen difiere un 0.01 % entre A y B.**
+
+**El umbral del bloom no era la restricción, y ése fue mi primer error.** Vale
+2.0 de radiancia lineal y cualquier cosa que un ojo llame «tenue» vive entre
+0.006 y 0.03 — sesenta a trescientas veces por debajo. Quien restringe es la
+figura: el canto más débil de la celda lejana del hipercubo está en HDR ≈ 0.0083.
+Contra ese suelo se calibró el cielo, y el resultado medido es que la estrella
+más brillante llega a sRGB 16.7, por debajo del cuerpo del cristal (p50 23).
+
+**El halo se ancla a la LUZ y no al centro del cuadro**, y es la única decisión
+del pase que interpreta el encargo en vez de transcribirlo. Se pidió «detrás del
+Tesseracto»; en la pose del preset el Tesseracto está a contraluz (`keyAngle`
+145°), así que la luz ESTÁ detrás. Anclarlo ahí resuelve además la trampa que
+destapó la auditoría: un «negro azulado muy profundo» tipo #04070e es HDR ≈
+0.0084, exactamente el nivel de la celda lejana, y un halo centrado sobre la
+silueta borraría la jerarquía 4D que costó las versiones V2 y V3. Las dos
+defensas son que el pico se queda en 0.0034 y que su máximo cae fuera de la
+figura. Al orbitar, el halo se queda donde está la luz en vez de seguir al ojo.
+
+**Dos errores míos corregidos sobre la captura, no sobre el papel.** El dither
+del halo se derivó en el punto equivocado de la curva ACES: entre HDR 0.005 y
+0.010 un escalón de sRGB son 0.001, pero el halo vive en 0.003, donde la curva
+es mucho más plana y un escalón son ~0.0025. Con 0.0011 el fondo salía en
+anillos concéntricos —justo el «círculo» vetado—: 155 cambios de nivel en 460 px
+con mesetas planas. Con 0.0032 y aplicado sólo donde hay halo, 300. Y el segundo:
+`bloomPass.setSize(w, h)` pisaba con píxeles CSS el tamaño efectivo que
+`composer.setSize` ya había propagado, así que a dpr 2 los mips del bloom se
+construían a media resolución. No se veía porque la herramienta captura a dpr 1
+— la misma clase de coincidencia que escondió el marco del overlay a 1440 px.
+
+**Y una lección que el repositorio ya tenía escrita y repitió igual.**
+`tools/glsl-check.mjs` existe para cazar backticks dentro del GLSL, y dio verde
+mientras `observatory-sky.ts` nacía con dos. Su propio comentario contaba que
+eso ya había pasado —«el guardián daba verde porque sólo miraba el archivo de
+Gargantúa»— y la primera vez se arregló la LISTA en vez del mecanismo. Ahora
+descubre los archivos: un shader nuevo queda cubierto por existir.
 
 ### Apéndice — una discrepancia encontrada de paso
 

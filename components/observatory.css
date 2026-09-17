@@ -2,10 +2,30 @@
   El Observatorio: el espécimen se queda con la pantalla, la instrumentación se
   quita de en medio.
 
-  Regla de composición del §5: el espécimen ocupa entre el 70 % y el 85 % del
-  cuadro y todo lo demás flota encima sin robarle ancho. Por eso no hay columnas
-  —ni sidebar de objetos ni panel de ficha permanente—: ése fue el fallo de las
-  maquetas de concepto.
+  Regla de composición del §5: el espécimen ocupa el cuadro y todo lo demás
+  flota encima sin robarle ancho. Por eso no hay columnas —ni sidebar de objetos
+  ni panel de ficha permanente—: ése fue el fallo de las maquetas de concepto.
+
+  ── Los mandos no tienen caja ───────────────────────────────────────────────
+
+  Jonás vio la primera versión y la describió como «visor Three.js premium» en
+  vez de «instrumento de JONAS ORBIT», y señaló la causa: cuatro píldoras. Tenía
+  razón por un motivo verificable — `border-radius: 999px` sobre un control VIVO
+  no existía en ningún otro sitio del repositorio. Era la única.
+
+  Lo que sustituye a la píldora no es «menos», es un vocabulario de cuatro
+  signos, y ninguno es inventado:
+
+   · un corchete que se abre alrededor de la palabra — el `[ Enter ]` del HUD
+     del System Map (`components/system-hud.tsx:81`);
+   · una regla de 1 px que se TRAZA de izquierda a derecha con `scaleX`, no que
+     aparece — el gesto del rótulo activo del mapa;
+   · una pica de 1 × 0.7rem entre palabras — el calibre del marcador del raíl;
+   · el peso de la letra, que es gratis en ancho porque el pie es monoespaciado.
+
+  Y el pie pasa entero a `--font-mono`: era el único rótulo de instrumento del
+  sitio que hablaba en tipografía de interfaz, y de ahí salía buena parte de la
+  sensación de componente genérico.
 */
 
 .observatory {
@@ -29,15 +49,72 @@
   cursor: grabbing;
 }
 
+/*
+  ── Instrumentación de borde ────────────────────────────────────────────────
+
+  El tercer ingrediente de la atmósfera, y el más fácil de arruinar. Cuatro
+  escuadras de 1 px en las esquinas, y nada más: ni coordenadas, ni retícula,
+  ni círculos, ni lecturas. La idea es «el centro pertenece al espécimen, los
+  bordes pertenecen al instrumento», y para eso basta con sugerir que hay un
+  aparato — dibujarlo sería construir la sala de laboratorio que el encargo
+  descarta.
+
+  NO se atenúan con el modo cine, al contrario que los controles. Son
+  atmósfera, no mando: las estrellas tampoco se apagan cuando dejas de tocar
+  nada, y una escuadra que aparece y desaparece pasaría a ser un aviso.
+*/
+.observatory__calipers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.observatory__caliper {
+  position: absolute;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 0 solid rgb(164 180 212 / 0.15);
+}
+
+.observatory__caliper--tl,
+.observatory__caliper--tr {
+  top: clamp(0.6rem, 1.6vw, 1.15rem);
+}
+
+.observatory__caliper--bl,
+.observatory__caliper--br {
+  bottom: clamp(0.6rem, 1.6vw, 1.15rem);
+}
+
+.observatory__caliper--tl,
+.observatory__caliper--bl {
+  left: clamp(0.6rem, 1.6vw, 1.15rem);
+  border-left-width: 1px;
+}
+
+.observatory__caliper--tr,
+.observatory__caliper--br {
+  right: clamp(0.6rem, 1.6vw, 1.15rem);
+  border-right-width: 1px;
+}
+
+.observatory__caliper--tl,
+.observatory__caliper--tr {
+  border-top-width: 1px;
+}
+
+.observatory__caliper--bl,
+.observatory__caliper--br {
+  border-bottom-width: 1px;
+}
+
 /* El cromo NO recibe el puntero: sólo sus controles. Es la regla que costó una
    entrega en Edmunds — un contenedor a pantalla completa por delante del objeto
    se traga el arrastre y el visor parece roto.
 
-   Ahora la regla es MÁS estrecha que antes, y tiene que serlo: con la
-   instrumentación agrupada en una banda inferior, un `pointer-events: auto`
-   sobre los contenedores dejaría toda esa franja sorda al arrastre aunque esté
-   casi vacía. Sólo lo reciben los elementos con los que de verdad se
-   interactúa — los rótulos son texto y no necesitan puntero. */
+   Al quitar las cajas la regla se vuelve MÁS delicada, no menos: ahora hay
+   corchetes, picas y reglas repartidos por la banda y ninguno puede pedir
+   puntero. Se lo quedan los `<button>` y la ficha, y nada más. */
 .observatory__chrome {
   position: absolute;
   inset: 0;
@@ -64,7 +141,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.9rem;
+  gap: 0.75rem;
   transition: opacity 420ms ease;
 }
 
@@ -94,8 +171,45 @@
   transition: opacity 420ms ease;
 }
 
-/* Pista a la izquierda, `Reajustar` al extremo derecho: la fila ocupa el ancho
-   y deja el hueco en medio, en vez de apelotonarse en una esquina. */
+/* ── Tipografía del pie ─────────────────────────────────────────────────── */
+
+.observatory__legend,
+.observatory__hint,
+.observatory__ink {
+  font-family: var(--font-mono);
+  /* Sin caja, la sombra deja de ser adorno: es lo único que separa el texto de
+     un espécimen brillante que puede pasar por detrás. Mismo valor que los
+     filtros de Edmunds, que viven sobre canvas desde hace una entrega. */
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.observatory__legend {
+  margin: 0;
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.42);
+}
+
+.observatory__hint {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.5);
+}
+
+/* El punto va en su propio span y más apagado que lo que separa: es el conector
+   canónico del proyecto. */
+.observatory__sep {
+  margin-inline: 0.55em;
+  color: rgb(234 246 255 / 0.28);
+}
+
+/* Pista a la izquierda, `Reajustar` al extremo derecho, como el boceto. La fila
+   ocupa el ancho y deja el hueco en medio en vez de apelotonarse en una
+   esquina. */
 .observatory__controls {
   display: flex;
   align-items: center;
@@ -104,56 +218,269 @@
   flex-wrap: wrap;
 }
 
-.observatory__hint,
-.observatory__legend {
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgb(234 246 255 / 0.5);
-}
-
-.observatory__button,
-.observatory__toggle {
-  appearance: none;
-  border: 1px solid rgb(127 229 255 / 0.35);
-  border-radius: 999px;
-  background: rgb(8 16 24 / 0.55);
-  color: #d7f1ff;
-  font: inherit;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  padding: 0.5rem 1.1rem;
-  cursor: pointer;
-  transition:
-    border-color 180ms ease,
-    background 180ms ease;
-}
-
-.observatory__button:hover,
-.observatory__toggle:hover,
-.observatory__button:focus-visible,
-.observatory__toggle:focus-visible {
-  border-color: rgb(127 229 255 / 0.8);
-  background: rgb(14 28 40 / 0.75);
-}
-
-/* Instrumento activo = canal aislado. Se marca en ámbar y no en cian para que
-   no se confunda con el estado normal: estás mirando un modo de inspección, no
-   la apariencia canónica del espécimen. */
-.observatory__toggle[aria-pressed="true"] {
-  border-color: rgb(255 194 122 / 0.8);
-  color: #ffd9a8;
-}
+/* ── El banco de instrumentos ───────────────────────────────────────────── */
 
 .observatory__inspect {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.1rem;
 }
 
+/*
+  `INSPECCIONAR` deja de ser un rótulo suelto y pasa a ser CABECERA DE APARATO:
+  la palabra y detrás una regla de 1 px que se desvanece hasta el borde de la
+  banda. Es el cierre de sección de «Sobre mí» puesto de lado, y hace dos de las
+  cinco cosas que pidió la dirección —línea fina y divisor— con un solo span.
+
+  Dice que lo de abajo es una superficie sin tener que pintarle un fondo.
+*/
+.observatory__group {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.observatory__rule {
+  flex: 1 1 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(164 180 212 / 0.26), transparent 62%);
+}
+
+.observatory__bank {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+/* La pica entre instrumentos: 1 × 0.7rem, el calibre del marcador del raíl. Es
+   corta a propósito — una línea de 44 px volvería a dibujar los lados de la
+   caja que acabamos de quitar. */
+.observatory__div {
+  flex: none;
+  width: 1px;
+  height: 0.7rem;
+  background: rgb(164 180 212 / 0.24);
+}
+
+/* ── Los mandos: un bloque de aire de 44 px con una palabra dentro ───────── */
+
+/*
+  Ésta es la respuesta a «sin caja, ¿de qué se agarra el dedo?».
+
+  El `<button>` conserva su caja —44 px de alto— pero esa caja no tiene ni un
+  píxel de tinta: es espacio. El blanco de activación nunca dependió del borde,
+  dependía del `min-height`, que es exactamente lo que escriben todos los demás
+  controles del repositorio. Lo único que se quita es el dibujo.
+
+  Y el ancho mínimo hace un segundo trabajo: el estado activo ensancha el
+  tracking de la palabra, y dentro de una celda de ancho fijo ese crecimiento se
+  absorbe en vez de empujar a los vecinos. Sin él, encender BLOOM movería
+  MATERIAL y DATOS a la derecha en cada pulsación.
+*/
+.observatory__button,
+.observatory__toggle {
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.observatory__toggle {
+  min-width: 6.5rem;
+}
+
+.observatory__ink {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.55);
+  /*
+    Sólo el color entra en la transición. `font-weight` y `letter-spacing`
+    también cambian con el estado, pero animarlos obliga al navegador a rehacer
+    el layout en cada fotograma de una barra que está por delante de un canvas
+    que ya va justo — y el cambio de estado no necesita rampa para leerse.
+  */
+  transition: color 180ms var(--ease-orbit);
+}
+
+/*
+  Los corchetes. Siempre presentes y siempre ocupando su avance: lo que cambia
+  es la opacidad y un desplazamiento de 0.16em. Si se insertaran y se quitaran,
+  cada pulsación recolocaría la palabra bajo el cursor.
+
+  Van en spans `aria-hidden` y NUNCA en un pseudoelemento: el `content` de
+  `::before`/`::after` entra en el cálculo del nombre accesible en Chromium, y
+  el nombre de estos mandos es contrato — lo comprueba
+  `observatory-chrome.test.tsx` y lo usa `tools/observatory-shot.mjs`.
+*/
+.observatory__bracket {
+  display: inline-block;
+  margin-inline: 0.2em;
+  opacity: 0;
+  transform: translateX(0.16em);
+  transition:
+    opacity 200ms var(--ease-orbit),
+    transform 240ms var(--ease-orbit);
+}
+
+.observatory__bracket:last-child {
+  transform: translateX(-0.16em);
+}
+
+/*
+  La regla del activo: el `────────` del boceto. Se DIBUJA de izquierda a
+  derecha con `scaleX` en vez de aparecer, y hereda `currentColor`, así que el
+  ámbar del canal aislado la tiñe sola.
+
+  Vive a 0.62rem bajo la tinta, dentro de los 14 px de aire que deja el bloque
+  de 44 px: no se sale del blanco de activación ni choca con el filete del foco,
+  que va a 6 px.
+*/
+.observatory__toggle .observatory__ink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.62rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition:
+    opacity 300ms var(--ease-orbit),
+    transform 340ms var(--ease-orbit);
+}
+
+/* `Reajustar` lleva su filete SIEMPRE, y por eso no lleva corchetes: es una
+   acción, no un estado. Dos signos distintos para dos cosas distintas — un
+   filete permanente dice «esta palabra se pulsa», un corchete que se abre dice
+   «este instrumento está abierto». Compartir el signo los habría hecho
+   ambiguos. */
+.observatory__button .observatory__ink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.45rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.26;
+  transition: opacity 180ms var(--ease-orbit);
+}
+
+.observatory__button:hover .observatory__ink,
+.observatory__button:focus-visible .observatory__ink,
+.observatory__toggle:hover .observatory__ink,
+.observatory__toggle:focus-visible .observatory__ink {
+  color: #eaf6ff;
+}
+
+.observatory__button:hover .observatory__ink::after,
+.observatory__button:focus-visible .observatory__ink::after {
+  opacity: 0.85;
+}
+
+.observatory__toggle:hover .observatory__bracket,
+.observatory__toggle:focus-visible .observatory__bracket {
+  opacity: 0.3;
+  transform: translateX(0);
+}
+
+/*
+  Instrumento activo = canal aislado.
+
+  Sigue siendo ámbar y no cian, para que no se confunda con el estado normal:
+  estás mirando un modo de inspección, no la apariencia canónica del espécimen.
+  Pero el ámbar ya NO es la señal — es sólo el matiz. La señal son tres cambios
+  de GEOMETRÍA que sobreviven a una captura en gris y a un ojo daltónico: los
+  corchetes se abren, la regla se traza y la palabra engorda de 400 a 650.
+
+  El peso es gratis en ancho porque la tinta es monoespaciada. Ése es el motivo
+  real de que el pie sea mono, y no sólo el parecido con los demás rótulos.
+
+  Estas reglas van DESPUÉS de las de hover a propósito: misma especificidad, así
+  que un instrumento abierto conserva su ámbar aunque lo estés apuntando.
+*/
+.observatory__toggle[aria-pressed="true"] .observatory__ink {
+  color: #ffd2a0;
+  font-weight: 650;
+  letter-spacing: 0.22em;
+}
+
+.observatory__toggle[aria-pressed="true"] .observatory__bracket {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.observatory__toggle[aria-pressed="true"] .observatory__ink::after {
+  opacity: 0.9;
+  transform: scaleX(1);
+}
+
+/*
+  El foco, que es la deuda que deja quitar el borde.
+
+  El anillo global se dibujaría alrededor del bloque de 44 px de alto:
+  exactamente la píldora que acabamos de retirar, sólo que en cian. Se apaga y
+  se repone alrededor de la PALABRA, siguiendo la doctrina ya escrita en el
+  repositorio para el raíl de navegación.
+
+  Por eso el `<span class="observatory__ink">` no es decorativo ni opcional: es
+  la pieza de la que se agarra el foco. Un mando de esta banda sin ese span se
+  queda sin indicador ninguno.
+*/
+.observatory__button:focus-visible,
+.observatory__toggle:focus-visible {
+  outline: none;
+}
+
+.observatory__button:focus-visible .observatory__ink,
+.observatory__toggle:focus-visible .observatory__ink {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 6px;
+}
+
+/*
+  Y el respaldo de alto contraste, que es donde este cromo es más frágil que la
+  píldora que sustituye: en `forced-colors` el navegador descarta fondos y
+  `color-mix`, así que un indicador construido con tinte se evapora. Los
+  corchetes sobreviven porque son TEXTO; el filete del foco necesita decirlo
+  con un color del sistema.
+*/
+@media (forced-colors: active) {
+  .observatory__button:focus-visible .observatory__ink,
+  .observatory__toggle:focus-visible .observatory__ink {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* ── La ficha ───────────────────────────────────────────────────────────── */
+
+/*
+  La ficha CONSERVA su fondo, y es la única pieza de esta hoja que no pierde la
+  caja. No es un descuido del pase: es que no es cromo, es una superficie de
+  lectura, y sólo existe mientras `DATOS` está abierto. Quitarle el fondo pondría
+  seis números claros sobre las aristas cian y ámbar del espécimen justo en la
+  esquina por donde la figura se acerca al abrirse, y la petición era retirar la
+  sensación de píldora en los MANDOS — no discutir dónde se leen los datos.
+*/
 .observatory__data {
   display: flex;
   flex-wrap: wrap;
@@ -166,6 +493,7 @@
   border-radius: 0.5rem;
   background: rgb(6 12 20 / 0.72);
   max-width: 46rem;
+  font-family: var(--font-mono);
 }
 
 .observatory__data section {
@@ -205,9 +533,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* En pantallas estrechas el banco envuelve, y tres mandos de 6.5rem más sus
+   picas no caben en una línea. Se aprieta el calibre antes que dejar que la
+   banda crezca hacia el espécimen. */
+@media (max-width: 26rem) {
+  .observatory__toggle {
+    min-width: 5.4rem;
+    padding: 0 0.45rem;
+  }
+
+  .observatory__ink {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+
+  .observatory__toggle[aria-pressed="true"] .observatory__ink {
+    letter-spacing: 0.15em;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .observatory__foot,
-  .observatory__specimen {
+  .observatory__specimen,
+  .observatory__ink,
+  .observatory__bracket,
+  .observatory__button .observatory__ink::after,
+  .observatory__toggle .observatory__ink::after {
     transition: none;
   }
 }
