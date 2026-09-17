@@ -99,3 +99,62 @@ describe("reloj clavado y acumulación", () => {
     }
   });
 });
+
+/*
+  Las tres capas de atmósfera del Observatorio.
+
+  Son el campo con más riesgo de todo el banco, y el riesgo no es técnico: una
+  atmósfera bien hecha es invisible por definición —el encargo pedía «tan sutil
+  que probablemente sólo notes su ausencia al apagarlo»— así que el único modo
+  de juzgarla es poder quitarla. Y en el momento en que existe un interruptor
+  que la quita, existe la tentación de invertirlo y que sea el interruptor el
+  que la PONE para la captura.
+
+  Ahí se cruza la línea. Los factores del banco se clampan a [0,1] con 1 =
+  producción: sólo pueden restar, así que son matemáticamente incapaces de
+  halagar nada. Estos tests fijan que las capas tengan esa misma propiedad — si
+  el defecto dejara de ser «todas encendidas», las tres capturas dejarían de
+  ser evidencia de lo que recibe el visitante y pasarían a ser una demo.
+*/
+describe("capas de atmósfera", () => {
+  it("por defecto están las tres, y el banco entero es producción", () => {
+    expect(parseVisualBench(null).atmosphere).toEqual({
+      stars: true,
+      halo: true,
+      marks: true,
+    });
+    expect(parseVisualBench("{}").atmosphere).toEqual(
+      FULL_VISUAL_BENCH.atmosphere,
+    );
+  });
+
+  it("solo un false literal apaga una capa", () => {
+    expect(parseVisualBench('{"atmosfera":{"estrellas":false}}').atmosphere)
+      .toEqual({ stars: false, halo: true, marks: true });
+    for (const otro of ['"false"', "0", "null", "true"]) {
+      expect(
+        parseVisualBench(`{"atmosfera":{"halo":${otro}}}`).atmosphere.halo,
+        otro,
+      ).toBe(true);
+    }
+  });
+
+  it("apaga las capas por separado, que es la pregunta que se hace sobre un fondo", () => {
+    // No es «cuánta atmósfera» sino «cuál de las tres está haciendo el
+    // trabajo». Un nivel de 0 a 3 no puede responder eso.
+    const soloEstrellas = parseVisualBench(
+      '{"atmosfera":{"halo":false,"marcas":false}}',
+    ).atmosphere;
+    expect(soloEstrellas).toEqual({ stars: true, halo: false, marks: false });
+  });
+
+  it("una atmósfera rota no deja al visitante sin fondo", () => {
+    // Falla cerrado hacia producción, igual que el resto del parser.
+    for (const roto of ['"todo"', "3", "null", "[]"]) {
+      expect(
+        parseVisualBench(`{"atmosfera":${roto}}`).atmosphere,
+        roto,
+      ).toEqual(FULL_VISUAL_BENCH.atmosphere);
+    }
+  });
+});

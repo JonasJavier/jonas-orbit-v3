@@ -54,6 +54,24 @@ export interface VisualBench {
    * si una banda del disco la dibuja el material o la deposita el acumulador.
    */
   accumulate: boolean;
+  /**
+   * Las tres capas de atmósfera del Observatorio. Las tres `true` es
+   * producción.
+   *
+   * Existe por el mismo motivo que `bloom`: una atmósfera bien hecha es
+   * INVISIBLE por definición —el encargo pedía «tan sutil que probablemente
+   * sólo notes su ausencia al apagarlo»— y una cosa que sólo se nota al
+   * quitarla no se puede juzgar sin poder quitarla.
+   *
+   * Y va capa a capa, no como un nivel de 0 a 3, porque la pregunta que se
+   * hace sobre un fondo no es «cuánto» sino «cuál de las tres está haciendo el
+   * trabajo»: el campo estelar, la variación del negro o las marcas del borde.
+   */
+  atmosphere: {
+    stars: boolean;
+    halo: boolean;
+    marks: boolean;
+  };
 }
 
 /** Lo que ve todo el mundo salvo quien escriba la clave a mano. */
@@ -62,6 +80,7 @@ export const FULL_VISUAL_BENCH: VisualBench = {
   emission: 1,
   clock: null,
   accumulate: true,
+  atmosphere: { stars: true, halo: true, marks: true },
 };
 
 function factor(value: unknown): number | null {
@@ -83,6 +102,29 @@ function clock(value: unknown): number | null {
 /** Solo un `false` literal apaga la acumulación. Cualquier otra cosa: producción. */
 function flag(value: unknown): boolean {
   return value === false ? false : true;
+}
+
+/**
+ * Las tres capas de atmósfera, con la misma regla que `flag`: sólo un `false`
+ * literal apaga una.
+ *
+ * Que el defecto sea «todas encendidas» no es comodidad, es la condición que
+ * mantiene honesto al banco entero. Los factores se clampan a [0,1] con 1 =
+ * producción, así que el banco sólo puede RESTAR y es matemáticamente incapaz
+ * de halagar nada. Si aquí el defecto fuera «sin atmósfera», este campo pasaría
+ * a ser el que ENCIENDE la versión bonita para la captura, y entonces las
+ * capturas dejarían de ser evidencia de lo que recibe el visitante.
+ */
+function layers(value: unknown): VisualBench["atmosphere"] {
+  if (typeof value !== "object" || value === null) {
+    return FULL_VISUAL_BENCH.atmosphere;
+  }
+  const source = value as Record<string, unknown>;
+  return {
+    stars: flag(source.estrellas),
+    halo: flag(source.halo),
+    marks: flag(source.marcas),
+  };
 }
 
 /**
@@ -108,6 +150,7 @@ export function parseVisualBench(raw: string | null): VisualBench {
     emission: factor(source.emision) ?? FULL_VISUAL_BENCH.emission,
     clock: clock(source.reloj),
     accumulate: flag(source.acumular),
+    atmosphere: layers(source.atmosfera),
   };
 }
 
