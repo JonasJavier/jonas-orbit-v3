@@ -2,10 +2,20 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
-import { useMotionEnabled } from "@/lib/effects-mode";
+import {
+  useForcedEffects,
+  useLightEffectsMode,
+  useMotionEnabled,
+} from "@/lib/effects-mode";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVisualBench } from "@/lib/visual-bench";
 import type { ObservatoryHandle } from "@/components/scene/observatory-scene";
 import type { SpecimenContract } from "@/components/scene/specimen-contract";
+import {
+  evaluateCapabilities,
+  readSignals,
+} from "@/components/scene/capability";
+import { FlatWorldBody } from "./flat-world-body";
 import { architectureLabel, RENDER_LABELS } from "./observatory-labels";
 import "./observatory.css";
 
@@ -85,6 +95,68 @@ export function ObservatoryViewer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<ObservatoryHandle | null>(null);
   const motion = useMotionEnabled();
+  const reducedMotion = usePrefersReducedMotion();
+  const lightEffects = useLightEffectsMode();
+  const forced = useForcedEffects();
+
+  /*
+    EL GATE DE CAPACIDAD, que hasta ahora no existía aquí.
+
+    El resto del sitio decide si hay equipo para 3D antes de montar nada; esta
+    página montaba WebGL igual. Se vio en las primeras capturas del pase visual:
+    el gate vetó la escena persistente por GPU por software y el Observatorio
+    dibujó de todas formas.
+
+    Es el MISMO veredicto que usa `gargantua-system.tsx`, con la misma lectura
+    por `useSyncExternalStore` y la misma instantánea de servidor: en servidor
+    siempre `flat`, porque ahí no hay navegador al que preguntar, y tras la
+    hidratación se resuelve con las capacidades reales sin provocar mismatch.
+
+    Se lee el NIVEL y no el veredicto entero: `useSyncExternalStore` compara la
+    instantánea con `Object.is`, y devolver un objeto nuevo en cada llamada
+    metería el componente en un bucle infinito de re-renders. Es la misma
+    trampa que el otro archivo documenta.
+
+    `forced` —el icono pulsado— salta por encima de las heurísticas, igual que
+    en la escena persistente: si alguien pide expresamente los efectos, los
+    tiene.
+  */
+  const flat = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const verdict = evaluateCapabilities(
+        readSignals({ reducedMotion, lightEffects, forced }),
+      );
+      if (verdict.level !== "flat") return false;
+      /*
+        DEGRADA POR FALTA DE EQUIPO, NO POR PREFERENCIA DE MOVIMIENTO.
+
+        Esta línea es la que separa dos cosas que el resto del sitio junta a
+        propósito, y hace falta aquí por una razón concreta.
+
+        El interruptor global escribe el perfil ligero al apagarse
+        (`effects-mode.ts:146`), así que sin este filtro apagar el movimiento
+        retiraría el espécimen entero y dejaría el dibujo SVG. En la home eso
+        es correcto —la escena es decoración sobre contenido—, pero aquí el
+        espécimen ES la página, y el §12 del documento pide lo contrario en su
+        prueba O6: «con movimiento apagado, sin giro en reposo, transiciones
+        instantáneas, MANIPULACIÓN VIVA». No se puede manipular lo que no está.
+
+        El interruptor ya tiene aquí un efecto propio y correcto: `setMotion`
+        congela la reconfiguración del espécimen sin tocar la mano del
+        visitante, que es lo que se aprobó en el primer pase visual.
+
+        ⏳ Queda una pregunta abierta para Jonás, y es suya: `?no3d=1` es la
+        puerta documentada del perfil ligero y la que usa la auditoría de
+        Lighthouse (regla 5). Con este filtro, esa puerta tampoco retira el 3D
+        de esta ruta. Antes de este pase no lo retiraba nadie porque no había
+        gate ninguno, así que no es una regresión — pero es una decisión que
+        conviene tomar a la vista y no por omisión.
+      */
+      return verdict.reason !== "perfil-ligero";
+    },
+    () => true,
+  );
 
   /*
     El estado del interruptor en el MOMENTO DE MONTAR, y nada más.
@@ -128,7 +200,7 @@ export function ObservatoryViewer({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || flat) return;
 
     let cancelled = false;
     let handle: ObservatoryHandle | null = null;
@@ -159,7 +231,12 @@ export function ObservatoryViewer({
       handle?.dispose();
       handleRef.current = null;
     };
-  }, [id, visual, accent, secondary, placement]);
+    // `flat` entra en las dependencias a propósito: en la hidratación el nivel
+    // todavía es la instantánea de servidor, así que el primer pase no monta
+    // nada. Sin esto, el re-render que trae el veredicto real no volvería a
+    // llamar al efecto y el visor se quedaría vacío en un equipo perfectamente
+    // capaz.
+  }, [flat, id, visual, accent, secondary, placement]);
 
   useEffect(() => {
     // La ref se sincroniza AQUÍ y no durante el render: escribirla al renderizar
@@ -213,6 +290,28 @@ export function ObservatoryViewer({
     };
   }, []);
 
+  /*
+    RESPALDO PLANO (§9 / O7).
+
+    No es el visor apagado: es otra página. El visor normal es `fixed; inset:0`
+    y TAPA el HTML servido —el título, el resumen y la vuelta al índice—, cosa
+    que no importa cuando hay un espécimen en 3D encima porque ésa es la
+    experiencia. En `flat` sí importa: si tapara la ficha, alguien con un equipo
+    modesto se quedaría con una pantalla negra en vez de con la página.
+
+    Así que aquí no se monta el contenedor a pantalla completa. El dibujo SVG
+    del cuerpo entra en el flujo y la ficha servida se ve encima, que es
+    exactamente lo que pide el §9: espécimen y ficha completa, nunca una página
+    rota.
+  */
+  if (flat) {
+    return (
+      <div className="observatory__flat">
+        <FlatWorldBody world={{ id, visual, accent, secondary }} />
+      </div>
+    );
+  }
+
   return (
     <div className="observatory" data-idle={idle ? "true" : "false"}>
       {failed ? null : (
@@ -242,10 +341,18 @@ export function ObservatoryViewer({
         caería justo en el centro, encima del espécimen — que es exactamente el
         fallo que ya se corrigió una vez con la pista de arrastre.
 
-        Cuatro marcas de 1 px y nada más. Sin texto, y eso es deliberado: el
-        encargo veta las coordenadas falsas, y cualquier rótulo aquí —un índice,
-        una lectura, un `ACQ`— sería o un dato inventado o el raíl de seis
+        Marcas de 1 px y nada más. Sin texto, y eso es deliberado: el encargo
+        veta las coordenadas falsas, y cualquier rótulo aquí —un índice, una
+        lectura, un `ACQ`— sería o un dato inventado o el raíl de seis
         especímenes entrando por la puerta de atrás.
+
+        Siete elementos y no cuatro: la primera versión era «demasiado tímida»,
+        y subirle la opacidad sin darle vocabulario habría dejado cuatro sellos
+        idénticos más brillantes. Cuatro escuadras asimétricas y tres signos
+        sueltos —calibre, fiducial y marcas cortas—, cada uno en un borde y a
+        una altura distinta, para que ninguna pareja insinúe un lado completo.
+        La geometría de cada uno vive en la hoja de estilo; aquí sólo se
+        nombran.
       */}
       {marks ? (
         <div aria-hidden="true" className="observatory__calipers">
@@ -253,6 +360,9 @@ export function ObservatoryViewer({
           <span className="observatory__caliper observatory__caliper--tr" />
           <span className="observatory__caliper observatory__caliper--bl" />
           <span className="observatory__caliper observatory__caliper--br" />
+          <span className="observatory__scale" />
+          <span className="observatory__fiducial" />
+          <span className="observatory__ticks" />
         </div>
       ) : null}
 

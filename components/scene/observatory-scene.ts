@@ -49,7 +49,7 @@ import { specimenContract, type SpecimenContract } from "./specimen-contract";
  * valor de entrada mida el espécimen 46 px o 700 px. Copiarla es lo que
  * garantiza que el material se lea igual aquí que en su sitio.
  */
-const BASE_EXPOSURE = 0.95;
+export const BASE_EXPOSURE = 0.95;
 
 /**
  * El bloom NO se copia, y ésta es la corrección del primer pase visual.

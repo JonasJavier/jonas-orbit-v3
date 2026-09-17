@@ -46,3 +46,26 @@ export function findWorldRoute(
   }
   return best;
 }
+
+/**
+ * El segmento del Observatorio, y por qué esto importa fuera del Observatorio.
+ *
+ * `docs/design/tesseract-experimentos.md` §3, enmienda 3: en estas rutas el
+ * contexto persistente **no se crea o se libera**, y NO basta con pausar el
+ * bucle. La enmienda existe porque yo había escrito lo contrario y era falso:
+ * `COVERED_WORLDS` sólo llama a `cancelAnimationFrame`, así que la escena deja
+ * de dibujar pero su contexto WebGL —y su VRAM— siguen enteros. En una ruta que
+ * monta su PROPIO contexto a pantalla completa eso deja dos vivos a la vez.
+ *
+ * Es más estricto que el resto del sitio a propósito. Miller y la Ranger montan
+ * su propio WebGL2 y ahí basta con que la escena persistente no DIBUJE, que es
+ * lo que promete `AGENTS.md`. El Observatorio sube el listón porque su canvas
+ * ocupa la pantalla entera durante toda la visita, no un hero.
+ *
+ * Se casa sólo por el segmento `observatorio`, que es una carpeta del router y
+ * por tanto nuestra. El slug del mundo —`experimentos`— vive en el frontmatter
+ * del MDX y no se duplica aquí: ésa es la regla 4 del repositorio.
+ */
+export function isObservatoryPath(pathname: string): boolean {
+  return pathname.split("/").includes("observatorio");
+}

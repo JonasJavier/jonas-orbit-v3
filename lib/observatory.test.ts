@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { WORLD_IDS, worldsData, type WorldId } from "@/content/worlds.data";
 import {
@@ -353,5 +355,50 @@ describe("intensidad de clave", () => {
     expect(observationLightIntensity(25)).toBeGreaterThan(
       observationLightIntensity(32),
     );
+  });
+});
+
+/*
+  O11 · El Observatorio y el contrato de cámara no se conocen.
+
+  La enmienda del §2 es lo que hace LEGAL este visor: «el contrato de cámara
+  rige la escena persistente; el Observatorio es otra escena, con otro canvas y
+  otra cámara, a la que el visitante entra a propósito». La regla 6 del
+  repositorio sigue intacta —`cameraPose = f(routeWorldId)`, sin OrbitControls,
+  sin arrastre, sin rueda— y este visor no la incumple porque no es esa escena.
+
+  Esa frontera se erosiona de una sola manera: que alguien importe una cosa
+  desde la otra buscando reutilizar una pose o un límite de zoom. El día que eso
+  pase, el Observatorio dejará de ser «otra escena» y pasará a ser un
+  controlador de cámara sobre la escena persistente — que es exactamente lo que
+  la regla 6 prohíbe, sólo que por la puerta de atrás.
+
+  Se comprueba sobre las importaciones y no sobre el comportamiento porque el
+  comportamiento no lo delata: las dos cosas seguirían funcionando.
+*/
+describe("O11 · frontera con el contrato de cámara", () => {
+  const OBSERVATORY_SOURCES = [
+    "lib/observatory.ts",
+    "components/scene/observatory-scene.ts",
+    "components/scene/observatory-sky.ts",
+    "components/scene/specimen-contract.ts",
+    "components/observatory-viewer.tsx",
+  ];
+
+  it("ningún módulo del Observatorio importa scene-poses", () => {
+    for (const source of OBSERVATORY_SOURCES) {
+      const code = readFileSync(join(process.cwd(), source), "utf8");
+      expect(code, `${source} importa el contrato de cámara`).not.toMatch(
+        /from\s+["'][^"']*scene-poses/,
+      );
+    }
+  });
+
+  it("scene-poses no sabe que el Observatorio existe", () => {
+    const code = readFileSync(
+      join(process.cwd(), "lib/scene-poses.ts"),
+      "utf8",
+    );
+    expect(code).not.toMatch(/observator/i);
   });
 });
