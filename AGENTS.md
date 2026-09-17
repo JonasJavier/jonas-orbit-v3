@@ -118,6 +118,31 @@ de rumbo sigue el mismo `yaw`, y el mundo gira bajo la nave con la distancia.
 La búsqueda de estrellas es de cuatro celdas, exacta porque ninguna mide más
 de media celda. Su valoración visual queda abierta.
 
+**Experimentos — recepción y encendido del instrumento (2026-09-17):** la
+sección `La recepción y el encendido del instrumento` de
+`docs/design/tesseract-experimentos.md` manda sobre el §4 y el §5 de ese
+documento en **cómo se entra al Observatorio**. Dirección fijada por el dueño:
+*hay dos acciones distintas —viajar a Experimentos y operar Experimentos—*, así
+que el viaje desde el System Map sigue siendo la travesía y entrar al
+laboratorio NO es otro viaje, es encender un aparato. `/es/experimentos` deja de
+ser ficha editorial y pasa a recepción instrumental (vestíbulo en SVG —ventanal,
+limbo, suelo y una figura que fija la escala— más índice de seis con `LISTO` /
+`SIN MONTAR`); entra por la cascada de `[mundo]/page.tsx` como Miller y Edmunds,
+sin tocar `BESPOKE_WORLD_IDS`. Elegir una muestra dispara `ACQUISITION LOCK`:
+`ADQUIRIENDO → BLOQUEO → MONTANDO` en 1,08 s, navegación **por temporizador**, y
+mientras tanto se descarga el módulo de la escena. En el laboratorio la cara
+servida deja de ser un respaldo y es el estado en frío del aparato
+—`INSTRUMENTO · EN ESPERA`, con el esquema de `FlatWorldBody` donde caerá el
+espécimen— hasta que `onFirstFrame` publica `data-state="nominal"`. Tres reglas:
+**el aviso de llegada va después de `composer.render()`, nunca en el `.then()`
+del import**; **exactamente UNA de las dos superficies está viva** (la otra va
+`inert`, o hay dos salidas y dos nombres accesibles); y **atenuar una capa la
+vuelve translúcida, no oscura** — el vestíbulo se apaga contra un velo negro.
+`lib/observatory-catalog.ts` es el catálogo único; el par instrumental del §14.1
+vive en el MDX (`observatory.pair`) y `registro` es opcional. El tramo final de
+cámara (fov 50→40 y barrido de fase) queda **aplazado a propósito** hasta el
+veredicto visual. Su valoración visual queda abierta.
+
 **UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
 anterior en consentimiento, pausa y perfil ligero:**
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior

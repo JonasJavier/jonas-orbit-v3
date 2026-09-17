@@ -1,0 +1,546 @@
+/*
+  LA RECEPCIÓN DEL LABORATORIO.
+
+  Dos capas y una regla entre ellas: el vestíbulo no compite con el índice. El
+  fondo es arquitectura, luz y silencio —cero datos— y toda la densidad de la
+  página vive en las seis filas del catálogo. Si alguna vez hay que elegir
+  entre que la sala se vea mejor y que el índice se lea mejor, gana el índice:
+  la sala es el sitio, pero el catálogo es a lo que se viene.
+*/
+
+.experiments-page {
+  position: relative;
+  min-height: 100svh;
+  font-family: var(--font-mono);
+}
+
+/*
+  EL VELO DE LA ADQUISICIÓN.
+
+  Existe por un fallo que sólo se vio en captura: atenuar el vestíbulo dejaba
+  translúcida su propia PARED —un rectángulo opaco que es lo que hace negro el
+  fondo— y por debajo asomaba la nebulosa general del sitio. La sala se
+  apagaba y el fondo se encendía, que es exactamente lo contrario de lo que
+  pide el momento.
+
+  Así que la sala no se apaga contra nada: se apaga contra negro. El velo va
+  por encima del vestíbulo y por debajo del contenido, y es la razón de que
+  estos tres z-index existan.
+*/
+.experiments-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgb(1 2 5 / 0.92);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.experiments-page:has(.specimen-index:not([data-acquiring="none"]))::before {
+  opacity: 1;
+}
+
+/* ── El vestíbulo ────────────────────────────────────────────────────────── */
+
+/*
+  Fijo y detrás de todo. Fijo y no absoluto a propósito: la sala no se
+  desplaza con el texto porque uno no arrastra una habitación al bajar la
+  vista. Es también lo más barato — una sola capa compuesta, sin repintado al
+  hacer scroll.
+*/
+.experiments-hall {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.experiments-hall__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+  La viñeta: apaga las esquinas y hunde el pie. Es lo que impide que el SVG se
+  lea como una lámina pegada al fondo — sin ella se ve dónde termina el dibujo.
+*/
+.experiments-hall__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      120% 90% at 22% 40%,
+      transparent 0%,
+      transparent 42%,
+      rgba(1, 2, 5, 0.72) 100%
+    ),
+    linear-gradient(180deg, rgba(1, 2, 5, 0.55) 0%, transparent 22%);
+}
+
+/* El rótulo del canto. Vertical, diminuto y sin ninguna función informativa:
+   es la frase que se lee antes de que haya nada que leer. */
+.experiments-page__edge {
+  position: fixed;
+  top: 50%;
+  left: clamp(0.5rem, 1.6vw, 1.5rem);
+  z-index: 2;
+  margin: 0;
+  transform: translateY(-50%) rotate(180deg);
+  writing-mode: vertical-rl;
+  font-size: 0.56rem;
+  letter-spacing: 0.52em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.3);
+  pointer-events: none;
+}
+
+/* ── La columna de contenido ─────────────────────────────────────────────── */
+
+.experiments-page__inner {
+  position: relative;
+  z-index: 2;
+  padding: clamp(2.5rem, 6vw, 6rem) var(--page-gutter)
+    clamp(3rem, 8vw, 7rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 6vw, 5.5rem);
+}
+
+/*
+  A partir de tableta grande la columna se aparta del ventanal, que ocupa del
+  9 % al 39 % del ancho por construcción del `viewBox`. No es un margen
+  elegido a ojo: es el sitio donde termina el cristal.
+*/
+@media (min-width: 64rem) {
+  .experiments-page__inner {
+    margin-left: 44%;
+    padding-right: clamp(2rem, 5vw, 5rem);
+    max-width: 58rem;
+  }
+}
+
+.experiments-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 42rem;
+}
+
+.experiments-head__kicker {
+  margin: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.45);
+}
+
+.experiments-head__sep {
+  padding: 0 0.7em;
+  color: rgba(242, 200, 121, 0.5);
+}
+
+.experiments-head__title {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 7vw, 4.2rem);
+  font-weight: 400;
+  letter-spacing: 0.17em;
+  line-height: 1.02;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.experiments-head__eyebrow {
+  margin: 0;
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.55);
+}
+
+.experiments-head__intro {
+  margin: 1.1rem 0 0;
+  max-width: 34rem;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.6vw, 1.08rem);
+  line-height: 1.6;
+  color: rgba(201, 210, 229, 0.82);
+}
+
+/* ── El índice de especímenes ────────────────────────────────────────────── */
+
+.specimen-index {
+  position: relative;
+}
+
+.specimen-index__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(164, 180, 212, 0.14);
+}
+
+.specimen-index__title {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.62);
+}
+
+.specimen-index__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: var(--amber);
+}
+
+.specimen-index__count-label {
+  font-size: 0.56rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(146, 159, 186, 0.6);
+}
+
+.specimen-index__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.specimen-index__item + .specimen-index__item {
+  border-top: 1px solid rgba(164, 180, 212, 0.09);
+}
+
+/*
+  UNA FILA.
+
+  Rejilla de cuatro columnas y ni una caja: cifra, cuerpo, estado y flecha. Sin
+  borde, sin fondo, sin sombra — una tarjeta convertiría el índice en la
+  colección de cards que el encargo veta, y aquí lo que se enumera son muestras
+  de un aparato, no productos.
+*/
+.specimen-row {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto 1.4rem;
+  align-items: center;
+  gap: 0 clamp(0.8rem, 2vw, 1.6rem);
+  padding: clamp(0.85rem, 2vw, 1.25rem) 0;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 260ms ease, background-color 260ms ease;
+}
+
+.specimen-row__index {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: rgba(146, 159, 186, 0.55);
+}
+
+.specimen-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.specimen-row__name {
+  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  transition: color 260ms ease, letter-spacing 260ms ease;
+}
+
+.specimen-row__pair {
+  font-size: 0.58rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(146, 159, 186, 0.62);
+}
+
+/*
+  El estado. Cian y sólo aquí: es la única lectura de la página que habla de la
+  MÁQUINA y no del objeto, así que se le da el color que en el resto del sitio
+  significa navegación y sistema. El ámbar es la identidad; el cian, el aparato.
+*/
+.specimen-row__state {
+  font-size: 0.58rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+.specimen-row__arrow {
+  font-size: 0.9rem;
+  text-align: right;
+  color: rgba(242, 200, 121, 0.4);
+  transform: translateX(-0.3rem);
+  opacity: 0;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.specimen-row:hover .specimen-row__arrow,
+.specimen-row:focus-visible .specimen-row__arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.specimen-row:hover .specimen-row__name {
+  color: #ffe6b4;
+}
+
+.specimen-row:focus-visible {
+  outline: 1px solid rgba(242, 200, 121, 0.7);
+  outline-offset: 0.35rem;
+}
+
+/* Sin montar: la muestra existe y su observación no. Se cuenta, se lee y no
+   promete puerta ninguna. */
+.specimen-row--off {
+  cursor: default;
+}
+
+.specimen-row--off .specimen-row__name {
+  color: rgba(201, 210, 229, 0.38);
+}
+
+.specimen-row--off .specimen-row__index {
+  color: rgba(146, 159, 186, 0.3);
+  text-decoration: line-through;
+  text-decoration-color: rgba(146, 159, 186, 0.35);
+}
+
+.specimen-row--off .specimen-row__pair {
+  color: rgba(146, 159, 186, 0.32);
+}
+
+.specimen-row--off .specimen-row__state {
+  color: rgba(146, 159, 186, 0.45);
+}
+
+/* ── ADQUISICIÓN ─────────────────────────────────────────────────────────── */
+
+/*
+  El protocolo. Lo que cambia no es una animación de entrada: es la ATENCIÓN.
+  El resto del catálogo se retira, la sala pierde contraste y queda una fila
+  encendida diciendo en qué punto va el aparato. Una máquina cambiando de
+  estado, que es literalmente lo que está pasando — mientras se lee esto, el
+  módulo de la escena se está descargando.
+*/
+.specimen-index:not([data-acquiring="none"]) .specimen-row {
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.specimen-index:not([data-acquiring="none"])
+  .specimen-index__item[data-active="true"]
+  .specimen-row {
+  opacity: 1;
+}
+
+.specimen-index__item[data-active="true"] .specimen-row__name {
+  color: #ffe6b4;
+  letter-spacing: 0.26em;
+}
+
+.specimen-index__item[data-active="true"] .specimen-row__state {
+  color: var(--amber);
+}
+
+.specimen-index__item[data-active="true"] .specimen-row__arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* La fila encendida se apoya en un filete que barre hacia la derecha: es la
+   única pieza de la adquisición que se mueve, y mide lo que dura. */
+.specimen-index__item[data-active="true"] {
+  position: relative;
+}
+
+.specimen-index__item[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--amber),
+    rgba(242, 200, 121, 0.05)
+  );
+  transform-origin: left center;
+}
+
+html[data-motion="on"] .specimen-index__item[data-active="true"]::after {
+  animation: specimen-lock 1080ms linear forwards;
+}
+
+@keyframes specimen-lock {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Y la sala se retira. `:has` porque el vestíbulo es hermano del índice y no
+   su padre: el estado vive donde se produce, no se sube a un contenedor sólo
+   para poder pintarlo. */
+.experiments-page:has(.specimen-index:not([data-acquiring="none"]))
+  .experiments-hall {
+  opacity: 0.55;
+}
+
+.experiments-page:has(.specimen-index:not([data-acquiring="none"]))
+  .experiments-head,
+.experiments-page:has(.specimen-index:not([data-acquiring="none"]))
+  .experiments-facts,
+.experiments-page:has(.specimen-index:not([data-acquiring="none"]))
+  .experiments-page__closing,
+.experiments-page:has(.specimen-index:not([data-acquiring="none"]))
+  .experiments-neighbours {
+  opacity: 0.2;
+}
+
+.experiments-hall,
+.experiments-head,
+.experiments-facts,
+.experiments-page__closing,
+.experiments-neighbours {
+  transition: opacity 420ms ease;
+}
+
+/* ── Pie editorial ───────────────────────────────────────────────────────── */
+
+.experiments-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1.4rem clamp(1.5rem, 4vw, 3rem);
+  margin: 0;
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  border-top: 1px solid rgba(164, 180, 212, 0.1);
+}
+
+.experiments-facts dt {
+  font-size: 0.56rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(146, 159, 186, 0.6);
+}
+
+.experiments-facts dd {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  color: rgba(234, 246, 255, 0.86);
+}
+
+.experiments-page__closing {
+  margin: 0;
+  max-width: 34rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(201, 210, 229, 0.7);
+}
+
+.experiments-page__closing span {
+  color: rgba(242, 200, 121, 0.5);
+}
+
+.experiments-neighbours {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  border-top: 1px solid rgba(164, 180, 212, 0.1);
+}
+
+.experiments-neighbours a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: rgba(201, 210, 229, 0.75);
+  transition: color 220ms ease;
+}
+
+.experiments-neighbours a:hover,
+.experiments-neighbours a:focus-visible {
+  color: var(--amber);
+}
+
+.experiments-neighbours small {
+  display: block;
+  font-size: 0.54rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(146, 159, 186, 0.55);
+}
+
+.experiments-neighbours a > span:not([aria-hidden]) {
+  font-size: 0.86rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Pantallas estrechas ─────────────────────────────────────────────────── */
+
+/*
+  En móvil el `slice` del SVG deja el ventanal ocupando buena parte del ancho
+  detrás del texto. No se recompone la sala: se le baja la presencia y se le
+  pone un velo. La sala es atmósfera, y una atmósfera que estorba la lectura
+  ha dejado de serlo.
+*/
+@media (max-width: 63.99rem) {
+  .experiments-hall {
+    opacity: 0.5;
+  }
+
+  .experiments-hall__vignette {
+    background:
+      radial-gradient(
+        140% 80% at 30% 30%,
+        transparent 0%,
+        rgba(1, 2, 5, 0.6) 62%,
+        rgba(1, 2, 5, 0.9) 100%
+      ),
+      linear-gradient(180deg, rgba(1, 2, 5, 0.7) 0%, rgba(1, 2, 5, 0.45) 40%);
+  }
+
+  .experiments-page__edge {
+    display: none;
+  }
+
+  .specimen-row {
+    grid-template-columns: 2.2rem 1fr auto;
+  }
+
+  .specimen-row__arrow {
+    display: none;
+  }
+
+  .experiments-neighbours {
+    flex-direction: column;
+  }
+}
+
+/* El interruptor único de movimiento para también el CSS de esta ruta. */
+html[data-motion="off"] .experiments-page *,
+html[data-motion="off"] .experiments-page *::before,
+html[data-motion="off"] .experiments-page *::after {
+  animation: none !important;
+  transition: none !important;
+}

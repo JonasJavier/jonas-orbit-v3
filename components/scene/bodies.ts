@@ -4255,6 +4255,25 @@ export interface SceneBody {
    * era una de las cosas que se veían como «los planetas se mueven raro».
    */
   spinAt(seconds: number): void;
+  /**
+   * Sólo el movimiento PROPIO del espécimen, sin el giro genérico.
+   *
+   * Existe para el Observatorio, y responde a una regla de su §3: «en un
+   * laboratorio el espécimen se queda quieto hasta que alguien lo estudia; un
+   * objeto que gira solo obliga a perseguirlo para mirarle una cara concreta».
+   * Pero apagar el reloj entero apagaría también lo que SÍ es contenido — la
+   * reconfiguración del Tesseracto, el oleaje de Miller, los RCS y las balizas
+   * de la Endurance—, así que el giro se anula por ESPÉCIMEN y no por reloj.
+   *
+   * `spinAt` hace las dos cosas y no se toca: es lo que consume el System Map,
+   * donde los seis cuerpos sí giran. Aquí se separan porque el Observatorio
+   * necesita exactamente la mitad.
+   *
+   * Que el Tesseracto no notara la diferencia es una coincidencia de su tabla:
+   * su `SPIN_RATE` vale 0, así que llamar a uno o a otro daba lo mismo. La
+   * Endurance gira a 0.016 rad/s y es el primer espécimen donde se nota.
+   */
+  animateAt(seconds: number): void;
 }
 
 /** Crea el cuerpo. Devuelve `null` para Gargantúa: la dibuja el raymarch y no
@@ -4318,6 +4337,12 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
       // Y lo que se mueve DENTRO del cuerpo: anillos en su plano, hábitat en su
       // órbita, retículas contrarrotando. Es lo que reparte la vida por toda la
       // escena en lugar de concentrarla en el único cuerpo que tenía módulos.
+      model.animate?.(seconds);
+    },
+    animateAt(seconds) {
+      // La segunda mitad de `spinAt`, sin la primera. El cuaternión de la raíz
+      // no se toca, así que el modelo se queda en su orientación de reposo —que
+      // es justamente la que el preset de observación encuadra.
       model.animate?.(seconds);
     },
   };

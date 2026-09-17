@@ -98,6 +98,24 @@ export interface ObservationPreset {
   /** Qué instrumentos se ofrecen. El laboratorio adapta sus instrumentos a la
    *  muestra; no fuerza a los seis a tener los mismos botones. */
   instruments: readonly ObservationInstrument[];
+  /**
+   * Qué fracción del alto del cuadro ocupa la ESFERA ENVOLVENTE del espécimen.
+   *
+   * Vive en el preset y no como constante del driver porque **no se hereda**, y
+   * eso se supo antes de tener un segundo espécimen: la relación entre la
+   * envolvente y lo que se ve es propia de cada figura. Un 4-cubo en alambre
+   * toca su esfera en ocho vértices y en ningún otro sitio, así que su silueta
+   * ocupa mucho menos que el disco de esa esfera; una nave alargada la toca en
+   * las puntas de sus radiadores, que son lo más fino que tiene.
+   *
+   * Mismo número en dos figuras distintas da dos tamaños en pantalla
+   * distintos, y por eso encuadrar «como el Tesseracto» sería exactamente el
+   * error que este Observatorio intenta no cometer: tratar al laboratorio como
+   * si fuera la página de un objeto.
+   *
+   * Se calibra sobre captura, midiendo ocupación real. Nunca por fórmula.
+   */
+  boundsFill: number;
 }
 
 /**
@@ -109,6 +127,29 @@ export interface ObservationPreset {
  * descartada en V1 porque el raymarch acumula en el tiempo y esa acumulación
  * sólo vale con la cámara quieta.
  */
+/**
+ * El orden del CATÁLOGO del laboratorio, que no es el orden narrativo.
+ *
+ * `worldsData.order` gobierna el raíl de navegación, el DOM, el tabulador y el
+ * sitemap, y eso no se toca: es la secuencia con la que se cuenta el sitio. El
+ * Observatorio es otra cosa —una vitrina de muestras— y su orden lo fijó Jonás
+ * al elegir por dónde crecía: primero los dos montados, y detrás los cuatro que
+ * esperan. Reordenar aquí no mueve ni un cuerpo ni un enlace de la navegación.
+ *
+ * Los seis están, incluida Gargantúa, que no tiene preset ni malla. Aparece
+ * como muestra no disponible porque **el catálogo dice cuántas hay**: enseñar
+ * cinco huecos sería mentir sobre el tamaño del laboratorio, y quitarla del
+ * todo escondería que su observación es otro contrato (§7).
+ */
+export const OBSERVATION_ORDER: readonly WorldId[] = [
+  "tesseract",
+  "endurance",
+  "ranger",
+  "miller",
+  "edmunds",
+  "gargantua",
+];
+
 export const OBSERVATION_PRESETS: Record<
   Exclude<WorldId, "gargantua">,
   ObservationPreset
@@ -122,6 +163,14 @@ export const OBSERVATION_PRESETS: Record<
     environment: 0.06,
     rim: 0.12,
     instruments: ["bloom", "material", "datos"],
+    /*
+      Calibrado sobre 12 000 instantes en `observatory-framing.test.ts` y
+      aprobado en el pase visual: media 69.0 % del alto, con mínimo 54.2 y
+      máximo 85.6. La banda es ancha porque la reconfiguración 4D encoge y
+      estira la silueta, y no se puede estrechar sin sacrificar la presencia
+      media de la figura. Congelado.
+    */
+    boundsFill: 0.91,
   },
   /* Tres cuartos: es donde separan las facetas y las cavidades del aluminio.
      De frente se aplana en una silueta y a 90° se parte en dos mitades. */
@@ -131,6 +180,22 @@ export const OBSERVATION_PRESETS: Record<
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "material", "datos"],
+    /*
+      Mayor que uno, y no es un error: con 0.91 —el número del Tesseracto— la
+      Endurance ocupaba el 58.3 % del alto contra el 70-85 % que pide el §5.
+
+      La causa es la que este campo existe para admitir: su esfera envolvente la
+      fijan las PUNTAS DE LOS RADIADORES, que son lo más fino que tiene y
+      además apuntan fuera del plano de la silueta. Encuadrar por esa esfera es
+      encuadrar por algo que casi no se ve. Que el valor pase de uno significa
+      exactamente eso — la envolvente se sale del cuadro y la nave no.
+
+      Y basta UNA medida, al revés que con el Tesseracto: la Endurance no
+      reconfigura nada. Con el giro genérico apagado, lo único que se mueve en
+      su silueta es la corrección de actitud de ±0.4°, así que su ocupación es
+      un número y no una banda de treinta puntos. Medido: 76.9 % del alto.
+    */
+    boundsFill: 1.15,
   },
   /* Lateral pura: la identidad de la Ranger es el reparto ámbar hacia la luz y
      azul de campo estelar en la espalda. Ese reparto no existe si la luz no
@@ -146,6 +211,8 @@ export const OBSERVATION_PRESETS: Record<
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "material", "datos"],
+    /* ⏳ Sin montar: marcador hasta que haya captura que medir. */
+    boundsFill: 0.91,
   },
   /* Casi frontal: el camino de luz sobre el agua y la cresta con espuma son
      reflejos, y un reflejo sólo vuelve a la cámara cuando la fuente está cerca
@@ -160,6 +227,8 @@ export const OBSERVATION_PRESETS: Record<
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "datos"],
+    /* ⏳ Sin montar: marcador hasta que haya captura que medir. */
+    boundsFill: 0.91,
   },
   /* Rasante: Edmunds se define por PENDIENTE y no por altura, así que la luz
      casi tangente es literalmente el instrumento correcto para ese campo — es
@@ -172,6 +241,8 @@ export const OBSERVATION_PRESETS: Record<
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "datos"],
+    /* ⏳ Sin montar: marcador hasta que haya captura que medir. */
+    boundsFill: 0.91,
   },
 };
 

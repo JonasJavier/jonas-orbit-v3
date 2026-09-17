@@ -37,6 +37,59 @@ const worldProse = defineCollection({
       summary: s.string(),
       introduction: s.string(),
       closing: s.string(),
+      /**
+       * La ficha de laboratorio del ESPÉCIMEN, no de la sección.
+       *
+       * Es la distinción que obligó a añadir este bloque: todo lo demás de este
+       * archivo describe el mundo como sección del sitio —«Experimentos»,
+       * «Cosas que construyo para explorar una idea»— y el Observatorio no
+       * enseña una sección, enseña un objeto. El resumen de la sección puesto
+       * bajo el nombre del Tesseracto habla de otra cosa.
+       *
+       * Y va SEPARADO de `DATOS`, que es medición pura: llamadas de dibujo,
+       * materiales, vértices y conteos que salen del modelo. Aquí vive el
+       * objeto como experimento de diseño —qué se buscaba, qué falló, qué
+       * quedó— y ninguno de los dos puede colarse en el otro. Mezclarlos
+       * convertiría una medida en una opinión o al revés.
+       *
+       * Opcional a propósito: los cuatro especímenes que aún no se montan no
+       * tienen registro, y el instrumento simplemente no aparece. Inventarles
+       * una intención sería exactamente el contenido de relleno que prohíbe la
+       * regla 8.
+       */
+      observatory: s
+        .object({
+          /** Una línea bajo el nombre. Dos o tres palabras, no una frase. */
+          descriptor: s.string().max(40),
+          /**
+           * El par instrumental del §14.1: `CRISTAL / CUARTA DIMENSIÓN`.
+           *
+           * Habla del objeto COMO OBJETO, nunca de la sección del sitio. Es
+           * otro eje que la arquitectura narrativa y por eso no la contradice
+           * — queda escrito aquí y en el documento para que nadie lo «arregle»
+           * dentro de seis meses.
+           */
+          pair: s.string().max(40),
+          /*
+            El registro es lo ÚNICO opcional de este bloque, y es lo que separa
+            una muestra montada de una que sólo está catalogada. Los cuatro
+            especímenes que aún no se observan tienen nombre, descriptor y par
+            —son datos del objeto, que existe— y no tienen proceso escrito,
+            porque no lo hay. El instrumento `REGISTRO` simplemente no aparece.
+            Inventarles una intención sería el contenido de relleno que prohíbe
+            la regla 8.
+          */
+          registro: s
+            .object({
+              intencion: s.string(),
+              prueba: s.string(),
+              construccion: s.string(),
+              resultado: s.string(),
+              iteraciones: s.string(),
+            })
+            .optional(),
+        })
+        .optional(),
       creativity: s.object({
         heroLine: s.string(),
         statement: s.string(),

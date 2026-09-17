@@ -1629,6 +1629,315 @@ veredicto sobre el clip.*
 
 ---
 
+### Tesseracto congelado · Endurance como prueba de generalización (2026-09-17)
+
+Jonás eligió la variante nueva del halo —menos cian, más extendida— y **congeló
+el Tesseracto**: geometría, materiales, encuadre, bloom, cromo, estrellas,
+atmósfera y comportamiento en movimiento. No se vuelve a tocar.
+
+Y puso el siguiente checkpoint con una pregunta que no es «¿se ve bonita?»:
+
+> ¿Parecen dos objetos radicalmente distintos estudiados por el mismo
+> instrumento? Si sí, hemos demostrado que la arquitectura visual escala. Si
+> necesita que cambiemos completamente todo el fondo, UI y framing, significará
+> que hemos construido la página del Tesseracto.
+
+Por eso el segundo espécimen es la Endurance y no otro planeta: es el opuesto
+exacto —mecánica, concreta, modular, material— del primero.
+
+#### Lo que hizo falta, y lo que NO
+
+Reutiliza sin tocar: cielo, halo, estrellas, instrumentación de borde, cromo,
+gestos, modo cine, contrato de `DATOS`, respaldo plano y liberación del contexto
+persistente. Lo único propio es su preset.
+
+| # | Qué cambia | Dónde |
+| --- | --- | --- |
+| 26 | `SceneBody.animateAt(seconds)`: el movimiento PROPIO sin el giro genérico. `spinAt` sigue intacto para el System Map | §3 |
+| 27 | `boundsFill` pasa a ser campo del preset. **No se hereda**: la relación entre esfera envolvente y silueta es propia de cada figura | §5, §6 |
+| 28 | La ficha de `DATOS` sube de 0.72 a 0.94 de alfa. Una superficie de lectura no puede depender de lo que tenga detrás | §5 |
+| 29 | El pie despeja la bandeja global por debajo de 34 rem. Defecto anterior a Endurance | §9 |
+
+**El giro genérico y la actividad propia son dos cosas, y el Tesseracto lo
+escondía.** El §3 pide apagar el giro en reposo y conservar lo que es contenido
+—reconfiguración, oleaje, RCS y balizas—, pero `spinAt` hacía las dos con el
+mismo reloj. Con el Tesseracto daba igual: su `SPIN_RATE` vale 0. La Endurance
+gira a 0.016 rad/s y es el primer cuerpo donde llamar al método equivocado se
+ve. De ahí `animateAt`, que es la segunda mitad de `spinAt` sin la primera.
+
+**`boundsFill` no se hereda, y se midió.** Con el 0.91 del Tesseracto la
+Endurance ocupaba el 58.3 % del alto contra el 70-85 % que pide el §5, porque su
+esfera envolvente la fijan las puntas de los radiadores — lo más fino que tiene
+y además fuera del plano de la silueta. Con 1.15 sube a **76.9 %**. Que el valor
+pase de uno significa exactamente que la envolvente se sale del cuadro y la nave
+no. Y basta una medida, al revés que con el Tesseracto: sin giro genérico, lo
+único que mueve su silueta es la corrección de actitud de ±0.4°.
+
+**Sus datos no se transcriben.** `DATOS` consume `enduranceArchitecture` del
+propio modelo: 12 módulos, 4 grupos, 4 brazos, 4 campanas de motor, 4
+radiadores, 2 Rangers atracadas, 2 módulos de descenso, 10 toberas RCS, 2
+encendidas, 9 luces cálidas, 4 técnicas. Ni un número escrito a mano, que es la
+regla del §8.
+
+#### Lo que el segundo espécimen destapó, que es para lo que servía
+
+1. **La ficha de `DATOS` dejaba pasar el espécimen.** Con 0.72 de alfa
+   funcionaba sobre un cristal casi negro; sobre aluminio claro a plena luz, los
+   módulos cruzaban por debajo del texto y se llevaban por delante dos filas.
+   Sube a 0.94 — sin `backdrop-filter`, que costaría una pasada de composición
+   por fotograma sobre un canvas que acaba de conseguir llegar a cero.
+2. **A 375 px la bandeja global tapaba `MATERIAL` y `DATOS`.** Defecto anterior
+   a Endurance —idéntico en los dos especímenes— que sobrevivió porque O10
+   comprueba que cada mando MIDA 44 px, y eso es otra cosa que poder pulsarlo:
+   la caja estaba perfecta y encima había otro elemento. Lo caza ahora
+   `O10 bis`, con `elementFromPoint` sobre el centro de cada mando y en los dos
+   especímenes.
+
+#### La diferencia que hay que decidir: la Endurance no tiene halo en cuadro
+
+No es un fallo ni una omisión. El halo es el resplandor de **la única luz del
+mundo**, y dónde cae depende del `keyAngle` de cada preset:
+
+| | keyAngle | Ángulo luz-cámara | Halo en cuadro |
+| --- | --- | --- | --- |
+| Tesseracto | 145° (contraluz) | 35° | sí, entra por la esquina |
+| Endurance | 55° (tres cuartos) | 125° | no: la luz queda a la espalda |
+
+Con una clave de tres cuartos, Gargantúa está detrás del visitante, así que
+mirar hacia la muestra es mirar hacia el vacío. El cielo es el mismo objeto con
+el mismo shader; lo que cambia es dónde se ha sentado uno. La Endurance conserva
+campo estelar, instrumentación de borde y cromo — todo el laboratorio— sobre
+negro real.
+
+**No se toca sin decisión suya.** Si prefiere atmósfera en todas las muestras,
+la solución NO es subir el halo —lo congelamos— sino darle un suelo
+independiente de la dirección de la luz, y eso es un ingrediente nuevo. La
+alternativa es mover el `keyAngle` de la Endurance hacia el contraluz, y eso
+cambia lo que su material revela, que es justamente lo que el preset protege.
+
+#### Y el cielo se mueve igual en los dos, medido de dos formas
+
+    Tesseracto   barrido 216 px por cada 10° de cámara  (geometría: 225)
+    Endurance    solape de encendidos tras 10°: 3.2 %
+    los dos      zoom: mediana 0.00 niveles, 88 % del cielo sin cambiar
+
+Hacen falta dos métricas porque cada una es ciega donde la otra ve. La
+**correlación** necesita estructura continua: sobre el halo del Tesseracto
+funciona, y sobre un cielo de sólo estrellas no encuentra mínimo. El **solape de
+encendidos** —qué fracción de los píxeles de cielo encendidos sigue encendida en
+el mismo sitio— funciona con puntos y no significa nada sobre un degradado,
+donde el 83 % de la banda cae en el mismo rango de brillo aunque haya barrido
+doscientos píxeles. La herramienta declara cuál aplica en cada caso.
+
+Y la banda de muestreo **se elige corriendo la correlación en cada candidata y
+quedándose con la de más confianza**. Los dos criterios que probé antes eligen
+mal, y los dos costaron una lectura falsa: «la más vacía» escogió una franja de
+cromo en la Endurance —97 % de solape, que parecía un cielo clavado y eran
+letras— y «la que más cielo tiene» escogió la MESETA del halo del Tesseracto,
+donde hay mucha luz y ningún relieve, y hundió la confianza del 65 % al 3 %.
+
+*Estado: pendiente del veredicto visual sobre Tesseracto contra Endurance.*
+
+---
+
+### Primera interfaz completa del Observatorio (2026-09-17)
+
+Jonás dio por pasado el test de generalización —*«dos especímenes radicalmente
+distintos observados por el mismo instrumento»*— y con él dos decisiones que
+cierran el pase anterior:
+
+> No añadas un halo universal a Endurance; la diferencia de atmósfera derivada de
+> la condición de observación me parece correcta y evita uniformar todos los
+> objetos.
+
+Y el Tesseracto queda **congelado** con la variante del halo elegida. De
+Endurance queda una sola cosa pendiente: validar su iluminación en movimiento a
+tamaño completo, sin pase grande antes de la interfaz.
+
+La interfaz se diseña sobre **dos casos reales y opuestos** a propósito. Era la
+razón de montar Endurance antes que el raíl: una UI validada sólo contra el
+Tesseracto sería la página del Tesseracto.
+
+| # | Qué añade | Dónde |
+| --- | --- | --- |
+| 30 | Catálogo de seis especímenes en el borde izquierdo: cifras en reposo, nombre al apuntar o enfocar, activo marcado por pica, peso y tono | §5 |
+| 31 | Identidad de aparato: `01 / 06`, nombre y descriptor del ESPÉCIMEN | §5 |
+| 32 | Cambio de muestra dentro del laboratorio con `key` por espécimen: cámara, zoom e instrumentos vuelven al preset de la nueva | §2, §5 |
+| 33 | Salida al índice integrada en el instrumento, con rastro `Experimentos / Observatorio` | §5 |
+| 34 | `REGISTRO`: ficha editorial en cinco secciones, desde el MDX del espécimen | §8 |
+| 35 | El calibre del borde izquierdo se retira: ese borde lo ocupa el catálogo | §5 |
+
+#### Las dos profundidades, y la frontera entre ellas
+
+    DATOS      → el objeto como construcción técnica   (medido del modelo)
+    REGISTRO   → el objeto como experimento de diseño  (escrito en el MDX)
+
+La separación es el punto entero del instrumento y no se puede relajar. `DATOS`
+no declara ni una constante de conteo: recorre el modelo. `REGISTRO` no lleva ni
+una cifra, y esa regla es la que lo protege — en cuanto aparezca un número ahí,
+alguien tendrá que decidir si está medido o escrito a mano, que es exactamente
+la pregunta que el §8 existe para que no haya que hacerse.
+
+Por eso el registro vive en el MDX del mundo y no en `worlds.data.ts` (regla 4)
+ni en el componente, y por eso es OPCIONAL: los cuatro especímenes sin montar no
+tienen registro y el mando sencillamente no aparece. Un botón que abre una ficha
+vacía es la regla 8 incumplida por la puerta de la interfaz.
+
+**Y el bloque describe el ESPÉCIMEN, no la sección.** Todo lo demás del MDX de
+`tesseract` habla de «Experimentos» —«cosas que construyo para explorar una
+idea»— y eso bajo el nombre del Tesseracto habla de otra cosa. De ahí
+`observatory.descriptor` y `observatory.registro`, que son la primera prosa del
+proyecto que se refiere al objeto y no a su sección.
+
+⚠ **El texto de los dos registros es un borrador mío.** Está sacado de lo que
+realmente pasó —está todo documentado en este archivo y en
+`world-visual-language.md`—, pero es portafolio y es su voz. Pendiente de que
+Jonás lo reescriba.
+
+#### El catálogo: la trampa de accesibilidad del diseño que pidió
+
+En reposo se ven seis cifras y el nombre aparece al apuntar. Eso tiene una
+consecuencia que no se ve: si el nombre se ocultara con `display: none` o
+`visibility: hidden` saldría del árbol de accesibilidad y el laboratorio tendría
+**seis enlaces llamados «01», «02»…** — un lector de pantalla leería una lista de
+números y ninguna muestra.
+
+Se oculta con opacidad y se saca del flujo con posición absoluta: el enlace
+conserva su nombre accesible y la columna conserva su ancho. El test comprueba
+justamente lo que el ojo no ve — `getByRole("link", { name: "Endurance" })`.
+
+Las cuatro sin montar son `<span aria-disabled>` y no enlaces muertos, y siguen
+en el catálogo: el laboratorio tiene seis muestras y enseñar cinco mentiría
+sobre su tamaño. Gargantúa entra también, aunque no tenga malla ni preset,
+porque su ausencia escondería que se observa por otro contrato (§7).
+
+El activo se marca por **geometría y tipografía** —pica de 1 × 0.7 rem, peso 650
+y tono ámbar— y no despliega su nombre: ya está escrito en grande dos líneas más
+arriba, y repetirlo convertía el raíl en una etiqueta redundante.
+
+#### El cambio de muestra no hereda estado, y no se cumplía solo
+
+La cámara sí se reinicia gratis: al cambiar el `id` el efecto reconstruye la
+escena desde el preset. Los instrumentos no. Entre dos rutas con el mismo árbol
+**React reutiliza la instancia**, así que `bloom`, `emission` y la ficha abierta
+sobreviven al salto: dejar el Tesseracto sin bloom y abrir Endurance sin bloom,
+que es la petición literal del encargo dicha al revés.
+
+Lo resuelve un `key` por espécimen en la ruta. No rompe ningún tipo ni ninguna
+unidad al quitarlo — sólo hace que una muestra se presente con el material de la
+anterior— así que lo sujeta un e2e que apaga el bloom, salta por el raíl y
+comprueba que vuelve encendido.
+
+#### Lo que la interfaz nueva destapó en responsive
+
+1. **El registro se salía por la derecha a 375 px.** Hereda `align-self:
+   flex-start` de la ficha, y dentro de una columna flexible eso hace que la caja
+   se ajuste a su contenido: la rejilla resolvía `auto-fit` contra su ancho
+   máximo y seguía pidiendo dos columnas de 15 rem. Estirada cae a una sola.
+2. **El cuarto instrumento volvió a acercar el banco a la bandeja global.**
+   Comprobado con `elementFromPoint` sobre los seis controles en 375, 768 y 1440:
+   todos alcanzables. Es la prueba que el pase anterior tuvo que inventar porque
+   medir la caja de un botón no dice si se puede pulsar.
+
+#### Lo que NO se ha hecho
+
+Ranger, Miller, Edmunds y Gargantúa siguen sin montar y sin contenido; sólo
+aparecen en el catálogo como estados no disponibles. La recepción
+`/es/experimentos` sigue intacta y fuera de alcance.
+
+*Estado: pendiente del veredicto visual sobre la composición.*
+
+---
+
+### Pase de UX: densidad, descubribilidad y móvil (2026-09-17)
+
+La dirección de escritorio quedó aprobada conceptualmente —cabecera, salida,
+banco y raíl pertenecen al mismo instrumento— con tres correcciones. Las dos
+primeras son ajustes; la tercera es un rediseño.
+
+| # | Qué cambia | Dónde |
+| --- | --- | --- |
+| 36 | `REGISTRO` enseña UNA de las cinco secciones, con pestañas reales (`tablist`/`tab`/`tabpanel`) y navegación por flechas | §5, §10 |
+| 37 | El raíl sube su legibilidad en reposo y separa tres estados: activo, disponible y no montado | §5 |
+| 38 | Móvil deja de imitar a escritorio: hoja inferior de lectura, paso compacto `‹ 02 / 06 ›` y retirada del cromo secundario | §9 |
+
+#### «Reduce la densidad» no es «hazlo más pequeño», y lo hice mal primero
+
+Con los cinco bloques puestos el panel era el segundo protagonista del cuadro:
+el ojo empezaba a leer en vez de seguir mirando el objeto. La corrección es
+enseñar una sección a la vez, con las cinco como navegación interna.
+
+Pero al primer intento bajé las dos cosas —densidad Y tamaño— y el panel pasó a
+leerse como un pie de foto: 640 × 150 px, el 7 % del cuadro. El encargo decía
+literalmente *«no lo haría mucho más pequeño; reduciría su densidad»*. Con un
+suelo de 10.5 rem la superficie vuelve a ser una ficha de lectura estable —que
+además no salta de alto al cambiar de sección— y lo que baja es cuánto texto hay
+dentro: **de 736 × 380 a 640 × 168**, con una quinta parte de las palabras.
+
+Las pestañas son el patrón ARIA completo y no cinco botones que conmutan: con
+tabulador roving hay UNA parada antes del texto en vez de cinco, y las flechas
+mueven selección y foco juntos. Hablan el idioma del banco —palabras
+monoespaciadas separadas por picas, activa en ámbar con su filete— pero **no
+llevan corchetes**: el corchete significa «instrumento abierto» y esto son
+secciones, no instrumentos.
+
+#### El raíl era elegante y poco descubrible
+
+En reposo tiene que leerse de un vistazo como un índice de SEIS muestras. Las no
+montadas pasan de 0.15 a 0.3 de opacidad —con la cifra tachada— porque también
+tienen que CONTARSE: son las que dicen que el laboratorio tiene seis sitios. Las
+disponibles suben a 0.62 y el cuerpo de 0.6 a 0.68 rem. Lo que no sube es la
+presencia del bloque: siguen siendo seis cifras pequeñas en el borde.
+
+#### Móvil: dos estados en vez de los dos a la vez
+
+El diagnóstico fue exacto — a 375 px todo CABÍA y nada funcionaba. **Caber no es
+funcionar.**
+
+    OBSERVAR        el objeto domina
+    LEER REGISTRO   el texto domina, temporalmente
+
+Tres decisiones, y ninguna es un margen:
+
+1. **El raíl vertical desaparece** y lo sustituye `‹ 02 / 06 ›` sobre el nombre.
+   No es una preferencia de tamaño: el raíl revela el nombre al APUNTAR, y en
+   una pantalla táctil no existe apuntar — la columna quedaría como seis cifras
+   mudas que nadie puede interrogar. Las dos presentaciones existen a la vez en
+   el DOM y se excluyen con `display: none`, que **sí** saca del árbol de
+   accesibilidad, así que hay siempre una sola navegación de especímenes
+   expuesta y nunca dos.
+2. **La ficha se convierte en hoja inferior**: 55 vh con desplazamiento propio y
+   velo sobre el espécimen. El velo sale de una sombra de 100 vmax en vez de un
+   elemento nuevo — ni un nodo más para oscurecer lo de detrás. Medido: el
+   espécimen baja de luma 74 a 43 y sigue ahí.
+3. **Con la hoja abierta se retira todo lo demás**: pista de manipulación,
+   `Reajustar`, banco de instrumentos y paso entre muestras. Como la hoja tapa
+   el banco —incluido el mando que la abrió— lleva su propia cabecera con la
+   salida, que en escritorio está oculta porque allí se cierra con el instrumento.
+
+**El espécimen no se mueve.** No se desplaza ni se reencuadra al abrir un panel,
+y eso es contrato: si la capa editorial moviera la cámara, la escena tendría una
+pose distinta según el estado de la interfaz.
+
+#### Tres cosas que sólo aparecieron al medir
+
+1. **La hoja se quedaba en 32 vh.** Con una sección a la vez el contenido es
+   corto, así que el techo de 62 vh no hacía nada y la hoja salía como una tira.
+   El suelo de 55 vh es lo que la convierte en zona de lectura, y de paso evita
+   que cambiar de sección la haga saltar.
+2. **El contador se salía por la izquierda en modo lectura.** El desplazamiento
+   negativo que alinea la flecha estaba en la FILA, así que al ocultar las
+   flechas seguía tirando del `02 / 06` fuera del margen. Ahora vive en la
+   flecha y desaparece con ella.
+3. **Creí que el velo no funcionaba.** La captura parecía igual de brillante y
+   la medida decía lo contrario: 73.9 → 42.9 de luma sobre la zona de la hoja.
+   Comparar dos imágenes de memoria no vale; la primera medición tampoco valía,
+   porque su ventana incluía filas que ya eran hoja.
+
+*Estado: pendiente del veredicto sobre las cuatro capturas.*
+
+---
+
 ### Apéndice — una discrepancia encontrada de paso
 
 No afecta al Observatorio, pero conviene registrarla donde se vea:
@@ -1673,3 +1982,115 @@ laboratorio espacial a estudiar un objeto de Jonás Orbit?*
 *Estado: **aprobado con enmiendas** por Jonás el 2026-09-16, once enmiendas en
 dos rondas más cuatro ajustes de precisión, todas incorporadas. Entrega 1 en
 verde; el resto sin implementar.*
+
+---
+
+### La recepción y el encendido del instrumento (2026-09-17)
+
+Jonás fijó la dirección tras una ronda de cinco conceptos juzgados contra el
+código: **A · Encendido del instrumento + D · Protocolo de montaje**, con un
+gesto propio llamado `ACQUISITION LOCK`. Quedan fuera C (la bandeja) y B (el
+tramo final de cámara), este último aplazado hasta ver funcionando la
+experiencia básica: *«primero quiero comprobar si el cambio ACQUIRING →
+STANDBY → NOMINAL ya tiene suficiente fuerza por sí mismo»*.
+
+> **El principio que ordena este pase, en sus palabras:** hay dos acciones
+> distintas en Jonas Orbit —**viajar** a Experimentos y **operar** Experimentos—.
+> El viaje desde el System Map sigue siendo la travesía. Entrar al Observatorio
+> no es otro viaje: el visitante ya llegó al lugar y lo que hace es **encender
+> un aparato**.
+
+#### El diagnóstico, y por qué el laboratorio se sentía un modal
+
+No faltaba un viaje. Faltaban un estado y una puerta, y había un defecto:
+
+1. **No había puerta.** Ni un solo enlace del repositorio apuntaba a
+   `/es/experimentos/observatorio/*` — el único existente era el raíl interno
+   del propio visor. Se entraba tecleando la URL, que además no estaba en
+   `app/sitemap.ts`.
+2. **No había recepción.** `/es/experimentos` la servía la plantilla editorial
+   común, que es exactamente lo que el §4 dice que no debe ser.
+3. **Y la causa del «modal»:** la cara servida y el visor eran **hermanos** en
+   el mismo `<main>`, y el visor no la sustituía: la **tapaba** con
+   `.observatory { position: fixed; inset: 0; background: #000 }` en la
+   hidratación. Una superficie opaca que aparece de golpe sobre una página viva
+   es la definición de un modal. `.observatory-route` no tenía además **ni una
+   regla de CSS** en todo el repositorio.
+
+Tres creencias que el código desmintió y conviene no repetir: la liberación del
+contexto persistente por ruta **ya existe** (`isObservatoryPath`,
+`lib/world-route.ts:69`, con el JSX devolviendo `null`); `tesseract` ya estaba
+en `COVERED_WORLDS`; y `forceContextLoss` sigue sin aparecer en ningún archivo
+fuente.
+
+#### La cadena, golpe a golpe
+
+| t | qué pasa | quién lo hace |
+| --- | --- | --- |
+| — | recepción instrumental: vestíbulo + índice de seis | `components/experiments-page.tsx` |
+| 0 | clic en una fila `LISTO`; `preventDefault` y arranca el protocolo | `experiments-index.tsx` |
+| 0 | **empieza a descargarse `observatory-scene`**, si hay equipo | `import()` en el manejador |
+| 0–0,42 s | `ADQUIRIENDO` · el vestíbulo se va a negro, el resto del catálogo se retira | CSS `[data-acquiring]` |
+| 0,42–0,76 s | `BLOQUEO` | |
+| 0,76–1,08 s | `MONTANDO` | |
+| 1,08 s | `router.push` **por temporizador**, nunca desde un fotograma | |
+| llegada | `INSTRUMENTO · EN ESPERA`: cara servida estilada, esquema del cuerpo, mandos `no disponible` | `observatory-face` |
+| primer fotograma | `onFirstFrame` → `data-state="nominal"`: el canvas sube de 0 a 1, el negro llega con él, el cromo deja de ser `inert` | `observatory-scene.ts` |
+
+**El protocolo no es decoración: es el tiempo que el aparato tarda de todos
+modos.** Mientras se leen las tres palabras, los ~250 KB del instrumento ya
+viajan por el cable. Con el movimiento apagado no hay protocolo — el
+interruptor único manda aquí igual que en todo lo demás.
+
+#### Cinco reglas que salen de este pase
+
+1. **El aviso de llegada va después de `composer.render()`, no en el `.then()`
+   del import.** Entre construir la escena y pintarla hay una compilación de
+   shaders que en un equipo modesto se mide en cientos de milisegundos: encender
+   el cromo con lo primero enseña un rectángulo negro con mandos encima.
+2. **Exactamente UNA de las dos superficies está viva.** En espera manda la cara
+   servida y el cromo va `inert`; encendido es al revés. Las dos dicen las
+   mismas cosas —nombre y salida—, así que dejarlas vivas duplica cada nombre
+   accesible y pone una parada de tabulador invisible bajo un canvas opaco. Ese
+   fallo existía antes de este pase.
+3. **Una tarjeta que navega copia `activate()` entero, `preventDefault`
+   incluido.** `useWorldNavigation` no lo hace; quien lo hace es
+   `system-map.tsx:129`. Sin esas dos líneas el enlace navega en el mismo tick.
+4. **Atenuar una capa no la oscurece: la vuelve translúcida.** Bajar el
+   vestíbulo al 32 % durante la adquisición dejaba pasar la nebulosa general del
+   sitio: la sala se apagaba y el fondo se encendía. La sala se apaga **contra
+   un velo negro**, que es la razón de los tres z-index de `experiments-page.css`.
+5. **El esquema no llena su caja.** `FlatWorldBody` traza dentro de su `viewBox`
+   con aire alrededor, así que una caja «del tamaño del espécimen» da un dibujo
+   la mitad de pequeño. Calibrado en pantalla a 88 vmin para que el relevo se
+   lea como la misma cosa cambiando de representación.
+
+#### Decisiones de montaje
+
+- **La recepción entra por la cascada de `app/[locale]/[mundo]/page.tsx`**, como
+  ya hacen Sobre mí, Miller y Edmunds, y no como carpeta a medida: la ruta no
+  cambia de forma, así que conserva `generateStaticParams`, su OG y las pruebas
+  que ya la cubrían. `BESPOKE_WORLD_IDS` no se toca.
+- **`lib/observatory-catalog.ts`** compone el catálogo una sola vez. La
+  recepción y el raíl del laboratorio numeran igual por construcción; montar el
+  tercer espécimen es una línea en `OBSERVATORY_SLUGS` y con ella se actualizan
+  índice, raíl, `generateStaticParams` y sitemap.
+- **El par instrumental del §14.1 pasa al MDX** (`observatory.pair`) y `registro`
+  se vuelve opcional: los cuatro sin montar tienen nombre, descriptor y par
+  —datos del objeto, que existe— y no tienen proceso escrito, porque no lo hay.
+- **`SIN MONTAR` cuenta.** Las cuatro muestras sin observación siguen en el
+  índice, con la cifra tachada y sin enlace. El catálogo dice cuántas hay.
+- **La salida se llama `Salir del Observatorio`.** Antes ponía «Índice» con el
+  destino en un `sr-only`, en la única ruta del sitio sin barra de navegación.
+- **El vestíbulo es un SVG**, no un segundo contexto WebGL. La garantía del §1
+  se mantiene y ahora la vigila un test: `e2e/experimentos.spec.ts` cuenta los
+  contextos creados sobre canvas anclados.
+- **La figura humana se queda, de momento.** Mide un 6 % del alto frente a un
+  ventanal de 800 unidades y es lo que fija la escala. Es una silueta
+  geométrica, no una ilustración: en Jonas Orbit no hay gente dibujada en
+  ninguna parte. Un solo `<g>` la retira si al verla no convence.
+
+*Estado: `npm run check` verde; 125 e2e en chromium en verde, con cuatro
+pruebas nuevas de recepción y una del encendido. **Pendiente del veredicto
+visual de Jonás sobre composición, jerarquía y atmósfera**, y con B —el tramo
+de cámara al llegar— aplazado a propósito hasta ese veredicto.*

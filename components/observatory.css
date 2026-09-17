@@ -152,38 +152,16 @@
 }
 
 /*
-  SIGNO 1 · El calibre del borde izquierdo.
+  El calibre del borde izquierdo se RETIRA en este pase, y conviene decir por qué
+  en vez de dejar el hueco sin explicación: el catálogo de especímenes ocupa
+  ahora ese borde, y hace mejor su trabajo. Era una columna de marcas calibradas
+  que no medía nada; lo que la sustituye es una columna de cifras que dice
+  cuántas muestras hay y en cuál estás. Misma familia visual, misma posición, y
+  ahora significa algo.
 
-  Dos tramas repetidas sobre un solo elemento: marcas cortas cada 1.5 rem y una
-  larga cada tres de ellas. Es la proporción de cualquier regla física, y es lo
-  que hace que se lea como un instrumento y no como una lista de rayas.
-
-  Va con gradientes y no con nueve spans porque nueve spans serían nueve nodos
-  para dibujar nueve píxeles.
+  Sobreviven las cuatro escuadras, el fiducial y las marcas del borde derecho,
+  que es lo que mantiene la sensación de aparato sin cerrar la caja.
 */
-.observatory__scale {
-  position: absolute;
-  left: var(--obs-inset);
-  top: 50%;
-  width: 0.95rem;
-  height: 10.5rem;
-  transform: translateY(-50%);
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      var(--obs-mark-soft) 0 1px,
-      transparent 1px 1.5rem
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      var(--obs-mark) 0 1px,
-      transparent 1px 4.5rem
-    );
-  background-repeat: no-repeat;
-  background-size:
-    0.5rem 100%,
-    0.95rem 100%;
-}
 
 /*
   SIGNO 2 · El fiducial del borde superior.
@@ -297,7 +275,14 @@
   opacity: 0.06;
 }
 
-.observatory[data-idle="true"] .observatory__specimen {
+/*
+  Nivel 1 del modo cine: identidad, catálogo y salida. Bajan mucho pero siguen
+  legibles, porque las tres contestan «dónde estoy» y una página que no sabe
+  decirlo se lee como una geometría flotando en negro. Fue la corrección del
+  primer pase visual y ahora cubre tres piezas en vez de una.
+*/
+.observatory[data-idle="true"] .observatory__head,
+.observatory[data-idle="true"] .observatory__rail {
   opacity: 0.3;
 }
 
@@ -611,15 +596,495 @@
   }
 }
 
+/*
+  ── La cabecera: dónde estoy, qué miro y cómo salgo ─────────────────────────
+
+  Una fila en el borde superior con la identidad a la izquierda y la salida a la
+  derecha. Las dos son tipografía pequeña y monoespaciada: el trabajo de esta
+  banda es contestar tres preguntas sin quitarle un centímetro al espécimen.
+*/
+.observatory__head {
+  /* Por encima del velo de la hoja inferior: en modo lectura el espécimen se
+     oscurece, pero saber qué estás mirando no se negocia. */
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  transition: opacity 420ms ease;
+}
+
+.observatory__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/*
+  La cifra va ENCIMA del nombre y no debajo porque se lee antes: primero dónde
+  estás en el catálogo, después qué tienes delante.
+*/
+.observatory__index {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  color: rgb(234 246 255 / 0.42);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+/*
+  El descriptor: dos o tres palabras que dicen QUÉ es la muestra. Sale del MDX
+  del espécimen y no del de la sección — el resumen de «Experimentos» bajo el
+  nombre del Tesseracto hablaría de otra cosa.
+*/
+.observatory__descriptor {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.38);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.observatory__exit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  text-align: right;
+}
+
+.observatory__trail {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.3);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+/* El enlace SÍ recibe puntero: el cromo no, sus controles sí. Es la regla que
+   costó una entrega en Edmunds. */
+.observatory__back {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.observatory__arrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: rgb(234 246 255 / 0.5);
+  transition:
+    transform 240ms var(--ease-orbit),
+    color 180ms var(--ease-orbit);
+}
+
+.observatory__back:hover .observatory__arrow,
+.observatory__back:focus-visible .observatory__arrow {
+  transform: translateX(-0.22em);
+  color: #eaf6ff;
+}
+
+.observatory__back:hover .observatory__ink,
+.observatory__back:focus-visible .observatory__ink {
+  color: #eaf6ff;
+}
+
+/*
+  ── El paso entre muestras ──────────────────────────────────────────────────
+
+  En escritorio es sólo la cifra. En táctil se le suman las dos flechas y
+  sustituye al raíl vertical entero, porque el raíl revela el nombre al APUNTAR
+  y en una pantalla táctil no existe apuntar: la columna quedaría como seis
+  cifras mudas que nadie puede interrogar.
+*/
+.observatory__step {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* El desplazamiento negativo vive en la flecha y no en la fila: así desaparece
+   solo cuando la flecha se oculta. Puesto en la fila, el contador se salía por
+   la izquierda del cuadro en cuanto el modo lectura retiraba las flechas. */
+.observatory__step-arrow:first-child {
+  margin-left: -0.8rem;
+}
+
+.observatory__step-arrow {
+  display: none;
+  pointer-events: auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: rgb(234 246 255 / 0.62);
+  text-decoration: none;
+  transition: color 180ms var(--ease-orbit);
+}
+
+a.observatory__step-arrow:hover,
+a.observatory__step-arrow:focus-visible {
+  color: #eaf6ff;
+}
+
+/* El extremo del catálogo no da la vuelta: con dos muestras montadas, envolver
+   haría que las dos flechas apuntaran al mismo sitio. */
+.observatory__step-arrow--off {
+  color: rgb(234 246 255 / 0.18);
+}
+
+a.observatory__step-arrow:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: -8px;
+  border-radius: 2px;
+}
+
+/*
+  ── La cabecera de la hoja ──────────────────────────────────────────────────
+
+  Oculta en escritorio: allí la ficha se cierra con el mismo instrumento que la
+  abrió y un título encima de algo que acabas de pedir es ruido. Existe para
+  móvil, donde la hoja tapa el banco entero y sin ella no habría salida visible
+  del modo lectura.
+*/
+.observatory__sheet-head {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 1 0 100%;
+  grid-column: 1 / -1;
+  margin-bottom: 0.35rem;
+}
+
+.observatory__sheet-close {
+  appearance: none;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -0.75rem -0.6rem -0.75rem 0;
+  color: rgb(234 246 255 / 0.62);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.observatory__sheet-close:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: -8px;
+  border-radius: 2px;
+}
+
+/*
+  ── Las secciones del registro ──────────────────────────────────────────────
+
+  Una de las cinco a la vez, y ésa es toda la corrección de este pase: con los
+  cinco bloques puestos el panel pasaba a ser el segundo protagonista del cuadro
+  y el ojo empezaba a leer en vez de seguir mirando el objeto. Se abre el
+  registro para profundizar, no para sustituir al Observatorio.
+
+  Las pestañas hablan el idioma del banco —palabras monoespaciadas separadas por
+  picas, activa en ámbar con su filete— pero NO llevan corchetes: el corchete
+  significa «instrumento abierto» y aquí no hay instrumentos, hay secciones. Dos
+  signos distintos para dos cosas distintas.
+*/
+.observatory__tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 0.15rem;
+  grid-column: 1 / -1;
+  margin-bottom: 0.25rem;
+}
+
+.observatory__tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.55rem 0.6rem;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  position: relative;
+}
+
+/* La pica entre secciones, el mismo calibre que separa los instrumentos. */
+.observatory__tab + .observatory__tab::before {
+  content: "";
+  position: absolute;
+  left: -0.1rem;
+  top: 50%;
+  width: 1px;
+  height: 0.7rem;
+  transform: translateY(-50%);
+  background: rgb(164 180 212 / 0.24);
+}
+
+.observatory__tab .observatory__ink {
+  font-size: 0.56rem;
+  color: rgb(234 246 255 / 0.5);
+}
+
+.observatory__tab:hover .observatory__ink,
+.observatory__tab:focus-visible .observatory__ink {
+  color: #eaf6ff;
+}
+
+.observatory__tab[aria-selected="true"] .observatory__ink {
+  color: #ffd2a0;
+  font-weight: 650;
+}
+
+.observatory__tab[aria-selected="true"] .observatory__ink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.4rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+.observatory__tab:focus-visible {
+  outline: none;
+}
+
+.observatory__tab:focus-visible .observatory__ink {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 5px;
+}
+
+.observatory__tabpanel {
+  grid-column: 1 / -1;
+}
+
+.observatory__tabpanel:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/*
+  ── El catálogo de especímenes ──────────────────────────────────────────────
+
+  Seis cifras en el borde izquierdo, y el nombre sólo cuando lo pides. La
+  dirección fue explícita: nada de una barra lateral con seis tarjetas, porque
+  eso vuelve a encajonar el viewport.
+
+  El nombre NO se oculta con `display: none` ni con `visibility: hidden`. Las
+  dos cosas lo sacarían del árbol de accesibilidad y dejarían seis enlaces
+  llamados «01», «02»… — exactamente lo que el `aria-hidden` de la cifra existe
+  para evitar. Se oculta con opacidad y se saca del flujo con posición absoluta,
+  así que el enlace conserva su nombre y la columna conserva su ancho.
+
+  Y el activo se marca por GEOMETRÍA y TIPOGRAFÍA —pica, peso y rótulo puesto—,
+  nunca por un bloque de color. Fue la petición literal.
+*/
+.observatory__rail {
+  position: absolute;
+  left: var(--obs-inset);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.observatory__rail ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.observatory__slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* 32 px y no 44: son seis seguidos, y con 44 la columna mediría 264 px y
+     empezaría a competir con el espécimen. */
+  min-height: 34px;
+  padding-right: 0.5rem;
+  /*
+    0.62 y no 0.5. El diagnóstico fue «visualmente elegante, pero poco
+    descubrible»: en reposo la columna tiene que leerse de un vistazo como un
+    índice de SEIS muestras, y con medio tono las cuatro últimas eran fantasmas.
+    Lo que no sube es la presencia del bloque — siguen siendo seis cifras de un
+    cuerpo pequeño en el borde, no una barra lateral.
+  */
+  color: rgb(234 246 255 / 0.62);
+  text-decoration: none;
+  transition: color 180ms var(--ease-orbit);
+}
+
+a.observatory__slot {
+  pointer-events: auto;
+}
+
+.observatory__slot-index {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.observatory__slot-name {
+  position: absolute;
+  left: 2.1rem;
+  top: 50%;
+  transform: translateY(-50%) translateX(-0.3em);
+  white-space: nowrap;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+  transition:
+    opacity 200ms var(--ease-orbit),
+    transform 240ms var(--ease-orbit);
+}
+
+a.observatory__slot:hover,
+a.observatory__slot:focus-visible {
+  color: #eaf6ff;
+}
+
+a.observatory__slot:hover .observatory__slot-name,
+a.observatory__slot:focus-visible .observatory__slot-name {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.observatory__slot[aria-current="page"] {
+  color: #ffd2a0;
+}
+
+.observatory__slot[aria-current="page"] .observatory__slot-index {
+  font-weight: 650;
+}
+
+/*
+  El activo NO despliega su nombre, aunque parezca lo natural. Ya está escrito
+  dos veces más arriba, en el bloque de identidad y en grande: repetirlo aquí
+  convierte el raíl en una etiqueta redundante y le quita lo que lo hace fino,
+  que es ser una columna de cifras. El estado lo dicen la pica, el peso y el
+  tono; el nombre sigue apareciendo al apuntar, como en los demás.
+*/
+.observatory__slot[aria-current="page"] .observatory__slot-name {
+  font-weight: 650;
+}
+
+/*
+  La pica del activo va ENTRE la cifra y el hueco del nombre, no al margen
+  izquierdo: pegada al borde del cuadro se sale del recorte en pantallas
+  estrechas y se pierde justo donde más falta hace. Y es la misma pica de
+  1 × 0.7 rem que separa los instrumentos del banco — mismo calibre, mismo
+  significado de «aquí hay una división».
+*/
+.observatory__slot[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  width: 1px;
+  height: 0.7rem;
+  transform: translateY(-50%);
+  background: currentColor;
+}
+
+/* Las que aún no se montan. Siguen en el catálogo —el laboratorio tiene seis
+   muestras y esconder cuatro mentiría sobre su tamaño— pero no fingen ser
+   enlaces: uno que no lleva a ninguna parte es peor que su ausencia. */
+/*
+  La mitad del tono de una disponible, no una décima parte. La diferencia entre
+  «puedes ir» y «todavía no» tiene que verse sin leer — pero las no montadas
+  también tienen que CONTARSE, porque son las que dicen que el laboratorio tiene
+  seis sitios. Con 0.15 no se contaban; con 0.3 y la cifra tachada se leen como
+  plazas reservadas.
+*/
+.observatory__slot--off {
+  color: rgb(234 246 255 / 0.3);
+}
+
+.observatory__slot--off .observatory__slot-index {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.observatory__back:focus-visible,
+a.observatory__slot:focus-visible {
+  outline: none;
+}
+
+.observatory__back:focus-visible .observatory__ink {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 6px;
+}
+
+a.observatory__slot:focus-visible .observatory__slot-index {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 5px;
+}
+
+@media (forced-colors: active) {
+  a.observatory__slot:focus-visible .observatory__slot-index,
+  .observatory__back:focus-visible .observatory__ink {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
 /* ── La ficha ───────────────────────────────────────────────────────────── */
 
 /*
   La ficha CONSERVA su fondo, y es la única pieza de esta hoja que no pierde la
   caja. No es un descuido del pase: es que no es cromo, es una superficie de
   lectura, y sólo existe mientras `DATOS` está abierto. Quitarle el fondo pondría
-  seis números claros sobre las aristas cian y ámbar del espécimen justo en la
-  esquina por donde la figura se acerca al abrirse, y la petición era retirar la
-  sensación de píldora en los MANDOS — no discutir dónde se leen los datos.
+  los números sobre las aristas del espécimen justo en la zona por donde la
+  figura se acerca al abrirse, y la petición era retirar la sensación de píldora
+  en los MANDOS — no discutir dónde se leen los datos.
+
+  ── Y por eso el fondo es casi opaco, no medio ─────────────────────────────
+
+  Lo destapó el segundo espécimen, que es para lo que servía traerlo. Con 0.72
+  de alfa la ficha funcionaba sobre el Tesseracto porque el Tesseracto es
+  cristal casi negro: detrás de los números no pasaba casi nada. La Endurance es
+  aluminio claro a plena luz, y sus módulos cruzaban por debajo del texto y se
+  llevaban por delante «módulos principales» y «campanas de motor».
+
+  Una superficie de lectura no puede depender de lo que tenga detrás, y menos en
+  un laboratorio que va a contener seis muestras distintas. Sube a 0.94, que
+  sigue dejando ver que hay algo debajo —no es un panel opaco pegado encima—
+  pero ya no cede la legibilidad al espécimen de turno.
+
+  No se usa `backdrop-filter`: desenfocar una región de este tamaño por encima
+  de un canvas en vivo cuesta una pasada de composición por fotograma, y el
+  Observatorio acaba de conseguir llegar a cero fotogramas en reposo.
 */
 .observatory__data {
   display: flex;
@@ -631,7 +1096,7 @@
   padding: 1rem 1.25rem;
   border: 1px solid rgb(127 229 255 / 0.2);
   border-radius: 0.5rem;
-  background: rgb(6 12 20 / 0.72);
+  background: rgb(6 12 20 / 0.94);
   max-width: 46rem;
   font-family: var(--font-mono);
 }
@@ -639,6 +1104,65 @@
 .observatory__data section {
   min-width: 14rem;
   flex: 1 1 14rem;
+}
+
+/*
+  El registro comparte la caja de la ficha —misma superficie, mismo sitio, misma
+  forma de abrirse— y cambia el contenido: párrafos en vez de pares. Se le limita
+  el alto y se le da desbordamiento propio porque son cinco secciones de texto y
+  el encargo fue explícito: «nada de case study gigante dentro del viewer».
+*/
+.observatory__record {
+  display: grid;
+  /* Una sola columna: la rejilla de dos servía para cinco bloques y ahora sólo
+     hay uno. El ancho lo pone la medida del texto, no la caja. */
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 40rem;
+  /*
+    `stretch` y no el `flex-start` que hereda de la ficha, y esto costó una
+    captura en móvil.
+
+    Dentro de una columna flexible, `align-self: flex-start` hace que la caja se
+    ajuste a su contenido, así que la rejilla resuelve `auto-fit` contra su
+    ancho MÁXIMO en vez de contra el disponible: a 375 px seguía pidiendo dos
+    columnas de 15 rem y la segunda se salía del cuadro cortada por la mitad.
+    Estirada, `auto-fit` ve el ancho real y cae a una sola columna. El
+    `max-width` heredado sigue poniendo el techo en escritorio.
+  */
+  align-self: stretch;
+  gap: 0.35rem;
+  padding: 1.2rem 1.6rem 1.5rem;
+  /*
+    Un suelo de alto, y es la segunda mitad de la corrección de densidad.
+
+    Bajar de cinco bloques a uno redujo el panel tanto que pasó a leerse como un
+    pie de foto: el encargo era «no lo haría mucho más pequeño; reduciría su
+    densidad», y yo hice las dos cosas. La superficie se mantiene —sigue siendo
+    una ficha de lectura— y lo que baja es cuánto texto hay dentro. Además evita
+    que cambiar de sección haga saltar la caja de alto.
+  */
+  min-height: 10.5rem;
+  max-height: min(42vh, 26rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.observatory__record section {
+  min-width: 0;
+}
+
+/*
+  Medida editorial, no ancho de ficha técnica: 34 caracteres de ancho de `e` dan
+  unas sesenta letras por línea, que es donde un párrafo se lee sin que el ojo
+  pierda el renglón. El panel puede ser más ancho; el texto no.
+*/
+.observatory__record p {
+  margin: 0.7rem 0 0;
+  max-width: 34em;
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: rgb(215 241 255 / 0.86);
+  text-wrap: pretty;
 }
 
 .observatory__data h2 {
@@ -673,6 +1197,29 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  ── El banco tiene que despejar la bandeja global ───────────────────────────
+
+  A 375 px la bandeja inferior derecha —interruptor de movimiento y banda
+  sonora, `position: fixed` en TODAS las rutas— cae justo encima de la fila de
+  instrumentos y se traga sus pulsaciones. Medido: la bandeja ocupa de 752 a
+  798 px y el banco vivía dentro de esa franja, así que `MATERIAL` y `DATOS`
+  eran inalcanzables con el dedo.
+
+  El defecto es anterior a Endurance —es idéntico en los dos especímenes— y
+  sobrevivió porque O10 comprueba que cada mando MIDA 44 px, que es otra cosa
+  que poder pulsarlo: la caja estaba perfecta y encima había otro elemento. Lo
+  que lo caza ahora es `elementFromPoint` sobre el centro de cada mando.
+
+  Se resuelve subiendo el pie, no bajando la bandeja: la bandeja es global y
+  esta página es la invitada.
+*/
+@media (max-width: 34rem) {
+  .observatory__chrome {
+    padding-bottom: 4.25rem;
+  }
+}
+
 /* En pantallas estrechas el banco envuelve, y tres mandos de 6.5rem más sus
    picas no caben en una línea. Se aprieta el calibre antes que dejar que la
    banda crezca hacia el espécimen. */
@@ -689,6 +1236,105 @@
 
   .observatory__toggle[aria-pressed="true"] .observatory__ink {
     letter-spacing: 0.15em;
+  }
+}
+
+/*
+  ── Móvil: el Observatorio no es el escritorio comprimido ───────────────────
+
+  El diagnóstico fue exacto: a 375 px todo CABÍA y nada funcionaba. Identidad,
+  rastro, raíl, pista, `Reajustar`, panel, cuatro instrumentos, bandeja global y
+  el espécimen intentando existir detrás — ni se leía la ficha ni se observaba
+  la nave.
+
+  La respuesta no es un margen sino dos estados: **observar** y **leer**.
+
+   · El raíl vertical desaparece y lo sustituye el paso `‹ 02 / 06 ›`, porque el
+     raíl depende de apuntar y en táctil no hay puntero que apunte.
+   · La ficha deja de flotar dentro del laboratorio y pasa a ser una hoja
+     inferior con su propio desplazamiento y su propia salida.
+   · Con la hoja abierta se retiran la pista de manipulación, `Reajustar` y el
+     paso entre muestras. Lo que queda es la identidad y el texto.
+
+  Lo que NO cambia es el espécimen. No se desplaza ni se reencuadra al abrir un
+  panel, y eso es contrato: si la capa editorial moviera la cámara, la escena
+  tendría una pose distinta según el estado de la interfaz.
+*/
+@media (max-width: 40rem) {
+  .observatory__rail {
+    display: none;
+  }
+
+  .observatory__step-arrow {
+    display: inline-flex;
+  }
+
+  .observatory__sheet-head {
+    display: flex;
+  }
+
+  .observatory__data {
+    position: fixed;
+    inset: auto 0 0 0;
+    align-self: auto;
+    max-width: none;
+    /* Dentro del 55-65 % que pidió la dirección. El techo es el que manda: con
+       una sección a la vez el contenido suele ser más corto, y la hoja se ajusta
+       en vez de reservar un hueco vacío. */
+    /* Y un SUELO, no sólo un techo. Con una sección a la vez el contenido cae a
+       32vh y la hoja quedaba como una tira: la zona de lectura tiene que ser
+       estable, y además cambiar de sección no puede hacerla saltar de alto. */
+    min-height: 55vh;
+    max-height: 62vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 0;
+    border-width: 1px 0 0;
+    /* El fondo baja a casi opaco y el velo sale de una sombra enorme en vez de
+       un elemento nuevo: ni un nodo más para oscurecer lo de detrás. */
+    background: rgb(6 12 20 / 0.97);
+    /* 0.42 y no 0.55: el encargo pedía oscurecer LIGERAMENTE. Medido sobre la
+       captura, con 0.55 el espécimen bajaba de luma 84 a 32 y se apagaba
+       demasiado para seguir siendo el fondo de lo que estás leyendo. */
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.42);
+    /* El último renglón despeja la bandeja global, que vive por encima. */
+    padding: 0.9rem 1.15rem 4.5rem;
+  }
+
+  .observatory__record {
+    max-height: none;
+    max-width: none;
+  }
+
+  /* Las pestañas no envuelven en tres líneas: ruedan en horizontal. */
+  .observatory__tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-bottom: 0.5rem;
+    /* El desvanecido del borde derecho no es adorno: una palabra cortada en
+       seco se lee como un fallo de maquetación, y difuminada se lee como «hay
+       más». Es la única señal de que la tira rueda. */
+    mask-image: linear-gradient(to right, #000 86%, transparent);
+  }
+
+  .observatory__tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .observatory__tab {
+    flex: none;
+  }
+
+  /* MODO LECTURA. Todo lo que no es identidad ni texto se retira. */
+  .observatory[data-panel="datos"] .observatory__controls,
+  .observatory[data-panel="registro"] .observatory__controls,
+  .observatory[data-panel="datos"] .observatory__inspect,
+  .observatory[data-panel="registro"] .observatory__inspect,
+  .observatory[data-panel="datos"] .observatory__step-arrow,
+  .observatory[data-panel="registro"] .observatory__step-arrow {
+    display: none;
   }
 }
 
@@ -719,8 +1365,334 @@
 */
 .observatory__flat {
   position: relative;
-  min-height: min(62vh, 26rem);
+  min-height: 100svh;
+}
+
+/* ══ EL INSTRUMENTO EN FRÍO ═══════════════════════════════════════════════
+
+  La cara servida: el HTML que existe sin JavaScript y, con él, la pantalla de
+  `EN ESPERA` mientras el contexto WebGL monta. Una sola pieza para los dos
+  casos, porque son el mismo caso visto a dos velocidades.
+
+  La regla que gobierna todo este bloque: **no hay un solo instante en que una
+  superficie nueva tape una vieja.** El negro absoluto del Observatorio no
+  aparece encima de la página, LLEGA con el espécimen — es el fondo del
+  instrumento ya encendido, no un velo que lo anuncia.
+*/
+
+/*
+  El velo de la ruta.
+
+  Sin él, la cara servida se apoya en el fondo general del sitio —nebulosa
+  azulada— y al encenderse el instrumento el valor del fondo daba un salto:
+  primero una página clara, después el cielo oscuro del Observatorio. El salto
+  se leía como una capa nueva tapando una vieja, que es justo lo que este pase
+  existe para quitar. Con el velo, en espera ya se está casi en el valor del
+  aparato y lo que cambia al encender es el ESPÉCIMEN, no la habitación.
+*/
+.observatory-route {
+  min-height: 100svh;
+  background:
+    radial-gradient(
+      125% 85% at 50% 42%,
+      rgba(2, 4, 9, 0.52) 0%,
+      rgba(1, 2, 5, 0.86) 62%,
+      rgba(0, 1, 3, 0.95) 100%
+    );
+}
+
+.observatory-face {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: stretch;
+  gap: clamp(1rem, 2.6vw, 2rem);
+  padding: clamp(1.25rem, 3.4vw, 3rem);
+  min-height: 100svh;
+  font-family: var(--font-mono);
+}
+
+.observatory-face__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 34rem;
+}
+
+.observatory-face__eyebrow {
+  margin: 0;
+  font-size: 0.66rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.5);
+}
+
+.observatory-face__sep {
+  padding: 0 0.5em;
+  color: rgba(242, 200, 121, 0.45);
+}
+
+.observatory-route__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.observatory-face__descriptor {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  color: rgba(201, 210, 229, 0.72);
+}
+
+.observatory-face__pair {
+  margin: 0.15rem 0 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(242, 200, 121, 0.62);
+}
+
+/*
+  El esquema ocupa el centro y le deja a `FlatWorldBody` lo que necesita: un
+  ancestro posicionado y las tres variables con las que se dimensiona. Su
+  tamaño se elige para caer cerca de donde aparecerá el espécimen —el preset
+  encuadra la envolvente a ~70-85 % del alto— de modo que el cambio de mano se
+  lea como la misma figura pasando de dibujo a observación.
+*/
+.observatory-face__figure {
+  position: relative;
+  min-height: 44svh;
   --flat-anchor-x: 50%;
   --flat-anchor-y: 50%;
-  --flat-size: min(58vw, 18rem);
+}
+
+/*
+  El esquema manda sobre su propio calibre.
+
+  `FlatWorldBody` trae un `--flat-size` POR MUNDO, declarado sobre su propio
+  elemento para el atlas de la portada: allí los seis comparten cuadro y su
+  tamaño relativo es el dato. Aquí no hay seis, hay uno, y tiene que caer donde
+  caerá el espécimen. Se fija por selector de atributo porque la clase del
+  módulo viene con hash y no se puede nombrar desde fuera — y con tres clases
+  de especificidad, que es lo que hace falta para ganarle a su media query.
+*/
+.observatory-face .observatory-face__figure [data-flat-world] {
+  /*
+    Grande, y más de lo que parece: el dibujo no llena su caja —la geometría se
+    traza dentro del `viewBox` con aire alrededor— así que una caja «del tamaño
+    del espécimen» deja un esquema la mitad de pequeño. Calibrado sobre la
+    pantalla: a 88vmin el trazo cae donde caerá la figura en 3D, que es lo que
+    hace que el relevo se lea como la misma cosa cambiando de representación.
+  */
+  width: min(88vmin, 40rem);
+}
+
+.observatory-face__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 34rem;
+}
+
+.observatory-face__state {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: clamp(0.82rem, 2.2vw, 1.05rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.observatory-face__dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-right: 0.8rem;
+  border-radius: 50%;
+  background: var(--amber);
+  opacity: 0.55;
+}
+
+/* El latido dice «está pasando algo» sin escribir un porcentaje que nadie ha
+   medido. Obedece al interruptor único como todo lo demás. */
+@keyframes observatory-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+
+html[data-motion="on"] .observatory-face__dot {
+  animation: observatory-pulse 2.4s ease-in-out infinite;
+}
+
+.observatory-route__summary {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: rgba(201, 210, 229, 0.78);
+}
+
+/*
+  El banco en frío: los mandos que TENDRÁ esta muestra, dichos antes de que
+  existan. Salen de `preset.instruments`, así que no se promete ninguno que
+  luego no aparezca.
+*/
+.observatory-face__bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.6rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.observatory-face__bank li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.observatory-face__mando {
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.42);
+}
+
+.observatory-face__estado {
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(146, 159, 186, 0.45);
+}
+
+.observatory-face__exit {
+  margin: 0.6rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.observatory-face__exit a {
+  color: rgba(242, 200, 121, 0.85);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(242, 200, 121, 0.3);
+  padding-bottom: 0.15rem;
+}
+
+.observatory-face__exit a:hover,
+.observatory-face__exit a:focus-visible {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+}
+
+/* ══ EN ESPERA → NOMINAL ══════════════════════════════════════════════════ */
+
+/*
+  El fondo del instrumento llega CON el espécimen.
+
+  `.observatory` era `background: #000` desde el primer fotograma de CSS, así
+  que el rectángulo negro aparecía en la hidratación y tapaba el HTML servido:
+  una superficie opaca sobre una página viva, que es la definición de un modal.
+  Ahora entra a la vez que la imagen y con la misma curva.
+*/
+.observatory {
+  background: transparent;
+  transition: background-color 340ms ease;
+}
+
+.observatory[data-state="nominal"] {
+  background: #000;
+}
+
+.observatory__canvas {
+  opacity: 0;
+  transition: opacity 340ms ease;
+}
+
+.observatory[data-state="nominal"] .observatory__canvas {
+  opacity: 1;
+}
+
+/*
+  La cara servida DENTRO del instrumento: en espera manda ella y su salida
+  funciona; encendido el aparato se apaga y se vuelve `inert`, así que ni
+  duplica nombres accesibles ni deja una parada de tabulador invisible bajo un
+  canvas opaco.
+*/
+.observatory__served {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow-y: auto;
+  transition: opacity 340ms ease;
+}
+
+.observatory[data-state="nominal"] .observatory__served {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+  Y la instrumentación al revés: no existe hasta que hay algo que instrumentar.
+
+  Va después de las reglas del modo cine a propósito — misma especificidad,
+  así que gana la última— porque en espera no hay dos niveles de atenuación que
+  negociar: el cromo entero está apagado.
+*/
+.observatory[data-state="standby"] .observatory__chrome,
+.observatory[data-state="standby"] .observatory__rail,
+.observatory[data-state="standby"] .observatory__calipers {
+  opacity: 0;
+}
+
+.observatory__chrome,
+.observatory__rail,
+.observatory__calipers {
+  transition: opacity 420ms ease;
+}
+
+/* La lectura del aparato en el cromo: la misma frase que la cara servida
+   enseña en grande, aquí reducida a una línea fina sobre el nombre. */
+.observatory__state {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(242, 200, 121, 0.72);
+}
+
+.observatory__state-dot {
+  width: 0.32rem;
+  height: 0.32rem;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+/* El interruptor único de movimiento (`html[data-motion="off"]`) para también
+   el CSS de esta ruta, igual que en Miller, Edmunds y la Ranger. */
+html[data-motion="off"] .observatory *,
+html[data-motion="off"] .observatory *::before,
+html[data-motion="off"] .observatory *::after,
+html[data-motion="off"] .observatory-face *,
+html[data-motion="off"] .observatory-face *::before,
+html[data-motion="off"] .observatory-face *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (max-width: 47.99rem) {
+  .observatory-face__figure {
+    min-height: 34svh;
+    --flat-size: min(70vmin, 20rem);
+  }
 }
