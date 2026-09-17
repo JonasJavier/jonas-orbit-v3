@@ -1359,6 +1359,172 @@ eso ya había pasado —«el guardián daba verde porque sólo miraba el archivo
 Gargantúa»— y la primera vez se arregló la LISTA en vez del mecanismo. Ahora
 descubre los archivos: un shader nuevo queda cubierto por existir.
 
+### Cierre de los dos huecos de sistema (2026-09-17)
+
+Los dos pendientes que se venían reportando desde el primer checkpoint, ambos
+independientes del veredicto visual.
+
+| # | Qué cierra | Dónde |
+| --- | --- | --- |
+| 21 | El contexto persistente se **libera** en las rutas del Observatorio. La enmienda 3 del §3 estaba escrita y sin construir: `COVERED_WORLDS` sólo congelaba el bucle, así que había **dos contextos WebGL vivos** en esta ruta | §3, O2 |
+| 22 | El gate de capacidad del §9, que aquí no existía. El Observatorio montaba WebGL sin preguntar mientras el resto del sitio sí preguntaba | §9, O7 |
+
+**La liberación va por booleano, no por `pathname`.** El efecto que construye la
+escena depende de `isObservatoryPath(pathname)` y no del pathname: con el
+pathname, la escena se destruiría y volvería a subir su geometría en CADA
+navegación, que es lo contrario de tener una escena persistente. Con el
+booleano, sólo se reejecuta al CRUZAR la frontera. Y el lienzo se retira del
+DOM, que es lo que hace comprobable la liberación: el marcador de persistencia
+de la suite tiene que **desaparecer**, al revés que en Miller, donde debe
+sobrevivir.
+
+**El gate degrada por falta de equipo, no por preferencia de movimiento.** Al
+cablearlo apareció un conflicto real entre dos documentos ratificados: el
+interruptor global escribe el perfil ligero al apagarse
+(`effects-mode.ts:146`), así que un gate ingenuo retiraba el espécimen entero
+al apagar el movimiento — y el O6 de este mismo documento pide lo contrario,
+«con movimiento apagado, sin giro en reposo, transiciones instantáneas,
+MANIPULACIÓN VIVA». No se puede manipular lo que no está. El gate filtra por
+`reason`, de modo que `sin-webgl2`, `gpu-por-software`, `red-lenta` y
+`memoria-corta` degradan, y `perfil-ligero` congela sin retirar.
+
+⏳ **Queda una decisión abierta para Jonás**, y es suya: con ese filtro,
+`?no3d=1` —la puerta documentada del perfil ligero y la que usa la auditoría de
+Lighthouse por la regla 5— tampoco retira el 3D de esta ruta. Antes de este pase
+no lo retiraba nadie porque no había gate ninguno, así que no es una regresión,
+pero conviene decidirlo a la vista y no por omisión.
+
+**Verificación.** `e2e/observatorio.spec.ts` cubre **O2, O6, O7, O8 (parcial),
+O10 y O12**; O11 entra como unit en `lib/observatory.test.ts`. O1, O9 y O13
+siguen sin escribirse porque necesitan la recepción o un segundo espécimen, y
+ninguna de las dos cosas existe: escribirlos ahora sería escribir pruebas que
+pasan porque no hay nada que probar. O8 va parcial por lo mismo — pide seis URLs
+y sólo existe una.
+
+Dos cosas que costaron una pasada cada una. El **build obsoleto**: el servidor
+de Playwright sirve `.next`, así que editar el visor y volver a correr sin
+reconstruir mide la versión anterior. Y la **ventana de medición del arrastre**:
+con un bucle bajo demanda el fotograma sucio se dibuja DURANTE el gesto, así que
+contar doce fotogramas al soltar mide cero — el mismo cero que dos líneas antes
+significa lo contrario. La cuenta va alrededor del gesto, no después.
+
+### Segundo pase de atmósfera — presencia (2026-09-17)
+
+Jonás vio el A/B/C del pase anterior y su veredicto fue que las tres variantes
+se sentían prácticamente iguales: *«la implementación puede existir
+técnicamente, pero no está comunicando atmósfera visualmente»*. Y puso la
+corrección de rumbo que gobierna este pase:
+
+> «Mínima» no significa invisible. Quiero que C tenga una identidad espacial
+> evidente manteniendo jerarquía: **Tesseracto 100 % / atmósfera ~30 % /
+> instrumentación ~10-15 %**. La prueba de éxito es muy sencilla: si tengo que
+> acercarme a la pantalla para descubrir qué cambió, sigue demasiado débil.
+
+Con dos límites explícitos: no tocar el Tesseracto en absoluto —*«ya está
+haciendo su trabajo; lo que está vacío es el mundo alrededor de él»*— y la misma
+lista de vetos de siempre (grids, órbitas, coordenadas, nebulosas, retículas
+centrales, texto técnico nuevo).
+
+#### No era cuestión de gusto: la atmósfera no existía en la imagen
+
+El pase anterior calibró los tres ingredientes contra el «suelo del espécimen»
+—HDR 0.0083, el canto más débil de la celda lejana— y le impuso al halo la mitad
+de ese número. Pasado por la cadena real de salida (ACES a exposición 0.95, que
+internamente divide por 0.6, más la codificación sRGB del `OutputPass`), HDR
+0.0034 sale a **sRGB 0, 0, 1**.
+
+Y ese 0,0,1 es el PICO, que además cae casi fuera de cuadro: la luz de este
+preset está a 35° del eje de cámara y el cuadro llega a 30° por su lado ancho.
+Lo que se veía era el hombro, `cos³(35°) = 0.55` de ese uno: **sRGB 0, 0, 0.**
+
+O sea que la discusión sobre si «se notaba poco» era una discusión sobre una
+imagen en la que no había nada, y no había forma de saberlo leyendo el código.
+
+**La lección, que vale para todo el proyecto: un nivel en HDR no es un nivel en
+pantalla.** Cerca del negro la curva ACES es muy plana y comprime tres décadas
+de radiancia lineal en los diez primeros valores de sRGB. Acotar «por debajo de
+tal cosa» en unidades lineales no acota la imagen: la borra. Y un test escrito
+en la misma unidad que el error no puede verlo — el del pase anterior pasaba en
+verde sobre un cielo inexistente.
+
+| # | Qué cambia | Dónde |
+| --- | --- | --- |
+| 23 | El halo pasa de un coseno elevado a **dos lóbulos sobre el eje de la luz** con radio exterior finito: uno ancho que muere a 66° y un núcleo de petróleo que muere a 40°. El coseno elevado no llega nunca a cero, así que levantaba el cuadro entero por igual en vez de dibujar una masa — y morir es la mitad del encargo | §5 |
+| 24 | El campo estelar recupera **suelo de magnitud** y **perfil medido en ángulo**. Sin suelo, el exponente 14 dejaba el 90 % del campo por debajo de un dígito de sRGB; con el perfil atado a la escala, la capa fina daba estrellas de 0.2 px que el rasterizador pillaba o no según dónde cayera el centro del píxel | §5 |
+| 25 | La instrumentación de borde pasa de cuatro escuadras iguales a **cuatro asimétricas más tres signos** —calibre, fiducial y marcas cortas—, cada uno en un borde y a una altura distinta | §5 |
+
+#### Lo que dicen las capturas
+
+Medido con `tools/observatory-atmosfera.mjs`, que nace en este pase y mide en la
+única unidad en la que se puede discutir con alguien que está delante de un
+monitor: niveles de sRGB sobre el PNG.
+
+| | Antes | Ahora |
+| --- | --- | --- |
+| Salto A→C, media | — | **+16.6 niveles** |
+| Fondo que cambia ≥ 12 niveles | 0 % | **47.3 %** |
+| Atmósfera (p99 del fondo) frente al objeto | 0 % | **23 %** |
+| Estrellas de referencia en cuadro | 1 | **3** |
+| Estrellas medias / débiles | 11 / 83 | **45 / 282** |
+| Meseta mayor en la pendiente del halo | — | 14 px (sin anillos) |
+
+El mapa del fondo en tercios, que es el sandwich que dibujó Jonás puesto en
+números: **45 · 43 · 15 / 23 · 19 · 5 / 8 · 5 · 1.** Masa fría entrando por la
+esquina de la luz, azul muy oscuro detrás de la figura, negro real en la esquina
+opuesta.
+
+#### El número que dijo una mentira, y por qué la imagen mandó
+
+La primera versión de la métrica medía el contraste **con signo** de los cantos
+flojos de la celda lejana contra su fondo local, y anunciaba una catástrofe: de
++7.8 a −1.3 niveles, con la mitad de los cantos «invertidos». Leído así, este
+pase se habría cargado la jerarquía 4D que costó las versiones V2 y V3.
+
+La captura decía lo contrario. **Contra negro, un canto casi negro es
+invisible; contra el campo, es una línea nítida.** Lo que se había medido era el
+cambio de POLARIDAD, no el de legibilidad: el ojo lee el valor absoluto del
+contraste y el signo sólo dice si el canto brilla o recorta. Medido bien:
+
+    |contraste| en A   7.79 niveles
+    |contraste| en C   8.42 niveles
+
+La celda lejana se lee **algo mejor** que antes, no peor. Lo que sí cambia —y
+es una decisión de arte que le corresponde a Jonás, no una medida— es que el
+49.5 % de esos cantos pasa de brillar a recortarse. El hipercubo sigue separando
+sus dos celdas; la lejana lo hace ahora en negativo.
+
+La defensa que sigue en pie del pase anterior es el ANCLAJE: con el halo atado a
+la dirección de la luz, su máximo cae en la esquina del cuadro y el espécimen
+vive en el hombro del lóbulo. Anclarlo a la vista lo pondría justo encima de la
+silueta y entonces sí habría que elegir entre atmósfera y jerarquía.
+
+#### Tres trampas de medida, y las tres daban verde o rojo por lo que no era
+
+1. **Calibrar en HDR lo que se juzga en sRGB.** Descrito arriba. Ahora el test
+   del cielo pasa por la cadena completa y afirma niveles de pantalla, que es la
+   comprobación que habría cazado el fallo el primer día.
+2. **Contar cambios de nivel para detectar bandeo.** El umbral era inventado y
+   marcaba en rojo un degradado perfectamente dithered. La medida buena es la
+   meseta más larga — pero sólo **en la pendiente**: el negro real del otro lado
+   del halo es un tramo enorme de ceros que no es un degradado, y la cima DE LA
+   LÍNEA también se cuantiza plana, porque donde la horizontal pasa por su punto
+   más cercano al centro del halo la derivada es cero. Una cumbre de 116 px a
+   valor 76 no es un anillo, es ese punto — el pico del lóbulo ni siquiera está
+   en cuadro: con la luz a 35° del eje y la media diagonal del cuadro en 35.4°,
+   cae justo detrás de la esquina.
+3. **Dos servidores peleándose por el puerto.** Un `next start` anterior
+   sobrevivió al `pkill`, se quedó con el 3100 y sirvió manifiestos obsoletos
+   contra el `.next` recién construido: los chunks daban 500, React no hidrataba
+   y la página se quedaba en el respaldo plano del §9. La captura fallaba con
+   «no aparece el canvas», que es exactamente el síntoma de un gate de capacidad
+   mal cableado. Es la misma familia que el build obsoleto del pase anterior: en
+   este proyecto, **antes de creerse una captura hay que saber qué build la
+   sirvió.**
+
+*Estado: pendiente del veredicto visual de Jonás sobre el A/B/C.*
+
+---
+
 ### Apéndice — una discrepancia encontrada de paso
 
 No afecta al Observatorio, pero conviene registrarla donde se vea:

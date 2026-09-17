@@ -3,17 +3,41 @@ import * as THREE from "three";
 /**
  * La atmósfera del Observatorio: el espacio que hay DETRÁS del espécimen.
  *
- * > "Quiero que el fondo siga pareciendo negro al primer vistazo. Pero cuando
- * > miras durante unos segundos, empieces a percibir que hay espacio detrás."
- * > — Jonás, 2026-09-16
+ * > "Quiero subir un nivel claro de intensidad. «Mínima» no significa
+ * > invisible: debe notarse inmediatamente al comparar A contra C, aunque el
+ * > Tesseracto siga siendo por mucho el elemento dominante."
+ * > — Jonás, 2026-09-17
  *
- * Y con una lista de vetos igual de explícita: nada de nebulosa espectacular,
- * campo denso, rejilla 3D, números flotando, círculos orbitales, retículas ni
- * HUD. Su tesis, que es la que gobierna este archivo: **el laboratorio no es
- * una sala.** Es la cámara, las herramientas y la forma de inspeccionar; el
- * espacio puede seguir siendo infinito. El visitante no está dentro de una
- * habitación mirando un objeto, está usando un instrumento imposible suspendido
- * en el vacío.
+ * Con una referencia de jerarquía que es la que gobierna todos los números de
+ * este archivo: **objeto 100 %, atmósfera 25-35 %, instrumentación 10-15 %**. Y
+ * con la misma lista de vetos de siempre: nada de nebulosa, campo denso,
+ * rejilla 3D, coordenadas, círculos orbitales, retículas ni HUD.
+ *
+ * ── Por qué el primer pase salió invisible ──────────────────────────────────
+ *
+ * No fue una cuestión de gusto: fue un error aritmético con causa localizable.
+ * El pase anterior calibró la atmósfera entera contra el «suelo del espécimen»
+ * —HDR 0.0083, el canto más débil de la celda lejana— y le impuso al halo la
+ * mitad de ese número. Pasado por la cadena real (ACES a exposición 0.95, que
+ * internamente divide por 0.6, más la codificación sRGB del OutputPass), HDR
+ * 0.0034 sale a **sRGB 0, 0, 1**. Un solo dígito, en un canal.
+ *
+ * Y peor: ese 0,0,1 es el PICO, que cae fuera de cuadro. La luz de este preset
+ * está a 35° del eje de cámara y el cuadro llega a 30° por su lado ancho, así
+ * que el máximo del lóbulo vive justo detrás del borde. Lo que se veía en la
+ * imagen era el hombro, `cos³(35°) = 0.55` de ese uno: **sRGB 0, 0, 0**.
+ *
+ * La atmósfera no estaba tenue. Estaba por debajo de lo que un canal de ocho
+ * bits sabe representar. Cualquier discusión sobre si «se nota poco» era una
+ * discusión sobre una imagen en la que no había nada.
+ *
+ * La lección, que vale para el resto del proyecto: **un nivel en HDR no es un
+ * nivel en pantalla**. Cerca del negro la curva ACES es muy plana y comprime
+ * tres décadas de radiancia en los primeros diez valores de sRGB; calibrar «por
+ * debajo de tal cosa» en unidades lineales, sin pasar por la curva, no acota la
+ * imagen: la borra. Los números de abajo están todos anotados con su valor EN
+ * PANTALLA, que es la única unidad en la que se puede discutir con alguien que
+ * está mirando una captura.
  *
  * ── Por qué va pegado a la cámara ───────────────────────────────────────────
  *
@@ -38,71 +62,91 @@ import * as THREE from "three";
  * Este archivo no declara un solo uniforme de tiempo, y es deliberado. El bucle
  * del Observatorio es bajo demanda: en reposo no llama a `composer.render()` ni
  * una vez, y un fotograma aquí no es barato —`spinAt` reescribe en CPU los
- * 768 vértices por arista de las 32 aristas, más las normales de las
- * membranas—. Un centelleo obligaría a repetir todo eso para mover unos
- * subpíxeles: coste máximo, señal mínima, y contradiciendo de paso el encargo
- * de que ninguna estrella compita con las aristas.
+ * vértices de las 32 aristas, más las normales de las membranas—. Un centelleo
+ * obligaría a repetir todo eso para mover unos subpíxeles.
  *
- * El único movimiento que el cielo se permite es el que YA está pagado: el de
- * la mano. Al arrastrar, el fotograma se redibuja de todas formas.
+ * Y hay una segunda razón: un reloj propio no lo congela el interruptor global
+ * de movimiento, así que el cielo seguiría corriendo con el movimiento apagado
+ * —contra `movimiento-unificado.md`— y rompería el A/B/C, cuyo requisito es
+ * «mismo instante».
  */
 
 /**
- * El techo de brillo de una estrella, en radiancia lineal HDR.
+ * El brillo de la estrella de magnitud 1, en radiancia lineal HDR.
  *
- * NO sale del umbral del bloom. Eso fue lo primero que comprobé y estaba
- * equivocado: el umbral vale 2.0 de radiancia lineal, y cualquier cosa que un
- * humano llame «extremadamente tenue» vive entre 0.006 y 0.03 — entre sesenta y
- * trescientas veces por debajo. El bloom no es la restricción.
+ * **En pantalla: sRGB ≈ 63, 66, 70.** Es una estrella que se ve sin buscarla y
+ * que hace de referencia de profundidad, que es lo que se pidió. En cuadro hay
+ * dos o tres de este calibre; el reparto lo decide el exponente y está
+ * explicado en `starLayer`.
  *
- * La restricción la pone el ESPÉCIMEN. Evaluado el ramo de cristal del
- * Tesseracto con su intensidad de clave real, el canto más débil de la celda
- * lejana —la que la jerarquía 4D empuja al fondo— está en HDR ≈ 0.0083, o sea
- * sRGB 3-6-12. Ése es el suelo contra el que hay que calibrar: una estrella a
- * sRGB 32 sería cuatro veces el borde más débil de la figura, y el encargo dice
- * que ninguna puede competir con las aristas.
- *
- * Con 0.022 la más definida sale a sRGB ≈ 21 y el grueso del campo se queda
- * entre 2 y 8. Medido sobre la captura, no estimado.
+ * El techo lo sigue poniendo el espécimen —«ninguna debe acercarse al brillo
+ * del Tesseracto»—, pero medido donde se puede medir: contra sus aristas VIVAS,
+ * que en pantalla pasan de 190, y no contra su canto más apagado, que fue el
+ * error del pase anterior.
  */
-const STAR_PEAK = 0.022;
+const STAR_PEAK = 0.115;
 
 /**
- * El pico del halo ambiental, y el número más delicado del archivo.
+ * El suelo de magnitud: qué le queda a la estrella más floja del reparto.
  *
- * El encargo lo describe como «#000000 → negro azulado muy profundo → #000000»,
- * y un azul de ésos —#04070e— es HDR luma ≈ 0.0084: EXACTAMENTE el nivel del
- * canto más débil de la celda lejana del hipercubo. Un halo así, centrado
- * detrás del espécimen, borraría la jerarquía por profundidad en W justo donde
- * más se nota, que es lo que costó las versiones V2 y V3 del Tesseracto.
- *
- * De ahí las dos defensas, y hacen falta las dos: el pico se queda por debajo
- * de 0.004, y su centro NO cae sobre la silueta (ver `HALO_ANCHOR`).
+ * **En pantalla: sRGB ≈ 8.** Es el «muchas muy débiles» del encargo, y existe
+ * por una razón concreta: sin suelo, `pow(h, n)` con n alto deja el 90 % del
+ * campo por debajo de un dígito de sRGB, o sea que lo BORRA. El campo tenía
+ * cientos de estrellas y ninguna llegaba a pintarse.
  */
-const HALO_PEAK = 0.0034;
+const STAR_FLOOR = 0.1;
+
+/**
+ * El pico del halo ambiental, y el número que más cambia respecto del pase
+ * anterior: de 0.0034 a 0.105, treinta veces.
+ *
+ * **En pantalla: sRGB ≈ 44, 55, 85 en la esquina de la luz, y ≈ 13, 18, 32
+ * detrás del espécimen** (el lóbulo vale 0.26 ahí). O sea: masa fría evidente
+ * hacia un lado del cuadro, azul muy oscuro detrás de la figura, negro real en
+ * la esquina opuesta. Es el sandwich que dibujó la dirección.
+ *
+ * ── La pieza que sigue en pie del pase anterior ─────────────────────────────
+ *
+ * Que el máximo NO caiga sobre la silueta. La jerarquía por profundidad en W
+ * del Tesseracto —celda cercana gruesa y clara, lejana fina y apagada— costó
+ * dos versiones enteras, y un fondo azul del nivel de la celda lejana la
+ * invierte: el canto deja de ser un hilo que brilla y pasa a ser un hilo
+ * oscuro. Eso no se evita bajando el halo hasta hacerlo invisible —ése fue el
+ * error— sino colocándolo: el pico está en la esquina de la luz y el espécimen
+ * vive en el hombro.
+ *
+ * El coste residual está medido y anotado en el documento de diseño, porque es
+ * real y es la contrapartida de subir la atmósfera un orden de magnitud.
+ */
+const HALO_PEAK = 0.105;
+
+/**
+ * El núcleo azul petróleo, encima del lóbulo ancho y mucho más cerrado.
+ *
+ * Es lo que convierte una mancha de un solo color en una masa con dentro: el
+ * ancho aporta azul profundo en medio cuadro y éste vira a cian-petróleo sólo
+ * donde la masa es más densa. Un degradado de COLOR dentro del degradado de
+ * luz es lo que separa «hay atmósfera» de «hay un foco azul».
+ */
+const HALO_CORE = 0.052;
 
 /**
  * El halo se ancla a la LUZ, no al centro del cuadro.
  *
  * En este mundo la luz es el origen (`toLight = normalize(-vPositionW)`), así
  * que «de dónde viene la luz» es una dirección real y no una decisión de
- * composición. Anclar ahí el halo tiene tres consecuencias, y las tres son
- * buenas:
+ * composición. Anclar ahí tiene tres consecuencias, y las tres son buenas:
  *
- *  · En la pose del preset el Tesseracto está a CONTRALUZ —su `keyAngle` es
- *    145°—, así que el halo cae justo detrás de la figura, que es literalmente
- *    lo que se pidió, sin tener que decirle a nadie dónde ponerse.
- *  · Su máximo queda FUERA de la silueta —arriba y a la izquierda, según la
- *    dirección de clave del preset—, que es la segunda defensa del párrafo de
- *    arriba.
+ *  · En el preset del Tesseracto la luz cae a 35° del eje de cámara, o sea
+ *    justo en una esquina del cuadro. La masa entra por ahí y muere hacia la
+ *    esquina contraria: el degradado ocupa la diagonal larga, que es la lectura
+ *    más amplia posible sin tocar nada.
+ *  · Su máximo queda FUERA de la silueta, que es la defensa de la jerarquía 4D
+ *    descrita arriba.
  *  · Al orbitar, el halo se queda donde está la luz en vez de seguir al ojo.
  *    Una viñeta centrada en pantalla se delata en cuanto arrastras; esto se
- *    comporta como una cosa del espacio.
- *
- * Es la única decisión de este archivo que interpreta el encargo en vez de
- * transcribirlo: se pidió «detrás del Tesseracto» y aquí está «donde está la
- * luz», que en la pose inicial es el mismo sitio. Cambiarlo a centrado en
- * pantalla es sustituir `toLight` por la dirección de vista.
+ *    comporta como una cosa del espacio, que es justo la diferencia entre
+ *    «profundidad del espacio detrás» y «glow del objeto».
  */
 const HALO_ANCHOR = "luz";
 
@@ -133,8 +177,7 @@ const FRAGMENT = /* glsl */ `
   // Los mismos hashes del cielo de Gargantúa. Se copian y no se importan porque
   // aquel shader es una cadena de texto dentro del raymarch: compartirlos
   // obligaría a extraer un módulo de GLSL que hoy no existe, y estas seis
-  // líneas no son la parte de aquel archivo que vale la pena reutilizar. Lo que
-  // sí se reutiliza es todo lo de abajo.
+  // líneas no son la parte de aquel archivo que vale la pena reutilizar.
   vec3 hash33(vec3 p) {
     p = fract(p * vec3(0.1031, 0.1030, 0.0973));
     p += dot(p, p.yxz + 33.33);
@@ -143,91 +186,143 @@ const FRAGMENT = /* glsl */ `
 
   /*
     Una estrella por celda de un retículo 3D, y sólo en una fracción de las
-    celdas. Es el starLayer de gargantua-shaders.ts con dos cambios de
-    calibre, y conserva sus dos lecciones ya pagadas:
+    celdas. Conserva las dos lecciones ya pagadas del campo de Gargantúa y
+    corrige dos errores propios del pase anterior.
+
+    ── Lo que se conserva ─────────────────────────────────────────────────────
 
      · La distancia se mide ENTRE DIRECCIONES NORMALIZADAS, no entre puntos del
        retículo. Medir en 3D parece equivalente y no lo es: la esfera de
        muestreo corta la gaussiana de la estrella por un plano que casi nunca
-       pasa por su centro, y esa sección es un anillo. De ahí salían rayas y
-       arcos en vez de puntos.
-     · El exponente alto de la magnitud es lo que hace el trabajo. pow(h, 14)
-       deja una cola tan corta que sólo una fracción diminuta de celdas produce
-       una estrella legible; el resto se queda en polvo. Subir el brillo en vez
-       del exponente da estrellas más gordas, no un cielo más poblado.
+       pasa por su centro, y esa sección es un anillo. De ahí salían rayas.
+     · El reparto de magnitudes lo hace un exponente sobre ruido uniforme, no
+       una lista. Muchas flojas, algunas medias y unas pocas vivas con una sola
+       instrucción, y sin que dos capas puedan contradecirse.
 
-    Los dos cambios respecto del original: no hay suelo de brillo —allí el campo
-    arranca en 0.30 y aquí en 0.0, porque allí compite con un disco de acreción
-    y aquí con un cristal casi negro— y el perfil es más apretado.
+    ── Los dos errores que corrige ────────────────────────────────────────────
+
+    1. **El perfil se medía en celdas y no en ángulo.** El original multiplica
+       la distancia por la escala, así que el radio de la estrella encoge cuando
+       el retículo se aprieta. En la capa fina —escala 260— eso dejaba estrellas
+       de 0.2 px: más pequeñas que la rejilla de muestreo, así que el
+       rasterizador las pillaba o no según dónde cayera el centro del píxel. La
+       mayoría no se pintaba NUNCA. Ahora el radio va en radianes y cada capa
+       elige el suyo, con el suelo puesto donde manda la rejilla: el cuadro mide
+       40° de alto sobre 900 px, o sea 0.00078 rad por píxel, y ninguna capa
+       baja de 1.3 de ésos.
+
+    2. **No había suelo de magnitud.** Con un exponente de 14 la estrella
+       mediana vale 10⁻⁴ del pico: por debajo de un dígito de sRGB, o sea negro.
+       El campo existía en el shader y no en la imagen. El parámetro "base" es
+       el mínimo que se lleva cualquier estrella presente.
   */
-  float starLayer(vec3 dir, float scale, float density) {
+  float starLayer(
+    vec3 dir, float scale, float density,
+    float sigma, float sharpness, float base
+  ) {
     vec3 cell = floor(dir * scale);
     vec3 h = hash33(cell);
     float present = step(1.0 - density, h.z);
-    vec3 starDir = normalize(cell + 0.5 + (h - 0.5) * 0.9);
-    float d = length(dir - starDir) * scale;
-    float magnitude = pow(h.y, 14.0);
-    return present * magnitude * exp(-d * d * 320.0);
+    // El desplazamiento dentro de la celda se queda en el 80 % central: con el
+    // perfil ya desacoplado de la escala, una estrella pegada a la frontera se
+    // cortaría en recto contra la celda vecina.
+    vec3 starDir = normalize(cell + 0.5 + (h - 0.5) * 0.8);
+    float d = length(dir - starDir);
+    float magnitude = base + (1.0 - base) * pow(h.y, sharpness);
+    return present * magnitude * exp(-(d * d) / (sigma * sigma));
   }
 
   void main() {
     vec3 dir = normalize(vDirection);
 
     /*
-      Tres escalas, y el peso va casi entero a la más fina. Es el reparto que
-      pidió la dirección —«95 % negro, 4 % apenas perceptible, 1 % alguna algo
-      más definida»— dicho en el único sitio donde se puede cumplir: la escala
-      gruesa es la que produce las estrellas legibles y por eso su densidad es
-      la más baja de las tres.
+      Dos capas y no tres, y la jerarquía que pidió la dirección —«muchas
+      pequeñas y débiles, unas pocas de brillo medio y 2-3 referencias»— la
+      produce el EXPONENTE dentro de cada capa, no el número de capas:
+
+       · REFERENCIAS (escala 34, 2.1 px): unas 47 estrellas en cuadro. Con
+         exponente 8 el reparto deja unas 4 por encima de la mitad del pico y 2
+         por encima de tres cuartos. Ésas son las referencias de profundidad.
+       · POLVO (escala 110, 1.3 px, peso 0.30): unas 270 en cuadro, casi todas
+         entre sRGB 6 y 20. Es lo que hace que el ojo diga «espacio profundo»
+         sin que se pueda contar ninguna.
+
+      La tercera capa del pase anterior —escala 260— se retira: con el perfil
+      corregido pintaría miles de puntos, que es el campo decorativo vetado. La
+      densidad de ese régimen la da ahora el suelo de magnitud de la capa de
+      polvo, que es mucho más barato y no se parece a una textura.
     */
     float field =
-        starLayer(dir,  38.0, 0.055) * 1.00
-      + starLayer(dir, 105.0, 0.120) * 0.52
-      + starLayer(dir, 260.0, 0.170) * 0.24;
+        starLayer(dir,  34.0, 0.060, 0.0019, 8.0, STAR_FLOOR_C) * 1.00
+      + starLayer(dir, 110.0, 0.045, 0.0012, 3.5, 0.18) * 0.38;
 
     // Frío por defecto, con una minoría templada. Los mismos tres tonos que el
     // campo persistente del sitio, sin el ámbar: aquí el ámbar significa «canal
     // aislado» en el cromo y no puede significar otra cosa en el cielo.
     vec3 cool  = vec3(0.86, 0.92, 1.00);
     vec3 plain = vec3(1.00, 1.00, 1.00);
-    vec3 tint = mix(cool, plain, hash33(floor(dir * 38.0)).x);
+    vec3 tint = mix(cool, plain, hash33(floor(dir * 34.0)).x);
 
     vec3 colour = tint * field * uStars;
 
     /*
-      El halo: una variación amplísima del negro alrededor de la dirección de la
-      luz. pow(..., 3.0) sobre el coseno da una campana muy ancha y sin borde
-      —no hay radio, no hay filo, no hay nada que se pueda llamar círculo—, que
-      es la diferencia entre «hay espacio detrás» y «hay un foco ahí».
+      EL HALO. Dos lóbulos sobre el mismo eje —el de la luz— y nada más.
+
+      Se pasa de un coseno elevado a dos smoothstep sobre el ÁNGULO por un
+      motivo que se ve en la imagen: el coseno elevado no llega nunca a cero,
+      así que levantaba el cuadro entero por igual en vez de dibujar una masa.
+      Un smoothstep con radio exterior sí muere, y morir es la mitad del
+      encargo —«que se desvanezca lentamente hacia negro»—: sin negro real al
+      otro lado no hay masa, hay velo.
+
+      Los dos radios, con la luz a 35° del eje y el cuadro llegando a 30° por su
+      lado ancho y 35° por la diagonal:
+
+       · ANCHO, muere a 66°. En la esquina de la luz vale 1, detrás del
+         espécimen 0.26 y en la esquina opuesta 0. Por encima del umbral de
+         visibilidad ocupa algo más de la mitad del cuadro, que es lo pedido.
+       · NÚCLEO, muere a 40°. Sólo vive en el tercio de la luz, y es el que mete
+         el petróleo: cian frío y oscuro contra el azul profundo del ancho.
+
+      El cuadrado del ancho no es adorno: convierte el hombro del smoothstep
+      en una caída más lenta cerca del pico y más rápida en la cola, que es el
+      perfil de una masa de gas y no el de una lámpara.
     */
-    float toLight = max(0.0, dot(dir, uLightDirection));
-    float halo = pow(toLight, 3.0);
-    colour += vec3(0.42, 0.56, 1.00) * halo * uHalo;
+    float a = acos(clamp(dot(dir, uLightDirection), -1.0, 1.0));
+    float wide = smoothstep(1.45, 0.06, a);
+    wide *= wide;
+    float core = smoothstep(0.95, 0.00, a);
+    core *= core;
+
+    vec3 deepBlue  = vec3(0.20, 0.46, 0.90);
+    vec3 petroleum = vec3(0.06, 0.58, 0.74);
+    colour += deepBlue * wide * uHalo;
+    colour += petroleum * core * uHalo * HALO_CORE_C;
 
     /*
       DITHER, y no es opcional.
 
       El lienzo final es de 8 bits y en esta cadena no hay dithering en ningún
-      sitio: OutputPass usa un RawShaderMaterial sin dithering_fragment, y
-      renderer.dithering sólo actúa sobre la cadena estándar de materiales. Un
-      degradado a pantalla completa que vive entre sRGB 0 y 6 bandea sí o sí, y
-      unos anillos concéntricos son justo el circulo que el encargo veta.
+      sitio: OutputPass usa un RawShaderMaterial sin dithering_fragment, y el
+      del renderer sólo actúa sobre la cadena estándar de materiales. Un
+      degradado a pantalla completa que ahora recorre de sRGB 0 a 85 bandea sí o
+      sí, y unos anillos concéntricos son justo el círculo que el encargo veta.
 
       LA AMPLITUD SE DERIVA EN EL SITIO CORRECTO DE LA CURVA, y ése fue el error
-      de la primera versión. Entre HDR 0.005 y 0.010 la cadena ACES a exposición
-      0.95 da unos mil pasos de sRGB por unidad, o sea un escalón cada 0.001 —
-      pero el halo no vive ahí, vive en 0.003, donde la curva es MUCHO más
-      plana: de 0 a 0.005 sólo caben dos escalones, así que un escalón son
-      ~0.0025. Con 0.0011 el dither valía un quinto de lo que hacía falta y los
-      anillos seguían enteros. Medido sobre la captura: 155 cambios de nivel en
-      460 px, con mesetas planas entre ellos.
+      de la primera versión de este archivo. Un escalón de sRGB no vale lo mismo
+      en todo el recorrido: en el cuerpo del halo son ~0.0011 de HDR y en la
+      cola, donde la curva ACES se aplana contra el negro, son ~0.0026. Un solo
+      número o ensucia el cuerpo o deja la cola bandeada, y el pase anterior
+      eligió el de la zona equivocada. Se interpola entre los dos según la
+      densidad local, que es lo único que funciona para un degradado que recorre
+      dos décadas.
 
       Y va sólo DONDE HAY HALO. Sobre negro puro no hay nada que cuantizar, y
-      ensuciarlo levantaría el fondo entero sin ganar nada — el encargo pide que
-      el fondo siga leyéndose negro.
+      ensuciarlo levantaría el fondo entero sin ganar nada.
     */
     float grain = hash33(vec3(gl_FragCoord.xy, 1.0)).x - 0.5;
-    colour += grain * 0.0032 * smoothstep(0.0, 0.02, halo);
+    float ladder = mix(0.0026, 0.0011, smoothstep(0.0, 0.30, wide));
+    colour += grain * ladder * smoothstep(0.0, 0.004, wide);
 
     gl_FragColor = vec4(max(colour, 0.0), 1.0);
   }
@@ -256,7 +351,18 @@ export function createObservatorySky(lightDirection: THREE.Vector3): Observatory
   const geometry = new THREE.SphereGeometry(SHELL_RADIUS, 24, 16);
   const material = new THREE.ShaderMaterial({
     vertexShader: VERTEX,
-    fragmentShader: FRAGMENT,
+    /*
+      Las dos constantes que el fragmento necesita como literales entran por
+      sustitución de texto y no por uniforme, a propósito: `setLayers` sólo
+      puede tocar `uStars` y `uHalo`, así que el suelo de magnitud y la mezcla
+      del núcleo quedan fuera del alcance del banco visual. Un interruptor de
+      capas que pudiera cambiar el CARÁCTER del cielo y no sólo su presencia
+      convertiría el A/B/C en tres imágenes incomparables.
+    */
+    fragmentShader: FRAGMENT.replace(
+      /STAR_FLOOR_C/g,
+      STAR_FLOOR.toFixed(4),
+    ).replace(/HALO_CORE_C/g, (HALO_CORE / HALO_PEAK).toFixed(4)),
     uniforms,
     side: THREE.BackSide,
     // Ni escribe ni comprueba profundidad: es el fondo, y todo lo demás va
@@ -301,6 +407,8 @@ export function createObservatorySky(lightDirection: THREE.Vector3): Observatory
 /** Sólo para los tests y la documentación: los números que se calibran a ojo. */
 export const SKY_CALIBRATION = {
   STAR_PEAK,
+  STAR_FLOOR,
   HALO_PEAK,
+  HALO_CORE,
   HALO_ANCHOR,
 } as const;

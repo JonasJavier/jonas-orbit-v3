@@ -52,14 +52,30 @@
 /*
   ── Instrumentación de borde ────────────────────────────────────────────────
 
-  El tercer ingrediente de la atmósfera, y el más fácil de arruinar. Cuatro
-  escuadras de 1 px en las esquinas, y nada más: ni coordenadas, ni retícula,
-  ni círculos, ni lecturas. La idea es «el centro pertenece al espécimen, los
-  bordes pertenecen al instrumento», y para eso basta con sugerir que hay un
-  aparato — dibujarlo sería construir la sala de laboratorio que el encargo
-  descarta.
+  El tercer ingrediente de la atmósfera. La primera versión —cuatro escuadras
+  cuadradas al 15 % de opacidad— la describió la dirección como «demasiado
+  tímida»: la línea exterior apenas existía. Este pase la sube a un nivel que se
+  ve sin buscarlo y le da VOCABULARIO, que es lo que faltaba.
 
-  NO se atenúan con el modo cine, al contrario que los controles. Son
+  Tres reglas gobiernan el bloque entero:
+
+  1. **Nunca se cierra el rectángulo.** Es la petición literal: «evita una caja
+     alrededor del viewport». Por eso las escuadras son ASIMÉTRICAS —un brazo
+     largo y otro corto, así que ninguna pareja insinúa un lado completo— y por
+     eso los tres signos sueltos están en posiciones distintas de sus bordes y
+     no se responden entre sí. Un calibre a la izquierda a media altura y otro
+     igual a la derecha a media altura serían dos lados de un marco; uno largo
+     a media altura y tres marcas cortas más abajo, no.
+  2. **El centro es del espécimen.** Todo vive pegado al borde, y el único signo
+     que se acerca al eje —el fiducial— lo hace por arriba del todo, donde la
+     figura no llega ni en su pose más estirada (el techo medido es el 85.6 %
+     del alto).
+  3. **Ni una coordenada, ni un número, ni una retícula.** El encargo veta las
+     lecturas falsas y aquí no hay ninguna: son marcas de calibración sin
+     escala, que es lo que dice «hay un aparato» sin afirmar nada que no sea
+     verdad. Un `ACQ 04` o un `+12.7°` serían un dato inventado.
+
+  Y NO se atenúan con el modo cine, al contrario que los controles. Son
   atmósfera, no mando: las estrellas tampoco se apagan cuando dejas de tocar
   nada, y una escuadra que aparece y desaparece pasaría a ser un aviso.
 */
@@ -67,34 +83,61 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /*
+    Un solo sitio donde calibrar la presencia de TODA la instrumentación, que
+    es la palanca que pidió la dirección: «10-15 %» frente al 25-35 % de la
+    atmósfera. Sobre negro, 0.46 de este azul acerado da sRGB ≈ 75, 83, 98.
+
+    Parece mucho al lado del halo —que llega a 85 en su esquina— y no lo es: la
+    presencia es brillo por ÁREA, y esto son líneas de un píxel. La masa fría
+    ocupa medio cuadro; todas las marcas juntas no llegan a un millar de
+    píxeles.
+  */
+  --obs-mark: rgb(164 180 212 / 0.46);
+  --obs-mark-soft: rgb(164 180 212 / 0.26);
+  --obs-inset: clamp(0.7rem, 1.8vw, 1.4rem);
 }
 
+/*
+  Las escuadras. El brazo largo y el corto salen de las DIMENSIONES de la caja,
+  no de dos elementos: un bloque de 2.1 × 0.85 rem con borde sólo arriba y a la
+  izquierda ya es una L asimétrica. Un elemento, una regla, cero pseudos.
+*/
 .observatory__caliper {
   position: absolute;
-  width: 0.85rem;
+  width: 2.1rem;
   height: 0.85rem;
-  border: 0 solid rgb(164 180 212 / 0.15);
+  border: 0 solid var(--obs-mark);
+}
+
+/* Y las dos de abajo llevan la asimetría al revés —brazo corto en horizontal y
+   largo en vertical—, para que las cuatro no se lean como el mismo sello
+   repetido cuatro veces. */
+.observatory__caliper--bl,
+.observatory__caliper--br {
+  width: 0.85rem;
+  height: 2.1rem;
 }
 
 .observatory__caliper--tl,
 .observatory__caliper--tr {
-  top: clamp(0.6rem, 1.6vw, 1.15rem);
+  top: var(--obs-inset);
 }
 
 .observatory__caliper--bl,
 .observatory__caliper--br {
-  bottom: clamp(0.6rem, 1.6vw, 1.15rem);
+  bottom: var(--obs-inset);
 }
 
 .observatory__caliper--tl,
 .observatory__caliper--bl {
-  left: clamp(0.6rem, 1.6vw, 1.15rem);
+  left: var(--obs-inset);
   border-left-width: 1px;
 }
 
 .observatory__caliper--tr,
 .observatory__caliper--br {
-  right: clamp(0.6rem, 1.6vw, 1.15rem);
+  right: var(--obs-inset);
   border-right-width: 1px;
 }
 
@@ -106,6 +149,103 @@
 .observatory__caliper--bl,
 .observatory__caliper--br {
   border-bottom-width: 1px;
+}
+
+/*
+  SIGNO 1 · El calibre del borde izquierdo.
+
+  Dos tramas repetidas sobre un solo elemento: marcas cortas cada 1.5 rem y una
+  larga cada tres de ellas. Es la proporción de cualquier regla física, y es lo
+  que hace que se lea como un instrumento y no como una lista de rayas.
+
+  Va con gradientes y no con nueve spans porque nueve spans serían nueve nodos
+  para dibujar nueve píxeles.
+*/
+.observatory__scale {
+  position: absolute;
+  left: var(--obs-inset);
+  top: 50%;
+  width: 0.95rem;
+  height: 10.5rem;
+  transform: translateY(-50%);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      var(--obs-mark-soft) 0 1px,
+      transparent 1px 1.5rem
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--obs-mark) 0 1px,
+      transparent 1px 4.5rem
+    );
+  background-repeat: no-repeat;
+  background-size:
+    0.5rem 100%,
+    0.95rem 100%;
+}
+
+/*
+  SIGNO 2 · El fiducial del borde superior.
+
+  Un segmento partido por la mitad: la marca de alineación de cualquier óptica.
+  Está centrado en horizontal y ésa es la única concesión al eje de todo el
+  bloque — a 1.4 rem del borde superior está por encima de cualquier pose del
+  espécimen, y el hueco central es lo que impide que se lea como el lado de una
+  caja.
+*/
+.observatory__fiducial {
+  position: absolute;
+  top: var(--obs-inset);
+  left: 50%;
+  width: 6rem;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    var(--obs-mark) 0 2rem,
+    transparent 2rem 4rem,
+    var(--obs-mark) 4rem 6rem
+  );
+}
+
+/*
+  SIGNO 3 · Las tres marcas del borde derecho.
+
+  Deliberadamente distintas del calibre de la izquierda —tres y no nueve, más
+  cortas, y a dos tercios de altura en vez de a la mitad—. Si fueran iguales y
+  simétricas, izquierda y derecha se leerían como los dos lados de un marco, que
+  es justo lo que la dirección descartó.
+*/
+.observatory__ticks {
+  position: absolute;
+  right: var(--obs-inset);
+  top: 66%;
+  width: 0.7rem;
+  height: 3.1rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--obs-mark) 0 1px,
+    transparent 1px 1.5rem
+  );
+}
+
+/* En pantallas estrechas el calibre largo se recorta antes que invadir el
+   cuadro, y el fiducial se estrecha: a 375 px, 6 rem son un tercio del ancho. */
+@media (max-width: 30rem) {
+  .observatory__scale {
+    height: 6rem;
+  }
+
+  .observatory__fiducial {
+    width: 3.6rem;
+    background: linear-gradient(
+      90deg,
+      var(--obs-mark) 0 1.2rem,
+      transparent 1.2rem 2.4rem,
+      var(--obs-mark) 2.4rem 3.6rem
+    );
+  }
 }
 
 /* El cromo NO recibe el puntero: sólo sus controles. Es la regla que costó una
@@ -561,4 +701,26 @@
   .observatory__toggle .observatory__ink::after {
     transition: none;
   }
+}
+
+/*
+  ── El respaldo plano ───────────────────────────────────────────────────────
+
+  §9: en `flat` o sin WebGL2 hay espécimen SVG y ficha completa. Este bloque es
+  el espécimen; la ficha ya la sirve la ruta en HTML y aquí, a diferencia del
+  visor normal, NO se tapa — de ahí que esto viva en el flujo y no en
+  `position: fixed`.
+
+  `FlatWorldBody` se posiciona en absoluto contra el ancestro posicionado más
+  cercano y se dimensiona por variables, así que el contenedor tiene que
+  ofrecerle las dos cosas. Es el mismo dibujo que usa el atlas 2D de la portada:
+  quien no tiene equipo para la escena no recibe un placeholder, recibe la
+  representación que el proyecto ya tenía construida y probada.
+*/
+.observatory__flat {
+  position: relative;
+  min-height: min(62vh, 26rem);
+  --flat-anchor-x: 50%;
+  --flat-anchor-y: 50%;
+  --flat-size: min(58vw, 18rem);
 }

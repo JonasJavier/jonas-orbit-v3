@@ -21,6 +21,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `shot.mjs` | captura 1440×860 del hero con WebGL por software y los efectos forzados |
 | `observatory-shot.mjs` | recorrido del Observatorio: diez capturas y un vídeo del gesto y los instrumentos |
 | `observatory-fill.mjs` | cuánto del cuadro ocupa el espécimen y cuánto blanco satura, leído del PNG |
+| `observatory-atmosfera.mjs` | cuánta atmósfera hay en el A/B/C, en niveles de sRGB: salto, jerarquía, censo de estrellas y bandeo |
 | `composition.mjs` | dónde cae cada destino en pantalla, en píxeles y en % del cuadro |
 | `crop.mjs` | recorta y amplía una zona de una captura |
 | `stability.mjs` | mide si el disco avanza o hierve entre fotogramas |
@@ -180,7 +181,7 @@ rotación rígida cambia todos los píxeles. Para aislar lo que decide el materi
 compara dos renders **del mismo instante** que difieran sólo en el término que
 investigas.
 
-## El Observatorio: dos trampas que costaron una medida cada una
+## El Observatorio: cuatro trampas que costaron una medida cada una
 
 `observatory-shot.mjs` hace el recorrido y `observatory-fill.mjs` lo mide. Las
 dos trampas salieron en el primer pase visual del Tesseracto y las dos dan
@@ -211,6 +212,41 @@ Y un aviso sobre qué mide cada cifra de `observatory-fill.mjs`: el **alto
 ocupado** es el encuadre, y el **núcleo ≥250** es el bloom. La luz total no
 sirve para juzgar un halo — bajar la fuerza del bloom un 57 % movió el total un
 13 %, porque casi todo lo pone la figura, que no bloomea.
+
+### `observatory-atmosfera.mjs`, y la unidad en la que hay que discutir
+
+Las otras dos trampas salieron en el pase de atmósfera, y las dos producen
+aserciones verdes sobre imágenes que no existen.
+
+**Un nivel en HDR no es un nivel en pantalla.** La primera atmósfera se calibró
+en radiancia lineal —«el halo por debajo de la mitad del canto más débil del
+espécimen»— y sobre el papel era impecable. En la captura no había nada: pasado
+por ACES y la codificación sRGB del `OutputPass`, aquel número sale a **sRGB 0,
+0, 1**, y en el centro del cuadro a 0. Cerca del negro la curva ACES es plana y
+comprime tres décadas de radiancia en los diez primeros valores de sRGB, así que
+una cota en unidades lineales no acota la imagen: la borra. De ahí este script —
+mide en niveles de sRGB sobre el PNG, que es la única unidad en la que «se ve» y
+«no se ve» significan algo.
+
+**Un contraste con signo no mide legibilidad.** La primera versión de la medida
+de jerarquía 4D anunciaba «de +7.8 a −1.3»: una catástrofe. La imagen decía lo
+contrario, porque contra negro un canto casi negro es INVISIBLE y contra el
+campo es una línea nítida. Lo medido era el cambio de polaridad. El ojo lee el
+valor absoluto; el signo sólo dice si el canto brilla o recorta.
+
+Y una tercera, menor, sobre el bandeo: la meseta se mide **en la pendiente**. El
+negro real del otro lado del halo es un tramo enorme de ceros, y la cima de
+cualquier máximo suave se cuantiza plana porque su derivada es cero. Ninguna de
+las dos es un anillo.
+
+```bash
+node tools/observatory-shot.mjs .shots/atmosfera tesseracto http://localhost:3100 --atmosfera
+node tools/observatory-atmosfera.mjs .shots/atmosfera
+```
+
+Las tres capturas tienen que venir de la misma pasada con el reloj clavado:
+mismo instante, misma pose, mismo cromo. Si no, la comparación de jerarquía 4D
+está midiendo dos figuras distintas.
 
 ## `composition.mjs` LEE la escena, no la reimplementa
 

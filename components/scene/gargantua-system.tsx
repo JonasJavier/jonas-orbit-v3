@@ -7,7 +7,11 @@ import { useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVoyageDeparture, subscribeVoyage } from "@/lib/voyage-controller";
-import { findWorldRoute, type WorldRoute } from "@/lib/world-route";
+import {
+  findWorldRoute,
+  isObservatoryPath,
+  type WorldRoute,
+} from "@/lib/world-route";
 import {
   evaluateCapabilities,
   readSignals,
@@ -122,6 +126,22 @@ export function GargantuaSystem({
   );
   const level: EffectsLevel = failed ? "flat" : detected;
 
+  /*
+    El Observatorio no se CUBRE: se libera.
+
+    Va como booleano y no como `pathname` en las dependencias del efecto que
+    construye la escena, y esa distinción es todo el diseño. Con `pathname` la
+    escena se destruiría y volvería a subir su geometría en CADA navegación,
+    que es justo lo contrario de tener una escena persistente. Con el booleano,
+    el efecto sólo se reejecuta al CRUZAR la frontera: al entrar, su limpieza
+    libera el contexto; al salir, lo vuelve a crear.
+
+    Es la enmienda 3 del §3 del documento del Tesseracto, y hasta ahora estaba
+    sin construir: `COVERED_WORLDS` congelaba el bucle y dejaba el contexto
+    vivo, así que en la ruta del Observatorio había dos.
+  */
+  const observatory = isObservatoryPath(pathname);
+
   const worldId = findWorldRoute(pathname, routes)?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
 
@@ -155,7 +175,7 @@ export function GargantuaSystem({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || level === "flat") return;
+    if (!canvas || level === "flat" || observatory) return;
 
     let cancelled = false;
     let handle: SceneHandle | null = null;
@@ -200,8 +220,9 @@ export function GargantuaSystem({
       handleRef.current = null;
     };
     // `bodies` viene del servidor y es estable. Cambiar de ruta NO reconstruye
-    // la escena: solo cambia su pose.
-  }, [bodies, level]);
+    // la escena: solo cambia su pose. La única excepción es cruzar la frontera
+    // del Observatorio, donde el contexto se libera de verdad.
+  }, [bodies, level, observatory]);
 
   /**
    * Enlaza los nodos del HTML con la escena. Se rehace en cada navegación
@@ -277,7 +298,11 @@ export function GargantuaSystem({
 
   // Sin escena no hay nada que dibujar ni que ofrecer: el interruptor único
   // de movimiento de la bandeja es el único control, en todas las rutas.
-  if (level === "flat") return null;
+  //
+  // Y en el Observatorio tampoco queda el lienzo vacío: retirarlo es lo que
+  // hace comprobable la liberación —el marcador de persistencia que usa la
+  // suite tiene que DESAPARECER, no quedarse sobre un canvas sin contexto.
+  if (level === "flat" || observatory) return null;
 
   return (
     <canvas

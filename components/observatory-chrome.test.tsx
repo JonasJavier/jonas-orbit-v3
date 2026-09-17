@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { evaluateCapabilities } from "@/components/scene/capability";
 import { worldsData } from "@/content/worlds.data";
 import { ObservatoryViewer } from "./observatory-viewer";
 
@@ -42,6 +43,39 @@ import { ObservatoryViewer } from "./observatory-viewer";
  * jsdom no tiene WebGL. Esto prueba el cromo, que es lo que cambió.
  */
 
+/*
+  El veredicto de capacidad, declarado.
+
+  Sin esto los tests del cromo caen todos, y caen POR EL MOTIVO CORRECTO: jsdom
+  no tiene WebGL2, así que el gate del §9 decide `flat` y el visor entrega el
+  respaldo plano —espécimen SVG sobre la ficha servida— en vez del instrumento.
+  Es la misma clase de dependencia de entorno que `matchMedia`: el componente
+  pregunta por el equipo y en un entorno de prueba hay que contestarle.
+
+  Se mockea la evaluación y no el sondeo de WebGL porque lo que estos tests
+  quieren fijar es el CROMO. Que el gate funcione lo prueba el último test de
+  este archivo, que es el único que deja hablar al veredicto de verdad.
+*/
+vi.mock("@/components/scene/capability", async (original) => {
+  const real =
+    await original<typeof import("@/components/scene/capability")>();
+  return { ...real, evaluateCapabilities: vi.fn() };
+});
+
+const conEquipo = () =>
+  vi.mocked(evaluateCapabilities).mockReturnValue({
+    level: "orbit",
+    reason: "ok",
+    canOverride: true,
+  });
+
+const sinEquipo = () =>
+  vi.mocked(evaluateCapabilities).mockReturnValue({
+    level: "flat",
+    reason: "sin-webgl2",
+    canOverride: false,
+  });
+
 const world = worldsData.tesseract;
 
 /*
@@ -81,6 +115,7 @@ function mount() {
 const INSTRUMENTS = ["Bloom", "Material", "Datos"] as const;
 
 describe("Observatorio · cromo instrumental", () => {
+  beforeEach(conEquipo);
   it("los mandos se llaman exactamente como los busca la herramienta de captura", () => {
     mount();
     // En testing-library un `name` de tipo string ya es coincidencia EXACTA de
@@ -201,5 +236,78 @@ describe("Observatorio · cromo instrumental", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("la instrumentación de borde no afirma nada y no cierra el marco", () => {
+    /*
+      El tercer ingrediente de la atmósfera, con sus dos vetos convertidos en
+      aserciones.
+
+      El primero es el que más fácil se rompe cuando alguien quiere «darle más
+      vida» a los bordes: **ni una lectura**. El encargo veta las coordenadas
+      falsas, y aquí no hay ninguna — un `ACQ 04` o un `+12.7°` serían un dato
+      inventado, que es la regla 8 del repositorio aplicada a un píxel. Se
+      comprueba sobre el texto porque es lo único que un test puede ver: si
+      algún día aparece una cifra ahí dentro, este test la caza.
+
+      El segundo es «nada de caja alrededor del viewport». Un rectángulo no se
+      puede detectar en jsdom, que no calcula geometría, pero sí su causa más
+      probable: que alguien resuelva las cuatro escuadras con un solo selector
+      simétrico. Mientras las de abajo lleven su propia clase y su propia
+      proporción invertida, la simetría no puede volver por accidente.
+
+      Y va fuera del árbol de accesibilidad entero: son marcas de calibración,
+      no información. Un lector de pantalla que las anunciara estaría leyendo
+      decoración.
+    */
+    const { container } = mount();
+    const bloque = container.querySelector(".observatory__calipers")!;
+    expect(bloque).not.toBeNull();
+    expect(bloque).toHaveAttribute("aria-hidden", "true");
+    expect(bloque.textContent).toBe("");
+
+    expect(bloque.querySelectorAll(".observatory__caliper")).toHaveLength(4);
+    for (const signo of ["scale", "fiducial", "ticks"]) {
+      expect(
+        bloque.querySelector(`.observatory__${signo}`),
+        `falta el signo «${signo}» del borde`,
+      ).not.toBeNull();
+    }
+
+    // Las dos de abajo invierten la asimetría, así que no comparten regla con
+    // las de arriba: es lo que impide que las cuatro dibujen el mismo sello.
+    const css = readFileSync(
+      join(process.cwd(), "components/observatory.css"),
+      "utf8",
+    );
+    expect(css).toMatch(/\.observatory__caliper--bl,\s*\n\s*\.observatory__caliper--br \{[^}]*height: 2\.1rem/);
+  });
+
+  it("sin equipo entrega el espécimen plano y NO tapa la ficha", () => {
+    /*
+      §9 / O7: en `flat` o sin WebGL2 hay espécimen SVG y ficha completa.
+
+      Las dos mitades importan y la segunda es la que se olvida. El visor normal
+      es `position: fixed; inset: 0` y TAPA el HTML servido —título, resumen y
+      vuelta al índice—, cosa que da igual cuando encima hay un espécimen en 3D
+      porque ésa es la experiencia. En `flat` no: taparlo dejaría a alguien con
+      un equipo modesto mirando un rectángulo negro en vez de la página.
+
+      De ahí que el respaldo no sea «el visor apagado» sino otro árbol, en
+      flujo. Este test fija justamente eso: que el contenedor a pantalla
+      completa NO se monta.
+    */
+    sinEquipo();
+    const { container } = mount();
+
+    expect(container.querySelector(".observatory")).toBeNull();
+    expect(container.querySelector(".observatory__canvas")).toBeNull();
+    expect(container.querySelector(".observatory__flat")).not.toBeNull();
+    expect(container.querySelector("[data-flat-world='tesseract']")).not.toBeNull();
+
+    // Y sin instrumentos: no hay modelo del que medir nada, así que un banco
+    // de INSPECCIONAR aquí prometería lecturas que no existen.
+    expect(screen.queryByRole("button", { name: "Bloom" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Datos" })).toBeNull();
   });
 });
