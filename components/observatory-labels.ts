@@ -58,6 +58,28 @@ export const ARCHITECTURE_LABELS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Las cinco secciones del `REGISTRO`, en orden.
+ *
+ * Es la segunda profundidad del laboratorio y la frontera con `DATOS` es
+ * deliberada: aquélla mide el objeto como CONSTRUCCIÓN TÉCNICA —llamadas de
+ * dibujo, materiales, conteos que salen del modelo— y ésta lo cuenta como
+ * EXPERIMENTO DE DISEÑO. Ningún número de las de arriba puede aparecer aquí, y
+ * ninguna frase de aquí puede colarse en el panel de medidas: un dato medido y
+ * una decisión de diseño no se leen igual ni valen lo mismo, y juntarlos
+ * convertiría la medición en opinión.
+ *
+ * El orden no es alfabético ni casual, es el del trabajo real: qué se buscaba,
+ * con qué se chocó, cómo se construyó, qué quedó y qué se tiró por el camino.
+ */
+export const REGISTRO_SECTIONS = [
+  ["intencion", "Intención"],
+  ["prueba", "Prueba"],
+  ["construccion", "Construcción"],
+  ["resultado", "Resultado"],
+  ["iteraciones", "Iteraciones"],
+] as const;
+
+/**
  * La etiqueta de una clave, o la clave si nadie la ha nombrado.
  *
  * El respaldo no es una red de seguridad cómoda: es un fallo visible a

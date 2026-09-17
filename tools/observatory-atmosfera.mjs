@@ -134,13 +134,36 @@ const percentil = (xs, q) => {
   es un cielo infinito; cualquier otra combinación es otra cosa.
 */
 function registro(X, y0, y1, x0, x1) {
+  /*
+    Se reduce por MÁXIMO, no tomando un píxel de cada tres, y la diferencia
+    decide si esto mide algo o no.
+
+    Con el Tesseracto el muestreo puntual funcionaba porque lo que se
+    correlacionaba de verdad era el halo, que es una superficie suave y
+    sobrevive a cualquier submuestreo. La Endurance no tiene halo en cuadro —su
+    preset mira a 125° de la luz— así que la única estructura del cielo son las
+    estrellas, y una estrella mide 1.3 px: tomar uno de cada tres píxeles se las
+    salta casi todas. El resultado eran nueve pasos con 0 % de señal sobre un
+    cielo que sí tiene estrellas.
+
+    El máximo de cada bloque conserva el punto. Es el operador que corresponde a
+    una señal hecha de picos aislados, y no cuesta nada más.
+
+    El recorte a 60 se queda: las aristas vivas del espécimen pasan de 200 y sin
+    él dominarían la suma.
+  */
   const filas = [];
   for (let y = y0; y < y1; y += 3) {
     const fila = [];
     for (let x = x0; x < x1; x += 2) {
-      // Recortado: las aristas vivas del espécimen valen más de 200 y
-      // dominarían la suma, y lo que se quiere correlacionar es el CIELO.
-      fila.push(Math.min(60, X.luma[y * X.width + x]));
+      let maximo = 0;
+      for (let dy = 0; dy < 3 && y + dy < y1; dy++) {
+        for (let dx = 0; dx < 2 && x + dx < x1; dx++) {
+          const v = X.luma[(y + dy) * X.width + x + dx];
+          if (v > maximo) maximo = v;
+        }
+      }
+      fila.push(Math.min(60, maximo));
     }
     filas.push(fila);
   }
@@ -213,9 +236,152 @@ if (MOVIMIENTO) {
 `,
   );
 
-  // La banda alta: casi todo cielo en cualquier pose, y es donde el campo tiene
-  // más estructura para correlacionar.
-  const banda = (X) => registro(X, 70, 250, 0, X.width);
+  /*
+    La banda de muestreo se ELIGE, no se fija, y es la tercera vez que esta
+    lección se cobra una medida.
+
+    Con el Tesseracto valía una banda alta fija: es un alambre y deja pasar el
+    cielo por todas partes. La Endurance es una masa sólida y clara que ocupa
+    justo esa franja, así que la correlación dejaba de seguir al cielo y seguía
+    a la nave — 48 px por cada 10° en vez de los ~200 que predice la geometría,
+    y con un 60 % de confianza, porque estaba siguiendo algo de verdad. Sólo que
+    no el cielo.
+
+    Así que se recorren bandas candidatas y se queda la MÁS VACÍA en todos los
+    fotogramas a la vez. Para un alambre saldrá arriba, para una nave saldrá
+    donde no llegue, y para el siguiente espécimen saldrá donde toque sin que
+    haya que tocar este archivo.
+  */
+  const ALTO_BANDA = 170;
+  let y0 = 70;
+  let mejorOcupacion = 0;
+  /*
+    Y la búsqueda se queda en el 72 % SUPERIOR del cuadro, porque abajo no hay
+    cielo: hay cromo. La banda inferior es donde viven la pista de arrastre,
+    `INSPECCIONAR` y los tres instrumentos, y todo eso es CSS — no se mueve
+    nunca, por definición.
+
+    Costó otra medida falsa. Para la Endurance el buscador eligió y 670-840
+    porque era la franja con menos espécimen, y ahí el 97.2 % de los píxeles
+    encendidos seguían encendidos en el mismo sitio tras girar la cámara. Parecía
+    un cielo clavado a la pantalla y eran letras. En la banda ALTA del mismo par
+    de fotogramas el solape es del 19.3 %: el cielo se movía, sólo que no se
+    estaba mirando el cielo.
+  */
+  const TECHO_CROMO = Math.floor(cuadros[0].height * 0.72);
+
+  /*
+    Y entre las bandas limpias se queda la que MEJOR CORRELACIONA, no la que más
+    cielo tiene ni la más vacía. Probé las dos y las dos eligen mal:
+
+     · «La más vacía» escoge la franja donde no hay nada, y ahí no hay nada que
+       seguir — con la Endurance eligió una banda de cromo.
+     · «La que más cielo tiene» escoge, en un halo, su MESETA: mucha luz y
+       ningún relieve. Con el Tesseracto la llevó de y 70-250 —donde el
+       degradado cae 63 niveles— a y 310-480, donde es plano, y la confianza se
+       desplomó del 65 % al 3 %.
+
+    Lo que hace falta no es luz ni vacío: es RELIEVE, y eso ya lo mide la propia
+    confianza —cuánto mejora el mejor encaje respecto de no desplazar nada—. Así
+    que se corre la correlación sobre el primer par en cada banda candidata y
+    gana la que más confianza da. Cuesta ocho correlaciones extra y elimina el
+    criterio inventado.
+  */
+  let mejor = null;
+  for (let y = 40; y + ALTO_BANDA < TECHO_CROMO; y += 30) {
+    let especimen = 0;
+    for (const X of cuadros) {
+      let brillantes = 0;
+      let total = 0;
+      for (let yy = y; yy < y + ALTO_BANDA; yy += 4) {
+        for (let xx = 60; xx < X.width - 60; xx += 4) {
+          if (X.luma[yy * X.width + xx] > 45) brillantes++;
+          total++;
+        }
+      }
+      especimen = Math.max(especimen, brillantes / total);
+    }
+    if (especimen > 0.12) continue;
+    const prueba = desplazamiento(
+      registro(cuadros[0], y, y + ALTO_BANDA, 0, cuadros[0].width),
+      registro(cuadros[1], y, y + ALTO_BANDA, 0, cuadros[1].width),
+    );
+    if (!mejor || prueba.confianza > mejor.confianza) {
+      mejor = { y, especimen, confianza: prueba.confianza };
+    }
+  }
+  if (mejor) {
+    y0 = mejor.y;
+    mejorOcupacion = mejor.especimen;
+  }
+  console.log(
+    `banda de muestreo   y ${y0}-${y0 + ALTO_BANDA}, ` +
+      `${(100 * mejorOcupacion).toFixed(1)} % de espécimen en el peor fotograma
+`,
+  );
+  const banda = (X) => registro(X, y0, y0 + ALTO_BANDA, 0, X.width);
+
+  /*
+    ── Solape de encendidos ───────────────────────────────────────────────────
+
+    La segunda métrica, y la que funciona cuando la primera no puede.
+
+    La correlación necesita ESTRUCTURA. Con el Tesseracto la hay de sobra —el
+    halo es una superficie suave que llena media banda—, pero la Endurance mira
+    a 125° de la luz, así que su cielo son sólo estrellas: picos aislados sobre
+    negro, sin nada continuo que superponer. Ahí la correlación no encuentra
+    mínimo y no puede decir CUÁNTO se movió.
+
+    Pero para la pregunta que importa —«¿se mueve o está pegado a la pantalla?»—
+    no hace falta saber cuánto. Basta con mirar si los píxeles encendidos siguen
+    encendidos EN EL MISMO SITIO. Un cielo clavado da un solape cercano al 100 %;
+    uno que barre lo baja de inmediato. Es tosca y es exactamente la que un
+    campo disperso sí puede contestar.
+  */
+  const encendidos = (X) => {
+    const s = new Set();
+    for (let y = y0; y < y0 + ALTO_BANDA; y++) {
+      for (let x = 60; x < X.width - 60; x++) {
+        const v = X.luma[y * X.width + x];
+        if (v >= 10 && v < 60) s.add(y * X.width + x);
+      }
+    }
+    return s;
+  };
+  const primerosEncendidos = encendidos(cuadros[0]);
+  const siguientesEncendidos = encendidos(cuadros[1]);
+  let comunes = 0;
+  for (const k of primerosEncendidos) {
+    if (siguientesEncendidos.has(k)) comunes++;
+  }
+  const solape = primerosEncendidos.size
+    ? comunes / primerosEncendidos.size
+    : 1;
+  /*
+    Y sólo vale para cielos DISPERSOS, así que se dice cuándo aplica.
+
+    Sobre un halo el solape no significa nada: el degradado cubre la banda
+    entera, así que casi todos sus píxeles caen dentro del rango 10-60 antes y
+    después de girar, y sale un 83 % aunque el cielo haya barrido doscientos
+    píxeles. No mide dónde está una cosa: mide si ese píxel cae en una franja de
+    brillo. Con estrellas sí mide lo primero, porque una estrella ocupa dos
+    píxeles y o está o no está.
+
+    Las dos métricas son complementarias y cada una cubre el punto ciego de la
+    otra: correlación para cielo continuo, solape para cielo de puntos.
+  */
+  const densidad =
+    primerosEncendidos.size / (ALTO_BANDA * (cuadros[0].width - 120));
+  console.log(
+    densidad < 0.1
+      ? `solape de encendidos tras un paso de 10°: ${(100 * solape).toFixed(1)} % ` +
+          `sobre ${primerosEncendidos.size} px` +
+          (solape < 0.6
+            ? "   ✓ el cielo se mueve\n"
+            : "   ⚠ el cielo apenas cambia de sitio\n")
+      : "solape de encendidos: no aplica — la banda está llena de halo " +
+          `(${(100 * densidad).toFixed(0)} % encendida). Manda el barrido.\n`,
+  );
 
   console.log("── BARRIDO EN ÓRBITA ────────────────────────────────────────");
   const barridos = [];
@@ -311,19 +477,40 @@ if (MOVIMIENTO) {
     const antes = await leer(zoom[0]);
     for (const n of zoom.slice(1)) {
       const despues = await leer(n);
+      /*
+        Sólo donde los DOS fotogramas son cielo. Sin esa máscara, al acercarse el
+        espécimen ocupa más de la mitad del cuadro y la mediana deja de hablar
+        del cielo: la Endurance daba «7.45 niveles, el cielo sigue a la cámara»
+        midiendo la nave.
+      */
       const diffs = [];
       let iguales = 0;
       let total = 0;
       for (let i = 0; i < antes.luma.length; i += 7) {
+        if (antes.luma[i] > 45 || despues.luma[i] > 45) continue;
         const d = Math.abs(antes.luma[i] - despues.luma[i]);
         diffs.push(d);
         if (d <= 1) iguales++;
         total++;
       }
+      /*
+        Hace falta cielo de sobra para que la mediana hable de él. Al acercarse,
+        la Endurance llena el cuadro y lo poco que queda de cielo está PEGADO a
+        la nave, donde su propio bloom lo levanta: eso da diferencias que son del
+        espécimen y no del fondo. Un par así no concluye nada, y decirlo es más
+        útil que teñirlo de rojo.
+      */
+      const suficiente = total > antes.luma.length / 7 / 4;
+      if (!suficiente) {
+        console.log(
+          `${zoom[0]} → ${n.padEnd(14)} sólo ${pct(total, antes.luma.length / 7)} de cielo: no concluye`,
+        );
+        continue;
+      }
       const med = mediana(diffs);
       console.log(
         `${zoom[0]} → ${n.padEnd(14)} mediana ${med.toFixed(2)} niveles · ` +
-          `${pct(iguales, total)} del cuadro sin cambiar` +
+          `${pct(iguales, total)} del CIELO sin cambiar (${total} muestras)` +
           (med <= 1
             ? "   ✓ el cielo no se movió ni escaló"
             : "   ⚠ el cielo sigue a la cámara"),

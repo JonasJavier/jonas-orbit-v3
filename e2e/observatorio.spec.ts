@@ -25,6 +25,12 @@ import { expect, test, type Page } from "@playwright/test";
  */
 
 const OBSERVATORIO = "/es/experimentos/observatorio/tesseracto";
+/** Los dos especímenes montados. El segundo existe para probar que el
+ *  laboratorio no está hecho a la medida del primero. */
+const ESPECIMENES = [
+  "/es/experimentos/observatorio/tesseracto",
+  "/es/experimentos/observatorio/endurance",
+];
 
 /** Enciende los efectos y cuenta dibujos por canvas, separando los dos dueños. */
 async function contarDibujos(page: Page) {
@@ -267,4 +273,319 @@ test("O10 · 375, 768 y 1440: sin desbordamiento y con blancos de 44 px", async 
         .toBeGreaterThanOrEqual(44);
     }
   }
+});
+
+test("O10 bis · los mandos se pueden PULSAR, no sólo medir", async ({ page }) => {
+  test.setTimeout(120_000);
+  await contarDibujos(page);
+
+  /*
+    La mitad de O10 que faltaba, y que costó un defecto real.
+
+    O10 comprueba que cada mando MIDA 44 px, y eso es otra cosa que poder
+    pulsarlo: a 375 px la bandeja global —interruptor de movimiento y banda
+    sonora, `position: fixed` en todas las rutas— caía justo encima de la fila
+    de instrumentos. Las cajas estaban perfectas y `MATERIAL` y `DATOS` eran
+    inalcanzables con el dedo. Un `boundingBox()` no ve lo que hay ENCIMA.
+
+    Se comprueba con `elementFromPoint` sobre el centro exacto de cada mando, que
+    es lo que hace el navegador cuando alguien toca ahí. Y sobre los DOS
+    especímenes, porque el pie es del laboratorio y no de la muestra: si un día
+    uno de ellos cambia la altura de la banda, el otro se entera aquí.
+  */
+  for (const ruta of ESPECIMENES) {
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 812 });
+      await page.goto(ruta);
+      await expect(page.locator(".observatory__canvas")).toBeVisible({
+        timeout: 30000,
+      });
+      await page.waitForTimeout(2500);
+
+      for (const nombre of ["Bloom", "Material", "Datos", "Reajustar"]) {
+        const boton = page.getByRole("button", { name: nombre, exact: true });
+        const caja = (await boton.boundingBox())!;
+        expect(caja, `${nombre} no existe en ${ruta} a ${width} px`).not.toBeNull();
+
+        const encima = await page.evaluate(
+          ([x, y]) => {
+            const nodo = document.elementFromPoint(x, y);
+            return nodo ? nodo.closest("button")?.textContent ?? null : null;
+          },
+          [caja.x + caja.width / 2, caja.y + caja.height / 2],
+        );
+        expect(
+          encima,
+          `«${nombre}» está tapado en ${ruta} a ${width} px`,
+        ).toContain(nombre);
+      }
+    }
+  }
+});
+
+test("los dos especímenes son el mismo laboratorio con datos propios", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await contarDibujos(page);
+
+  /*
+    La prueba de generalización, en la parte que un test puede afirmar.
+
+    Lo visual lo juzga Jonás sobre captura; lo que se fija aquí es que el
+    Observatorio NO se ha ramificado por espécimen. Mismo cromo, mismos cuatro
+    mandos, misma instrumentación de borde — y `DATOS` con los conteos de CADA
+    figura, que es la única cosa que tiene que ser distinta.
+
+    Los números no se comparan contra una lista: se comprueba que las dos fichas
+    no digan lo mismo. Escribir «radiadores 4» aquí sería exactamente el dato
+    tecleado a mano que el §8 prohíbe, sólo que en un test.
+  */
+  const fichas: string[] = [];
+  for (const ruta of ESPECIMENES) {
+    await page.goto(ruta);
+    await expect(page.locator(".observatory__canvas")).toBeVisible({
+      timeout: 30000,
+    });
+    await page.waitForTimeout(3000);
+
+    await expect(page.locator(".observatory__calipers")).toHaveCount(1);
+    for (const nombre of ["Bloom", "Material", "Datos", "Reajustar"]) {
+      await expect(
+        page.getByRole("button", { name: nombre, exact: true }),
+      ).toBeVisible();
+    }
+
+    await page.getByRole("button", { name: "Datos", exact: true }).click();
+    const ficha = page.locator(".observatory__data");
+    await expect(ficha).toBeVisible();
+    fichas.push((await ficha.textContent()) ?? "");
+  }
+
+  expect(fichas[0]).not.toBe(fichas[1]);
+  expect(fichas[0].length).toBeGreaterThan(40);
+  expect(fichas[1].length).toBeGreaterThan(40);
+});
+
+test("cambiar de espécimen dentro del laboratorio NO hereda el estado", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+
+  /*
+    La petición fue literal: «nada de heredar que dejaste el Tesseracto sin bloom
+    y descubrir Endurance también sin bloom».
+
+    Y no se cumple sola. La cámara sí se reinicia gratis —al cambiar el `id` el
+    efecto reconstruye la escena entera desde el preset—, pero los instrumentos
+    viven en estado de React, y entre dos rutas con el mismo árbol React
+    REUTILIZA la instancia: `bloom`, `emission` y la ficha abierta sobreviven al
+    cambio. Quien los tira es el `key` por espécimen de la ruta, y este test es
+    lo único que lo sujeta: quitarlo no rompe ningún tipo ni ninguna unidad, y la
+    consecuencia es que una muestra se presenta con el material de la anterior.
+
+    Se prueba con BLOOM porque es el que más miente: apagado, la Endurance
+    aparecería sin halo y parecería que su material es así.
+  */
+  await page.goto(OBSERVATORIO);
+  await expect(page.locator(".observatory__canvas")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.waitForTimeout(3000);
+
+  const bloom = () => page.getByRole("button", { name: "Bloom", exact: true });
+  await bloom().click();
+  await expect(bloom()).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Datos", exact: true }).click();
+  await expect(page.locator(".observatory__data")).toBeVisible();
+
+  // El salto va por el raíl, que es como lo hará un visitante.
+  await page.getByRole("link", { name: "Endurance", exact: true }).click();
+  await expect(page.locator(".observatory__canvas")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.waitForTimeout(3000);
+
+  await expect(bloom()).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    page.getByRole("button", { name: "Material", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".observatory__data")).toHaveCount(0);
+
+  // Y la identidad y el raíl acompañan al cambio.
+  await expect(page.locator(".observatory__index")).toContainText(
+    "Espécimen 2 de 6",
+  );
+  const activo = page.locator('[aria-current="page"]');
+  await expect(activo).toHaveCount(1);
+  await expect(activo).toContainText("Endurance");
+});
+
+test("el catálogo enseña las seis muestras y sólo enlaza las montadas", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+  await page.goto(OBSERVATORIO);
+  await expect(page.locator(".observatory__canvas")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.waitForTimeout(2500);
+
+  /*
+    El raíl en un navegador de verdad, que es donde se puede comprobar lo que
+    jsdom no calcula: que la columna sea FINA. La petición fue «nada de una
+    sidebar grande con seis cards porque volveríamos a encajonar el viewport», y
+    eso es una medida, no una opinión — en reposo los nombres están ocultos por
+    opacidad y la columna no debería pasar de unas pocas decenas de píxeles.
+  */
+  const catalogo = page.getByRole("navigation", { name: "Especímenes" });
+  await expect(catalogo.locator("li")).toHaveCount(6);
+  await expect(catalogo.locator("a")).toHaveCount(2);
+  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(4);
+
+  const caja = (await catalogo.boundingBox())!;
+  expect(caja.width, "el catálogo dejó de ser una columna fina").toBeLessThan(
+    120,
+  );
+
+  // Y el nombre existe para quien navega escuchando aunque no se vea.
+  await expect(
+    page.getByRole("link", { name: "Endurance", exact: true }),
+  ).toHaveAttribute("href", "/es/experimentos/observatorio/endurance");
+});
+
+test("la salida del Observatorio lleva al índice de Experimentos", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+  await page.goto(OBSERVATORIO);
+  await expect(page.locator(".observatory__canvas")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.waitForTimeout(2500);
+
+  /*
+    Hay DOS salidas escritas y las dos tienen que llevar al mismo sitio: la del
+    HTML servido —la que existe sin JavaScript, regla 7— y la del instrumento.
+    Que una apunte a otro lado es el fallo que nadie encuentra, porque cada
+    quien prueba la suya.
+
+    Pero sólo UNA está expuesta a la vez, y eso también se comprueba aquí. Con
+    el instrumento encendido la cara servida va `inert`: si las dos estuvieran
+    vivas habría dos salidas en el tabulador —una de ellas invisible bajo el
+    espécimen— y dos enlaces con el mismo nombre accesible. De ahí que la
+    servida se busque por el DOM y la del instrumento por su papel.
+  */
+  const salida = page.getByRole("link", { name: "Salir del Observatorio" });
+  await expect(salida).toHaveAttribute("href", "/es/experimentos");
+
+  const servida = page.locator(".observatory-face__exit a");
+  await expect(servida).toHaveAttribute("href", "/es/experimentos");
+  await expect(page.locator(".observatory__served")).toHaveAttribute(
+    "inert",
+    "",
+  );
+
+  // Y la invariante al derecho: con el instrumento en marcha, la única salida
+  // que un lector de pantalla encuentra es la suya.
+  await expect(
+    page.getByRole("link", { name: "Volver a Experimentos" }),
+  ).toHaveCount(0);
+});
+
+test("el instrumento se enciende cuando hay imagen, no cuando hay escena", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+  await page.goto(OBSERVATORIO);
+
+  /*
+    EN ESPERA → NOMINAL, y por qué el orden importa.
+
+    `createObservatoryScene` resuelve al CONSTRUIR, y entre construir y pintar
+    hay una compilación de shaders que en un equipo modesto se mide en cientos
+    de milisegundos. Encender el cromo con lo primero enseñaría un rectángulo
+    negro con mandos encima; encenderlo con lo segundo es lo que convierte la
+    entrada en un aparato que arranca.
+
+    El estado se publica en el DOM y por eso se puede comprobar sin GPU: lo que
+    se fija aquí es que existe el estado intermedio y que el final llega.
+  */
+  const visor = page.locator(".observatory");
+  await expect(visor).toHaveAttribute("data-state", "nominal", {
+    timeout: 30000,
+  });
+
+  // Con imagen, el cromo deja de ser `inert` y sus mandos existen de verdad.
+  await expect(page.locator(".observatory__chrome")).not.toHaveAttribute(
+    "inert",
+    "",
+  );
+  await expect(page.getByRole("button", { name: "Bloom" })).toBeVisible();
+});
+
+test("en móvil la ficha es modo lectura, no el escritorio comprimido", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await contarDibujos(page);
+  await page.goto("/es/experimentos/observatorio/endurance");
+  await expect(page.locator(".observatory__canvas")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.waitForTimeout(3000);
+
+  /*
+    El diagnóstico fue que a 375 px todo CABÍA y nada funcionaba: identidad,
+    rastro, raíl, pista, `Reajustar`, panel, cuatro instrumentos, bandeja global
+    y el espécimen intentando existir detrás. Ni se leía la ficha ni se observaba
+    la nave.
+
+    La respuesta son dos estados, y esto comprueba que existen de verdad. En
+    observar no hay raíl vertical —depende de apuntar, y en táctil no hay dónde
+    apuntar— sino el paso compacto. En leer, la ficha es una hoja inferior y se
+    retira todo lo que no es identidad ni texto.
+
+    Se mide el ALTO de la hoja porque la petición fue un rango —55-65 vh— y
+    porque con una sección a la vez el contenido cae solo a la mitad de eso: sin
+    un suelo, la hoja quedaba como una tira.
+  */
+  const rail = page.locator(".observatory__rail");
+  await expect(rail).toHaveCount(1);
+  await expect(rail).toBeHidden();
+  await expect(
+    page.getByRole("link", { name: "Muestra anterior: Tesseracto" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Registro", exact: true }).click();
+  await expect(page.getByRole("tabpanel")).toBeVisible();
+
+  const alto = await page.evaluate(() => {
+    const hoja = document.querySelector(".observatory__data")!.getBoundingClientRect();
+    return Math.round((100 * hoja.height) / window.innerHeight);
+  });
+  expect(alto, "la hoja se salió del 55-65 vh pedido").toBeGreaterThanOrEqual(55);
+  expect(alto).toBeLessThanOrEqual(65);
+
+  // Modo lectura: fuera la pista, `Reajustar`, el banco y el paso.
+  await expect(page.locator(".observatory__controls")).toBeHidden();
+  await expect(page.locator(".observatory__inspect")).toBeHidden();
+  await expect(
+    page.getByRole("link", { name: "Muestra anterior: Tesseracto" }),
+  ).toBeHidden();
+
+  // Y la salida del modo la da la propia hoja, porque tapa el banco entero.
+  await page.getByRole("button", { name: "Cerrar registro" }).click();
+  await expect(page.getByRole("tabpanel")).toHaveCount(0);
+  await expect(page.locator(".observatory__inspect")).toBeVisible();
 });

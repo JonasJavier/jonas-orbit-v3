@@ -4,7 +4,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
-import { observationPlacement } from "@/lib/observatory";
+import { observationPlacement, OBSERVATION_PRESETS } from "@/lib/observatory";
 import { readVisualBench } from "@/lib/visual-bench";
 import { createBody, disposeBody, type SceneBodyInput } from "./bodies";
 import { createObservatorySky } from "./observatory-sky";
@@ -130,7 +130,7 @@ export const FOV = 40;
  * cada figura —Miller es una esfera y no tiene desfase; la Endurance lo tendrá
  * enorme, porque su envolvente la fijan las puntas de los radiadores—.
  */
-export const BOUNDS_FILL = 0.91;
+export const BOUNDS_FILL = OBSERVATION_PRESETS.tesseract.boundsFill;
 
 /** Topes del zoom, en múltiplos de la distancia de encuadre inicial. Acotado a
  *  propósito: esto es un instrumento de observación, no un vuelo libre. */
@@ -163,12 +163,24 @@ export interface ObservatoryOptions {
   canvas: HTMLCanvasElement;
   world: SceneBodyInput;
   motion: boolean;
+  /**
+   * El apretón de manos de llegada: se llama UNA vez, justo después del primer
+   * `composer.render()` que de verdad ha pintado.
+   *
+   * No sirve el `.then()` del import dinámico —ahí sólo existe el contrato
+   * medido, y el lienzo sigue vacío— ni sirve el primer `requestAnimationFrame`,
+   * porque este bucle es bajo demanda y sale por `if (!dirty) return` antes de
+   * dibujar. Sin esta llamada nadie de fuera puede saber cuándo hay imagen, y
+   * ésa es exactamente la diferencia entre encender un instrumento y enseñar un
+   * rectángulo negro mientras se monta.
+   */
+  onFirstFrame?: () => void;
 }
 
 export function createObservatoryScene(
   options: ObservatoryOptions,
 ): ObservatoryHandle | null {
-  const { canvas, world } = options;
+  const { canvas, world, onFirstFrame } = options;
 
   const body = createBody(world);
   // Gargantúa no llega aquí: no tiene malla y se observa por vistas curadas.
@@ -191,16 +203,20 @@ export function createObservatoryScene(
 
   /*
     El encuadre: a `d = r / sin(fov/2)` la ENVOLVENTE llena el alto exacto. Se
-    divide por `BOUNDS_FILL` para dejarle aire alrededor — un objeto que toca
-    los bordes se lee como un recorte, no como una muestra.
+    divide por el `boundsFill` DEL PRESET para dejarle aire alrededor — un
+    objeto que toca los bordes se lee como un recorte, no como una muestra.
+
+    Del preset y no de una constante del driver: la relación entre la esfera
+    envolvente y lo que se ve es propia de cada figura, así que un mismo número
+    encuadra dos especímenes de dos tamaños distintos. Encuadrar la Endurance
+    «como el Tesseracto» sería tratar el laboratorio como la página de un
+    objeto, que es justo lo que este Observatorio no puede ser.
   */
+  const id = world.id as Exclude<WorldId, "gargantua">;
+  const preset = OBSERVATION_PRESETS[id];
   const framing =
-    body.radius / (BOUNDS_FILL * Math.sin(((FOV / 2) * Math.PI) / 180));
-  const placement = observationPlacement(
-    world.id as Exclude<WorldId, "gargantua">,
-    body.radius,
-    framing,
-  );
+    body.radius / (preset.boundsFill * Math.sin(((FOV / 2) * Math.PI) / 180));
+  const placement = observationPlacement(id, body.radius, framing);
 
   const target = new THREE.Vector3(...placement.body);
   body.object.position.copy(target);
@@ -257,6 +273,8 @@ export function createObservatoryScene(
   let last = 0;
   let frame = 0;
   let disposed = false;
+  /** Si ya se avisó del primer fotograma pintado. Una vez y nunca más. */
+  let painted = false;
   /** Render bajo demanda: se dibuja cuando algo cambió, no en bucle. */
   let dirty = true;
   let width = 0;
@@ -330,13 +348,19 @@ export function createObservatoryScene(
     last = timestamp;
 
     /*
-      El movimiento propio del espécimen. Para el Tesseracto `spinAt` es
-      exactamente su reconfiguración interna y su trazo, porque su `SPIN_RATE`
-      vale 0: el giro genérico que el §3 retira no existe en este cuerpo.
+      SÓLO el movimiento propio del espécimen: `animateAt`, nunca `spinAt`.
 
-      Cuando entren Miller, Edmunds y la Endurance habrá que separar el giro de
-      la animación —ahí `spinAt` hace las dos cosas con el mismo reloj—, y ése
-      es el motivo por el que el Observatorio lleva reloj propio.
+      El §3 retira el giro genérico en reposo —«un objeto que gira solo obliga a
+      perseguirlo para mirarle una cara concreta»— pero conserva lo que es
+      CONTENIDO: la reconfiguración del Tesseracto, el oleaje de Miller, los RCS
+      y las balizas de la Endurance. Apagar el reloj entero apagaría las dos
+      cosas, así que el giro se anula por espécimen y no por reloj, y eso es una
+      diferencia deliberada con el System Map — allí un solo interruptor congela
+      todo a la vez.
+
+      Con el Tesseracto la distinción no se veía: su `SPIN_RATE` vale 0, así que
+      los dos métodos daban el mismo resultado. La Endurance gira a 0.016 rad/s
+      y es el primer espécimen donde llamar al equivocado se nota.
     */
     /*
       Con el reloj del banco clavado la figura NO avanza: `sampleTesseract` es
@@ -349,7 +373,7 @@ export function createObservatoryScene(
     */
     if (motion && bench.clock === null) {
       elapsed += delta;
-      body!.spinAt(elapsed);
+      body!.animateAt(elapsed);
       dirty = true;
     }
 
@@ -360,6 +384,17 @@ export function createObservatoryScene(
     applyCamera();
     writeUniforms();
     composer.render();
+
+    /*
+      Aquí y no antes. El aviso va DESPUÉS de `composer.render()` porque lo que
+      se anuncia es que hay imagen, no que haya escena: entre construir el
+      cuerpo y pintarlo hay una compilación de shaders que en un equipo modesto
+      se mide en cientos de milisegundos.
+    */
+    if (!painted) {
+      painted = true;
+      onFirstFrame?.();
+    }
   }
 
   // ── El gesto del visitante ────────────────────────────────────────────────
@@ -421,7 +456,7 @@ export function createObservatoryScene(
 
   resize();
   applyCamera();
-  body.spinAt(bench.clock ?? 0);
+  body.animateAt(bench.clock ?? 0);
   frame = requestAnimationFrame(renderFrame);
 
   return {

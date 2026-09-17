@@ -71,6 +71,16 @@ describe("presets de observación", () => {
       "environment",
       "rim",
       "instruments",
+      /*
+        `boundsFill` entra al montar el segundo espécimen, y entra porque es una
+        condición de OBSERVACIÓN: dice a qué distancia se pone la cámara, igual
+        que `keyAngle` dice desde dónde llega la luz. No toca el material.
+
+        La lista se amplía a mano a propósito. Esta prueba no está para impedir
+        que el preset crezca, sino para que cada campo nuevo tenga que pasar por
+        aquí y alguien diga en voz alta de cuál de las dos familias es.
+      */
+      "boundsFill",
     ]);
     for (const id of SOLIDS) {
       for (const key of Object.keys(OBSERVATION_PRESETS[id])) {
