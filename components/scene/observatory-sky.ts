@@ -118,7 +118,7 @@ const STAR_FLOOR = 0.1;
  * El coste residual está medido y anotado en el documento de diseño, porque es
  * real y es la contrapartida de subir la atmósfera un orden de magnitud.
  */
-const HALO_PEAK = 0.105;
+const HALO_PEAK = 0.098;
 
 /**
  * El núcleo azul petróleo, encima del lóbulo ancho y mucho más cerrado.
@@ -128,7 +128,7 @@ const HALO_PEAK = 0.105;
  * donde la masa es más densa. Un degradado de COLOR dentro del degradado de
  * luz es lo que separa «hay atmósfera» de «hay un foco azul».
  */
-const HALO_CORE = 0.052;
+const HALO_CORE = 0.042;
 
 /**
  * El halo se ancla a la LUZ, no al centro del cuadro.
@@ -290,12 +290,12 @@ const FRAGMENT = /* glsl */ `
     */
     float a = acos(clamp(dot(dir, uLightDirection), -1.0, 1.0));
     float wide = smoothstep(1.45, 0.06, a);
-    wide *= wide;
+    wide = pow(wide, 1.5);
     float core = smoothstep(0.95, 0.00, a);
     core *= core;
 
-    vec3 deepBlue  = vec3(0.20, 0.46, 0.90);
-    vec3 petroleum = vec3(0.06, 0.58, 0.74);
+    vec3 deepBlue  = vec3(0.28, 0.46, 0.80);
+    vec3 petroleum = vec3(0.22, 0.48, 0.62);
     colour += deepBlue * wide * uHalo;
     colour += petroleum * core * uHalo * HALO_CORE_C;
 
