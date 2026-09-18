@@ -58,6 +58,37 @@ export const ARCHITECTURE_LABELS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Los ejes del 4-cubo, por índice de bit.
+ *
+ * No son una convención nuestra: dos vértices del hipercubo son adyacentes si y
+ * sólo si sus índices difieren en un bit, y ese bit ES el eje. Las ocho aristas
+ * que devuelven `W` son las que atraviesan la cuarta dimensión, y poder
+ * señalarlas con el dedo es la única razón por la que la sonda existe.
+ */
+export const AXIS_LABELS = ["X", "Y", "Z", "W"] as const;
+
+/**
+ * Las lecturas de observación. Describen la CÁMARA, no la figura.
+ *
+ * Son la tercera familia del panel, y se separan de las otras dos por lo mismo
+ * que aquéllas se separaron entre sí: lo que cuesta dibujar el espécimen, lo
+ * que ES la figura y cómo se está mirando son tres cosas distintas. Mezclarlas
+ * volvería a producir dos filas con el mismo nombre y distinto significado.
+ *
+ * `key` es la que de verdad significa algo aquí y ningún visor gráfico enseña:
+ * el ángulo entre la luz y la mirada medido en el espécimen. Es la columna
+ * `KEY` de la tabla del §6, y al orbitar es lo que está cambiando.
+ */
+export const OBSERVATION_LABELS = {
+  view: "Vista",
+  azimuth: "Azimut",
+  elevation: "Elevación",
+  distance: "Distancia",
+  key: "Ángulo de clave",
+  fov: "Campo de visión",
+} as const;
+
+/**
  * Las cinco secciones del `REGISTRO`, en orden.
  *
  * Es la segunda profundidad del laboratorio y la frontera con `DATOS` es

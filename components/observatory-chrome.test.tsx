@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import Link from "next/link";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateCapabilities } from "@/components/scene/capability";
@@ -98,9 +98,22 @@ const contrato = {
   architecture: { vertices: 16, edges: 32 },
 };
 
+/*
+  Las vistas y la sonda llegan del handle, no de la ruta: es el instrumento
+  quien sabe qué puede hacer con el cuerpo que ha construido. El doble tiene que
+  publicarlas para que el cromo monte el grupo `OBSERVAR` y el mando `SONDA`.
+*/
 const escena = {
   contract: contrato,
+  views: [
+    { id: "canonica", label: "Canónica", study: "La pose del preset." },
+    { id: "rasante", label: "Rasante", keyAngle: 92, study: "Las facetas." },
+  ],
+  canProbe: true,
+  fov: 40,
   reset: vi.fn(),
+  setView: vi.fn(),
+  setProbe: vi.fn(),
   setBloom: vi.fn(),
   setEmission: vi.fn(),
   setMotion: vi.fn(),
@@ -677,5 +690,119 @@ describe("Observatorio · cromo instrumental", () => {
     // de INSPECCIONAR aquí prometería lecturas que no existen.
     expect(screen.queryByRole("button", { name: "Bloom" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Datos" })).toBeNull();
+  });
+
+  /* ── V1.5 · observar, comparar, sondar ─────────────────────────────────── */
+
+  it("las vistas son un grupo de opciones y llegan del instrumento", async () => {
+    /*
+      No son cinco botones sueltos: son un `radiogroup`, porque elegir una vista
+      EXCLUYE a las otras y quien navega con teclado espera que las flechas se
+      muevan dentro del grupo. Y llegan del handle de la escena, no de la ruta:
+      es el instrumento quien sabe qué puede hacer con el cuerpo que construyó.
+    */
+    await mount();
+    const grupo = screen.getByRole("radiogroup", {
+      name: "Vistas de observación",
+    });
+    const vistas = within(grupo).getAllByRole("radio");
+    expect(vistas).toHaveLength(2);
+    expect(vistas[0]).toHaveAttribute("aria-checked", "true");
+
+    await act(async () => {
+      fireEvent.click(vistas[1]);
+    });
+    expect(escena.setView).toHaveBeenCalledWith(1);
+    expect(vistas[1]).toHaveAttribute("aria-checked", "true");
+    // La frase que convierte un encuadre en un instrumento acompaña a la vista.
+    expect(document.querySelector(".observatory__study")?.textContent).toContain(
+      "facetas",
+    );
+  });
+
+  it("mantener un mando compara, y soltarlo NO deja el instrumento al revés", async () => {
+    /*
+      La diferencia entre un interruptor y una comparación. Mantener apaga el
+      halo mientras se sostiene; soltar lo devuelve y —esto es lo que costó una
+      captura— NO conmuta el pestillo. `preventDefault` en `pointerup` no
+      cancela el `click` de un botón, así que el estado se decide en el propio
+      `click` midiendo cuánto duró la pulsación.
+    */
+    await mount();
+    const bloom = screen.getByRole("button", { name: "Bloom" });
+    escena.setBloom.mockClear();
+    // El reloj del gesto, bajo control: `event.timeStamp` es de sólo lectura en
+    // un evento sintético y no se puede fijar desde aquí.
+    const reloj = vi.spyOn(performance, "now");
+
+    reloj.mockReturnValue(1000);
+    await act(async () => {
+      fireEvent.pointerDown(bloom);
+    });
+    expect(escena.setBloom).toHaveBeenLastCalledWith(false);
+    expect(bloom).toHaveAttribute("aria-pressed", "true");
+
+    reloj.mockReturnValue(1600);
+    await act(async () => {
+      fireEvent.pointerUp(bloom);
+      fireEvent.click(bloom);
+    });
+    expect(escena.setBloom).toHaveBeenLastCalledWith(true);
+    expect(bloom).toHaveAttribute("aria-pressed", "false");
+    reloj.mockRestore();
+  });
+
+  it("un clic corto sigue conmutando el pestillo", async () => {
+    // Es lo que mantiene el mando utilizable con teclado, donde «mantener» no
+    // existe como gesto, y para quien quiera dejarlo apagado y orbitar.
+    await mount();
+    const bloom = screen.getByRole("button", { name: "Bloom" });
+    escena.setBloom.mockClear();
+    const reloj = vi.spyOn(performance, "now");
+
+    reloj.mockReturnValue(2000);
+    await act(async () => {
+      fireEvent.pointerDown(bloom);
+    });
+    reloj.mockReturnValue(2060);
+    await act(async () => {
+      fireEvent.pointerUp(bloom);
+      fireEvent.click(bloom);
+    });
+    expect(bloom).toHaveAttribute("aria-pressed", "true");
+    expect(escena.setBloom).toHaveBeenLastCalledWith(false);
+    reloj.mockRestore();
+  });
+
+  it("la sonda sólo aparece donde se puede nombrar lo que se señala", async () => {
+    await mount();
+    const sonda = screen.getByRole("button", { name: "Sonda" });
+    await act(async () => {
+      fireEvent.click(sonda);
+    });
+    expect(escena.setProbe).toHaveBeenLastCalledWith(true);
+    expect(sonda).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("DATOS se lee en tres familias y en este orden", async () => {
+    /*
+      Qué estoy viendo → cómo lo estoy observando → cómo está construido. El
+      orden ES la lectura: abrir por las llamadas de dibujo contaba primero lo
+      que le cuesta a la GPU, que es el orden de un profiler y no el de un
+      laboratorio.
+    */
+    await mount();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Datos" }));
+    });
+    const panel = document.querySelector(".observatory__data")!;
+    const familias = [...panel.querySelectorAll("section h2")].map(
+      (node) => node.textContent,
+    );
+    expect(familias).toEqual(["Objeto", "Observación", "Render"]);
+
+    // Y la observación publica el campo de visión que dice el instrumento, no
+    // un número escrito aquí.
+    expect(panel.textContent).toContain(`${escena.fov}°`);
   });
 });

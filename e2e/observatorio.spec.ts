@@ -589,3 +589,77 @@ test("en móvil la ficha es modo lectura, no el escritorio comprimido", async ({
   await expect(page.getByRole("tabpanel")).toHaveCount(0);
   await expect(page.locator(".observatory__inspect")).toBeVisible();
 });
+
+/* ── V1.5 · observar, medir, sondar ──────────────────────────────────────── */
+
+test("una vista cambia la geometría de la luz, y la telemetría lo demuestra", async ({
+  page,
+}) => {
+  /*
+    LA PRUEBA QUE SEPARA UNA VISTA DE UN ENCUADRE.
+
+    `CLAVE` es el ángulo entre la luz y la mirada medido EN EL ESPÉCIMEN, y no
+    se lee de ninguna tabla: lo calcula la telemetría sobre la posición real de
+    la cámara. Si al elegir `RASANTE` ese número pasa de los 145° del preset a
+    los 92° que declara la vista, entonces la vista está cambiando las
+    CONDICIONES DE OBSERVACIÓN y no colocando una cámara a ojo.
+
+    Es la misma afirmación que el §6 hace sobre los presets, comprobada esta vez
+    a través de la pantalla y no del módulo.
+  */
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+  await page.goto(OBSERVATORIO);
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+
+  const clave = page.locator(".observatory__telemetry .observatory__cell").last();
+  await expect(clave).toContainText("145.0°");
+
+  await page.getByRole("radio", { name: /Rasante/ }).click();
+  await expect(clave).toContainText("92.0°");
+
+  // Y `Reajustar` devuelve la pose de casa, incluido el ángulo de clave.
+  await page.getByRole("button", { name: "Reajustar" }).click();
+  await expect(clave).toContainText("145.0°");
+});
+
+test("la sonda nombra una arista real del hipercubo", async ({ page }) => {
+  /*
+    Lo que se fija no es que la sonda acierte en un píxel concreto —la figura
+    reconfigura y la pose no se repite nunca— sino que **lo que devuelve existe
+    en el modelo**: un índice dentro de las treinta y dos aristas del circuito y
+    uno de los cuatro ejes del 4-cubo. Un valor fuera de esos rangos sería una
+    lectura inventada, que es exactamente lo que el §8 prohíbe.
+  */
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+  await page.goto(OBSERVATORIO);
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+
+  await page.getByRole("button", { name: "Sonda" }).click();
+
+  const linea = page.locator(".observatory__probe-line");
+  let lectura: string | null = null;
+  // La figura ocupa el centro del cuadro; se barre hasta dar con una arista.
+  for (let i = 0; i < 60 && !lectura; i += 1) {
+    await page.mouse.move(460 + (i % 10) * 40, 260 + Math.floor(i / 10) * 60);
+    await page.waitForTimeout(80);
+    lectura = (await linea.textContent()) || null;
+  }
+
+  expect(lectura, "la sonda no encontró ninguna arista").not.toBeNull();
+  const arista = lectura!.match(/Arista (\d{2}) · eje ([XYZW])/);
+  expect(arista, `lectura inesperada: ${lectura}`).not.toBeNull();
+  expect(Number(arista![1])).toBeGreaterThanOrEqual(1);
+  expect(Number(arista![1])).toBeLessThanOrEqual(32);
+
+  // Apagarla borra la lectura: una medición que sobrevive a su gesto miente.
+  await page.getByRole("button", { name: "Sonda" }).click();
+  await expect(linea).toHaveText("");
+});
