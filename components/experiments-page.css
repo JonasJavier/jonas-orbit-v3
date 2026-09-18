@@ -54,30 +54,119 @@
   position: fixed;
   inset: 0;
   z-index: 0;
+  /* La pared. Todo lo que no es fotografía es esto, y es opaco a propósito:
+     sin ella el cielo estrellado del sitio se ve DENTRO de la sala, que es una
+     habitación con suelo y techo. Un interior no tiene estrellas. */
+  background: rgb(1 2 5);
   pointer-events: none;
 }
 
-.experiments-hall__svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+/*
+  LA SALA NO ES UNA COLUMNA.
+
+  El primer montaje la pintaba al alto de la ventana y deducía su ancho de la
+  proporción 2:3: 600 px sobre 1440, el 41 %. Cabía entera y no perdía un
+  píxel, y ése era justamente el problema — cabía entera, con sus cuatro
+  cantos, y una imagen con cuatro cantos dentro de una página es un póster.
+
+  Ahora ocupa el 63 % y se recorta: lo que se ve es una VENTANA sobre la
+  fotografía, no la fotografía. Medida la imagen, el recorte se decide solo —
+  la figura vive entre el 63,6 % y el 75,4 % del alto y su reflejo llega al
+  100 %, así que la ventana va del 12 % al 80 % y lo que se sacrifica es cielo
+  arriba y suelo en primer término abajo, que es lo que menos cuenta.
+
+  El tope existe por resolución, no por composición: el original mide 1024 px
+  y pintarlo mucho más ancho lo reblandece.
+*/
+.experiments-hall__frame {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: min(58%, 66rem);
 }
 
 /*
-  La viñeta: apaga las esquinas y hunde el pie. Es lo que impide que el SVG se
-  lea como una lámina pegada al fondo — sin ella se ve dónde termina el dibujo.
+  ESPEJADA.
+
+  Medida la luminancia por columnas, el arco del limbo sube de abajo-izquierda
+  a arriba-derecha y la columna más brillante de toda la imagen —la jamba
+  encendida, media 93 sobre 255— está al 87,5 % del ancho: justo debajo del
+  catálogo. Espejada, el arco DESCIENDE hacia el texto y se apaga bajo las
+  filas, y lo que queda ahí es la pared del otro extremo, que mide 2 sobre 255.
+  La composición no se arregló moviendo el texto: se arregló dando la vuelta a
+  la sala.
+*/
+.experiments-hall__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 35%;
+  transform: scaleX(-1);
+}
+
+/*
+  EL DESVANECIDO LARGO.
+
+  Un tercio del ancho de la imagen, medido EN LA IMAGEN y no en la ventana,
+  porque su canto cae donde diga su proporción. No hay frontera que ver: el
+  limbo entra por debajo del catálogo, pierde luz fila a fila y se acaba. Donde
+  empieza el texto —el 70 % del marco— el negro ya pesa tres cuartos.
+
+  No lleva `mask` a propósito: un degradado encima compone en el negro de la
+  página, y una máscara dejaría pasar el cielo estrellado del sitio por el
+  hueco.
 */
 .experiments-hall__vignette {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(
-      120% 90% at 22% 40%,
-      transparent 0%,
-      transparent 42%,
-      rgba(1, 2, 5, 0.72) 100%
+    linear-gradient(
+      90deg,
+      rgba(1, 2, 5, 0.5) 0%,
+      rgba(1, 2, 5, 0) 5%,
+      rgba(1, 2, 5, 0) 34%,
+      rgba(1, 2, 5, 0.14) 50%,
+      rgba(1, 2, 5, 0.34) 64%,
+      rgba(1, 2, 5, 0.58) 76%,
+      rgba(1, 2, 5, 0.82) 88%,
+      rgb(1, 2, 5) 97%
     ),
-    linear-gradient(180deg, rgba(1, 2, 5, 0.55) 0%, transparent 22%);
+    linear-gradient(180deg, rgba(1, 2, 5, 0.6) 0%, transparent 11%),
+    linear-gradient(0deg, rgba(1, 2, 5, 0.55) 0%, transparent 11%);
+}
+
+/*
+  EL SUELO SIGUE.
+
+  La sala no termina donde termina la fotografía. Su reflejo se derrama por
+  todo el pie de la ventana y se apaga hacia la derecha, así que bajo el
+  catálogo hay la misma piedra que bajo la figura. Es una capa plana, sin un
+  nodo ni una línea: la integración sale de la luz, no de un marco.
+*/
+.experiments-hall__spill {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 34%;
+  background:
+    /* El reflejo, que sale de la fotografía y cruza toda la ventana. */
+    radial-gradient(
+      96% 120% at 26% 108%,
+      rgba(242, 200, 121, 0.16) 0%,
+      rgba(242, 200, 121, 0.075) 34%,
+      rgba(242, 200, 121, 0.028) 62%,
+      rgba(242, 200, 121, 0.009) 80%,
+      transparent 92%
+    ),
+    /* Y la piedra bajo el catálogo: fría, apenas ahí, para que las últimas
+       filas no floten sobre la nada. */
+    linear-gradient(
+      0deg,
+      rgba(120, 138, 170, 0.055) 0%,
+      rgba(120, 138, 170, 0.018) 42%,
+      transparent 78%
+    );
 }
 
 /* El rótulo del canto. Vertical, diminuto y sin ninguna función informativa:
@@ -102,17 +191,19 @@
 .experiments-page__inner {
   position: relative;
   z-index: 2;
-  padding: clamp(2.5rem, 6vw, 6rem) var(--page-gutter)
+  padding: clamp(2rem, 4vw, 3.4rem) var(--page-gutter)
     clamp(3rem, 8vw, 7rem);
   display: flex;
   flex-direction: column;
-  gap: clamp(2.5rem, 6vw, 5.5rem);
+  gap: clamp(1.6rem, 3vw, 2.6rem);
 }
 
 /*
-  A partir de tableta grande la columna se aparta del ventanal, que ocupa del
-  9 % al 39 % del ancho por construcción del `viewBox`. No es un margen
-  elegido a ojo: es el sitio donde termina el cristal.
+  A partir de tableta grande la columna arranca DENTRO de la fotografía, no
+  después: la sala ocupa el 63 % y el texto entra en el 44 %, así que el limbo
+  pasa por debajo de las primeras filas antes de apagarse. Esos diecinueve
+  puntos de solape son la composición entera — sin ellos vuelven a ser dos
+  cosas puestas una al lado de la otra.
 */
 @media (min-width: 64rem) {
   .experiments-page__inner {
@@ -125,7 +216,7 @@
 .experiments-head {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
   max-width: 42rem;
 }
 
@@ -142,32 +233,35 @@
   color: rgba(242, 200, 121, 0.5);
 }
 
+/*
+  El título baja de 4,2 rem a 2,4. No es un ajuste de gusto: a 4,2 ocupaba él
+  solo una décima parte de la ventana y obligaba al catálogo a empezar por
+  debajo de la mitad. Sigue siendo lo más grande de la pantalla, que es lo que
+  tiene que ser, y ahora cabe con el índice entero.
+*/
 .experiments-head__title {
-  margin: 0.4rem 0 0;
+  margin: 0.25rem 0 0;
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 7vw, 4.2rem);
+  font-size: clamp(1.9rem, 4vw, 2.4rem);
   font-weight: 400;
-  letter-spacing: 0.17em;
+  letter-spacing: 0.19em;
   line-height: 1.02;
   text-transform: uppercase;
   color: var(--amber);
 }
 
-.experiments-head__eyebrow {
-  margin: 0;
-  font-size: 0.66rem;
-  letter-spacing: 0.32em;
+/* La tercera línea ya es un estado del laboratorio: dice qué es esto y cuántas
+   muestras hay montadas, con la cifra contada del catálogo. */
+.experiments-head__state {
+  margin: 0.45rem 0 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(201, 210, 229, 0.55);
+  color: rgba(201, 210, 229, 0.5);
 }
 
-.experiments-head__intro {
-  margin: 1.1rem 0 0;
-  max-width: 34rem;
-  font-family: var(--font-body);
-  font-size: clamp(0.95rem, 1.6vw, 1.08rem);
-  line-height: 1.6;
-  color: rgba(201, 210, 229, 0.82);
+.experiments-head__count {
+  color: var(--amber);
 }
 
 /* ── El índice de especímenes ────────────────────────────────────────────── */
@@ -176,39 +270,10 @@
   position: relative;
 }
 
-.specimen-index__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 0.9rem;
-  border-bottom: 1px solid rgba(164, 180, 212, 0.14);
-}
-
-.specimen-index__title {
-  margin: 0;
-  font-size: 0.66rem;
-  font-weight: 500;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-  color: rgba(201, 210, 229, 0.62);
-}
-
-.specimen-index__count {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  color: var(--amber);
-}
-
-.specimen-index__count-label {
-  font-size: 0.56rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(146, 159, 186, 0.6);
+/* La primera fila necesita su filete igual que las otras cinco: antes se lo
+   daba el borde inferior del encabezado, que ya no se ve. */
+.specimen-index__list {
+  border-top: 1px solid rgba(164, 180, 212, 0.14);
 }
 
 .specimen-index__list {
@@ -406,9 +471,7 @@ html[data-motion="on"] .specimen-index__item[data-active="true"]::after {
 .experiments-page:has(.specimen-index:not([data-acquiring="none"]))
   .experiments-head,
 .experiments-page:has(.specimen-index:not([data-acquiring="none"]))
-  .experiments-facts,
-.experiments-page:has(.specimen-index:not([data-acquiring="none"]))
-  .experiments-page__closing,
+  .experiments-page__foot,
 .experiments-page:has(.specimen-index:not([data-acquiring="none"]))
   .experiments-neighbours {
   opacity: 0.2;
@@ -416,13 +479,43 @@ html[data-motion="on"] .specimen-index__item[data-active="true"]::after {
 
 .experiments-hall,
 .experiments-head,
-.experiments-facts,
-.experiments-page__closing,
+.experiments-page__foot,
 .experiments-neighbours {
   transition: opacity 420ms ease;
 }
 
 /* ── Pie editorial ───────────────────────────────────────────────────────── */
+
+/*
+  Todo lo que antes abría la página. Va detrás del catálogo y en cuerpo menor
+  porque a la recepción se viene a elegir una muestra; quien quiera leer la
+  sección la tiene entera, en el mismo HTML servido de siempre, un poco más
+  abajo. El margen superior es grande a propósito: separa la máquina del texto
+  y deja que el índice termine en negro.
+*/
+.experiments-page__foot {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.6rem, 3vw, 2.4rem);
+  margin-top: clamp(2.5rem, 7vw, 6rem);
+  max-width: 40rem;
+}
+
+.experiments-page__eyebrow {
+  margin: 0 0 -0.9rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.42);
+}
+
+.experiments-page__intro {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(0.88rem, 1.3vw, 0.96rem);
+  line-height: 1.65;
+  color: rgba(201, 210, 229, 0.68);
+}
 
 .experiments-facts {
   display: grid;
@@ -499,25 +592,35 @@ html[data-motion="on"] .specimen-index__item[data-active="true"]::after {
 /* ── Pantallas estrechas ─────────────────────────────────────────────────── */
 
 /*
-  En móvil el `slice` del SVG deja el ventanal ocupando buena parte del ancho
-  detrás del texto. No se recompone la sala: se le baja la presencia y se le
-  pone un velo. La sala es atmósfera, y una atmósfera que estorba la lectura
-  ha dejado de serlo.
+  En móvil la sala ya no cabe al lado del texto: se pone DEBAJO, a pantalla
+  completa, y se APAGA. Apagar, no atenuar: bajarle la opacidad al vestíbulo
+  volvería translúcida su propia pared y por debajo asomaría el cielo general
+  del sitio —una habitación con estrellas dentro—, que es el mismo fallo que
+  obligó a inventar el velo de la adquisición. Así que la pared sigue opaca y
+  lo que se oscurece es la FOTOGRAFÍA, con negro encima.
+
+  La sala es atmósfera, y una atmósfera que estorba la lectura ha dejado de
+  serlo: queda en torno a un cuarto de su luz, lo justo para que se note que
+  hay un sitio detrás.
 */
 @media (max-width: 63.99rem) {
-  .experiments-hall {
-    opacity: 0.5;
+  .experiments-hall__frame {
+    inset: 0;
+    width: auto;
+  }
+
+  .experiments-hall__spill {
+    display: none;
   }
 
   .experiments-hall__vignette {
-    background:
-      radial-gradient(
-        140% 80% at 30% 30%,
-        transparent 0%,
-        rgba(1, 2, 5, 0.6) 62%,
-        rgba(1, 2, 5, 0.9) 100%
-      ),
-      linear-gradient(180deg, rgba(1, 2, 5, 0.7) 0%, rgba(1, 2, 5, 0.45) 40%);
+    background: linear-gradient(
+      180deg,
+      rgba(1, 2, 5, 0.94) 0%,
+      rgba(1, 2, 5, 0.82) 20%,
+      rgba(1, 2, 5, 0.8) 64%,
+      rgba(1, 2, 5, 0.88) 100%
+    );
   }
 
   .experiments-page__edge {
