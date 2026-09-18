@@ -10,7 +10,14 @@ import {
 } from "@/lib/effects-mode";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVisualBench } from "@/lib/visual-bench";
-import type { ObservatoryHandle } from "@/components/scene/observatory-scene";
+import type {
+  ObservatoryHandle,
+  ProbeReading,
+} from "@/components/scene/observatory-scene";
+import type {
+  ObservationTelemetry,
+  ObservationView,
+} from "@/lib/observation-views";
 import type { SpecimenContract } from "@/components/scene/specimen-contract";
 import {
   evaluateCapabilities,
@@ -18,6 +25,8 @@ import {
 } from "@/components/scene/capability";
 import {
   architectureLabel,
+  AXIS_LABELS,
+  OBSERVATION_LABELS,
   REGISTRO_SECTIONS,
   RENDER_LABELS,
 } from "./observatory-labels";
@@ -39,9 +48,37 @@ import "./observatory.css";
 /** Modo cine: los mismos 3,5 s que la cubierta de Edmunds. */
 const IDLE_MS = 3500;
 
+/**
+ * A partir de aquí una pulsación es una COMPARACIÓN y no un clic.
+ *
+ * 220 ms: por debajo está el clic deliberado más lento que se mide en la
+ * práctica, y por encima empieza el gesto de «déjame ver esto un momento».
+ */
+const HOLD_MS = 220;
+
 /** Dos dígitos. Es tipografía de instrumento: mantiene la columna del raíl
  *  alineada y hace que `01` y `06` ocupen lo mismo. */
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Un número con los separadores del sitio.
+ *
+ * Va por `toLocaleString` y no por `toFixed` para que todas las cifras del
+ * Observatorio usen la misma convención: `es-DO` separa millares con coma y
+ * decimales con punto —la del país, no la de España— y los vértices de malla ya
+ * se imprimían así. Dos criterios en la misma tabla se notan.
+ */
+const fixed = (n: number, digits: number) =>
+  n.toLocaleString("es-DO", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+
+/** Con signo explícito: una elevación de −18° y una de +18° no son la misma
+ *  observación, y sin el signo la lectura no distingue mirar desde arriba de
+ *  mirar desde abajo. */
+const signed = (n: number, digits: number) =>
+  `${n < 0 ? "−" : "+"}${fixed(Math.abs(n), digits)}`;
 
 /**
  * Un instrumento del banco: una palabra entre corchetes, sin caja.
@@ -62,17 +99,87 @@ function Instrument({
   label,
   pressed,
   onToggle,
+  onHold,
 }: {
   label: string;
   pressed: boolean;
   onToggle: () => void;
+  /**
+   * COMPARAR SIN CAMBIAR DE ESTADO.
+   *
+   * Un interruptor responde «¿está encendido?»; una comparación responde «¿qué
+   * parte de esto es el objeto y qué parte es el tratamiento?». Es la misma
+   * pregunta que hace el bloom-off test del proyecto, y mantener pulsado es su
+   * forma natural: se ve la diferencia mientras se sostiene y el instrumento
+   * vuelve solo a su estado canónico, sin dejar al visitante mirando una
+   * versión degradada sin saberlo.
+   *
+   * El clic corto SIGUE conmutando, y eso no es un extra: es lo que mantiene el
+   * mando utilizable con teclado —donde «mantener» no existe como gesto— y para
+   * quien quiera dejarlo apagado y orbitar.
+   */
+  onHold?: (held: boolean) => void;
 }) {
+  /**
+   * Cuándo empezó la pulsación, o `null` si no hubo ninguna.
+   *
+   * El `null` es la pieza: distingue una activación con PUNTERO de una con
+   * TECLADO. Space y Enter disparan `click` sin `pointerdown`, así que sin esa
+   * distinción una comparación larga y una pulsación de teclado serían
+   * indistinguibles y el mando dejaría de funcionar con teclado.
+   */
+  const since = useRef<number | null>(null);
   return (
     <button
       type="button"
       className="observatory__toggle"
       aria-pressed={pressed}
-      onClick={onToggle}
+      onClick={() => {
+        /*
+          Una pulsación larga es una comparación, no un clic: el instrumento
+          ya volvió solo a su estado canónico al soltar y conmutar el pestillo
+          aquí lo dejaría al revés de como estaba.
+
+          `preventDefault` en `pointerup` NO sirve para esto —el clic de un
+          botón no se cancela desde el evento de puntero— y probarlo costó una
+          captura: el `aria-pressed` se quedaba en `true` después de comparar.
+
+          El reloj es `performance.now()` y no `event.timeStamp` por una razón
+          de prueba: el `timeStamp` de un evento sintético es de sólo lectura y
+          no se puede fijar desde un test, así que la diferencia entre comparar
+          y conmutar quedaba fuera de la suite. Los dos son monótonos y en
+          milisegundos; éste además se puede espiar.
+        */
+        const held =
+          since.current !== null && performance.now() - since.current > HOLD_MS;
+        since.current = null;
+        if (!held) onToggle();
+      }}
+      onPointerDown={
+        onHold
+          ? () => {
+              since.current = performance.now();
+              onHold(true);
+            }
+          : undefined
+      }
+      onPointerUp={onHold ? () => onHold(false) : undefined}
+      onPointerCancel={
+        onHold
+          ? () => {
+              since.current = null;
+              onHold(false);
+            }
+          : undefined
+      }
+      onPointerLeave={
+        onHold
+          ? () => {
+              since.current = null;
+              onHold(false);
+            }
+          : undefined
+      }
     >
       <span className="observatory__ink">
         <span aria-hidden="true" className="observatory__bracket">
@@ -273,6 +380,39 @@ export function ObservatoryViewer({
   const [bloom, setBloom] = useState(true);
   const [emission, setEmission] = useState(true);
   /*
+    LAS VISTAS llegan con el instrumento y no con la ruta: las publica el handle
+    de la escena, que es quien sabe si el espécimen tiene alguna. Así un
+    espécimen sin vistas no enseña un grupo vacío, y añadir vistas a la Ranger
+    mañana no pasa por este archivo.
+  */
+  const [views, setViews] = useState<readonly ObservationView[]>([]);
+  const [view, setView] = useState(0);
+  const [canProbe, setCanProbe] = useState(false);
+  /** El campo de visión del instrumento. Constante, así que es un dato del
+   *  aparato y no telemetría — pero se lee del handle y no se teclea. */
+  const [fov, setFov] = useState<number | null>(null);
+  const [probe, setProbe] = useState(false);
+  /** Qué instrumento se está sosteniendo para comparar. Se suma al pestillo:
+   *  el efecto es el mismo, la intención no. */
+  const [holding, setHolding] = useState<"bloom" | "material" | null>(null);
+
+  /*
+    LA TELEMETRÍA SE ESCRIBE, NO SE RENDERIZA.
+
+    Cambia en cada fotograma que se pinta, o sea hasta sesenta veces por segundo
+    mientras se arrastra. Pasarla por estado de React re-renderizaría el visor
+    entero —raíl, banco, paneles— sesenta veces por segundo para cambiar cuatro
+    números: el coste no está en el número, está en reconciliar todo lo demás.
+
+    Así que se guarda en una ref y se escribe en el DOM. Es imperativo a
+    propósito y es la excepción, no la regla: sólo para lecturas de alta
+    frecuencia que no cambian la ESTRUCTURA de nada. El panel `DATOS` enseña los
+    mismos valores por el mismo camino, y por eso hace falta `writeReadouts`.
+  */
+  const telemetry = useRef<ObservationTelemetry | null>(null);
+  const readouts = useRef<Record<string, HTMLElement | null>>({});
+  const reticle = useRef<HTMLDivElement>(null);
+  /*
     UN solo panel abierto, y no dos banderas independientes.
 
     `DATOS` y `REGISTRO` ocupan el mismo hueco —encima de la fila que los
@@ -320,6 +460,27 @@ export function ObservatoryViewer({
   const previous = here > 0 ? mounted[here - 1] : null;
   const next = here >= 0 && here < mounted.length - 1 ? mounted[here + 1] : null;
 
+  /*
+    Una celda de lectura. Es una FUNCIÓN QUE DEVUELVE ELEMENTOS, no un
+    componente: un componente definido dentro del render cambia de identidad en
+    cada pase, React desmonta y vuelve a montar su subárbol, y el texto que
+    escribimos a mano en el DOM desaparecería con cada pulsación de cualquier
+    otro mando.
+  */
+  function readout(code: string, slot: string) {
+    return (
+      <span className="observatory__cell" key={slot}>
+        <span className="observatory__code">{code}</span>
+        <span
+          className="observatory__value"
+          ref={(node) => {
+            readouts.current[slot] = node;
+          }}
+        />
+      </span>
+    );
+  }
+
   function onTabKey(event: React.KeyboardEvent) {
     const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
     if (!keys.includes(event.key)) return;
@@ -361,6 +522,53 @@ export function ObservatoryViewer({
     () => true,
   );
 
+  /**
+   * Vuelca la telemetría en el DOM.
+   *
+   * Se llama desde el bucle de la escena y también al abrir el panel `DATOS`,
+   * y ésa segunda llamada no es redundancia: el bucle es BAJO DEMANDA, así que
+   * con el instrumento quieto no llega ningún fotograma y el panel se abriría
+   * con los huecos vacíos.
+   */
+  function writeReadouts(measured: ObservationTelemetry) {
+    telemetry.current = measured;
+    /* Los mismos cuatro valores viven en dos sitios —la lectura del borde y el
+       panel `DATOS`— y se escriben en los dos de una vez. Dos huecos, una
+       fuente: si alguna vez discreparan, uno de los dos estaría mintiendo. */
+    const write = (key: string, value: string) => {
+      for (const slot of [key, `panel-${key}`]) {
+        const node = readouts.current[slot];
+        if (node) node.textContent = value;
+      }
+    };
+    write("azimuth", `${fixed(measured.azimuth, 1)}°`);
+    write("elevation", `${signed(measured.elevation, 1)}°`);
+    write("distance", fixed(measured.distance, 2));
+    write("key", `${fixed(measured.key, 1)}°`);
+  }
+
+  /**
+   * La lectura de la sonda y su retícula.
+   *
+   * La retícula vive en el DOM y no en WebGL: cuatro marcas de un píxel no
+   * justifican una pasada de render, y en el DOM se pueden hacer tan discretas
+   * como pide el encargo sin pelearse con el bloom.
+   */
+  function writeProbe(reading: ProbeReading | null) {
+    const line = readouts.current.probe;
+    const mark = reticle.current;
+    if (mark) {
+      mark.dataset.on = reading ? "true" : "false";
+      if (reading) {
+        mark.style.transform = `translate(${reading.screen.x}px, ${reading.screen.y}px)`;
+      }
+    }
+    if (!line) return;
+    line.textContent = reading
+      ? `Arista ${pad(reading.edge + 1)} · eje ${AXIS_LABELS[reading.axis] ?? "?"} · W ${fixed(reading.depth, 2)} · ${fixed(reading.range, 2)} r`
+      : "";
+  }
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || flat) return;
@@ -382,6 +590,12 @@ export function ObservatoryViewer({
           onFirstFrame: () => {
             if (!cancelled) setReady(true);
           },
+          onTelemetry: (measured) => {
+            if (!cancelled) writeReadouts(measured);
+          },
+          onProbe: (reading) => {
+            if (!cancelled) writeProbe(reading);
+          },
         });
         if (!handle) {
           setFailed(true);
@@ -389,6 +603,9 @@ export function ObservatoryViewer({
         }
         handleRef.current = handle;
         setContract(handle.contract);
+        setViews(handle.views);
+        setCanProbe(handle.canProbe);
+        setFov(handle.fov);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -416,12 +633,30 @@ export function ObservatoryViewer({
   }, [motion]);
 
   useEffect(() => {
-    handleRef.current?.setBloom(bloom);
-  }, [bloom]);
+    handleRef.current?.setBloom(bloom && holding !== "bloom");
+  }, [bloom, holding]);
 
   useEffect(() => {
-    handleRef.current?.setEmission(emission);
-  }, [emission]);
+    handleRef.current?.setEmission(emission && holding !== "material");
+  }, [emission, holding]);
+
+  useEffect(() => {
+    handleRef.current?.setView(view);
+  }, [view]);
+
+  useEffect(() => {
+    handleRef.current?.setProbe(probe);
+  }, [probe]);
+
+  /* Al abrir `DATOS` hay que rellenar sus huecos a mano: el bucle es bajo
+     demanda y con el instrumento quieto no va a llegar ningún fotograma. */
+  useEffect(() => {
+    if (panel === "datos" && telemetry.current) writeReadouts(telemetry.current);
+    /* `writeReadouts` no entra en las dependencias a propósito: se redefine en
+       cada render, así que listarla volvería a disparar el efecto en cada
+       render. Lo que hace es escribir texto en huecos que ya existen, y sólo
+       depende de qué panel está abierto. */
+  }, [panel, contract]);
 
   /* Modo cine. No es movimiento —es foco—, así que no obedece al interruptor
      global; y con puntero grueso no se atenúa, porque sin hover no habría forma
@@ -555,6 +790,18 @@ export function ObservatoryViewer({
         ahora el catálogo de especímenes, que es una columna de cifras que sí
         mide algo — cuántas muestras hay y en cuál estás.
       */}
+      {/*
+        LA RETÍCULA DE LA SONDA.
+
+        Cuatro marcas de un píxel alrededor del punto y nada más — ni círculo,
+        ni cruz completa, ni caja. Vive en el DOM porque cuatro trazos no
+        justifican una pasada de render, y porque en WebGL tendrían que pelearse
+        con el bloom para quedarse discretas.
+      */}
+      <div aria-hidden="true" className="observatory__reticle" data-on="false" ref={reticle}>
+        <span /><span /><span /><span />
+      </div>
+
       {marks ? (
         <div aria-hidden="true" className="observatory__calipers">
           <span className="observatory__caliper observatory__caliper--tl" />
@@ -706,6 +953,36 @@ export function ObservatoryViewer({
             </div>
             <p className="observatory__specimen">{name}</p>
             <p className="observatory__descriptor">{descriptor}</p>
+
+            {/*
+              LA TELEMETRÍA. Cuatro números que describen la CÁMARA y ninguno
+              que describa un aparato inventado: azimut y elevación son dónde
+              se ha sentado el visitante, la distancia va en radios del propio
+              espécimen —las unidades de mundo aquí no significan nada— y la
+              clave es el ángulo entre la luz y la mirada medido en el objeto,
+              que es la columna del §6 y lo único que de verdad cambia al
+              orbitar.
+
+              `aria-hidden` porque cambia hasta sesenta veces por segundo y
+              nadie puede seguir eso escuchando. Los mismos cuatro valores
+              están en `DATOS`, quietos y leíbles, que es donde sirven.
+            */}
+            <p aria-hidden="true" className="observatory__telemetry">
+              {readout("AZ", "azimuth")}
+              {readout("EL", "elevation")}
+              {readout("DIST", "distance")}
+              {readout("CLAVE", "key")}
+            </p>
+
+            {/* La sonda escribe aquí y borra al salir de la figura: una lectura
+                que se queda colgada donde estuvo el puntero miente. */}
+            <p
+              aria-hidden="true"
+              className="observatory__probe-line"
+              ref={(node) => {
+                readouts.current.probe = node;
+              }}
+            />
           </div>
 
           {/*
@@ -736,12 +1013,38 @@ export function ObservatoryViewer({
 
         <div className="observatory__foot">
           <div className="observatory__controls">
-            <p className="observatory__hint">
-              Arrastra para girar
-              <span aria-hidden="true" className="observatory__sep">
-                ·
-              </span>
-              rueda para acercar
+            {/*
+              La pista, y la lectura de la comparación EN EL MISMO SITIO.
+
+              Mientras se compara dice qué se está comparando —`Canónico · sin
+              bloom`— y el resto del tiempo explica los tres gestos. No es un
+              rótulo nuevo: es el único que ya había, contando lo que está
+              pasando en vez de repetir una instrucción que ya se leyó. Añadir
+              una línea para esto habría sido exactamente la capa de HUD que el
+              encargo prohíbe.
+            */}
+            <p className="observatory__hint" data-comparing={holding ?? "none"}>
+              {holding ? (
+                <>
+                  Canónico
+                  <span aria-hidden="true" className="observatory__sep">
+                    |
+                  </span>
+                  {holding === "bloom" ? "sin bloom" : "sin emisión"}
+                </>
+              ) : (
+                <>
+                  Arrastra para girar
+                  <span aria-hidden="true" className="observatory__sep">
+                    ·
+                  </span>
+                  rueda para acercar
+                  <span aria-hidden="true" className="observatory__sep">
+                    ·
+                  </span>
+                  mantén un mando para comparar
+                </>
+              )}
             </p>
             {/* La palabra va envuelta porque el filete del foco se agarra a la
                 TINTA y no al bloque de 44 px: sin este span, un mando sin caja
@@ -761,11 +1064,76 @@ export function ObservatoryViewer({
           {panel === "datos" && contract ? (
             <div className="observatory__data">
               <SheetHead title="Datos" onClose={() => setPanel(null)} />
-              {/* Dos familias, y la separación importa: lo que cuesta DIBUJAR
-                  el espécimen no es lo que ES la figura. Juntas, «vértices»
-                  aparecía dos veces con valores distintos. */}
+              {/*
+                TRES FAMILIAS, Y EL ORDEN ES LA LECTURA.
+
+                Qué estoy viendo → cómo lo estoy observando → cómo está
+                construido. Antes abría por las llamadas de dibujo, o sea por lo
+                último: el panel contaba primero lo que le cuesta a la GPU y
+                después qué es el objeto, que es el orden de un profiler y no el
+                de un laboratorio. Los números no cambian; cambia cuál se lee
+                primero.
+
+                La separación entre las tres es la misma regla de siempre: lo
+                que ES la figura, cómo se está MIRANDO y lo que cuesta
+                DIBUJARLA son tres cosas distintas, y juntarlas ya produjo una
+                vez dos filas llamadas «vértices» con valores distintos.
+              */}
+              {contract.architecture ? (
+                <section>
+                  <h2 className="observatory__legend">Objeto</h2>
+                  <dl>
+                    {Object.entries(contract.architecture).map(
+                      ([key, value]) => (
+                        <div key={key}>
+                          <dt>{architectureLabel(key)}</dt>
+                          <dd>{value}</dd>
+                        </div>
+                      ),
+                    )}
+                  </dl>
+                </section>
+              ) : null}
+
               <section>
-                <h2 className="observatory__legend">Dibujo</h2>
+                <h2 className="observatory__legend">Observación</h2>
+                <dl>
+                  {views.length > 1 ? (
+                    <div>
+                      <dt>{OBSERVATION_LABELS.view}</dt>
+                      <dd>{views[view]?.label}</dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt>{OBSERVATION_LABELS.azimuth}</dt>
+                    <dd>{readout("", "panel-azimuth")}</dd>
+                  </div>
+                  <div>
+                    <dt>{OBSERVATION_LABELS.elevation}</dt>
+                    <dd>{readout("", "panel-elevation")}</dd>
+                  </div>
+                  <div>
+                    <dt>{OBSERVATION_LABELS.distance}</dt>
+                    <dd>
+                      {readout("", "panel-distance")}
+                      <span className="observatory__unit"> radios</span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{OBSERVATION_LABELS.key}</dt>
+                    <dd>{readout("", "panel-key")}</dd>
+                  </div>
+                  {fov === null ? null : (
+                    <div>
+                      <dt>{OBSERVATION_LABELS.fov}</dt>
+                      <dd>{fov}°</dd>
+                    </div>
+                  )}
+                </dl>
+              </section>
+
+              <section>
+                <h2 className="observatory__legend">Render</h2>
                 <dl>
                   <div>
                     <dt>{RENDER_LABELS.draws}</dt>
@@ -781,22 +1149,6 @@ export function ObservatoryViewer({
                   </div>
                 </dl>
               </section>
-
-              {contract.architecture ? (
-                <section>
-                  <h2 className="observatory__legend">Figura</h2>
-                  <dl>
-                    {Object.entries(contract.architecture).map(
-                      ([key, value]) => (
-                        <div key={key}>
-                          <dt>{architectureLabel(key)}</dt>
-                          <dd>{value}</dd>
-                        </div>
-                      ),
-                    )}
-                  </dl>
-                </section>
-              ) : null}
             </div>
           ) : null}
 
@@ -855,7 +1207,61 @@ export function ObservatoryViewer({
             </div>
           ) : null}
 
-          <div className="observatory__inspect">
+          {/*
+            OBSERVAR: las vistas curadas.
+
+            Dos grupos y no cuatro pestañas. La arquitectura mental es
+            observar → analizar, pero convertirla en pestañas habría metido el
+            espécimen dentro de paneles, que es justo lo que esta página no
+            puede hacer. Aquí son dos rótulos con su regla, el mismo patrón que
+            ya tenía `INSPECCIONAR`.
+
+            Una vista NO es un encuadre elegido a ojo: es otra geometría de luz
+            sobre el mismo material, resuelta por la misma matemática que coloca
+            el preset. Por eso cada una puede decir qué revela, y por eso el
+            grupo sólo aparece donde hay vistas de verdad.
+          */}
+          {views.length > 1 ? (
+            <div className="observatory__deck observatory__observe">
+              <p className="observatory__legend observatory__group">
+                Observar
+                <span aria-hidden="true" className="observatory__rule" />
+              </p>
+              <div
+                aria-label="Vistas de observación"
+                className="observatory__views"
+                role="radiogroup"
+              >
+                {views.map((option, index) => (
+                  <button
+                    aria-checked={index === view}
+                    className="observatory__view"
+                    key={option.id}
+                    onClick={() => setView(index)}
+                    role="radio"
+                    /* Tabulador roving, igual que las pestañas del registro:
+                       un solo punto de entrada al grupo y flechas dentro. */
+                    tabIndex={index === view ? 0 : -1}
+                    type="button"
+                  >
+                    <span aria-hidden="true" className="observatory__view-index">
+                      {pad(index + 1)}
+                    </span>
+                    <span className="observatory__ink">{option.label}</span>
+                  </button>
+                ))}
+              </div>
+              {/*
+                Qué estudia la vista elegida. Es la frase que convierte una
+                cámara en un instrumento: sin ella son cuatro ángulos, con ella
+                son cuatro preguntas. Sale del módulo de vistas, donde cada una
+                se puede rastrear hasta una línea del shader.
+              */}
+              <p className="observatory__study">{views[view]?.study}</p>
+            </div>
+          ) : null}
+
+          <div className="observatory__deck observatory__inspect">
             {/* Cabecera de aparato, no rótulo suelto: la palabra y detrás una
                 regla que se desvanece hasta el borde de la banda. */}
             <p className="observatory__legend observatory__group">
@@ -866,15 +1272,37 @@ export function ObservatoryViewer({
             <div className="observatory__bank">
               <Instrument
                 label="Bloom"
-                pressed={!bloom}
+                pressed={!bloom || holding === "bloom"}
                 onToggle={() => setBloom((on) => !on)}
+                onHold={(held) => setHolding(held ? "bloom" : null)}
               />
               <span aria-hidden="true" className="observatory__div" />
               <Instrument
                 label="Material"
-                pressed={!emission}
+                pressed={!emission || holding === "material"}
                 onToggle={() => setEmission((on) => !on)}
+                onHold={(held) => setHolding(held ? "material" : null)}
               />
+              {/*
+                LA SONDA sólo aparece donde se puede nombrar lo que se señala.
+
+                Hoy es el Tesseracto y nada más: su topología la publica
+                `lib/tesseract.ts` —dieciséis vértices, treinta y dos aristas,
+                cada una corriendo por uno de los cuatro ejes— y su pose sale de
+                una función pura que se puede volver a evaluar con los mismos
+                segundos. Sobre la Endurance una sonda sólo podría decir «un
+                triángulo», que no es un instrumento: es un inspector.
+              */}
+              {canProbe ? (
+                <>
+                  <span aria-hidden="true" className="observatory__div" />
+                  <Instrument
+                    label="Sonda"
+                    pressed={probe}
+                    onToggle={() => setProbe((on) => !on)}
+                  />
+                </>
+              ) : null}
               <span aria-hidden="true" className="observatory__div" />
               <Instrument
                 label="Datos"

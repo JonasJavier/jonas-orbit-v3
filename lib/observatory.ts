@@ -391,19 +391,27 @@ export function cameraBasis(forward: Vec3): { right: Vec3; up: Vec3 } {
  * @param radius     radio del modelo ya construido (`SceneBody.radius`).
  * @param framing    distancia de encuadre, que decide la página según su campo
  *                   de visión y su viewport.
+ * @param override   otra geometría de luz para el MISMO espécimen. Es lo que
+ *                   usan las vistas curadas de `observation-views.ts`, y entra
+ *                   por aquí en vez de por una segunda función para que exista
+ *                   una sola implementación de esta construcción: una vista es
+ *                   el mismo cálculo con otros dos ángulos, no otro cálculo.
+ *                   El espécimen no se mueve, el material no se toca y la luz
+ *                   sigue siendo el origen del mundo.
  */
 export function observationPlacement(
   id: Exclude<WorldId, "gargantua">,
   radius: number,
   framing: number,
+  override?: { keyAngle?: number; keyAzimuth?: number },
 ): ObservationPlacement {
   const preset = OBSERVATION_PRESETS[id];
   const originDistance = radius * ORIGIN_DISTANCE_RADII;
 
   const body: Vec3 = [0, 0, -originDistance];
 
-  const a = preset.keyAngle * DEG;
-  const r = preset.keyAzimuth * DEG;
+  const a = (override?.keyAngle ?? preset.keyAngle) * DEG;
+  const r = (override?.keyAzimuth ?? preset.keyAzimuth) * DEG;
   const view: Vec3 = [
     Math.sin(a) * Math.cos(r),
     Math.sin(a) * Math.sin(r),

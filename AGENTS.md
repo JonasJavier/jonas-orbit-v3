@@ -156,6 +156,31 @@ vive en el MDX (`observatory.pair`) y `registro` es opcional. El tramo final de
 cámara (fov 50→40 y barrido de fase) queda **aplazado a propósito** hasta el
 veredicto visual. Su valoración visual queda abierta.
 
+**Observatorio V1.5 — instrumentos, no interruptores (2026-09-17):** la sección
+`V1.5 — de manipular un modelo a investigar un objeto` de
+`docs/design/tesseract-experimentos.md` manda sobre el §5 y el §8 en **qué
+instrumentos ofrece el Observatorio y qué puede enseñar como medido**. Cuatro
+piezas nuevas y ninguna caja nueva: **vistas curadas** (`lib/observation-views.ts`),
+que NO son encuadres sino otra geometría de luz resuelta por el mismo
+`observationPlacement` —una vista puede ALEJARSE, nunca acercarse: la silueta del
+Tesseracto respira treinta y un puntos y cualquier factor menor que uno la
+recorta—; **telemetría** de azimut, elevación, distancia en radios del espécimen
+y ángulo de clave, escrita en el DOM por referencia y no por estado de React;
+**SONDA** sobre el Tesseracto (`lib/tesseract-probe.ts`), que nombra la arista, su
+eje —X/Y/Z/W, verdad del hipercubo porque dos vértices adyacentes difieren en un
+bit y ese bit ES el eje— y su profundidad en W, sin raycaster y re-evaluando
+`sampleTesseract`, que es pura; y **comparación por pulsación sostenida** en
+`BLOOM` y `MATERIAL`, donde `preventDefault` en `pointerup` NO cancela el clic y
+el reloj es `performance.now()` porque el `timeStamp` sintético es de sólo
+lectura. `DATOS` pasa a `OBJETO / OBSERVACIÓN / RENDER`, y el orden es la
+lectura. **Gargantúa no tiene vistas**: las cuatro del §7 son especificación, no
+código. Dos fallos preexistentes corregidos: `--obs-inset` vivía en las
+escuadras, que son HERMANAS del raíl, así que el catálogo se pintaba pegado al
+canto —una custom property sólo la ven los descendientes—; y el panel de lectura
+se sentaba encima del raíl. `MEDIR` A→B y alambre/normales siguen aplazados. Su
+valoración visual queda abierta.
+
+
 **UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
 anterior en consentimiento, pausa y perfil ligero:**
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior

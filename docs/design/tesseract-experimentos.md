@@ -2229,3 +2229,160 @@ las seis filas siguen contándose igual. **Pendiente el veredicto visual de
 Jonás.** ACQUISITION LOCK sigue intacto y B —el tramo de cámara al llegar—
 sigue aplazado: él pidió expresamente no animar encima de una composición que
 antes no funcionaba.*
+
+
+## V1.5 — de manipular un modelo a investigar un objeto (2026-09-17)
+
+Encargo de Jonás, y su diagnóstico es la especificación: *«el Observatorio
+todavía se siente más como un inspector premium de un modelo 3D que como un
+observatorio espacial donde realmente estoy estudiando un espécimen»*. La base
+visual se conserva entera —composición, paleta, tipografía, el espécimen como
+protagonista absoluto— y lo que sube de nivel es la PROFUNDIDAD DE INTERACCIÓN.
+
+### Lo que existía, lo que se derivó barato y lo que no se construyó
+
+Antes de tocar nada, la matriz que él pidió:
+
+| Instrumento | Estado | Qué se hizo |
+| --- | --- | --- |
+| Vistas de observación | **derivable barato** | `observationPlacement` ya convertía dos ángulos en una pose. Una vista es esa misma función con otros dos ángulos. |
+| Telemetría de cámara | **derivable barato** | La escena ya tenía la `Spherical` y la posición del espécimen. `AZ`, `EL`, `DIST` y `CLAVE` salen de restar dos vectores. |
+| Sonda sobre el Tesseracto | **derivable barato** | `sampleTesseract` es pura: se puede volver a evaluar con los mismos segundos y da los mismos dieciséis vértices bit a bit. |
+| Comparación A/B | **ya existía** | `setBloom` y `setEmission`. Lo que cambia es el GESTO, no el mecanismo. |
+| `DATOS` en tres familias | **ya existía** | Los mismos números del contrato, reordenados. |
+| Sonda sobre la Endurance | **requiere sistema nuevo** | Su arquitectura se cuenta pero sus piezas no llevan nombre en la malla: una sonda sólo podría decir «un triángulo». No se hizo. |
+| Vistas de Gargantúa | **no existe** | Ver abajo. |
+| `MEDIR` A→B, alambre/normales | **requiere sistema nuevo** | Aplazados a propósito, como pidió el encargo. |
+
+**Corrección que hay que dejar escrita: Gargantúa NO tiene vistas curadas.** El
+§7 diseña cuatro —cinematográfica, lente, disco y sombra— pero eso es una
+especificación, no código: no tiene malla, `createBody` devuelve `null` para
+ella y en el catálogo figura como muestra sin montar. `observation-views.ts`
+deja su lista vacía y un test lo fija, porque un instrumento que promete una
+capacidad que el modelo no tiene es la peor clase de dato inventado.
+
+### Una vista es una geometría de luz, no un encuadre
+
+La restricción que hace honesta la lista. En este Observatorio hay UNA fuente de
+luz y es el origen del mundo, así que la única variable de observación real es
+dónde se sienta uno respecto de ella. Una vista se define con los mismos dos
+números que el preset y entra por el mismo `observationPlacement` —con un
+parámetro opcional, no con una segunda función—, así que por construcción no
+puede tocar el material: es literalmente el §6 hecho mando.
+
+Por eso cada vista puede decir qué revela, y esas frases se pueden rastrear
+hasta una línea del shader. Y por eso hay una prueba que lo demuestra a través
+de la pantalla: elegir `RASANTE` lleva la lectura `CLAVE` de los 145° del preset
+a los 92° que declara la vista. Si alguien colocara una cámara a ojo, ese número
+no cuadraría.
+
+**Y una vista puede ALEJARSE, nunca acercarse.** La regla la impuso una captura.
+Había una vista `SECCIÓN` a 0,55 de la distancia de encuadre y lo que salió no
+era una observación: era un recorte, con la figura cortada por los cuatro lados.
+El motivo está medido en `observatory-framing.test.ts` —la silueta del
+Tesseracto ocupa entre el 54 % y el 86 % del alto según la fase de su
+reconfiguración, treinta y un puntos— y cualquier factor menor que uno
+multiplica esa banda entera. No hay número que lo arregle: el problema es que la
+figura respira. La `OPERACIONES` de la Endurance a 0,72 tenía el mismo fallo.
+
+### La telemetría se escribe, no se renderiza
+
+Cuatro lecturas bajo el nombre del espécimen: azimut, elevación, distancia **en
+radios del propio espécimen** —las unidades de mundo aquí no significan nada— y
+el ángulo de clave, que es el que ningún visor gráfico enseña y el único que
+describe lo que de verdad cambia al orbitar.
+
+Cambian en cada fotograma pintado, así que no pasan por estado de React:
+re-renderizar el visor entero sesenta veces por segundo para cambiar cuatro
+números cuesta reconciliar todo lo demás. Se escriben en el DOM por referencia.
+Es la excepción, no la regla, y sólo vale para lecturas que no cambian la
+estructura de nada. El panel `DATOS` enseña los mismos cuatro valores por el
+mismo camino, y por eso al abrirlo hay que rellenarlo a mano: el bucle es bajo
+demanda y con el instrumento quieto no llega ningún fotograma.
+
+### La sonda dice cosas que son verdad del hipercubo
+
+Señalar una arista devuelve su índice dentro del circuito euleriano, **el eje
+por el que corre** —X, Y, Z o W—, su profundidad en la cuarta dimensión en el
+punto señalado y a qué distancia está.
+
+El eje es el dato que justifica la sonda entera. En un 4-cubo dos vértices son
+adyacentes si y sólo si sus índices difieren en UN bit, y ese bit es el eje: no
+es una convención de nuestro modelo, es la definición del hipercubo, y por eso
+es invariante mientras la figura rota. Ocho de las treinta y dos aristas
+atraviesan W, y el test lo cuenta de los datos en vez de escribirlo. **Es el
+único sitio del proyecto donde se puede señalar la cuarta dimensión con el
+dedo.**
+
+Nada de raycasting: se proyectan los dieciséis vértices y se busca el segmento
+más cercano al puntero en dos dimensiones. Treinta y dos distancias
+punto-segmento, ninguna estructura de aceleración, y de regalo el parámetro a lo
+largo de la arista, que es lo que permite interpolar la profundidad en el punto
+y no sólo en los extremos. Los vértices salen de volver a evaluar
+`sampleTesseract` con los mismos segundos: es una función pura, así que es la
+misma verdad y no una copia del estado.
+
+La retícula son cuatro marcas de un píxel con un hueco en medio. El hueco es la
+pieza: una cruz completa tapa justo lo que se señala y un círculo convierte el
+instrumento en una mira. Vive en el DOM porque cuatro trazos no justifican una
+pasada de render.
+
+### Comparar no es conmutar
+
+`BLOOM` y `MATERIAL` pasan a responder a la pulsación sostenida: mientras se
+mantiene, el instrumento sale de su estado canónico; al soltar vuelve solo. Es
+la pregunta del bloom-off test hecha gesto —¿qué parte de esto es el objeto y
+qué parte es el tratamiento?— y la pista de abajo deja de ser una instrucción
+para decir qué se está comparando, sin añadir un rótulo nuevo.
+
+El clic corto sigue conmutando, y eso no es un extra: es lo que mantiene el
+mando utilizable con teclado, donde «mantener» no existe como gesto.
+
+Dos cosas que costaron una captura cada una. **`preventDefault` en `pointerup`
+no cancela el `click` de un botón**, así que soltar tras comparar conmutaba el
+pestillo y el instrumento quedaba al revés; la decisión tiene que tomarse en el
+propio `click`, midiendo cuánto duró la pulsación. Y el reloj es
+`performance.now()` y no `event.timeStamp` **porque el `timeStamp` de un evento
+sintético es de sólo lectura**: con él, la diferencia entre comparar y conmutar
+quedaba fuera de la suite.
+
+### `DATOS`: el orden ES la lectura
+
+`OBJETO` → `OBSERVACIÓN` → `RENDER`. Qué estoy viendo, cómo lo estoy observando,
+cómo está construido. Antes abría por las llamadas de dibujo, o sea por lo
+último: contaba primero lo que le cuesta a la GPU y después qué es el objeto,
+que es el orden de un profiler y no el de un laboratorio. Ningún número cambia;
+cambia cuál se lee primero.
+
+### Dos fallos preexistentes que este pase destapó
+
+**El raíl nunca recibió su margen.** `--obs-inset` estaba declarada en
+`.observatory__calipers`, que es HERMANO del raíl y no su ancestro, así que
+`left: var(--obs-inset)` no resolvía a nada, la declaración era inválida, `left`
+caía a `auto` y las seis cifras del catálogo se pintaban pegadas al canto de la
+pantalla. **Ésa era la causa real de que `02`–`06` «casi desaparecieran»**, y
+ninguna cantidad de color lo habría arreglado: una custom property sólo la ven
+los descendientes del elemento que la declara. Ahora viven en `.observatory`.
+
+**Y el panel de lectura se sentaba encima del catálogo.** Con dos familias era
+corto y sólo alcanzaba a las dos últimas cifras; con tres llega a las seis. Un
+panel que tapa la navegación deja de ser una lectura del objeto y pasa a ser un
+modal. Se sangra lo justo para librar el raíl.
+
+### Ajustes de presencia
+
+El raíl sube de 0.62 a 0.76 y las no montadas de 0.30 a 0.42 —siguen por debajo
+de las montadas y con la cifra tachada—; el rastro `EXPERIMENTOS / OBSERVATORIO`
+baja a 0.20 para que la acción reconocible sea `SALIR DEL OBSERVATORIO`; la
+prosa del registro baja un 6 % y abre interlínea. En modo cine la telemetría cae
+a un 35 % del nivel 1: identidad, catálogo y salida contestan «dónde estoy» y se
+quedan; la telemetría contesta «cómo estoy mirando», que es una pregunta que
+sólo existe mientras se opera.
+
+*Estado: `npm run check` verde; 127 e2e en chromium en verde, con dos pruebas
+nuevas de navegador —una vista cambia la geometría de la luz y la telemetría lo
+demuestra; la sonda nombra una arista real— más dieciséis unitarias nuevas entre
+`observation-views.test.ts`, `tesseract-probe.test.ts` y el cromo. **Pendiente el
+veredicto visual de Jonás.** `MEDIR` A→B y el alambre/normales siguen aplazados,
+y la infraestructura queda lista para congelarse y montar los cuatro especímenes
+que faltan.*

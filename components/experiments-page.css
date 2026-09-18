@@ -125,12 +125,12 @@
       90deg,
       rgba(1, 2, 5, 0.5) 0%,
       rgba(1, 2, 5, 0) 5%,
-      rgba(1, 2, 5, 0) 34%,
-      rgba(1, 2, 5, 0.14) 50%,
-      rgba(1, 2, 5, 0.34) 64%,
-      rgba(1, 2, 5, 0.58) 76%,
-      rgba(1, 2, 5, 0.82) 88%,
-      rgb(1, 2, 5) 97%
+      rgba(1, 2, 5, 0) 30%,
+      rgba(1, 2, 5, 0.14) 46%,
+      rgba(1, 2, 5, 0.34) 60%,
+      rgba(1, 2, 5, 0.58) 72%,
+      rgba(1, 2, 5, 0.82) 85%,
+      rgb(1, 2, 5) 96%
     ),
     linear-gradient(180deg, rgba(1, 2, 5, 0.6) 0%, transparent 11%),
     linear-gradient(0deg, rgba(1, 2, 5, 0.55) 0%, transparent 11%);
@@ -370,28 +370,39 @@
   outline-offset: 0.35rem;
 }
 
-/* Sin montar: la muestra existe y su observación no. Se cuenta, se lee y no
-   promete puerta ninguna. */
+/*
+  Sin montar: la muestra EXISTE y su observación no.
+
+  Subida de legibilidad del pase V1.5, y el motivo es de significado, no de
+  contraste. A 0.38 las cuatro se leían como contenido deshabilitado —algo que
+  el sitio te niega— cuando lo que son es muestras que todavía no tienen
+  observación montada. Una plaza reservada se lee; una opción gris se ignora.
+
+  La jerarquía se mantiene entera: siguen por debajo de las montadas, la cifra
+  sigue tachada y el estado sigue diciendo `SIN MONTAR`. Lo que cambia es que
+  ahora se pueden leer sin acercarse a la pantalla, que es la regla que este
+  proyecto ya aprendió una vez en Miller: «mínimo» no es invisible.
+*/
 .specimen-row--off {
   cursor: default;
 }
 
 .specimen-row--off .specimen-row__name {
-  color: rgba(201, 210, 229, 0.38);
+  color: rgba(201, 210, 229, 0.62);
 }
 
 .specimen-row--off .specimen-row__index {
-  color: rgba(146, 159, 186, 0.3);
+  color: rgba(146, 159, 186, 0.45);
   text-decoration: line-through;
-  text-decoration-color: rgba(146, 159, 186, 0.35);
+  text-decoration-color: rgba(146, 159, 186, 0.5);
 }
 
 .specimen-row--off .specimen-row__pair {
-  color: rgba(146, 159, 186, 0.32);
+  color: rgba(146, 159, 186, 0.5);
 }
 
 .specimen-row--off .specimen-row__state {
-  color: rgba(146, 159, 186, 0.45);
+  color: rgba(146, 159, 186, 0.62);
 }
 
 /* ── ADQUISICIÓN ─────────────────────────────────────────────────────────── */

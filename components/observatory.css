@@ -33,6 +33,24 @@
   inset: 0;
   overflow: hidden;
   background: #000;
+
+  /*
+    LA CALIBRACIÓN DE TODA LA INSTRUMENTACIÓN, y vive aquí por un fallo que
+    costó una entrega encontrar.
+
+    Las tres estaban declaradas en `.observatory__calipers`, que es HERMANO del
+    raíl y no su ancestro. `left: var(--obs-inset)` no resolvía a nada, así que
+    era una declaración inválida, `left` caía a `auto` y las seis cifras del
+    catálogo se pintaban en la posición estática: pegadas al canto de la
+    pantalla, medio perdidas. Era la causa real de que `02`–`06` «casi
+    desaparecieran», y ninguna cantidad de color lo habría arreglado.
+
+    Una custom property sólo la ven los DESCENDIENTES del elemento que la
+    declara. Dos hermanos no comparten variables.
+  */
+  --obs-mark: rgb(164 180 212 / 0.46);
+  --obs-mark-soft: rgb(164 180 212 / 0.26);
+  --obs-inset: clamp(0.7rem, 1.8vw, 1.4rem);
 }
 
 .observatory__canvas {
@@ -93,9 +111,8 @@
     ocupa medio cuadro; todas las marcas juntas no llegan a un millar de
     píxeles.
   */
-  --obs-mark: rgb(164 180 212 / 0.46);
-  --obs-mark-soft: rgb(164 180 212 / 0.26);
-  --obs-inset: clamp(0.7rem, 1.8vw, 1.4rem);
+  /* Las tres variables viven ahora en `.observatory`, que es el ancestro de
+     todo el cromo. Aquí sólo se consumen. */
 }
 
 /*
@@ -345,7 +362,10 @@
 
 /* ── El banco de instrumentos ───────────────────────────────────────────── */
 
-.observatory__inspect {
+/* Los dos bloques con cabecera de aparato —OBSERVAR e INSPECCIONAR— comparten
+   caja. La clase específica de cada uno se conserva porque el modo lectura de
+   móvil y la suite e2e los distinguen. */
+.observatory__deck {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -902,6 +922,9 @@ a.observatory__step-arrow:focus-visible {
 .observatory__rail {
   position: absolute;
   left: var(--obs-inset);
+  /* Media cifra de aire: el raíl es lo más pegado al borde de todo el cromo y
+     sin este margen la columna parece cortada por la pantalla. */
+  padding-left: 0.3rem;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
@@ -1089,6 +1112,20 @@ a.observatory__slot:focus-visible .observatory__slot-index {
 .observatory__data {
   display: flex;
   flex-wrap: wrap;
+  /*
+    Y NO PUEDE SENTARSE ENCIMA DEL CATÁLOGO.
+
+    El raíl de especímenes es una columna permanente en el borde izquierdo y la
+    banda de lectura arranca once píxeles por dentro de su canto derecho. Con
+    dos familias el panel era corto y sólo alcanzaba a las dos últimas cifras;
+    con tres llega a las seis y se las come — medido: la ficha ocupaba de y=330
+    a y=669 y el raíl vive entre 344 y 556. Un panel que tapa la navegación deja
+    de ser una lectura del objeto y pasa a ser un modal.
+
+    Sangrado de 1,1 rem: lo justo para librar el raíl. No se alinea con el resto
+    de la banda a propósito — es una superficie, no una fila.
+  */
+  margin-left: 1.1rem;
   /* Se ciñe a su contenido: dentro de una banda `stretch`, sin esto el panel
      se estiraría hasta el ancho del cuadro y dejaría de leerse como una ficha. */
   align-self: flex-start;
@@ -1277,6 +1314,9 @@ a.observatory__slot:focus-visible .observatory__slot-index {
     position: fixed;
     inset: auto 0 0 0;
     align-self: auto;
+    /* Sin raíl no hay nada que librar, y una hoja inferior sangrada por un lado
+       se leería torcida. */
+    margin-left: 0;
     max-width: none;
     /* Dentro del 55-65 % que pidió la dirección. El techo es el que manda: con
        una sección a la vez el contenido suele ser más corto, y la hoja se ajusta
@@ -1330,8 +1370,8 @@ a.observatory__slot:focus-visible .observatory__slot-index {
   /* MODO LECTURA. Todo lo que no es identidad ni texto se retira. */
   .observatory[data-panel="datos"] .observatory__controls,
   .observatory[data-panel="registro"] .observatory__controls,
-  .observatory[data-panel="datos"] .observatory__inspect,
-  .observatory[data-panel="registro"] .observatory__inspect,
+  .observatory[data-panel="datos"] .observatory__deck,
+  .observatory[data-panel="registro"] .observatory__deck,
   .observatory[data-panel="datos"] .observatory__step-arrow,
   .observatory[data-panel="registro"] .observatory__step-arrow {
     display: none;
@@ -1695,4 +1735,266 @@ html[data-motion="off"] .observatory-face *::after {
     min-height: 34svh;
     --flat-size: min(70vmin, 20rem);
   }
+}
+
+/* ── V1.5 · Los instrumentos de observación ─────────────────────────────── */
+
+/*
+  LA TELEMETRÍA.
+
+  Cuatro lecturas bajo el nombre del espécimen, y ni una caja. Van más apagadas
+  que el descriptor a propósito: describen la cámara, no el objeto, y el objeto
+  es el protagonista. Se escriben desde el bucle de la escena y por eso llevan
+  cifras tabulares — sin ellas, `042,8` y `142,8` mueven la columna entera cada
+  vez que el visitante cruza cien grados.
+*/
+.observatory__telemetry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.05rem;
+  margin: 0.55rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.observatory__cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+.observatory__code {
+  color: rgb(234 246 255 / 0.3);
+}
+
+.observatory__value {
+  color: rgb(234 246 255 / 0.62);
+  /* Reserva el ancho de la lectura más larga. Sin esto, el primer fotograma
+     llega con los huecos vacíos y la fila entera salta al llenarse. */
+  min-width: 3.2em;
+}
+
+/*
+  LA SONDA.
+
+  Ámbar, porque es lo único de la pantalla que responde a un gesto de
+  interrogación y no a uno de navegación. Una sola línea: la arista, su eje, su
+  profundidad en la cuarta dimensión y a qué distancia está. Vacía cuando el
+  puntero no señala nada, que es lo que impide que una lectura se quede colgada
+  mintiendo sobre el presente.
+*/
+.observatory__probe-line {
+  margin: 0.3rem 0 0;
+  min-height: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 210 160 / 0.78);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+/*
+  LA RETÍCULA: cuatro marcas y un hueco en medio.
+
+  El hueco es la pieza. Una cruz completa TAPA justo lo que se está señalando, y
+  un círculo convierte el instrumento en una mira. Cuatro trazos de un píxel
+  separados del punto dejan ver la arista entera y aun así dicen dónde cae la
+  lectura.
+*/
+.observatory__reticle {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.observatory__reticle[data-on="true"] {
+  opacity: 1;
+}
+
+.observatory__reticle span {
+  position: absolute;
+  background: rgb(255 210 160 / 0.85);
+}
+
+.observatory__reticle span:nth-child(1),
+.observatory__reticle span:nth-child(2) {
+  left: -0.5px;
+  width: 1px;
+  height: 6px;
+}
+
+.observatory__reticle span:nth-child(1) {
+  top: -15px;
+}
+.observatory__reticle span:nth-child(2) {
+  top: 9px;
+}
+
+.observatory__reticle span:nth-child(3),
+.observatory__reticle span:nth-child(4) {
+  top: -0.5px;
+  width: 6px;
+  height: 1px;
+}
+
+.observatory__reticle span:nth-child(3) {
+  left: -15px;
+}
+.observatory__reticle span:nth-child(4) {
+  left: 9px;
+}
+
+/*
+  LAS VISTAS.
+
+  Mismo patrón de cabecera que `INSPECCIONAR` —palabra y regla— porque son dos
+  grupos del mismo aparato y no dos interfaces. La cifra delante de cada nombre
+  las convierte en un índice de observaciones en vez de en cuatro botones.
+*/
+.observatory__views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.35rem;
+}
+
+.observatory__view {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  min-height: 44px;
+  padding: 0 0.55rem 0 0.15rem;
+  border: 0;
+  background: none;
+  color: rgb(234 246 255 / 0.48);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 180ms var(--ease-orbit);
+}
+
+.observatory__view-index {
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  color: rgb(234 246 255 / 0.26);
+  transition: color 180ms var(--ease-orbit);
+}
+
+.observatory__view:hover,
+.observatory__view:focus-visible {
+  color: #eaf6ff;
+}
+
+.observatory__view[aria-checked="true"] {
+  color: #ffd2a0;
+}
+
+.observatory__view[aria-checked="true"] .observatory__view-index {
+  color: rgb(255 210 160 / 0.6);
+}
+
+.observatory__view:focus-visible {
+  outline: none;
+}
+
+.observatory__view:focus-visible .observatory__ink {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 5px;
+}
+
+/*
+  Qué estudia la vista elegida.
+
+  Es la frase que separa un encuadre de un instrumento, y por eso está — pero va
+  en el tono más bajo de la banda y acotada en ancho: se lee al elegir una vista
+  y desaparece de la atención en cuanto se mira el espécimen. Si alguna vez pesa
+  más que el objeto, lo que sobra es la frase.
+*/
+.observatory__study {
+  margin: 0.15rem 0 0;
+  max-width: 74ch;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+  color: rgb(234 246 255 / 0.36);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+/* La unidad, más apagada que su número: `6,21` es el dato y `radios` es cómo se
+   lee. */
+.observatory__unit {
+  color: rgb(234 246 255 / 0.34);
+}
+
+/* Comparando, la pista deja de ser una instrucción y pasa a ser una lectura.
+   El ámbar es lo que dice que el instrumento está fuera de su estado canónico. */
+.observatory__hint[data-comparing]:not([data-comparing="none"]) {
+  color: rgb(255 210 160 / 0.82);
+}
+
+/* ── V1.5 · Ajustes de presencia ────────────────────────────────────────── */
+
+/*
+  El raíl se lee. `02`–`06` estaban al 62 % de un blanco que ya vive sobre un
+  espécimen brillante, y con el modo cine encima —que multiplica por 0.3— caían
+  por debajo del umbral en el que una cifra se puede contar. Sube a 0.76; el
+  activo sigue distinguiéndose por color y peso, no por ser el único visible.
+*/
+.observatory__slot {
+  color: rgb(234 246 255 / 0.76);
+}
+
+.observatory__slot--off {
+  color: rgb(234 246 255 / 0.42);
+}
+
+/* El rastro cede protagonismo a la salida: dice dónde estás, no qué puedes
+   hacer, y la acción reconocible tiene que ser `Salir del Observatorio`. */
+.observatory__trail {
+  font-size: 0.52rem;
+  color: rgb(234 246 255 / 0.2);
+}
+
+/* La prosa del registro, un 6 % menor y algo más abierta: son párrafos de
+   verdad dentro de una interfaz monoespaciada, y a este cuerpo se leen sin que
+   el panel pese más que el espécimen. */
+.observatory__tabpanel {
+  font-size: 0.78rem;
+  line-height: 1.72;
+}
+
+/*
+  Y EN MODO CINE, LA TELEMETRÍA SE VA CASI DEL TODO.
+
+  El nivel 1 deja identidad, catálogo y salida al 30 % porque las tres
+  contestan «dónde estoy». La telemetría no contesta eso: contesta «cómo estoy
+  mirando», que es una pregunta que sólo existe mientras se opera. Al 35 % de
+  ese 30 % queda como un rastro —se ve que el aparato sigue midiendo— sin
+  disputarle el cuadro al espécimen.
+*/
+.observatory[data-idle="true"] .observatory__telemetry,
+.observatory[data-idle="true"] .observatory__probe-line {
+  opacity: 0.35;
+}
+
+.observatory__telemetry,
+.observatory__probe-line {
+  transition: opacity 420ms ease;
 }

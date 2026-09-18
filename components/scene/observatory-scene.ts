@@ -5,6 +5,15 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
 import { observationPlacement, OBSERVATION_PRESETS } from "@/lib/observatory";
+import {
+  observationTelemetry,
+  observationViews,
+  resolveView,
+  type ObservationTelemetry,
+  type ObservationView,
+} from "@/lib/observation-views";
+import { sampleTesseract } from "@/lib/tesseract";
+import { nearestEdge, probeDepth, type ProbeHit } from "@/lib/tesseract-probe";
 import { readVisualBench } from "@/lib/visual-bench";
 import { createBody, disposeBody, type SceneBodyInput } from "./bodies";
 import { createObservatorySky } from "./observatory-sky";
@@ -140,10 +149,39 @@ const ZOOM_FAR = 2.6;
  *  imagen y el gesto deja de tener sentido. */
 const PITCH_LIMIT = 1.45;
 
+/**
+ * Lo que la sonda resuelve sobre el punto señalado.
+ *
+ * Todo medido: la arista y su eje salen de la topología del 4-cubo, la
+ * profundidad del mismo array que reparte grosor y luz en el shader, y la
+ * distancia de la cámara que hay. `screen` va en píxeles CSS del lienzo porque
+ * la retícula se dibuja en el DOM y no en WebGL — unas marcas de un píxel no
+ * justifican una pasada de render.
+ */
+export interface ProbeReading extends ProbeHit {
+  /** Profundidad en W del punto, 0 (lo más lejano de esta pose) a 1. */
+  depth: number;
+  /** Distancia de la cámara al punto, en radios del espécimen. */
+  range: number;
+  screen: { x: number; y: number };
+}
+
 export interface ObservatoryHandle {
   /** El contrato medido del espécimen. Va a `INSPECCIONAR / DATOS`, nunca a la
    *  vista normal. */
   readonly contract: SpecimenContract;
+  /** Las vistas curadas de este espécimen. Vacío si no tiene. */
+  readonly views: readonly ObservationView[];
+  /** Si este espécimen admite sonda. Hoy sólo el Tesseracto: es el único cuya
+   *  geometría se puede nombrar pieza a pieza sin inventar nada. */
+  readonly canProbe: boolean;
+  /** El campo de visión del instrumento, en grados. Constante, y por eso se
+   *  publica como dato del aparato y no como telemetría. */
+  readonly fov: number;
+  /** Coloca una de las vistas curadas. `0` es siempre la canónica. */
+  setView(index: number): void;
+  /** Enciende la sonda. Sin ella el puntero sólo gira el espécimen. */
+  setProbe(enabled: boolean): void;
   /** Vuelve a la pose del preset. No es «movimiento» y por eso no depende del
    *  interruptor global. */
   reset(): void;
@@ -175,12 +213,24 @@ export interface ObservatoryOptions {
    * rectángulo negro mientras se monta.
    */
   onFirstFrame?: () => void;
+  /**
+   * La telemetría, en cada fotograma que se pinta.
+   *
+   * Va por callback y no por getter porque lo que describe es un movimiento: si
+   * hubiera que preguntar, quien pregunta tendría que montar su propio bucle
+   * junto al que ya existe. Y se llama DESPUÉS de colocar la cámara, así que lo
+   * que publica es la cámara que se está dibujando y no la del fotograma
+   * anterior.
+   */
+  onTelemetry?: (telemetry: ObservationTelemetry) => void;
+  /** Lo que la sonda encuentra bajo el puntero, o `null` al señalar el vacío. */
+  onProbe?: (reading: ProbeReading | null) => void;
 }
 
 export function createObservatoryScene(
   options: ObservatoryOptions,
 ): ObservatoryHandle | null {
-  const { canvas, world, onFirstFrame } = options;
+  const { canvas, world, onFirstFrame, onTelemetry, onProbe } = options;
 
   const body = createBody(world);
   // Gargantúa no llega aquí: no tiene malla y se observa por vistas curadas.
@@ -230,6 +280,8 @@ export function createObservatoryScene(
   const home = new THREE.Vector3(...placement.camera).sub(target);
   const spherical = new THREE.Spherical().setFromVector3(home);
   const homeSpherical = spherical.clone();
+  // Mutable: cada vista recalcula su vertical, porque el `up` sale de la
+  // mirada y la mirada cambia con el ángulo de clave.
   const up = new THREE.Vector3(...placement.up);
 
   /*
@@ -266,6 +318,41 @@ export function createObservatoryScene(
   );
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
+
+  /*
+    LAS VISTAS CURADAS.
+
+    Una vista es el MISMO cálculo de `observationPlacement` con otros dos
+    ángulos: el espécimen no se mueve, el material no se toca y la luz sigue
+    siendo el origen del mundo. Lo único que cambia es dónde se sienta el
+    visitante respecto de la única lámpara que hay — que es la definición de
+    «condiciones de observación» del §6, y por eso cada vista puede decir qué
+    revela sin inventarse una capacidad.
+  */
+  const views = observationViews(world.id);
+
+  /*
+    LA SONDA, sólo donde se puede nombrar lo que se señala.
+    
+    El Tesseracto es hoy el único: su topología la publica `lib/tesseract.ts`
+    —dieciséis vértices, treinta y dos aristas, cada una corriendo por uno de
+    los cuatro ejes— y su pose sale de una función pura que se puede volver a
+    evaluar aquí con los mismos segundos y los mismos bits. La Endurance tiene
+    arquitectura contable pero sus piezas no llevan nombre en la malla, así que
+    una sonda sobre ella sólo podría decir «un triángulo»: eso no es un
+    instrumento, es un inspector.
+  */
+  const probeEdges =
+    world.id === "tesseract"
+      ? (body.object.getObjectByName("tesseract-crystal-edges") ?? null)
+      : null;
+  const probePoints = new Float32Array(48);
+  const probeCells = new Float32Array(16);
+  const probeScreen = new Float32Array(32);
+  const probeVector = new THREE.Vector3();
+  let probing = false;
+  let pointerX = 0;
+  let pointerY = 0;
 
   let motion = options.motion;
   let emission = 1;
@@ -386,6 +473,24 @@ export function createObservatoryScene(
     composer.render();
 
     /*
+      La telemetría, después de colocar la cámara y de dibujar: lo que se
+      publica es la cámara que se está viendo, no la del fotograma anterior.
+
+      Y sólo en fotogramas que se PINTAN. El bucle es bajo demanda y ya salió
+      por `if (!dirty) return` si nada cambió, así que en reposo esto no se
+      llama ni una vez por segundo. Una lectura que se repite sola no es
+      telemetría, es un temporizador.
+    */
+    onTelemetry?.(
+      observationTelemetry(
+        camera.position.toArray(),
+        [target.x, target.y, target.z],
+        body!.radius,
+      ),
+    );
+    if (probing) resolveProbe();
+
+    /*
       Aquí y no antes. El aviso va DESPUÉS de `composer.render()` porque lo que
       se anuncia es que hay imagen, no que haya escena: entre construir el
       cuerpo y pintarlo hay una compilación de shaders que en un equipo modesto
@@ -395,6 +500,73 @@ export function createObservatoryScene(
       painted = true;
       onFirstFrame?.();
     }
+  }
+
+  /**
+   * LA SONDA: qué arista hay bajo el puntero y qué se sabe de ella.
+   *
+   * Los dieciséis vértices se vuelven a muestrear aquí con los MISMOS segundos
+   * que usó el modelo. No es una copia del estado: `sampleTesseract` es una
+   * función pura, así que el mismo número da los mismos dieciséis vértices bit
+   * a bit — es la misma propiedad que hace comparables las capturas del banco
+   * visual. La alternativa —sacar el array del cierre del modelo— acoplaría el
+   * visor a la implementación de la figura para no ganar nada.
+   *
+   * Después se proyectan a PÍXELES del lienzo, no a coordenadas normalizadas:
+   * en normalizadas una ventana apaisada mide distinto a lo ancho que a lo
+   * alto, y «la arista más cercana» dependería de la forma de la ventana.
+   */
+  function resolveProbe() {
+    if (!probeEdges || !onProbe) return;
+    sampleTesseract(bench.clock ?? elapsed, probePoints, probeCells);
+    probeEdges.updateWorldMatrix(true, false);
+
+    for (let vertex = 0; vertex < 16; vertex += 1) {
+      probeVector
+        .fromArray(probePoints, vertex * 3)
+        .applyMatrix4(probeEdges.matrixWorld)
+        .project(camera);
+      probeScreen[vertex * 2] = ((probeVector.x + 1) / 2) * width;
+      probeScreen[vertex * 2 + 1] = ((1 - probeVector.y) / 2) * height;
+    }
+
+    /*
+      El radio de captura sale del tamaño del cuadro y no de un número fijo: en
+      una ventana pequeña el espécimen ocupa menos píxeles, así que un alcance
+      constante señalaría media figura. Un 3.2 % del lado menor es, medido,
+      algo más que el grosor de una arista gruesa.
+    */
+    const hit = nearestEdge(
+      probeScreen,
+      pointerX,
+      pointerY,
+      Math.min(width, height) * 0.032,
+    );
+    if (!hit) {
+      onProbe(null);
+      return;
+    }
+
+    const x =
+      probeScreen[hit.from * 2] * (1 - hit.t) + probeScreen[hit.to * 2] * hit.t;
+    const y =
+      probeScreen[hit.from * 2 + 1] * (1 - hit.t) +
+      probeScreen[hit.to * 2 + 1] * hit.t;
+
+    probeVector
+      .fromArray(probePoints, hit.from * 3)
+      .lerp(
+        new THREE.Vector3().fromArray(probePoints, hit.to * 3),
+        hit.t,
+      )
+      .applyMatrix4(probeEdges.matrixWorld);
+
+    onProbe({
+      ...hit,
+      depth: probeDepth(probeCells, hit),
+      range: probeVector.distanceTo(camera.position) / body!.radius,
+      screen: { x, y },
+    });
   }
 
   // ── El gesto del visitante ────────────────────────────────────────────────
@@ -413,7 +585,20 @@ export function createObservatoryScene(
     canvas.setPointerCapture(event.pointerId);
   }
 
+  function trackPointer(event: PointerEvent) {
+    if (!probing) return;
+    const box = canvas.getBoundingClientRect();
+    pointerX = event.clientX - box.left;
+    pointerY = event.clientY - box.top;
+    // La sonda se resuelve en el fotograma, no en el evento: un `pointermove`
+    // llega hasta cinco veces por fotograma en un ratón moderno y proyectar
+    // dieciséis vértices cinco veces para tirar cuatro resultados es trabajo
+    // regalado.
+    dirty = true;
+  }
+
   function onPointerMove(event: PointerEvent) {
+    trackPointer(event);
     if (dragging !== event.pointerId) return;
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
@@ -448,7 +633,16 @@ export function createObservatoryScene(
     dirty = true;
   }
 
+  /* Sacar el puntero del lienzo borra la lectura. Sin esto, la retícula se
+     queda clavada donde estuvo y sigue afirmando una arista que ya nadie
+     señala — una medición que sobrevive a su gesto es una medición falsa. */
+  function onPointerLeave() {
+    if (!probing) return;
+    onProbe?.(null);
+  }
+
   canvas.addEventListener("pointerdown", onPointerDown);
+  canvas.addEventListener("pointerleave", onPointerLeave);
   canvas.addEventListener("pointermove", onPointerMove);
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", endDrag);
@@ -459,10 +653,55 @@ export function createObservatoryScene(
   body.animateAt(bench.clock ?? 0);
   frame = requestAnimationFrame(renderFrame);
 
+  /**
+   * Coloca una vista curada.
+   *
+   * Reusa `observationPlacement` con otros dos ángulos y otra distancia, y de
+   * ahí saca cámara y vertical. No hay un segundo camino por el que la cámara
+   * pueda llegar a un sitio que no describa el contrato de observación — que es
+   * la misma invariante que ya protegía `reset()`.
+   */
+  function applyView(index: number) {
+    const view = views[index];
+    const resolved = resolveView(preset, view);
+    const pose = observationPlacement(
+      id,
+      body!.radius,
+      framing * resolved.distance,
+      resolved,
+    );
+    up.set(...pose.up);
+    spherical.setFromVector3(
+      new THREE.Vector3(...pose.camera).sub(target),
+    );
+    dirty = true;
+  }
+
   return {
     contract: specimenContract(body),
+    views,
+    canProbe: probeEdges !== null,
+    fov: FOV,
+    setView(index) {
+      if (index < 0 || index >= views.length) return;
+      applyView(index);
+    },
+    setProbe(enabled) {
+      probing = enabled && probeEdges !== null;
+      // Apagarla tiene que borrar la lectura: una retícula que se queda
+      // colgada donde estuvo el puntero es un dato mintiendo sobre el presente.
+      if (!probing) onProbe?.(null);
+      dirty = true;
+    },
     reset() {
+      /*
+        Vuelve a la pose de casa Y a la vertical de casa. Antes sólo restauraba
+        las tres coordenadas esféricas, que bastaba porque el `up` no cambiaba
+        nunca; con las vistas sí cambia, y sin esta línea `Reajustar` dejaría el
+        cuadro girado.
+      */
       spherical.copy(homeSpherical);
+      up.set(...placement.up);
       dirty = true;
     },
     setBloom(enabled) {
@@ -484,6 +723,7 @@ export function createObservatoryScene(
       disposed = true;
       cancelAnimationFrame(frame);
       canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointerleave", onPointerLeave);
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerup", endDrag);
       canvas.removeEventListener("pointercancel", endDrag);
