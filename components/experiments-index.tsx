@@ -63,8 +63,6 @@ export function ExperimentsIndex({
   const [stage, setStage] = useState(0);
   const timers = useRef<number[]>([]);
 
-  const mounted = specimens.filter((entry) => entry.href).length;
-
   const clear = () => {
     for (const timer of timers.current) window.clearTimeout(timer);
     timers.current = [];
@@ -144,23 +142,16 @@ export function ExperimentsIndex({
       className="specimen-index"
       data-acquiring={acquiring ?? "none"}
     >
-      <header className="specimen-index__head">
-        <h2 className="specimen-index__title" id="specimen-index-title">
-          Índice de especímenes
-        </h2>
-        <p className="specimen-index__count">
-          <span aria-hidden="true">
-            {String(mounted).padStart(2, "0")} /{" "}
-            {String(specimens.length).padStart(2, "0")}
-          </span>
-          <span className="specimen-index__count-label">
-            <span className="sr-only">
-              {mounted} de {specimens.length}{" "}
-            </span>
-            especímenes disponibles
-          </span>
-        </p>
-      </header>
+      {/*
+        El encabezado se queda pero deja de verse: la cuenta ya la dice la
+        cabecera de la página —una sola vez, que es como se dicen las cosas— y
+        un rótulo `ÍNDICE DE ESPECÍMENES` encima de seis filas numeradas no
+        informa a nadie que esté mirando. Sigue existiendo para quien navega
+        por encabezados o por regiones, y es el nombre accesible de esta.
+      */}
+      <h2 className="sr-only" id="specimen-index-title">
+        Índice de especímenes
+      </h2>
 
       <ol className="specimen-index__list">
         {specimens.map((entry) => {

@@ -125,9 +125,17 @@ documento en **cómo se entra al Observatorio**. Dirección fijada por el dueño
 *hay dos acciones distintas —viajar a Experimentos y operar Experimentos—*, así
 que el viaje desde el System Map sigue siendo la travesía y entrar al
 laboratorio NO es otro viaje, es encender un aparato. `/es/experimentos` deja de
-ser ficha editorial y pasa a recepción instrumental (vestíbulo en SVG —ventanal,
-limbo, suelo y una figura que fija la escala— más índice de seis con `LISTO` /
-`SIN MONTAR`); entra por la cascada de `[mundo]/page.tsx` como Miller y Edmunds,
+ser ficha editorial y pasa a recepción instrumental (vestíbulo fotográfico
+—ventanal, limbo, suelo y una figura que fija la escala; original e informe de
+origen en `assets/experimentos/FUENTES.md`, copias por
+`tools/prepare-experiments.mjs`— más índice de seis con `LISTO` / `SIN MONTAR`).
+**La sala NO es una columna al lado del texto**: va espejada —medida la
+luminancia, su arco sube a la derecha y su jamba encendida caía justo bajo el
+catálogo—, ocupa el 58 % del ancho recortada del 12 % al 80 % de su alto, y se
+funde a negro durante un tercio de su ancho para que las primeras filas caigan
+sobre el limbo. La cabecera es una lectura de tres líneas que acaba en
+`OBSERVATORIO EXPERIMENTAL · 02 / 06 MONTADOS`; la prosa del mundo baja al pie,
+detrás del índice. Entra por la cascada de `[mundo]/page.tsx` como Miller y Edmunds,
 sin tocar `BESPOKE_WORLD_IDS`. Elegir una muestra dispara `ACQUISITION LOCK`:
 `ADQUIRIENDO → BLOQUEO → MONTANDO` en 1,08 s, navegación **por temporizador**, y
 mientras tanto se descarga el módulo de la escena. En el laboratorio la cara
@@ -137,7 +145,12 @@ espécimen— hasta que `onFirstFrame` publica `data-state="nominal"`. Tres regl
 **el aviso de llegada va después de `composer.render()`, nunca en el `.then()`
 del import**; **exactamente UNA de las dos superficies está viva** (la otra va
 `inert`, o hay dos salidas y dos nombres accesibles); y **atenuar una capa la
-vuelve translúcida, no oscura** — el vestíbulo se apaga contra un velo negro.
+vuelve translúcida, no oscura** — el vestíbulo se apaga contra un velo negro, su
+pared es opaca porque un interior no tiene estrellas dentro, y en móvil se
+oscurece con negro encima en vez de bajarle la opacidad. La sala se pinta a la
+ALTURA de la ventana y deduce su ancho de la proporción del encuadre, que es lo
+que la deja por debajo del 44 % donde arranca el índice; el degradado que funde
+su canto derecho se mide EN LA IMAGEN y no en el viewport.
 `lib/observatory-catalog.ts` es el catálogo único; el par instrumental del §14.1
 vive en el MDX (`observatory.pair`) y `registro` es opcional. El tramo final de
 cámara (fov 50→40 y barrido de fase) queda **aplazado a propósito** hasta el

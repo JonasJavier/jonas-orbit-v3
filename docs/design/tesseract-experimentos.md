@@ -2082,15 +2082,150 @@ interruptor único manda aquí igual que en todo lo demás.
   índice, con la cifra tachada y sin enlace. El catálogo dice cuántas hay.
 - **La salida se llama `Salir del Observatorio`.** Antes ponía «Índice» con el
   destino en un `sr-only`, en la única ruta del sitio sin barra de navegación.
-- **El vestíbulo es un SVG**, no un segundo contexto WebGL. La garantía del §1
-  se mantiene y ahora la vigila un test: `e2e/experimentos.spec.ts` cuenta los
-  contextos creados sobre canvas anclados.
-- **La figura humana se queda, de momento.** Mide un 6 % del alto frente a un
-  ventanal de 800 unidades y es lo que fija la escala. Es una silueta
-  geométrica, no una ilustración: en Jonas Orbit no hay gente dibujada en
-  ninguna parte. Un solo `<g>` la retira si al verla no convence.
+- **El vestíbulo es una imagen fija**, no un segundo contexto WebGL. La
+  garantía del §1 se mantiene y ahora la vigila un test:
+  `e2e/experimentos.spec.ts` cuenta los contextos creados sobre canvas anclados.
+- **La figura humana se queda.** Es lo que fija la escala: sin ella la sala
+  podría medir cuatro metros.
 
 *Estado: `npm run check` verde; 125 e2e en chromium en verde, con cuatro
 pruebas nuevas de recepción y una del encendido. **Pendiente del veredicto
 visual de Jonás sobre composición, jerarquía y atmósfera**, y con B —el tramo
 de cámara al llegar— aplazado a propósito hasta ese veredicto.*
+
+
+#### El vestíbulo deja de ser un dibujo (2026-09-17, mismo día)
+
+Jonás cambió el vestíbulo en SVG por una fotografía —imagen generada, dirigida
+por él y documentada en `assets/experimentos/FUENTES.md`— en cuanto vio la
+primera captura. La sustitución no cambia ni la arquitectura de la página ni el
+protocolo: cambia una capa por otra dentro del mismo `.experiments-hall`.
+
+El motivo es el que ya decía el §5: **la recepción vive de la escala**, y la
+escala se compra con piedra, reflejo y distancia. Un SVG de tres degradados
+sabe dar silencio y línea; no sabe dar un suelo pulido de veinte metros. El
+dibujo cumplía la disciplina —cero datos, una sola curva de luz— y la
+fotografía la hereda entera: sigue sin llevar un rótulo, un número ni una
+lectura. Y sigue sin ser WebGL: son 132 KB de WebP y ni un contexto de dibujo.
+
+Cuatro reglas salieron de montarla, y tres costaron una captura cada una.
+
+**A la altura, no al ancho.** La sala no llena la ventana: toma su alto y deduce
+su ancho de la proporción 2:3 del encuadre. En 1440 × 900 son 600 px, el 41 % —
+justo por debajo del 44 % donde arranca la columna del índice, que ya estaba
+escrito. Llenar a lo ancho con `cover` habría recortado más de la mitad del
+alto, y lo que se pierde al recortar arriba y abajo es exactamente lo que da la
+escala: el ventanal entero y el suelo bajo la figura. El marco lleva
+`aspect-ratio` y la imagen `object-fit: cover` dentro, así que en una ventana
+muy alta y estrecha se recorta por los lados —donde sólo hay pared— antes que
+invadir la lectura.
+
+**Un degradado que tapa un canto se mide en la IMAGEN, no en la ventana.** El
+primer intento fundía a negro entre el 30 % y el 54 % del *viewport* y dejaba
+un corte vertical duro sobre el suelo iluminado: el canto de la fotografía cae
+donde su proporción diga, y eso se mueve con cada tamaño de ventana. La viñeta
+vive ahora dentro del marco, donde el 100 % es la imagen, y apaga su último
+8 %. Ocho y no más: la curva encendida de la jamba derecha ocupa del 72 % al
+93 % y es la mejor línea del cuadro; un degradado más ancho la borraría para
+arreglar un canto.
+
+**Un interior no tiene estrellas.** Al meter la viñeta dentro del marco, el
+resto de la ventana dejó de estar cubierto y apareció el cielo estrellado
+general del sitio *dentro* de la sala. `.experiments-hall` es opaco a
+propósito: es la pared, y todo lo que no es fotografía es pared.
+
+**Y la misma regla de siempre, otra vez, en móvil.** Bajar la opacidad del
+vestíbulo para que no estorbe al texto vuelve translúcida esa pared y devuelve
+el cielo del sitio al interior. La sala no se atenúa: se oscurece con negro
+encima, sobre la fotografía, dejándole en torno a un cuarto de su luz. Es la
+tercera vez que este documento escribe la misma frase —**atenuar una capa la
+vuelve translúcida, no oscura**— y ya no es una anécdota de implementación: es
+la consecuencia de que el sitio entero tenga un cielo detrás.
+
+*Estado: `npm run check` verde; 125 e2e en chromium en verde. La fotografía no
+añadió ni quitó ninguna prueba: ninguna de las cinco del pase miraba el
+vestíbulo, porque lo que fijan es la cadena y no el aspecto.*
+
+
+#### La sala deja de ser una columna (2026-09-17, tercer pase del día)
+
+Jonás rechazó el montaje anterior con un diagnóstico de cuatro puntos que vale
+más que cualquier retoque: *«la imagen parece un póster pegado al layout»*, *«la
+mitad derecha sigue siendo demasiado editorial»*, *«no hay relación visual entre
+el espacio y el catálogo: son dos ideas colocadas juntas, no una sola
+composición»* y *«hay demasiadas capas reclamando atención»*. Su objetivo, dicho
+por él: **45 % lugar / 55 % instrumento, sin frontera evidente**, con el planeta
+invadiendo la composición y muriendo en negro debajo del catálogo.
+
+El pase no toca el protocolo de adquisición ni añade un solo efecto: es
+composición estática, que es lo que él pidió arreglar primero.
+
+**Lo que decidió el pase fue una medición, no un gusto.** Antes de mover nada se
+levantó un mapa de luminancia de la fotografía en rejilla 32 × 48 y la media por
+columna. De ahí salieron cuatro hechos duros: el arco del limbo **sube de
+abajo-izquierda a arriba-derecha**; la columna más brillante de toda la imagen
+—media 93 sobre 255— está al **87,5 %** del ancho, o sea la jamba encendida del
+ventanal; el **6 % más a la derecha es pared, media 2**; y la figura ocupa el
+**11,7 % del alto**, entre el 63,6 % y el 75,4 %, con la junta de pared y suelo
+al 71,5 %.
+
+De esos cuatro números salen las cuatro decisiones.
+
+**La sala va ESPEJADA.** Con la fotografía en su orientación original, su parte
+más brillante cae exactamente debajo del catálogo y su arco viene HACIA el
+texto. Espejada, el arco desciende hacia las filas y se apaga bajo ellas, y lo
+que queda debajo es la pared del otro extremo, que mide 2 sobre 255. La
+composición no se arregló moviendo el texto: se arregló dando la vuelta a la
+sala. La imagen no lleva rótulos ni retrata un lugar real, así que reflejarla no
+miente sobre nada.
+
+**Se ve una ventana sobre la fotografía, no la fotografía.** Antes se pintaba al
+alto de la pantalla y cabía entera, con sus cuatro cantos — y una imagen con
+cuatro cantos dentro de una página es un póster. Ahora ocupa el 58 % del ancho y
+se recorta: la ventana va del 12 % al 80 % del alto, que es lo que conserva el
+eclipse por encima de la barra de navegación, la figura completa y un palmo de
+reflejo bajo sus pies. Se sacrifica cielo arriba y suelo en primer término
+abajo, que es lo que menos cuenta.
+
+**El desvanecido dura un tercio de la imagen**, y sigue midiéndose EN la imagen y
+no en la ventana. Donde empieza el texto el negro ya pesa un 58 %, así que las
+primeras filas caen sobre el limbo todavía visible y las últimas sobre pared. No
+hay frontera que ver porque no hay frontera: hay una pendiente.
+
+**Y el suelo sale de la foto.** Dos capas planas —el reflejo cálido que cruza
+toda la ventana y una piedra fría bajísima bajo el catálogo— para que las
+últimas filas no floten sobre la nada. Ni un nodo, ni un marco, ni una línea
+técnica: la integración sale de la luz.
+
+**La cabecera pasa de portada a lectura.** Antes iba destino, título a 4,2 rem,
+subtítulo y párrafo, que es la gramática de cualquier otra sección del
+portafolio. Ahora son tres líneas y la tercera ya es un estado del laboratorio
+—`OBSERVATORIO EXPERIMENTAL · 02 / 06 MONTADOS`, con la cifra contada del
+catálogo— y el índice empieza en el primer tercio de la pantalla. El encabezado
+del índice desaparece de la vista y se queda de nombre accesible de la región:
+un rótulo `ÍNDICE DE ESPECÍMENES` encima de seis filas numeradas no informa a
+nadie que esté mirando, y la cuenta ya se dice una vez arriba. **Las seis filas
+caben en una sola pantalla de 900 px.**
+
+La prosa del mundo no se pierde: divisa, introducción, hechos y cierre bajan al
+pie, detrás del catálogo y en cuerpo menor. Siguen enteros en el HTML servido,
+que es lo que pide la regla 7. A la recepción se viene a elegir una muestra.
+
+**La tensión que este pase no puede resolver del todo, y hay que saberla:**
+recortar la imagen para que la sala tenga presencia hace la figura relativamente
+más grande. Con la foto entera ocupaba el 11,7 % de la pantalla; con la ventana
+al 68 % ocupa el 16,5 %. No hay encuadre que dé las dos cosas: **más presencia
+del lugar es siempre menos escala del personaje**. El 58 % es el punto donde la
+figura todavía se lee como una persona pequeña en una sala enorme.
+
+La otra: el original mide 1024 px de ancho y ahora se pinta a 835 en una ventana
+de 1440 —todavía por encima de 1:1— pero el marco se topa en 66 rem para que en
+pantallas grandes no se estire. Con un original de 2048 px el tope sobra y se
+retira cambiando un número.
+
+*Estado: `npm run check` verde; 125 e2e en chromium en verde. Ninguna prueba
+cambió: el encabezado del índice sigue siendo el nombre accesible de su región y
+las seis filas siguen contándose igual. **Pendiente el veredicto visual de
+Jonás.** ACQUISITION LOCK sigue intacto y B —el tramo de cámara al llegar—
+sigue aplazado: él pidió expresamente no animar encima de una composición que
+antes no funcionaba.*
