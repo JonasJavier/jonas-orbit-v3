@@ -1,5 +1,6 @@
 import type { WorldId } from "@/content/worlds.data";
 import {
+  lightGeometry,
   OBSERVATION_PRESETS,
   type ObservationPreset,
   type Vec3,
@@ -201,6 +202,16 @@ export interface ObservationTelemetry {
   distance: number;
   /** Ángulo luz-mirada medido en el espécimen, 0-180°. */
   key: number;
+  /**
+   * Dónde cae la luz en el reloj de la PANTALLA, -180 a 180°.
+   *
+   * Es la otra mitad de la geometría de luz, y entra en la telemetría porque
+   * los mandos de `LUZ` no son un formulario: son una lectura que además se
+   * puede arrastrar. Con `key` y `roll` publicados en cada fotograma, orbitar
+   * mueve los dos diales solo — que es lo que dice que el aparato está
+   * conectado a algo.
+   */
+  roll: number;
 }
 
 const RAD = 180 / Math.PI;
@@ -220,15 +231,17 @@ function length(v: Vec3): number {
  * @param body   dónde está el espécimen, en el mundo. La luz es el ORIGEN, así
  *               que desde el espécimen la luz está en `normalize(-body)`.
  * @param radius radio del espécimen, en unidades de mundo.
+ * @param up     la vertical de la cámara. Hace falta para el `roll`, que se
+ *               mide en el marco de la PANTALLA y no en el del mundo.
  */
 export function observationTelemetry(
   camera: Vec3,
   body: Vec3,
   radius: number,
+  up: Vec3 = [0, 1, 0],
 ): ObservationTelemetry {
   const view = sub(camera, body);
   const span = length(view);
-  const toLight = length(body);
 
   /*
     Convención de `THREE.Spherical`: theta se mide desde +Z hacia +X. Se copia a
@@ -239,30 +252,20 @@ export function observationTelemetry(
   const elevation = span > 0 ? Math.asin(view[1] / span) * RAD : 0;
 
   /*
-    El ángulo de clave. `toLight` desde el espécimen es `-body` normalizado;
-    `toCamera` es `view` normalizado. Con el espécimen en el origen no hay
-    dirección de luz que medir, y ahí el número no existe: se devuelve 0 en vez
-    de un NaN que llegaría hasta la pantalla.
+    El ángulo de clave y el giro NO se calculan aquí: los da `lightGeometry`,
+    que es el mismo módulo que los usa para COLOCAR la luz. Una sola fórmula
+    para leer y para escribir es lo que impide que el dial y la lectura acaben
+    discrepando medio grado — y con el espécimen en el origen aquél ya devuelve
+    ceros en vez de un NaN, porque ahí no hay dirección de luz que medir.
   */
-  const key =
-    span > 0 && toLight > 0
-      ? Math.acos(
-          Math.min(
-            1,
-            Math.max(
-              -1,
-              (-body[0] * view[0] + -body[1] * view[1] + -body[2] * view[2]) /
-                (toLight * span),
-            ),
-          ),
-        ) * RAD
-      : 0;
+  const { key, roll } = lightGeometry(camera, body, up);
 
   return {
     azimuth,
     elevation,
     distance: radius > 0 ? span / radius : 0,
     key,
+    roll,
   };
 }
 

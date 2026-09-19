@@ -51,6 +51,10 @@
   --obs-mark: rgb(164 180 212 / 0.46);
   --obs-mark-soft: rgb(164 180 212 / 0.26);
   --obs-inset: clamp(0.7rem, 1.8vw, 1.4rem);
+  /* El sangrado del cromo, sacado a variable en el pase de los dos modos: el
+     alféizar de la consola tiene que cruzar la pantalla de canto a canto, y
+     para eso necesita anular exactamente este padding. */
+  --obs-pad: clamp(1rem, 3vw, 2.5rem);
 }
 
 .observatory__canvas {
@@ -256,8 +260,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(1rem, 3vw, 2.5rem);
+  padding: var(--obs-pad);
   pointer-events: none;
+  /* Por encima del velo de la escotilla, que vive en el `::after` del visor.
+     El cromo es instrumentación y no puede caer dentro de la caída de luz del
+     borde; el espécimen sí, que es justo para lo que está. */
+  z-index: 2;
 }
 
 .observatory__button,
@@ -266,42 +274,7 @@
   pointer-events: auto;
 }
 
-/*
-  La banda inferior: TODA la instrumentación junta, anclada abajo.
 
-  El centro queda libre por construcción y no por márgenes — el cromo sólo
-  tiene dos hijos, así que `space-between` no puede dejar nada a media altura.
-*/
-.observatory__foot {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.75rem;
-  transition: opacity 420ms ease;
-}
-
-/*
-  Modo cine, en DOS niveles. El anterior atenuaba el cromo entero al 8 % y con
-  él se iba también el nombre del espécimen: la página pasaba a leerse como una
-  geometría flotando en negro, sin decir qué se está mirando.
-
-  La identidad se queda tenue pero legible; los controles sí pueden
-  desaparecer, porque nadie necesita leer «Reajustar» mientras observa.
-*/
-.observatory[data-idle="true"] .observatory__foot {
-  opacity: 0.06;
-}
-
-/*
-  Nivel 1 del modo cine: identidad, catálogo y salida. Bajan mucho pero siguen
-  legibles, porque las tres contestan «dónde estoy» y una página que no sabe
-  decirlo se lee como una geometría flotando en negro. Fue la corrección del
-  primer pase visual y ahora cubre tres piezas en vez de una.
-*/
-.observatory[data-idle="true"] .observatory__head,
-.observatory[data-idle="true"] .observatory__rail {
-  opacity: 0.3;
-}
 
 .observatory__specimen {
   margin: 0;
@@ -349,48 +322,36 @@
   color: rgb(234 246 255 / 0.28);
 }
 
-/* Pista a la izquierda, `Reajustar` al extremo derecho, como el boceto. La fila
-   ocupa el ancho y deja el hueco en medio en vez de apelotonarse en una
-   esquina. */
+/*
+  La barra del aparato: selector de modo, `Reajustar` y la pista, en ese orden y
+  todo a la izquierda.
+
+  El extremo derecho queda VACÍO a propósito, y eso lo decidió una captura: con
+  `Reajustar` pegado al canto —que es donde lo ponía el boceto— la bandeja
+  global se lo comía. Medido: la bandeja ocupa 293 px a 20 px del borde en
+  cualquier ancho por encima de móvil, y el clic no llegaba nunca al botón.
+
+  El defecto no es de la bandeja: es global, vive en las seis rutas y esta
+  página es la invitada. Lo que cambia es que ahora la barra reserva su sitio.
+*/
 .observatory__controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.25rem;
+  justify-content: flex-start;
+  gap: 0.6rem 1.25rem;
   flex-wrap: wrap;
+}
+
+@media (min-width: 48rem) {
+  .observatory__controls {
+    /* 293 px de bandeja + 20 px de canto + aire. */
+    padding-right: 20rem;
+  }
 }
 
 /* ── El banco de instrumentos ───────────────────────────────────────────── */
 
-/* Los dos bloques con cabecera de aparato —OBSERVAR e INSPECCIONAR— comparten
-   caja. La clase específica de cada uno se conserva porque el modo lectura de
-   móvil y la suite e2e los distinguen. */
-.observatory__deck {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.1rem;
-}
 
-/*
-  `INSPECCIONAR` deja de ser un rótulo suelto y pasa a ser CABECERA DE APARATO:
-  la palabra y detrás una regla de 1 px que se desvanece hasta el borde de la
-  banda. Es el cierre de sección de «Sobre mí» puesto de lado, y hace dos de las
-  cinco cosas que pidió la dirección —línea fina y divisor— con un solo span.
-
-  Dice que lo de abajo es una superficie sin tener que pintarle un fondo.
-*/
-.observatory__group {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-}
-
-.observatory__rule {
-  flex: 1 1 1.5rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgb(164 180 212 / 0.26), transparent 62%);
-}
 
 .observatory__bank {
   display: flex;
@@ -670,22 +631,16 @@
   text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
 }
 
+/* El rastro `EXPERIMENTOS / OBSERVATORIO` se retira en el pase de los dos
+   modos: estaba al 20 % de opacidad repitiendo lo que el enlace de debajo ya
+   dice entero, justo en la esquina donde sobraba texto. Queda la salida sola, y
+   el bloque conserva su alineación a la derecha porque sigue siendo el extremo
+   de una fila con la identidad al otro lado. */
 .observatory__exit {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.35rem;
   text-align: right;
-}
-
-.observatory__trail {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgb(234 246 255 / 0.3);
-  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
 }
 
 /* El enlace SÍ recibe puntero: el cromo no, sus controles sí. Es la regla que
@@ -1250,8 +1205,13 @@ a.observatory__slot:focus-visible .observatory__slot-index {
 
   Se resuelve subiendo el pie, no bajando la bandeja: la bandeja es global y
   esta página es la invitada.
+
+  El umbral sube de 34 a 48 rem en el pase de los dos modos, y tapa un hueco que
+  llevaba ahí desde el principio: entre 544 y 768 px no actuaba ni esta reserva
+  vertical ni la horizontal de la barra, así que la bandeja seguía cayendo sobre
+  los mandos en cualquier tableta en vertical.
 */
-@media (max-width: 34rem) {
+@media (max-width: 47.99rem) {
   .observatory__chrome {
     padding-bottom: 4.25rem;
   }
@@ -1370,8 +1330,8 @@ a.observatory__slot:focus-visible .observatory__slot-index {
   /* MODO LECTURA. Todo lo que no es identidad ni texto se retira. */
   .observatory[data-panel="datos"] .observatory__controls,
   .observatory[data-panel="registro"] .observatory__controls,
-  .observatory[data-panel="datos"] .observatory__deck,
-  .observatory[data-panel="registro"] .observatory__deck,
+  .observatory[data-panel="datos"] .observatory__console,
+  .observatory[data-panel="registro"] .observatory__console,
   .observatory[data-panel="datos"] .observatory__step-arrow,
   .observatory[data-panel="registro"] .observatory__step-arrow {
     display: none;
@@ -1379,6 +1339,7 @@ a.observatory__slot:focus-visible .observatory__slot-index {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .observatory__console,
   .observatory__foot,
   .observatory__specimen,
   .observatory__ink,
@@ -1697,18 +1658,7 @@ html[data-motion="on"] .observatory-face__dot {
   transition: opacity 420ms ease;
 }
 
-/* La lectura del aparato en el cromo: la misma frase que la cara servida
-   enseña en grande, aquí reducida a una línea fina sobre el nombre. */
-.observatory__state {
-  display: flex;
-  align-items: center;
-  margin: 0 0 0.35rem;
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: rgba(242, 200, 121, 0.72);
-}
+
 
 .observatory__state-dot {
   width: 0.32rem;
@@ -1739,26 +1689,7 @@ html[data-motion="off"] .observatory-face *::after {
 
 /* ── V1.5 · Los instrumentos de observación ─────────────────────────────── */
 
-/*
-  LA TELEMETRÍA.
 
-  Cuatro lecturas bajo el nombre del espécimen, y ni una caja. Van más apagadas
-  que el descriptor a propósito: describen la cámara, no el objeto, y el objeto
-  es el protagonista. Se escriben desde el bucle de la escena y por eso llevan
-  cifras tabulares — sin ellas, `042,8` y `142,8` mueven la columna entera cada
-  vez que el visitante cruza cien grados.
-*/
-.observatory__telemetry {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem 1.05rem;
-  margin: 0.55rem 0 0;
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.16em;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
-}
 
 .observatory__cell {
   display: inline-flex;
@@ -1777,26 +1708,7 @@ html[data-motion="off"] .observatory-face *::after {
   min-width: 3.2em;
 }
 
-/*
-  LA SONDA.
 
-  Ámbar, porque es lo único de la pantalla que responde a un gesto de
-  interrogación y no a uno de navegación. Una sola línea: la arista, su eje, su
-  profundidad en la cuarta dimensión y a qué distancia está. Vacía cuando el
-  puntero no señala nada, que es lo que impide que una lectura se quede colgada
-  mintiendo sobre el presente.
-*/
-.observatory__probe-line {
-  margin: 0.3rem 0 0;
-  min-height: 0.9rem;
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  color: rgb(255 210 160 / 0.78);
-  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
-}
 
 /*
   LA RETÍCULA: cuatro marcas y un hueco en medio.
@@ -1822,36 +1734,36 @@ html[data-motion="off"] .observatory-face *::after {
   opacity: 1;
 }
 
-.observatory__reticle span {
+.observatory__mark {
   position: absolute;
   background: rgb(255 210 160 / 0.85);
 }
 
-.observatory__reticle span:nth-child(1),
-.observatory__reticle span:nth-child(2) {
+.observatory__mark:nth-child(1),
+.observatory__mark:nth-child(2) {
   left: -0.5px;
   width: 1px;
   height: 6px;
 }
 
-.observatory__reticle span:nth-child(1) {
+.observatory__mark:nth-child(1) {
   top: -15px;
 }
-.observatory__reticle span:nth-child(2) {
+.observatory__mark:nth-child(2) {
   top: 9px;
 }
 
-.observatory__reticle span:nth-child(3),
-.observatory__reticle span:nth-child(4) {
+.observatory__mark:nth-child(3),
+.observatory__mark:nth-child(4) {
   top: -0.5px;
   width: 6px;
   height: 1px;
 }
 
-.observatory__reticle span:nth-child(3) {
+.observatory__mark:nth-child(3) {
   left: -15px;
 }
-.observatory__reticle span:nth-child(4) {
+.observatory__mark:nth-child(4) {
   left: 9px;
 }
 
@@ -1925,15 +1837,20 @@ html[data-motion="off"] .observatory-face *::after {
   en el tono más bajo de la banda y acotada en ancho: se lee al elegir una vista
   y desaparece de la atención en cuanto se mira el espécimen. Si alguna vez pesa
   más que el objeto, lo que sobra es la frase.
+
+  La medida sube de 74 a 104 caracteres en el pase de los dos modos: dentro del
+  bastidor la frase caía en tres renglones y la consola crecía hacia el
+  espécimen por culpa de un `max-width` heredado de cuando vivía suelta en la
+  banda.
 */
 .observatory__study {
-  margin: 0.15rem 0 0;
-  max-width: 74ch;
+  margin: 0.1rem 0 0;
+  max-width: 104ch;
   font-family: var(--font-mono);
   font-size: 0.55rem;
   line-height: 1.6;
   letter-spacing: 0.06em;
-  color: rgb(234 246 255 / 0.36);
+  color: rgb(234 246 255 / 0.46);
   text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
 }
 
@@ -1965,12 +1882,7 @@ html[data-motion="off"] .observatory-face *::after {
   color: rgb(234 246 255 / 0.42);
 }
 
-/* El rastro cede protagonismo a la salida: dice dónde estás, no qué puedes
-   hacer, y la acción reconocible tiene que ser `Salir del Observatorio`. */
-.observatory__trail {
-  font-size: 0.52rem;
-  color: rgb(234 246 255 / 0.2);
-}
+
 
 /* La prosa del registro, un 6 % menor y algo más abierta: son párrafos de
    verdad dentro de una interfaz monoespaciada, y a este cuerpo se leen sin que
@@ -1980,21 +1892,647 @@ html[data-motion="off"] .observatory-face *::after {
   line-height: 1.72;
 }
 
-/*
-  Y EN MODO CINE, LA TELEMETRÍA SE VA CASI DEL TODO.
 
-  El nivel 1 deja identidad, catálogo y salida al 30 % porque las tres
-  contestan «dónde estoy». La telemetría no contesta eso: contesta «cómo estoy
-  mirando», que es una pregunta que sólo existe mientras se opera. Al 35 % de
-  ese 30 % queda como un rastro —se ve que el aparato sigue midiendo— sin
-  disputarle el cuadro al espécimen.
+
+/* ══ V2 · DOS MODOS: OBSERVAR Y ESTUDIO ═══════════════════════════════════
+
+  El diagnóstico de Jonás sobre la V1.5 fue «hay mucha información y se siente
+  todo muy pesado», y la petición «modo cine por defecto, sólo mover la cámara
+  con el ratón; y luego un modo estudio con las herramientas».
+
+  Lo que la hoja hace con eso no es esconder rótulos: es separar dos
+  actividades. Mirar un espécimen y medirlo no se hacen a la vez, y el aparato
+  las tenía las dos encendidas siempre. `data-mode` en la raíz gobierna el
+  reparto entero — la consola existe siempre en el DOM y `ESTUDIO` es lo que la
+  despliega, así que cambiar de modo no monta ni desmonta un nodo y los mandos
+  conservan su estado al ir y volver.
+
+  Y el vocabulario nuevo contesta la otra mitad del encargo —«que se sienta más
+  nave espacial»— sin añadir un solo dato: un ALFÉIZAR que cruza la pantalla, un
+  BASTIDOR con su regla vertical continua, DIALES con aguja y escala, un SELECTOR
+  con muescas y una CAÍDA DE LUZ en los bordes. Es geometría de aparato, no
+  decoración de ciencia ficción: aquí no aparece ni un radar falso, ni un
+  porcentaje inventado, ni una coordenada que nadie haya medido.
 */
-.observatory[data-idle="true"] .observatory__telemetry,
-.observatory[data-idle="true"] .observatory__probe-line {
-  opacity: 0.35;
+
+/*
+  LA ESCOTILLA.
+
+  Una caída de luz muy suave hacia los cuatro bordes. No es un viñeteado de
+  fotografía: es lo que convierte un rectángulo negro en una ABERTURA, y es la
+  única pieza de este pase que dice «estás dentro de algo mirando hacia fuera»
+  sin dibujar un marco. El centro no se toca —el espécimen vive ahí— y la
+  instrumentación va por encima, porque un mando atenuado por el borde sería un
+  mando peor.
+*/
+.observatory::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    124% 92% at 50% 46%,
+    transparent 48%,
+    rgb(0 0 0 / 0.42) 82%,
+    rgb(0 0 0 / 0.66) 100%
+  );
+  opacity: 0;
+  transition: opacity 420ms ease;
 }
 
-.observatory__telemetry,
+.observatory[data-state="nominal"]::after {
+  opacity: 1;
+}
+
+.observatory__rail {
+  z-index: 2;
+}
+
+/*
+  La banda inferior. Sigue siendo el segundo y último hijo del cromo, así que
+  `space-between` no puede dejar nada a media altura: el centro del cuadro es
+  del espécimen por construcción y no por márgenes.
+*/
+.observatory__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+/* ── El selector de modo ─────────────────────────────────────────────────── */
+
+/*
+  Dos posiciones con su muesca, no dos pestañas.
+
+  Una pestaña cambia el CONTENIDO; aquí no cambia el contenido, cambia lo que
+  estás haciendo con el mismo objeto. Por eso el signo es un detente —una marca
+  que crece y se enciende bajo la palabra elegida— colgado de un raíl de un
+  píxel. Es el mismo calibre que ya separa los instrumentos del banco; lo único
+  que se añade es que ahora tiene dos paradas.
+*/
+.observatory__modes {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-top: 0.5rem;
+}
+
+.observatory__modes::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.55rem;
+  right: 0.55rem;
+  height: 1px;
+  background: var(--obs-mark-soft);
+}
+
+.observatory__mode {
+  pointer-events: auto;
+  appearance: none;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.34rem;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/*
+  La muesca crece con `scaleY` y NO con `height`, y eso no es una preferencia de
+  rendimiento: la caja del botón es una columna, así que una muesca más alta
+  EMPUJA la palabra hacia abajo. Medido sobre la captura: la posición elegida
+  quedaba siete píxeles por debajo de la otra y de `Reajustar`, y una barra de
+  aparato con las palabras a dos alturas se lee como un error de maquetación.
+  Con la altura fija y la escala anclada abajo, la muesca crece hacia arriba y
+  la línea base no se mueve.
+*/
+.observatory__detent {
+  width: 1px;
+  height: 11px;
+  margin-top: -0.5rem;
+  background: var(--obs-mark);
+  transform: scaleY(0.36);
+  transform-origin: bottom center;
+  transition:
+    transform 240ms var(--ease-orbit),
+    background-color 240ms var(--ease-orbit);
+}
+
+.observatory__mode[aria-checked="true"] .observatory__detent {
+  transform: scaleY(1);
+  background: #ffd2a0;
+}
+
+.observatory__mode[aria-checked="true"] .observatory__ink {
+  color: #ffd2a0;
+  font-weight: 650;
+  letter-spacing: 0.22em;
+}
+
+.observatory__mode:hover .observatory__ink,
+.observatory__mode:focus-visible .observatory__ink {
+  color: #eaf6ff;
+}
+
+.observatory__mode:focus-visible {
+  outline: none;
+}
+
+.observatory__mode:focus-visible .observatory__ink {
+  border-radius: 2px;
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 5px;
+}
+
+/* ── La consola ──────────────────────────────────────────────────────────── */
+
+.observatory__console {
+  position: relative;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  /* Anula el sangrado del cromo para que el alféizar cruce de canto a canto y
+     vuelve a ponerlo por dentro: el contenido se alinea con el resto de la
+     banda, la regla no. */
+  margin: 0.2rem calc(var(--obs-pad) * -1) 0;
+  padding: 0.7rem var(--obs-pad) 0.1rem;
+  transition:
+    opacity 300ms ease,
+    transform 300ms var(--ease-orbit),
+    visibility 0s;
+}
+
+/*
+  EL VELO DEL ALFÉIZAR.
+
+  El espécimen NO se recorta ni se reencuadra al desplegar la consola —eso es
+  contrato: la escena no puede tener una pose distinta según el estado de la
+  interfaz—. Lo que pasa es que el objeto SE HUNDE detrás del panel, con un
+  degradado que arranca en cero justo en la línea. Sin él, el alféizar cortaba la
+  figura por la mitad con un filo de un píxel y se leía como un fallo de
+  maquetación; con él se lee como lo que es, un tablero por delante de una
+  ventana.
+
+  Va con `z-index: -1` dentro del contexto de apilamiento que crea el cromo: así
+  queda por encima del lienzo y por debajo de toda la tinta, incluida la de la
+  barra de abajo. Y hereda la `visibility` de la consola, así que en `OBSERVAR`
+  no existe.
+*/
+.observatory__console::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 0;
+  /* Hasta el canto de la pantalla: por debajo de la consola todavía queda la
+     barra del aparato y el sangrado del cromo. */
+  bottom: calc(var(--obs-pad) * -1);
+  pointer-events: none;
+  /*
+    Los valores los fijó el segundo espécimen, que es para lo que sirve tenerlo.
+
+    Con 0.52 a un cuarto de la banda, el velo funcionaba sobre el Tesseracto
+    —cristal casi negro, detrás del texto no pasa casi nada— y se quedaba corto
+    sobre la Endurance, que es aluminio marfil a plena luz: sus módulos cruzaban
+    por debajo de la frase de la vista. Es la MISMA lección que ya se aprendió
+    con la ficha de `DATOS`, y por eso conviene decirla otra vez aquí: una
+    superficie de lectura no puede depender de lo que tenga detrás, y menos en un
+    laboratorio que va a contener seis muestras distintas.
+  */
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0) 0%,
+    rgb(0 0 0 / 0.62) 24%,
+    rgb(0 0 0 / 0.88) 58%,
+    rgb(0 0 0 / 0.94) 100%
+  );
+}
+
+/*
+  EL ALFÉIZAR.
+
+  Una línea de un píxel de borde a borde, con los extremos difuminados. Es la
+  pieza que más trabaja de todo el pase: separa el espacio de la máquina, que es
+  la lectura que faltaba. Y no cierra ninguna caja —es un solo lado, arriba de la
+  banda— así que la regla del §5 sigue en pie: nunca se dibuja el rectángulo
+  alrededor del viewport.
+*/
+.observatory__console::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--obs-mark);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+}
+
+/* En `OBSERVAR` la consola no está: ni se ve, ni se apunta, ni se tabula. El
+   `inert` del componente cubre el foco; `visibility` la saca además del árbol de
+   accesibilidad, y se retrasa hasta el final de la transición para que la salida
+   se pueda ver. */
+.observatory[data-mode="observar"] .observatory__console {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition-delay: 0s, 0s, 300ms;
+}
+
+/*
+  EL BASTIDOR: una columna de nombres, una regla vertical continua y las filas de
+  mandos a su derecha.
+
+  La regla la dibujan los propios rótulos con su borde derecho: filas adyacentes
+  la sueldan en una sola línea de arriba abajo, sin un elemento dedicado y sin
+  que haya que saber cuántas filas hay. Ése es el detalle que convierte una lista
+  de grupos en un panel.
+*/
+.observatory__row {
+  display: grid;
+  grid-template-columns: 6.6rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0 1.1rem;
+  min-height: 2.35rem;
+}
+
+/* Los rótulos van pegados a la regla y no al margen: en un bastidor la columna
+   de nombres termina en el divisor, y con el borde ragged a la derecha las
+   cuatro palabras se leían como una lista suelta en vez de como una columna. */
+.observatory__row > .observatory__legend {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: right;
+  padding-right: 1rem;
+  border-right: 1px solid var(--obs-mark-soft);
+}
+
+/* La fila de vistas lleva debajo su frase, así que su lado derecho es una
+   columna y no una línea. */
+.observatory__slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.25rem 0;
+}
+
+/*
+  El despliegue escalonado: las filas entran una detrás de otra.
+
+  Es lo más cerca que esta interfaz llega de una animación, y hace un trabajo
+  concreto: dice que la consola es una PIEZA que se abre y no una capa que
+  aparece. Obedece al interruptor único como todo lo demás — con
+  `html[data-motion="off"]` la animación se anula y las filas se pintan en su
+  estado final, que es el normal.
+*/
+@keyframes observatory-rack {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+}
+
+.observatory[data-mode="estudio"] .observatory__row {
+  animation: observatory-rack 300ms var(--ease-orbit) both;
+}
+
+.observatory[data-mode="estudio"] .observatory__row:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.observatory[data-mode="estudio"] .observatory__row:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.observatory[data-mode="estudio"] .observatory__row:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+/* ── La lectura de cámara ────────────────────────────────────────────────── */
+
+/*
+  AZ, EL y DIST bajan aquí desde la cabecera, y el sitio importa: describen cómo
+  se está MIRANDO, que es una pregunta que sólo existe mientras se opera. Arriba,
+  junto al nombre, eran tres números permanentes sobre un espécimen que no los
+  necesita para presentarse.
+*/
+.observatory__readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 1.4rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.observatory__cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+.observatory__code {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(234 246 255 / 0.34);
+}
+
+.observatory__value {
+  color: rgb(234 246 255 / 0.7);
+  /* Reserva el ancho de la lectura más larga. Sin esto, el primer fotograma
+     llega con los huecos vacíos y la fila entera salta al llenarse. */
+  min-width: 3.4em;
+}
+
+/* ── Los diales de la luz ────────────────────────────────────────────────── */
+
+/*
+  UN DIAL ES UNA LECTURA QUE ADEMÁS SE ARRASTRA.
+
+  Se dibujan como el instrumento que son: una escala de ocho divisiones —22,5°
+  cada una en `CLAVE`, 45° en `GIRO`—, una línea de referencia y una AGUJA de dos
+  píxeles. Nada de pista
+  rellena ni pulgar redondo — eso es un control de volumen, y aquí lo que se
+  mueve es la única lámpara que hay.
+
+  El blanco de agarre son los 24 px de alto del carril, que es donde vive el
+  puntero; la tinta son cinco. Misma doctrina que los mandos sin caja: el área de
+  activación nunca dependió del dibujo.
+*/
+.observatory__dials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 1.8rem;
+  padding: 0.2rem 0;
+}
+
+/* La tipografía del dial es la de la consola y no la del documento: sin esta
+   línea el valor cae al cuerpo heredado y `145,0°` sale al doble que todo lo que
+   tiene al lado, que es justo el aspecto de formulario que este pase retira. */
+.observatory__dial {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 38px;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.observatory__dial .observatory__code {
+  min-width: 2.7rem;
+}
+
+.observatory__dial .observatory__value {
+  min-width: 3.6em;
+  color: rgb(255 210 160 / 0.82);
+}
+
+.observatory__dial-track {
+  appearance: none;
+  -webkit-appearance: none;
+  width: clamp(5rem, 11vw, 9.5rem);
+  height: 24px;
+  margin: 0;
+  background: none;
+  cursor: ew-resize;
+}
+
+.observatory__dial-track::-webkit-slider-runnable-track {
+  height: 24px;
+  background:
+    repeating-linear-gradient(
+        90deg,
+        var(--obs-mark) 0 1px,
+        transparent 1px 12.5%
+      )
+      left center / 100% 5px no-repeat,
+    linear-gradient(var(--obs-mark-soft), var(--obs-mark-soft)) left center /
+      100% 1px no-repeat;
+}
+
+.observatory__dial-track::-moz-range-track {
+  height: 24px;
+  background:
+    repeating-linear-gradient(
+        90deg,
+        var(--obs-mark) 0 1px,
+        transparent 1px 12.5%
+      )
+      left center / 100% 5px no-repeat,
+    linear-gradient(var(--obs-mark-soft), var(--obs-mark-soft)) left center /
+      100% 1px no-repeat;
+}
+
+.observatory__dial-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2px;
+  height: 15px;
+  margin-top: 4.5px;
+  border: 0;
+  border-radius: 0;
+  background: #ffd2a0;
+  box-shadow: 0 0 9px rgb(255 210 160 / 0.5);
+}
+
+.observatory__dial-track::-moz-range-thumb {
+  width: 2px;
+  height: 15px;
+  border: 0;
+  border-radius: 0;
+  background: #ffd2a0;
+  box-shadow: 0 0 9px rgb(255 210 160 / 0.5);
+}
+
+.observatory__dial-track:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (forced-colors: active) {
+  .observatory__dial-track:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
+
+/* ── La retícula lleva su lectura al lado ────────────────────────────────── */
+
+/*
+  En V1.5 la lectura de la sonda salía arriba a la izquierda, a seis líneas del
+  punto señalado. Funcionaba —medido: 136 aciertos en un barrido de 288
+  posiciones— y aun así el veredicto fue «la sonda no sé qué hace, no funciona».
+  Tenía razón: una medición que aparece lejos de lo que se mide no es una
+  medición, es un mensaje.
+
+  Ahora el rótulo cuelga de la retícula, y se voltea al canto izquierdo cuando el
+  punto se acerca al borde derecho de la pantalla. Una línea, monoespaciada,
+  ámbar, sin caja.
+*/
 .observatory__probe-line {
+  position: absolute;
+  top: 0.55rem;
+  left: 1.05rem;
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 210 160 / 0.88);
+  text-shadow: 0 1px 10px rgb(0 0 0 / 85%);
+}
+
+.observatory__reticle[data-side="left"] .observatory__probe-line {
+  left: auto;
+  right: 1.05rem;
+  text-align: right;
+}
+
+/* Señalar y girar son dos gestos. El puntero es el único sitio donde eso se
+   puede decir sin gastar una palabra. */
+.observatory[data-probe="true"] .observatory__canvas {
+  cursor: crosshair;
+}
+
+/* ── El modo cine vuelve a ser CINE ──────────────────────────────────────── */
+
+/*
+  Y ahora sólo existe en `OBSERVAR`.
+
+  En V1.5 la atenuación por inactividad se llevaba también la consola: a los
+  3,5 s de pensar qué medir, los mandos desaparecían. Un instrumento desplegado
+  se queda desplegado — el reposo es mirar, y es ahí donde la pantalla puede
+  quedarse con el espécimen y nada más.
+
+  Sigue en dos niveles. La identidad y el catálogo bajan pero se leen, porque
+  contestan «dónde estoy» y una página que no sabe decirlo se lee como una
+  geometría flotando en negro. La barra del aparato sí puede irse del todo: nadie
+  necesita leer `Reajustar` mientras observa.
+*/
+.observatory__head,
+.observatory__controls,
+.observatory__rail {
   transition: opacity 420ms ease;
+}
+
+.observatory[data-mode="observar"][data-idle="true"] .observatory__controls {
+  opacity: 0.06;
+}
+
+.observatory[data-mode="observar"][data-idle="true"] .observatory__head,
+.observatory[data-mode="observar"][data-idle="true"] .observatory__rail {
+  opacity: 0.3;
+}
+
+/* ── Móvil: el bastidor se apila ─────────────────────────────────────────── */
+
+/*
+  Por debajo de 40 rem la columna de rótulos y su regla desaparecen: 6,6 rem de
+  etiqueta sobre 375 px de ancho dejarían los mandos en una rendija. El nombre
+  del grupo pasa encima de su fila, que es la misma jerarquía dicha en vertical.
+*/
+@media (max-width: 40rem) {
+  .observatory__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+    padding-bottom: 0.2rem;
+    min-height: 0;
+  }
+
+  /*
+    Y EL BASTIDOR NO RUEDA, se aprieta.
+
+    La primera versión de este pase le puso un techo de 38 svh con
+    desbordamiento propio, para que el espécimen no bajara del 40 % de la
+    pantalla. La suite lo tumbó en el sitio exacto: a 375 px, `DATOS` y
+    `REGISTRO` caían fuera del techo y `elementFromPoint` sobre su centro
+    devolvía el selector de modo. Un mando que hay que desplazar para tocar es
+    un mando que no está — y esa comprobación existe justo porque medir la caja
+    no basta.
+
+    Así que el bastidor entra entero y lo que baja es su calibre. La consola se
+    lleva más de un tercio del teléfono, y eso es lo que `ESTUDIO` significa en
+    un teléfono: se entra a propósito, y `OBSERVAR` devuelve la pantalla con un
+    toque.
+  */
+  .observatory__study {
+    font-size: 0.52rem;
+  }
+
+  .observatory__dials {
+    gap: 0 1.2rem;
+  }
+
+  .observatory__dial {
+    min-height: 34px;
+    gap: 0.5rem;
+  }
+
+  .observatory__dial .observatory__code {
+    min-width: 2.4rem;
+  }
+
+  /* Sin la columna de rótulos, el degradado tiene que hacer todo el trabajo de
+     legibilidad él solo: la primera fila cae mucho más arriba y ahí el
+     espécimen todavía está entero. */
+  .observatory__console::after {
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0) 0%,
+      rgb(0 0 0 / 0.78) 12%,
+      rgb(0 0 0 / 0.93) 38%,
+      rgb(0 0 0 / 0.95) 100%
+    );
+  }
+
+  .observatory__row > .observatory__legend {
+    justify-content: flex-start;
+    text-align: left;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .observatory__console {
+    /* Sin columna de rótulos, la primera fila arranca pegada al alféizar. */
+    padding-top: 1rem;
+  }
+
+  .observatory__controls {
+    gap: 0.4rem 1rem;
+  }
+
+  /* La pista se va la última: en táctil no hay hover que la recupere, pero
+     tampoco hay sitio para tres bloques en una fila. */
+  .observatory__hint {
+    order: 3;
+    flex: 1 0 100%;
+  }
 }

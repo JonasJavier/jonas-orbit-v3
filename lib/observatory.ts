@@ -467,3 +467,158 @@ export function keyScreenDirection(placement: ObservationPlacement): {
     up: dot(toLight, up),
   };
 }
+
+/**
+ * ── MOVER LA LUZ SIN MOVER LA OBSERVACIÓN ───────────────────────────────────
+ *
+ * Todo lo de arriba coloca la CÁMARA. Esto coloca la LUZ, y son dos
+ * instrumentos distintos aunque los dos acaben cambiando el mismo número.
+ *
+ * La luz es el origen del mundo, así que no hay una lámpara que arrastrar: lo
+ * que se mueve es el espécimen ALREDEDOR del origen, con la cámara enganchada a
+ * él. Y ésa es exactamente la diferencia entre los dos gestos:
+ *
+ *   · **Orbitar** mueve la cámara y deja el espécimen quieto → cambia qué CARA
+ *     se ve, y de paso cambia el ángulo de clave.
+ *   · **Mover la luz** gira el espécimen alrededor del origen con la cámara
+ *     rígidamente unida a él → la cara que se ve es la MISMA y lo único que
+ *     cambia es de dónde le llega la luz.
+ *
+ * El segundo es el que convierte el visor en un instrumento: permite sostener
+ * la pose y barrer la iluminación, que es la variable que el §6 dice que el
+ * Observatorio sí puede tocar. La identidad material no se roza — ni un
+ * uniform, ni una rama de shader.
+ *
+ * Y conserva el carácter de la luz por construcción: el espécimen se queda
+ * SIEMPRE a la misma distancia del origen, así que la divergencia del haz —lo
+ * paralela que llega— es idéntica antes y después. Lo único que cambia es la
+ * dirección.
+ */
+export interface LightGeometry {
+  /**
+   * Ángulo entre la luz y la mirada, medido en el espécimen. 0-180°.
+   *
+   * Es el mismo `keyAngle` del preset y la misma `key` de la telemetría: una
+   * sola magnitud con un solo nombre. 0° es luz frontal plana, 180° contraluz.
+   */
+  key: number;
+  /**
+   * Dónde cae la luz en el RELOJ DE LA PANTALLA, -180 a 180°.
+   *
+   * 0° es luz por la derecha del cuadro, +90° por arriba, ±180° por la
+   * izquierda. Se mide en pantalla y no en el mundo a propósito: `keyAzimuth`
+   * es el parámetro correcto para declarar un preset y el incorrecto para
+   * MANIPULAR, porque nadie puede predecir dónde acabará la luz sin resolver
+   * antes el `up` de la cámara. Aquí la pregunta que se contesta es la que un
+   * humano se hace: «quiero la luz arriba a la derecha».
+   */
+  roll: number;
+}
+
+/**
+ * La base de PANTALLA de una cámara: derecha y arriba, ortonormales.
+ *
+ * `cameraBasis` deriva la vertical del eje +Y del mundo, que es lo que hace
+ * falta para CONSTRUIR una pose. Esto es lo contrario: se parte de una cámara
+ * que ya existe y que puede llevar cualquier `up` —las vistas curadas lo
+ * cambian—, así que la vertical se ortonormaliza contra la mirada en vez de
+ * inventarse. Sin eso, la componente vertical de la luz saldría torcida en
+ * cuanto el `up` dejara de ser perpendicular al eje de mirada.
+ */
+function screenBasis(toCamera: Vec3, cameraUp: Vec3): { right: Vec3; up: Vec3 } {
+  const forward: Vec3 = [-toCamera[0], -toCamera[1], -toCamera[2]];
+  const reference =
+    Math.abs(dot(normalise(forward), normalise(cameraUp))) > 1 - DEGENERATE
+      ? FALLBACK_UP
+      : cameraUp;
+  const right = normalise(cross(forward, reference));
+  return { right, up: normalise(cross(right, forward)) };
+}
+
+/**
+ * Cómo está iluminada AHORA MISMO esta observación, en los dos números que se
+ * pueden manipular.
+ *
+ * Es una lectura, no un ajuste: sale de dónde están la cámara y el espécimen, y
+ * por eso los mandos de `LUZ` se mueven solos cuando el visitante orbita. Un
+ * dial que no responde al resto del aparato es una caja de texto con estilo.
+ */
+export function lightGeometry(
+  camera: Vec3,
+  body: Vec3,
+  cameraUp: Vec3,
+): LightGeometry {
+  const span = Math.hypot(...sub3(camera, body));
+  const reach = Math.hypot(body[0], body[1], body[2]);
+  // Con el espécimen en el origen no hay dirección de luz que medir: la luz ES
+  // el origen. Devolver ceros es lo único honesto — un NaN llegaría a pantalla.
+  if (span === 0 || reach === 0) return { key: 0, roll: 0 };
+
+  const toCamera = normalise(sub3(camera, body));
+  const toLight = normalise([-body[0], -body[1], -body[2]]);
+  const { right, up } = screenBasis(toCamera, cameraUp);
+
+  return {
+    key: Math.acos(Math.min(1, Math.max(-1, dot(toLight, toCamera)))) / DEG,
+    roll: Math.atan2(dot(toLight, up), dot(toLight, right)) / DEG,
+  };
+}
+
+/**
+ * Dónde hay que poner el espécimen —y con él la cámara— para que la luz caiga
+ * con esta geometría.
+ *
+ * El offset cámara-espécimen se conserva ENTERO en coordenadas de mundo, y eso
+ * es lo que garantiza la propiedad que hace útil al instrumento: la misma cara,
+ * el mismo encuadre, la misma distancia, otra luz. La rotación de la figura
+ * tampoco se toca, porque nadie la toca aquí.
+ */
+export function lightPlacement(
+  camera: Vec3,
+  body: Vec3,
+  cameraUp: Vec3,
+  light: LightGeometry,
+): { body: Vec3; camera: Vec3 } {
+  const reach = Math.hypot(body[0], body[1], body[2]);
+  if (reach === 0) return { body, camera };
+
+  const offset = sub3(camera, body);
+  const toCamera = normalise(offset);
+  const { right, up } = screenBasis(toCamera, cameraUp);
+
+  const key = Math.min(180, Math.max(0, light.key)) * DEG;
+  const roll = light.roll * DEG;
+  const sin = Math.sin(key);
+  // La dirección en la que hay que ver la luz DESDE el espécimen, reconstruida
+  // en el marco de la pantalla: `key` la separa del eje de mirada y `roll` la
+  // reparte por el reloj del cuadro.
+  const toLight: Vec3 = [
+    Math.cos(key) * toCamera[0] +
+      sin * (Math.cos(roll) * right[0] + Math.sin(roll) * up[0]),
+    Math.cos(key) * toCamera[1] +
+      sin * (Math.cos(roll) * right[1] + Math.sin(roll) * up[1]),
+    Math.cos(key) * toCamera[2] +
+      sin * (Math.cos(roll) * right[2] + Math.sin(roll) * up[2]),
+  ];
+
+  // Y el espécimen va justo enfrente: la luz es el origen, así que si desde el
+  // cuerpo la luz se ve en `toLight`, el cuerpo está en `-reach · toLight`.
+  const placed: Vec3 = [
+    -toLight[0] * reach,
+    -toLight[1] * reach,
+    -toLight[2] * reach,
+  ];
+
+  return {
+    body: placed,
+    camera: [
+      placed[0] + offset[0],
+      placed[1] + offset[1],
+      placed[2] + offset[2],
+    ],
+  };
+}
+
+function sub3(a: Vec3, b: Vec3): Vec3 {
+  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}

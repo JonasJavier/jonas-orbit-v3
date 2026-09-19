@@ -2386,3 +2386,194 @@ demuestra; la sonda nombra una arista real— más dieciséis unitarias nuevas e
 veredicto visual de Jonás.** `MEDIR` A→B y el alambre/normales siguen aplazados,
 y la infraestructura queda lista para congelarse y montar los cuatro especímenes
 que faltan.*
+
+## V2 — dos modos, y una luz que se puede mover (2026-09-18)
+
+Jonás vio la V1.5 terminada y el diagnóstico fue de densidad, no de piezas:
+*«hay mucha información y se siente ahora todo muy pesado»*. Con él llegaron
+cinco encargos concretos: **modo cine por defecto** —sólo la cámara con el
+ratón— y un **modo estudio** con las herramientas; **quitar texto** de la
+esquina superior izquierda; que la interfaz sea minimalista pero **se sienta más
+como una nave espacial**; que **la sonda funcione**, porque no se entendía qué
+hacía; y **poder mover la luz**.
+
+### El error no era un rótulo de más: eran dos actividades a la vez
+
+La pantalla contestaba al mismo tiempo dos preguntas que nadie se hace a la vez.
+**Mirar** un espécimen y **medirlo** son dos cosas, y el aparato tenía las dos
+encendidas siempre — de ahí el peso, y de ahí que cada intento de aligerar
+acabara siendo una discusión sobre qué rótulo sacrificar.
+
+`data-mode` en la raíz reparte el aparato entero:
+
+ · **`OBSERVAR`** es el estado de reposo: el espécimen, su nombre, el catálogo,
+   la salida y la mano. Nada más. Es lo que se ve al entrar.
+ · **`ESTUDIO`** despliega la consola: vistas, luz, cámara e inspección.
+
+La consola **no se desmonta** al plegarse. Así los mandos conservan su estado al
+ir y volver, y cambiar de modo no reconstruye un solo nodo; lo que hace es irse
+—`inert` más `visibility: hidden`— para que no quede ni en el puntero, ni en el
+tabulador, ni en el árbol de accesibilidad. Eso es justo lo que jsdom NO
+comprueba solo: `inert` no está implementado ahí, así que los mandos de una
+consola plegada siguen apareciendo en las consultas por rol, y sin un test
+explícito el reparto entero podría romperse sin que nada se pusiera rojo.
+
+Y el **modo cine pasa a existir sólo en `OBSERVAR`**. En V1.5 la atenuación por
+inactividad se llevaba también los controles: a los 3,5 s de estar pensando qué
+medir, los mandos desaparecían. Un instrumento desplegado se queda desplegado;
+el reposo es mirar.
+
+### Lo que se fue de la esquina, y adónde
+
+La cabecera tenía seis líneas. Ninguna se borró: cada una se mudó a donde sirve.
+
+| Lo que estaba arriba | Adónde fue | Por qué |
+| --- | --- | --- |
+| `INSTRUMENTO · NOMINAL` | un punto ámbar | La cara servida ya lo enseña en grande mientras hace falta, que es mientras el aparato está en espera. Encendido, un aparato lo dice con una luz. |
+| `AZ / EL / DIST` | consola, fila `CÁMARA` | Contestan «cómo estoy mirando», y ésa es una pregunta que sólo existe mientras se opera. |
+| `CLAVE` | consola, dial de `LUZ` | Dejó de ser una lectura para ser un mando. Ver abajo. |
+| lectura de la sonda | junto a la retícula | Ver abajo. |
+| `EXPERIMENTOS / OBSERVATORIO` | retirado | Repetía al 20 % de opacidad lo que la salida dice entera, en la esquina donde sobraba texto. |
+
+Quedan tres líneas: la cifra del catálogo, el nombre y el descriptor.
+
+### `LUZ`: el instrumento que faltaba
+
+Es el mando nuevo, y es el que convierte el visor en un laboratorio. Aquí **no
+hay una lámpara que arrastrar** —la luz ES el origen del mundo, `toLight =
+normalize(-vPositionW)`— así que lo que el dial mueve es el espécimen ALREDEDOR
+de ese origen, con la cámara rígidamente enganchada a él.
+
+Eso lo hace exactamente lo contrario de orbitar, y ahí está todo su valor:
+
+ · **Orbitar** mueve la cámara y deja el espécimen quieto → cambia qué CARA se
+   ve, y de paso cambia el ángulo de clave.
+ · **`LUZ`** gira el espécimen alrededor del origen con la cámara pegada → la
+   misma cara, el mismo encuadre, la misma distancia, **otra luz**.
+
+Es la única variable que el §6 autoriza a tocar, ofrecida por primera vez sola.
+Hasta ahora sólo se podía rozar de refilón orbitando, mezclada con el cambio de
+cara. Con esto se puede sostener la pose y barrer la iluminación, que es lo que
+hace un laboratorio y no un visor — y el Tesseracto a 20° de clave y a 145° son
+dos objetos distintos: la tabla del §6 convertida en un dial.
+
+Dos números, los dos medidos y los dos ajustables:
+
+ · **`CLAVE`**, 0-180°: el ángulo entre la luz y la mirada, el mismo `keyAngle`
+   del preset y la misma `key` de la telemetría. Una sola magnitud con un solo
+   nombre.
+ · **`GIRO`**, −180 a 180°: dónde cae la luz en el reloj de la PANTALLA. Se mide
+   en pantalla y no en el mundo a propósito — `keyAzimuth` es el parámetro
+   correcto para declarar un preset y el incorrecto para manipular, porque nadie
+   puede predecir dónde acabará la luz sin resolver antes el `up` de la cámara.
+   Aquí la pregunta que se contesta es la que un humano se hace: «quiero la luz
+   arriba a la derecha».
+
+**Y los dos diales son a la vez LECTURA.** Al orbitar se mueven solos, porque
+rodear el espécimen cambia de dónde le llega la clave. Un dial que no sabe lo
+que está pasando en el resto del aparato es una casilla con estilo. Por eso
+`lightPlacement` y `lightGeometry` son inversas exactas y hay un test que barre
+treinta pares: si la ida y la vuelta no coincidieran, cada fotograma escribiría
+en el `<input>` un número ligeramente distinto del que acaba de poner el pulgar,
+y la aguja temblaría mientras se arrastra.
+
+Lo que el mando **no** puede tocar, por construcción y con prueba: el
+desplazamiento cámara-espécimen se arrastra entero en coordenadas de mundo, y el
+espécimen se queda en su esfera de `ORIGIN_DISTANCE_RADII`. Eso segundo protege
+el material: esa distancia gobierna cuán paralela llega la luz, así que moverla
+sería cambiar el CARÁCTER de la iluminación y no sólo su dirección.
+
+**Un fallo que costó un barrido de teclado.** La primera versión leía
+`camera.position`, que sólo se actualiza dentro de `applyCamera` —una vez por
+fotograma PINTADO—, mientras la fuente de verdad del encuadre es la esférica.
+Entre dos fotogramas caben varias órdenes, así que cada una conservaba un
+desplazamiento caducado: medido, el dial saltaba de 52° a 49° en una sola
+pulsación de flecha. Se reconstruye el desplazamiento desde la esférica y la ida
+y la vuelta vuelven a ser exactas sin importar cuántas órdenes lleguen entre dos
+fotogramas. Lo sujeta una prueba de navegador que no mira la imagen: cuarenta
+pulsaciones de un grado tienen que llegar exactamente cuarenta grados más abajo.
+
+### La sonda sí funcionaba. El problema era dónde aparecía
+
+Medido antes de tocar nada: un barrido de 288 posiciones sobre la figura dio
+**136 aciertos**. La sonda acertaba. Lo que fallaba es que la lectura salía
+arriba a la izquierda, a seis líneas de distancia del punto señalado, en cuerpo
+0,56 rem y entre otros cinco rótulos.
+
+Una medición que aparece lejos de lo que se está midiendo no es una medición, es
+un mensaje. Ahora el rótulo cuelga de la propia retícula —y se voltea al canto
+izquierdo cuando el punto se acerca al borde derecho de la pantalla—, el lienzo
+cambia a cursor de cruz mientras la sonda está encendida, y la pista de abajo
+deja de explicar el arrastre para decir `SEÑALA UNA ARISTA DEL HIPERCUBO`. Tres
+señales, ni un elemento nuevo.
+
+### La consola, o de dónde sale la sensación de nave
+
+La otra mitad del encargo —«que se sienta más nave espacial»— no se resuelve
+añadiendo datos: se resuelve con **geometría de aparato**. Aquí no hay ni un
+radar falso, ni un porcentaje inventado, ni una coordenada que nadie haya
+medido. Lo que hay es esto, y ninguna pieza dice nada:
+
+ · **El alféizar.** Una línea de 1 px de borde a borde con los extremos
+   difuminados, arriba de la banda. Es la pieza que más trabaja: separa el
+   espacio de la máquina. Y no cierra ninguna caja —es un solo lado— así que la
+   regla del §5 sigue en pie.
+ · **El velo.** El espécimen no se recorta ni se reencuadra al desplegar la
+   consola, que es contrato; lo que hace es HUNDIRSE detrás del panel con un
+   degradado que arranca en cero justo en la línea. Sin él, el alféizar cortaba
+   la figura por la mitad con un filo de un píxel. Sus valores los fijó la
+   Endurance —aluminio marfil a plena luz— y no el Tesseracto, que es cristal
+   casi negro: la misma lección que ya enseñó la ficha de `DATOS`.
+ · **El bastidor.** Una columna de rótulos a la derecha del todo, una regla
+   vertical continua y las filas de mandos al otro lado. La regla la dibujan los
+   propios rótulos con su borde derecho: filas adyacentes la sueldan en una sola
+   línea, sin un elemento dedicado y sin que nadie tenga que saber cuántas filas
+   hay.
+ · **Los diales.** Escala de ocho divisiones, línea de referencia y una AGUJA de
+   dos píxeles. Nada de pista rellena ni pulgar redondo — eso es un control de
+   volumen. El blanco de agarre son los 24 px del carril; la tinta, cinco.
+ · **El selector de modo.** Dos posiciones con su muesca colgadas de un raíl de
+   1 px, no dos pestañas: una pestaña cambia el contenido, y aquí lo que cambia
+   es lo que estás haciendo con el mismo objeto. La muesca crece con `scaleY` y
+   no con `height`, porque en una caja en columna una muesca más alta EMPUJA la
+   palabra: medido, la posición elegida quedaba siete píxeles por debajo de la
+   otra.
+ · **La escotilla.** Una caída de luz muy suave hacia los cuatro bordes del
+   lienzo. No es viñeteado de fotografía: es lo que convierte un rectángulo
+   negro en una ABERTURA. La instrumentación va por encima.
+
+Y la pista de abajo pasa a ser el único sitio donde el aparato habla: dice qué
+se puede hacer AHORA, que es distinto en cada modo y mientras se compara. Cuatro
+frases en un rótulo es lo que permite no tener una capa de avisos.
+
+### Dos fallos de alcance que este pase destapó
+
+**La bandeja global se comía `Reajustar`.** Medida: ocupa 293 px a 20 px del
+canto, en cualquier ancho por encima de móvil. Con el botón pegado al extremo
+derecho —que es donde lo ponía el boceto— el clic no llegaba nunca. La barra del
+aparato pasa a ordenarse de izquierda a derecha —selector, `Reajustar`, pista— y
+reserva su sitio. El defecto no es de la bandeja: es global, vive en las seis
+rutas, y esta página es la invitada.
+
+**Y había un hueco entre 544 y 768 px** donde no actuaba ni la reserva vertical
+de móvil ni la horizontal de la barra, así que la bandeja caía sobre los mandos
+en cualquier tableta en vertical. El umbral sube de 34 a 48 rem.
+
+### Móvil: el bastidor se aprieta, no rueda
+
+La primera versión le puso un techo de 38 svh con desbordamiento propio, para
+que el espécimen no bajara del 40 % de la pantalla. La suite lo tumbó en el sitio
+exacto: a 375 px, `DATOS` y `REGISTRO` caían fuera del techo y `elementFromPoint`
+sobre su centro devolvía el selector de modo. **Un mando que hay que desplazar
+para tocar es un mando que no está**, y esa comprobación —O10 bis— existe
+precisamente porque medir la caja no basta.
+
+Así que el bastidor entra entero y lo que baja es su calibre. La consola se lleva
+poco más de un tercio del teléfono, y eso es lo que `ESTUDIO` significa en un
+teléfono: se entra a propósito, y `OBSERVAR` devuelve la pantalla con un toque.
+
+*Estado: `npm run check` verde —48 archivos, 362 pruebas unitarias— y la suite de
+Playwright entera en verde, con dos pruebas de navegador nuevas: que mover la luz
+cambia la clave exactamente los grados pedidos y NO mueve la cámara, y que los
+dos modos reparten el alcance de los mandos. `MEDIR` A→B y el alambre/normales
+siguen aplazados. **Pendiente el veredicto visual de Jonás.***

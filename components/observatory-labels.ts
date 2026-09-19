@@ -79,6 +79,20 @@ export const AXIS_LABELS = ["X", "Y", "Z", "W"] as const;
  * el ángulo entre la luz y la mirada medido en el espécimen. Es la columna
  * `KEY` de la tabla del §6, y al orbitar es lo que está cambiando.
  */
+/**
+ * Los dos mandos de `LUZ`, dichos entero para quien navega escuchando.
+ *
+ * En la consola se ven como `CLAVE` y `GIRO` —tipografía de instrumento, cuatro
+ * y cinco letras— pero el nombre accesible de un control deslizante tiene que
+ * decir qué mueve. `Ángulo de clave` es además la MISMA palabra que la lectura
+ * homónima del panel `DATOS`, y eso no es una coincidencia que convenga
+ * romper: son el mismo número, uno para leerlo y otro para ponerlo.
+ */
+export const LIGHT_LABELS = {
+  key: "Ángulo de clave de la luz",
+  roll: "Giro de la luz en la pantalla",
+} as const;
+
 export const OBSERVATION_LABELS = {
   view: "Vista",
   azimuth: "Azimut",

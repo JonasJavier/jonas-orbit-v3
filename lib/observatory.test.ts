@@ -5,6 +5,8 @@ import { WORLD_IDS, worldsData, type WorldId } from "@/content/worlds.data";
 import {
   cameraBasis,
   keyScreenDirection,
+  lightGeometry,
+  lightPlacement,
   OBSERVATION_PRESETS,
   ORIGIN_DISTANCE_RADII,
   PENDING_VISUAL_CALIBRATION,
@@ -410,5 +412,150 @@ describe("O11 · frontera con el contrato de cámara", () => {
       "utf8",
     );
     expect(code).not.toMatch(/observator/i);
+  });
+});
+
+/**
+ * ── EL INSTRUMENTO `LUZ` ────────────────────────────────────────────────────
+ *
+ * Es el mando nuevo de la V2 y el único del Observatorio que mueve el mundo, así
+ * que es el que más necesita que su promesa esté escrita como prueba.
+ *
+ * La promesa es una frase: **la misma cara, el mismo encuadre, la misma
+ * distancia, otra luz.** Aquí no hay una lámpara que arrastrar —la luz ES el
+ * origen del mundo— así que lo que se mueve es el espécimen ALREDEDOR de ese
+ * origen, con la cámara rígidamente enganchada a él. Eso es lo contrario de
+ * orbitar, que mueve la cámara y deja el espécimen quieto.
+ *
+ * Las tres invariantes de abajo son esa frase, una por cláusula. Si alguien
+ * reimplementara el mando moviendo la cámara —que es lo que parece más fácil—
+ * caerían las tres a la vez.
+ */
+describe("la geometría de la luz", () => {
+  /** La pose de casa del Tesseracto, que es la que usa el visor al abrir. */
+  const casa = observationPlacement("tesseract", 1, 3.2);
+
+  it("leer la luz de la pose de casa devuelve el ángulo del preset", () => {
+    /*
+      No es una tautología: `lightGeometry` no mira el preset. Mide el ángulo
+      entre «hacia la luz» y «hacia la cámara» sobre las POSICIONES de mundo que
+      produjo `observationPlacement`. Que los dos números coincidan es lo que
+      demuestra que el dial va a enseñar la cámara real y no una copia del dato.
+    */
+    const medida = lightGeometry(casa.camera, casa.body, casa.up);
+    expect(medida.key).toBeCloseTo(OBSERVATION_PRESETS.tesseract.keyAngle, 6);
+  });
+
+  it("colocar y volver a leer da el mismo par, para cualquier ángulo", () => {
+    /*
+      `lightPlacement` y `lightGeometry` son inversas, y eso no es elegancia: es
+      lo que permite que el dial sea a la vez mando y lectura sin pelearse
+      consigo mismo. Si la ida y la vuelta no fueran exactas, cada fotograma
+      escribiría en el `<input>` un número ligeramente distinto del que acaba de
+      poner el pulgar, y la aguja temblaría mientras se arrastra.
+    */
+    for (const key of [12, 45, 90, 134, 168]) {
+      for (const roll of [-175, -90, -31, 0, 64, 179]) {
+        const puesto = lightPlacement(casa.camera, casa.body, casa.up, {
+          key,
+          roll,
+        });
+        const leido = lightGeometry(puesto.camera, puesto.body, casa.up);
+        expect(leido.key, `clave ${key}/${roll}`).toBeCloseTo(key, 6);
+        expect(leido.roll, `giro ${key}/${roll}`).toBeCloseTo(roll, 6);
+      }
+    }
+  });
+
+  it("conserva la cámara respecto del espécimen, entera", () => {
+    /*
+      LA CLÁUSULA CENTRAL. El desplazamiento cámara-espécimen se arrastra tal
+      cual en coordenadas de mundo, así que la cara que se ve, el encuadre y la
+      distancia son exactamente los mismos antes y después. Es lo que convierte
+      el mando en un instrumento: se puede sostener la pose y barrer la
+      iluminación, que es la única variable que el §6 autoriza a tocar.
+    */
+    const antes: Vec3 = [
+      casa.camera[0] - casa.body[0],
+      casa.camera[1] - casa.body[1],
+      casa.camera[2] - casa.body[2],
+    ];
+    const puesto = lightPlacement(casa.camera, casa.body, casa.up, {
+      key: 38,
+      roll: -120,
+    });
+    for (let i = 0; i < 3; i += 1) {
+      expect(puesto.camera[i] - puesto.body[i]).toBeCloseTo(antes[i], 9);
+    }
+  });
+
+  it("no cambia a qué distancia del origen vive el espécimen", () => {
+    /*
+      Y ésta es la que protege el MATERIAL. `ORIGIN_DISTANCE_RADII` gobierna cuán
+      paralela llega la luz al cuerpo; si el mando lo moviera, el mando estaría
+      cambiando el carácter de la iluminación además de su dirección, y eso ya no
+      es una condición de observación. El espécimen se queda en su esfera.
+    */
+    const radio = Math.hypot(...casa.body);
+    for (const key of [0, 74, 180]) {
+      const puesto = lightPlacement(casa.camera, casa.body, casa.up, {
+        key,
+        roll: 20,
+      });
+      expect(Math.hypot(...puesto.body)).toBeCloseTo(radio, 9);
+    }
+  });
+
+  it("acota la clave y no inventa una luz con el espécimen en el origen", () => {
+    /*
+      Fuera de 0-180 el ángulo entre dos direcciones no existe, así que el mando
+      se satura en vez de dar la vuelta. Y con el espécimen en el origen no hay
+      dirección de luz que medir —la luz ES el origen—: ahí devolver la pose
+      intacta es lo único honesto, porque la alternativa es un NaN que llegaría
+      entero hasta la pantalla.
+    */
+    const arriba = lightPlacement(casa.camera, casa.body, casa.up, {
+      key: 260,
+      roll: 0,
+    });
+    expect(lightGeometry(arriba.camera, arriba.body, casa.up).key).toBeCloseTo(
+      180,
+      6,
+    );
+
+    const origen = lightPlacement([0, 0, 3], [0, 0, 0], [0, 1, 0], {
+      key: 90,
+      roll: 0,
+    });
+    expect(origen.body).toEqual([0, 0, 0]);
+    expect(lightGeometry([0, 0, 3], [0, 0, 0], [0, 1, 0])).toEqual({
+      key: 0,
+      roll: 0,
+    });
+  });
+
+  it("el giro dice dónde cae la luz EN PANTALLA", () => {
+    /*
+      La convención, fijada aquí porque es la que hace el mando predecible: 0° es
+      luz por la derecha del cuadro y +90° por arriba. Se comprueba contra
+      `keyScreenDirection`, que es la función que el §6 ya usaba para responder
+      «quiero la luz arriba a la derecha» — dos caminos al mismo sitio, y si
+      alguna vez discreparan uno de los dos estaría mintiendo.
+    */
+    for (const roll of [0, 90, -90, 145]) {
+      const puesto = lightPlacement(casa.camera, casa.body, casa.up, {
+        key: 70,
+        roll,
+      });
+      const pantalla = keyScreenDirection({
+        ...casa,
+        body: puesto.body,
+        camera: puesto.camera,
+      });
+      expect(
+        (Math.atan2(pantalla.up, pantalla.right) * 180) / Math.PI,
+        `giro ${roll}`,
+      ).toBeCloseTo(roll, 4);
+    }
   });
 });
