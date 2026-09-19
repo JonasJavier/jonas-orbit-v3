@@ -5,10 +5,12 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
 import {
+  instrumentsFor,
   lightPlacement,
   observationPlacement,
   OBSERVATION_PRESETS,
   type LightGeometry,
+  type ObservationInstrument,
 } from "@/lib/observatory";
 import {
   observationTelemetry,
@@ -21,6 +23,8 @@ import { sampleTesseract } from "@/lib/tesseract";
 import { nearestEdge, probeDepth, type ProbeHit } from "@/lib/tesseract-probe";
 import { readVisualBench } from "@/lib/visual-bench";
 import { createBody, disposeBody, type SceneBodyInput } from "./bodies";
+import { createGargantuaObservatory } from "./gargantua-observatory";
+import type { QualityTier } from "./gargantua-render";
 import { createObservatorySky } from "./observatory-sky";
 import { specimenContract, type SpecimenContract } from "./specimen-contract";
 
@@ -163,6 +167,20 @@ const PITCH_LIMIT = 1.45;
  * la retícula se dibuja en el DOM y no en WebGL — unas marcas de un píxel no
  * justifican una pasada de render.
  */
+/**
+ * Lo único que la interfaz necesita saber de una vista.
+ *
+ * Las vistas de los sólidos y las de Gargantúa no comparten campos —unas
+ * declaran geometría de luz y otras geometría de cámara— pero las dos tienen
+ * que caber en el mismo mando. Esto es esa intersección, y es a propósito lo
+ * más pequeña posible: en cuanto alguien meta aquí un ángulo, los dos
+ * contratos empezarán a parecerse por la fuerza.
+ */
+export type ObservationViewSummary = Pick<
+  ObservationView,
+  "id" | "label" | "study"
+>;
+
 export interface ProbeReading extends ProbeHit {
   /** Profundidad en W del punto, 0 (lo más lejano de esta pose) a 1. */
   depth: number;
@@ -175,14 +193,43 @@ export interface ObservatoryHandle {
   /** El contrato medido del espécimen. Va a `INSPECCIONAR / DATOS`, nunca a la
    *  vista normal. */
   readonly contract: SpecimenContract;
-  /** Las vistas curadas de este espécimen. Vacío si no tiene. */
-  readonly views: readonly ObservationView[];
+  /**
+   * Las vistas curadas de este espécimen. Vacío si no tiene.
+   *
+   * Sólo el resumen —clave, rótulo y qué estudia— y no la vista entera. Las de
+   * los sólidos llevan `keyAngle` y `keyAzimuth`, que son geometría de LUZ, y
+   * las de Gargantúa llevan elevación, distancia y campo, que son geometría de
+   * CÁMARA. Son dos contratos distintos porque son dos especímenes distintos, y
+   * lo único que la interfaz necesita de los dos es lo que se lee en el mando.
+   */
+  readonly views: readonly ObservationViewSummary[];
   /** Si este espécimen admite sonda. Hoy sólo el Tesseracto: es el único cuya
    *  geometría se puede nombrar pieza a pieza sin inventar nada. */
   readonly canProbe: boolean;
-  /** El campo de visión del instrumento, en grados. Constante, y por eso se
-   *  publica como dato del aparato y no como telemetría. */
-  readonly fov: number;
+  /**
+   * Si el visitante puede llevar la cámara con la mano.
+   *
+   * **Falso sólo en Gargantúa** (§7), y no por rendimiento: durante el arrastre
+   * se perdería el supermuestreo sobre ocho posiciones de Halton que paga su
+   * acabado, y —lo que más pesa— una órbita libre garantiza que alguien acabará
+   * mirando el pase visual final desde un ángulo que nadie encuadró.
+   *
+   * Se publica en vez de deducirse del espécimen porque la pista de abajo tiene
+   * que decir la verdad sobre lo que se puede hacer AHORA, y «arrastra para
+   * girar» sobre un lienzo que no escucha el puntero es la peor clase de
+   * rótulo: uno que miente sin que nada falle.
+   */
+  readonly canOrbit: boolean;
+  /**
+   * Qué ofrece `INSPECCIONAR` sobre esta muestra.
+   *
+   * Lo publica el instrumento y no lo deduce la interfaz, por la misma razón
+   * que las vistas: quien sabe si un mando va a hacer algo es quien lo va a
+   * ejecutar. Y tiene que coincidir con lo que la cara servida promete en frío
+   * —las dos salen de `instrumentsFor`— porque un aparato que promete apagado
+   * lo que no da encendido es peor que uno mudo.
+   */
+  readonly instruments: readonly ObservationInstrument[];
   /** Coloca una de las vistas curadas. `0` es siempre la canónica. */
   setView(index: number): void;
   /**
@@ -194,7 +241,13 @@ export interface ObservatoryHandle {
    * variable que el §6 autoriza a tocar, y la única forma que tiene este visor
    * de ofrecerla sin inventarse una lámpara.
    */
-  setLight(light: LightGeometry): void;
+  /**
+   * AUSENTE EN GARGANTÚA, y su ausencia es la mitad del contrato de ese
+   * espécimen: no hay lámpara que mover porque la lámpara ES el objeto. La
+   * interfaz lo dice con un método opcional y no con un método que no hace
+   * nada — un mando que existe y no obedece es peor que un mando que no está.
+   */
+  setLight?(light: LightGeometry): void;
   /** Enciende la sonda. Sin ella el puntero sólo gira el espécimen. */
   setProbe(enabled: boolean): void;
   /** Vuelve a la pose del preset. No es «movimiento» y por eso no depende del
@@ -205,7 +258,18 @@ export interface ObservatoryHandle {
   setBloom(enabled: boolean): void;
   /** Instrumento `MATERIAL`: el material sin su emisión, vía `uEmission`. Aísla
    *  un canal con fines diagnósticos; no altera un solo parámetro. */
-  setEmission(enabled: boolean): void;
+  setEmission?(enabled: boolean): void;
+  /**
+   * Instrumento de física, sólo en Gargantúa: apaga una rama del raymarch.
+   *
+   * `uDoppler`, `uSecondary` y `uSkyLens` llevan escritos en el fragmento desde
+   * que se escribió y hasta este pase valían 1 y no los tocaba nadie. Cada uno
+   * retira una pieza concreta —el beaming y la asimetría, las imágenes de orden
+   * superior, la curvatura del campo estelar— así que apagarlos es la cláusula
+   * de inspección del §6 aplicada a un objeto sin material: aísla un canal con
+   * fines diagnósticos y no altera ni un parámetro.
+   */
+  setPhysics?(uniform: "uDoppler" | "uSecondary" | "uSkyLens", on: boolean): void;
   /** El interruptor global. Gobierna el movimiento AUTÓNOMO, nunca la mano del
    *  visitante: rotar y acercar siguen funcionando con él apagado. */
   setMotion(enabled: boolean): void;
@@ -216,6 +280,15 @@ export interface ObservatoryOptions {
   canvas: HTMLCanvasElement;
   world: SceneBodyInput;
   motion: boolean;
+  /**
+   * Nivel de calidad del raymarch. Sólo lo usa Gargantúa.
+   *
+   * Los cinco sólidos no lo necesitan —su coste lo fija la geometría, que no
+   * tiene palancas— pero un raymarcher sí: píxeles y pasos. Llega desde el
+   * visor porque es quien ya tiene el veredicto de capacidad, y así esta escena
+   * no vuelve a preguntarle al navegador lo que la página ya sabe.
+   */
+  tier?: QualityTier;
   /**
    * El apretón de manos de llegada: se llama UNA vez, justo después del primer
    * `composer.render()` que de verdad ha pintado.
@@ -228,6 +301,17 @@ export interface ObservatoryOptions {
    * rectángulo negro mientras se monta.
    */
   onFirstFrame?: () => void;
+  /**
+   * El instrumento se rindió a mitad de un fotograma.
+   *
+   * Lo usa el camino de Gargantúa, que es el único con un bucle capaz de
+   * fallar después de haber pintado: un raymarch con acumulación temporal
+   * escribe en render targets de media precisión, y eso puede caerse en un
+   * equipo que sí llegó a montar el contexto. Sin este aviso la pantalla se
+   * queda con el último fotograma bueno y nada dice que el aparato está muerto
+   * — que es peor que un rectángulo negro, porque parece que funciona.
+   */
+  onFailure?: (reason: string) => void;
   /**
    * La telemetría, en cada fotograma que se pinta.
    *
@@ -247,8 +331,28 @@ export function createObservatoryScene(
 ): ObservatoryHandle | null {
   const { canvas, world, onFirstFrame, onTelemetry, onProbe } = options;
 
+  /*
+    GARGANTÚA SE VA POR OTRA PUERTA, y es la única que lo hace.
+
+    Todo lo que hay debajo de esta línea da por supuesta una malla: `createBody`
+    devuelve `null` para ella, `OBSERVATION_PRESETS` la excluye a propósito
+    —no recibe ninguna luz añadida, §6— y `specimenContract` mide recorriendo un
+    objeto que no existe. Forzarla por aquí habría exigido fingir que tiene
+    posición, material y ángulo de clave.
+
+    Se reparte en el borde y no dentro, para que el camino de los cinco sólidos
+    no gane una sola rama por un espécimen que no es como ellos. Los dos
+    caminos devuelven el mismo handle, que es lo que permite que el visor no se
+    entere.
+  */
+  if (world.visual === "black-hole") {
+    return createGargantuaObservatory({
+      ...options,
+      tier: options.tier ?? "orbit",
+    });
+  }
+
   const body = createBody(world);
-  // Gargantúa no llega aquí: no tiene malla y se observa por vistas curadas.
   if (!body) return null;
 
   const renderer = new THREE.WebGLRenderer({
@@ -528,6 +632,7 @@ export function createObservatoryScene(
         // cambian, y con la equivocada el `roll` de la luz saldría torcido justo
         // en las poses donde el mando de `LUZ` más se usa.
         up.toArray() as [number, number, number],
+        FOV,
       ),
     );
     if (probing) resolveProbe();
@@ -731,9 +836,10 @@ export function createObservatoryScene(
 
   return {
     contract: specimenContract(body),
-    views,
+    views: views.map(({ id: key, label, study }) => ({ id: key, label, study })),
     canProbe: probeEdges !== null,
-    fov: FOV,
+    canOrbit: true,
+    instruments: instrumentsFor(world.id),
     setView(index) {
       if (index < 0 || index >= views.length) return;
       applyView(index);

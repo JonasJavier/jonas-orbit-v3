@@ -53,6 +53,30 @@ export interface SpecimenContract {
    * Edmunds.
    */
   architecture: Readonly<Record<string, number>> | null;
+  /**
+   * Lo que define a un espécimen que NO es una malla. Sólo Gargantúa.
+   *
+   * Las tres cifras de arriba describen lo que cuesta pintar una geometría, y
+   * sobre un raymarch de pantalla completa dicen la verdad y no dicen nada:
+   * un cuad es un cuad. Lo que de verdad define a este objeto —dónde está su
+   * horizonte, hasta dónde llega su disco y cuántos pasos da el integrador por
+   * píxel— es esto, y es exactamente la fila que el §8 le reserva.
+   *
+   * Los tres salen del código que los usa: `GARGANTUA_RS`, `DISK_INNER` y
+   * `DISK_OUTER` del módulo de shaders, y `steps` del mismo `define MAX_STEPS`
+   * con el que se compila el material. La mezcla temporal no está aquí porque
+   * cambia en cada fotograma: ésa es telemetría.
+   */
+  raymarch?: {
+    /** Radio de Schwarzschild, en unidades del integrador. */
+    rs: number;
+    /** Borde interior del disco, en radios de Schwarzschild. */
+    diskInner: number;
+    /** Borde exterior del disco, en radios de Schwarzschild. */
+    diskOuter: number;
+    /** Pasos de integración por píxel, como máximo. */
+    steps: number;
+  };
 }
 
 /**

@@ -1,6 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import Link from "next/link";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateCapabilities } from "@/components/scene/capability";
@@ -91,6 +98,30 @@ const sinEquipo = () =>
   llamar a `onFirstFrame`. Es el contrato del driver, no su implementación —lo
   que se prueba aquí es el cromo, igual que antes.
 */
+/**
+ * Un evento de puntero con SU PROPIO reloj.
+ *
+ * El mando decide si una pulsación fue un clic o una comparación sostenida con
+ * `event.timeStamp`, que es lo que el navegador fija al CREAR el evento. Antes
+ * usaba `performance.now()` en el manejador, y estos tests controlaban el
+ * tiempo espiándolo — hasta que se midió que sobre Gargantúa el hilo principal
+ * se queda 742 ms dentro de un fotograma del raymarch entre `pointerdown` y
+ * `pointerup`, y todo clic se leía como comparación.
+ *
+ * El reloj del manejador no mide el gesto: mide el gesto más lo que la página
+ * tardó en atenderlo. Así que ahora se fija el del evento, que es el que el
+ * código lee, y la prueba ejercita el camino de verdad y no el respaldo.
+ */
+function puntero(
+  nodo: HTMLElement,
+  tipo: "pointerDown" | "pointerUp",
+  reloj: number,
+) {
+  const evento = createEvent[tipo](nodo);
+  Object.defineProperty(evento, "timeStamp", { value: reloj });
+  fireEvent(nodo, evento);
+}
+
 const contrato = {
   draws: 4,
   materials: 3,
@@ -110,7 +141,14 @@ const escena = {
     { id: "rasante", label: "Rasante", keyAngle: 92, study: "Las facetas." },
   ],
   canProbe: true,
-  fov: 40,
+  /*
+    Lo que este espécimen ofrece y lo que permite. Desde que hay una muestra sin
+    malla, el visor no deduce ninguna de las dos cosas: las publica el
+    instrumento, así que el doble tiene que publicarlas también o el cromo no
+    monta ni el banco ni la pista.
+  */
+  canOrbit: true,
+  instruments: ["bloom", "material", "datos"] as const,
   reset: vi.fn(),
   setLight: vi.fn(),
   setView: vi.fn(),
@@ -134,8 +172,9 @@ interface Lectura {
   azimuth: number;
   elevation: number;
   distance: number;
-  key: number;
-  roll: number;
+  fov: number;
+  key?: number;
+  roll?: number;
 }
 
 let ultimoMontaje: {
@@ -821,25 +860,19 @@ describe("Observatorio · cromo instrumental", () => {
     await mount();
     const bloom = screen.getByRole("button", { name: "Bloom" });
     escena.setBloom.mockClear();
-    // El reloj del gesto, bajo control: `event.timeStamp` es de sólo lectura en
-    // un evento sintético y no se puede fijar desde aquí.
-    const reloj = vi.spyOn(performance, "now");
 
-    reloj.mockReturnValue(1000);
     await act(async () => {
-      fireEvent.pointerDown(bloom);
+      puntero(bloom, "pointerDown", 1000);
     });
     expect(escena.setBloom).toHaveBeenLastCalledWith(false);
     expect(bloom).toHaveAttribute("aria-pressed", "true");
 
-    reloj.mockReturnValue(1600);
     await act(async () => {
-      fireEvent.pointerUp(bloom);
+      puntero(bloom, "pointerUp", 1600);
       fireEvent.click(bloom);
     });
     expect(escena.setBloom).toHaveBeenLastCalledWith(true);
     expect(bloom).toHaveAttribute("aria-pressed", "false");
-    reloj.mockRestore();
   });
 
   it("un clic corto sigue conmutando el pestillo", async () => {
@@ -848,20 +881,16 @@ describe("Observatorio · cromo instrumental", () => {
     await mount();
     const bloom = screen.getByRole("button", { name: "Bloom" });
     escena.setBloom.mockClear();
-    const reloj = vi.spyOn(performance, "now");
 
-    reloj.mockReturnValue(2000);
     await act(async () => {
-      fireEvent.pointerDown(bloom);
+      puntero(bloom, "pointerDown", 2000);
     });
-    reloj.mockReturnValue(2060);
     await act(async () => {
-      fireEvent.pointerUp(bloom);
+      puntero(bloom, "pointerUp", 2060);
       fireEvent.click(bloom);
     });
     expect(bloom).toHaveAttribute("aria-pressed", "true");
     expect(escena.setBloom).toHaveBeenLastCalledWith(false);
-    reloj.mockRestore();
   });
 
   it("la sonda sólo aparece donde se puede nombrar lo que se señala", async () => {
@@ -994,6 +1023,7 @@ describe("Observatorio · cromo instrumental", () => {
         azimuth: 12.5,
         elevation: -8.25,
         distance: 4.5,
+        fov: 40,
         key: 63.4,
         roll: -27.8,
       });
@@ -1025,8 +1055,26 @@ describe("Observatorio · cromo instrumental", () => {
     );
     expect(familias).toEqual(["Objeto", "Observación", "Render"]);
 
-    // Y la observación publica el campo de visión que dice el instrumento, no
-    // un número escrito aquí.
-    expect(panel.textContent).toContain(`${escena.fov}°`);
+    /*
+      Y la observación publica el campo de visión que MIDE el instrumento.
+
+      Bajó de dato del aparato a telemetría al montar Gargantúa: sus cuatro
+      vistas cambian de objetivo —35° la cinematográfica, 16° la sombra— porque
+      sin órbita ni zoom el campo es la única forma que tiene una vista de
+      acercarse. Un número que cambia con la observación no es una ficha
+      técnica. Por eso se escribe desde el bucle, y por eso aquí hay que
+      mandarlo antes de leerlo.
+    */
+    act(() => {
+      ultimoMontaje.onTelemetry?.({
+        azimuth: 0,
+        elevation: 0,
+        distance: 3,
+        fov: 40,
+        key: 55,
+        roll: 0,
+      });
+    });
+    expect(panel.textContent).toContain("40°");
   });
 });

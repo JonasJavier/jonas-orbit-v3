@@ -391,6 +391,17 @@ describe("intensidad de clave", () => {
 describe("O11 · frontera con el contrato de cámara", () => {
   const OBSERVATORY_SOURCES = [
     "lib/observatory.ts",
+    /*
+      Los tres del pase de Gargantúa entran en la lista, y el primero es el que
+      más la necesita: `gargantua-views.ts` declara elevación, campo, roll y
+      corrimiento — los mismos seis números que `SYSTEM_POSE`— y la tentación de
+      importarlos en vez de declararlos es exactamente la erosión que esta
+      prueba existe para impedir. La duplicación la vigila otro test, que sí
+      puede conocer las dos orillas.
+    */
+    "lib/gargantua-views.ts",
+    "components/scene/gargantua-observatory.ts",
+    "components/scene/gargantua-render.ts",
     "components/scene/observatory-scene.ts",
     "components/scene/observatory-sky.ts",
     "components/scene/specimen-contract.ts",

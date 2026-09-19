@@ -50,7 +50,21 @@ export type Vec3 = readonly [number, number, number];
  * `ESTRUCTURA` (alambre / normales) NO está aquí: sale de la V1 como deuda
  * V1.1 porque es el único que exige construir un sistema entero desde cero.
  */
-export type ObservationInstrument = "bloom" | "material" | "datos";
+export type ObservationInstrument =
+  | "bloom"
+  | "material"
+  | "datos"
+  /*
+    Los tres de Gargantúa. No son instrumentos «de agujero negro» inventados
+    para llenar la fila: son uniformes que llevan en el fragmento desde que se
+    escribió —`uDoppler`, `uSecondary`, `uSkyLens`— y que hasta este pase valían
+    1 y no los tocaba nadie. Apagar cada uno retira una pieza de física concreta
+    y comprobable, que es lo más cerca que esta página puede estar de un
+    laboratorio de verdad.
+  */
+  | "doppler"
+  | "secundarias"
+  | "lente";
 
 export interface ObservationPreset {
   /**
@@ -266,6 +280,62 @@ export const OBSERVATION_PRESETS: Record<
  * el System Map original contra el Observatorio a 6, 10 y 13 radios sobre al
  * menos dos cuerpos, y juzgar cuál conserva el carácter.
  */
+/**
+ * QUÉ INSTRUMENTOS OFRECE CADA MUESTRA. Los seis, incluida la que no tiene malla.
+ *
+ * Existe porque hasta este pase la respuesta vivía en `OBSERVATION_PRESETS`, que
+ * por contrato **excluye a Gargantúa**: la ruta leía `preset.instruments` para
+ * pintar el banco en frío y con la sexta muestra montada eso deja de compilar.
+ * La salida no era darle un preset —eso sería darle una luz añadida, que el §6
+ * prohíbe— sino separar dos preguntas que estaban juntas: «cómo se ilumina esta
+ * muestra» y «qué se puede hacer con ella».
+ *
+ * Es la regla del §5 escrita como función: *el laboratorio adapta sus
+ * instrumentos a la muestra; no fuerza a los seis a tener los mismos botones.*
+ */
+export const GARGANTUA_INSTRUMENTS: readonly ObservationInstrument[] = [
+  /*
+    `bloom` primero, y no por orden alfabético: en Gargantúa es el instrumento
+    con algo que contar. El §14 undecies del documento del hero fija que el halo
+    no puede encender lo que estaba apagado, y la vista `SOMBRA` es donde eso se
+    ve — apagarlo y encenderlo enseña la guarda trabajando.
+  */
+  "bloom",
+  "doppler",
+  "secundarias",
+  "lente",
+  "datos",
+];
+
+/**
+ * Los instrumentos de una muestra.
+ *
+ * `material` no aparece para Gargantúa y no es un olvido: `uEmission` vive en el
+ * material común de los cuerpos y aquí no hay cuerpo. Un botón que no cambia un
+ * píxel es peor que un botón ausente — el mismo argumento que ya dejó a Miller y
+ * a Edmunds sin él.
+ */
+export function instrumentsFor(id: WorldId): readonly ObservationInstrument[] {
+  return id === "gargantua"
+    ? GARGANTUA_INSTRUMENTS
+    : OBSERVATION_PRESETS[id as Exclude<WorldId, "gargantua">].instruments;
+}
+
+/**
+ * Si esta muestra admite el instrumento `LUZ`.
+ *
+ * **Gargantúa no, y es el único.** Ese mando gira el espécimen alrededor del
+ * origen para barrer su iluminación, y aquí el espécimen ES la fuente: el
+ * origen del mundo es el agujero, y lo que ilumina la escena es su propio
+ * disco. Ofrecer el dial sería ofrecer mover una lámpara que no existe.
+ *
+ * Vive aquí, junto a los presets, porque es la misma frontera: quien no tiene
+ * preset de luz no tiene luz que mover.
+ */
+export function hasLightInstrument(id: WorldId): boolean {
+  return id !== "gargantua";
+}
+
 export const ORIGIN_DISTANCE_RADII = 10;
 
 /**

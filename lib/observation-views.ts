@@ -200,8 +200,25 @@ export interface ObservationTelemetry {
   elevation: number;
   /** Distancia al espécimen, en radios suyos. */
   distance: number;
-  /** Ángulo luz-mirada medido en el espécimen, 0-180°. */
-  key: number;
+  /**
+   * Campo de visión del instrumento, en grados.
+   *
+   * Sube aquí desde el handle, donde era una constante del aparato. Dejó de
+   * serlo al montar Gargantúa: sus cuatro vistas curadas cambian de objetivo
+   * —35° la cinematográfica, 16° la sombra— porque sin órbita ni zoom el campo
+   * es la única forma que tiene una vista de acercarse. Una lectura que cambia
+   * con la observación es telemetría, no una ficha técnica.
+   */
+  fov: number;
+  /**
+   * Ángulo luz-mirada medido en el espécimen, 0-180°.
+   *
+   * **Ausente en Gargantúa**, y la ausencia es el dato. Este número mide la
+   * separación entre la luz y la mirada; allí la luz es el propio objeto, así
+   * que no hay ángulo que medir y un cero sería una medición falsa. Es la misma
+   * frontera que deja a Gargantúa fuera de `OBSERVATION_PRESETS`.
+   */
+  key?: number;
   /**
    * Dónde cae la luz en el reloj de la PANTALLA, -180 a 180°.
    *
@@ -211,7 +228,19 @@ export interface ObservationTelemetry {
    * mueve los dos diales solo — que es lo que dice que el aparato está
    * conectado a algo.
    */
-  roll: number;
+  roll?: number;
+  /**
+   * El peso de la mezcla temporal de este fotograma. Sólo donde hay raymarch.
+   *
+   * Es una de las cuatro lecturas que el §8 pide para Gargantúa, y se publica
+   * leyendo el uniform que el bucle acaba de escribir — no la constante de la
+   * que sale. Con la acumulación desactivada no existe, y entonces no se
+   * enseña: un 0.18 escrito de todas formas sería exactamente el dato tecleado
+   * que ese párrafo prohíbe.
+   */
+  blend?: number;
+  /** Fotogramas ya promediados en el historial. */
+  accumulated?: number;
 }
 
 const RAD = 180 / Math.PI;
@@ -239,6 +268,7 @@ export function observationTelemetry(
   body: Vec3,
   radius: number,
   up: Vec3 = [0, 1, 0],
+  fov = 40,
 ): ObservationTelemetry {
   const view = sub(camera, body);
   const span = length(view);
@@ -264,6 +294,7 @@ export function observationTelemetry(
     azimuth,
     elevation,
     distance: radius > 0 ? span / radius : 0,
+    fov,
     key,
     roll,
   };

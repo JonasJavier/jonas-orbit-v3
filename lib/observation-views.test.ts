@@ -6,6 +6,7 @@ import {
   observationPreset,
   resolveView,
 } from "./observation-views";
+import { GARGANTUA_VIEWS } from "./gargantua-views";
 import {
   OBSERVATION_ORDER,
   OBSERVATION_PRESETS,
@@ -24,12 +25,27 @@ import {
 describe("las vistas de observación", () => {
   it("sólo existen donde hay espécimen que observar", () => {
     /*
-      Gargantúa NO puede tener vistas aquí. El §7 diseña cuatro —cinematográfica,
-      lente, disco y sombra— pero eso es una especificación: no tiene malla,
-      `createBody` devuelve `null` y en el catálogo figura sin montar. Una lista
-      de vistas para ella sería un instrumento prometiendo lo que no hay.
+      GARGANTÚA SIGUE SIN VISTAS AQUÍ, y el motivo cambió por completo.
+
+      Hasta que se montó, la razón era una carencia: el §7 diseñaba cuatro pero
+      eso era una especificación, no código — no tenía malla, `createBody`
+      devolvía `null` y en el catálogo figuraba sin montar. Publicarlas habría
+      sido un instrumento prometiendo lo que no hay.
+
+      Ahora las tiene, y viven en `lib/gargantua-views.ts`. Lo que las mantiene
+      fuera de ESTE módulo es que no son la misma clase de objeto: una vista de
+      aquí se declara con `keyAngle` y `keyAzimuth` —geometría de LUZ, resuelta
+      por `observationPlacement` moviendo el espécimen alrededor de la lámpara—
+      y las suyas se declaran con elevación, distancia y campo, porque su
+      espécimen ES la lámpara y no se mueve nunca. Meterlas aquí obligaría a
+      darle un `keyAngle` a un agujero negro.
+
+      Así que la lista vacía dejó de significar «todavía no» y pasa a significar
+      «por otro contrato». Se comprueba que el otro existe para que nadie lea
+      este cero como una tarea pendiente y lo rellene.
     */
     expect(observationViews("gargantua")).toHaveLength(0);
+    expect(GARGANTUA_VIEWS).toHaveLength(4);
     expect(observationViews("tesseract").length).toBeGreaterThan(1);
     expect(observationViews("endurance").length).toBeGreaterThan(1);
   });

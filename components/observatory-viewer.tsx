@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
 import {
   useForcedEffects,
@@ -19,6 +19,8 @@ import type {
   ObservationView,
 } from "@/lib/observation-views";
 import type { SpecimenContract } from "@/components/scene/specimen-contract";
+import type { QualityTier } from "@/components/scene/gargantua-render";
+import type { ObservationInstrument } from "@/lib/observatory";
 import {
   evaluateCapabilities,
   readSignals,
@@ -28,6 +30,7 @@ import {
   AXIS_LABELS,
   LIGHT_LABELS,
   OBSERVATION_LABELS,
+  RAYMARCH_LABELS,
   REGISTRO_SECTIONS,
   RENDER_LABELS,
 } from "./observatory-labels";
@@ -82,6 +85,37 @@ const HOLD_MS = 220;
  * además el que hace falta para salir de ahí.
  */
 const ROLL_FLOOR = 2;
+
+/**
+ * El reloj de un gesto de puntero.
+ *
+ * `event.timeStamp` lo fija el navegador al CREAR el evento, así que mide
+ * cuándo ocurrió y no cuándo se pudo atender — que es la diferencia entre medir
+ * un gesto y medir un gesto más el fotograma que lo bloqueó. El respaldo cubre
+ * entornos donde ese campo llega a cero, y deja además el camino por el que la
+ * suite puede espiar el reloj.
+ */
+function stamp(event: { timeStamp: number }): number {
+  return event.timeStamp > 0 ? event.timeStamp : performance.now();
+}
+
+/**
+ * Los tres interruptores de física, y el orden es la lectura.
+ *
+ * Doppler, secundarias y lente van de lo más cercano a lo más lejano: lo que
+ * le pasa al material del disco, lo que le pasa a la luz que ese disco emite, y
+ * lo que le pasa a la luz que sólo estaba de paso. Es el mismo criterio que
+ * ordena `DATOS` —objeto, observación, render— aplicado a la física.
+ *
+ * Vive fuera del componente porque es una tabla, no un estado: declararla
+ * dentro del render la recrearía en cada pase y cambiaría la identidad de cada
+ * `Fragment` con ella.
+ */
+const PHYSICS = [
+  ["doppler", "Doppler"],
+  ["secundarias", "Secundarias"],
+  ["lente", "Lente"],
+] as const;
 
 /** Dos dígitos. Es tipografía de instrumento: mantiene la columna del raíl
  *  alineada y hace que `01` y `06` ocupen lo mismo. */
@@ -156,6 +190,12 @@ function Instrument({
    * indistinguibles y el mando dejaría de funcionar con teclado.
    */
   const since = useRef<number | null>(null);
+  /**
+   * El veredicto del gesto, decidido AL SOLTAR y leído al hacer clic.
+   *
+   * `null` significa que no hubo puntero —teclado— y entonces siempre conmuta.
+   */
+  const held = useRef(false);
   return (
     <button
       type="button"
@@ -170,31 +210,64 @@ function Instrument({
           `preventDefault` en `pointerup` NO sirve para esto —el clic de un
           botón no se cancela desde el evento de puntero— y probarlo costó una
           captura: el `aria-pressed` se quedaba en `true` después de comparar.
-
-          El reloj es `performance.now()` y no `event.timeStamp` por una razón
-          de prueba: el `timeStamp` de un evento sintético es de sólo lectura y
-          no se puede fijar desde un test, así que la diferencia entre comparar
-          y conmutar quedaba fuera de la suite. Los dos son monótonos y en
-          milisegundos; éste además se puede espiar.
         */
-        const held =
-          since.current !== null && performance.now() - since.current > HOLD_MS;
+        const comparado = held.current;
         since.current = null;
-        if (!held) onToggle();
+        held.current = false;
+        if (!comparado) onToggle();
       }}
       onPointerDown={
         onHold
-          ? () => {
-              since.current = performance.now();
+          ? (event) => {
+              since.current = stamp(event);
+              held.current = false;
               onHold(true);
             }
           : undefined
       }
-      onPointerUp={onHold ? () => onHold(false) : undefined}
+      onPointerUp={
+        onHold
+          ? (event) => {
+              /*
+                EL GESTO SE MIDE CON EL RELOJ DEL EVENTO, NO CON EL DE QUIEN LO
+                ATIENDE — y esto costó que un mando entero dejara de funcionar.
+
+                La versión anterior comparaba `performance.now()` en el momento
+                del CLIC contra el del `pointerdown`. Los dos relojes son
+                monótonos, así que parecía equivalente, y sobre el Tesseracto lo
+                era: medido, un clic normal entrega `down → up` en 113 ms, muy
+                por debajo del umbral.
+
+                Sobre Gargantúa el mismo clic mide **742 ms**. No porque el dedo
+                tarde más, sino porque entre los dos eventos el hilo principal se
+                queda dentro de un fotograma del raymarch — cientos de pasos de
+                integración por píxel— y los entrega juntos al salir. O sea que
+                el reloj del manejador no mide el gesto: mide el gesto MÁS lo
+                que la página tardó en atenderlo.
+
+                La consecuencia era un mando roto en el sitio donde más se nota:
+                en un equipo lento, pulsar `BLOOM` nunca conmutaba el pestillo,
+                siempre comparaba, y el visitante veía un botón que no responde.
+                Y no era exclusivo de este espécimen: le pasaría a cualquiera en
+                cuanto un fotograma pasara de 220 ms.
+
+                `event.timeStamp` lo pone el navegador cuando CREA el evento, no
+                cuando lo entrega, así que mide el gesto de verdad. El respaldo a
+                `performance.now()` existe para entornos donde ese campo llega a
+                cero, y la decisión se toma aquí —al soltar— porque es el último
+                momento en que los dos extremos del gesto están disponibles.
+              */
+              held.current =
+                since.current !== null && stamp(event) - since.current > HOLD_MS;
+              onHold(false);
+            }
+          : undefined
+      }
       onPointerCancel={
         onHold
           ? () => {
               since.current = null;
+              held.current = false;
               onHold(false);
             }
           : undefined
@@ -203,6 +276,7 @@ function Instrument({
         onHold
           ? () => {
               since.current = null;
+              held.current = false;
               onHold(false);
             }
           : undefined
@@ -376,6 +450,25 @@ export function ObservatoryViewer({
   );
 
   /*
+    EL NIVEL DE CALIDAD, del mismo veredicto y no de otra pregunta.
+
+    Sólo lo consume Gargantúa —las dos palancas de un raymarcher son píxeles y
+    pasos, y una malla no tiene ninguna de las dos— pero se resuelve aquí porque
+    aquí ya está el veredicto. Preguntarle otra vez al navegador desde la escena
+    daría dos respuestas que pueden discrepar, y la que manda tiene que ser la
+    misma que decidió si hay escena.
+  */
+  const tier = useSyncExternalStore<QualityTier>(
+    () => () => {},
+    () =>
+      evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced }))
+        .level === "deep"
+        ? "deep"
+        : "orbit",
+    () => "orbit",
+  );
+
+  /*
     El estado del interruptor en el MOMENTO DE MONTAR, y nada más.
 
     Va por ref y no por dependencia a propósito: encender o apagar el
@@ -419,13 +512,46 @@ export function ObservatoryViewer({
   const [views, setViews] = useState<readonly ObservationView[]>([]);
   const [view, setView] = useState(0);
   const [canProbe, setCanProbe] = useState(false);
-  /** El campo de visión del instrumento. Constante, así que es un dato del
-   *  aparato y no telemetría — pero se lee del handle y no se teclea. */
-  const [fov, setFov] = useState<number | null>(null);
+  /*
+    QUÉ MANDOS OFRECE ESTA MUESTRA, dicho por el instrumento.
+
+    `fov` se fue de aquí: dejó de ser una constante del aparato cuando las
+    vistas de Gargantúa empezaron a cambiar de objetivo, así que ahora viaja con
+    la telemetría y se escribe en su hueco como los demás números.
+
+    Lo que entra en su lugar es la lista de instrumentos. La interfaz no deduce
+    qué puede hacer una muestra —eso lo sabe quien la va a ejecutar— y así
+    montar la séptima no pasa por este archivo.
+  */
+  const [instruments, setInstruments] = useState<
+    readonly ObservationInstrument[]
+  >([]);
+  /*
+    Si esta muestra tiene luz que mover. Gargantúa es la única que no, y el
+    método opcional del handle es la fuente: no hay una segunda lista que
+    mantener en paralelo.
+  */
+  const [hasLight, setHasLight] = useState(true);
+  /** Si la cámara se lleva con la mano. Falso sólo en Gargantúa (§7). */
+  const [canOrbit, setCanOrbit] = useState(true);
   const [probe, setProbe] = useState(false);
   /** Qué instrumento se está sosteniendo para comparar. Se suma al pestillo:
    *  el efecto es el mismo, la intención no. */
   const [holding, setHolding] = useState<"bloom" | "material" | null>(null);
+  /*
+    LOS TRES INTERRUPTORES DE FÍSICA, sólo en Gargantúa.
+
+    Van juntos en un objeto y no en tres estados porque son la misma clase de
+    gesto —apagar una rama del integrador— y porque el efecto que los propaga
+    puede entonces ser uno solo. Arrancan los tres encendidos, que es el estado
+    canónico: un instrumento de inspección nunca puede ser la apariencia por
+    defecto de una ruta (§6).
+  */
+  const [physics, setPhysics] = useState({
+    doppler: true,
+    secundarias: true,
+    lente: true,
+  });
 
   /*
     LA TELEMETRÍA SE ESCRIBE, NO SE RENDERIZA.
@@ -609,7 +735,8 @@ export function ObservatoryViewer({
   function commitLight() {
     const key = Number(dials.current.key?.value ?? light.current.key);
     const roll = Number(dials.current.roll?.value ?? light.current.roll);
-    handleRef.current?.setLight({ key, roll });
+    // Opcional porque Gargantúa no lo trae: su espécimen ES la fuente de luz.
+    handleRef.current?.setLight?.({ key, roll });
   }
 
   /**
@@ -698,7 +825,26 @@ export function ObservatoryViewer({
     write("azimuth", `${fixed(measured.azimuth, 1)}°`);
     write("elevation", `${signed(measured.elevation, 1)}°`);
     write("distance", fixed(measured.distance, 2));
-    write("key", `${fixed(measured.key, 1)}°`);
+    write("fov", `${fixed(measured.fov, 0)}°`);
+    /*
+      LO QUE NO SE MIDE NO SE ESCRIBE.
+
+      `key` y las dos lecturas del raymarch son opcionales porque describen
+      cosas que no todos los especímenes tienen: el ángulo de clave no existe
+      donde la luz es el propio objeto, y la mezcla temporal no existe donde no
+      hay integrador. Rellenar el hueco con un cero habría sido más corto y
+      habría convertido una ausencia en una medición falsa, que es justo lo que
+      el §8 prohíbe.
+    */
+    if (measured.key !== undefined) write("key", `${fixed(measured.key, 1)}°`);
+    if (measured.blend !== undefined) {
+      write("blend", fixed(measured.blend, 3));
+    }
+    if (measured.accumulated !== undefined) {
+      write("accumulated", String(measured.accumulated));
+    }
+
+    if (measured.key === undefined || measured.roll === undefined) return;
 
     /*
       Y LOS DIALES DE LA LUZ SE MUEVEN SOLOS.
@@ -708,21 +854,22 @@ export function ObservatoryViewer({
       dos mandos lo reflejan en el mismo fotograma. Es la diferencia entre un
       dial y una casilla: éste sabe lo que está pasando aunque no lo toques.
     */
-    light.current = { key: measured.key, roll: measured.roll };
+    const { key: measuredKey, roll: measuredRoll } = measured;
+    light.current = { key: measuredKey, roll: measuredRoll };
     const dialled = (slot: "key" | "roll", value: number) => {
       const node = dials.current[slot];
       if (node && grab.current !== slot) node.value = String(Math.round(value));
     };
-    dialled("key", measured.key);
+    dialled("key", measuredKey);
     const keyed = readouts.current["dial-key"];
-    if (keyed) keyed.textContent = `${fixed(measured.key, 1)}°`;
+    if (keyed) keyed.textContent = `${fixed(measuredKey, 1)}°`;
     /* El giro sólo existe fuera del eje de mirada: con la luz casi alineada con
        la cámara su posición en el reloj de la pantalla es ruido, y el dial
        conserva el último valor con sentido en vez de temblar. */
-    if (measured.key > ROLL_FLOOR && measured.key < 180 - ROLL_FLOOR) {
-      dialled("roll", measured.roll);
+    if (measuredKey > ROLL_FLOOR && measuredKey < 180 - ROLL_FLOOR) {
+      dialled("roll", measuredRoll);
       const rolled = readouts.current["dial-roll"];
-      if (rolled) rolled.textContent = `${signed(measured.roll, 0)}°`;
+      if (rolled) rolled.textContent = `${signed(measuredRoll, 0)}°`;
     }
   }
 
@@ -778,6 +925,12 @@ export function ObservatoryViewer({
           canvas,
           world: { id, visual, accent, secondary, placement },
           motion: motionRef.current,
+          /*
+            El nivel de calidad del raymarch. Sólo lo mira Gargantúa, y sale del
+            MISMO veredicto que decide si hay escena: preguntarle otra vez al
+            navegador daría dos respuestas que pueden discrepar.
+          */
+          tier,
           // El aviso puede llegar después de desmontar —el bucle sigue vivo un
           // fotograma— así que la guarda es la misma bandera del import.
           onFirstFrame: () => {
@@ -798,7 +951,9 @@ export function ObservatoryViewer({
         setContract(handle.contract);
         setViews(handle.views);
         setCanProbe(handle.canProbe);
-        setFov(handle.fov);
+        setInstruments(handle.instruments);
+        setHasLight(typeof handle.setLight === "function");
+        setCanOrbit(handle.canOrbit);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -814,7 +969,7 @@ export function ObservatoryViewer({
     // nada. Sin esto, el re-render que trae el veredicto real no volvería a
     // llamar al efecto y el visor se quedaría vacío en un equipo perfectamente
     // capaz.
-  }, [flat, id, visual, accent, secondary, placement]);
+  }, [flat, tier, id, visual, accent, secondary, placement]);
 
   useEffect(() => {
     // La ref se sincroniza AQUÍ y no durante el render: escribirla al renderizar
@@ -830,8 +985,18 @@ export function ObservatoryViewer({
   }, [bloom, holding]);
 
   useEffect(() => {
-    handleRef.current?.setEmission(emission && holding !== "material");
+    handleRef.current?.setEmission?.(emission && holding !== "material");
   }, [emission, holding]);
+
+  /* Los tres interruptores de física, propagados de una vez: son la misma clase
+     de gesto y separarlos en tres efectos sólo multiplicaría las llamadas. */
+  useEffect(() => {
+    const set = handleRef.current?.setPhysics;
+    if (!set) return;
+    set("uDoppler", physics.doppler);
+    set("uSecondary", physics.secundarias);
+    set("uSkyLens", physics.lente);
+  }, [physics]);
 
   useEffect(() => {
     handleRef.current?.setView(view);
@@ -925,13 +1090,27 @@ export function ObservatoryViewer({
     <>Señala una arista del hipercubo</>
   ) : mode === "estudio" ? (
     <>Mantén un mando para comparar</>
-  ) : (
+  ) : canOrbit ? (
     <>
       Arrastra para girar
       <span aria-hidden="true" className="observatory__sep">
         ·
       </span>
       rueda para acercar
+    </>
+  ) : (
+    /*
+      Gargantúa no se arrastra, así que su pista no puede decirlo. Lo que dice
+      en su lugar es lo único que sí se puede hacer desde el reposo — y es una
+      frase que además explica por qué: aquí se ELIGE un punto de vista de una
+      lista, no se busca uno.
+    */
+    <>
+      Cuatro vistas en
+      <span aria-hidden="true" className="observatory__sep">
+        ·
+      </span>
+      Estudio
     </>
   );
 
@@ -1239,22 +1418,65 @@ export function ObservatoryViewer({
                       <span className="observatory__unit"> radios</span>
                     </dd>
                   </div>
-                  <div>
-                    <dt>{OBSERVATION_LABELS.key}</dt>
-                    <dd>{readout("", "panel-key")}</dd>
-                  </div>
-                  {fov === null ? null : (
+                  {/* El ángulo de clave sólo donde hay clave que medir. En
+                      Gargantúa la luz es el propio objeto, así que la fila
+                      entera se va en vez de enseñar un cero. */}
+                  {hasLight ? (
                     <div>
-                      <dt>{OBSERVATION_LABELS.fov}</dt>
-                      <dd>{fov}°</dd>
+                      <dt>{OBSERVATION_LABELS.key}</dt>
+                      <dd>{readout("", "panel-key")}</dd>
                     </div>
-                  )}
+                  ) : null}
+                  <div>
+                    <dt>{OBSERVATION_LABELS.fov}</dt>
+                    <dd>{readout("", "panel-fov")}</dd>
+                  </div>
                 </dl>
               </section>
 
               <section>
                 <h2 className="observatory__legend">Render</h2>
                 <dl>
+                  {/*
+                    LO QUE DEFINE A UN OBJETO SIN MALLA.
+
+                    Las tres cifras de abajo dicen la verdad sobre Gargantúa y
+                    no dicen nada: un cuad de pantalla completa es un cuad. Lo
+                    que de verdad la describe —dónde está su horizonte, hasta
+                    dónde llega su disco, cuántos pasos da el integrador y
+                    cuántos fotogramas lleva promediados— es esto, y sale del
+                    mismo código que lo usa: los radios del módulo de shaders,
+                    los pasos del `define` con el que se compila el material y
+                    la mezcla leída del uniform que el bucle acaba de escribir.
+                  */}
+                  {contract.raymarch ? (
+                    <>
+                      <div>
+                        <dt>{RAYMARCH_LABELS.rs}</dt>
+                        <dd>{fixed(contract.raymarch.rs, 2)}</dd>
+                      </div>
+                      <div>
+                        <dt>{RAYMARCH_LABELS.disk}</dt>
+                        <dd>
+                          {fixed(contract.raymarch.diskInner, 2)} –{" "}
+                          {fixed(contract.raymarch.diskOuter, 0)}
+                          <span className="observatory__unit"> rs</span>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{RAYMARCH_LABELS.steps}</dt>
+                        <dd>{contract.raymarch.steps}</dd>
+                      </div>
+                      <div>
+                        <dt>{RAYMARCH_LABELS.blend}</dt>
+                        <dd>{readout("", "panel-blend")}</dd>
+                      </div>
+                      <div>
+                        <dt>{RAYMARCH_LABELS.accumulated}</dt>
+                        <dd>{readout("", "panel-accumulated")}</dd>
+                      </div>
+                    </>
+                  ) : null}
                   <div>
                     <dt>{RENDER_LABELS.draws}</dt>
                     <dd>{contract.draws}</dd>
@@ -1407,6 +1629,18 @@ export function ObservatoryViewer({
                 porque rodear el espécimen cambia de dónde le llega la clave. Un
                 dial que no sabe lo que está pasando es una casilla con estilo.
               */}
+              {/*
+                LUZ, y la única muestra que no la tiene.
+
+                Este instrumento gira el espécimen alrededor del origen del
+                mundo para barrer su iluminación sin mover el encuadre. En
+                Gargantúa el espécimen ES el origen y la luz es su propio disco,
+                así que no hay nada que girar: la fila entera desaparece en vez
+                de quedarse con dos diales que no obedecen. Es el §5 —el
+                laboratorio adapta sus instrumentos a la muestra— aplicado a lo
+                más visible de la consola.
+              */}
+              {hasLight ? (
               <div className="observatory__row">
                 <p className="observatory__legend">Luz</p>
                 <div className="observatory__dials">
@@ -1422,6 +1656,7 @@ export function ObservatoryViewer({
                   {dial("roll", "Giro", LIGHT_LABELS.roll, -180, 180)}
                 </div>
               </div>
+              ) : null}
 
               {/*
                 CÁMARA: dónde se ha sentado el visitante.
@@ -1459,13 +1694,55 @@ export function ObservatoryViewer({
                     onToggle={() => setBloom((on) => !on)}
                     onHold={(held) => setHolding(held ? "bloom" : null)}
                   />
-                  <span aria-hidden="true" className="observatory__div" />
-                  <Instrument
-                    label="Material"
-                    pressed={!emission || holding === "material"}
-                    onToggle={() => setEmission((on) => !on)}
-                    onHold={(held) => setHolding(held ? "material" : null)}
-                  />
+                  {/*
+                    MATERIAL sólo donde hay material que aislar. `uEmission`
+                    vive en el shader común de los cuerpos: Miller y Edmunds no
+                    escriben término emisivo y Gargantúa no tiene malla, así que
+                    sobre los tres el botón no cambiaría un píxel. El criterio
+                    de siempre: un mando que no hace nada es peor que ausente.
+                  */}
+                  {instruments.includes("material") ? (
+                    <>
+                      <span aria-hidden="true" className="observatory__div" />
+                      <Instrument
+                        label="Material"
+                        pressed={!emission || holding === "material"}
+                        onToggle={() => setEmission((on) => !on)}
+                        onHold={(held) => setHolding(held ? "material" : null)}
+                      />
+                    </>
+                  ) : null}
+                  {/*
+                    LOS TRES DE GARGANTÚA.
+
+                    No son instrumentos inventados para llenar la fila: son
+                    ramas que llevan escritas en el fragmento desde que se
+                    escribió y que hasta este pase valían 1 y no tocaba nadie.
+                    Cada una retira una pieza de física concreta —el beaming
+                    relativista y la asimetría entre los dos lados, las imágenes
+                    de orden superior, la curvatura del campo estelar— y las
+                    tres son reversibles y están etiquetadas, que es lo que la
+                    cláusula de inspección del §6 exige de un diagnóstico.
+
+                    Van sin pulsación sostenida: su A/B no es un vistazo de
+                    medio segundo, es mirar la imagen con y sin la pieza. La
+                    comparación por pulsación se queda donde nació, en los dos
+                    mandos cuyo efecto se lee de un golpe.
+                  */}
+                  {PHYSICS.filter(([key]) => instruments.includes(key)).map(
+                    ([key, label]) => (
+                      <Fragment key={key}>
+                        <span aria-hidden="true" className="observatory__div" />
+                        <Instrument
+                          label={label}
+                          pressed={!physics[key]}
+                          onToggle={() =>
+                            setPhysics((on) => ({ ...on, [key]: !on[key] }))
+                          }
+                        />
+                      </Fragment>
+                    ),
+                  )}
                   {/*
                     LA SONDA sólo aparece donde se puede nombrar lo que se
                     señala. Hoy es el Tesseracto y nada más: su topología la
@@ -1561,7 +1838,28 @@ export function ObservatoryViewer({
             <button
               type="button"
               className="observatory__button"
-              onClick={() => handleRef.current?.reset()}
+              onClick={() => {
+                /*
+                  REAJUSTAR TIENE QUE DEVOLVER TAMBIÉN EL RÓTULO.
+
+                  `reset()` lleva el instrumento a la pose del preset, que es la
+                  vista 01. La interfaz, en cambio, se quedaba marcando la que
+                  el visitante hubiera elegido: el mando decía `SOMBRA`, la
+                  frase de debajo explicaba qué estudia `SOMBRA`, y la cámara
+                  estaba en la canónica.
+
+                  Se destapó montando Gargantúa —donde las vistas SON la
+                  interacción y la telemetría delata la pose, 42 radios y 9° de
+                  elevación contra los 34 y 12° que prometía el rótulo— pero el
+                  defecto era de los cinco sólidos también: allí `reset()`
+                  restaura la esférica de casa y nadie tocaba `view`. Sólo que
+                  con una figura que se puede orbitar a mano, una discrepancia
+                  entre el rótulo y la pose se lee como «la vista era
+                  aproximada» en vez de como un error.
+                */
+                handleRef.current?.reset();
+                setView(0);
+              }}
             >
               <span className="observatory__ink">Reajustar</span>
             </button>

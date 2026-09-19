@@ -219,6 +219,54 @@ desbordamiento, `DATOS` y `REGISTRO` quedaban fuera y O10 bis los cazó —un ma
 que hay que desplazar para tocar es un mando que no está—. Su valoración visual
 queda abierta.
 
+**Observatorio V3 — Gargantúa, el espécimen sin malla (2026-09-19):** la sección
+`V3 — Gargantúa, el espécimen que no es una malla` de
+`docs/design/tesseract-experimentos.md` manda sobre `V2`, el §6 y el §7 en **qué
+ofrece el Observatorio a un objeto sin geometría y dónde viven los números que
+lo dibujan**. El catálogo pasa a `03 / 06 MONTADOS`. `createBody` devuelve `null`
+para ella, así que rompía tres contratos a la vez —la ruta leía
+`preset.instruments` y Gargantúa no tiene preset a propósito (§6: ninguna luz
+añadida), `specimenContract` recorre un objeto que no existe, y
+`observationPlacement` mueve el espécimen alrededor de la lámpara cuando aquí el
+espécimen ES la lámpara—. La salida es el §5 un nivel más abajo: **el
+laboratorio adapta también su contrato de observación**. De los tres caminos
+para el driver se eligió **extraer los DATOS y no la maquinaria**:
+`components/scene/gargantua-render.ts` guarda nivel, bloom, exposición, Halton,
+mezcla, guarda de sombra y fábrica de uniformes, y `system-scene.ts` sólo
+cambia literales por importaciones — **el diff tiene que ser auditable de un
+vistazo**. Verificado con captura antes/después: media |Δ| 0.157 contra un suelo
+de ruido de 0.231, y las métricas reproducen el cierre del §14 duodecies.
+`lib/gargantua-views.ts` declara las cuatro vistas con seis números de CÁMARA y
+no dos de luz; sus distancias se calibran con aritmética —la sombra ocupa
+`2.598/(d·tan(fov/2))` del alto, el disco `17/(d·tan(fov/2)·aspecto)` del
+semiancho— porque estimarlas dejó `LENTE` y `SOMBRA` como una pared de crema, y
+luego como la misma imagen. La canónica repite los cinco números de
+`SYSTEM_POSE` porque el §2 prohíbe importarlo, y un test lee los dos archivos.
+`LUZ`, `SONDA`, `MATERIAL` y la lectura `CLAVE` desaparecen; entran `DOPPLER`,
+`SECUNDARIAS` y `LENTE`, que son ramas reales del fragmento medidas contra un
+suelo de 0.0000 (26.4 / 1.3 / 3.5). El bucle sigue dibujando hasta asentarse
+—48 fotogramas, medidos, no deducidos— y entonces para (O12). **Trampa de
+medición: en Chromium headless rAF deja de dispararse si nada fuerza un
+pintado**, así que esperar entre capturas no deja pasar fotogramas; hay que
+capturar en cadena y leer el contador de `DATOS`. Tres defectos preexistentes
+corregidos: **un clic no conmutaba el pestillo en un render lento** —medido
+`pointerdown → pointerup` 742 ms en Gargantúa contra 113 ms en el Tesseracto,
+así que todo clic pasaba por comparación; el gesto se mide ahora con
+`event.timeStamp` y no con el reloj del manejador—; `Reajustar` devolvía la
+cámara pero no el rótulo de la vista; y `FlatWorldBody` no dibujaba el agujero
+negro, lo que dejaba la ruta sin cuerpo sin JS (O7/O8) — la exclusión se mudó a
+`system-map.tsx`, que es donde está el motivo. En móvil el retroceso por aspecto
+se topa en cuanto la sombra baja del 12 % del alto: perseguir que el disco
+quepa entero llevaba la cámara a 145 radios y dejaba el espécimen en un borrón.
+Herramientas: `observatory-shot.mjs` gana `--asentamiento`, `--vista=` y
+`--movil` y **fija los mandos leyendo `aria-pressed`, no contando clics**;
+`gargantua-metrics.mjs` gana `--centro`, `--radio` y `--encuadre`; nace
+`tools/shot-diff.mjs`. Y se corrigió que `shot.mjs`, `composition.mjs` y
+`stability.mjs` llevaban desde el 2026-09-13 capturando el perfil plano por una
+clave de almacenamiento renombrada. El System Map, sus cuerpos, cámara y
+materiales no cambian. **El `registro` de Gargantúa sigue en borrador,
+pendiente de Jonás, y su valoración visual queda abierta.**
+
 **UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
 anterior en consentimiento, pausa y perfil ligero:**
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior

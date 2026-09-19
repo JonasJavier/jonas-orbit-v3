@@ -78,7 +78,18 @@ const page = await context.newPage();
 page.on("pageerror", (e) => console.error("[page error]", e.message));
 await page.addInitScript(
   ({ glow, reloj, acumular, flat }) => {
-    if (!flat) localStorage.setItem("jonas-orbit:efectos-forzados", "true");
+    /*
+      El interruptor global, encendido a propósito.
+
+      La clave es `reducir-efectos = "false"`, que es lo que lee
+      `useForcedEffects()`. Antes aquí se escribía `efectos-forzados`, una clave
+      que el pase de movimiento unificado (2026-09-13) retiró y que hoy no lee
+      NADIE: desde entonces esta herramienta capturaba el perfil plano —el atlas
+      en SVG— en vez de la escena, y no se notó porque la imagen sigue saliendo.
+      Una captura del cuerpo equivocado no es una captura mala, es una medición
+      de otra cosa.
+    */
+    if (!flat) localStorage.setItem("jonas-orbit:reducir-efectos", "false");
     // La escena lee el banco UNA vez al montarse, así que tiene que estar
     // escrito antes de que corra un solo script de la página.
     const banco = {};

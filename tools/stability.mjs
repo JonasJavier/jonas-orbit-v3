@@ -47,7 +47,10 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 await page.addInitScript(() =>
-  localStorage.setItem("jonas-orbit:efectos-forzados", "true"),
+  // `reducir-efectos = "false"` es lo que lee `useForcedEffects()`. La clave
+  // anterior, `efectos-forzados`, no la lee nadie desde el pase de movimiento
+  // unificado: con ella esta herramienta medía el perfil plano.
+  localStorage.setItem("jonas-orbit:reducir-efectos", "false"),
 );
 await page.goto(url, { waitUntil: "load", timeout: 120000 });
 await page.waitForTimeout(16000);

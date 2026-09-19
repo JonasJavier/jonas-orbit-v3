@@ -5,7 +5,7 @@ import { FlatWorldBody } from "@/components/flat-world-body";
 import { ObservatoryViewer } from "@/components/observatory-viewer";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
-import { OBSERVATION_PRESETS } from "@/lib/observatory";
+import { instrumentsFor } from "@/lib/observatory";
 import {
   observatoryCatalog,
   OBSERVATORY_SLUGS,
@@ -57,6 +57,10 @@ const INSTRUMENT_LABELS: Record<string, string> = {
   bloom: "Bloom",
   material: "Material",
   datos: "Datos",
+  // Los tres de Gargantúa: ramas reales del raymarch, no adornos.
+  doppler: "Doppler",
+  secundarias: "Secundarias",
+  lente: "Lente",
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -107,18 +111,23 @@ export default async function ObservatoryRoute({ params }: Props) {
   const entry = catalog.find((slot) => slot.id === id)!;
   const observatory = world.prose.observatory;
   const descriptor = observatory?.descriptor ?? world.prose.eyebrow;
-  const preset = OBSERVATION_PRESETS[id as keyof typeof OBSERVATION_PRESETS];
 
   /*
     Los mandos que TENDRÁ esta muestra, dichos en frío.
 
-    Salen de `preset.instruments` —la tabla del §6, que declara qué puede hacer
-    la escena con cada cuerpo— más `Registro`, que no es una capacidad de la
-    escena sino contenido escrito. No se listan mandos que luego no aparezcan:
-    un aparato que promete en frío lo que no da encendido es peor que uno mudo.
+    Salen de `instrumentsFor` —que cubre los SEIS— más `Registro`, que no es una
+    capacidad de la escena sino contenido escrito. No se listan mandos que luego
+    no aparezcan: un aparato que promete en frío lo que no da encendido es peor
+    que uno mudo.
+
+    Antes esto leía `preset.instruments`, y ahí estaba el defecto que la sexta
+    muestra destapó: `OBSERVATION_PRESETS` excluye a Gargantúa a propósito —no
+    recibe ninguna luz añadida— así que montarla habría reventado esta línea en
+    el build. La salida no era darle un preset, era separar «cómo se ilumina»
+    de «qué se puede hacer con ella».
   */
   const bank = [
-    ...preset.instruments.map((key) => INSTRUMENT_LABELS[key] ?? key),
+    ...instrumentsFor(id).map((key) => INSTRUMENT_LABELS[key] ?? key),
     ...(observatory?.registro ? ["Registro"] : []),
   ];
 

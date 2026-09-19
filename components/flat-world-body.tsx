@@ -347,20 +347,124 @@ function Ranger() {
   );
 }
 
+/**
+ * GARGANTÚA SIN GPU, y por qué hacía falta.
+ *
+ * Este componente cubría cinco de los seis visuales y devolvía `null` para el
+ * sexto, con el argumento de que «ya la pinta SiteBackdrop». Era cierto en el
+ * System Map y dejó de serlo al montar el Observatorio: la cara servida de
+ * `/es/experimentos/observatorio/gargantua` usa esta misma figura como esquema
+ * del espécimen, así que sin dibujo la ruta salía sin cuerpo justo para quien
+ * no tiene JavaScript ni equipo — que es a quien O7 y O8 protegen.
+ *
+ * ── Qué se dibuja, y qué NO se intenta dibujar ──────────────────────────────
+ *
+ * No es una miniatura del raymarch. Un agujero negro sin integrador no tiene
+ * arcos lensados ni anillo de fotones, y fingirlos con elipses habría sido
+ * exactamente el dato inventado que este proyecto persigue. Lo que se dibuja
+ * son las tres cosas que SÍ son ciertas sin integrar nada:
+ *
+ *  · **La sombra**, un disco negro. Su radio sale de la geometría real —el
+ *    parámetro de impacto crítico, √27/2 · rs ≈ 2.6 rs— y no de lo que quede
+ *    bien: es la misma cifra que `placement.size` publica para el blanco de
+ *    clic del mapa.
+ *  · **El disco de acreción visto de canto**, con el borde interior y el
+ *    exterior en su proporción real (1.58 y 17 rs). Por eso la elipse es tan
+ *    ancha comparada con la sombra: ésa ES la relación.
+ *  · **El reparto de luz entre los dos lados**, que es lo único que el ojo
+ *    identifica de inmediato. El lado que se acerca llega crema y el que se
+ *    aleja, cobre apagado — la asimetría del §14 duodecies punto 5, dicha con
+ *    un degradado en vez de con un beaming.
+ *
+ * El arco que cruza por encima de la sombra se dibuja porque es la lectura
+ * central de la composición aprobada —la cara lejana del disco doblada por la
+ * gravedad— y se dibuja como lo que es: la continuación de la misma elipse,
+ * no una segunda figura.
+ */
+function Gargantua() {
+  /*
+    Las proporciones, todas derivadas de la geometría y ninguna elegida:
+    sombra 2.6 rs, disco de 1.58 a 17 rs. A 3.5 px por rs la sombra mide 9.1 de
+    radio y el disco llega a 59.5, que es lo que hace que quepa en 140.
+  */
+  const PX = 3.5;
+  const shadow = 2.598 * PX;
+  const outer = 17 * PX;
+  const inner = 1.58 * PX;
+  // Canto: el semieje menor es el mayor por el seno de la elevación de la pose
+  // aprobada, 9°. El mismo aplanamiento de 6.39 : 1 que fija `scene-poses.ts`.
+  const squash = Math.sin((9 * Math.PI) / 180);
+  return (
+    <svg viewBox="0 0 140 140" focusable="false">
+      <defs>
+        <linearGradient id="flat-gargantua-disk" x1="0" y1="0" x2="1" y2="0">
+          {/* Izquierda el lado que se acerca: más luz, más densidad y más
+              crema. Derecha el que se aleja: cobre y apagado. */}
+          <stop stopColor="#fff4e2" stopOpacity="0.95" />
+          <stop offset="0.42" stopColor="#f3c489" stopOpacity="0.78" />
+          <stop offset="1" stopColor="#9e5a26" stopOpacity="0.5" />
+        </linearGradient>
+      </defs>
+      <g data-flat-part="disk" fill="none" stroke="url(#flat-gargantua-disk)">
+        {/* Tres trazos entre el borde interior y el exterior: el disco no es
+            una línea, es una extensión radial con estructura. */}
+        {[0.34, 0.62, 0.92].map((t, i) => {
+          const rx = inner + (outer - inner) * t;
+          return (
+            <ellipse
+              key={t}
+              cx="70"
+              cy="70"
+              rx={rx.toFixed(2)}
+              ry={Math.max(1.4, rx * squash).toFixed(2)}
+              strokeWidth={(3.4 - i * 0.7).toFixed(2)}
+              strokeOpacity={(0.8 - i * 0.2).toFixed(2)}
+            />
+          );
+        })}
+      </g>
+      {/* El arco de la cara lejana, doblado por encima de la sombra. Es la
+          MISMA elipse vista por detrás: media vuelta, no otra figura. */}
+      <path
+        data-flat-part="lensed"
+        d={`M ${70 - outer * 0.52} 70 A ${outer * 0.52} ${shadow * 1.5} 0 0 1 ${70 + outer * 0.52} 70`}
+        fill="none"
+        stroke="url(#flat-gargantua-disk)"
+        strokeWidth="2.6"
+        strokeOpacity="0.62"
+      />
+      {/* Y la sombra encima de todo: es lo único que no deja pasar nada. */}
+      <circle
+        cx="70"
+        cy="70"
+        data-flat-part="shadow"
+        fill="#000"
+        r={shadow.toFixed(2)}
+      />
+    </svg>
+  );
+}
+
 const DRAWINGS: Partial<Record<WorldNavItem["visual"], () => ReactNode>> = {
   tesseract: Tesseract,
   water: Miller,
   ship: Endurance,
   desert: Edmunds,
   beacon: Ranger,
+  "black-hole": Gargantua,
 };
 
 /**
  * Representación estática de un destino para el perfil `flat`.
  *
  * Vive dentro del mismo slot DOM que el proxy interactivo, por lo que hereda
- * posición y target sin inventar otro mapa. Gargantúa se omite porque ya la
- * pinta SiteBackdrop. La capa completa es decorativa y no recibe puntero.
+ * posición y target sin inventar otro mapa. La capa completa es decorativa y no
+ * recibe puntero.
+ *
+ * Los seis están dibujados desde que el Observatorio monta a Gargantúa: en el
+ * System Map su figura la pone `SiteBackdrop`, pero la cara servida del
+ * laboratorio usa ESTE componente como esquema del espécimen, y ahí no hay
+ * nadie más que la dibuje.
  */
 export function FlatWorldBody({ world }: { world: FlatWorld }) {
   const Drawing = DRAWINGS[world.visual];
