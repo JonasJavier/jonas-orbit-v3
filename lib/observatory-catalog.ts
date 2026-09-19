@@ -29,6 +29,13 @@ import { getWorld } from "@/lib/worlds";
 export const OBSERVATORY_SLUGS: Readonly<Record<string, WorldId>> = {
   tesseracto: "tesseract",
   endurance: "endurance",
+  /*
+    La tercera, y la que demuestra que la tabla era de verdad el único sitio:
+    montarla no tocó la recepción, ni el raíl, ni el sitemap, ni
+    `generateStaticParams`. Sigue siendo la muestra 06 del catálogo —ese orden
+    lo fija `OBSERVATION_ORDER` y no esta tabla— y ahora tiene puerta.
+  */
+  gargantua: "gargantua",
 };
 
 export interface SpecimenEntry {

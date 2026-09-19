@@ -32,12 +32,25 @@ const ESPECIMENES = [
   "/es/experimentos/observatorio/endurance",
 ];
 
+/**
+ * Enciende los efectos a propósito.
+ *
+ * Sin esto el gate de capacidad decide `flat` sobre una GPU por software y el
+ * visor entrega el respaldo plano: no hay instrumento que probar. Es el mismo
+ * precedente que Miller y Edmunds, y se separa de `contarDibujos` porque son
+ * dos necesidades distintas — casi todas las pruebas del Observatorio quieren
+ * la escena viva y sólo dos quieren además contar dibujos.
+ */
+async function conEscenaViva(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("jonas-orbit:reducir-efectos", "false");
+  });
+}
+
 /** Enciende los efectos y cuenta dibujos por canvas, separando los dos dueños. */
 async function contarDibujos(page: Page) {
+  await conEscenaViva(page);
   await page.addInitScript(() => {
-    // Encendido a propósito: sólo eso monta la escena sobre una GPU por
-    // software. El mismo precedente que Miller y Edmunds.
-    localStorage.setItem("jonas-orbit:reducir-efectos", "false");
     const state = window as unknown as {
       systemDraws: number;
       observatoryDraws: number;
@@ -480,8 +493,10 @@ test("el catálogo enseña las seis muestras y sólo enlaza las montadas", async
   */
   const catalogo = page.getByRole("navigation", { name: "Especímenes" });
   await expect(catalogo.locator("li")).toHaveCount(6);
-  await expect(catalogo.locator("a")).toHaveCount(2);
-  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(4);
+  // Tres montadas desde que entró Gargantúa; las otras tres siguen catalogadas
+  // y sin puerta, que es lo que dice cuántas hay sin prometer lo que no existe.
+  await expect(catalogo.locator("a")).toHaveCount(3);
+  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(3);
 
   const caja = (await catalogo.boundingBox())!;
   expect(caja.width, "el catálogo dejó de ser una columna fina").toBeLessThan(
@@ -767,4 +782,216 @@ test("la sonda nombra una arista real del hipercubo", async ({ page }) => {
   // Apagarla borra la lectura: una medición que sobrevive a su gesto miente.
   await page.getByRole("button", { name: "Sonda" }).click();
   await expect(linea).toHaveText("");
+});
+
+/*
+  ── GARGANTÚA ───────────────────────────────────────────────────────────────
+
+  El tercer espécimen, y el único sin malla. Cierra dos filas de la matriz del
+  §12 que hasta ahora no se podían escribir porque no había nada que probar: O5
+  entera y la mitad de O12 que habla del asentamiento.
+*/
+
+const GARGANTUA = "/es/experimentos/observatorio/gargantua";
+
+/** Las tres lecturas de la fila `CÁMARA`, tal como están escritas en el DOM. */
+async function camara(page: Page) {
+  return page.locator(".observatory__readout .observatory__value").allTextContents();
+}
+
+test("O5 · Gargantúa no ofrece luz, ni material, ni sonda, ni órbita", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await conEscenaViva(page);
+  await page.goto(GARGANTUA);
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+  await abrirEstudio(page);
+
+  /*
+    LO QUE NO ESTÁ, que es la mitad del contrato de este espécimen.
+
+    `LUZ` movería el espécimen alrededor del origen para barrer su iluminación,
+    y aquí el espécimen ES la fuente: el origen del mundo es el agujero y lo que
+    ilumina la escena es su propio disco. `MATERIAL` escribe `uEmission`, que
+    vive en el shader común de los cuerpos, y aquí no hay cuerpo. `SONDA` nombra
+    aristas del hipercubo. Los tres serían mandos que no hacen nada.
+  */
+  await expect(page.getByRole("slider", { name: /clave/i })).toHaveCount(0);
+  await expect(page.getByRole("slider", { name: /giro/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Material", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sonda", exact: true })).toHaveCount(0);
+
+  // Y lo que SÍ está: tres ramas reales del raymarch, más el bloom y la ficha.
+  for (const mando of ["Bloom", "Doppler", "Secundarias", "Lente", "Datos"]) {
+    await expect(
+      page.getByRole("button", { name: mando, exact: true }),
+      mando,
+    ).toHaveCount(1);
+  }
+
+  // Las cuatro vistas curadas del §7, ni una más.
+  const vistas = page.getByRole("radio").filter({ hasNotText: /observar|estudio/i });
+  await expect(vistas).toHaveCount(4);
+
+  /*
+    Y NO HAY ÓRBITA LIBRE. Ésta es la mitad que un test de datos no puede
+    demostrar: que no existe un manejador de puntero sobre el lienzo. Se arrastra
+    media pantalla y las tres lecturas de cámara tienen que salir idénticas.
+
+    Se mide sobre la telemetría y no sobre la imagen a propósito: la imagen
+    cambia sola porque el disco se devana, así que compararla no distinguiría
+    «no se movió la cámara» de «no pasó el tiempo».
+  */
+  const antes = await camara(page);
+  expect(antes).toHaveLength(3);
+
+  const lienzo = page.locator(".observatory__canvas");
+  const caja = (await lienzo.boundingBox())!;
+  await page.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i += 1) {
+    await page.mouse.move(
+      caja.x + caja.width / 2 + i * 45,
+      caja.y + caja.height / 2 + i * 12,
+    );
+  }
+  await page.mouse.up();
+  await page.mouse.wheel(0, -600);
+  await page.waitForTimeout(800);
+
+  expect(await camara(page)).toEqual(antes);
+
+  // Y la pista no promete lo que no hay: no puede decir «arrastra».
+  await page.getByRole("radio", { name: "Observar", exact: true }).click();
+  await expect(page.locator(".observatory__hint")).not.toContainText(/arrastra/i);
+});
+
+test("un clic conmuta el pestillo también en el espécimen más lento", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await conEscenaViva(page);
+  await page.goto(GARGANTUA);
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+  await abrirEstudio(page);
+
+  /*
+    LA REGRESIÓN QUE ESTE TEST EXISTE PARA IMPEDIR, y por qué vive aquí.
+
+    El mando distingue un clic de una comparación sostenida por cuánto dura la
+    pulsación. La primera versión lo medía con `performance.now()` DENTRO del
+    manejador, y sobre el Tesseracto funcionaba: medido, un clic entrega
+    `pointerdown → pointerup` en 113 ms.
+
+    Sobre Gargantúa el mismo clic medía **742 ms**, porque entre los dos eventos
+    el hilo principal se queda dentro de un fotograma del raymarch. Todo clic
+    pasaba por comparación y el pestillo no conmutaba nunca: un botón que no
+    responde, en el espécimen donde más cuesta darse cuenta de por qué.
+
+    Se comprueba aquí y no en jsdom porque el defecto NO existe sin un render
+    lento de verdad — ahí está toda la gracia. Dos clics tienen que devolver el
+    mando exactamente a donde estaba.
+  */
+  const bloom = page.getByRole("button", { name: "Bloom", exact: true });
+  await expect(bloom).toHaveAttribute("aria-pressed", "false");
+
+  await bloom.click();
+  await expect(bloom).toHaveAttribute("aria-pressed", "true");
+
+  await bloom.click();
+  await expect(bloom).toHaveAttribute("aria-pressed", "false");
+});
+
+test("O12 · Gargantúa sigue dibujando hasta asentarse, y entonces para", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await contarDibujos(page);
+  await page.goto(GARGANTUA);
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+
+  await abrirEstudio(page);
+  await page.getByRole("button", { name: "Datos", exact: true }).click();
+
+  /*
+    LA DIFERENCIA CON LOS CINCO SÓLIDOS, dicha en un test.
+
+    Aquéllos paran en cuanto nadie toca nada: su imagen sale de un fotograma.
+    Gargantúa promedia — ocho posiciones de Halton sobre un raymarch— así que
+    parar al primero dejaría a la vista el ruido de una sola muestra. Tiene que
+    seguir dibujando hasta que el promedio se asiente y ENTONCES parar, que es
+    literalmente lo que dice O12 para su caso.
+
+    El movimiento se apaga primero porque `uTime` devana el disco: con el reloj
+    corriendo la imagen cambia cada fotograma y no hay convergencia posible — el
+    mismo motivo por el que la prueba de los sólidos también lo apaga.
+  */
+  await page
+    .getByRole("button", { name: "Desactivar movimiento" })
+    .first()
+    .click();
+
+  const promediados = page
+    .locator(".observatory__data dl > div")
+    .filter({ hasText: "promediados" })
+    .locator("dd");
+
+  /*
+    Se espera a que el contador DEJE DE SUBIR, y no a que llegue a un número.
+
+    Lo que O12 afirma es una propiedad —«tras el asentamiento el contador de
+    renders deja de avanzar»— y el umbral concreto es un detalle de calibración
+    del driver que puede subir o bajar con una captura. Escribir aquí el 48
+    habría convertido una constante interna en parte del contrato público y
+    obligaría a tocar este archivo cada vez que se recalibre.
+  */
+  let previo = -1;
+  await expect
+    .poll(
+      async () => {
+        const ahora = Number(await promediados.textContent());
+        const quieto = ahora === previo && ahora > 0;
+        previo = ahora;
+        return quieto;
+      },
+      { timeout: 120_000, intervals: [1_500], message: "no llegó a asentarse" },
+    )
+    .toBe(true);
+
+  /*
+    Y donde para tiene que ser un asentamiento, no una muerte. Ocho posiciones
+    de Halton son el supermuestreo entero: parar antes de un par de ciclos
+    dejaría el moteado de unas pocas muestras a la vista, que es exactamente el
+    fallo que un bucle bajo demanda mal puesto produce — y que ya se vio una vez
+    durante la medición, cuando el bucle se paraba en tres fotogramas.
+  */
+  expect(Number(await promediados.textContent())).toBeGreaterThan(16);
+
+  // Y una vez asentado, cero. De verdad, no «casi».
+  await page.waitForTimeout(1_000);
+  expect(await dibujosEn(page, "observatoryDraws")).toBe(0);
+
+  /*
+    Y elegir otra vista lo despierta: la acumulación se tira entera —la cámara
+    cambió, así que el historial ya no describe este cuadro— y el bucle vuelve a
+    trabajar hasta asentarse otra vez. Sin esto, «para» podría significar «se
+    murió».
+  */
+  const antes = Number(await promediados.textContent());
+  await page.getByRole("radio", { name: /Sombra/i }).click();
+  await expect
+    .poll(async () => Number(await promediados.textContent()), {
+      timeout: 60_000,
+    })
+    .toBeLessThan(antes);
 });

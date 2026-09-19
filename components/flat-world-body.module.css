@@ -85,6 +85,25 @@
   aspect-ratio: 16 / 9;
 }
 
+/*
+  Gargantúa. Es la más grande de las seis y tiene que serlo: su disco llega a
+  17 radios contra los 2.6 de la sombra, así que dibujarla al tamaño de un
+  planeta dejaría la sombra en dos píxeles y el disco en una raya.
+
+  Sin halo propio. El `::before` de `.body` reparte un resplandor circular
+  alrededor de la figura, y aquí eso sería luz DENTRO de la sombra: exactamente
+  lo que el §14 undecies prohíbe en la versión con GPU —el halo no puede
+  encender lo que estaba apagado— dicho en CSS. La luz la pone el degradado del
+  propio disco, que es de donde sale.
+*/
+.black-hole {
+  --flat-size: clamp(7.2rem, 9.4vw, 11rem);
+}
+
+.black-hole::before {
+  content: none;
+}
+
 /* La escena real reemplaza esta ilustración; nunca se superponen ambas. */
 :global(html[data-scene-live="true"]) .body {
   visibility: hidden;

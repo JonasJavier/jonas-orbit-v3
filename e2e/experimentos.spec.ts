@@ -23,13 +23,18 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
   await expect(indice.locator("li")).toHaveCount(6);
 
   /*
-    Dos enlaces y cuatro sin enlace. Las cuatro NO son enlaces muertos y por eso
-    se comprueban por `aria-disabled` y no por su ausencia: el catálogo dice
-    cuántas muestras tiene el laboratorio, y enseñar sólo las dos observables
+    Tres enlaces y tres sin enlace. Las que faltan NO son enlaces muertos y por
+    eso se comprueban por `aria-disabled` y no por su ausencia: el catálogo dice
+    cuántas muestras tiene el laboratorio, y enseñar sólo las observables
     mentiría sobre su tamaño. Regla 8 aplicada a un índice.
+
+    El reparto cambia cada vez que se monta una muestra —dos y cuatro hasta que
+    entró Gargantúa— y eso es lo que este test existe para notar: la cuenta sale
+    de `OBSERVATORY_SLUGS` y de `OBSERVATION_ORDER`, así que si alguna vez
+    discreparan, la recepción llevaría a la fila `03` y aterrizaría en otra.
   */
-  await expect(indice.locator("a")).toHaveCount(2);
-  await expect(indice.locator("[aria-disabled='true']")).toHaveCount(4);
+  await expect(indice.locator("a")).toHaveCount(3);
+  await expect(indice.locator("[aria-disabled='true']")).toHaveCount(3);
 
   await expect(
     page.getByRole("link", { name: /Tesseracto/ }),
@@ -38,6 +43,15 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
     "href",
     "/es/experimentos/observatorio/endurance",
   );
+  /*
+    Acotado al índice, y no por manía: «Gargantúa» aparece DOS veces en esta
+    página como nombre de enlace —la fila del catálogo y el «Volver al Sistema
+    Gargantúa ↑» del pie— porque el agujero negro da nombre al sistema entero.
+    Es el único de los seis al que le pasa.
+  */
+  await expect(
+    indice.getByRole("link", { name: /Gargantúa/ }),
+  ).toHaveAttribute("href", "/es/experimentos/observatorio/gargantua");
 });
 
 test("O1 · la recepción no crea un contexto WebGL propio", async ({ page }) => {

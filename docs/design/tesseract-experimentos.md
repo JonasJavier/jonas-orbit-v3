@@ -2577,3 +2577,254 @@ Playwright entera en verde, con dos pruebas de navegador nuevas: que mover la lu
 cambia la clave exactamente los grados pedidos y NO mueve la cámara, y que los
 dos modos reparten el alcance de los mandos. `MEDIR` A→B y el alambre/normales
 siguen aplazados. **Pendiente el veredicto visual de Jonás.***
+
+---
+
+## V3 — Gargantúa, el espécimen que no es una malla (2026-09-19)
+
+Manda sobre `V2`, sobre el §6 y sobre el §7 en **qué instrumentos ofrece el
+Observatorio a un objeto sin geometría, cómo se encuadra, y dónde viven los
+números que lo dibujan**. No toca el System Map, ni el pase visual de Gargantúa,
+ni el contrato de los cinco sólidos.
+
+El catálogo pasa de `02 / 06` a `03 / 06 MONTADOS`.
+
+### Por qué era distinto montarla
+
+Los dos primeros especímenes eran mallas y el laboratorio está construido
+alrededor de `createBody`. Para Gargantúa esa función devuelve `null`: no tiene
+geometría. Lo que hay es un raymarch de geodésicas sobre un cuad de pantalla
+completa, alimentado por una base de cámara explícita —posición y tres
+vectores— en vez de por una `PerspectiveCamera`.
+
+Eso no era un detalle de montaje: rompía tres contratos a la vez.
+`OBSERVATION_PRESETS` la excluye a propósito —el §6 dice que no recibe ninguna
+luz añadida, nada, en ninguna vista— así que la ruta, que leía
+`preset.instruments` para pintar el banco en frío, no compilaba con ella
+montada. `specimenContract` mide recorriendo un objeto que no existe. Y
+`observationPlacement` coloca el espécimen a distancia del origen porque el
+origen ES la lámpara, mientras que aquí el espécimen es el origen y no se mueve
+nunca.
+
+La salida no fue forzarla por el molde de los cinco. Fue el §5 un nivel más
+abajo: **el laboratorio adapta sus instrumentos a la muestra, y también su
+contrato de observación.**
+
+### Los datos se extraen; la maquinaria, no
+
+Había tres caminos para que el laboratorio dibujara el raymarch y ninguno era
+obviamente el bueno: extraer el montaje entero a un módulo compartido,
+replicarlo aquí, o algo intermedio. Se eligió lo tercero, y el criterio es dónde
+está el riesgo real.
+
+El cuad, los dos render targets en ping-pong y el orden de las pasadas no
+derivan solos: son código que nadie edita por gusto, y los dos consumidores
+quieren cosas distintas alrededor —el mapa tiene cinco cuerpos encima, una
+travesía que dobla la imagen entera y una pose por ruta; el laboratorio tiene
+cuatro vistas curadas y un bucle bajo demanda—. Un módulo que sirviera a los dos
+habría ido creciendo opciones hasta ser un objeto de configuración, que es la
+forma habitual de romper lo que se pretendía proteger.
+
+Lo que sí deriva son los NÚMEROS. La guarda de la sombra se afinó dos veces en
+un solo día —`amount` 0.88 → 0.96, `inner` 0.72 → 0.80 → 0.85— y con dos copias
+vivas cada una de esas rondas habría dejado al Observatorio enseñando la versión
+anterior. Justo en la página cuya vista `SOMBRA` existe para contar esa
+constante.
+
+Así que `components/scene/gargantua-render.ts` recibe el nivel de calidad, el
+bloom, la exposición, la tabla de Halton, la regla de mezcla, la guarda de la
+sombra y la fábrica de uniformes; `system-scene.ts` los importa y no conserva ni
+una constante de Gargantúa. **El diff de ese archivo es auditable de un
+vistazo**: 145 líneas borradas y, como añadidos, la importación y cinco
+sustituciones de sitio de llamada. Si aparece una línea que no sea eso, el
+camino se ejecutó mal.
+
+Y se verificó como se verifica un refactor sobre un pase congelado: captura de
+la home antes, extracción, captura después.
+
+| | antes | después | suelo de ruido |
+| --- | --- | --- | --- |
+| media abs(Δ) contra la base | — | **0.157** | **0.231** |
+| núcleo 0-0.35 R | 45.4 | 45.3 | ±0.2 |
+| negro < 8 por el centro | 80 × 69 | 80 × 68 | ±1 |
+| banda ≥ 235 | 0.84 % | 0.84 % | — |
+
+La diferencia tras la extracción es MENOR que la que hay entre dos capturas del
+mismo código, y las métricas reproducen los valores de cierre del §14 duodecies.
+El System Map no se movió.
+
+### Una vista es una cámara, y se calibra con aritmética
+
+`lib/gargantua-views.ts` es a Gargantúa lo que `observatory.ts` es a los
+sólidos. Allí una vista son dos ángulos de LUZ; aquí son seis números de CÁMARA
+—elevación, azimut, distancia, campo, roll y corrimiento— porque la luz no se
+puede tocar.
+
+La primera versión eligió las distancias estimando, y las dos vistas de detalle
+salieron siendo una pared de crema sin objeto dentro. El error fue olvidar el
+tamaño del disco: diecisiete radios contra los 2.6 de la sombra. Lo que decide
+un par es esta aritmética, verificada contra captura:
+
+- la sombra ocupa `2.598 / (d · tan(fov/2))` del ALTO;
+- el disco ocupa `17 / (d · tan(fov/2) · aspecto)` del SEMIANCHO.
+
+| vista | d / fov | sombra | disco | qué estudia |
+| --- | --- | --- | --- | --- |
+| **Cinematográfica** | 42 / 35 | 19.6 % | 80.2 % | la composición aprobada |
+| **Lente** | 40 / 20 | 36.8 % | 151 % | el anillo y la imagen doblada |
+| **Disco** | 46 / 32 | 19.7 % | 80.6 % | bandas y asimetría |
+| **Sombra** | 34 / 15 | 58.0 % | 237 % | el negro y su borde |
+
+Las dos de conjunto encuadran el disco entero con el aire del §5; las dos de
+detalle lo sacan de cuadro a propósito. Eso no contradice la regla de
+`observation-views.ts` —una vista puede alejarse, nunca acercarse— porque
+aquélla nació de que la silueta del Tesseracto respira treinta y un puntos.
+Gargantúa no respira.
+
+**Y `SOMBRA` costó una ronda entera.** A 38 / 18 daba la misma imagen que
+`LENTE` —un negro con su arco— y dos vistas que enseñan lo mismo son una vista y
+un rótulo de más. La diferencia no podía venir de la elevación, porque las dos
+viven cerca del suelo de 9°: vino del encuadre. Una enseña la estructura
+ALREDEDOR del agujero; la otra, el agujero.
+
+La vista canónica repite los cinco números de `SYSTEM_POSE`, y la duplicación es
+deliberada: el §2 prohíbe que el Observatorio importe el contrato de cámara. Lo
+que impide que deriven es un test que lee los dos archivos, porque una prueba sí
+puede conocer las dos orillas.
+
+### Los instrumentos: tres que se van, tres que llegan
+
+`LUZ` no existe aquí —ese mando gira el espécimen alrededor del origen para
+barrer su iluminación, y el espécimen ES la fuente—, `SONDA` tampoco —no hay
+aristas que nombrar— y `MATERIAL` menos —`uEmission` vive en el shader común de
+los cuerpos—. La fila de luz desaparece entera y la telemetría no publica
+`CLAVE`: un cero ahí no sería un dato neutro, sería una medición falsa.
+
+En su lugar entran **tres ramas del raymarch que llevaban escritas desde que se
+escribió el shader y que hasta este pase valían 1 y no tocaba nadie**:
+`uDoppler`, `uSecondary` y `uSkyLens`. Son la cláusula de inspección del §6
+aplicada a un objeto sin material: aíslan un canal con fines diagnósticos, son
+reversibles y están etiquetados.
+
+Medido con el reloj congelado y en la vista donde cada uno se usa, contra un
+suelo de ruido de **0.0000** — el render asentado es determinista bit a bit:
+
+| instrumento | media abs(Δ) | píxeles fuera de ±16 | qué retira |
+| --- | --- | --- | --- |
+| `DOPPLER` | **26.4** (lente) · 11.6 (canónica) | 50.6 % | beaming, tinte y el 12 % de asimetría de densidad |
+| `LENTE` | 3.5 (canónica) · 2.0 (lente) | 2.1 % | la curvatura del campo estelar |
+| `SECUNDARIAS` | 1.3 (lente) · 0.78 (canónica) | 0.70 % | las imágenes de orden superior |
+
+Los tres están muy por encima del suelo. `SECUNDARIAS` es el más discreto y el
+que más depende de dónde se mire: en la canónica se le nota poco, en `LENTE`
+—que es la vista que existe para eso— retira la línea que cruza por debajo de la
+sombra.
+
+`DATOS` se compone de lo que el §8 le reserva, y todo sale del código: `rs` y
+los radios del disco del módulo de shaders (publicados en radios de
+Schwarzschild, porque 23.8 no dice nada y «17 rs» sí), los pasos por píxel del
+mismo `define` con el que se compila el material, y la mezcla temporal leída del
+uniform que el bucle acaba de escribir. Las tres cifras de render dicen la
+verdad más rara de la ficha: **un agujero negro entero en una llamada de dibujo,
+un material y cuatro vértices.**
+
+### El asentamiento, y una trampa de medición que costó media tarde
+
+Los cinco sólidos paran de dibujar en cuanto nadie toca nada. Gargantúa no
+puede: su imagen se compone promediando ocho posiciones de Halton, así que parar
+al primer fotograma dejaría el moteado de una sola muestra. Sigue dibujando
+hasta que el promedio se asienta y entonces para — que es literalmente lo que
+pide O12 para su caso.
+
+Cuántos fotogramas es una medida, no la serie geométrica:
+
+| promediados | media abs(Δ) contra la asentada | píxeles fuera de ±16 |
+| --- | --- | --- |
+| 17 | 0.476 | 0.33 % |
+| 34 | 0.102 | 0.007 % |
+| 48 | asentada | — |
+
+A diecisiete quedan cuatro mil píxeles a más de dieciséis niveles de su valor
+final: moteado visible. Cuarenta y ocho deja margen y son seis ciclos completos
+de Halton.
+
+**Y medir esto tiene una trampa.** En Chromium headless `requestAnimationFrame`
+deja de dispararse cuando nada fuerza un pintado — comprobado con un contador de
+rAF propio en la página, que se queda clavado a los veintitantos ciclos.
+Esperar entre capturas no deja pasar fotogramas, deja pasar tiempo. La primera
+medición concluyó que la acumulación se asentaba en tres pasos, y lo que medía
+es que cada captura forzaba exactamente un fotograma. Hay que capturar en cadena
+y leer el contador que el propio instrumento publica en `DATOS`.
+
+El descarte que esa persecución dejó por el camino: el bucle tenía un `catch`
+mudo que paraba el render sin decir nada, y fue la única salida que hubo que
+descartar a mano. Ahora se anuncia por consola y por `onFailure`.
+
+### Tres defectos que este pase destapó, y ninguno era de Gargantúa
+
+**1 · Un clic no conmutaba el pestillo en un render lento.** El mando distingue
+un clic de una comparación sostenida por cuánto dura la pulsación, y lo medía
+con `performance.now()` dentro del manejador. Medido: sobre el Tesseracto un
+clic entrega `pointerdown → pointerup` en **113 ms**; sobre Gargantúa, en **742
+ms**, porque entre los dos eventos el hilo principal se queda dentro de un
+fotograma del raymarch. Todo clic pasaba por comparación y `BLOOM` no conmutaba
+nunca: un botón que no responde. El reloj del manejador no mide el gesto, mide
+el gesto más lo que la página tardó en atenderlo — `event.timeStamp` lo fija el
+navegador al CREAR el evento. Con el arreglo, el mismo clic mide 28 ms. No era
+exclusivo de este espécimen: le pasaría a cualquiera en cuanto un fotograma
+pasara de 220 ms.
+
+**2 · `Reajustar` devolvía la cámara pero no el rótulo.** `reset()` lleva el
+instrumento a la pose del preset, que es la vista 01, y la interfaz se quedaba
+marcando la que el visitante hubiera elegido. Se destapó aquí —donde la
+telemetría delata la pose— pero el defecto era de los cinco sólidos también.
+
+**3 · `FlatWorldBody` no tenía dibujo para el agujero negro**, y devolvía
+`null`. Era correcto mientras el único consumidor era el atlas plano, donde la
+figura la pinta `SiteBackdrop`; dejó de serlo cuando la cara servida del
+laboratorio pasó a usar la misma figura como esquema del espécimen. Sin dibujo,
+la ruta salía sin cuerpo justo para quien no tiene JavaScript ni equipo — que es
+a quien O7 y O8 protegen. Ahora existe, y la exclusión se mudó a
+`system-map.tsx`, que es donde está el motivo: **una regla sostenida por un
+hueco en otro archivo no es una regla, es una coincidencia que aguanta hasta el
+siguiente consumidor.**
+
+### Móvil: el disco no cabe, y perseguirlo lo empeora
+
+El disco es una figura ancha, así que en vertical se sale por los lados y la
+regla natural es retroceder en proporción al aspecto. Medido a 375 × 812, esa
+regla lleva la cámara de 42 a **145 radios**: el disco cabe entero y el
+espécimen queda en un borrón de cien píxeles. Cumplir la regla al pie de la
+letra producía exactamente lo que el §5 prohíbe.
+
+En un teléfono no se pueden tener las dos cosas, y de las dos manda la que hace
+de esto una muestra: que la sombra se lea. El retroceso se topa en cuanto la
+sombra baja del 12 % del alto —42 → 68.67 radios— y el disco se sale por los
+lados, que es lo que hace cualquier fotografía de algo más ancho que su
+encuadre.
+
+### Herramientas
+
+`tools/observatory-shot.mjs` deja de dar por supuestos los mandos del
+Tesseracto: pregunta al DOM qué existe, recorre las vistas que haya, y **fija el
+estado de un mando leyendo `aria-pressed` en vez de contando clics** — el A/B
+del bloom salió invertido una vez y no se detectó mirando, sino midiendo, porque
+el negro salía más grande CON halo. Nuevos: `--asentamiento`, `--vista=<rótulo>`
+y `--movil`. `tools/gargantua-metrics.mjs` acepta `--centro`, `--radio` y
+`--encuadre`, porque sus valores clavados eran los de la portada. Y nace
+`tools/shot-diff.mjs`, que compara dos capturas contra un suelo de ruido medido.
+
+**Y tres herramientas llevaban desde el 2026-09-13 capturando el perfil plano.**
+`shot.mjs`, `composition.mjs` y `stability.mjs` escribían
+`jonas-orbit:efectos-forzados`, una clave que el pase de movimiento unificado
+renombró y que hoy no lee nadie. Las capturas seguían saliendo, sólo que del
+atlas en SVG en vez de la escena. Una captura del cuerpo equivocado no es una
+captura mala: es una medición de otra cosa.
+
+*Estado: `npm run check` verde y la suite de Playwright entera en verde —262
+pruebas—, con cuatro de navegador nuevas: O5 (ni luz, ni material, ni sonda, ni
+órbita, y arrastrar no mueve un número), O12 para su caso (sigue dibujando hasta
+asentarse y entonces para), que un clic conmuta también en el espécimen más
+lento, y las cuentas del catálogo a tres montadas. Trece pruebas unitarias
+nuevas en `lib/gargantua-views.test.ts`. **Pendiente el veredicto visual de
+Jonás, y su aprobación del `registro`, que es su voz.***

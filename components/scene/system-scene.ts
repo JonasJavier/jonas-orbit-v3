@@ -20,14 +20,30 @@ import {
   type VoyageSample,
 } from "@/lib/voyage";
 import {
-  DISK_INNER,
   DISK_OUTER,
   DISPLAY_FRAGMENT,
   GARGANTUA_FRAGMENT,
-  GARGANTUA_RS,
   GARGANTUA_VERTEX,
   SHADOW_GUARD_FRAGMENT,
 } from "./gargantua-shaders";
+/*
+  Los números de Gargantúa viven en un solo sitio desde que hay DOS superficies
+  que la dibujan: este mapa y el Observatorio. Aquí no queda ni una constante
+  suya — sólo las que describen cómo la encuadra ESTA página.
+*/
+import {
+  BASE_EXPOSURE,
+  BLOOM,
+  BLOOM_THRESHOLD,
+  createMarchUniforms,
+  createShadowGuardUniforms,
+  HISTORY_TARGET,
+  JITTER,
+  SHADOW_IMPACT,
+  temporalBlend,
+  TIER,
+  type QualityTier,
+} from "./gargantua-render";
 import {
   createBody,
   disposeBody,
@@ -53,8 +69,6 @@ import { createVoyagePass } from "./voyage-pass";
  * three.js puro, sin react-three-fiber: el bucle de render no compite con el
  * reconciliador y el presupuesto de JS no paga un integrador que no usamos.
  */
-
-export type QualityTier = "orbit" | "deep";
 
 export interface ProjectedBody {
   id: WorldId;
@@ -120,42 +134,6 @@ export interface SceneOptions {
  */
 const COMPOSITION_DISK_OUTER = 17;
 
-/** Presupuesto por nivel: las dos palancas de un raymarcher son píxeles y pasos. */
-const TIER: Record<QualityTier, { dpr: number; steps: number; stepScale: number }> = {
-  orbit: { dpr: 1.0, steps: 190, stepScale: 0.14 },
-  deep: { dpr: 1.35, steps: 340, stepScale: 0.085 },
-};
-
-/*
-  El bloom se ensancha MUCHO más de lo que se sube de fuerza, y esa proporción es
-  deliberada.
-
-  Lo que hace que una fuente de luz se sienta enorme no es que su núcleo esté más
-  quemado, es hasta dónde llega su resplandor: es la diferencia entre una bombilla
-  y un incendio. Subir `strength` sí sube el pico, pero además levanta el suelo
-  dentro de la SOMBRA — y la sombra tiene que quedarse negra, porque es lo único
-  que dice que ahí hay un agujero y no una lámpara. Ensanchar el radio reparte el
-  halo hacia fuera, sobre el cielo negro, donde no hay nada que ensuciar.
-*/
-const BLOOM: Record<QualityTier, { strength: number; radius: number; scale: number }> = {
-  orbit: { strength: 0.6, radius: 0.57, scale: 0.5 },
-  deep: { strength: 0.67, radius: 0.61, scale: 0.62 },
-};
-
-const BASE_EXPOSURE = 0.95;
-const BLOOM_THRESHOLD = 2.0;
-const TEMPORAL_BLEND = 0.18;
-
-/*
-  ── La travesía ─────────────────────────────────────────────────────────────
-
-  Durante el viaje la cámara SÍ se mueve, y la acumulación temporal del
-  raymarch deja de ser válida fotograma a fotograma. El pivote (§G3) fija la
-  respuesta: no se reproyecta —eso es TAA de motor de juego— sino que se
-  sostiene alto el peso de la mezcla mientras dura el movimiento. 0.55 deja
-  algo de suavizado sin dejar estela.
-*/
-const VOYAGE_TEMPORAL_BLEND = 0.55;
 /**
  * Campo de visión al final de la aceleración. La pose de la home es un
  * teleobjetivo de 35°; abrirlo a 50° mientras la cámara cae es lo que hace
@@ -175,57 +153,6 @@ const VOYAGE_STOP_RADII = 3.2;
 const VOYAGE_GARGANTUA_STOP = DISK_OUTER * 1.35;
 /** Muestras del desenfoque radial por nivel. Ver `createVoyagePass`. */
 const VOYAGE_TAPS: Record<QualityTier, number> = { orbit: 8, deep: 12 };
-
-/**
- * Radio aparente de la sombra, en unidades del integrador.
- *
- * No es el horizonte. Un observador lejano no ve una esfera de radio rs: ve el
- * disco de parámetros de impacto que caen dentro, y ese borde está en
- * b = 3√3·GM/c² = (√27/2)·rs con la convención del shader (horizonte en r = rs,
- * esfera de fotones en 1.5·rs). Es el mismo número que se retiró de la
- * geodésica por dibujar una circunferencia exacta de un píxel; aquí no dibuja
- * nada, sólo acota dónde se protege el negro.
- */
-const SHADOW_IMPACT = (Math.sqrt(27) / 2) * GARGANTUA_RS;
-
-/**
- * Guarda de la sombra. Ver la nota larga de `SHADOW_GUARD_FRAGMENT`.
- *
- * `inner` deja el 72 % central protegido y abre el borde hasta el radio de la
- * sombra, para que no se vea una circunferencia. `amount` se queda por debajo
- * de 1 a propósito: retirar el halo del TODO deja un negro plano y recortado
- * contra el disco: sigue mereciendo una traza. Y `darkGate` está en luminancia
- * LINEAL, antes del tone mapping — el suelo del disco lensado dentro de la
- * sombra vive muy por encima de esta ventana, así que sus arcos no la cruzan.
- */
-/*
-  Y sube (2026-09-12): `inner` 0.72 → 0.80 y `amount` 0.88 → 0.96. Con 0.88 el
-  12 % residual del halo dejaba el centro en 18 y el flanco que mira al
-  material brillante en 93 sobre 255: no un negro con una traza, un gris con
-  degradado. El pase de autoridad de la sombra vacía el interior en el propio
-  raymarch, y con el interior vacío la puerta de material deja pasar todo el
-  halo: había que cerrar más el techo. La traza sigue existiendo —4 %— y el
-  borde sigue abierto en el 20 % exterior del radio.
-*/
-const SHADOW_GUARD = {
-  // 0.80 → 0.85 en la ronda final del pase: el borde queda abierto en el 15 %
-  // exterior, que sigue sin ser una circunferencia y afila el negro un pelo.
-  inner: 0.85,
-  amount: 0.96,
-  darkGate: [0.006, 0.075] as const,
-};
-
-/** Halton(2,3) recentrado en el píxel. */
-const JITTER: readonly (readonly [number, number])[] = [
-  [0.5, 0.333333],
-  [0.25, 0.666667],
-  [0.75, 0.111111],
-  [0.125, 0.444444],
-  [0.625, 0.777778],
-  [0.375, 0.222222],
-  [0.875, 0.555556],
-  [0.0625, 0.888889],
-].map(([x, y]) => [x - 0.5, y - 0.5] as const);
 
 /**
  * Ancho de la traza orbital, como fracción de la distancia de encuadre.
@@ -336,27 +263,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     depthTest: false,
     depthWrite: false,
     defines: { MAX_STEPS: TIER[tier].steps },
-    uniforms: {
-      uCamPos: { value: new THREE.Vector3() },
-      uCamRight: { value: new THREE.Vector3(1, 0, 0) },
-      uCamUp: { value: new THREE.Vector3(0, 1, 0) },
-      uCamFwd: { value: new THREE.Vector3(0, 0, -1) },
-      uTanHalfFov: { value: Math.tan((pose.fov * Math.PI) / 360) },
-      uAspect: { value: 1 },
-      uTime: { value: 0 },
-      uRs: { value: GARGANTUA_RS },
-      uPixelScale: { value: 0.002 },
-      uDiskInner: { value: DISK_INNER },
-      uDiskOuter: { value: DISK_OUTER },
-      uSkyRadius: { value: 60 },
-      uStepScale: { value: TIER[tier].stepScale },
-      uDoppler: { value: 1 },
-      uSecondary: { value: 1 },
-      uSkyLens: { value: 1 },
-      tHistory: { value: null },
-      uJitter: { value: new THREE.Vector2() },
-      uBlend: { value: 1 },
-    },
+    uniforms: createMarchUniforms(tier),
   });
   marchScene.add(new THREE.Mesh(quadGeometry, marchMaterial));
 
@@ -377,16 +284,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
   // === Acumulación temporal ================================================
   const canAccumulate = canFloat && bench.accumulate;
-  const targetOptions: THREE.RenderTargetOptions = {
-    type: THREE.HalfFloatType,
-    depthBuffer: false,
-    stencilBuffer: false,
-    minFilter: THREE.NearestFilter,
-    magFilter: THREE.NearestFilter,
-    generateMipmaps: false,
-  };
-  let historyRead = new THREE.WebGLRenderTarget(1, 1, targetOptions);
-  let historyWrite = new THREE.WebGLRenderTarget(1, 1, targetOptions);
+  let historyRead = new THREE.WebGLRenderTarget(1, 1, HISTORY_TARGET);
+  let historyWrite = new THREE.WebGLRenderTarget(1, 1, HISTORY_TARGET);
 
   const displayMaterial = new THREE.ShaderMaterial({
     vertexShader: GARGANTUA_VERTEX,
@@ -498,23 +397,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   const shadowGuardPass = savePass
     ? new ShaderPass({
         name: "ShadowGuard",
-        uniforms: {
-          tDiffuse: { value: null },
-          // Se enlaza DESPUÉS de construir el paso: `ShaderPass` clona los
-          // uniformes que recibe, y `cloneUniforms` no puede clonar la textura
-          // de un render target — la pone a null y avisa por consola.
-          tClean: { value: null },
-          uCentre: { value: new THREE.Vector2(0.5, 0.5) },
-          uRadius: { value: new THREE.Vector2(0.05, 0.05) },
-          uInner: { value: SHADOW_GUARD.inner },
-          uAmount: { value: SHADOW_GUARD.amount },
-          uDarkGate: {
-            value: new THREE.Vector2(
-              SHADOW_GUARD.darkGate[0],
-              SHADOW_GUARD.darkGate[1],
-            ),
-          },
-        },
+        uniforms: createShadowGuardUniforms(),
         vertexShader: GARGANTUA_VERTEX,
         fragmentShader: SHADOW_GUARD_FRAGMENT,
       })
@@ -1486,9 +1369,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       if (canAccumulate) {
         const [jx, jy] = JITTER[accumulated % JITTER.length];
         marchMaterial.uniforms.uJitter.value.set(jx / pixelWidth, jy / pixelHeight);
-        marchMaterial.uniforms.uBlend.value = Math.max(
-          voyage ? VOYAGE_TEMPORAL_BLEND : TEMPORAL_BLEND,
-          1 / (accumulated + 1),
+        marchMaterial.uniforms.uBlend.value = temporalBlend(
+          accumulated,
+          voyage !== null,
         );
         marchMaterial.uniforms.tHistory.value = historyRead.texture;
 

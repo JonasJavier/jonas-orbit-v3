@@ -201,7 +201,24 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   } as CSSProperties
                 }
               >
-                <FlatWorldBody world={world} />
+                {/*
+                  GARGANTÚA NO SE DIBUJA AQUÍ, y la decisión es del mapa.
+
+                  En el atlas plano su figura la pone `SiteBackdrop`, a pantalla
+                  completa y detrás de todo: dibujarla también en su slot pondría
+                  dos agujeros negros en el cuadro.
+
+                  Hasta este pase esto funcionaba por omisión —`FlatWorldBody`
+                  no tenía dibujo para `black-hole` y devolvía `null`— y eso era
+                  una regla del mapa sostenida por un hueco en otro archivo. Al
+                  montar el Observatorio ese hueco tuvo que rellenarse, porque su
+                  cara servida usa la misma figura como esquema del espécimen, y
+                  la ausencia se convirtió al instante en un sexto cuerpo aquí.
+                  Ahora la condición vive donde está el motivo.
+                */}
+                {world.id === "gargantua" ? null : (
+                  <FlatWorldBody world={world} />
+                )}
                 <span className="system-map__target-brackets" aria-hidden="true" />
                 <Link
                   aria-hidden="true"

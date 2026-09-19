@@ -58,6 +58,27 @@ export const ARCHITECTURE_LABELS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Lo que describe a un espécimen que se integra en vez de dibujarse.
+ *
+ * Son las cuatro lecturas que el §8 le reserva a Gargantúa, más los fotogramas
+ * ya promediados. Ninguna se teclea: los radios salen del módulo de shaders,
+ * los pasos del `define` con el que se compila el material y la mezcla del
+ * uniform que el bucle acaba de escribir.
+ *
+ * `rs` se deja sin unidad a propósito. Es el radio de Schwarzschild EN
+ * UNIDADES DEL INTEGRADOR, o sea la escala contra la que se miden los demás
+ * números de esta ficha: ponerle «rs» detrás diría que el radio de
+ * Schwarzschild se mide en radios de Schwarzschild.
+ */
+export const RAYMARCH_LABELS = {
+  rs: "Radio de Schwarzschild",
+  disk: "Disco",
+  steps: "Pasos por píxel",
+  blend: "Mezcla temporal",
+  accumulated: "Fotogramas promediados",
+} as const;
+
+/**
  * Los ejes del 4-cubo, por índice de bit.
  *
  * No son una convención nuestra: dos vértices del hipercubo son adyacentes si y
