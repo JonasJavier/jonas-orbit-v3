@@ -334,6 +334,15 @@ export interface ObservatorySky {
   follow(camera: THREE.Camera): void;
   /** Las capas del banco visual. Restan; nunca suman. */
   setLayers(layers: { stars: boolean; halo: boolean }): void;
+  /**
+   * Adónde mira el halo cuando el instrumento mueve la luz.
+   *
+   * El cielo no es decoración independiente: su gradiente sale de la MISMA
+   * dirección que ilumina al espécimen, así que si el mando de `LUZ` gira una y
+   * no la otra, el fondo empieza a contradecir a la figura y el cuadro deja de
+   * ser un sitio.
+   */
+  setLight(direction: THREE.Vector3): void;
   dispose(): void;
 }
 
@@ -392,6 +401,9 @@ export function createObservatorySky(lightDirection: THREE.Vector3): Observatory
       mesh.position.copy(camera.position);
       mesh.updateMatrix();
       mesh.updateMatrixWorld(true);
+    },
+    setLight(direction) {
+      uniforms.uLightDirection.value.copy(direction).normalize();
     },
     setLayers({ stars, halo }) {
       uniforms.uStars.value = stars ? STAR_PEAK : 0;

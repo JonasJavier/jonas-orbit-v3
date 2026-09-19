@@ -181,6 +181,44 @@ se sentaba encima del raíl. `MEDIR` A→B y alambre/normales siguen aplazados. 
 valoración visual queda abierta.
 
 
+**Observatorio V2 — dos modos y una luz que se mueve (2026-09-18):** la sección
+`V2 — dos modos, y una luz que se puede mover` de
+`docs/design/tesseract-experimentos.md` manda sobre `V1.5` y sobre el §5 en
+**qué se ve al entrar al Observatorio y dónde vive cada mando**. Diagnóstico del
+dueño sobre la V1.5: «hay mucha información y se siente ahora todo muy pesado».
+La corrección no es quitar rótulos: es que **mirar** un espécimen y **medirlo**
+son dos actividades y el aparato tenía las dos encendidas. `data-mode` reparte
+el visor en **`OBSERVAR`** —reposo: espécimen, nombre, catálogo, salida y la
+mano con el ratón— y **`ESTUDIO`**, que despliega la consola. La consola NO se
+desmonta al plegarse: se va con `inert` + `visibility`, y eso hay que probarlo a
+propósito porque **jsdom no implementa `inert`** y los mandos de una consola
+plegada siguen apareciendo por rol. El modo cine pasa a existir **sólo en
+`OBSERVAR`**. La cabecera baja de seis líneas a tres: `NOMINAL` se convierte en
+un punto, `AZ/EL/DIST` bajan a la consola, `CLAVE` pasa a ser MANDO y la lectura
+de la sonda se pega a la retícula. **Instrumento `LUZ`** (`lightGeometry` /
+`lightPlacement` en `lib/observatory.ts`): no hay lámpara que arrastrar —la luz
+es el origen— así que gira el ESPÉCIMEN alrededor del origen con la cámara
+rígidamente enganchada; misma cara, mismo encuadre, misma distancia, otra luz, y
+el espécimen no sale de su esfera de `ORIGIN_DISTANCE_RADII` para no cambiar el
+carácter del haz. Sus dos números —`CLAVE` 0-180 y `GIRO` −180..180, medido en
+PANTALLA— son a la vez lectura: orbitar los mueve solos. `lightPlacement` y
+`lightGeometry` son inversas exactas, y **el desplazamiento cámara-espécimen se
+reconstruye desde la esférica, nunca desde `camera.position`**, que sólo se
+actualiza una vez por fotograma pintado: leyéndolo, el dial saltaba de 52° a 49°
+en una pulsación. La sonda ya funcionaba —136 aciertos en un barrido de 288
+posiciones— y lo que fallaba era que la lectura salía a seis líneas del punto
+señalado. La sensación de nave sale de GEOMETRÍA, no de datos: alféizar,
+velo —el espécimen se hunde detrás del panel, nunca se reencuadra—, bastidor con
+regla vertical soldada por los bordes de los rótulos, diales con aguja de 2 px,
+selector con muescas que crecen por `scaleY` (con `height` empujan la palabra) y
+caída de luz en los bordes. Dos fallos de alcance corregidos: **la bandeja global
+mide 293 px a 20 px del canto** y se comía `Reajustar`, así que la barra se
+ordena a la izquierda y reserva su sitio; y entre 544 y 768 px no actuaba
+ninguna reserva. En móvil el bastidor **se aprieta y no rueda**: con techo y
+desbordamiento, `DATOS` y `REGISTRO` quedaban fuera y O10 bis los cazó —un mando
+que hay que desplazar para tocar es un mando que no está—. Su valoración visual
+queda abierta.
+
 **UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
 anterior en consentimiento, pausa y perfil ligero:**
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior

@@ -63,6 +63,24 @@ async function contarDibujos(page: Page) {
   });
 }
 
+/**
+ * Despliega la consola.
+ *
+ * El aparato arranca en `OBSERVAR` —modo cine— y ahí la consola va `inert` y
+ * `visibility: hidden`: sus mandos no se pueden pulsar ni tabular, que es
+ * exactamente lo que se pidió. Casi todo lo que esta suite comprueba vive
+ * dentro, así que casi todo empieza por aquí.
+ *
+ * Al contrario que en jsdom, en un navegador de verdad `inert` SÍ se aplica:
+ * olvidar esta llamada no produce un test que pasa por casualidad, produce un
+ * clic que nunca llega. Es la comprobación de los dos modos escondida dentro de
+ * cada test que usa un instrumento.
+ */
+async function abrirEstudio(page: Page) {
+  await page.getByRole("radio", { name: "Estudio", exact: true }).click();
+  await expect(page.locator(".observatory__console")).toBeVisible();
+}
+
 function dibujosEn(page: Page, clave: "systemDraws" | "observatoryDraws") {
   return page.evaluate(async (key) => {
     const state = window as unknown as Record<string, number>;
@@ -263,7 +281,11 @@ test("O10 · 375, 768 y 1440: sin desbordamiento y con blancos de 44 px", async 
       pudo haberse llevado algo por delante: al quitarles la caja, lo único que
       sostiene los 44 px es el `min-height`. Con puntero grueso el modo cine no
       atenúa, así que los mandos están ahí en los tres anchos.
+
+      `Reajustar` y el selector de modo viven en la barra del aparato y existen
+      en los dos modos; los demás, dentro de la consola.
     */
+    await abrirEstudio(page);
     for (const nombre of ["Bloom", "Material", "Datos", "Reajustar"]) {
       const caja = await page
         .getByRole("button", { name: nombre, exact: true })
@@ -301,6 +323,7 @@ test("O10 bis · los mandos se pueden PULSAR, no sólo medir", async ({ page }) 
         timeout: 30000,
       });
       await page.waitForTimeout(2500);
+      await abrirEstudio(page);
 
       for (const nombre of ["Bloom", "Material", "Datos", "Reajustar"]) {
         const boton = page.getByRole("button", { name: nombre, exact: true });
@@ -351,6 +374,7 @@ test("los dos especímenes son el mismo laboratorio con datos propios", async ({
     await page.waitForTimeout(3000);
 
     await expect(page.locator(".observatory__calipers")).toHaveCount(1);
+    await abrirEstudio(page);
     for (const nombre of ["Bloom", "Material", "Datos", "Reajustar"]) {
       await expect(
         page.getByRole("button", { name: nombre, exact: true }),
@@ -396,6 +420,7 @@ test("cambiar de espécimen dentro del laboratorio NO hereda el estado", async (
   });
   await page.waitForTimeout(3000);
 
+  await abrirEstudio(page);
   const bloom = () => page.getByRole("button", { name: "Bloom", exact: true });
   await bloom().click();
   await expect(bloom()).toHaveAttribute("aria-pressed", "true");
@@ -408,6 +433,16 @@ test("cambiar de espécimen dentro del laboratorio NO hereda el estado", async (
     timeout: 30000,
   });
   await page.waitForTimeout(3000);
+
+  /*
+    Y el MODO también se reinicia, que es parte de lo mismo: el reposo del
+    aparato es mirar, y una muestra nueva se presenta antes de medirse.
+  */
+  await expect(page.locator(".observatory")).toHaveAttribute(
+    "data-mode",
+    "observar",
+  );
+  await abrirEstudio(page);
 
   await expect(bloom()).toHaveAttribute("aria-pressed", "false");
   await expect(
@@ -530,6 +565,8 @@ test("el instrumento se enciende cuando hay imagen, no cuando hay escena", async
     "inert",
     "",
   );
+  await expect(page.getByRole("radio", { name: "Observar" })).toBeVisible();
+  await abrirEstudio(page);
   await expect(page.getByRole("button", { name: "Bloom" })).toBeVisible();
 });
 
@@ -567,6 +604,7 @@ test("en móvil la ficha es modo lectura, no el escritorio comprimido", async ({
     page.getByRole("link", { name: "Muestra anterior: Tesseracto" }),
   ).toBeVisible();
 
+  await abrirEstudio(page);
   await page.getByRole("button", { name: "Registro", exact: true }).click();
   await expect(page.getByRole("tabpanel")).toBeVisible();
 
@@ -615,7 +653,10 @@ test("una vista cambia la geometría de la luz, y la telemetría lo demuestra", 
     timeout: 60_000,
   });
 
-  const clave = page.locator(".observatory__telemetry .observatory__cell").last();
+  await abrirEstudio(page);
+  /* La lectura de `CLAVE` vive ahora en su dial: el mismo número que antes se
+     leía es el que ahora se puede poner. */
+  const clave = page.locator(".observatory__dial").first();
   await expect(clave).toContainText("145.0°");
 
   await page.getByRole("radio", { name: /Rasante/ }).click();
@@ -624,6 +665,69 @@ test("una vista cambia la geometría de la luz, y la telemetría lo demuestra", 
   // Y `Reajustar` devuelve la pose de casa, incluido el ángulo de clave.
   await page.getByRole("button", { name: "Reajustar" }).click();
   await expect(clave).toContainText("145.0°");
+});
+
+test("mover la luz cambia la clave y NO mueve la cámara", async ({ page }) => {
+  /*
+    LA PRUEBA DEL INSTRUMENTO NUEVO, y es la única forma de demostrar que hace
+    lo que dice.
+
+    `LUZ` promete algo muy concreto: la misma cara, el mismo encuadre, la misma
+    distancia, otra luz. Aquí no hay una lámpara que arrastrar —la luz ES el
+    origen del mundo— así que lo que el mando mueve es el espécimen alrededor de
+    ese origen con la cámara rígidamente enganchada.
+
+    Si esa construcción es correcta, `CLAVE` cambia y `AZ`, `EL` y `DIST` NO se
+    mueven ni un decimal. Si alguien lo reimplementara moviendo la cámara —que
+    es lo que parece más fácil— las tres lecturas se irían con ella y este test
+    caería. Y cambia de verdad el material de la imagen: es la tabla del §6
+    convertida en un dial.
+  */
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await contarDibujos(page);
+  await page.goto(OBSERVATORIO);
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+  await abrirEstudio(page);
+
+  const camara = () =>
+    page.locator(".observatory__readout").first().textContent();
+  const antes = await camara();
+  expect(antes).toContain("AZ");
+
+  const clave = page.getByRole("slider", { name: /clave/i });
+  await clave.focus();
+  /*
+    CUARENTA PULSACIONES SON CUARENTA GRADOS, y esto es una regresión con
+    nombre.
+
+    La primera versión del mando leía `camera.position`, que sólo se actualiza
+    dentro de `applyCamera` —una vez por fotograma PINTADO—, mientras la fuente
+    de verdad del encuadre es la esférica. Entre dos fotogramas caben varias
+    órdenes, así que cada una conservaba un desplazamiento caducado y la luz
+    acababa en un sitio que no era el pedido: medido con un barrido de flechas,
+    el dial saltaba de 52° a 49° en una sola pulsación.
+
+    Comprobar el VALOR FINAL es lo que caza eso. Que la imagen cambie no
+    demuestra nada —cambiaba también con la deriva—; que cuarenta pasos de un
+    grado lleguen exactamente cuarenta grados más abajo, sí.
+  */
+  for (let i = 0; i < 40; i += 1) await page.keyboard.press("ArrowLeft");
+
+  await expect(clave).toHaveValue("105");
+  await expect(page.locator(".observatory__dial").first()).toContainText(
+    "105.0°",
+  );
+  expect(await camara(), "mover la luz movió la cámara").toBe(antes);
+
+  // Y `Reajustar` también devuelve la luz: la pose del preset incluye de dónde
+  // viene la clave.
+  await page.getByRole("button", { name: "Reajustar" }).click();
+  await expect(page.locator(".observatory__dial").first()).toContainText(
+    "145.0°",
+  );
 });
 
 test("la sonda nombra una arista real del hipercubo", async ({ page }) => {
@@ -642,6 +746,7 @@ test("la sonda nombra una arista real del hipercubo", async ({ page }) => {
     timeout: 60_000,
   });
 
+  await abrirEstudio(page);
   await page.getByRole("button", { name: "Sonda" }).click();
 
   const linea = page.locator(".observatory__probe-line");

@@ -112,6 +112,7 @@ const escena = {
   canProbe: true,
   fov: 40,
   reset: vi.fn(),
+  setLight: vi.fn(),
   setView: vi.fn(),
   setProbe: vi.fn(),
   setBloom: vi.fn(),
@@ -120,8 +121,33 @@ const escena = {
   dispose: vi.fn(),
 };
 
+/**
+ * Lo que el driver le pasó al visor en el último montaje.
+ *
+ * Hace falta para probar la mitad del instrumento `LUZ` que NO es un gesto: los
+ * diales son a la vez mando y LECTURA, y la lectura llega por `onTelemetry`
+ * desde el bucle de la escena. Sin agarrar el callback no hay forma de
+ * demostrar que orbitar mueve los mandos solos, que es justo lo que separa un
+ * dial de una casilla.
+ */
+interface Lectura {
+  azimuth: number;
+  elevation: number;
+  distance: number;
+  key: number;
+  roll: number;
+}
+
+let ultimoMontaje: {
+  onTelemetry?: (t: Lectura) => void;
+} = {};
+
 vi.mock("@/components/scene/observatory-scene", () => ({
-  createObservatoryScene: (options: { onFirstFrame?: () => void }) => {
+  createObservatoryScene: (options: {
+    onFirstFrame?: () => void;
+    onTelemetry?: (t: Lectura) => void;
+  }) => {
+    ultimoMontaje = options;
     options.onFirstFrame?.();
     return escena;
   },
@@ -173,7 +199,9 @@ const RECORD = {
   iteraciones: "Iteraciones de prueba.",
 };
 
-async function mount(props: { record?: typeof RECORD | null } = {}) {
+async function mount(
+  props: { record?: typeof RECORD | null; modo?: "observar" | "estudio" } = {},
+) {
   const utils = render(
     <ObservatoryViewer
       descriptor="Geometría de cuatro dimensiones"
@@ -209,6 +237,23 @@ async function mount(props: { record?: typeof RECORD | null } = {}) {
   // Vacía la microcola del `import()` dinámico: sin esto la escena no ha
   // montado todavía, el instrumento sigue en espera y el cromo va `inert`.
   await act(async () => {});
+  /*
+    Y EL APARATO ARRANCA EN `OBSERVAR`, donde la consola no está.
+
+    Casi todo lo que fija este archivo —el banco, las vistas, los diales— vive
+    en `ESTUDIO`, así que el montaje por defecto lo despliega. Los dos tests que
+    prueban el reparto entre modos piden `{ modo: "observar" }` y se quedan en
+    el estado de reposo.
+
+    El gesto no se puede dar por hecho desde jsdom mirando el DOM: `inert` no
+    está implementado ahí, así que los mandos de una consola plegada SIGUEN
+    apareciendo en las consultas por rol. Ésa es justo la razón de pulsar el
+    selector de verdad en vez de confiar en que los botones se encuentran.
+  */
+  const selector = screen.queryByRole("radio", { name: "Estudio" });
+  // En el respaldo plano no hay selector que pulsar: ahí no hay instrumento,
+  // hay una ficha. Es el único montaje donde esta línea no hace nada.
+  if (props.modo !== "observar" && selector) fireEvent.click(selector);
   return utils;
 }
 
@@ -455,12 +500,49 @@ describe("Observatorio · cromo instrumental", () => {
     const { container } = await mount();
     const indice = container.querySelector(".observatory__index")!;
     expect(indice).toHaveTextContent("Espécimen 1 de 6");
-    expect(indice.querySelector('[aria-hidden="true"]')).toHaveTextContent(
-      "01/06",
-    );
+    expect(
+      indice.querySelector('[aria-hidden="true"]:not(.observatory__state-dot)'),
+    ).toHaveTextContent("01/06");
     expect(container.querySelector(".observatory__descriptor")).toHaveTextContent(
       "Geometría de cuatro dimensiones",
     );
+  });
+
+  it("la cabecera dice dónde estoy y nada más", async () => {
+    /*
+      EL PASE DE LOS DOS MODOS SE MIDE AQUÍ ARRIBA.
+
+      La esquina tenía seis líneas: estado del aparato, paso de catálogo,
+      nombre, descriptor, cuatro lecturas de telemetría y la línea de la sonda.
+      El diagnóstico de Jonás fue literal —«arriba a la izquierda también hay
+      mucho texto»— y la corrección no fue encoger la tipografía: fue mudar cada
+      pieza a donde sirve.
+
+      Lo que queda contesta «dónde estoy». La telemetría se fue a la consola
+      porque contesta «cómo estoy mirando», que sólo se pregunta mientras se
+      opera; la lectura de la sonda, junto a la arista que señala; el rastro
+      `EXPERIMENTOS / OBSERVATORIO` desapareció porque repetía al 20 % de
+      opacidad lo que la salida ya dice entera; y la palabra `NOMINAL` la
+      sustituye un punto, que es lo que un aparato encendido enseña.
+
+      Este test existe para que la esquina no vuelva a crecer sin que alguien lo
+      decida.
+    */
+    const { container } = await mount();
+    const cabecera = container.querySelector(".observatory__head")!;
+
+    expect(cabecera.querySelector(".observatory__state")).toBeNull();
+    expect(cabecera.querySelector(".observatory__trail")).toBeNull();
+    expect(cabecera.querySelector(".observatory__readout")).toBeNull();
+    expect(cabecera.querySelector(".observatory__probe-line")).toBeNull();
+    // El punto sí: dice `NOMINAL` sin gastar la palabra.
+    expect(cabecera.querySelector(".observatory__state-dot")).not.toBeNull();
+
+    /* Tres párrafos visibles y ni uno más: cifra, nombre y descriptor. */
+    const visibles = [...cabecera.querySelectorAll("p")].filter(
+      (nodo) => !nodo.closest('[aria-hidden="true"]'),
+    );
+    expect(visibles).toHaveLength(3);
   });
 
   it("la salida dice a dónde va, y su nombre accesible es su texto visible", async () => {
@@ -506,9 +588,17 @@ describe("Observatorio · cromo instrumental", () => {
     expect(container.querySelector(".observatory__chrome")).not.toHaveAttribute(
       "inert",
     );
+    /*
+      Y la LECTURA del aparato ya no gasta una línea del cromo. La cara servida
+      la enseña en grande mientras hace falta —que es exactamente mientras el
+      instrumento está en espera— y encendido queda el punto ámbar. El estado
+      real sigue publicado donde siempre se leyó de verdad: el `data-state` de
+      la raíz, que es lo que consulta la suite y lo que gobierna la hoja.
+    */
+    expect(container.querySelector(".observatory__state")).toBeNull();
     expect(
-      container.querySelector(".observatory__state")!.textContent,
-    ).toContain("Nominal");
+      container.querySelector(".observatory__state-dot"),
+    ).not.toBeNull();
   });
 
   it("DATOS y REGISTRO son dos lecturas y no dos capas", async () => {
@@ -782,6 +872,140 @@ describe("Observatorio · cromo instrumental", () => {
     });
     expect(escena.setProbe).toHaveBeenLastCalledWith(true);
     expect(sonda).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("en OBSERVAR el aparato sólo enseña el espécimen", async () => {
+    /*
+      EL REPARTO DE LOS DOS MODOS, y por qué se comprueba por `inert` y no por
+      lo que se ve.
+
+      El encargo fue «modo cine por defecto, sólo mover la cámara con el ratón;
+      y luego un modo estudio con las herramientas». La consola NO se desmonta
+      al plegarse —así los mandos conservan su estado al ir y volver, y el
+      cambio de modo no reconstruye un solo nodo— así que lo que hay que fijar
+      es que, plegada, esté fuera de alcance: ni puntero, ni tabulador, ni
+      lector de pantalla.
+
+      Y esto es exactamente lo que jsdom NO comprueba solo: `inert` no está
+      implementado ahí, así que los mandos de una consola plegada siguen
+      apareciendo en las consultas por rol. Sin este test, el reparto entero
+      podría romperse sin que nada se pusiera rojo.
+    */
+    const { container } = await mount({ modo: "observar" });
+    const raiz = container.querySelector(".observatory")!;
+    expect(raiz).toHaveAttribute("data-mode", "observar");
+    expect(container.querySelector(".observatory__console")).toHaveAttribute(
+      "inert",
+    );
+
+    /* Lo que SÍ sigue vivo en reposo: la identidad, el catálogo, la salida, el
+       selector de modo y `Reajustar`. Nada más — y ninguna de esas cinco es una
+       herramienta. */
+    expect(screen.getByRole("link", { name: "Salir del Observatorio" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reajustar" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "Observar" }),
+    ).toHaveAttribute("aria-checked", "true");
+
+    fireEvent.click(screen.getByRole("radio", { name: "Estudio" }));
+    expect(raiz).toHaveAttribute("data-mode", "estudio");
+    expect(
+      container.querySelector(".observatory__console"),
+    ).not.toHaveAttribute("inert");
+  });
+
+  it("volver a OBSERVAR recoge los instrumentos, pero NO rehace la observación", async () => {
+    /*
+      La asimetría que hay que dejar escrita, porque leída de golpe parece una
+      incoherencia: al plegar la consola se apagan la sonda y la ficha, y NO se
+      tocan bloom, material, vista ni luz.
+
+      La regla que las separa es de qué hablan. La sonda y las fichas son
+      instrumentos DESPLEGADOS —una retícula viva detrás del modo cine es un
+      dato que nadie puede ver ni apagar—. Bloom, material, vista y luz son cómo
+      está PUESTO el espécimen, y volver a mirar no puede deshacer la
+      observación que el visitante acaba de montar.
+    */
+    await mount();
+    const sonda = () => screen.getByRole("button", { name: "Sonda" });
+    const bloom = () => screen.getByRole("button", { name: "Bloom" });
+
+    fireEvent.click(sonda());
+    fireEvent.click(bloom());
+    fireEvent.click(screen.getByRole("button", { name: "Datos" }));
+    expect(sonda()).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector(".observatory__data")).not.toBeNull();
+
+    escena.setProbe.mockClear();
+    escena.setBloom.mockClear();
+    fireEvent.click(screen.getByRole("radio", { name: "Observar" }));
+
+    expect(escena.setProbe).toHaveBeenCalledWith(false);
+    expect(document.querySelector(".observatory__data")).toBeNull();
+    // Y el canal aislado sigue aislado: nadie ha vuelto a encender el halo.
+    expect(escena.setBloom).not.toHaveBeenCalledWith(true);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Estudio" }));
+    expect(bloom()).toHaveAttribute("aria-pressed", "true");
+    expect(sonda()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("los diales de la luz mandan los DOS números, y con su rango entero", async () => {
+    /*
+      La geometría de luz es un PAR —cuánto se separa del eje de mirada y por
+      dónde del reloj de la pantalla— y colocarla con uno solo obligaría a
+      inventarse el otro. Por eso mover cualquiera de los dos manda los dos.
+
+      Y los rangos no son decoración. `CLAVE` va de 0 a 180 porque es un ángulo
+      entre dos direcciones y fuera de ahí no existe nada; `GIRO` es un reloj
+      completo y va de −180 a 180. Costó una captura: con el mínimo de `GIRO` en
+      cero, media vuelta de la luz quedaba recortada contra el tope y el mando
+      mentía sobre lo que puede hacer.
+    */
+    await mount();
+    const clave = screen.getByRole("slider", { name: /clave/i });
+    const giro = screen.getByRole("slider", { name: /giro/i });
+
+    expect(clave).toHaveAttribute("min", "0");
+    expect(clave).toHaveAttribute("max", "180");
+    expect(giro).toHaveAttribute("min", "-180");
+    expect(giro).toHaveAttribute("max", "180");
+
+    fireEvent.input(giro, { target: { value: "-120" } });
+    escena.setLight.mockClear();
+    fireEvent.input(clave, { target: { value: "92" } });
+    expect(escena.setLight).toHaveBeenCalledWith({ key: 92, roll: -120 });
+  });
+
+  it("un dial es una LECTURA: la telemetría lo mueve sola", async () => {
+    /*
+      Lo que separa un instrumento de un formulario. La luz es el origen del
+      mundo, así que rodear el espécimen cambia de dónde le llega la clave — y
+      los dos mandos tienen que reflejarlo en el mismo fotograma, sin que nadie
+      los toque.
+
+      Va por el DOM y no por estado de React a propósito: esto cambia hasta
+      sesenta veces por segundo mientras se arrastra, y reconciliar el visor
+      entero para mover dos agujas cuesta todo lo demás.
+    */
+    await mount();
+    act(() => {
+      ultimoMontaje.onTelemetry?.({
+        azimuth: 12.5,
+        elevation: -8.25,
+        distance: 4.5,
+        key: 63.4,
+        roll: -27.8,
+      });
+    });
+
+    expect(screen.getByRole("slider", { name: /clave/i })).toHaveValue("63");
+    expect(screen.getByRole("slider", { name: /giro/i })).toHaveValue("-28");
+
+    const lecturas = [
+      ...document.querySelectorAll(".observatory__readout .observatory__value"),
+    ].map((nodo) => nodo.textContent);
+    expect(lecturas).toEqual(["12.5°", "−8.3°", "4.50"]);
   });
 
   it("DATOS se lee en tres familias y en este orden", async () => {

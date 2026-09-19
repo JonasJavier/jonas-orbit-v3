@@ -112,6 +112,18 @@ await page.waitForSelector(".observatory__canvas", { timeout: 30_000 });
 await page.waitForTimeout(6_000);
 
 const boton = (nombre) => page.getByRole("button", { name: nombre, exact: true });
+/**
+ * Despliega la consola.
+ *
+ * Desde el pase de los dos modos el aparato arranca en `OBSERVAR` —sólo el
+ * espécimen y la mano— y todos los instrumentos viven en `ESTUDIO`. La consola
+ * plegada va `inert`, así que sin esta llamada los clics de abajo no fallan por
+ * un selector equivocado: no llegan.
+ */
+const abrirEstudio = async () => {
+  await page.getByRole("radio", { name: "Estudio", exact: true }).click();
+  await page.waitForTimeout(500);
+};
 const paso = async (nombre, espera = 900) => {
   await page.waitForTimeout(espera);
   await page.screenshot({ path: join(OUT, `${nombre}.png`) });
@@ -172,6 +184,9 @@ if (ATMOSFERA) {
 if (ORBITA) {
   /*
     El clip de órbita, y por qué no reutiliza el recorrido normal.
+
+    Este modo se queda en `OBSERVAR` a propósito: no despliega la consola ni
+    toca un instrumento, que es exactamente lo que necesita.
 
     Lo que hay que juzgar aquí es una sola pregunta: **¿el cielo se comporta
     como espacio o como un fondo pegado a la pantalla?** Eso no se ve en una
@@ -264,16 +279,22 @@ if (CICLO > 0) {
   process.exit(0);
 }
 
-// 1 · Reposo. Sin tocar nada, el modo cine ya ha atenuado la instrumentación:
-//     es la vista que debería sentirse como un laboratorio y no como un visor.
+// 1 · OBSERVAR en reposo. Sin tocar nada, el modo cine ya se ha llevado todo lo
+//     que no dice dónde estás: queda el espécimen, su nombre y la salida.
 await paso("01-limpia", 4_000);
 
-// 2 · Cualquier gesto devuelve el cromo.
+// 2 · Cualquier gesto devuelve la identidad y la barra del aparato. Sigue sin
+//     haber un solo instrumento a la vista, y ése es el modo por defecto.
 await page.mouse.move(720, 450);
-await paso("02-instrumentacion", 400);
+await paso("02-observar", 400);
 
-// 3 · El arrastre: la cámara rodea al espécimen. Y como la luz es el origen del
+// 3 · ESTUDIO: la consola se despliega bajo su alféizar.
+await abrirEstudio();
+await paso("03-estudio", 900);
+
+// 4 · El arrastre: la cámara rodea al espécimen. Y como la luz es el origen del
 //     mundo, rodearlo CAMBIA su iluminación — eso es lo que hay que juzgar.
+//     Los dos diales de `LUZ` lo dicen moviéndose solos.
 await page.mouse.move(720, 450);
 await page.mouse.down();
 for (let i = 1; i <= 24; i++) {
@@ -281,36 +302,54 @@ for (let i = 1; i <= 24; i++) {
   await page.waitForTimeout(45);
 }
 await page.mouse.up();
-await paso("03-arrastre", 600);
+await paso("04-arrastre", 600);
 
-// 4 · Rueda.
+// 5 · Rueda.
 await page.mouse.wheel(0, -420);
-await paso("04-zoom");
-
-// 5 · DATOS. Las métricas viven aquí dentro y no en la vista normal.
-await boton("Datos").click();
-await paso("05-datos", 700);
-await boton("Datos").click();
-
-// 6 · BLOOM apagado: la prueba de oficio del contrato visual — un cuerpo que
-//     pierde su identidad sin glow no está terminado.
-await boton("Bloom").click();
-await paso("06-sin-bloom");
-await boton("Bloom").click();
-
-// 7 · MATERIAL: el material sin su emisión, vía `uEmission`.
-await boton("Material").click();
-await paso("07-sin-emision");
-await boton("Material").click();
-
-// 8 · Reajustar: vuelta exacta a la pose del preset.
-await boton("Reajustar").click();
-await paso("08-reajustada", 1_200);
+await paso("05-zoom");
 
 /*
-  9 y 10 · El A/B de verdad, con el reloj congelado.
+  6 y 7 · LUZ. El instrumento que sostiene la pose y barre la iluminación.
 
-  Los pasos 4 y 6 de arriba NO sirven para comparar bloom encendido contra
+  Se mueve por TECLADO y no arrastrando el dial: un `<input type="range">` se
+  recorre con las flechas grado a grado, así que la captura cae en un ángulo
+  nombrable en vez de en el que toque el píxel donde se soltó el ratón. Y la
+  prueba de que el mando hace lo que dice está en la fila de al lado: `AZ`, `EL`
+  y `DIST` tienen que salir idénticos en las dos.
+*/
+const clave = page.getByRole("slider", { name: /clave/i });
+await clave.focus();
+for (let i = 0; i < 25; i++) await page.keyboard.press("ArrowRight");
+await paso("06-luz-contraluz", 900);
+for (let i = 0; i < 100; i++) await page.keyboard.press("ArrowLeft");
+await paso("07-luz-frontal", 900);
+await boton("Reajustar").click();
+await page.waitForTimeout(600);
+
+// 8 · DATOS. Las métricas viven aquí dentro y no en la vista normal.
+await boton("Datos").click();
+await paso("08-datos", 700);
+await boton("Datos").click();
+
+// 9 · BLOOM apagado: la prueba de oficio del contrato visual — un cuerpo que
+//     pierde su identidad sin glow no está terminado.
+await boton("Bloom").click();
+await paso("09-sin-bloom");
+await boton("Bloom").click();
+
+// 10 · MATERIAL: el material sin su emisión, vía `uEmission`.
+await boton("Material").click();
+await paso("10-sin-emision");
+await boton("Material").click();
+
+// 11 · Reajustar: vuelta exacta a la pose del preset, luz incluida.
+await boton("Reajustar").click();
+await paso("11-reajustada", 1_200);
+
+/*
+  12 y 13 · El A/B de verdad, con el reloj congelado.
+
+  Los pasos 5 y 9 de arriba NO sirven para comparar bloom encendido contra
   apagado: entre uno y otro el Tesseracto sigue reconfigurándose, así que son
   dos poses 4D distintas y la diferencia medida mezcla las dos cosas. Es
   exactamente la trampa que documenta `body-metrics.mjs` para un cuerpo que
@@ -326,9 +365,9 @@ await paso("08-reajustada", 1_200);
 const movimiento = page.getByRole("button", { name: "Desactivar movimiento" });
 if (await movimiento.count()) {
   await movimiento.first().click();
-  await paso("09-ab-bloom", 1_400);
+  await paso("12-ab-bloom", 1_400);
   await boton("Bloom").click();
-  await paso("10-ab-sin-bloom", 900);
+  await paso("13-ab-sin-bloom", 900);
   await boton("Bloom").click();
 }
 
@@ -339,4 +378,4 @@ await browser.close();
 const video = readdirSync(OUT).find((name) => name.endsWith(".webm"));
 if (video) renameSync(join(OUT, video), join(OUT, "00-interaccion.webm"));
 
-console.log(`Observatorio · ${OBJETO}: ocho capturas y un vídeo en ${OUT}`);
+console.log(`Observatorio · ${OBJETO}: trece capturas y un vídeo en ${OUT}`);

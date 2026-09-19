@@ -4,7 +4,12 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
-import { observationPlacement, OBSERVATION_PRESETS } from "@/lib/observatory";
+import {
+  lightPlacement,
+  observationPlacement,
+  OBSERVATION_PRESETS,
+  type LightGeometry,
+} from "@/lib/observatory";
 import {
   observationTelemetry,
   observationViews,
@@ -180,6 +185,16 @@ export interface ObservatoryHandle {
   readonly fov: number;
   /** Coloca una de las vistas curadas. `0` es siempre la canónica. */
   setView(index: number): void;
+  /**
+   * Instrumento `LUZ`: mueve la ÚNICA lámpara que hay sin tocar el encuadre.
+   *
+   * No mueve la cámara respecto del espécimen — mueve el espécimen alrededor
+   * del origen del mundo, que es donde vive la luz, con la cámara enganchada.
+   * Misma cara, misma distancia, misma rotación de la figura, otra luz. Es la
+   * variable que el §6 autoriza a tocar, y la única forma que tiene este visor
+   * de ofrecerla sin inventarse una lámpara.
+   */
+  setLight(light: LightGeometry): void;
   /** Enciende la sonda. Sin ella el puntero sólo gira el espécimen. */
   setProbe(enabled: boolean): void;
   /** Vuelve a la pose del preset. No es «movimiento» y por eso no depende del
@@ -268,7 +283,17 @@ export function createObservatoryScene(
     body.radius / (preset.boundsFill * Math.sin(((FOV / 2) * Math.PI) / 180));
   const placement = observationPlacement(id, body.radius, framing);
 
+  /*
+    Dónde está el espécimen, y por tanto de dónde le llega la luz: la lámpara es
+    el origen, así que `normalize(-target)` ES la dirección de la clave.
+
+    Ya no es constante. El instrumento `LUZ` lo gira alrededor del origen —con
+    la cámara rígidamente unida— para barrer la iluminación sin mover la
+    observación. `homeTarget` guarda la pose del preset, que es a la que vuelven
+    `Reajustar` y cualquier vista curada.
+  */
   const target = new THREE.Vector3(...placement.body);
+  const homeTarget = target.clone();
   body.object.position.copy(target);
 
   /*
@@ -296,6 +321,19 @@ export function createObservatoryScene(
     `normalize(-target)`.
   */
   const sky = createObservatorySky(target.clone().negate());
+  /**
+   * Recoloca espécimen y cielo tras mover la luz.
+   *
+   * La cámara NO se toca aquí: vive en coordenadas esféricas relativas al
+   * espécimen y `applyCamera` la reconstruye sumando el `target` nuevo. Ésa es
+   * justo la propiedad que hace que mover la luz conserve el encuadre exacto —
+   * el offset cámara-espécimen no se recalcula, se arrastra.
+   */
+  function placeSpecimen() {
+    body!.object.position.copy(target);
+    sky.setLight(target.clone().negate());
+    dirty = true;
+  }
   scene.add(sky.object);
 
   /*
@@ -486,6 +524,10 @@ export function createObservatoryScene(
         camera.position.toArray(),
         [target.x, target.y, target.z],
         body!.radius,
+        // La vertical de verdad y no el eje +Y del mundo: las vistas curadas la
+        // cambian, y con la equivocada el `roll` de la luz saldría torcido justo
+        // en las poses donde el mando de `LUZ` más se usa.
+        up.toArray() as [number, number, number],
       ),
     );
     if (probing) resolveProbe();
@@ -664,6 +706,16 @@ export function createObservatoryScene(
   function applyView(index: number) {
     const view = views[index];
     const resolved = resolveView(preset, view);
+    /*
+      Una vista es una CONDICIÓN DE OBSERVACIÓN completa, no un encuadre suelto:
+      sus dos ángulos se declaran respecto de la luz canónica, así que aplicarla
+      sobre una luz movida a mano daría un ángulo de clave que no es el que la
+      vista promete. Se devuelve la lámpara a su sitio antes de colocar la
+      cámara — y eso es lo que mantiene en pie la prueba que dice que elegir
+      `RASANTE` lleva `CLAVE` a los 92° que la vista declara.
+    */
+    target.copy(homeTarget);
+    placeSpecimen();
     const pose = observationPlacement(
       id,
       body!.radius,
@@ -686,6 +738,35 @@ export function createObservatoryScene(
       if (index < 0 || index >= views.length) return;
       applyView(index);
     },
+    setLight(light) {
+      /*
+        LA CÁMARA SE RECONSTRUYE, NO SE LEE.
+
+        `camera.position` sólo se actualiza dentro de `applyCamera`, o sea una
+        vez por fotograma PINTADO. La fuente de verdad del encuadre es la
+        esférica, y las dos se separan en cuanto llegan dos órdenes entre dos
+        fotogramas — que es exactamente lo que hace una flecha del teclado
+        mantenida, o el pulgar sobre el dial.
+
+        Leyendo la posición vieja, cada orden conservaba un desplazamiento
+        caducado y la luz acababa en un sitio que no era el pedido. Se vio en un
+        barrido con flechas: el dial saltaba de 52° a 49° en una sola pulsación,
+        porque el ángulo devuelto por la geometría ya no coincidía con el
+        mandado y la lectura del fotograma siguiente lo sobrescribía. Reconstruir
+        el desplazamiento desde la esférica hace la ida y la vuelta exactas por
+        construcción, sin importar cuántas órdenes lleguen entre dos fotogramas.
+      */
+      spherical.makeSafe();
+      const offset = new THREE.Vector3().setFromSpherical(spherical);
+      const placed = lightPlacement(
+        [target.x + offset.x, target.y + offset.y, target.z + offset.z],
+        [target.x, target.y, target.z],
+        up.toArray() as [number, number, number],
+        light,
+      );
+      target.set(...placed.body);
+      placeSpecimen();
+    },
     setProbe(enabled) {
       probing = enabled && probeEdges !== null;
       // Apagarla tiene que borrar la lectura: una retícula que se queda
@@ -702,7 +783,10 @@ export function createObservatoryScene(
       */
       spherical.copy(homeSpherical);
       up.set(...placement.up);
-      dirty = true;
+      // Y la luz. `Reajustar` significa «la pose del preset», y desde que el
+      // instrumento `LUZ` existe la pose incluye de dónde viene la clave.
+      target.copy(homeTarget);
+      placeSpecimen();
     },
     setBloom(enabled) {
       bloomPass.enabled = enabled;
