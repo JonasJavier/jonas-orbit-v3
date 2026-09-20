@@ -187,6 +187,10 @@ export function temporalBlend(accumulated: number, moving: boolean): number {
  * `uSkyLens` deja de curvar el campo estelar— y quien quiera ofrecerlas como
  * instrumento las mueve desde fuera. Ninguna de las dos escenas las toca por su
  * cuenta.
+ *
+ * `uDiag` es distinto: no es un instrumento, es el banco visual
+ * (`diagnosticCode` en `lib/visual-bench.ts`). Arranca en 0 —producción— y
+ * cada escena lo fija UNA vez al montar, con el resto del banco.
  */
 export function createMarchUniforms(
   tier: QualityTier,
@@ -208,6 +212,7 @@ export function createMarchUniforms(
     uDoppler: { value: 1 },
     uSecondary: { value: 1 },
     uSkyLens: { value: 1 },
+    uDiag: { value: 0 },
     tHistory: { value: null },
     uJitter: { value: new THREE.Vector2() },
     uBlend: { value: 1 },

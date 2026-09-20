@@ -23,19 +23,23 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
   await expect(indice.locator("li")).toHaveCount(6);
 
   /*
-    Cuatro enlaces y dos sin enlace. Las que faltan NO son enlaces muertos y por
-    eso se comprueban por `aria-disabled` y no por su ausencia: el catálogo dice
-    cuántas muestras tiene el laboratorio, y enseñar sólo las observables
-    mentiría sobre su tamaño. Regla 8 aplicada a un índice.
+    Seis enlaces y ninguno muerto. El reparto cambió con cada muestra montada
+    —dos y cuatro, tres y tres con Gargantúa, cuatro y dos con la Ranger— y con
+    Miller y Edmunds llega a seis y cero: el laboratorio está completo.
 
-    El reparto cambia cada vez que se monta una muestra —dos y cuatro, luego
-    tres y tres con Gargantúa— y eso es lo que este test existe para notar: la
-    cuenta sale de `OBSERVATORY_SLUGS` y de `OBSERVATION_ORDER`, así que si
-    alguna vez discreparan, la recepción llevaría a la fila `03` y aterrizaría
-    en otra.
+    Lo que comprueba este par de líneas cambia de sentido con ese cero, y vale
+    decirlo. Antes vigilaba que las muestras sin montar no fingieran ser
+    puertas; ahora vigila lo contrario —que ninguna montada pierda su `href`—
+    porque es lo único que puede romperse ya. La cuenta sigue saliendo de
+    `OBSERVATORY_SLUGS` y de `OBSERVATION_ORDER`, así que si alguna vez
+    discreparan, la recepción llevaría a la fila `03` y aterrizaría en otra.
+
+    El camino deshabilitado NO se queda sin prueba: lo cubre el fixture mixto de
+    `components/observatory-chrome.test.tsx`, que existe precisamente para no
+    depender de que el catálogo real tenga huecos.
   */
-  await expect(indice.locator("a")).toHaveCount(4);
-  await expect(indice.locator("[aria-disabled='true']")).toHaveCount(2);
+  await expect(indice.locator("a")).toHaveCount(6);
+  await expect(indice.locator("[aria-disabled='true']")).toHaveCount(0);
 
   await expect(
     page.getByRole("link", { name: /Tesseracto/ }),
@@ -62,6 +66,21 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
   await expect(indice.getByRole("link", { name: /Ranger/ })).toHaveAttribute(
     "href",
     "/es/experimentos/observatorio/ranger",
+  );
+  await expect(indice.getByRole("link", { name: /Miller/ })).toHaveAttribute(
+    "href",
+    "/es/experimentos/observatorio/miller",
+  );
+  /*
+    Y Edmunds acotada también, por una tercera razón distinta de las dos de
+    arriba: el pie encadena con el destino ANTERIOR, y Experimentos viene
+    después de Creatividad. Gargantúa sale dos veces por ser el sistema entero,
+    la Ranger por ser la vecina de después y Edmunds por ser la de antes. Tres
+    trampas distintas con el mismo síntoma.
+  */
+  await expect(indice.getByRole("link", { name: /Edmunds/ })).toHaveAttribute(
+    "href",
+    "/es/experimentos/observatorio/edmunds",
   );
 });
 

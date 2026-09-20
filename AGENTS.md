@@ -322,6 +322,90 @@ conserva su textura a 128. El System Map, sus cuerpos, cámara y materiales no
 cambian. **El `registro` de la Ranger no está escrito: es la voz de Jonás. Su
 valoración visual queda abierta.**
 
+**Observatorio V5 — Miller, Edmunds y el laboratorio completo (2026-09-20):** la
+sección `V5 — Miller y Edmunds, y el laboratorio completo` de
+`docs/design/tesseract-experimentos.md` manda sobre `V4` y el §6 en **cómo se
+ilumina y se encuadra un cuerpo esférico**, y sobre el §5 en **qué significa
+`boundsFill`**. El catálogo pasa a `06 / 06 MONTADOS` y no queda ninguna muestra
+sin puerta. Montarlos fueron dos líneas en `OBSERVATORY_SLUGS`; lo que costó fue
+la captura que sus propios presets llevaban pidiendo por escrito desde la V1.
+**Una esfera es su propia envolvente**, así que `boundsFill` deja de ser una
+calibración y pasa a ser una lectura: la fracción del alto es
+`tan(asin(boundsFill·sin(fov/2)))/tan(fov/2)` y la captura lo confirma —0.91
+promete 90.0 % y mide 89.6; 0.78 promete 76.0 y mide 75.4, y el medio punto es
+la teselación—. Los dos en **0.78**, mitad de la banda del §5, y son los
+primeros que la cumplen sin nota al pie. **Los dos presets estaban mal por
+motivos opuestos.** Miller decía 25° con una frase de óptica que este shader no
+cumple: `oceanSheet` y `oceanGlint` son gaussianas sobre la separación respecto
+de la DIRECCIÓN ESPECULAR, que existe a cualquier clave, y el destello se pesa
+con `mix(0.86, 1.34, waterFresnel)`, o sea que el espejo devuelve más cuanto más
+rasante. Medido, a 25° el camino de luz **no llega a blanco ni en un píxel** —la
+lámina se extiende en meseta (18 537 px ≥200) en vez de concentrarse— y sin
+terminador el cuerpo no tiene volumen; pasa a **`55 / 20`**. Edmunds decía 82° y
+esa frase sí era verdad —una pendiente sólo se convierte en sombra larga con la
+luz tangente— pero nadie había medido el precio: a 82° sólo el 39 % del ancho
+del cuerpo lleva luz y la ocupación medida cae al 65.2 %, **por debajo del suelo
+del 70 % del §5 sin que el encuadre tenga nada que ver**; pasa a **`55 / 10`**.
+Los dos ángulos viejos no se tiran: bajan a las vistas `ESPEJO` y `RASANTE` —una
+vista curada es para el extremo bajo demanda; un preset es lo que ve quien
+entra—. **Ningún planeta admite contraluz en este laboratorio**, y no es de
+grados: todos los términos de canto de `uKind == 0` y `uKind == 1` están
+cerrados por `ndl` (`airLit`), así que lo que enciende su limbo es mirar a la
+luz; a 160° Miller deja 94 px ≥200 y a 150° Edmunds 93, y lo que ocupa el cuadro
+es el cielo del laboratorio por detrás. Seis vistas nuevas —`CANÓNICA`,
+`ESPEJO`, `CORRIENTES` y `CANÓNICA`, `RASANTE`, `PROVINCIAS`— y **ninguna toca
+`distance`**: una esfera no respira, así que el encuadre del preset vale para
+las tres. `DATOS` se queda sin la familia `OBJETO` porque `specimenContract`
+devuelve `null` para los dos: son una esfera con un material y su identidad vive
+en GLSL, que se cita como contenido y no se disfraza de medición. **Edmunds es
+el primer espécimen cuya imagen no cambia nunca** —media |Δ| 0.0007 en nueve
+segundos contra 2.8241 de Miller— y el bucle le dibuja sesenta fotogramas por
+segundo igual: no se toca, porque O12 sólo promete cero con el movimiento
+apagado y el ahorro está identificado pero su precio no está calculado. Trampa
+de medición anotada: el indicador del servidor de desarrollo (`NEXTJS-PORTAL`)
+aporta 25 px por encima de 250 a CUALQUIER captura hecha contra `npm run dev`.
+El System Map, sus cuerpos, cámara y materiales no cambian. **Los `registro` de
+Miller y Edmunds no están escritos: son la voz de Jonás. Su valoración visual
+—los dos presets y las seis vistas— queda abierta.**
+
+**Observatorio V6 — el eje de la figura (2026-09-20):** la sección `V6 — el eje
+de la figura, el tercer gesto` de `docs/design/tesseract-experimentos.md` manda
+sobre `V2` y el §5 en **qué mandos ofrece la consola** y sobre el §6 en **qué
+puede tocar el laboratorio de un espécimen**. Lo pidió el dueño: «un control
+para la rotación de los objetos como endurance, miller, edmunds y ranger». El
+laboratorio tenía dos gestos y **los dos cambiaban dos cosas a la vez**: el
+arrastre mueve la cámara y, como la luz ES el origen del mundo, cambia la cara Y
+el ángulo de clave; `LUZ` cambia la clave y conserva la cara. Faltaba el
+tercero —**otra cara, la MISMA luz**— y es el único que no toca la geometría de
+luz por construcción, porque `lightGeometry` se calcula con tres vectores del
+mundo en los que la orientación del modelo no aparece. `SceneBody.turnTo` es la
+primera mitad de `spinAt` sacada a la luz y usa el MISMO `spinAxis` del mapa
+—polo en los mundos, eje del aro en la Endurance, proa-popa en la Ranger—: **no
+se le inventa un segundo eje a ninguna figura**. No podía servir `spinAt`,
+que multiplica por `SPIN_RATE` y vale cero para la Ranger. Dos ausencias de
+distinta clase: Gargantúa no tiene malla, y el Tesseracto tiene su lectura
+entera en la orientación de reposo —el eje de la recursión enfilado a la
+cámara— así que girarlo no ofrece otra cara, le quita la suya; **la Ranger
+también vale cero en `SPIN_RATE` y sí entra**, porque los dos ceros no dicen lo
+mismo —uno niega que haya eje y el otro dice que una lanzadera girando sola es
+«un modelo colgado de un hilo», y una vuelta PEDIDA no es una vuelta que se dé
+sola—. El encuadre no se toca ni una línea: **el eje pasa por el origen de la
+raíz y `modelRadius` mide desde ahí, así que la envolvente es invariante**. Lo
+que sí se pasea es la silueta dentro de ella —medido a un grado, la Endurance
+llega a 1.041 del semicuadro contra una envolvente de 1.175— y la conclusión que
+hay que conservar es que **la promesa del §5 es la envolvente y cubre las poses
+que el laboratorio ELIGE**, no la mano del visitante: el arrastre, que existe
+desde la V1, ya llevaba su casco a **1.174**. Una vista curada NO devuelve la
+cara —su corrección es la luz, porque sus ángulos se declaran contra la luz
+canónica; el giro no entra en ninguna de esas cuentas— y `Reajustar` sí devuelve
+las dos. Es el **único mando de la consola que no es además una lectura**, así
+que no entra en la telemetría: nada más en el aparato cambia la orientación
+propia de la figura. Dial de −180 a 180 para que el reposo caiga en el centro, y
+la pista pasa a decir «arrastra para **orbitar**», que es lo que de verdad hace.
+El System Map, sus cuerpos, cámara y materiales no cambian: `spinAt` da
+exactamente lo mismo que antes. **Su valoración visual queda abierta**, con
+cuatro barridos de seis ángulos enviados.
+
 **UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
 anterior en consentimiento, pausa y perfil ligero:**
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior
@@ -756,6 +840,41 @@ bloom, `rs`, cámara y los cinco cuerpos no cambian. **Trampa de captura:** en
 Chromium headless la acumulación sólo avanza si algo fuerza un pintado; el
 laboratorio se empuja con pantallazos de 8 px y la portada no (tarda minutos
 por fotograma): se espera. Su valoración visual queda abierta.
+
+**Pase de gramática común del disco de Gargantúa (2026-09-20):** la sección
+`14 quaterdecies` de `docs/design/hero-gargantua-direction.md` manda sobre
+`14 terdecies` en **qué términos del material dependen del lado, cómo se
+reparten cortes, grano y polvo entre sectores densos y vacíos, y cómo se
+diagnostica el disco por separado de su luz**. El dueño dio por resuelto el
+problema de capas y abrió otro: «la asimetría izquierda-derecha ya no es sólo
+luminosa; es morfológica», con dos condiciones —**no espejo** y **misma
+estadística material**— y una orden de método: diagnosticar antes de tocar.
+El banco visual gana `diagnostico` (`uDiag`): gris de densidad, sólo
+directa, sólo lensada; `gargantua-ab.mjs` los captura con `--diag=` y
+apaga DOPPLER con `--doppler=0`. Tres resultados que hay que saber antes de
+volver a tocar el disco: **el lensado no pone nada en los brazos** (densidad
+y densidad-sólo-directa dan las mismas cifras a tres decimales); **los
+modificadores por lado no eran la causa** (con `uDoppler` apagado el gris se
+movía 0.93 niveles y la asimetría seguía); y **el campo base es ESTÁTICO**
+—la realización de edad cero se repite cada `EPOCH` = 20 s, el material
+respira en cizalla y nunca da la vuelta, así que 60, 200 y 400 s son la
+misma imagen— y trataba valle y masa como dos materiales: cortes agrupados
+donde el macro baja, grano por sector 0.55-1.0, suelo del valle modulado con
+el grano lineal y, sobre todo, el campo de carriles con `macro·0.42`, que
+hacía que el valle del ansa derecha perdiera densidad Y absorbiera como polvo
+(una franja de 1.2 rs en la que el gris cae a la décima parte, casi todo por
+`laneAbs`). Se retiran por principio los términos morfológicos por lado
+(contraste, calibre, pozos, grano sólo al acercarse; el nudo pasa a perder
+sólo luz, `knotLuz`) y se igualan los acoplamientos: cortes sin macro, grano
+0.75-1.0, suelo con `streams`, polvo a medias con el macro
+(`mix(macro, wb, 0.5)`; el macro fuera del todo bajaba el blanco recortado
+de 2 411 a 578 px y se rechazó). Medido: la depresión derecha sube de 13-60 a
+22-86 de gris, hf izq/der abajo 0.59 → 0.72, familia de tono intacta; **el
+blanco recortado baja un 29 % de área** porque el grano y el polvo cruzan
+ahora el crema (palanca: rango de `fine`). Cero ruidos nuevos, un uniforme;
+exposición, rodilla, beaming, bloom, lensado, envolvente y cámara no cambian.
+**Trampa:** el servidor de otra sesión murió dos veces a mitad de captura; las
+capturas van contra un `next dev` propio. Su valoración visual queda abierta.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la

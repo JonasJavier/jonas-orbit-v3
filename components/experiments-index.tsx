@@ -198,6 +198,15 @@ export function ExperimentsIndex({
                   es su observación; fingir una puerta sería peor que decirlo.
                   El catálogo enseña las seis porque el catálogo dice cuántas
                   hay.
+
+                  Desde el 2026-09-20 esta rama no se pinta: las seis están
+                  montadas. Se queda porque es la regla que permitió enseñar el
+                  laboratorio a medio construir sin mentir sobre su tamaño, y
+                  porque el día que entre una muestra nueva —o se retire una—
+                  vuelve a hacer falta. Y su prueba dejó de existir el día que
+                  se llenaron los huecos, porque colgaba del catálogo real: hoy
+                  la sostiene `experiments-index.test.tsx` con un catálogo
+                  inventado, que es lo único que no caduca.
                 */
                 <span aria-disabled="true" className="specimen-row specimen-row--off">
                   {cifra}

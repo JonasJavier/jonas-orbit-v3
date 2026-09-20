@@ -97,8 +97,9 @@ export default async function ObservatoryRoute({ params }: Props) {
 
     La recepción y el raíl del instrumento tienen que numerar igual: si la fila
     `03` de `/es/experimentos` llevara a «Espécimen 4 de 6», la lectura mentiría
-    y nadie lo vería hasta montar el tercer espécimen. Una sola composición,
-    una sola regla honesta para las cuatro que aún no se observan.
+    y nadie lo vería hasta montar el tercer espécimen. Una sola composición y
+    una sola regla, que es lo que dejó llegar a las seis sin renumerar nada por
+    el camino.
   */
   const catalog = observatoryCatalog(typedLocale);
   const rail = catalog.map(({ id: slot, index, name, href }) => ({

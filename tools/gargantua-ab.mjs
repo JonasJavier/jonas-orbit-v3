@@ -26,9 +26,22 @@
  * historial. Y se comprueba, no se supone: las dos últimas capturas enteras se
  * restan y la media tiene que estar en el suelo de ruido.
  *
+ * ── Modos de diagnóstico (2026-09-20, pase de gramática común) ─────────────
+ *
+ * `--diag=densidad,directo,lensado` (cualquier subconjunto) escribe los modos
+ * del banco visual —ver `diagnostic` en `lib/visual-bench.ts`— y captura
+ * SÓLO el laboratorio sin halo, en `lab-diag.png`, con sus recortes: un
+ * gris de densidad con bloom encima no mide nada, y la portada no es la
+ * superficie de medida. `--doppler=0` apaga además el instrumento DOPPLER
+ * por su botón real, leyendo `aria-pressed` como hace `observatory-shot.mjs`,
+ * para separar lo que ponen los modificadores por lado de lo que pone la
+ * geometría: con él apagado, `approaching`, `receding` y `presence` valen
+ * cero y el material es el mismo campo a los dos lados.
+ *
  * Uso:
  *   node tools/gargantua-ab.mjs <etiqueta> [--base=http://localhost:3000]
  *                               [--reloj=60] [--solo=lab|home] [--centro=x,y]
+ *                               [--diag=densidad,directo,lensado] [--doppler=0]
  *
  * Deja todo en `.shots/cohesion/<etiqueta>/`.
  */
@@ -47,6 +60,11 @@ if (!ETIQUETA) {
 const BASE = flag("base") ?? "http://localhost:3000";
 const RELOJ = Number(flag("reloj") ?? 60);
 const SOLO = flag("solo") ?? null;
+/** Modos de diagnóstico del banco: {densidad, directo, lensado} → true. */
+const DIAG = flag("diag")
+  ? Object.fromEntries(flag("diag").split(",").map((m) => [m.trim(), true]))
+  : null;
+const SIN_DOPPLER = flag("doppler") === "0";
 /** Centro de la sombra en la vista canónica del laboratorio a 1440 × 900. */
 const centro = flag("centro")?.split(",").map(Number);
 const CX = centro?.[0] ?? 668;
@@ -92,7 +110,23 @@ async function capturarAsentada(page, destino) {
   return ruido;
 }
 
-async function laboratorio(sinGlow) {
+/**
+ * Fija un instrumento del laboratorio leyendo `aria-pressed`, no contando
+ * clics (misma regla que `observatory-shot.mjs`: una pareja mal etiquetada es
+ * peor que no tenerla). `pulsado` = el instrumento actúa = canal retirado.
+ */
+async function fijar(page, nombre, pulsado) {
+  const mando = page.getByRole("button", { name: nombre, exact: true });
+  for (let intento = 0; intento < 3; intento++) {
+    const ahora = (await mando.getAttribute("aria-pressed")) === "true";
+    if (ahora === pulsado) return;
+    await mando.click();
+    await page.waitForTimeout(400);
+  }
+  throw new Error(`no se pudo dejar ${nombre} en ${pulsado ? "pulsado" : "suelto"}`);
+}
+
+async function laboratorio(sinGlow, nombre = sinGlow ? "lab-singlow" : "lab") {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 1,
@@ -105,22 +139,30 @@ async function laboratorio(sinGlow) {
     if (m.type() === "error") console.error("[console]", m.text().slice(0, 400));
   });
   await page.addInitScript(
-    ({ reloj, bloom }) => {
+    ({ reloj, bloom, diagnostico }) => {
       localStorage.setItem("jonas-orbit:reducir-efectos", "false");
       const banco = { reloj };
       if (bloom === 0) banco.bloom = 0;
+      if (diagnostico) banco.diagnostico = diagnostico;
       localStorage.setItem("jonas-orbit:banco-visual", JSON.stringify(banco));
     },
-    { reloj: RELOJ, bloom: sinGlow ? 0 : 1 },
+    { reloj: RELOJ, bloom: sinGlow ? 0 : 1, diagnostico: DIAG },
   );
   await page.goto(`${BASE}/es/experimentos/observatorio/gargantua`, {
     waitUntil: "networkidle",
     timeout: 120_000,
   });
   await page.waitForSelector(".observatory__canvas", { timeout: 60_000 });
+  if (SIN_DOPPLER) {
+    // El instrumento vive en la consola de ESTUDIO; se apaga y se vuelve a
+    // OBSERVAR para que el modo cine retire el cromo antes de capturar.
+    await page.getByRole("radio", { name: "Estudio", exact: true }).click();
+    await page.waitForTimeout(600);
+    await fijar(page, "Doppler", true);
+    await page.getByRole("radio", { name: "Observar", exact: true }).click();
+  }
   // Sin tocar nada: el modo cine retira el cromo a los 3,5 s.
   await page.waitForTimeout(5_000);
-  const nombre = sinGlow ? "lab-singlow" : "lab";
   const ruido = await capturarAsentada(page, join(OUT, `${nombre}.png`));
   await context.close();
   return ruido;
@@ -167,8 +209,8 @@ async function portada(sinGlow) {
 }
 
 /** Recortes de los dos brazos del laboratorio, a 1:1 y a 2×. */
-async function recortes() {
-  const src = join(OUT, "lab.png");
+async function recortes(nombre = "lab") {
+  const src = join(OUT, `${nombre}.png`);
   const zonas = {
     izq: { left: CX - 520, top: CY - 135, width: 520, height: 300 },
     der: { left: CX + 50, top: CY - 205, width: 560, height: 340 },
@@ -183,12 +225,15 @@ async function recortes() {
 }
 
 const informe = [];
-if (SOLO !== "home") {
+if (DIAG) {
+  informe.push(`lab-diag    ruido ${(await laboratorio(true, "lab-diag")).toFixed(3)}`);
+  await recortes("lab-diag");
+} else if (SOLO !== "home") {
   informe.push(`lab        ruido ${(await laboratorio(false)).toFixed(3)}`);
   informe.push(`lab-singlow ruido ${(await laboratorio(true)).toFixed(3)}`);
   await recortes();
 }
-if (SOLO !== "lab") {
+if (!DIAG && SOLO !== "lab") {
   informe.push(`home        ruido ${(await portada(false)).toFixed(3)}`);
   informe.push(`home-singlow ruido ${(await portada(true)).toFixed(3)}`);
 }
@@ -197,5 +242,6 @@ await browser.close();
 // El vídeo no se pide; por si algún contexto lo dejó, se limpia.
 for (const f of readdirSync(OUT)) if (f.endsWith(".webm")) rmSync(join(OUT, f));
 
-console.log(`Gargantúa A/B · ${ETIQUETA} · reloj ${RELOJ} s → ${OUT}`);
+const modos = DIAG ? ` · diag ${Object.keys(DIAG).join("+")}` : "";
+console.log(`Gargantúa A/B · ${ETIQUETA} · reloj ${RELOJ} s${modos}${SIN_DOPPLER ? " · sin Doppler" : ""} → ${OUT}`);
 for (const linea of informe) console.log(`  ${linea}`);

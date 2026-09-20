@@ -3048,3 +3048,376 @@ por píxel, y no veintidós mil vértices procesados una vez.
 *Estado: `npm run check` verde. Pendientes el veredicto visual de Jonás sobre
 las cuatro vistas y el `registro` de la Ranger, que es su voz y por eso no está
 escrito en el MDX.*
+
+## V5 — Miller y Edmunds, y el laboratorio completo (2026-09-20)
+
+*Manda sobre `V4` y el §6 en **cómo se ilumina y se encuadra un cuerpo
+esférico**, y sobre el §5 en **qué significa `boundsFill`**. El catálogo pasa a
+`06 / 06 MONTADOS`: no queda ninguna muestra sin puerta.*
+
+Montar los dos últimos fue dos líneas en `OBSERVATORY_SLUGS`, y esta vez sí fue
+sólo eso: la recepción, el raíl, el sitemap, `generateStaticParams` y la cifra
+de la cabecera salieron solos. Lo que sí hubo que hacer es lo que el propio
+preset llevaba pidiendo por escrito desde la V1 — **los dos llegaban con
+marcadores y con una nota que decía «⏳ sin montar: hasta que haya captura que
+medir»**. Esto es esa captura.
+
+### 1. Una esfera es su propia envolvente, y eso cambia qué es `boundsFill`
+
+En las cuatro muestras anteriores ese campo era una calibración y no una
+medida, porque la esfera envolvente y la figura no son lo mismo: un 4-cubo en
+alambre toca la suya en ocho vértices, la Endurance en las puntas de sus
+radiadores y la Ranger en la baliza del morro. De ahí que tres figuras
+razonables acabaran en `0.91`, `1.15` y `1.00` sin que esos números se puedan
+comparar entre sí.
+
+Con un planeta la ambigüedad desaparece: la envolvente **es** la silueta, y la
+fracción del alto del cuadro sale de la aritmética del encuadre,
+
+    fracción = tan(asin(boundsFill · sin(fov/2))) / tan(fov/2)
+
+Comprobado sobre captura antes de darlo por bueno, que es lo que este campo
+exige:
+
+| `boundsFill` | promete | mide |
+|---|---|---|
+| 0.91 | 90.0 % del alto | **89.6 %** |
+| 0.78 | 76.0 % del alto | **75.4 %** |
+
+El medio punto que falta es la teselación: el poliedro va inscrito en la esfera
+que `modelRadius` mide. Los dos se quedan en **0.78**, que es mitad de la banda
+del §5 (70-85 %) — y son los dos primeros especímenes que la cumplen sin
+discusión ni nota al pie.
+
+### 2. Miller: los 25° eran una frase de óptica que este shader no cumple
+
+El marcador decía «casi frontal: el camino de luz y la cresta son reflejos, y un
+reflejo sólo vuelve a la cámara cuando la fuente está cerca de su eje; a 90°
+Miller es un planeta azul cualquiera». Suena a física y no describe este
+material. `oceanSheet` y `oceanGlint` son gaussianas sobre `alongOff` /
+`acrossOff`, que miden la separación respecto de la **dirección especular** — y
+ésa existe para cualquier ángulo de clave. El destello se pondera además con
+`mix(0.86, 1.34, waterFresnel)`: un espejo devuelve **más** cuanto más rasante
+se le mira.
+
+Cinco capturas con el azimut clavado en 20, descontando los 25 px fijos que
+el instrumento cuenta siempre, también sobre un cuadro apagado: son el
+indicador del servidor de desarrollo (`NEXTJS-PORTAL`, comprobado con
+`elementFromPoint`) y no un píxel del espécimen. Conviene tenerlo anotado
+porque lo arrastra cualquier medición de brillo hecha contra `npm run dev`:
+
+| clave | blanco real (≥250) | meseta (≥200) | luz total |
+|---|---|---|---|
+| 25 | **0 px** | 18 537 | 44.0 Mlum |
+| 45 | 172 px | **22 573** | 39.5 Mlum |
+| 55 | 120 px | 21 786 | 35.4 Mlum |
+| 75 | 314 px | 19 208 | 25.1 Mlum |
+| 90 | 259 px | 15 174 | 18.1 Mlum |
+
+**A 25° el camino de luz no llega a blanco ni en un píxel.** La lámina se
+extiende en meseta por medio disco en vez de concentrarse en un trazo — es el
+mismo movimiento que el §9 bis pidió para las naves, leído al revés: aquí el
+defecto era el lavado y no la penumbra. Y sin terminador el cuerpo no tiene
+volumen: Miller a 25° es una calcomanía azul.
+
+Preset **`55 / 20`**, que es donde coinciden meseta casi máxima, blanco de
+verdad en el trazo y un terminador que saca las bandas latitudinales — que son
+lo que impide que la lámina se lea como gas. Los 25° no se tiran: bajan a la
+vista `ESPEJO`.
+
+### 3. Edmunds: los 82° eran verdad, y nadie había medido el precio
+
+«Edmunds se define por PENDIENTE y no por altura, así que la luz casi tangente
+es el instrumento correcto para ese campo» — eso sigue siendo cierto. Lo que
+faltaba es cuánto cuesta. Cinco capturas con el azimut clavado en 10, sobre un
+disco de 678 px:
+
+| clave | ancho iluminado | alto ocupado | luz total |
+|---|---|---|---|
+| 30 | 605 px (89 %) | 74.4 % | 31.3 Mlum |
+| 55 | 466 px (69 %) | 72.6 % | 20.1 Mlum |
+| 65 | 395 px (58 %) | 70.0 % | 15.6 Mlum |
+| 82 | 267 px (39 %) | **65.2 %** | 9.0 Mlum |
+| 110 | 0 px | 0.9 % | 2.4 Mlum |
+
+La ocupación se mide sobre **luz**, no sobre geometría, así que a 82° cae por
+debajo del suelo del 70 % que pide el §5 sin que el encuadre tenga nada que
+ver: el cuerpo cabe entero y se ve la mitad. Preset **`55 / 10`**, donde el
+69 % del ancho lleva luz, la sombra larga de la cordillera sigue ahí y el campo
+de provincias se lee entero. Los 82° bajan a la vista `RASANTE`, que es su
+sitio: **una vista curada es para el extremo que revela una propiedad bajo
+demanda; un preset es lo que ve quien entra.**
+
+Y una cifra que dice de qué está hecho este cuerpo: en todo el barrido, de 30° a
+150°, **Edmunds no llega a blanco en un solo píxel**. El instrumento cuenta los
+mismos 25 px del indicador en las cinco capturas. La roca no tiene especular,
+y eso no es falta de exposición.
+
+### 4. Ningún planeta de este laboratorio admite contraluz
+
+No es cuestión de grados: **todos los términos de canto de `uKind == 0` y
+`uKind == 1` están cerrados por `ndl`**. El filo de aire de Miller va por
+`airLit = smoothstep(0.20, 0.90, ndl)` y el arco de Edmunds por
+`smoothstep(0.26, 0.94, ndl)`, así que lo que enciende su limbo es MIRAR A LA
+LUZ, no tenerla detrás. En un punto del limbo el producto `n·l` no pasa de
+`sin(clave)`, o sea que el término se apaga solo según la clave se acerca a 180.
+
+Medido: a 160° Miller deja **94 px** por encima de 200 y a 150° Edmunds deja
+**93** — contra los veinte mil de sus poses de trabajo. Y lo que ocupa el cuadro
+en esas dos capturas no es el espécimen: es el cielo del laboratorio
+encendiéndose por detrás.
+
+O sea que la vista `SILUETA` del Tesseracto y de la Endurance **no es
+trasladable**, y el motivo es material: aquél tiene `rim` propio y las dos naves
+tienen envoltura y filo ámbar escritos para contraluz. Un planeta a contraluz en
+este laboratorio es un agujero.
+
+### 5. Seis vistas, y ninguna con `distance`
+
+`MILLER` — `CANÓNICA` (el camino de luz con su cresta y el terminador),
+`ESPEJO` (25°: la lámina abierta, hasta dónde llega el campo de destellos, al
+precio de perder el volumen) y `CORRIENTES` (92°: las bandas picando la lámina y
+el filo de aire en su máximo).
+
+`EDMUNDS` — `CANÓNICA` (provincias y cordillera), `RASANTE` (82°: la pendiente
+convertida en sombra larga y el limbo troceado en cresta, hueco y destello) y
+`PROVINCIAS` (30°: con el sombreado aplanado lo único que queda dibujando es el
+albedo, o sea los seis minerales separados del relieve que los tapa).
+
+Ninguna toca `distance`, y tampoco es un olvido. La regla «una vista puede
+alejarse, nunca acercarse» existe porque la silueta del Tesseracto respira
+treinta y un puntos. **Una esfera no respira**: es la única figura del catálogo
+cuya ocupación es idéntica en todas sus vistas, así que el encuadre del preset
+vale para las tres sin corrección.
+
+### 6. Lo que el laboratorio NO puede enseñar de estos dos
+
+`specimenContract` devuelve `architecture: null` para los dos, así que el panel
+`DATOS` se queda sin su familia `OBJETO` y enseña sólo `OBSERVACIÓN` y `RENDER`
+— una llamada de dibujo, un material, 1 107 vértices. Eso ya estaba escrito en
+ese módulo desde la V1 y se confirma montándolos: **no tienen estructura que
+contar, son una esfera con un material**, y toda su identidad vive en parámetros
+de shader, que son texto GLSL y no datos en ejecución. Publicarlos exigiría
+copiarlos a mano, que es exactamente lo que el §8 prohíbe. Si algún día se
+quieren contar, entran como CONTENIDO en el MDX citando el documento de lenguaje
+visual — no disfrazados de medición.
+
+### 7. Edmunds es el primer espécimen cuya imagen no cambia nunca
+
+Medido con `shot-diff.mjs` sobre dos capturas separadas nueve segundos, sin
+tocar nada:
+
+| | media \|Δ\| | píxeles que cambian |
+|---|---|---|
+| Miller | **2.8241** | 27.3 % |
+| Edmunds | **0.0007** | 0.001 % |
+
+Miller se mueve porque su oleaje va por `uTime` dentro del shader, aunque
+`simpleWorld` no declare ningún `animate`. Edmunds no se mueve en absoluto, y
+sin embargo el bucle le dibuja sesenta fotogramas por segundo: `renderFrame`
+marca `dirty` en cuanto hay movimiento global, sin preguntar si el espécimen
+cambia.
+
+**No se toca, y a propósito.** O12 afirma que el bucle llega a cero *con el
+interruptor de movimiento apagado*, y eso se sigue cumpliendo; el contrato no
+promete nada más. Cambiarlo obligaría a declarar a mano qué cuerpo se anima —un
+dato que se separa del shader el día que alguien le meta tiempo al desierto— y a
+tocar el bucle de los cinco especímenes para ahorrar fotogramas en uno, con un
+beneficio que no se ha medido. Queda anotado con su número: **el ahorro está
+identificado y el precio de cobrarlo no está calculado.**
+
+### 8. El índice se queda sin huecos, y eso cambia qué vigilan dos pruebas
+
+`indice.locator("[aria-disabled='true']")` pasa de 2 a **0**. La aserción no
+desaparece porque ha cambiado de sentido: antes vigilaba que las muestras sin
+montar no fingieran ser puertas, y ahora vigila lo contrario —que ninguna
+montada pierda su `href`—, que es lo único que puede romperse ya. La cobertura
+del estado deshabilitado no se pierde: vive en el fixture deliberadamente mixto
+de `components/observatory-chrome.test.tsx`, que existe precisamente para no
+depender de que el catálogo real tenga huecos.
+
+Y `lib/observation-views.test.ts` deja de comprobar a mano que el Tesseracto y
+la Endurance tienen vistas: ahora recorre `OBSERVATORY_SLUGS`. Esa línea escrita
+a mano es la razón de que la suite se hubiera quedado verde con dos muestras
+montadas y sin una sola vista curada.
+
+*Estado: `npm run check` verde. El System Map, sus cuerpos, cámara y materiales
+no cambian. Pendientes el veredicto visual de Jonás sobre los dos presets
+—`55 / 20` y `55 / 10`, elegidos de un barrido que se le envía entero— y sobre
+las seis vistas; y los `registro` de Miller y Edmunds, que son su voz y por eso
+no están escritos en el MDX.*
+
+## V6 — el eje de la figura, el tercer gesto (2026-09-20)
+
+*Manda sobre `V2` y el §5 en **qué mandos ofrece la consola**, y sobre el §6 en
+**qué puede tocar el Observatorio de un espécimen**. Lo pidió Jonás el mismo
+día que se cerró la V5: «un control para la rotación de los objetos como
+endurance, miller, edmunds y ranger».*
+
+### 1. Lo que faltaba no era un mando, era un gesto
+
+El laboratorio tenía dos maneras de cambiar lo que se ve, y **las dos cambiaban
+dos cosas a la vez**:
+
+| gesto | qué mueve | qué cara se ve | ángulo de clave |
+|---|---|---|---|
+| arrastre | la cámara | cambia | **cambia** |
+| `LUZ` | el cuerpo alrededor del origen | **igual** | cambia |
+| `EJE` | la figura sobre su propio eje | cambia | **igual** |
+
+La primera fila es consecuencia directa del §6: la luz **es** el origen del
+mundo, así que rodear el espécimen es cambiar de dónde le llega la clave. Eso
+hace el arrastre muy expresivo y completamente inútil para una pregunta
+concreta: *¿qué hay en la otra mitad de este cuerpo?* Con el arrastre, la otra
+mitad llega siempre iluminada de otra manera, y no hay forma de saber si lo que
+se está viendo es geografía o es luz.
+
+La tercera fila es el mando nuevo, y es el único de los tres que no toca la
+geometría de luz — ni por descuido ni por cuidado, sino **por construcción**:
+girar la figura es una rotación del modelo, y `lightGeometry` se calcula entera
+con tres vectores del mundo —cámara, cuerpo y vertical— en los que la
+orientación del modelo no aparece.
+
+Dónde se nota, muestra por muestra:
+
+- **Edmunds** tiene seis provincias minerales y una cordillera, y desde la pose
+  del preset se ve poco más de la mitad del cuerpo. Girarlo es la única forma
+  de ver la cuenca pálida, que asoma hacia los 300°.
+- **Miller** deja la demostración más limpia del contrato: al girar, **el camino
+  de luz no se mueve** —es de la luz, no del agua— y las corrientes y la nube
+  pasan por debajo de él.
+- **La Endurance** gira sobre el eje de su aro, así que los doce módulos
+  desfilan por delante. Es el gesto que la nave hace en la película.
+- **La Ranger** alabea sobre su eje de proa y enseña el vientre, que desde la
+  pose del preset no se ve nunca. La V4 le puso espina dorsal, escotilla,
+  antenas, rejillas y carenados nuevos; la mitad de ese trabajo no tenía forma
+  de verse.
+
+### 2. Un eje, y es el que el cuerpo ya declaraba
+
+`turnTo` usa `spinAxis`, el mismo del System Map: polo en los dos mundos, eje
+del aro en la Endurance, proa-popa en la Ranger. **No se le inventa un segundo
+eje a ninguna figura**, y ésa es la versión de este pase de la regla del §6: el
+laboratorio puede cambiar las condiciones de observación, no afirmar cosas
+sobre el objeto que el objeto no dice.
+
+`turnTo(radianes)` es además la primera mitad de `spinAt` sacada a la luz, y las
+dos la comparten. No podía ser `spinAt` quien sirviera al mando: multiplica por
+`SPIN_RATE`, y esa tabla vale **cero** para la Ranger — el único mando capaz de
+girar una lanzadera habría sido el que no la gira nunca.
+
+### 3. Las dos ausencias, que no son de la misma clase
+
+**Gargantúa** no tiene malla. `createBody` devuelve `null` y no hay raíz que
+girar: la misma frontera que ya la deja fuera de los presets.
+
+**El Tesseracto** sí tiene malla, y se queda fuera igual. Su motivo estaba
+escrito desde antes de que este mando existiera, en la nota de su `SPIN_RATE`:
+*«un objeto que gira sobre su eje afirma que tiene un eje, un dentro y un fuera
+estables — que es exactamente la lectura que su diseño intenta negar»*. Y su
+orientación de reposo no es una pose entre otras, es **toda** su lectura: el eje
+de la recursión casi enfilado a la cámara, los tres marcos uno dentro de otro.
+Un dial que la deshaga no ofrece otra cara, le quita la suya.
+
+La Ranger también vale cero en `SPIN_RATE` y aquí **sí** entra. La asimetría es
+la decisión de este pase: los dos ceros de esa tabla no dicen lo mismo. El del
+Tesseracto niega que haya eje; el de la Ranger dice que una lanzadera dando
+vueltas sola es «un modelo colgado de un hilo». Lo primero sobrevive a una mano
+en el dial, lo segundo no — **una vuelta pedida no es una vuelta que se dé
+sola**.
+
+La lista vive en `hasTurnInstrument` y sale del handle, igual que `LUZ`: el
+visor monta la fila si el método existe, y no deduce nada. Un mando que existe y
+no obedece es peor que un mando que no está.
+
+### 4. La envolvente es invariante, y por eso el encuadre no se toca
+
+Era la pregunta obligada: si la figura da media vuelta, ¿sigue cabiendo? Tiene
+dos capas y sólo la segunda necesita medirse.
+
+**La envolvente no cambia.** El eje pasa por el origen de la raíz y
+`modelRadius` mide el vértice más lejano de ese mismo origen, así que la esfera
+envolvente es idéntica a cualquier ángulo. Como toda la aritmética del encuadre
+sale de ese número, este mando no tocó ni una línea de `framingFor`. Lo fija
+`bodies.test.ts` barriendo el círculo entero.
+
+**La silueta dentro de esa envolvente sí se pasea.** Una esfera no —es su propia
+envolvente— pero la Endurance toca la suya en las puntas de los radiadores.
+Medido a un grado, sobre el preset y las cuatro vistas curadas de cada muestra:
+
+| muestra | en reposo | peor del círculo | envolvente |
+|---|---|---|---|
+| Endurance (escritorio) | 0.947 | **1.041** (`RASANTE`, 249°) | 1.175 |
+| Endurance (móvil) | 0.943 | **1.038** (`CANÓNICA`, 271°) | 1.155 |
+| Ranger (escritorio) | 0.950 | **0.987** (`PROPULSIÓN`, 343°) | 1.000 |
+| Miller / Edmunds | 0.760 | **0.760** | 0.7605 |
+
+Los dos planetas llegan a su envolvente con un margen de 7·10⁻⁶ y no lo cruzan
+nunca, que es la V5 dicha otra vez y ahora en movimiento: el vértice extremo del
+poliedro se sienta exactamente sobre el disco que `boundsFill` promete.
+
+Y la conclusión que hay que dejar escrita, porque se lee mal de otra manera:
+**la promesa del §5 es la envolvente, no el borde del cuadro, y cubre las poses
+que el laboratorio ELIGE** —el preset y las vistas curadas, que es lo que fija
+el primer bloque de `observatory-frames.test.ts`—. Donde manda la mano del
+visitante la promesa siempre fue más débil, y lo era antes de este mando:
+medido, **el arrastre lleva el casco de la Endurance a 1.174** del semicuadro en
+escritorio, más lejos de lo que puede llevarlo la vuelta entera del eje. Girar
+es el más suave de los dos gestos que ya existían.
+
+### 5. Una vista no devuelve la cara; `Reajustar` sí
+
+`applyView` devuelve la luz a casa antes de colocar la cámara, y eso **no** es
+simetría: es corrección. Los dos ángulos de una vista están declarados contra la
+luz canónica, así que sobre una luz movida a mano darían un ángulo de clave que
+la vista no promete.
+
+El giro de la figura no entra en ninguna de esas cuentas —ni en `keyAngle`, ni
+en `keyAzimuth`, ni en el encuadre, que sale de una envolvente invariante— así
+que devolverlo no corregiría nada y sí le quitaría al visitante lo que acaba de
+elegir. **Se escoge la cara y se barren las vistas sobre ella.** `Reajustar`
+sigue devolviendo las dos cosas, porque «la pose del preset» las incluye.
+
+### 6. El único mando de la consola que no es además una lectura
+
+`CLAVE` y `GIRO` se mueven solos mientras el visitante orbita, y eso es lo que
+los separa de un formulario. `EJE` no puede: nada más en el aparato cambia la
+orientación propia de la figura —ni el arrastre, ni el zoom, ni las vistas, ni
+el interruptor de movimiento—, así que su valor es siempre el que alguien pidió.
+Publicarlo en cada fotograma habría sido un temporizador disfrazado de
+telemetría, que es lo que el §8 llama un dato que se repite solo. Su cifra la
+escribe el propio mando, y `Reajustar` la devuelve al centro.
+
+El recorrido va de **−180 a 180** y no de 0 a 360, aunque la vuelta sea la
+misma: así el reposo cae en el centro del dial, se ve de un vistazo cuánto se ha
+girado y se llega a cualquier cara en un solo arrastre.
+
+Y una palabra cambia en la pista: **«arrastra para orbitar»**, no «para girar».
+Hasta ahora las dos eran la misma cosa porque sólo había una; desde que se puede
+girar la figura, llamar «girar» al arrastre anunciaría igual los dos gestos —y
+el que se anuncia ahí es justo el que **no** conserva la iluminación.
+
+### 7. Lo que se probó
+
+- `bodies.test.ts` — la envolvente no cambia en todo el círculo; el giro es
+  absoluto e idempotente; el cero es la orientación de reposo; y la Ranger
+  alabea sobre su eje de proa en vez de cabecear (la proa se queda quieta y el
+  dorso se va a estribor).
+- `observatory-frames.test.ts` — segundo bloque: el círculo entero de cada
+  muestra girable contra su envolvente analítica, en los dos formatos.
+- `lib/observatory.test.ts` — la frontera del mando, con sus dos ausencias.
+- `observatory-chrome.test.tsx` — la fila manda el número y `Reajustar` la
+  devuelve al centro; y sin método publicado no hay fila.
+- `e2e/observatorio.spec.ts` — el contrario exacto de la prueba de `LUZ`: al
+  girar, **ninguna** de las cuatro lecturas se mueve y la imagen **sí**. El
+  movimiento se apaga antes para que el único motivo posible de un cambio de
+  píxeles sea la vuelta pedida; sin ese trozo, un mando desconectado pasaría el
+  test con matrícula. Y el Tesseracto y Gargantúa no enseñan el dial.
+- `tools/observatory-shot.mjs` gana dos pasos, `07b` y `07c`: cuarto y media
+  vuelta, por teclado como `LUZ` y por lo mismo —un ángulo se puede nombrar al
+  comparar dos capturas, y el píxel donde se suelte el ratón no.
+
+*Estado: `npm run check` verde (405 pruebas). `e2e/observatorio.spec.ts` verde en
+escritorio y en móvil. El System Map, sus cuerpos, cámara y materiales no
+cambian: `spinAt` sigue dando exactamente lo mismo que antes. Pendiente el
+veredicto visual de Jonás, con cuatro barridos de seis ángulos enviados.*

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { WORLD_IDS, worldsData, type WorldId } from "@/content/worlds.data";
 import {
   cameraBasis,
+  hasTurnInstrument,
   keyScreenDirection,
   lightGeometry,
   lightPlacement,
@@ -569,4 +570,43 @@ describe("la geometría de la luz", () => {
       ).toBeCloseTo(roll, 4);
     }
   });
+});
+
+describe("el eje de la figura", () => {
+  /*
+    LA FRONTERA DEL MANDO `EJE`, y las dos ausencias que la dibujan.
+
+    El instrumento gira el espécimen sobre su propio eje: otra cara, la MISMA
+    luz. Es el tercer gesto del laboratorio y el único que no cambia la
+    geometría de iluminación, porque no mueve el cuerpo del sitio del mundo
+    donde está.
+
+    Gargantúa se queda fuera por lo de siempre —no hay malla que girar— y el
+    Tesseracto por un motivo suyo que NO es técnico: su orientación de reposo es
+    toda su lectura. Este test existe para que quitarlo de la lista cueste
+    explicar por qué, que es lo que un comentario solo no consigue.
+  */
+  it("gira lo que tiene eje, y deja fuera a las dos que no lo tienen", () => {
+    for (const id of ["endurance", "ranger", "miller", "edmunds"] as const) {
+      expect(hasTurnInstrument(id), id).toBe(true);
+    }
+    expect(hasTurnInstrument("gargantua")).toBe(false);
+    expect(hasTurnInstrument("tesseract")).toBe(false);
+  });
+
+  /*
+    LA OTRA MITAD DEL CONTRATO NO SE PRUEBA AQUÍ, y conviene decir por qué en
+    vez de escribir una prueba que no pueda fallar.
+
+    «Girar la figura no cambia la luz» es cierto por AUSENCIA: `lightGeometry`
+    recibe tres vectores del mundo —cámara, cuerpo y vertical— y la orientación
+    del modelo no está entre ellos ni puede estarlo, porque este módulo no
+    conoce three.js. Llamarla dos veces con los mismos argumentos para
+    comprobar que da lo mismo sería comprobar que una función es una función.
+
+    Lo que sí se puede romper es que el mando mueva algo que no debe, y eso se
+    mide donde hay malla: `bodies.test.ts` fija que el eje pasa por el origen de
+    la raíz —la envolvente no cambia, y con ella el encuadre— y
+    `observatory-frames.test.ts` barre el círculo entero contra esa envolvente.
+  */
 });

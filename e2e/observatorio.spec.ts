@@ -25,10 +25,14 @@ import { expect, test, type Page } from "@playwright/test";
  */
 
 const OBSERVATORIO = "/es/experimentos/observatorio/tesseracto";
-/** Dos especímenes de malla, no los cuatro montados. El segundo existe para
+/** Dos especímenes de malla, no los seis montados. El segundo existe para
  *  probar que el laboratorio no está hecho a la medida del primero, y con eso
  *  basta: Gargantúa tiene sus propias pruebas al final de este archivo porque
- *  no es una malla, y la Ranger comparte camino con la Endurance. */
+ *  no es una malla, la Ranger comparte camino con la Endurance, y Miller y
+ *  Edmunds comparten el suyo —`simpleWorld`, una esfera y un material—, así que
+ *  añadirlos aquí multiplicaría por tres un recorrido de navegador sin cubrir
+ *  una sola línea nueva. Lo que sí es propio de ellos —el encuadre y la
+ *  geometría de luz— se demuestra sin GPU en `observatory-frames.test.ts`. */
 const ESPECIMENES = [
   "/es/experimentos/observatorio/tesseracto",
   "/es/experimentos/observatorio/endurance",
@@ -495,10 +499,17 @@ test("el catálogo enseña las seis muestras y sólo enlaza las montadas", async
   */
   const catalogo = page.getByRole("navigation", { name: "Especímenes" });
   await expect(catalogo.locator("li")).toHaveCount(6);
-  // Cuatro montadas desde que entró la Ranger; las otras dos siguen catalogadas
-  // y sin puerta, que es lo que dice cuántas hay sin prometer lo que no existe.
-  await expect(catalogo.locator("a")).toHaveCount(4);
-  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(2);
+  /*
+    Las seis, y desde Miller y Edmunds las seis tienen puerta. El cero de abajo
+    ya no comprueba «las que faltan no engañan» —no falta ninguna— sino lo
+    contrario, que es lo que ahora puede romperse: que ninguna muestra montada
+    pierda su `href` y vuelva a aparecer como no observable. La cobertura del
+    estado deshabilitado no se pierde: vive en el fixture mixto de
+    `components/observatory-chrome.test.tsx`, que es deliberadamente distinto
+    del catálogo real por este mismo motivo.
+  */
+  await expect(catalogo.locator("a")).toHaveCount(6);
+  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(0);
 
   const caja = (await catalogo.boundingBox())!;
   expect(caja.width, "el catálogo dejó de ser una columna fina").toBeLessThan(
@@ -714,6 +725,15 @@ test("mover la luz cambia la clave y NO mueve la cámara", async ({ page }) => {
   const antes = await camara();
   expect(antes).toContain("AZ");
 
+  /*
+    Y el Tesseracto no trae el mando `EJE`, que es la única ausencia del
+    laboratorio que no es técnica: tiene malla y se podría girar. Su orientación
+    de reposo ES su lectura —el eje de la recursión casi enfilado a la cámara,
+    los tres marcos uno dentro de otro— así que un dial que la deshaga no
+    ofrece otra cara, le quita la suya.
+  */
+  await expect(page.getByRole("slider", { name: /rotación/i })).toHaveCount(0);
+
   const clave = page.getByRole("slider", { name: /clave/i });
   await clave.focus();
   /*
@@ -745,6 +765,67 @@ test("mover la luz cambia la clave y NO mueve la cámara", async ({ page }) => {
   await expect(page.locator(".observatory__dial").first()).toContainText(
     "145.0°",
   );
+});
+
+test("el eje gira la figura y deja la luz donde estaba", async ({ page }) => {
+  /*
+    LA PRUEBA DEL TERCER GESTO, y es la contraria de la anterior.
+
+    `LUZ` promete «la misma cara, otra luz» y se demuestra viendo que `CLAVE`
+    cambia mientras `AZ`, `EL` y `DIST` no se mueven. `EJE` promete lo simétrico
+    —«otra cara, la misma luz»— así que aquí no se puede mover NINGUNA de las
+    cuatro lecturas: ni las tres de cámara ni el ángulo de clave. Lo único que
+    puede cambiar son los píxeles.
+
+    Y por eso se mide también la imagen. Sin ese trozo, un mando que no hiciera
+    absolutamente nada pasaría este test con matrícula: las cuatro lecturas
+    quietas son justo lo que devuelve un dial desconectado. El movimiento se
+    apaga antes para que el único motivo posible de un cambio de píxeles sea la
+    vuelta que se acaba de pedir — con el reloj corriendo, las balizas y la
+    corrección de actitud de la Endurance ya cambian la imagen solas.
+
+    Se hace sobre la Endurance porque es donde la vuelta significa más: su eje
+    es el del aro, así que girarla desfila los doce módulos por delante.
+  */
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await conEscenaViva(page);
+  await page.goto("/es/experimentos/observatorio/endurance");
+  await page.locator('.observatory[data-state="nominal"]').waitFor({
+    timeout: 60_000,
+  });
+  await abrirEstudio(page);
+
+  // Nada autónomo: a partir de aquí la imagen sólo cambia si alguien la cambia.
+  await page.getByRole("button", { name: "Desactivar movimiento" }).click();
+  await page.waitForTimeout(800);
+
+  const lienzo = page.locator(".observatory__canvas");
+  const camara = () =>
+    page.locator(".observatory__readout").first().textContent();
+  const luz = () => page.locator(".observatory__dial").first().textContent();
+
+  const antesCamara = await camara();
+  const antesLuz = await luz();
+  const antesImagen = await lienzo.screenshot();
+
+  const eje = page.getByRole("slider", { name: /rotación/i });
+  await expect(eje).toHaveValue("0");
+  await eje.focus();
+  for (let i = 0; i < 90; i += 1) await page.keyboard.press("ArrowRight");
+  await expect(eje).toHaveValue("90");
+  await page.waitForTimeout(800);
+
+  expect(await camara(), "girar la figura movió la cámara").toBe(antesCamara);
+  expect(await luz(), "girar la figura movió la luz").toBe(antesLuz);
+  expect(
+    (await lienzo.screenshot()).equals(antesImagen),
+    "el mando no cambió un solo píxel",
+  ).toBe(false);
+
+  // Y `Reajustar` devuelve también la cara: la pose del preset es una sola.
+  await page.getByRole("button", { name: "Reajustar" }).click();
+  await expect(eje).toHaveValue("0");
 });
 
 test("la sonda nombra una arista real del hipercubo", async ({ page }) => {
@@ -824,6 +905,9 @@ test("O5 · Gargantúa no ofrece luz, ni material, ni sonda, ni órbita", async 
   */
   await expect(page.getByRole("slider", { name: /clave/i })).toHaveCount(0);
   await expect(page.getByRole("slider", { name: /giro/i })).toHaveCount(0);
+  /* Y `EJE` tampoco: gira la malla del espécimen sobre su propio eje, y aquí no
+     hay malla que girar. Es la tercera ausencia del mismo motivo. */
+  await expect(page.getByRole("slider", { name: /rotación/i })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Material", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Sonda", exact: true })).toHaveCount(0);
 

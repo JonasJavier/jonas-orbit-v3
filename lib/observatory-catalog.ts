@@ -42,6 +42,17 @@ export const OBSERVATORY_SLUGS: Readonly<Record<string, WorldId>> = {
     había mirado. Ver la nota de su preset en `lib/observatory.ts`.
   */
   ranger: "ranger",
+  /*
+    Las dos últimas, y con ellas el catálogo queda `06 / 06`. Son los dos
+    cuerpos que el §8 llama «una esfera con un material»: no tienen arquitectura
+    que contar —`specimenContract` devuelve `null` para las dos y el panel
+    `DATOS` se queda sin la familia `Objeto`— y toda su identidad vive en
+    parámetros de shader. Eso no las hace muestras pobres: las hace las dos
+    únicas del laboratorio donde lo que se observa es LUZ SOBRE MATERIAL y nada
+    más. Ver sus presets en `lib/observatory.ts`.
+  */
+  miller: "miller",
+  edmunds: "edmunds",
 };
 
 export interface SpecimenEntry {
@@ -69,10 +80,19 @@ function observatoryHref(id: WorldId, locale: Locale): string | null {
  * Los seis, en orden de observación.
  *
  * Nombre, descriptor y par son reales o son `null`: nada se inventa para
- * rellenar una fila. Las cuatro muestras sin montar existen en el catálogo
- * porque **el catálogo dice cuántas hay** — enseñar dos sería mentir sobre el
- * tamaño del laboratorio— y llegan sin `href` porque una puerta que no lleva a
- * ninguna parte es peor que la ausencia de puerta.
+ * rellenar una fila.
+ *
+ * Desde Miller y Edmunds **ninguna llega sin `href`**, y la rama que lo permite
+ * se queda igual. No es código muerto por si acaso: es la regla que hizo
+ * crecible este catálogo —una muestra catalogada y sin montar aparece con su
+ * fila y sin puerta, porque el catálogo dice cuántas hay y una puerta que no
+ * lleva a ninguna parte es peor que la ausencia de puerta— y quien la borre por
+ * «ya no hace falta» tendrá que volver a discutirla el día que el laboratorio
+ * reciba una séptima muestra. Sus pruebas viven en dos fixtures inventados a
+ * propósito —`components/experiments-index.test.tsx` para la recepción y
+ * `components/observatory-chrome.test.tsx` para el raíl—, y son inventados
+ * justamente porque una prueba que cuelga del catálogo real deja de probar esta
+ * rama el día que el catálogo se completa, sin fallar al hacerlo.
  */
 export function observatoryCatalog(locale: Locale): SpecimenEntry[] {
   return OBSERVATION_ORDER.map((id, i) => {

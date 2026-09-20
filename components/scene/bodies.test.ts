@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { worldsData, type WorldId } from "@/content/worlds.data";
 import { DISK_OUTER, GARGANTUA_RS } from "./gargantua-shaders";
 import { bodyDepthLayerFor, placeBodyOnDepthLayer } from "@/lib/scene-depth";
+import { hasTurnInstrument, OBSERVATION_ORDER } from "@/lib/observatory";
 import { SYSTEM_POSE } from "@/lib/scene-poses";
 import {
   createBody,
@@ -829,6 +830,101 @@ describe("cuerpos del Sistema Gargantúa", () => {
       /* Y por debajo de 0.15 de cámara se vería de canto: nave iluminada que no
          se puede leer, que es el otro extremo del mismo error. */
       expect(back.dot(toCamera)).toBeGreaterThan(0.15);
+    } finally {
+      disposeBody(body);
+    }
+  });
+
+  /*
+    EL MANDO `EJE` DEL OBSERVATORIO, medido en el modelo y no en la interfaz.
+
+    `turnTo` es la primera mitad de `spinAt` sacada a la luz para que el
+    laboratorio pueda girar una figura que el mapa no gira —la Ranger vale cero
+    en `SPIN_RATE`— sin abrir un segundo camino a la misma rotación.
+
+    Lo que hay que fijar es la propiedad de la que cuelga todo el encuadre del
+    Observatorio: **el eje pasa por el origen de la raíz, así que la envolvente
+    es invariante**. `modelRadius` mide el vértice más lejano de ese origen y
+    `framingFor` calcula la distancia de cámara entera sobre ese número. Si
+    alguna vez el giro se aplicara sobre un pivote desplazado, el radio crecería
+    con el ángulo y el espécimen empezaría a salirse del cuadro al girarlo, sin
+    que ninguna otra prueba se pusiera roja.
+  */
+  it("girar la figura no toca su envolvente, y por eso no toca el encuadre", () => {
+    /* La lista sale de la frontera del laboratorio y no de una copia: el día
+       que una muestra entre o salga del mando, esta prueba la sigue. */
+    const girables = OBSERVATION_ORDER.filter(
+      (id): id is Exclude<WorldId, "gargantua"> =>
+        id !== "gargantua" && hasTurnInstrument(id),
+    );
+    expect(girables).toEqual(["endurance", "ranger", "miller", "edmunds"]);
+
+    for (const id of girables) {
+      const body = bodyFor(id);
+      try {
+        const reposo = body.object.children[0].quaternion.clone();
+
+        for (let grados = 0; grados < 360; grados += 10) {
+          body.turnTo((grados * Math.PI) / 180);
+          expect(
+            measuredRadius(body.object),
+            `${id} a ${grados}°`,
+          ).toBeCloseTo(body.radius, 6);
+        }
+
+        /* Y es ABSOLUTO, no incremental: el dial es una posición y no un
+           empujón. Sin esto, `Reajustar` tendría que llevar la cuenta de cuánto
+           se giró — que es la misma deuda que `spinAt` ya pagó cuando giraba
+           por fotograma y los cuerpos daban vueltas al doble en una pantalla de
+           144 Hz. */
+        body.turnTo(2.4);
+        const una = body.object.children[0].quaternion.clone();
+        body.turnTo(0.7);
+        body.turnTo(2.4);
+        expect(body.object.children[0].quaternion.equals(una)).toBe(true);
+
+        // Y el cero es la orientación de reposo, que es la que encuadra el
+        // preset y a la que vuelve `Reajustar`.
+        body.turnTo(0);
+        expect(body.object.children[0].quaternion.equals(reposo)).toBe(true);
+      } finally {
+        disposeBody(body);
+      }
+    }
+  });
+
+  /*
+    QUÉ EJE ES EL SUYO, dicho sobre la malla.
+
+    El mando no elige eje: usa el que el cuerpo ya declaraba en `spinAxis`, y
+    eso es lo que hace que girar no afirme nada nuevo sobre el objeto. Aquí se
+    comprueba en la Ranger, que es donde más se nota y donde una equivocación
+    sería invisible en la consola: su marco local es «+X proa, +Y arriba, +Z
+    estribor», así que su eje es el de PROA-POPA y el gesto es un ALABEO.
+
+    Importa porque es lo que el mando promete enseñar. Alabeando sale el
+    vientre —que desde la pose del preset no se ve nunca—; cabeceando saldría el
+    morro apuntando a ningún sitio, que es justo la lectura que la nota de
+    `SPIN_RATE` dice que hay que evitar.
+  */
+  it("la Ranger alabea sobre su eje de proa, y no cabecea", () => {
+    const body = bodyFor("ranger");
+    try {
+      const model = body.object.children[0];
+      const proa = new THREE.Vector3(1, 0, 0);
+      const dorso = new THREE.Vector3(0, 1, 0);
+
+      body.turnTo(Math.PI / 2);
+
+      // La proa se queda donde estaba: es el eje.
+      expect(
+        proa.clone().applyQuaternion(model.quaternion).dot(proa),
+      ).toBeCloseTo(1, 6);
+      // Y el dorso se va a estribor: media vuelta más y es el vientre lo que
+      // mira a la cámara.
+      expect(
+        dorso.clone().applyQuaternion(model.quaternion).dot(new THREE.Vector3(0, 0, 1)),
+      ).toBeCloseTo(1, 6);
     } finally {
       disposeBody(body);
     }

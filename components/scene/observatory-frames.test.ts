@@ -2,7 +2,11 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { worldsData, type WorldId } from "@/content/worlds.data";
 import { observationViews, resolveView } from "@/lib/observation-views";
-import { OBSERVATION_PRESETS, observationPlacement } from "@/lib/observatory";
+import {
+  hasTurnInstrument,
+  OBSERVATION_PRESETS,
+  observationPlacement,
+} from "@/lib/observatory";
 import { createBody, disposeBody } from "./bodies";
 import { FOV } from "./observatory-scene";
 
@@ -64,7 +68,24 @@ function framingFor(radius: number, boundsFill: number, aspect: number): number 
 }
 
 describe("el cuadro del Observatorio", () => {
-  const montados = ["tesseract", "endurance", "ranger"] as const;
+  /*
+    Los cinco de malla. Gargantúa no está porque no tiene ninguna: su encuadre
+    lo fijan las seis cifras de cámara de `lib/gargantua-views.ts` y no esta
+    fórmula.
+
+    Miller y Edmunds entran aquí sabiendo que no pueden fallar —una esfera es su
+    propia envolvente, así que `boundsFill` acota su proyección por
+    construcción— y precisamente por eso valen: son el CASO CONOCIDO de la
+    fórmula. Si algún día `framingFor` se estropea, estos dos caen primero y con
+    un número que se puede comparar a mano contra `tan(asin(0.78·sin 20°))`.
+  */
+  const montados = [
+    "tesseract",
+    "endurance",
+    "ranger",
+    "miller",
+    "edmunds",
+  ] as const;
 
   for (const id of montados) {
     const world = worldsData[id];
@@ -150,3 +171,152 @@ describe("el cuadro del Observatorio", () => {
     }
   }
 });
+
+/**
+ * GIRAR LA FIGURA NO PUEDE ROMPER EL ENCUADRE, y aquí se mide por qué.
+ *
+ * El mando `EJE` gira el espécimen sobre su propio eje sin mover la cámara ni
+ * la luz. La pregunta que abre es inmediata y no es retórica: si la figura da
+ * media vuelta, ¿sigue cabiendo?
+ *
+ * La respuesta tiene dos capas y sólo la segunda hace falta probarla.
+ *
+ * **La envolvente es invariante.** El eje pasa por el origen de la raíz y
+ * `modelRadius` mide desde ese origen, así que la esfera envolvente —de la que
+ * sale la distancia de cámara entera— es exactamente la misma a cualquier
+ * ángulo. Eso lo fija `bodies.test.ts`, y es lo que hace que este mando no
+ * necesite tocar ni una línea del encuadre.
+ *
+ * **La silueta dentro de esa envolvente sí se mueve.** Una esfera no —es su
+ * propia envolvente, así que Miller y Edmunds miden lo mismo a los 360
+ * grados—, pero la Endurance toca su esfera en las puntas de los radiadores y
+ * girarla los pasea por el cuadro. Medido a 5°: el peor caso de la Endurance
+ * llega a 1.041 del semicuadro en escritorio, contra 0.961 sin girar.
+ *
+ * Y ése es el límite honesto que se comprueba abajo: **la promesa es la
+ * envolvente, no el borde del cuadro**. `boundsFill` 1.15 dice literalmente que
+ * la esfera envolvente de la Endurance mide un 15 % más que el cuadro, y eso se
+ * calibró así a sabiendas —con 0.91 la nave ocupaba el 58 % del alto, muy por
+ * debajo del 70 % que pide el §5—. Lo que el laboratorio promete sin salirse
+ * son las poses que ELIGE: el preset y las vistas curadas, que es lo que fija
+ * el bloque de arriba. Donde manda la mano del visitante la promesa es otra, y
+ * más débil, y ya lo era antes de este mando: medido, el arrastre —que existe
+ * desde la V1— lleva el casco de la Endurance a **1.174** del semicuadro en
+ * escritorio, bastante más lejos de lo que puede llevarlo la vuelta entera del
+ * eje. Girar es el gesto más suave de los dos.
+ */
+describe("el cuadro del Observatorio al girar la figura", () => {
+  /*
+    El ancho que ocupa la ESFERA ENVOLVENTE, en el marco normalizado del cuadro.
+
+    Es la fórmula del pase de Miller y Edmunds —`tan(asin(f·sin h))/tan h`—
+    evaluada sobre el eje que de verdad recorta, que es el mismo que eligió
+    `framingFor`. Con `boundsFill` 0.78 da 0.760, que es justo lo que miden los
+    dos planetas: la comprobación de que esto no es una cota inventada sino la
+    misma geometría dicha al revés.
+
+    Y no es una cota que se pueda cruzar: ningún vértice está más lejos del
+    centro que `modelRadius`, así que ninguno puede proyectarse fuera del disco
+    de la envolvente. Por eso los dos planetas pasan con un margen de 7·10⁻⁶
+    —medido a un grado— sin que eso sea un test frágil: su vértice extremo se
+    sienta EXACTAMENTE sobre el disco prometido, que es lo que tiene que hacer.
+  */
+  function envolvente(boundsFill: number, aspect: number): number {
+    const half = (FOV / 2) * DEG;
+    const halfWide = Math.atan(aspect * Math.tan(half));
+    const tight = Math.min(half, halfWide);
+    return Math.tan(Math.asin(boundsFill * Math.sin(tight))) / Math.tan(tight);
+  }
+
+  const girables = (
+    ["tesseract", "endurance", "ranger", "miller", "edmunds"] as const
+  ).filter((id) => hasTurnInstrument(id));
+
+  it("el mando no llega al Tesseracto, que tiene su lectura en la pose", () => {
+    expect(girables).toEqual(["endurance", "ranger", "miller", "edmunds"]);
+  });
+
+  for (const id of girables) {
+    const world = worldsData[id];
+    const preset = OBSERVATION_PRESETS[id];
+    const vistas = observationViews(id);
+
+    for (const [formato, aspect] of FORMATOS) {
+      it(`${world.cosmicName} no sale de su envolvente al girar en ${formato}`, () => {
+        const body = createBody({
+          id,
+          visual: world.visual,
+          accent: world.accent,
+          secondary: world.secondary,
+          placement: world.placement,
+        });
+        if (!body) throw new Error(`${id} no construyó cuerpo`);
+
+        try {
+          body.animateAt(16.5);
+          const base = framingFor(body.radius, preset.boundsFill, aspect);
+          const techo = envolvente(preset.boundsFill, aspect);
+          const lista = vistas.length ? vistas : [undefined];
+          const p = new THREE.Vector3();
+
+          for (const vista of lista) {
+            const resuelta = resolveView(preset, vista);
+            const place = observationPlacement(
+              id,
+              body.radius,
+              base * resuelta.distance,
+              resuelta,
+            );
+            const target = new THREE.Vector3(...place.body);
+            body.object.position.copy(target);
+
+            const camera = new THREE.PerspectiveCamera(FOV, aspect, 0.1, 4000);
+            camera.position.set(...place.camera);
+            camera.up.set(...place.up);
+            camera.lookAt(target);
+            camera.updateMatrixWorld();
+
+            let peor = 0;
+            let donde = 0;
+            /* El círculo entero de diez en diez grados. Es el recorrido del
+               dial, que va de −180 a 180: no hay ninguna posición del mando que
+               este barrido no visite o roce. */
+            for (let grados = 0; grados < 360; grados += 10) {
+              body.turnTo(grados * DEG);
+              body.object.updateMatrixWorld(true);
+
+              let fuera = 0;
+              body.object.traverseVisible((node) => {
+                if (!(node instanceof THREE.Mesh) || EMISIVO.test(node.name)) {
+                  return;
+                }
+                const position = node.geometry.getAttribute("position");
+                if (!position) return;
+                for (let i = 0; i < position.count; i++) {
+                  p.fromBufferAttribute(position as THREE.BufferAttribute, i)
+                    .applyMatrix4(node.matrixWorld)
+                    .project(camera);
+                  if (p.z > 1) continue;
+                  fuera = Math.max(fuera, Math.abs(p.x), Math.abs(p.y));
+                }
+              });
+              if (fuera > peor) {
+                peor = fuera;
+                donde = grados;
+              }
+            }
+            body.turnTo(0);
+
+            expect(
+              peor,
+              `${id}/${vista?.id ?? "preset"} en ${formato}: ${peor.toFixed(3)} a ${donde}° contra una envolvente de ${techo.toFixed(3)}`,
+            ).toBeLessThanOrEqual(techo);
+          }
+        } finally {
+          disposeBody(body);
+        }
+      });
+    }
+  }
+});
+
