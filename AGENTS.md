@@ -267,6 +267,61 @@ clave de almacenamiento renombrada. El System Map, sus cuerpos, cámara y
 materiales no cambian. **El `registro` de Gargantúa sigue en borrador,
 pendiente de Jonás, y su valoración visual queda abierta.**
 
+**Observatorio V4 — la Ranger, y el cuadro que nadie medía (2026-09-19):** la
+sección `V4 — la Ranger, y el cuadro que nadie medía` de
+`docs/design/tesseract-experimentos.md` manda sobre `V3`, el §5 y el §6 en
+**cómo se ilumina y se encuadra un espécimen de malla**. El catálogo pasa a
+`04 / 06 MONTADOS`. Montarla fue una línea en `OBSERVATORY_SLUGS`; lo que
+destapó es que el laboratorio llevaba dos especímenes iluminados por donde
+tocara y encuadrados por un solo eje. **La actitud de una nave no es suya, es de
+su sitio**: `RANGER_ATTITUDE` es la solución de «encarar la luz y la cámara a la
+vez» EN EL SYSTEM MAP, y aquí el espécimen se sienta en `(0,0,−D)` con la
+lámpara en el origen, así que el dorso pasa de `+0.197` a `−0.088` —el arranque
+del terminador— y ninguna cámara lo arregla porque la cámara no mueve la luz. El
+barrido geométrico (2 184 triángulos sobre 36 × 72 direcciones) eligió `70/35`
+maximizando área iluminada y **la captura lo rechazó**: la Ranger tiene bloque
+propio en el shader (`uKind == 5`) escrito para contraluz, así que su identidad
+la llevan la envoltura y el filo ámbar y no el difuso. Medido con el azimut
+clavado en 80, la meseta `≥200` cae de 102 494 px (7.9 % del cuadro) a 13 298
+mientras el brillo real `≥235` SUBE de 3 037 a 6 630: la luz deja de ser un
+lavado y se concentra en cantos. Preset `135 / 80`, la vecindad de los 153° del
+mapa. **`FOV` es el campo VERTICAL** y nadie miraba el otro: a 375 × 812 el
+Tesseracto ocupaba el 181 % del ancho y la Endurance el 185 %, o sea que en
+móvil los dos especímenes montados salían cortados — `framingFor(aspect)` toma
+el eje que de verdad recorta y por construcción no mueve ni un píxel de lo
+aprobado, porque con el cuadro apaisado el mínimo vuelve a ser el término de
+siempre. De paso, `observatory-frames.test.ts` encontró que **dos vistas de la
+Endurance se salían en ESCRITORIO** (`SILUETA` en −1.00 y `OPERACIONES` en
++1.06, justo la de las toberas): `distance` a 1.18 y 1.14. La pluma queda fuera
+de la promesa a propósito —`modelRadius` la poda porque «una nave no ocupa más
+espacio por encender un motor»— y lo que no puede salirse nunca es la chapa.
+`boundsFill` 1.0 y no 1.15: con 1.15 son 78 % del alto en escritorio pero en
+móvil se le sale el ala. Cuatro vistas —`CANÓNICA`, `PLANTA`, `PROPULSIÓN`,
+`PERFIL`— y `rangerArchitecture` en el panel `DATOS`, con los conteos saliendo
+de las mismas listas que construyen las piezas. **Segunda entrega el mismo día,
+pedida por el dueño**: la pose por defecto baja de azimut 80 a **110** —a 0.74
+de dorso la nave se leía picada y con el morro caído, el mismo defecto que la
+fase 1 corrigió en el mapa; por encima de 115 el ala toca el borde en móvil— y
+**el modelo sube de calidad porque de cerca se veía básico**. Tres frentes: la
+TEXTURA de chapa pasa de 128 con paneles de 32 a **384 con paneles de 48** y
+gana labio, junta intermedia y regueros —a 128 cada junta salía de seis píxeles
+difuminados, o sea una franja pintada—; la TESELACIÓN sube donde se ve la
+silueta (fuselaje a tres subdivisiones, proa a dieciséis caras, góndolas y
+campanas a veintidós) sin mover un solo radio; y la CABINA se rehace —era una
+esfera aplastada medio enterrada, y **una superficie recortada por otra no tiene
+forma propia**— como cúpula facetada con marco en CHAPA, que es lo que pedía la
+dirección de arte desde el primer pase. Más espina dorsal, escotilla, antenas,
+puertos de maniobra, rejillas, vallas de ala, carenados e interior de campana.
+Dos reglas: **un carenado es del mismo material que el casco** —puestos en el
+metal oscuro de la estructura dejaban una franja negra de punta a punta del
+lomo— y todo cabe dentro de la envolvente, así que **el radio del cuerpo sigue
+siendo 2.5640** y ni el blanco de clic ni el encuadre se mueven. Las llamadas de
+dibujo no cambian; el techo de VÉRTICES sube de 19 500 a 22 500 —tenía 139 de
+margen— después de recortar 2 694 de los 5 306 que costó el pase. La Endurance
+conserva su textura a 128. El System Map, sus cuerpos, cámara y materiales no
+cambian. **El `registro` de la Ranger no está escrito: es la voz de Jonás. Su
+valoración visual queda abierta.**
+
 **UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
 anterior en consentimiento, pausa y perfil ligero:**
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior

@@ -117,6 +117,50 @@ export const OBSERVATION_VIEWS: Partial<
         "Contraluz puro. Lo único que sostiene la figura contra el negro es su filo frío, el único del laboratorio.",
     },
   ],
+  ranger: [
+    {
+      id: "canonica",
+      label: "Canónica",
+      study:
+        "Contraluz alto: la nave tiene bloque propio en el shader y está escrito para esto. Lo que dibuja el borde de ataque, la cabina y las góndolas no es el difuso, es el filo.",
+    },
+    {
+      id: "planta",
+      label: "Planta",
+      /* Cenital con la luz de lado. Es la dirección de máxima área proyectada
+         del barrido —22.1 contra 20.2 de la canónica— y la única donde la
+         flecha del ala y la deriva en V se leen como planta y no como canto. */
+      keyAngle: 90,
+      keyAzimuth: 80,
+      distance: 1.15,
+      study:
+        "Desde arriba con la luz de lado. La flecha del ala, la deriva en V y el panelado de chapa, que es el único del sistema con remaches, y sólo aparecen con el terminador cruzando el dorso.",
+    },
+    {
+      id: "propulsion",
+      label: "Propulsión",
+      /* Desde atrás y arriba: el eje de escape mira a la cámara (0.42) y sólo
+         el 18 % del área vista recibe luz, que es la condición para que se vea
+         lo que la nave emite en vez de lo que refleja. */
+      keyAngle: 100,
+      keyAzimuth: 135,
+      study:
+        "Por detrás y casi a oscuras: las dos campanas, sus plumas y las balizas. Escape blanco azulado y señal violeta son el mismo material separados por máscara de vértice, y son lo único que no depende de la luz.",
+    },
+    {
+      id: "perfil",
+      label: "Perfil",
+      /* Través exacto por babor: el producto de la mirada con el costado vale
+         -1.00, así que ni la proa ni el dorso aportan nada a la silueta. */
+      keyAngle: 139,
+      /* 190 y no -170, que es el mismo sitio: el contrato de las vistas acota
+         el azimut a [0, 360) y una prueba lo vigila. */
+      keyAzimuth: 190,
+      distance: 1.1,
+      study:
+        "Través exacto, a contraluz. El fuselaje es un lifting body y no un tubo, y eso sólo se afirma de perfil: la quilla del escudo térmico por el canto y el ala reducida a su larguero.",
+    },
+  ],
   endurance: [
     {
       id: "canonica",
@@ -135,7 +179,13 @@ export const OBSERVATION_VIEWS: Partial<
       id: "silueta",
       label: "Silueta",
       keyAngle: 168,
-      distance: 1.1,
+      /*
+        1.1 → 1.18, y no es un retoque de gusto: a 1.1 la nave TOCABA el borde
+        inferior del cuadro (NDC y = -1.00 a 1440 x 900, medido proyectando la
+        malla). Lo encontró el instrumento que trajo la Ranger —
+        `observatory-frames.test.ts`— al pasarlo por las vistas que ya existían.
+      */
+      distance: 1.18,
       study:
         "Contraluz. El aro, el eje y los cuatro radiadores se leen como estructura y no como superficie.",
     },
@@ -145,6 +195,9 @@ export const OBSERVATION_VIEWS: Partial<
       /* Las toberas encendidas y las balizas son lo único emisivo de la nave
          (`endurance-operations.ts`), y sobre la cara noche es donde cuentan. */
       keyAngle: 128,
+      /* Igual que `SILUETA`, y peor: a distancia 1 se salía por arriba (y =
+         +1.06). Era la vista que más lo notaba porque es la más cerrada. */
+      distance: 1.14,
       study:
         "Contra la cara noche: las toberas encendidas y las balizas, que son lo único que la nave emite por sí misma y lo único que no depende de la luz.",
     },

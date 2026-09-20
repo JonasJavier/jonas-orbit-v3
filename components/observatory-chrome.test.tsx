@@ -216,10 +216,15 @@ vi.stubGlobal("matchMedia", (query: string) => ({
 /*
   El catálogo que la ruta compone en servidor, aquí a mano.
 
-  Se declaran las seis entradas y sólo dos con enlace, que es el estado real del
-  laboratorio: así el test del raíl comprueba las dos mitades —las montadas y
-  las que todavía no— sin depender del contenido, y el día que entre la tercera
-  hay que venir a tocarlo a propósito.
+  Seis entradas y sólo dos con enlace. Ya NO es el estado real del laboratorio
+  —van cuatro montadas— y eso es deliberado: lo que estas pruebas necesitan es
+  un catálogo con las dos mitades a la vez, montadas y pendientes, para
+  comprobar que el raíl enlaza unas y no otras y que el paso compacto no
+  envuelve. Si la copia siguiera al catálogo de verdad, el día que se monten
+  las seis se quedarían sin probar las pendientes.
+
+  El reparto real lo comprueban `e2e/experimentos.spec.ts` y
+  `e2e/observatorio.spec.ts`, que leen el catálogo compuesto.
 */
 const RAIL = [
   { id: "tesseract", index: 1, name: "Tesseracto", href: "/es/experimentos/observatorio/tesseracto" },
@@ -734,9 +739,10 @@ describe("Observatorio · cromo instrumental", () => {
       viven a la vez en el DOM y se excluyen por `display: none`, que sí saca del
       árbol de accesibilidad: nunca hay dos navegaciones de especímenes expuestas.
 
-      El paso recorre sólo las muestras MONTADAS, y no envuelve: con dos montadas
-      envolver haría que las dos flechas llevaran al mismo sitio y el control
-      mentiría sobre dónde estás. Desde la primera, «anterior» no existe.
+      El paso recorre sólo las muestras MONTADAS, y no envuelve: con las dos
+      montadas de este catálogo de prueba, envolver haría que las dos flechas
+      llevaran al mismo sitio y el control mentiría sobre dónde estás. Desde la
+      primera, «anterior» no existe.
     */
     const { container } = await mount();
     const paso = container.querySelector(".observatory__step")!;

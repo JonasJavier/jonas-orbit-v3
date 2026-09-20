@@ -141,6 +141,10 @@ describe("contrato del espécimen", () => {
     // Suma de los cinco sin sus cintas: tiene que quedar por debajo del tope
     // global de `bodies.test.ts`, que además incluye órbitas y el quad de
     // Gargantúa. Si esto se acercara, el que avisa primero es aquel test.
+    //
+    // El tope sube con él de 19 500 a 22 500 por el pase de calidad de la
+    // Ranger; el motivo, el reparto por cuerpo y lo que se recortó antes de
+    // subirlo están escritos allí, que es donde vive el presupuesto.
     const total = SOLIDS.reduce(
       (acc, id) => {
         const { draws, vertices } = contractFor(id);
@@ -149,6 +153,6 @@ describe("contrato del espécimen", () => {
       { draws: 0, vertices: 0 },
     );
     expect(total.draws).toBeLessThanOrEqual(20);
-    expect(total.vertices).toBeLessThan(19_500);
+    expect(total.vertices).toBeLessThan(22_500);
   });
 });

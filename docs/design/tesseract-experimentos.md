@@ -2828,3 +2828,223 @@ asentarse y entonces para), que un clic conmuta también en el espécimen más
 lento, y las cuentas del catálogo a tres montadas. Trece pruebas unitarias
 nuevas en `lib/gargantua-views.test.ts`. **Pendiente el veredicto visual de
 Jonás, y su aprobación del `registro`, que es su voz.***
+
+---
+
+## V4 — la Ranger, y el cuadro que nadie medía (2026-09-19)
+
+*Manda sobre `V3`, el §5 y el §6 en **cómo se ilumina y se encuadra un
+espécimen de malla**. El catálogo pasa a `04 / 06 MONTADOS`.*
+
+Montarla fue una línea en `OBSERVATORY_SLUGS`, como estaba prometido. Lo que no
+estaba previsto es lo que la Ranger destapó: **este laboratorio llevaba dos
+especímenes iluminándolos por donde tocara y encuadrándolos por un solo eje**, y
+ninguna de las dos cosas se notaba hasta que entró un cuerpo aerodinámico.
+
+### 1. La actitud de una nave no es suya, es de su sitio
+
+`RANGER_ATTITUDE` no describe a la Ranger: es la SOLUCIÓN de «encarar la luz y
+la cámara a la vez» **en la posición que ocupa en el System Map**. Aquí el
+espécimen se sienta en `(0, 0, −D)` y la lámpara es el origen, así que la misma
+actitud da otra incidencia. Medido sobre la geometría real:
+
+| | dorso · luz | estribor · luz | proa · luz |
+|---|---|---|---|
+| System Map | **+0.197** | — | — |
+| Observatorio | **−0.088** | +0.759 | −0.645 |
+
+El suelo que `bodies.test.ts` vigila en el mapa es 0.15, y aquí sale negativo:
+el dorso —donde viven la cabina, su marco, las tapas de servicio y la deriva en
+V— cae justo en el arranque del terminador. **Ninguna elección de cámara lo
+arregla, porque la cámara no mueve la luz.** Lo mismo le pasa a la Endurance y
+no se ve, porque con doce módulos siempre tiene caras encaradas; la Ranger es
+casi toda una superficie mirando al mismo sitio.
+
+No se corrige reorientando la nave. Se corrige eligiendo dónde sentarse, que es
+lo único que el §6 permite tocar.
+
+### 2. El barrido geométrico eligió mal, y la captura lo dijo
+
+Primer intento, `70 / 35`: sale de proyectar los **2 184 triángulos** del modelo
+sobre 36 × 72 direcciones y quedarse con la que maximiza a la vez área vista,
+área iluminada e incidencia media — área 17.7, 53 % iluminada, incidencia 0.32,
+tres cuartos altos por estribor. Sobre el papel, el óptimo del compromiso. En la
+captura, una masa crema sin terminador.
+
+El motivo estaba en el shader desde antes de este pase. La Ranger tiene **bloque
+propio** (`uKind == 5`) y está escrito para contraluz: *«a 153° entre luz y
+cámara ESTE es el término que dibuja el borde de ataque, la cabina y las
+góndolas»*. Su identidad no la lleva el difuso, la llevan la envoltura y el filo
+ámbar — y a clave baja esos términos no existen. Maximizar área iluminada era
+optimizar justo el término que en esta nave no cuenta.
+
+Ocho capturas con el azimut clavado en 80 y sólo la clave variando, contando
+píxeles del cuadro por encima de dos umbrales:
+
+| clave | ≥ 200 (meseta) | ≥ 235 (brillo de verdad) |
+|---|---|---|
+| 60 | 102 494 (7.9 % del cuadro) | 3 037 |
+| 90 | 61 892 (4.8 %) | 4 753 |
+| 120 | 26 738 (2.1 %) | 5 380 |
+| **135** | **13 298 (1.0 %)** | **6 630** |
+| 150 | 4 874 (0.4 %) | 1 479 |
+
+La meseta se desploma a un octavo mientras el brillo real se **dobla**: la luz
+deja de ser un lavado y se concentra en cantos. Es el mismo movimiento que el
+§9 bis del lenguaje visual pide para las dos naves —«repartir el valor, no bajar
+la exposición»— y aquí no cuesta ni un uniforme: sólo elegir dónde sentarse.
+Pasados los 145° el cielo del laboratorio se enciende por detrás y le come el
+contraste a la silueta, así que **el techo no lo pone el gusto, lo pone el
+fondo**.
+
+Preset: **`135 / 80`**, que es además la vecindad de los 153° del mapa. El
+visitante llega del System Map y encuentra la nave con la luz donde la dejó.
+
+### 3. `FOV` es el campo VERTICAL, y nadie miraba el otro
+
+La distancia de encuadre era `radius / (boundsFill · sin(fov/2))`. En un cuadro
+apaisado eso basta —lo ancho sobra— y por eso no se vio en un año y medio de
+capturas a 1440 × 900. En cuanto el cuadro se estrecha, el que recorta es el
+ancho, y three.js no compensa: `PerspectiveCamera` conserva el campo vertical y
+ESTRECHA el horizontal. Proyectando la malla a **375 × 812**, antes de tocar
+nada:
+
+| | alto | ancho |
+|---|---|---|
+| Tesseracto | 83.4 % | **180.9 %** |
+| Endurance | 75.9 % | **185.1 %** |
+
+O sea que en un teléfono los dos especímenes montados salían cortados por los
+dos costados, casi al doble del cuadro. No es una regresión de este pase: lleva
+ahí desde el primero. Gargantúa no lo sufre porque su encuadre sí conoce el
+aspecto (`gargantuaFraming`) — se escribió al montarla, y esto es esa misma
+lección aplicada al camino de los sólidos.
+
+`framingFor(aspect)` toma el eje que de verdad recorta. **Por construcción no
+mueve ni un píxel de lo aprobado**: con el cuadro apaisado el campo horizontal
+es mayor que el vertical, su seno también, y el mínimo vuelve a ser el término
+de siempre. Sólo cambia por debajo de un aspecto de 1. Y como el encuadre deja
+de ser constante, la esférica se reescala con él: lo que se conserva al girar el
+teléfono es el ZOOM del visitante, no su distancia en unidades de mundo.
+
+### 4. Y dos vistas de la Endurance se salían en ESCRITORIO
+
+El instrumento que trajo la Ranger —`observatory-frames.test.ts`, que proyecta
+el casco de cada espécimen en cada vista y en los dos formatos— encontró de paso
+que `SILUETA` tocaba el borde inferior del cuadro (NDC y = −1.00) y que
+`OPERACIONES` se salía por arriba (+1.06), justo la vista cuyo tema son las
+toberas encendidas. Corregido subiendo su `distance` a 1.18 y 1.14. El peor de
+los doce casos deja hoy un 5 % de aire.
+
+**La pluma queda fuera de la promesa, y a propósito.** `modelRadius` la poda del
+radio del cuerpo porque *«una nave no ocupa más espacio por encender un motor»*,
+así que el encuadre no la conoce y no puede prometer nada sobre ella. En móvil
+se sale del cuadro en las dos vistas de la Ranger que la miran de través, y es
+la lectura correcta: un chorro que cruza el borde se lee como chorro. Lo que no
+puede salirse nunca es la chapa.
+
+### 5. `boundsFill` 1.0, y el primero que no se calibra por presencia
+
+La Ranger mide 1.40 de largo por 1.21 de envergadura y 0.28 de alto: la figura
+más anisótropa del catálogo, y su envolvente la fija el morro. Encuadrada por el
+alto se queda en una franja — con el 0.91 del marcador, 28.1 % del alto.
+
+Subirlo tiene tope, y está medido: con **1.15** ocupa el 78 % del alto en
+escritorio y en móvil **se le sale el ala** (1.08); con **1.00**, 67 % y cabe
+todo (0.95 en el peor caso). Se queda en uno. El §5 pide entre el 70 % y el
+85 % y esto da 67, tres puntos por debajo — y es la decisión correcta mientras
+el encuadre salga de la ESFERA envolvente: por encima de uno la envolvente se
+sale del cuadro y quien garantiza que la figura no la siga es la suerte, no la
+fórmula. ⏳ Si Jonás pide más presencia, el precio está dicho.
+
+### 6. Cuatro vistas, y una arquitectura que se cuenta sola
+
+`CANÓNICA` (135/80), `PLANTA` (90/80, la dirección de máxima área proyectada del
+barrido: 22.1 contra 20.2), `PROPULSIÓN` (100/135, con el eje de escape mirando
+a cámara y sólo el 18 % del área vista recibiendo luz, que es la condición para
+que se vea lo que la nave EMITE en vez de lo que refleja) y `PERFIL` (139/190,
+través exacto: el producto de la mirada con el costado vale −1.00, así que ni la
+proa ni el dorso aportan nada a la silueta).
+
+Y el panel `DATOS` deja de decir `null` para esta muestra:
+`craft.userData.rangerArchitecture` publica semialas, planos de cola, largueros
+de borde de ataque, campanas, plumas, toberas RCS, balizas, tapas de servicio y
+piezas del marco de cabina. **Ningún número está escrito a mano**: el modelo
+pasó de repetir `[-1, 1]` ocho veces a declarar cuatro listas, y los conteos
+salen de la misma lista que construye las piezas. Verificado con suma de control
+sobre los 6 036 vértices — idéntica antes y después del cambio.
+
+
+### 7. Segunda entrega: la pose por defecto la decidió Jonás
+
+La primera propuesta fue `135 / 80` y la rechazó. Tenía razón, y se ve en la
+captura: a 0.74 de dorso son cuarenta y cuatro grados de elevación, o sea la
+nave picada y con el morro caído — exactamente el defecto que la fase 1 del
+lenguaje visual corrigió en el System Map cuando midió la proa CONTRA LA
+PANTALLA y la encontró a −9.7°.
+
+La clave se queda en 135 y el azimut baja a **110**: perfil-tres cuartos, proa a
+la izquierda, planta abierta y las dos toberas a la derecha. El tope no es de
+gusto: por encima de 115 el ala toca el borde del cuadro en móvil —0.985 del
+centro contra el 0.98 que exige `observatory-frames.test.ts`— y a 110 queda en
+0.957.
+
+### 8. Y el modelo, que de cerca era otra cosa
+
+El segundo encargo de esa entrega: *«ahora que se ve de cerca se ve que está muy
+básica»*. También tenía razón, y el diagnóstico tiene tres partes y un orden.
+
+**La textura, que era casi todo.** La chapa se generaba a 128 con paneles de 32,
+o sea CUATRO paneles por cara. Sobre un fuselaje de seiscientos píxeles cada
+junta salía de seis píxeles de ancho y difuminada: no una costura, una franja
+pintada de negro. Sube a **384 con paneles de 48** —ocho por cara, juntas de un
+texel— y gana tres cosas que no tenía: el **labio**, el texel claro que va pegado
+a la junta y que es lo que hace que se lea como un escalón y no como una raya;
+una **junta intermedia** en un tercio de las celdas, para que la retícula deje de
+ser un damero perfecto; y **regueros** en un solo sentido, que es lo que
+distingue una chapa que ha volado de una recién pintada. La Endurance se queda
+en 128: su manta no tiene juntas que afinar y está aprobada.
+
+**La teselación, donde se ve la silueta.** Todo se dimensionó para setenta
+píxeles, donde un canto de dos subdivisiones ya es una curva y un cono de ocho
+caras ya es una punta. El fuselaje pasa a tres subdivisiones, la proa a
+dieciséis caras, góndolas y campanas a veintidós. Ni un radio cambia, así que la
+escala y la silueta del mapa son las mismas.
+
+**La cabina, que era lo peor.** Una esfera aplastada medio enterrada en el
+fuselaje: lo que se veía era el trozo que asomaba, una mancha oscura de contorno
+irregular sin arriba ni abajo. El problema no era el material —forzada a
+cualquier color se veía igual de informe— sino que **una superficie recortada por
+otra no tiene forma propia**. Ahora es una cúpula facetada de ocho caras con base
+cerrada y cumbrera definida, y su marco —cumbrera, dos arcos y dos rieles— pasa
+del metal oscuro de la quilla a la CHAPA, porque la dirección de arte lo dice
+desde el primer pase: «cristal oscuro hundido entre dos montantes claros».
+
+**Y las piezas que una nave tiene y ésta no tenía**: espina dorsal, anillo de
+escotilla, antena de pala, tubo de Pitot, seis puertos de maniobra por costado,
+rejillas en las góndolas, vallas de ala, carenados de actuador, carenado de
+encastre —que tapa la interpenetración ala-fuselaje, que estaba a la vista— y el
+interior de las campanas: garganta, anillo de cardán y tres nervios. Todo dentro
+de la envolvente: **el radio del cuerpo sigue siendo 2.5640**, así que ni el
+blanco de clic ni la distancia de encuadre se mueven.
+
+Una corrección por el camino, y vale la pena anotarla: la primera versión puso
+esos carenados en el METAL OSCURO de la estructura, y el resultado fue una
+franja negra de punta a punta del lomo. Un carenado es del mismo material que el
+casco; lo que lo separa no es su color, es el canto que proyecta.
+
+**El presupuesto.** Las llamadas de dibujo no se mueven —tres por nave, veinte en
+el sistema—: todo el detalle nuevo se fusiona en las mallas que ya existían. Los
+vértices sí, y ahí había un candado: el techo estaba en 19 500 con 19 361
+ocupados, o sea 139 de margen para los cinco cuerpos. Sube a **22 500** con el
+reparto escrito en `bodies.test.ts`, y se recortó antes de subirlo —el fuselaje
+de cinco subdivisiones a tres, una docena de carenados de `roundedBox` a
+`BoxGeometry`— lo que devolvió 2 694 de los 5 306 que había costado el pase. La
+Ranger queda en 4 624 contra los 12 163 de la Endurance. No se ha medido que
+esta subida cueste tiempo de fotograma y no se afirma: lo que se afirma es que
+el coste de la portada lo pone el raymarch de Gargantúa, entre 190 y 340 pasos
+por píxel, y no veintidós mil vértices procesados una vez.
+
+*Estado: `npm run check` verde. Pendientes el veredicto visual de Jonás sobre
+las cuatro vistas y el `registro` de la Ranger, que es su voz y por eso no está
+escrito en el MDX.*

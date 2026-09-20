@@ -383,8 +383,52 @@ export function createObservatoryScene(
   */
   const id = world.id as Exclude<WorldId, "gargantua">;
   const preset = OBSERVATION_PRESETS[id];
-  const framing =
-    body.radius / (preset.boundsFill * Math.sin(((FOV / 2) * Math.PI) / 180));
+
+  /**
+   * La distancia de encuadre para una forma de cuadro dada.
+   *
+   * ── Y el alto no siempre es el que recorta ──────────────────────────────
+   *
+   * La fórmula de arriba es la de toda la vida y estaba a medias: `FOV` es el
+   * campo VERTICAL, así que `sin(fov/2)` sólo dice cuánto cabe a lo alto. En un
+   * cuadro apaisado eso basta —lo ancho sobra— y por eso nadie lo notó en año y
+   * medio de capturas a 1440 x 900. En cuanto el cuadro se estrecha, el que
+   * recorta es el ancho, y three.js no compensa: `PerspectiveCamera` conserva
+   * el campo vertical y ESTRECHA el horizontal.
+   *
+   * Medido proyectando la geometría real a 375 x 812, que es el proyecto móvil
+   * de la suite, ANTES de tocar esto:
+   *
+   *   Tesseracto   alto  83.4 %   ancho  180.9 %
+   *   Endurance    alto  75.9 %   ancho  185.1 %
+   *
+   * O sea que en móvil los dos especímenes montados salían cortados por los dos
+   * costados, casi al doble del cuadro. No es una regresión de este pase: lleva
+   * ahí desde el primero, y sólo se ve donde nadie mide. Gargantúa no lo sufre
+   * porque su encuadre SÍ conoce el aspecto (`gargantuaFraming`) — se escribió
+   * al montarla, y esto es esa misma lección aplicada al camino de los sólidos.
+   *
+   * El arreglo es tomar el eje que de verdad recorta. Por construcción no mueve
+   * ni un píxel de lo aprobado: con el cuadro apaisado el campo horizontal es
+   * MAYOR que el vertical, su seno también, y el mínimo vuelve a ser el término
+   * de siempre. Sólo cambia por debajo de un aspecto de 1.
+   */
+  function framingFor(aspect: number): number {
+    const half = ((FOV / 2) * Math.PI) / 180;
+    const halfWide = Math.atan(Math.max(aspect, 1e-3) * Math.tan(half));
+    return (
+      body!.radius /
+      (preset.boundsFill * Math.min(Math.sin(half), Math.sin(halfWide)))
+    );
+  }
+
+  /*
+    Deja de ser constante, y por eso la esférica se reescala con ella: el
+    visitante puede haber acercado la rueda antes de girar el teléfono, y lo que
+    tiene que conservarse en ese giro es su ZOOM —la razón contra el encuadre—,
+    no la distancia en unidades de mundo. `resize` hace ese reparto.
+  */
+  let framing = framingFor(1);
   const placement = observationPlacement(id, body.radius, framing);
 
   /*
@@ -543,8 +587,24 @@ export function createObservatoryScene(
       capturas sobre las que se calibró.
     */
     composer.setSize(w, h);
-    camera.aspect = h > 0 ? w / h : 1;
+    const aspect = h > 0 ? w / h : 1;
+    camera.aspect = aspect;
     camera.updateProjectionMatrix();
+
+    /*
+      El encuadre se rehace con la forma del cuadro, y la esférica se reescala
+      con él. Se escala `radius` en vez de reasignarlo para conservar el zoom
+      del visitante: si había acercado a 0.6 del encuadre, sigue a 0.6 del
+      encuadre nuevo. `homeSpherical` viaja igual, o `Reajustar` devolvería la
+      cámara a una distancia que ya no encuadra nada.
+    */
+    const wanted = framingFor(aspect);
+    if (Math.abs(wanted - framing) > 1e-6) {
+      const scale = wanted / framing;
+      framing = wanted;
+      spherical.radius *= scale;
+      homeSpherical.radius *= scale;
+    }
     return true;
   }
 

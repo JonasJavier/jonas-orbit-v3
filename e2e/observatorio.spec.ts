@@ -25,8 +25,10 @@ import { expect, test, type Page } from "@playwright/test";
  */
 
 const OBSERVATORIO = "/es/experimentos/observatorio/tesseracto";
-/** Los dos especímenes montados. El segundo existe para probar que el
- *  laboratorio no está hecho a la medida del primero. */
+/** Dos especímenes de malla, no los cuatro montados. El segundo existe para
+ *  probar que el laboratorio no está hecho a la medida del primero, y con eso
+ *  basta: Gargantúa tiene sus propias pruebas al final de este archivo porque
+ *  no es una malla, y la Ranger comparte camino con la Endurance. */
 const ESPECIMENES = [
   "/es/experimentos/observatorio/tesseracto",
   "/es/experimentos/observatorio/endurance",
@@ -493,10 +495,10 @@ test("el catálogo enseña las seis muestras y sólo enlaza las montadas", async
   */
   const catalogo = page.getByRole("navigation", { name: "Especímenes" });
   await expect(catalogo.locator("li")).toHaveCount(6);
-  // Tres montadas desde que entró Gargantúa; las otras tres siguen catalogadas
+  // Cuatro montadas desde que entró la Ranger; las otras dos siguen catalogadas
   // y sin puerta, que es lo que dice cuántas hay sin prometer lo que no existe.
-  await expect(catalogo.locator("a")).toHaveCount(3);
-  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(3);
+  await expect(catalogo.locator("a")).toHaveCount(4);
+  await expect(catalogo.locator("[aria-disabled='true']")).toHaveCount(2);
 
   const caja = (await catalogo.boundingBox())!;
   expect(caja.width, "el catálogo dejó de ser una columna fina").toBeLessThan(

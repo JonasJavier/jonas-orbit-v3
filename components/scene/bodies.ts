@@ -1368,10 +1368,18 @@ const BODY_FRAGMENT = /* glsl */ `
       */
       albedo = mix(vec3(0.340, 0.345, 0.356), vec3(0.960, 0.942, 0.908), blanket);
       albedo = mix(albedo, vec3(0.78, 0.63, 0.43), warmFoil * 0.26);
-      albedo = mix(albedo, vec3(0.082, 0.086, 0.094), seam * 0.74);
-      gloss = mix(0.82, 0.26, microRoughness);
-      specularPower = 62.0;
-      specularStrength = 1.18;
+      /*
+        0.74 -> 0.58, y es consecuencia directa de que la junta ahora mida un
+        texel. Con la junta ancha del System Map hundirla casi a negro era lo
+        que la hacía visible a setenta pixeles; con la junta fina del
+        laboratorio, ese mismo 0.74 dibuja una retícula de rayas negras sobre
+        la chapa. Lo que la hace visible ahora no es su negrura, es el labio
+        claro que lleva al lado — y ese vive en el canal de chapa.
+      */
+      albedo = mix(albedo, vec3(0.082, 0.086, 0.094), seam * 0.58);
+      gloss = mix(0.86, 0.24, microRoughness);
+      specularPower = 68.0;
+      specularStrength = 1.22;
 
       /* El canal de manta ya lleva la junta restada, así que arrastra consigo
          la rejilla de paneles. El ala la devuelve: un plano sustentador tiene
@@ -1390,12 +1398,29 @@ const BODY_FRAGMENT = /* glsl */ `
            y cuerpo se fundían; el larguero oscuro tenía que hacer solo todo el
            trabajo de separarlos. Ahora los separa el valor, y el larguero
            dibuja el filo. */
-        float chordwise = smoothstep(0.42, 0.5, abs(fract(vUv.y * 4.0) - 0.5));
+        /*
+          Siete largueros finos donde había cuatro brochazos.
+
+          Con smoothstep(0.42, 0.5) sobre cuatro periodos, cada linea ocupaba
+          el 16 % de la cuerda: a setenta pixeles eso es sombreado y a
+          seiscientos es una cebra. Ahora son siete y miden la sexta parte, con
+          su propio labio claro por delante — el mismo recurso que la junta del
+          fuselaje, y por el mismo motivo: una linea oscura sola se lee como
+          pintura, una linea oscura con brillo al lado se lee como un canto.
+        */
+        float rib = abs(fract(vUv.y * 7.0) - 0.5);
+        float chordwise = smoothstep(0.47, 0.5, rib);
+        float ribLip = smoothstep(0.47, 0.43, rib) * smoothstep(0.38, 0.43, rib);
         albedo = mix(vec3(0.300, 0.307, 0.318), vec3(0.780, 0.774, 0.758), 0.3 + smoothPlate * 0.45);
-        albedo = mix(albedo, vec3(0.078, 0.083, 0.090), chordwise * 0.58);
-        gloss = mix(0.5, 0.2, microRoughness);
-        specularPower = 46.0;
-        specularStrength = 0.82;
+        albedo = mix(albedo, vec3(0.078, 0.083, 0.090), chordwise * 0.52);
+        albedo += vec3(0.055, 0.054, 0.052) * ribLip;
+        /* Y la envergadura tiene gradiente: el plano se aclara hacia la punta,
+           que es donde la chapa es mas fina y el sol rasante la encuentra
+           antes. Sin esto un ala es un poligono de un solo valor. */
+        albedo *= 0.94 + 0.12 * vUv.x;
+        gloss = mix(0.54, 0.18, microRoughness);
+        specularPower = 48.0;
+        specularStrength = 0.86;
       } else if (vSurfaceMask > 1.5) {
         /* Tapa de servicio. Bajó de saturación: en naranja pleno eran lo
            primero que se veía de la nave, por delante de la proa. */
@@ -1403,12 +1428,24 @@ const BODY_FRAGMENT = /* glsl */ `
         gloss = 0.31;
         specularPower = 38.0;
       } else if (vSurfaceMask > 0.5) {
-        /* Cristal polarizado: casi negro, con suficiente azul para recuperar
-           volumen cuando el barrido especular cruza la cabina. */
+        /*
+          Cristal polarizado: casi negro, con suficiente azul para recuperar
+          volumen cuando el barrido especular cruza la cabina.
+
+          Y con DOS cosas que antes no tenia, las dos por la misma razon — de
+          cerca era una mancha oscura con forma rara y nada mas. La primera es
+          el reflejo del campo estelar: un cristal que no refleja nada no es
+          cristal, es un agujero, y el termino de Fresnel ya esta calculado.
+          La segunda es el travesano central, que parte el parabrisas en dos
+          lunas y es lo que hace que se lea como una cabina y no como un visor.
+        */
+        float pane = smoothstep(0.02, 0.0, abs(fract(vUv.x * 2.0) - 0.5) - 0.5);
         albedo = vec3(0.018, 0.055, 0.075);
+        albedo += vec3(0.055, 0.075, 0.115) * pow(fresnel, 2.2);
+        albedo = mix(albedo, vec3(0.30, 0.30, 0.31), pane * 0.8);
         gloss = 0.96;
-        specularPower = 96.0;
-        specularStrength = 1.22;
+        specularPower = 110.0;
+        specularStrength = 1.34;
       }
     } else if (uKind == 7) {
       /* Trusses, ejes y hábitat: metal oscuro con grano direccional. El
@@ -2566,11 +2603,24 @@ function clamp01(value: number): number {
  * junta marcada y fila de remaches. La misma textura, dos oficios distintos.
  */
 function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
-  const size = 128;
   const blanketed = kind === "endurance";
-  // Celda pequeña = panel pequeño. La manta se acolcha cada 16 px; la chapa de
-  // la Ranger va en paneles de 32 px porque su UV cubre el ala entera.
-  const cell = blanketed ? 24 : 32;
+  /*
+    ── LA RESOLUCIÓN ES POR NAVE, y la diferencia la pidió el Observatorio ───
+
+    Esta textura se escribió para el System Map, donde la Ranger mide setenta
+    píxeles. A 128 con paneles de 32 hay CUATRO paneles por cara, así que sobre
+    el fuselaje del laboratorio —seiscientos píxeles de largo— cada junta salía
+    de seis píxeles de ancho y difuminada: no se leía como una costura sino como
+    una franja pintada de negro. Es lo que hacía que la nave, vista de cerca,
+    pareciera un asset barato por mucho que la geometría estuviera bien.
+
+    La Ranger sube a 384 con paneles de 48 —ocho por cara, juntas de un texel— y
+    la Endurance se queda exactamente donde estaba: su manta térmica no tiene
+    juntas que afinar, está aprobada, y subirle la resolución le cambiaría el
+    grano a un cuerpo que nadie ha pedido tocar.
+  */
+  const size = blanketed ? 128 : 384;
+  const cell = blanketed ? 24 : 48;
   const seed = blanketed ? 41 : 73;
   const data = new Uint8Array(size * size * 4);
 
@@ -2591,31 +2641,71 @@ function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
         cell - 1 - localX,
         cell - 1 - localY,
       );
-      // Costura: dura en la chapa, apenas insinuada en la manta.
+      /*
+        La junta de la chapa pasa a medir UN texel, no dos y medio.
+
+        Y no es sólo estrecharla: una junta real se ve porque la chapa de al
+        lado monta sobre ella, así que aquí hay dos cosas y no una — la línea
+        oscura y el LABIO, el texel inmediatamente anterior, que recibe la luz
+        rasante y sale más claro que el panel. Sin el labio una junta fina se
+        lee como una raya pintada; con él se lee como un escalón.
+      */
       const seam = blanketed
         ? edgeDistance < 1
           ? 0.34
           : edgeDistance < 1.8
             ? 0.13
             : 0
-        : edgeDistance < 1.2
+        : edgeDistance < 1
           ? 1
-          : edgeDistance < 2.4
-            ? 0.45
+          : edgeDistance < 2
+            ? 0.3
             : 0;
+      const lip = !blanketed && edgeDistance >= 2 && edgeDistance < 3 ? 1 : 0;
+      /*
+        Y los paneles dejan de ser un damero perfecto: uno de cada tres lleva
+        una junta INTERMEDIA. Una cuadrícula regular es lo que el ojo identifica
+        como textura repetida; basta romper un tercio de sus celdas para que se
+        lea como despiece.
+      */
+      const subSeam =
+        !blanketed &&
+        surfaceNoise(Math.floor(x / cell), Math.floor(y / cell), seed + 29) > 0.66 &&
+        Math.abs(localY - cell / 2) < 1
+          ? 0.8
+          : 0;
       // Remaches: sólo la Ranger, y sólo sobre la junta. Es el detalle que
-      // convierte un plano liso en una pieza fabricada.
+      // convierte un plano liso en una pieza fabricada. A 384 van cada seis
+      // texeles en vez de cada ocho, que a esta escala es el paso de un roblón.
       const rivet =
-        !blanketed && edgeDistance < 2.6 && (x + y) % 8 === 0 ? 0.55 : 0;
+        !blanketed && edgeDistance >= 3 && edgeDistance < 4.2 && (x + y) % 6 === 0
+          ? 0.5
+          : 0;
       const quilt = blanketed
         ? 0.5 + 0.5 * Math.sin((x / size) * Math.PI * 34 + Math.sin((y / size) * 21))
         : 0.5 + 0.5 * Math.sin((x / size) * Math.PI * 12);
+      /*
+        REGUEROS. Vetas largas y sucias en un solo sentido, que es lo que
+        distingue una chapa que ha VOLADO de una recién pintada. Valen menos de
+        seis centésimas de albedo: se notan en el conjunto, no de una en una.
+      */
+      const streak = blanketed
+        ? 0
+        : (surfaceNoise(x, Math.floor(y / 9), seed + 53) - 0.5) *
+          (0.35 + 0.65 * surfaceNoise(x, 0, seed + 67));
 
       const blanket = clamp01(
         blanketed
           ? // Manta clara y CASI uniforme: ±0.05 entre paneles vecinos, no ±0.2.
             0.84 + (broad - 0.5) * 0.1 + (grain - 0.5) * 0.055 - seam * 0.3
-          : 0.6 + (broad - 0.5) * 0.16 + (grain - 0.5) * 0.07 - seam * 0.4 + rivet * 0.3,
+          : 0.6 +
+            (broad - 0.5) * 0.13 +
+            (grain - 0.5) * 0.05 +
+            streak * 0.055 -
+            seam * 0.34 -
+            subSeam * 0.16 +
+            lip * 0.1 +
+            rivet * 0.22,
       );
       // Lámina dorada: parches raros y grandes, no un tinte general.
       const warmth = clamp01(
@@ -2626,12 +2716,19 @@ function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
       const roughness = clamp01(
         blanketed
           ? 0.52 + grain * 0.28 + quilt * 0.14
-          : 0.3 + grain * 0.24 + quilt * 0.1 - rivet * 0.2,
+          : 0.3 +
+            grain * 0.2 +
+            quilt * 0.1 +
+            Math.abs(streak) * 0.3 -
+            rivet * 0.2 -
+            lip * 0.12,
       );
 
       data[offset] = Math.round(blanket * 255);
       data[offset + 1] = Math.round(warmth * 255);
-      data[offset + 2] = Math.round(Math.max(seam, rivet) * 255);
+      data[offset + 2] = Math.round(
+        Math.max(Math.max(seam, subSeam), rivet) * 255,
+      );
       data[offset + 3] = Math.round(roughness * 255);
     }
   }
@@ -2766,14 +2863,22 @@ function surfaceMasked(
   return geometry;
 }
 
-/** RoundedBox sale no indexada; se normaliza para poder fusionarla con boxes. */
+/**
+ * RoundedBox sale no indexada; se normaliza para poder fusionarla con boxes.
+ *
+ * `segments` entra con el pase de calidad de la Ranger y por defecto vale lo de
+ * siempre, que es lo que deja intactos a los demás cuerpos. Dos subdivisiones
+ * bastan a setenta píxeles; en el Observatorio el fuselaje mide seiscientos y
+ * sus cantos redondeados se leen como tres facetas planas.
+ */
 function roundedBox(
   width: number,
   height: number,
   depth: number,
   radius: number,
+  segments = 2,
 ): THREE.BufferGeometry {
-  const geometry = new RoundedBoxGeometry(width, height, depth, 2, radius);
+  const geometry = new RoundedBoxGeometry(width, height, depth, segments, radius);
   const indexed = mergeVertices(geometry);
   geometry.dispose();
   return indexed;
@@ -3577,19 +3682,67 @@ function rangerModel(input: SceneBodyInput): BodyModel {
   const WING_ROOT_LEADING = 0.24;
   const WING_TIP_LEADING = -0.16;
   const WING_SPAN = 0.6;
+  /*
+    Babor y estribor, una sola vez.
+
+    Estaba escrito `[-1, 1]` ocho veces, que es lo mismo hasta que hay que
+    CONTAR: el panel `DATOS` del Observatorio publica la arquitectura de la
+    figura y la regla del §8 es que ninguna lectura se teclea. Con la constante,
+    «dos góndolas» sale de la misma lista que construye las dos góndolas.
+  */
+  const SIDES = [-1, 1];
+  /** Las dos semialas, por envergadura con signo. */
+  const WINGS = [WING_SPAN, -WING_SPAN];
+  /** Balizas de navegación: las dos puntas de ala y el morro. Son SEÑAL —dicen
+   *  dónde empieza y acaba la nave— y por eso van en violeta de identidad. */
+  const NAV_BEACONS: VectorTuple[] = [
+    [-0.2, -0.042, WING_SPAN + 0.02],
+    [-0.2, -0.042, -WING_SPAN - 0.02],
+    [0.75, 0.025, 0],
+  ];
+  /**
+   * El marco de la cabina: cumbrera, dos arcos y los dos rieles laterales.
+   *
+   * Sus cotas siguen a la cúpula del parabrisas y no al revés — antes eran tres
+   * barras colocadas a ojo alrededor de una esfera, y con la cúpula nueva
+   * quedaban por debajo de su base, o sea enterradas. Un marco que no toca el
+   * cristal no enmarca nada.
+   */
+  const COCKPIT_FRAME: Array<[VectorTuple, VectorTuple]> = [
+    // Cumbrera, sobre la arista alta de la cúpula.
+    [[0.3, 0.012, 0.016], [0.33, 0.211, 0]],
+    // Arco de proa y arco de popa, ceñidos a los dos extremos.
+    [[0.016, 0.03, 0.15], [0.478, 0.172, 0]],
+    [[0.016, 0.034, 0.17], [0.185, 0.174, 0]],
+    // Rieles laterales: la junta entre el cristal y la chapa.
+    [[0.31, 0.016, 0.014], [0.33, 0.174, 0.094]],
+    [[0.31, 0.016, 0.014], [0.33, 0.174, -0.094]],
+  ];
 
   const hullParts = [
     // Fuselaje: bloque bajo y ancho, con los cantos redondeados de una nave
     // que reentra. No es un cilindro: es un lifting body.
+    /*
+      ── LA TESELACIÓN ES DEL OBSERVATORIO, no del System Map ────────────────
+
+      Todo lo que sigue se dimensionó para setenta píxeles, donde un canto
+      redondeado de dos subdivisiones ya es una curva y un cono de ocho caras ya
+      es una punta. A seiscientos píxeles las dos cosas son poliedros: el
+      fuselaje enseña tres facetas planas por canto y la proa, ocho aristas
+      francas. Subir los lados no cambia ni la silueta ni la escala —los radios
+      son los mismos— y en el mapa no se nota, que es exactamente lo que tiene
+      que pasar.
+    */
     surfaceMasked(
-      placed(roundedBox(0.94, 0.28, 0.37, 0.09), [-0.07, 0.035, 0]),
+      placed(roundedBox(0.94, 0.28, 0.37, 0.09, 3), [-0.07, 0.035, 0]),
       PLATE,
     ),
-    // Proa facetada. Ocho caras y un aplastado vertical: a 70 px lo que se lee
-    // es la punta y los dos quiebres de la faceta superior.
+    // Proa facetada: dieciséis caras y un aplastado vertical. Sigue teniendo
+    // quiebres —una lanzadera es chapa plegada, no una gota— pero ya no se
+    // cuentan con el dedo.
     surfaceMasked(
       placed(
-        new THREE.ConeGeometry(0.19, 0.36, 8, 1).scale(0.76, 1, 1),
+        new THREE.ConeGeometry(0.19, 0.36, 16, 1).scale(0.76, 1, 1),
         [0.58, 0.025, 0],
         [0, 0, -Math.PI / 2],
       ),
@@ -3598,7 +3751,7 @@ function rangerModel(input: SceneBodyInput): BodyModel {
     // Popa: cierre troncocónico corto, para que la cola no acabe en un canto.
     surfaceMasked(
       placed(
-        new THREE.CylinderGeometry(0.12, 0.18, 0.14, 8),
+        new THREE.CylinderGeometry(0.12, 0.18, 0.14, 16),
         [-0.61, 0.035, 0],
         [0, 0, Math.PI / 2],
       ),
@@ -3606,36 +3759,45 @@ function rangerModel(input: SceneBodyInput): BodyModel {
     ),
     // Alas en flecha. La cuerda de raíz casi dobla a la de punta y el borde de
     // salida retrocede: la planta es la de una nave que vuela, no un triángulo.
-    surfaceMasked(
-      placed(
-        foil(WING_ROOT_LEADING, -0.5, WING_SPAN, WING_TIP_LEADING, -0.4, 0.055),
-        [0, -0.045, 0],
-        [Math.PI / 2, 0, 0],
+    ...WINGS.map((span) =>
+      surfaceMasked(
+        placed(
+          foil(WING_ROOT_LEADING, -0.5, span, WING_TIP_LEADING, -0.4, 0.055),
+          [0, -0.045, 0],
+          [Math.PI / 2, 0, 0],
+        ),
+        WING,
       ),
-      WING,
     ),
+    /*
+      LA CABINA, rehecha porque de cerca era lo peor de la nave.
+
+      Era una esfera aplastada medio enterrada en el fuselaje, así que lo que
+      se veía era el trozo que asomaba: una mancha oscura de contorno
+      irregular, sin arriba ni abajo, que a setenta píxeles pasa por cabina y a
+      seiscientos parece un bulto. El problema no era el material —forzado a
+      cualquier color se veía igual de informe— sino que una superficie
+      recortada por otra no tiene forma propia.
+
+      Ahora es una cúpula FACETADA de ocho caras apoyada sobre el lomo: base
+      cerrada, cumbrera definida y ocho aristas que la luz puede encontrar. La
+      dirección de arte pide «cristal hundido, no una burbuja encima», y eso lo
+      sigue cumpliendo — su base entra en la chapa y sólo asoma cinco
+      centésimas, que es menos de lo que asomaba la esfera.
+    */
     surfaceMasked(
       placed(
-        foil(WING_ROOT_LEADING, -0.5, -WING_SPAN, WING_TIP_LEADING, -0.4, 0.055),
-        [0, -0.045, 0],
-        [Math.PI / 2, 0, 0],
-      ),
-      WING,
-    ),
-    // Cabina: cristal hundido en la superficie superior, no una burbuja encima.
-    surfaceMasked(
-      placed(
-        new THREE.SphereGeometry(0.115, 14, 8).scale(1.5, 0.44, 1.05),
-        [0.31, 0.13, 0],
-        [0, 0, -0.06],
+        new THREE.SphereGeometry(1, 8, 3, 0, Math.PI * 2, 0, Math.PI * 0.5)
+          .scale(0.175, 0.052, 0.098),
+        [0.33, 0.162, 0],
       ),
       GLASS,
     ),
     // Góndolas de motor: cuerpo claro bajo el encastre del ala.
-    ...[-1, 1].map((side) =>
+    ...SIDES.map((side) =>
       surfaceMasked(
         placed(
-          new THREE.CylinderGeometry(0.1, 0.112, 0.42, 12),
+          new THREE.CylinderGeometry(0.1, 0.112, 0.42, 22),
           [-0.29, -0.06, side * 0.215],
           [0, 0, Math.PI / 2],
         ),
@@ -3644,7 +3806,7 @@ function rangerModel(input: SceneBodyInput): BodyModel {
     ),
     // Deriva en V. Dos planos inclinados 38°: rompen el perfil por arriba y
     // dejan ver el fuselaje entre ellos.
-    ...[-1, 1].map((side) =>
+    ...SIDES.map((side) =>
       surfaceMasked(
         placed(
           foil(-0.26, -0.54, 0.26, -0.44, -0.57, 0.032),
@@ -3655,12 +3817,80 @@ function rangerModel(input: SceneBodyInput): BodyModel {
       ),
     ),
     // Tapas de servicio: dos rectángulos cálidos, rasantes al dorso.
-    ...[-1, 1].map((side) =>
+    ...SIDES.map((side) =>
       surfaceMasked(
         placed(roundedBox(0.15, 0.018, 0.075, 0.005), [-0.19, 0.165, side * 0.115]),
         SERVICE,
       ),
     ),
+    /*
+      ── LO QUE UNA NAVE TIENE Y ESTA NO TENÍA ─────────────────────────────
+
+      Nada de esto se ve en el System Map y todo se ve en el Observatorio: una
+      superficie grande y limpia lee como maqueta, y lo que la convierte en
+      máquina es que tenga encima piezas de otro tamaño.
+
+      Van en CHAPA y no en estructura, y esa fue la corrección de la primera
+      versión: puestas en el metal oscuro de la quilla no se leían como piezas
+      montadas sino como agujeros, y el lomo acababa con una franja negra de
+      punta a punta. Un carenado es del mismo material que el casco; lo que lo
+      separa es el canto que proyecta, no su color.
+
+      Todas caben dentro de la envolvente: el radio del cuerpo lo sigue fijando
+      la baliza de proa, así que ni el blanco de clic ni la distancia de
+      encuadre se mueven.
+    */
+    /*
+      El marco de la cabina, en CHAPA y no en estructura.
+
+      Estaba en el metal oscuro de la quilla, que es donde vivía cuando era
+      tres barras sueltas alrededor de una esfera. Con la cúpula nueva el marco
+      pasa a ser lo que enmarca, y en metal oscuro lo que enmarcaba era un
+      rectángulo negro sobre el lomo. La dirección de arte lo dice desde el
+      primer pase: «cristal oscuro hundido entre dos montantes CLAROS».
+    */
+    ...COCKPIT_FRAME.map(([size, at]) =>
+      surfaceMasked(placed(new THREE.BoxGeometry(...size), at), PLATE),
+    ),
+    // Espina dorsal: el conducto que le da EJE al lomo. Sin ella la vista
+    // PLANTA es un rectángulo con dos tapas cálidas encima.
+    surfaceMasked(
+      placed(new THREE.BoxGeometry(0.58, 0.016, 0.034), [-0.2, 0.178, 0]),
+      PLATE,
+    ),
+    ...SIDES.flatMap((side) => [
+      // Carenado de encastre: tapa la junta entre ala y fuselaje, que hasta
+      // ahora era una interpenetración a la vista.
+      surfaceMasked(
+        placed(roundedBox(0.54, 0.05, 0.05, 0.018), [-0.08, -0.05, side * 0.172]),
+        PLATE,
+      ),
+      // Valla de ala: el plano queda partido y deja de ser una losa.
+      surfaceMasked(
+        placed(new THREE.BoxGeometry(0.13, 0.032, 0.01), [-0.07, -0.026, side * 0.37]),
+        PLATE,
+      ),
+      // Dos carenados de actuador bajo el borde de salida.
+      ...[0.16, 0.38].map((t) =>
+        surfaceMasked(
+          placed(
+            new THREE.BoxGeometry(0.085, 0.028, 0.038),
+            [-0.41 + t * 0.14, -0.068, side * (0.24 + t)],
+          ),
+          PLATE,
+        ),
+      ),
+      // Rejilla de la góndola: tres lamas finas sobre su dorso.
+      ...[0, 1, 2].map((n) =>
+        surfaceMasked(
+          placed(
+            new THREE.BoxGeometry(0.055, 0.01, 0.085),
+            [-0.205 + n * 0.05, 0.026, side * 0.215],
+          ),
+          PLATE,
+        ),
+      ),
+    ]),
   ];
   const hullMesh = mergedMesh(hullParts, hull);
   hullMesh.name = "ranger-metallic-hull";
@@ -3676,19 +3906,49 @@ function rangerModel(input: SceneBodyInput): BodyModel {
     /* Bloque de maniobra de proa. Va en estructura —metal oscuro— para que la
        brasa que lleva encima tenga contra qué leerse: un punto de luz sobre
        chapa clara es una mota, sobre chapa oscura es una tobera. */
-    ...[-1, 1].map((side) =>
+    ...SIDES.map((side) =>
       placed(
         new THREE.BoxGeometry(0.10, 0.055, 0.05),
         [0.42, 0.05, side * 0.125],
       ),
     ),
-    // Montante central de la cabina, más los dos travesaños del marco.
-    placed(new THREE.BoxGeometry(0.26, 0.026, 0.02), [0.31, 0.165, 0]),
-    placed(new THREE.BoxGeometry(0.018, 0.028, 0.16), [0.43, 0.145, 0]),
-    placed(new THREE.BoxGeometry(0.018, 0.028, 0.2), [0.19, 0.15, 0]),
+    /*
+      Puertos de maniobra: seis discos hundidos por costado, en dos grupos.
+      Una nave que apunta tiene por dónde empujar, y a esta se le veían sólo
+      los dos bloques de proa.
+    */
+    ...SIDES.flatMap((side) =>
+      [0.46, 0.34, -0.5].map((x) =>
+        placed(
+          new THREE.CylinderGeometry(0.017, 0.013, 0.014, 10),
+          [x, 0.02, side * 0.176],
+          [Math.PI / 2, 0, 0],
+        ),
+      ),
+    ),
+    // Patines de aterrizaje replegados bajo la quilla.
+    ...SIDES.map((side) =>
+      placed(
+        new THREE.BoxGeometry(0.22, 0.022, 0.055),
+        [-0.12, -0.147, side * 0.095],
+      ),
+    ),
+    // Anillo de escotilla, hundido en el lomo por detrás de la cabina.
+    placed(
+      new THREE.TorusGeometry(0.034, 0.006, 6, 20),
+      [0.0, 0.176, -0.095],
+      [Math.PI / 2, 0, 0],
+    ),
+    // Antena de pala y tubo de Pitot: dos siluetas finas que rompen el canto.
+    placed(new THREE.BoxGeometry(0.016, 0.055, 0.005), [-0.36, 0.198, 0.075]),
+    placed(
+      new THREE.CylinderGeometry(0.005, 0.005, 0.1, 6),
+      [0.71, 0.045, 0],
+      [0, 0, Math.PI / 2],
+    ),
   ];
 
-  for (const side of [-1, 1]) {
+  for (const side of SIDES) {
     /* Borde de ataque: un larguero oscuro que recorre la flecha entera. Es la
        pieza que separa el ala del fuselaje a distancia —sin él, ala y cuerpo
        comparten valor y la nave se lee como una mancha con puntas. */
@@ -3700,14 +3960,44 @@ function rangerModel(input: SceneBodyInput): BodyModel {
       ),
       // Campana de la tobera y su anillo.
       placed(
-        new THREE.CylinderGeometry(0.088, 0.12, 0.18, 12, 1, true),
+        new THREE.CylinderGeometry(0.088, 0.12, 0.18, 22, 1, true),
         [-0.58, -0.06, side * 0.215],
         [0, 0, Math.PI / 2],
       ),
       placed(
-        new THREE.TorusGeometry(0.112, 0.014, 6, 14),
+        new THREE.TorusGeometry(0.112, 0.014, 6, 20),
         [-0.49, -0.06, side * 0.215],
         [0, Math.PI / 2, 0],
+      ),
+      /*
+        DENTRO de la campana, que hasta ahora era un tubo hueco.
+
+        La garganta —un tronco de cono corto que estrecha hacia delante— y el
+        anillo de cardán que la sujeta. No se ven desde el System Map y son lo
+        primero que se mira en el Observatorio cuando la vista `PROPULSIÓN`
+        pone las dos toberas de frente: un motor sin interior es una lata.
+      */
+      placed(
+        new THREE.CylinderGeometry(0.046, 0.086, 0.13, 18, 1, true),
+        [-0.535, -0.06, side * 0.215],
+        [0, 0, Math.PI / 2],
+      ),
+      placed(
+        new THREE.TorusGeometry(0.058, 0.011, 5, 14),
+        [-0.475, -0.06, side * 0.215],
+        [0, Math.PI / 2, 0],
+      ),
+      // Tres nervios de refuerzo por campana, repartidos por su circunferencia.
+      ...[0, 1, 2].map((n) =>
+        placed(
+          new THREE.BoxGeometry(0.17, 0.012, 0.02),
+          [
+            -0.575 + Math.cos((n * Math.PI * 2) / 3) * 0.0,
+            -0.06 + Math.sin((n * Math.PI * 2) / 3 + 0.6) * 0.1,
+            side * 0.215 + Math.cos((n * Math.PI * 2) / 3 + 0.6) * 0.1,
+          ],
+          [(n * Math.PI * 2) / 3 + 0.6, 0, 0],
+        ),
       ),
       // Góndola colgada del ala por un pilón corto y visible.
       placed(
@@ -3716,10 +4006,11 @@ function rangerModel(input: SceneBodyInput): BodyModel {
       ),
       // Contenedor de punta de ala: cierra el plano y sostiene la baliza.
       placed(
-        new THREE.CylinderGeometry(0.028, 0.028, 0.18, 8),
+        new THREE.CylinderGeometry(0.028, 0.028, 0.18, 14),
         [-0.28, -0.042, side * (WING_SPAN + 0.005)],
         [0, 0, Math.PI / 2],
       ),
+
     );
   }
 
@@ -3750,10 +4041,10 @@ function rangerModel(input: SceneBodyInput): BodyModel {
      como escape y no como dos puntos pegados a la cola. */
   const beaconMesh = mergedMesh(
     [
-      placed(new THREE.SphereGeometry(0.021, 7, 5), [-0.2, -0.042, WING_SPAN + 0.02]),
-      placed(new THREE.SphereGeometry(0.021, 7, 5), [-0.2, -0.042, -WING_SPAN - 0.02]),
-      placed(new THREE.SphereGeometry(0.019, 7, 5), [0.75, 0.025, 0]),
-      ...[-1, 1].map((side) =>
+      ...NAV_BEACONS.map((at, i) =>
+        placed(new THREE.SphereGeometry(i === 2 ? 0.019 : 0.021, 7, 5), at),
+      ),
+      ...SIDES.map((side) =>
         surfaceMasked(
           placed(
             new THREE.CircleGeometry(0.048, 12),
@@ -3767,7 +4058,7 @@ function rangerModel(input: SceneBodyInput): BodyModel {
          en el hero— y con la rampa sobre el eje X local, que es el de la nave:
          la garganta en la boca de la campana y la punta detrás. Se construye
          a lo largo de X y se ramplea antes de colocarla en su góndola. */
-      ...[-1, 1].map((side) =>
+      ...SIDES.map((side) =>
         placed(
           surfaceRamp(
             new THREE.CylinderGeometry(0.060, 0.036, 0.30, 10, 1, true)
@@ -3782,7 +4073,7 @@ function rangerModel(input: SceneBodyInput): BodyModel {
         ),
       ),
       // Toberas de maniobra de proa: el par que hace apuntar a una lanzadera.
-      ...[-1, 1].map((side) =>
+      ...SIDES.map((side) =>
         surfaceMasked(
           placed(new THREE.SphereGeometry(0.019, 6, 5), [0.44, 0.055, side * 0.145]),
           1,
@@ -3794,6 +4085,32 @@ function rangerModel(input: SceneBodyInput): BodyModel {
   beaconMesh.name = "ranger-violet-beacon";
   beaconMesh.renderOrder = 2;
   craft.add(beaconMesh);
+
+  /*
+    LA ARQUITECTURA DE LA LANZADERA, contada por las listas que la construyen.
+
+    `specimen-contract.ts` ya lo esperaba —«se busca por sufijo para que añadir
+    `rangerArchitecture` mañana no exija tocar este archivo»— y el motivo de que
+    no haya ni un número escrito a mano es el de siempre: el modelo se toca, y
+    el día que a esta nave le salga una tercera tobera el panel `DATOS` tiene
+    que enterarse solo. Por eso arriba hay cuatro listas en vez de cuatro
+    literales repetidos.
+
+    No están TODAS las piezas: están las que alguien podría contar mirando. Un
+    conteo que no se puede verificar contra la imagen no es una lectura de
+    instrumento, es relleno.
+  */
+  craft.userData.rangerArchitecture = {
+    wings: WINGS.length,
+    tailFins: SIDES.length,
+    leadingEdgeSpars: SIDES.length,
+    engineBells: SIDES.length,
+    plumes: SIDES.length,
+    rcsNozzles: SIDES.length,
+    navBeacons: NAV_BEACONS.length,
+    servicePanels: SIDES.length,
+    cockpitFrame: COCKPIT_FRAME.length,
+  };
 
   return {
     root,
