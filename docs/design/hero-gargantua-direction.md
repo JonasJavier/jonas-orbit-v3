@@ -1149,6 +1149,148 @@ de `arcMask` para el grosor y la continuidad del arco inferior; `presence`
 (0.12) para la asimetría y `receding` (0.35) para el contraste del lado que se
 aleja.
 
+## 14 terdecies. Pase de cohesión del disco (2026-09-19)
+
+Manda sobre §14 duodecies y sobre el pase de silueta que lo siguió en **cómo
+se muestrea la altura del disco, en qué familia de tono vive su rampa térmica,
+dónde entra la absorción del polvo, y qué comparten los dos lados y las dos
+caras**. No toca escala, posición, inclinación, cámara, HUD, exposición,
+rodilla de altas luces, beaming (exponente y suelo), bloom, raymarch ni
+geodésica. Lo abrió el dueño con carta blanca —«te dejo encargado de todo»—
+sobre un diagnóstico suyo y de una segunda opinión, hecho sobre el pase de
+silueta: «sí, va mejor, pero el disco todavía se lee como varias capas muy
+buenas superpuestas, no como una sola masa física continua; y el lado
+izquierdo y el derecho no hablan el mismo idioma visual».
+
+El pase de silueta (mismo día, sin commitear hasta aquí) había traído altura
+de escala al disco —dos muestras de Gauss por travesía a ±0.577 de su
+semilongitud—, la envolvente separada de la turbulencia (`bordeFin`,
+`bordeCaida`) y más grano en el exterior. La forma general mejoró y el dueño
+lo dijo; lo que este pase corrige es lo que aquél dejó a la vista.
+
+### Diagnóstico: cuatro lentes, tres hallazgos que no se veían a ojo
+
+Se midió sobre la vista canónica del laboratorio (1440 × 900, 9°, reloj
+clavado en 60 s) con dos herramientas que nacen aquí —`tools/gargantua-ab.mjs`
+y `tools/disk-cohesion.mjs`— y con un panel de cuatro análisis independientes
+(geometría de muestreo, cadena tonal, campos y lados, dirección de arte) sobre
+el shader, las capturas y el fotograma de referencia.
+
+1. **Las dos muestras no daban volumen: daban la misma textura dos veces.**
+   La travesía de la capa mide `H(r) / |dir.y|`; con `H = 9 %` del radio en
+   el borde y 9° de elevación son 13.7 unidades, y las dos muestras de un
+   mismo píxel leían el material a ~16 unidades de distancia sobre un disco de
+   21.6 de ancho. En el eje menor —la banda frontal y el canto del arco— ese
+   desplazamiento es RADIAL: cada píxel de la banda componía material de fuera
+   (más frío, otra meseta de color) ENCIMA de material de dentro. De ahí el
+   «abanico radialmente barrido» del brazo derecho inferior, la neblina bajo
+   la banda frontal y, literalmente, la lectura «capa marrón por delante, capa
+   clara detrás». Medido: el borde inferior de la banda había bajado 15-25 px
+   con calidez plana, y la mitad lejana del brazo derecho brillaba el doble.
+2. **La rampa térmica cambiaba de familia de tono y ACES la partía en dos.**
+   Las paradas iban de oro (42°) a ámbar (30°) a cobre (19°). Por encima de la
+   rodilla ACES clipa R antes que G y rota el tono a amarillo desaturado
+   —beige—; por debajo pinta el oro fiel —caqui—. «Zona blanca / beige /
+   marrón 1 / marrón 2» no eran cuatro densidades: eran dos familias de tono a
+   los dos lados de la rodilla, y por eso la izquierda hablaba en luminancia
+   sin croma y la derecha en croma saturado. Medido con `disk-cohesion.mjs`:
+   el 32 % de los píxeles con color por encima de 30°, 8 % beige, 3.6 % caqui;
+   en el fotograma de referencia, 1-2 %, 0.1 % y 0 %. Allí el tono deriva
+   hacia el rojo al apagarse —blanco cálido rosado, salmón, óxido— y nunca
+   pasa por amarillo.
+3. **Los carriles de polvo absorbían ANTES del rodillo de altas luces**, y el
+   rodillo comprimía el cociente: en el núcleo que se acerca un carril que
+   emite el 21 % de su vecino salía de ACES al 94 % frente al 98 %. La masa
+   crema era lisa POR CONSTRUCCIÓN, y su borde era a la vez borde de color y
+   borde de textura: el «enganche» de la izquierda.
+
+Y dos más pequeños, medidos también: en la línea media del brazo que se
+aleja se apilaban el suelo del beaming, la presencia (0.88), el contraste del
+lado lejano (×1.35), el pozo (×1.5), el tinte cobre y el valle macro, y el
+producto dejaba una **zanja negra** de 200 px justo en la costura entre la
+mitad lejana y la cercana, que las partía en dos láminas; y la cara lejana
+—el arco superior, imagen directa— llevaba la rampa con toda su saturación y
+competía con la banda de polvo de delante, cuando en la referencia se desatura
+hacia gris rosado y queda subordinada.
+
+### Lo que cambia
+
+1. **Una muestra por travesía, colocada donde hay anillo.** Se resuelve
+   analíticamente qué tramo de la travesía cae dentro del anillo —dos raíces
+   cuadradas— y el espesor óptico se escala por su fracción
+   (`alpha = 1 − (1 − alpha)^cobertura`). Un cruce holgadamente dentro tiene
+   cobertura 1 y es EXACTAMENTE el píxel de antes de la altura; en el canto la
+   muestra se toma en el extremo del tramo tirado a medias hacia su centro,
+   así que las ansas ven el material del borde y no un vacío. El cuerpo del
+   disco es delgado (`H/r` 2.5 %) y sólo el último 40 % del radio se abocina
+   (hasta 8.5 %): la altura que da silueta es la del sitio donde el disco
+   termina, y en el cuerpo sólo desenfocaba. Cuesta lo que costaba antes del
+   pase de silueta: una llamada a `diskSample` por travesía.
+2. **Una sola familia de tono, y la rampa sigue al material.** Paradas crema
+   → salmón → óxido claro → óxido → umbría, prerrotadas hacia el rojo para que
+   tras ACES caigan entre 18° y 32°. La coordenada de la rampa deja de ser el
+   radio: `tCol = t + 0.16·(0.5 − mass) + 0.06·(0.5 − fabric) + 0.08·(1 −
+   laneMask)`, así que una masa densa toma el color de un radio más interior
+   y un carril el de uno más exterior, y las fronteras cromáticas serpentean
+   con las masas en vez de apilarse como filas de pantalla. El empuje Doppler
+   al cobre baja de 0.54 a 0.40 y entra en la familia: a los dos lados los
+   separa el valor, que ya lo pone `boost`, no la paleta. `temper` pesa menos
+   (0.14/0.18) porque ya no es lo único que mueve el color por material.
+3. **El polvo absorbe después del rodillo** (`laneAbs`), que es además el
+   orden físico, y los carriles ocluyen: su suelo de densidad sube de
+   0.07-0.20 a 0.30-0.55 en el cuerpo. Hacia fuera cortan más (0.72 → 0.60 de
+   emisión), como en la referencia, donde los carriles llegan hasta el borde.
+   Los pozos van por el mismo camino.
+4. **Los dos lados comparten gramática.** Se afloja la pila del lado que se
+   aleja —contraste 0.35 → 0.15, calibre 0.3 → 0.1, pozo ×1.5 → ×1.15,
+   presencia 0.12 → 0.08, nudos a la mitad— y el lado que se acerca recibe el
+   mismo grano fino en la única polaridad que puede enseñar dentro del blanco:
+   como polvo oscuro en los carriles (`approaching`). La cresta afloja hacia
+   fuera (0.38 → 0.22: dentro fibra, fuera nube, para que las ansas no
+   abaniquen) y el grano se filtra con la huella que de verdad tiene
+   (exponente 0.40 sobre `slant`). La cara lejana de la imagen directa se
+   desatura un 30 % hacia gris rosado desde t 0.25 (`farFade`), con puerta
+   geométrica y suave —el rayo se aleja del centro en el plano—, sin tocar su
+   valor.
+
+### Medido
+
+Vista canónica del laboratorio, con halo, reloj 60 s. «Tono > 30°», «beige»
+y «caqui» son fracciones de los píxeles con color; «hf» es energía de alta
+frecuencia sobre varianza local por región; las razones son izquierda/derecha
+y arriba/abajo.
+
+| | pase de silueta (X0) | ahora (X5) | referencia |
+| --- | --- | --- | --- |
+| tono > 30° | 32.3 % | 1.8 % | 1-2 % |
+| beige / caqui | 8.1 % / 3.6 % | 0 % / 0 % | 0.1 % / 0 % |
+| saturación media | 0.42 | 0.33 | 0.24-0.26 |
+| hf izq/der, abajo | 0.49 | 0.59 | 1.00 |
+| hf arriba/abajo, derecha | 1.63 | 2.17 | — |
+| coherencia der-abajo | 0.555 | 0.637 | 0.61 |
+
+La coherencia del brazo derecho inferior vuelve a la de la banda de arriba
+—era el abanico—, la familia de tono es la de la referencia y los dos lados se
+acercan en estadística de textura; la diferencia que queda la pone el beaming,
+que clipa la izquierda a blanco. El suelo de ruido entre dos capturas del
+mismo estado es 0.001 (el laboratorio para al asentarse).
+
+### Coste y lo que no se tocó
+
+Una llamada a `diskSample` por travesía —la doble muestra costaba entre un 25
+y un 30 % más por píxel—, dos raíces cuadradas por cruce y ni un campo de
+ruido, uniforme ni draw nuevos. Exposición, rodilla, `boost`, bloom, `rs`,
+radios del disco, épocas, guarda de la sombra, cámara y los cinco cuerpos
+siguen intactos; el System Map y el laboratorio dibujan el mismo shader.
+
+**Las palancas:** `alturaEscala` (2.5 % → 8.5 % desde t 0.6) y el tirón de la
+muestra hacia el centro del tramo (0.5) para cuánto canto tienen las ansas;
+las cinco paradas de la rampa y los pesos de `tCol` para el color; `laneAbs` y
+`laneFloor` para cuánto corta el polvo; `receding`/`approaching` para la
+gramática por lado; `farFade` para cuánto se subordina la cara lejana. El
+Observatorio respeta ahora `bench.bloom`, así que las capturas sin halo se
+hacen sin abrir la consola. **Su valoración visual queda abierta.**
+
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
 Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas

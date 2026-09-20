@@ -672,6 +672,36 @@ por máscara sobre tejido y masas, borde del negro más apretado, algo más de
 estructura en la masa crema y contraste extra en el lado que se aleja— y se
 detuvo ahí. El pase queda cerrado salvo veredicto contrario.
 
+**Pase de cohesión del disco de Gargantúa (2026-09-19):** la sección
+`14 terdecies` de `docs/design/hero-gargantua-direction.md` manda sobre
+`14 duodecies` en **cómo se muestrea la altura del disco, en qué familia de
+tono vive su rampa, dónde entra la absorción del polvo y qué comparten los dos
+lados y las dos caras**. El dueño lo abrió con carta blanca sobre el pase de
+silueta (altura de escala + dos muestras por travesía) con un diagnóstico
+claro: «se lee como varias capas superpuestas, y los dos lados no hablan el
+mismo idioma». Tres hallazgos medidos que no se veían a ojo: **las dos
+muestras de la travesía se desplazaban ±7.9 unidades EN RADIO en el eje
+menor** —la misma textura dos veces, no volumen: el «abanico» y la neblina de
+la banda frontal—, sustituidas por UNA muestra con cobertura analítica del
+tramo dentro del anillo y un disco delgado que sólo se abocina en el borde;
+**la rampa térmica cambiaba de familia de tono (oro 42° → óxido 16°) y ACES la
+partía en beige sobre la rodilla y caqui bajo ella** —32 % de píxeles con tono
+> 30° contra 1-2 % en la referencia—, ahora una sola familia crema→salmón→óxido
+con la coordenada desplazada por masa, tejido y carril (`tCol`); y **la
+absorción de los carriles entraba antes del rodillo de altas luces**, que la
+comprimía, así que la masa crema era lisa por construcción: ahora `laneAbs`
+multiplica después. La pila del lado que se aleja se afloja, el que se acerca
+recibe el grano como polvo fino oscuro, la cresta se vuelve nube hacia fuera y
+la cara lejana se desatura (`farFade`). Nacen `tools/gargantua-ab.mjs`
+(A/B en laboratorio y portada con reloj clavado) y `tools/disk-cohesion.mjs`
+(familia de tono, estratos, hf/coherencia por región); el Observatorio respeta
+`bench.bloom`. Una llamada a `diskSample` por travesía, como antes del pase de
+silueta; ni un ruido, uniforme ni draw nuevos. Exposición, rodilla, beaming,
+bloom, `rs`, cámara y los cinco cuerpos no cambian. **Trampa de captura:** en
+Chromium headless la acumulación sólo avanza si algo fuerza un pintado; el
+laboratorio se empuja con pantallazos de 8 px y la portada no (tarda minutos
+por fotograma): se espera. Su valoración visual queda abierta.
+
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
 asociación canónica entre cuerpo y sección:

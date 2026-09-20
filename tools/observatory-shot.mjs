@@ -79,6 +79,15 @@ const ASENTAMIENTO = args.includes("--asentamiento");
 const vistaFlag = args.find((a) => a.startsWith("--vista="));
 const VISTA = vistaFlag ? vistaFlag.split("=")[1] : null;
 /**
+ * Y se compara SIN TILDES, que es el defecto que dejó la vista canónica fuera
+ * de alcance: `--vista=cinematografica` construía `/cinematografica/i` y el
+ * nombre accesible del mando es «Cinematográfica». El regex crudo no casa una
+ * tilde, así que la única vista del catálogo que lleva uno era la única que no
+ * se podía fijar — y es la canónica, la que se usa en todos los A/B.
+ */
+const sinTildes = (texto) =>
+  (texto ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+/**
  * El instante que se clava. 16.5 s no es arbitrario: `lib/tesseract.ts` lo
  * documenta como una de las poses que el dueño marcó como BUENAS cuando se
  * calibró el ritmo de la figura.
@@ -149,7 +158,24 @@ const abrirEstudio = async () => {
   await page.getByRole("radio", { name: "Estudio", exact: true }).click();
   await page.waitForTimeout(500);
   if (VISTA) {
-    await page.getByRole("radio", { name: new RegExp(VISTA, "i") }).click();
+    const mandos = page.getByRole("radio").filter({ hasNotText: /observar|estudio/i });
+    const buscado = sinTildes(VISTA);
+    const total = await mandos.count();
+    let elegido = -1;
+    for (let i = 0; i < total; i++) {
+      if (sinTildes(await mandos.nth(i).textContent()).includes(buscado)) {
+        elegido = i;
+        break;
+      }
+    }
+    if (elegido < 0) {
+      const rotulos = [];
+      for (let i = 0; i < total; i++) rotulos.push((await mandos.nth(i).textContent())?.trim());
+      throw new Error(
+        `No hay ninguna vista que case con "${VISTA}". Las que hay: ${rotulos.join(", ")}`,
+      );
+    }
+    await mandos.nth(elegido).click();
     // La espera es larga a propósito: cambiar de vista tira la acumulación
     // entera, y capturar antes compararía una imagen de una sola muestra.
     await page.waitForTimeout(6_000);
