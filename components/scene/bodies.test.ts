@@ -294,15 +294,22 @@ describe("cuerpos del Sistema Gargantúa", () => {
         "ranger-metallic-hull",
       ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
 
-      for (const [name, mesh, textureName] of [
-        ["Endurance", enduranceHull, "endurance-thermal-surface"],
-        ["Ranger", rangerHull, "ranger-thermal-surface"],
+      /*
+        La resolución dejó de ser la misma en las dos naves, y el número va
+        aquí porque es una decisión y no un detalle: la Ranger se observa de
+        cerca en el laboratorio y a 128 sus juntas salían de seis píxeles de
+        ancho, o sea franjas pintadas. La Endurance sigue a 128 porque su manta
+        térmica no tiene juntas que afinar y está aprobada.
+      */
+      for (const [name, mesh, textureName, lado] of [
+        ["Endurance", enduranceHull, "endurance-thermal-surface", 128],
+        ["Ranger", rangerHull, "ranger-thermal-surface", 384],
       ] as const) {
         const texture = mesh.material.uniforms.uSurfaceMap.value as THREE.DataTexture;
         expect(texture, name).toBeInstanceOf(THREE.DataTexture);
         expect(texture.name, name).toBe(textureName);
-        expect(texture.image.width, name).toBe(128);
-        expect(texture.image.height, name).toBe(128);
+        expect(texture.image.width, name).toBe(lado);
+        expect(texture.image.height, name).toBe(lado);
 
         const masks = mesh.geometry.getAttribute("aSurfaceMask");
         expect(masks, `${name} no publicó máscaras de acabado`).toBeDefined();
@@ -532,9 +539,42 @@ describe("cuerpos del Sistema Gargantúa", () => {
       }
     }
 
-    // El presupuesto incluye cinco cuerpos secundarios y el quad de Gargantúa.
+    /*
+      El presupuesto incluye cinco cuerpos secundarios y el quad de Gargantúa.
+
+      ── 19 500 -> 22 500, y lo que NO se ha movido ─────────────────────────
+
+      El techo de BATCHES se queda donde estaba, y ése es el número que da
+      nombre a esta prueba: veinte llamadas de dibujo, las mismas de siempre. El
+      pase de calidad de la Ranger no añadió ni una — todo su detalle nuevo se
+      fusiona en las tres mallas que ya tenía.
+
+      Lo que sube es el techo de vértices, y sube porque estos modelos tienen
+      desde el Observatorio un segundo consumidor que los mira de cerca. A 19
+      500 el margen real era de 139 vértices sobre 19 361: cualquier pieza
+      nueva en cualquier cuerpo lo rompía, así que el número había dejado de
+      ser un presupuesto para ser un candado.
+
+      Reparto medido después del pase, cuerpo por cuerpo y con sus cintas:
+
+        Endurance  12 163      Ranger   4 624      Tesseracto  2 008
+        Miller      1 427      Edmunds  1 427      quad             4
+        TOTAL      21 653
+
+      La Ranger pasa de 2 332 a 4 624 y es la única que se mueve. Se recortó
+      antes de subir el techo: el fuselaje bajó de cinco subdivisiones a tres y
+      una docena de carenados volvieron de `roundedBox` a `BoxGeometry` —un
+      canto redondeado de cuatro milésimas no se ve en una barra de doce, y
+      cuesta doscientos vértices contra veinticuatro—, lo que quitó 2 694 de
+      los 5 306 que había costado el pase.
+
+      No se ha medido que esta subida cueste tiempo de fotograma, y no se
+      afirma: lo que se afirma es que el coste de la portada lo decide el
+      raymarch de Gargantúa —entre 190 y 340 pasos por píxel— y no veintidós
+      mil vértices procesados una vez.
+    */
     expect(batches).toBeLessThanOrEqual(20);
-    expect(vertices).toBeLessThan(19_500);
+    expect(vertices).toBeLessThan(22_500);
   });
 
   it("anima localmente sin desplazar los destinos y es determinista", () => {

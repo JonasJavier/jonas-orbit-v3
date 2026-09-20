@@ -36,6 +36,12 @@ export const OBSERVATORY_SLUGS: Readonly<Record<string, WorldId>> = {
     lo fija `OBSERVATION_ORDER` y no esta tabla— y ahora tiene puerta.
   */
   gargantua: "gargantua",
+  /*
+    La cuarta. Una línea otra vez, y esta vez la línea de verdad no costó nada:
+    lo que costó fue descubrir que el laboratorio la ILUMINABA por donde nadie
+    había mirado. Ver la nota de su preset en `lib/observatory.ts`.
+  */
+  ranger: "ranger",
 };
 
 export interface SpecimenEntry {

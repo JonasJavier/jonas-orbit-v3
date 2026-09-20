@@ -211,22 +211,109 @@ export const OBSERVATION_PRESETS: Record<
     */
     boundsFill: 1.15,
   },
-  /* Lateral pura: la identidad de la Ranger es el reparto ámbar hacia la luz y
-     azul de campo estelar en la espalda. Ese reparto no existe si la luz no
-     está claramente a un lado.
+  /*
+    Contraluz alto por babor, y el camino hasta ahí es la muestra entera.
 
-     Su azimut se queda en 0 y NO puede subir a 90 sin más: con `keyAngle 90`
-     ése es exactamente el valor que alinea la mirada con el eje +Y del mundo y
-     degenera la base de cámara. `observationPlacement` lo salva con un eje de
-     reserva, pero conviene saberlo antes de calibrar este cuerpo. */
+    ── 1. La luz de este laboratorio no es la del System Map ─────────────────
+
+    La actitud de la nave (`RANGER_ATTITUDE`, en `bodies.ts`) no es una
+    propiedad suya: es la SOLUCIÓN de «encarar la luz y la cámara a la vez» en
+    el sitio que ocupa en el mapa. Aquí el sitio es otro —el espécimen se sienta
+    en `(0, 0, -D)` y la lámpara es el origen— así que la misma actitud da otra
+    incidencia. Medido sobre la geometría real:
+
+      dorso · luz      mapa  +0.197        laboratorio  -0.088
+      estribor · luz                       laboratorio  +0.759
+      proa · luz                           laboratorio  -0.645
+
+    O sea: aquí la luz le llega por el costado de estribor y algo por detrás, y
+    el DORSO cae justo en el arranque del terminador. El suelo que
+    `bodies.test.ts` vigila en el mapa es 0.15 y aquí sale negativo. Ninguna
+    elección de cámara lo arregla: la cámara no mueve la luz.
+
+    ── 2. El barrido geométrico eligió mal, y la captura lo dijo ─────────────
+
+    Primer intento, `70 / 35`: sale de proyectar los 2 184 triángulos del modelo
+    sobre 36 x 72 direcciones y quedarse con la que maximiza área vista, área
+    iluminada e incidencia media a la vez (área 17.7, 53 % iluminada,
+    incidencia 0.32, tres cuartos altos por estribor). Sobre el papel es el
+    óptimo del compromiso. En la captura es una masa crema sin terminador.
+
+    Y el motivo estaba en el shader desde antes de este pase: la Ranger tiene
+    BLOQUE PROPIO (`uKind == 5`) y está escrito para contraluz —«a 153° entre
+    luz y cámara ESTE es el término que dibuja el borde de ataque, la cabina y
+    las góndolas»—. Su identidad no la lleva el difuso: la llevan la envoltura
+    y el filo ámbar, que a clave baja no existen. Maximizar área iluminada era
+    optimizar justo el término que en esta nave no cuenta.
+
+    Medido sobre ocho capturas con el azimut clavado en 80, variando sólo la
+    clave, contando píxeles del cuadro por encima de dos umbrales:
+
+      clave      ≥200 (meseta)      ≥235 (brillo de verdad)
+        60      102 494  (7.9 %)          3 037
+        90       61 892  (4.8 %)          4 753
+       120       26 738  (2.1 %)          5 380
+       135       13 298  (1.0 %)          6 630
+       150        4 874  (0.4 %)          1 479
+
+    La meseta se desploma a un octavo mientras el brillo real se DOBLA: la luz
+    deja de ser un lavado y se concentra en cantos. Ese es exactamente el
+    movimiento que el §9 bis pide para las dos naves —«repartir el valor, no
+    bajar la exposición»— y aquí no cuesta ni un uniforme, sólo elegir dónde
+    sentarse. Pasados los 145° el cielo del laboratorio empieza a encenderse por
+    detrás y le come el contraste a la silueta, así que el techo no lo pone el
+    gusto: lo pone el fondo.
+
+    La clave se queda en 135, que es además la vecindad de los 153° del mapa: el
+    visitante llega del System Map y encuentra la nave con la luz donde la dejó.
+
+    ── 3. El azimut lo decidió Jonás, y fue la segunda entrega ───────────────
+
+    La primera propuesta fue `135 / 80`: tres cuartos ALTOS —proa 0.55, dorso
+    0.74, o sea cuarenta y cuatro grados de elevación— y la rechazó. Tenía
+    razón y se ve en la captura: a esa elevación la nave se lee picada y con el
+    morro caído, que es exactamente el defecto que la fase 1 corrigió en el
+    System Map cuando midió la proa contra la pantalla.
+
+    `110` baja la cámara y pone la nave de perfil-tres cuartos, con la proa a
+    la izquierda, la planta abierta y las dos toberas a la derecha. El tope no
+    es de gusto: por encima de 115 el ala toca el borde del cuadro en móvil
+    —medido sobre la malla, 0.985 del centro contra el 0.98 que exige
+    `observatory-frames.test.ts`— y a 110 queda en 0.957.
+  */
   ranger: {
-    keyAngle: 90,
-    keyAzimuth: 0,
+    keyAngle: 135,
+    keyAzimuth: 110,
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "material", "datos"],
-    /* ⏳ Sin montar: marcador hasta que haya captura que medir. */
-    boundsFill: 0.91,
+    /*
+      Uno, y es el primero que NO se calibra por presencia sino por recorte.
+
+      La Ranger mide 1.40 de largo por 1.21 de envergadura y 0.28 de alto: es la
+      figura más anisótropa del catálogo, y su envolvente la fija el morro —el
+      radio publicado, 2.564, sale de la baliza de proa—. Encuadrarla por el
+      alto la deja en una franja: con el 0.91 del marcador, 28.1 % del alto y
+      49.7 % del ancho.
+
+      Subirlo tiene tope, y el tope está medido. Proyectando la malla sobre los
+      dos formatos de la suite, con las cuatro vistas:
+
+        boundsFill 1.15   escritorio 78 % del alto   móvil: el ala se sale (1.08)
+        boundsFill 1.00   escritorio 67 % del alto   móvil: cabe todo (0.95)
+
+      Se queda en uno. El §5 pide entre el 70 % y el 85 % del alto y esto da 67,
+      tres puntos por debajo — y es la decisión correcta mientras el encuadre
+      salga de la ESFERA envolvente: por encima de uno la envolvente se sale del
+      cuadro y quien garantiza que la figura no la siga es la suerte, no la
+      fórmula. ⏳ Si Jonás pide más presencia, el precio está dicho.
+
+      (Lo que sí se sale en dos vistas de móvil es la PLUMA, y eso es herencia
+      deliberada: `modelRadius` la poda porque «una nave no ocupa más espacio
+      por encender un motor». El casco nunca toca el borde: 0.95 en el peor
+      caso de los ocho.)
+    */
+    boundsFill: 1.0,
   },
   /* Casi frontal: el camino de luz sobre el agua y la cresta con espuma son
      reflejos, y un reflejo sólo vuelve a la cámara cuando la fuente está cerca

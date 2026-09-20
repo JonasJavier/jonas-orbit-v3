@@ -23,18 +23,19 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
   await expect(indice.locator("li")).toHaveCount(6);
 
   /*
-    Tres enlaces y tres sin enlace. Las que faltan NO son enlaces muertos y por
+    Cuatro enlaces y dos sin enlace. Las que faltan NO son enlaces muertos y por
     eso se comprueban por `aria-disabled` y no por su ausencia: el catálogo dice
     cuántas muestras tiene el laboratorio, y enseñar sólo las observables
     mentiría sobre su tamaño. Regla 8 aplicada a un índice.
 
-    El reparto cambia cada vez que se monta una muestra —dos y cuatro hasta que
-    entró Gargantúa— y eso es lo que este test existe para notar: la cuenta sale
-    de `OBSERVATORY_SLUGS` y de `OBSERVATION_ORDER`, así que si alguna vez
-    discreparan, la recepción llevaría a la fila `03` y aterrizaría en otra.
+    El reparto cambia cada vez que se monta una muestra —dos y cuatro, luego
+    tres y tres con Gargantúa— y eso es lo que este test existe para notar: la
+    cuenta sale de `OBSERVATORY_SLUGS` y de `OBSERVATION_ORDER`, así que si
+    alguna vez discreparan, la recepción llevaría a la fila `03` y aterrizaría
+    en otra.
   */
-  await expect(indice.locator("a")).toHaveCount(3);
-  await expect(indice.locator("[aria-disabled='true']")).toHaveCount(3);
+  await expect(indice.locator("a")).toHaveCount(4);
+  await expect(indice.locator("[aria-disabled='true']")).toHaveCount(2);
 
   await expect(
     page.getByRole("link", { name: /Tesseracto/ }),
@@ -52,6 +53,16 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
   await expect(
     indice.getByRole("link", { name: /Gargantúa/ }),
   ).toHaveAttribute("href", "/es/experimentos/observatorio/gargantua");
+  /*
+    Acotada al índice por lo mismo, y no era obvio: «Ranger» también sale dos
+    veces, porque el pie de la recepción encadena con el destino siguiente y ese
+    enlace se llama «Destino 06 · Ranger Contacto». Gargantúa lo hace por ser el
+    sistema entero; la Ranger, por ser la vecina.
+  */
+  await expect(indice.getByRole("link", { name: /Ranger/ })).toHaveAttribute(
+    "href",
+    "/es/experimentos/observatorio/ranger",
+  );
 });
 
 test("O1 · la recepción no crea un contexto WebGL propio", async ({ page }) => {

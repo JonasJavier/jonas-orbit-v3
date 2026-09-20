@@ -55,6 +55,14 @@ export const ARCHITECTURE_LABELS: Readonly<Record<string, string>> = {
   firingNozzles: "Toberas encendidas",
   warmLights: "Luces cálidas",
   technicalLights: "Luces técnicas",
+  // Ranger
+  wings: "Semialas",
+  tailFins: "Planos de cola",
+  leadingEdgeSpars: "Largueros de borde de ataque",
+  plumes: "Plumas de escape",
+  navBeacons: "Balizas de navegación",
+  servicePanels: "Tapas de servicio",
+  cockpitFrame: "Piezas del marco de cabina",
 };
 
 /**
