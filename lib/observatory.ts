@@ -147,13 +147,14 @@ export interface ObservationPreset {
  * `worldsData.order` gobierna el raíl de navegación, el DOM, el tabulador y el
  * sitemap, y eso no se toca: es la secuencia con la que se cuenta el sitio. El
  * Observatorio es otra cosa —una vitrina de muestras— y su orden lo fijó Jonás
- * al elegir por dónde crecía: primero los dos montados, y detrás los cuatro que
- * esperan. Reordenar aquí no mueve ni un cuerpo ni un enlace de la navegación.
+ * al elegir por dónde crecía. Reordenar aquí no mueve ni un cuerpo ni un enlace
+ * de la navegación.
  *
- * Los seis están, incluida Gargantúa, que no tiene preset ni malla. Aparece
- * como muestra no disponible porque **el catálogo dice cuántas hay**: enseñar
- * cinco huecos sería mentir sobre el tamaño del laboratorio, y quitarla del
- * todo escondería que su observación es otro contrato (§7).
+ * Esta lista ya NO reparte montadas y pendientes: desde que entraron Miller y
+ * Edmunds las seis están montadas y `OBSERVATORY_SLUGS` tiene seis filas. Lo
+ * que conserva es la secuencia en la que se crecía —los dos primeros, las naves
+ * y los planetas, y Gargantúa al final por ser el único que se observa con otro
+ * contrato (§7)—, que sigue siendo el orden con el que se recorre la vitrina.
  */
 export const OBSERVATION_ORDER: readonly WorldId[] = [
   "tesseract",
@@ -315,37 +316,151 @@ export const OBSERVATION_PRESETS: Record<
     */
     boundsFill: 1.0,
   },
-  /* Casi frontal: el camino de luz sobre el agua y la cresta con espuma son
-     reflejos, y un reflejo sólo vuelve a la cámara cuando la fuente está cerca
-     de su eje. A 90° Miller es un planeta azul cualquiera.
+  /*
+    Tres cuartos, y el marcador anterior decía 25° por un motivo que el shader
+    no sostiene.
 
-     Sin `material`: verificado en el shader, `emissive` sólo se escribe dentro
-     de la rama `uKind == 8`, así que apagar la emisión no cambiaría UN SOLO
-     píxel de Miller. Un botón que no hace nada es peor que un botón ausente. */
+    ── Lo que decía este comentario, y por qué era falso ─────────────────────
+
+    «Casi frontal: el camino de luz y la cresta son reflejos, y un reflejo sólo
+    vuelve a la cámara cuando la fuente está cerca de su eje. A 90° Miller es un
+    planeta azul cualquiera.» Suena a óptica y no lo es. En este material el
+    camino no se calcula contra el eje de la cámara: `oceanSheet` y `oceanGlint`
+    son gaussianas sobre `alongOff` / `acrossOff`, que miden la separación
+    respecto de la DIRECCIÓN ESPECULAR — y ésa existe para cualquier ángulo de
+    clave. Encima el destello se pondera con `mix(0.86, 1.34, waterFresnel)`, o
+    sea que un espejo devuelve MÁS cuanto más rasante se le mira, no menos.
+
+    Medido sobre cinco capturas con el azimut clavado en 20, restando los 25 px
+    que el instrumento cuenta SIEMPRE, también donde no hay nada encendido: son
+    el indicador del servidor de desarrollo (`NEXTJS-PORTAL`, comprobado con
+    `elementFromPoint`), no un píxel del espécimen:
+
+      clave   blanco real (≥250)   meseta (≥200)   luz total
+        25             0 px           18 537        44.0 Mlum
+        45           172 px           22 573        39.5 Mlum
+        55           120 px           21 786        35.4 Mlum
+        75           314 px           19 208        25.1 Mlum
+        90           259 px           15 174        18.1 Mlum
+
+    A 25° el camino de luz NO LLEGA A BLANCO ni en un píxel: la lámina se
+    extiende en meseta por medio disco en vez de concentrarse en un trazo. Es
+    exactamente el mismo movimiento que el §9 bis pidió para las naves —repartir
+    el valor, no bajar la exposición— leído al revés: aquí el defecto era el
+    lavado, no la penumbra. Y sin terminador el cuerpo no tiene volumen; con la
+    luz a 25° del ojo, Miller es una calcomanía azul.
+
+    55 es donde coinciden las tres cosas: meseta casi máxima, blanco de verdad
+    en el trazo, y un terminador que devuelve el volumen y saca las bandas
+    latitudinales, que son lo que impide que la lámina se lea como gas.
+
+    Los 25° no se tiran: bajan a la vista `BONANZA`, que es donde ese lavado
+    dice algo —la extensión del campo de destellos— en vez de ser el estado por
+    defecto.
+
+    Sin `material`: verificado en el shader, `emissive` sólo se escribe dentro
+    de la rama `uKind == 8`, así que apagar la emisión no cambiaría UN SOLO
+    píxel de Miller. Un botón que no hace nada es peor que un botón ausente.
+  */
   miller: {
-    keyAngle: 25,
+    keyAngle: 55,
     keyAzimuth: 20,
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "datos"],
-    /* ⏳ Sin montar: marcador hasta que haya captura que medir. */
-    boundsFill: 0.91,
-  },
-  /* Rasante: Edmunds se define por PENDIENTE y no por altura, así que la luz
-     casi tangente es literalmente el instrumento correcto para ese campo — es
-     la que convierte una pendiente en una sombra larga.
+    /*
+      Y aquí `boundsFill` deja de ser una calibración y pasa a ser una lectura.
 
-     Sin `material`, por lo mismo que Miller. */
+      En las tres muestras anteriores este número no decía cuánto se ve: un
+      4-cubo toca su esfera envolvente en ocho vértices, la Endurance en las
+      puntas de sus radiadores y la Ranger en la baliza del morro, así que hubo
+      que medirlo sobre captura y salieron 0.91, 1.15 y 1.00 para tres figuras
+      que ocupan cosas muy distintas. **Una esfera es su propia envolvente**, y
+      con eso la fórmula del encuadre se vuelve exacta: la fracción del alto es
+      `tan(asin(boundsFill · sin(fov/2))) / tan(fov/2)`.
+
+      Comprobado y no deducido, que es la regla de este campo. Con 0.91 la
+      aritmética promete el 90.0 % del alto y la captura da 89.6; con 0.78
+      promete el 76.0 y la captura da **75.4**. El medio punto que falta es la
+      teselación —el poliedro va inscrito en la esfera que `modelRadius` mide—
+      y es la única diferencia que queda entre las dos.
+
+      0.78 y no 0.91 porque 0.91 es el 90 % del alto: el cuerpo llegaba a tres
+      dedos del borde y el §5 pide entre el 70 % y el 85 %. Con 0.78 los dos
+      planetas caen en mitad de banda, y son los dos primeros especímenes que
+      la cumplen sin discusión.
+    */
+    boundsFill: 0.78,
+  },
+  /*
+    Tres cuartos también, y por el motivo contrario al de Miller: aquí la luz
+    rasante no lavaba el cuerpo, lo APAGABA.
+
+    El marcador decía 82° —«Edmunds se define por PENDIENTE y no por altura,
+    así que la luz casi tangente es el instrumento correcto para ese campo»— y
+    esa frase sigue siendo verdad. Lo que no se había medido es el precio.
+    Cinco capturas con el azimut clavado en 10, midiendo cuánto del cuerpo
+    lleva luz encima:
+
+      clave   ancho iluminado   alto ocupado   luz total
+        30        605 px          74.4 %        31.3 Mlum
+        55        466 px          72.6 %        20.1 Mlum
+        65        395 px          70.0 %        15.6 Mlum
+        82        267 px          65.2 %         9.0 Mlum
+       110          0 px           0.9 %         2.4 Mlum
+
+    El disco mide 678 px, así que a 82° sólo el 39 % de su ancho recibe algo, y
+    la ocupación medida —que se mide sobre LUZ, no sobre geometría— cae al
+    65.2 %, o sea por debajo del suelo del 70 % que pide el §5. El encuadre no
+    tiene la culpa: el cuerpo cabe entero y se ve la mitad. A 55° el 69 % del
+    ancho lleva luz, la sombra larga de la cordillera sigue ahí y el campo de
+    provincias se lee entero.
+
+    Los 82° tampoco se tiran: bajan a la vista `RASANTE`, que es su sitio. Una
+    vista curada es para el extremo que revela una propiedad bajo demanda; un
+    preset es lo que ve quien entra.
+
+    Y una cifra que dice qué material es esto: en todo el barrido, de 30° a
+    150°, Edmunds **no llega a blanco en un solo píxel**. El instrumento cuenta
+    25 px por encima de 250 en las cinco capturas, y son los mismos 25 px del
+    indicador de desarrollo. La roca no tiene especular; no es que falte exposición.
+
+    Sin `material`, por lo mismo que Miller.
+  */
   edmunds: {
-    keyAngle: 82,
+    keyAngle: 55,
     keyAzimuth: 10,
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "datos"],
-    /* ⏳ Sin montar: marcador hasta que haya captura que medir. */
-    boundsFill: 0.91,
+    /* El mismo 0.78, y por la misma razón: ver la nota de Miller. Medido
+       aquí da 72.6 % del alto en vez de 75.4 porque la medida se hace sobre
+       píxeles encendidos y a 55° la roca deja un gajo en penumbra. */
+    boundsFill: 0.78,
   },
 };
+
+/*
+  ── LO QUE ESTE PASE APRENDIÓ DE LOS DOS PLANETAS ──────────────────────────
+
+  **Ningún cuerpo de `uKind == 0` o `uKind == 1` admite contraluz**, y no es
+  cuestión de grados: es que todos sus términos de canto están cerrados por
+  `ndl`. El filo de aire de Miller va por `airLit = smoothstep(0.20, 0.90, ndl)`
+  y el arco de Edmunds por `smoothstep(0.26, 0.94, ndl)`, así que lo que
+  enciende su limbo es MIRAR A LA LUZ, no tenerla detrás. En un punto del limbo
+  el producto `n·l` no pasa de `sin(clave)`, o sea que el término muere solo
+  según la clave se acerca a 180.
+
+  Verificado en captura, que es como se vio: a 160° Miller deja 94 px por
+  encima de 200 y a 150° Edmunds deja 93 —contra los veinte mil de sus poses
+  de trabajo— y lo que ocupa el cuadro en las dos capturas no es el espécimen,
+  es el cielo del laboratorio encendiéndose por detrás.
+
+  O sea que la vista `SILUETA` que tienen el Tesseracto y la Endurance NO es
+  trasladable aquí, y el motivo es material y no de gusto: el Tesseracto tiene
+  `rim` propio y las dos naves tienen envoltura y filo ámbar escritos para
+  contraluz. Un planeta a contraluz en este laboratorio es un agujero.
+*/
 
 /**
  * A cuántos radios del cuerpo se pone el origen del mundo.
@@ -421,6 +536,52 @@ export function instrumentsFor(id: WorldId): readonly ObservationInstrument[] {
  */
 export function hasLightInstrument(id: WorldId): boolean {
   return id !== "gargantua";
+}
+
+/**
+ * Si esta muestra admite el instrumento `EJE`: girar la FIGURA sobre su eje.
+ *
+ * ── Qué gesto es éste, y por qué faltaba ────────────────────────────────────
+ *
+ * El laboratorio tenía dos maneras de cambiar lo que se ve y las dos cambian
+ * algo más por el camino:
+ *
+ *   · **Orbitar** mueve la cámara. Como la luz ES el origen del mundo, rodear
+ *     el espécimen cambia también de dónde le llega la clave: se ve otra cara,
+ *     sí, pero iluminada de otra manera.
+ *   · **`LUZ`** gira el espécimen alrededor del origen con la cámara enganchada:
+ *     misma cara, otra luz.
+ *
+ * Faltaba el tercero, que es el que pidió Jonás: **otra cara, la MISMA luz**.
+ * Eso no lo puede dar ninguno de los dos, porque los dos mueven la relación
+ * entre el cuerpo y la lámpara. Sólo lo da girar la figura sobre su propio eje,
+ * que es la única rotación de este laboratorio que no toca ni el encuadre ni la
+ * geometría de luz: el cuerpo sigue en el mismo sitio del mundo, así que
+ * `lightGeometry` devuelve exactamente los mismos dos números antes y después.
+ *
+ * ── Las dos ausencias, que son de distinta clase ────────────────────────────
+ *
+ * **Gargantúa** no tiene malla. `createBody` devuelve `null` para ella y no hay
+ * raíz que girar; es la misma frontera que la deja fuera de los presets.
+ *
+ * **El Tesseracto** sí tiene malla y aun así se queda fuera, y su motivo está
+ * escrito desde antes de que este mando existiera: su `SPIN_RATE` vale cero
+ * porque «un objeto que gira sobre su eje afirma que tiene un eje, un dentro y
+ * un fuera estables — que es exactamente la lectura que su diseño intenta
+ * negar». Y su orientación de reposo no es una pose entre otras: es TODA su
+ * lectura —el eje de la recursión casi enfilado a la cámara, los tres marcos
+ * uno dentro de otro—, así que un dial que la deshaga no ofrece otra cara, le
+ * quita la suya.
+ *
+ * La Ranger también vale cero en esa tabla y aquí SÍ entra, y esa asimetría es
+ * la decisión de este pase. Los dos ceros de `SPIN_RATE` no dicen lo mismo: el
+ * del Tesseracto niega que haya eje, y el de la Ranger dice que una lanzadera
+ * dando vueltas sola es «un modelo colgado de un hilo». Lo primero sobrevive a
+ * una mano en el dial; lo segundo no, porque una vuelta PEDIDA no es una vuelta
+ * que se dé sola.
+ */
+export function hasTurnInstrument(id: WorldId): boolean {
+  return id !== "gargantua" && id !== "tesseract";
 }
 
 export const ORIGIN_DISTANCE_RADII = 10;
@@ -727,8 +888,15 @@ export function lightGeometry(
  *
  * El offset cámara-espécimen se conserva ENTERO en coordenadas de mundo, y eso
  * es lo que garantiza la propiedad que hace útil al instrumento: la misma cara,
- * el mismo encuadre, la misma distancia, otra luz. La rotación de la figura
- * tampoco se toca, porque nadie la toca aquí.
+ * el mismo encuadre, la misma distancia, otra luz.
+ *
+ * La rotación propia de la figura sigue sin tocarse aquí, y desde que existe el
+ * mando `EJE` eso dejó de ser una casualidad para ser la otra mitad del
+ * reparto: esta función mueve el cuerpo POR EL MUNDO —cambia de dónde le llega
+ * la luz— y aquel mando lo gira SOBRE SÍ MISMO —cambia qué cara mira—. Las dos
+ * rotaciones son conmutativas y ninguna puede leer la otra en sus números: el
+ * eje de la figura no aparece en esta construcción, y la posición del cuerpo en
+ * el mundo no aparece en la de allí.
  */
 export function lightPlacement(
   camera: Vec3,

@@ -12,7 +12,7 @@ import {
   GARGANTUA_VIEWS,
 } from "@/lib/gargantua-views";
 import { GARGANTUA_INSTRUMENTS } from "@/lib/observatory";
-import { readVisualBench } from "@/lib/visual-bench";
+import { diagnosticCode, readVisualBench } from "@/lib/visual-bench";
 import {
   BASE_EXPOSURE,
   BLOOM,
@@ -157,6 +157,9 @@ export function createGargantuaObservatory(
     defines: { MAX_STEPS: TIER[tier].steps },
     uniforms: createMarchUniforms(tier),
   });
+  // Los modos de diagnóstico del disco (gris de densidad, sólo directa, sólo
+  // lensada) viven en el banco visual y se fijan una vez: ver visual-bench.ts.
+  marchMaterial.uniforms.uDiag.value = diagnosticCode(bench);
   marchScene.add(new THREE.Mesh(quadGeometry, marchMaterial));
 
   // === Acumulación temporal =================================================

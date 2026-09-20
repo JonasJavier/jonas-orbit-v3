@@ -202,6 +202,78 @@ export const OBSERVATION_VIEWS: Partial<
         "Contra la cara noche: las toberas encendidas y las balizas, que son lo único que la nave emite por sí misma y lo único que no depende de la luz.",
     },
   ],
+  /*
+    LOS DOS PLANETAS, Y LA VISTA QUE NO TIENEN.
+
+    Ninguno de los dos lleva `SILUETA`, y no es un hueco por rellenar: es la
+    conclusión medida del pase. Todo lo que enciende el canto de un cuerpo de
+    `uKind == 0` o `uKind == 1` está cerrado por `ndl` —`airLit` en los dos— así
+    que a contraluz no queda filo, queda un agujero. La nota larga está al pie
+    de `OBSERVATION_PRESETS`.
+
+    Y ninguna de estas seis vistas toca `distance`. Tampoco es olvido: la regla
+    de arriba —«una vista puede alejarse, nunca acercarse»— existe porque la
+    silueta del Tesseracto respira treinta y un puntos y cualquier factor menor
+    que uno la recorta. Una esfera no respira. Es la única figura del catálogo
+    cuya ocupación es la misma en todas sus vistas, así que el encuadre del
+    preset vale para las tres sin corrección.
+  */
+  miller: [
+    {
+      id: "canonica",
+      label: "Canónica",
+      study:
+        "Tres cuartos: el camino de luz cruza la cara iluminada con su cresta —ladera clara, seno oscuro y espuma intermitente— y el terminador devuelve el volumen que la luz frontal borra.",
+    },
+    {
+      id: "espejo",
+      label: "Espejo",
+      /* Los 25° que fueron preset hasta este pase. Aquí el lóbulo del destello
+         —`exp(-(alongOff²·9 + acrossOff²·110))`— cubre buena parte del
+         hemisferio en vez de un filete, que es justo lo que se quiere ver. */
+      keyAngle: 25,
+      study:
+        "Luz casi frontal. El camino de luz se abre en lámina y deja ver hasta dónde llega el campo de destellos, que es lo que dice que abajo hay agua y no gas. El precio es que no hay terminador: el cuerpo pierde volumen.",
+    },
+    {
+      id: "corrientes",
+      label: "Corrientes",
+      /* 92 y no 90: `keyAngle 90` con `keyAzimuth 90` degenera la base de
+         cámara, y aunque aquí el azimut es 20 y el módulo tiene eje de
+         reserva, no hay motivo para sentarse en el caso límite. */
+      keyAngle: 92,
+      study:
+        "El terminador cruzando el disco. Las bandas latitudinales pican la lámina y modulan el brillo, y el filo de aire llega a su máximo: se enciende mirando a la luz, no teniéndola detrás.",
+    },
+  ],
+  edmunds: [
+    {
+      id: "canonica",
+      label: "Canónica",
+      study:
+        "Tres cuartos: las seis provincias minerales y la cordillera, que está definida por PENDIENTE y no por altura. La sombra larga ya está ahí y todavía lleva luz el 69 % del ancho del cuerpo.",
+    },
+    {
+      id: "rasante",
+      label: "Rasante",
+      /* Los 82° que fueron preset hasta este pase: la luz casi tangente es
+         literalmente el instrumento de un campo definido por pendiente. Aquí
+         paga sólo quien lo pide: el 39 % del ancho del cuerpo lleva luz. */
+      keyAngle: 82,
+      study:
+        "Luz casi tangente. Es el único ángulo donde una pendiente se convierte en una sombra larga, y donde el limbo se trocea en cresta encendida, hueco y destello corto. A cambio, dos tercios del cuerpo caen a oscuras.",
+    },
+    {
+      id: "provincias",
+      label: "Provincias",
+      /* Al revés que las otras dos: con la luz casi en el eje el sombreado se
+         aplana y lo único que queda dibujando es el ALBEDO, o sea el campo
+         analítico de provincias sin el relieve encima. */
+      keyAngle: 30,
+      study:
+        "Luz casi frontal. Al aplanarse el sombreado, lo único que queda dibujando es el color: ocre, cobre, carbón, arcilla, arena y oliva apagado, separados del relieve que normalmente los tapa.",
+    },
+  ],
 };
 
 /** Las vistas de un espécimen, o una lista vacía si no tiene ninguna. */

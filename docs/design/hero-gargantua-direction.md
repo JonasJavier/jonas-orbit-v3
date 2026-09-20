@@ -1291,6 +1291,156 @@ gramática por lado; `farFade` para cuánto se subordina la cara lejana. El
 Observatorio respeta ahora `bench.bloom`, así que las capturas sin halo se
 hacen sin abrir la consola. **Su valoración visual queda abierta.**
 
+## 14 quaterdecies. Pase de gramática común (2026-09-20)
+
+Manda sobre §14 terdecies en **qué términos del material dependen del lado,
+cómo se reparten cortes, grano y polvo entre sectores densos y vacíos, y cómo
+se diagnostica el disco por separado de su luz**. No toca escala, posición,
+inclinación, cámara, HUD, exposición, rodilla de altas luces, beaming, tinte
+Doppler, bloom, lensado, órdenes, envolvente ni geodésica. Lo abrió el dueño
+tras dar por resuelto el problema de capas del pase anterior: «la asimetría
+izquierda-derecha ya no es sólo luminosa; es morfológica. La izquierda se lee
+como una cortina continua que conecta la banda frontal con el arco superior;
+la derecha, como una corriente superior laminar, una masa inferior en abanico
+y una depresión oscura entre ambas». Con dos condiciones que fijan el pase:
+**no espejo** —Doppler, temperatura, profundidad óptica y lensado siguen
+separando los lados— y **misma estadística material**: «si tapas el color y
+miras sólo la estructura, es el mismo gas visto bajo condiciones diferentes».
+Y una orden de método: diagnosticar antes de tocar un número.
+
+### Diagnóstico: tres modos, y ninguna de las dos sospechas era la causa
+
+El banco visual gana `diagnostico` (`lib/visual-bench.ts`, uniforme
+`uDiag`, decodificado con `mod` porque GLSL ES 1.0 no tiene bits): **gris
+de densidad** —la densidad que decide la opacidad, con masas, nudos, pozos,
+presencia, carriles, envolvente y caída por orden, comprimida con Reinhard y
+con la absorción del polvo, SIN rampa térmica, perfil radial de energía,
+beaming, tinte, función fuente ni rodillo—, **sólo la imagen directa** y
+**sólo las lensadas** (que conservan la opacidad de la directa y pierden su
+luz: es la contribución tal como llega al cuadro). `gargantua-ab.mjs` los
+escribe con `--diag=` y apaga el instrumento DOPPLER con `--doppler=0`
+leyendo `aria-pressed`. Los cuatro cuadros viven en
+`.shots/cohesion/diagnostico-modos.png`.
+
+1. **El lensado no pone nada en los brazos.** Gris de densidad y gris de
+   densidad sólo-directa dan las mismas cifras a tres decimales en las cuatro
+   regiones; el sólo-lensada es el anillo de fotones y el arco inferior. La
+   corriente superior derecha, la depresión y el abanico son imagen directa
+   entera: la corriente es la cara lejana del disco en el cuadrante derecho,
+   el abanico es el brazo cercano llegando al ansa.
+2. **Los modificadores por lado tampoco.** Con `uDoppler` apagado —que anula
+   `approaching`, `receding`, `presence` y todo lo que colgaba de
+   ellos— el gris de densidad se movía 0.93 niveles de media y las dos
+   texturas seguían donde estaban: laminar a la izquierda, moteada a la
+   derecha, con la depresión intacta.
+3. **La causa es el campo base, y el campo es ESTÁTICO.** El disco «avanza
+   pero no envejece»: la realización de edad cero es la misma cada 20 s
+   (`EPOCH`), el material respira en cizalla y nunca da la vuelta, así que
+   el mismo sector cae siempre en el mismo lado. En el ansa derecha, a
+   r ≈ 10-11 rs, hay un valle del campo macro; en la izquierda, una masa. Y
+   el shader trataba valle y masa como DOS materiales, por cuatro acoplamientos
+   distintos, ninguno visible a ojo:
+   · los cortes se agrupaban donde el macro está en su valle (`macro·0.22`
+     en `breakField`): lo tenue salía troceado en segmentos cortos, lo
+     denso continuo;
+   · el peso del grano variaba por sector 0.55-1.0 con `m2`: sectores
+     granulados junto a sectores lisos;
+   · el suelo de las masas se modulaba con `fabric` LINEAL, mientras en las
+     masas la densidad la pone una ventana que satura: dentro de una masa el
+     grano desaparece en la meseta, dentro de un valle se ve entero como
+     moteado;
+   · y el campo de carriles llevaba `macro·0.42`: el carril más ancho caía
+     SIEMPRE en el valle, que perdía densidad por la envolvente y encima
+     absorbía como polvo. Medido en el gris: una franja de 1.2 rs de ancho
+     en la que el gris cae a la décima parte, y casi todo lo pone
+     `laneAbs`, no la densidad. Ésa es la «depresión oscura».
+
+### Auditoría de los términos por lado
+
+| término | categoría | acción |
+| --- | --- | --- |
+| `boost` (beaming, 0.24-6.6) | fotométrico | se conserva |
+| tinte Doppler crema / cobre | cromático | se conserva |
+| `farFade` (cara lejana desaturada) | cromático | se conserva |
+| `presence` (±8 % de densidad) | densidad, suave | se conserva |
+| contraste del tejido ×1.15 al alejarse | morfológico | retirado |
+| calibre ×1.1 al alejarse | morfológico | retirado |
+| nudos ×0.5 al alejarse | morfológico en densidad | sólo luz: `knotLuz` en la fuente, `knot` simétrico en la densidad |
+| pozos ×1.15 al alejarse | densidad por lado | retirado |
+| grano como polvo en carriles sólo al acercarse | morfológico (topología del carril) | en todo el disco (`laneDust`) |
+
+Ninguno de los cinco retirados era la causa medida; se retiran por
+principio: cada uno era un sitio donde un lado podía volver a separarse del
+otro en QUÉ hay y no en cómo se ve.
+
+### Lo que cambia en el campo base (para los dos lados)
+
+1. **Cortes sin macro:** `breakField = wb·0.72 + grain·0.28`. Siguen
+   agrupándose por sectores —`wb` tiene celdas de ~4 unidades— pero no por
+   densidad.
+2. **Grano por sector 0.75-1.0** en vez de 0.55-1.0.
+3. **Suelo de las masas con `streams`** —el campo cizallado, fibra
+   tangencial— en `mix(0.45, 1.25, streams)` en vez de
+   `mix(0.55, 1.35, fabric)`; el rango baja porque `streams` promedia
+   ~0.65 y `fabric` ~0.45, así que el factor sigue en ~0.97 y la densidad
+   media del valle no se mueve.
+4. **Polvo a medias con el macro:** `mix(macro, wb, 0.5)·0.42`. Se probó
+   primero el macro fuera del todo y salió medido: el polvo caía entero sobre
+   lo brillante y el blanco recortado del cuadro bajaba de 2 411 a 578 px,
+   con la cara lejana izquierda convertida en óxido. Eso ya no era
+   redistribuir el polvo, era apagar el disco, y el blanco no es palanca de
+   este pase. Con la mitad, el valle derecho se rellena y el crema conserva su
+   núcleo.
+
+No se tocó la envolvente (`bordeFin`/`bordeCaida`): la corriente superior
+derecha es un sector tenue que muere antes, y alargarlo habría movido la
+silueta, que este pase no tiene permiso para mover.
+
+### Medido
+
+Vista canónica del laboratorio, reloj 60 s. Gris de densidad: perfil vertical
+en la columna a 320 px a la derecha del centro, filas de la depresión.
+
+| | antes | ahora |
+| --- | --- | --- |
+| gris en la depresión (dx 320) | 13-60 | 22-86 |
+| gris en la depresión (dx 220) | 47-100 | 63-135 |
+| hf izq/der, abajo (color) | 0.59 | 0.72 |
+| coherencia izq/der, abajo (color) | 1.01 | 0.96 |
+| tono > 30° / beige / caqui | 1.8 % / 0 / 0 | 1.6 % / 0 / 0 |
+| saturación media | 0.33 | 0.35 |
+| blanco ≥ 250 en el cuadro del disco | 2 411 px | 1 715 px |
+
+El histograma de grises del material se acerca entre lados: antes la
+izquierda tenía el 20 % de sus píxeles en la cubeta más clara y la derecha el
+19 % con el resto repartido distinto; ahora las siete cubetas difieren en
+menos de cinco puntos cada una salvo la segunda. **El blanco recortado baja
+un 29 % de ÁREA, no de intensidad**: ni exposición, ni rodilla, ni `boost`
+cambian; lo que pasa es que el grano (punto 2, −19 % él solo) y el polvo
+(punto 4) cruzan ahora el núcleo crema, que es la «fibra dentro del crema»
+que el pase anterior dejó como residuo. Si el dueño prefiere el núcleo liso,
+la palanca es el rango de `fine`.
+
+### Coste y lo que no se tocó
+
+Cero evaluaciones de ruido nuevas —`wb` y `streams` ya existían—, un
+uniforme (`uDiag`) con ramas uniformes que el compilador resuelve por
+invocación, un multiplicar-sumar en el campo de carriles y uno en
+`knotLuz`; `diskSample` cuesta lo mismo. Exposición, rodilla, `boost`,
+tinte Doppler, `farFade`, bloom, `rs`, radios, épocas, envolvente, órdenes,
+guarda de la sombra, cámara y los cinco cuerpos siguen intactos; el System
+Map y el laboratorio dibujan el mismo shader.
+
+**Las palancas:** `mix(macro, wb, 0.5)` para cuánto sigue el polvo a las
+masas; el rango de `fine` para cuánto grano entra en el crema; los pesos de
+`breakField` para dónde se agrupan los cortes; `mix(0.45, 1.25, streams)`
+para la textura del valle; `knotLuz` para lo único que sigue dependiendo del
+lado en el material. **Dos trampas de medida:** `EPOCH` es 20 s y el campo
+no avanza, así que dos relojes múltiplos de 20 dan la MISMA imagen (60, 200 y
+400 s son idénticos); y el servidor de otra sesión puede morir a mitad de una
+captura —lo hizo dos veces—: las capturas de este pase van contra un
+`next dev` propio. **Su valoración visual queda abierta.**
+
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
 Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas

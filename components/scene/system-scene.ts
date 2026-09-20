@@ -11,7 +11,7 @@ import {
   placeBodyOnDepthLayer,
 } from "@/lib/scene-depth";
 import type { CameraPose } from "@/lib/scene-poses";
-import { readVisualBench } from "@/lib/visual-bench";
+import { diagnosticCode, readVisualBench } from "@/lib/visual-bench";
 import {
   sampleVoyage,
   voyageFlavourFor,
@@ -281,6 +281,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     acumulación temporal, y eso se resuelve al construir la cadena de post.
   */
   const bench = readVisualBench();
+  // Los modos de diagnóstico del disco (gris de densidad, sólo directa, sólo
+  // lensada) viven en el mismo banco y se fijan una vez: ver visual-bench.ts.
+  marchMaterial.uniforms.uDiag.value = diagnosticCode(bench);
 
   // === Acumulación temporal ================================================
   const canAccumulate = canFloat && bench.accumulate;

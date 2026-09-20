@@ -4591,6 +4591,33 @@ export interface SceneBody {
    * Endurance gira a 0.016 rad/s y es el primer espécimen donde se nota.
    */
   animateAt(seconds: number): void;
+  /**
+   * Pone el giro propio de la figura en un ángulo ABSOLUTO, en radianes.
+   *
+   * Es la primera mitad de `spinAt` sacada a la luz, y las dos la comparten:
+   * una sola implementación de «la figura girada sobre su eje», que es lo que
+   * garantiza que el mando del Observatorio y el giro del System Map no puedan
+   * acabar hablando de ejes distintos.
+   *
+   * ── Por qué un ángulo y no unos segundos ────────────────────────────────
+   *
+   * Porque `spinAt` no sirve para esto y no es un detalle de firma: multiplica
+   * por `SPIN_RATE`, y esa tabla vale CERO para la Ranger y para el Tesseracto.
+   * Con ella, el único mando que puede girar una lanzadera de veinte metros
+   * sería el que no la gira nunca.
+   *
+   * El eje es el mismo `spinAxis` del mapa —polo en los mundos, eje del aro en
+   * la Endurance, proa-popa en la Ranger— y eso también es deliberado: el
+   * laboratorio puede cambiar las condiciones de observación, pero inventarle
+   * un segundo eje a un cuerpo sería afirmar algo sobre el objeto que el objeto
+   * no dice.
+   *
+   * Y no toca el tamaño de nada. `modelRadius` mide desde el origen de la
+   * raíz y el eje pasa por ese origen, así que la envolvente es invariante por
+   * construcción: el encuadre —que se calcula entero sobre ese radio— no se
+   * entera de que la figura ha girado.
+   */
+  turnTo(angle: number): void;
 }
 
 /** Crea el cuerpo. Devuelve `null` para Gargantúa: la dibuja el raymarch y no
@@ -4639,6 +4666,12 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
   const spin = SPIN_RATE[input.visual] ?? 0.014;
   const axis = spinAxis(input.visual);
 
+  // En el eje LOCAL del modelo completo: módulos, trusses, planeta y hábitat
+  // conservan sus relaciones y no bambolean alrededor del eje del mundo.
+  const turnTo = (angle: number) => {
+    model.root.quaternion.setFromAxisAngle(axis, angle);
+  };
+
   return {
     id: input.id,
     visual: input.visual,
@@ -4647,19 +4680,27 @@ export function createBody(input: SceneBodyInput): SceneBody | null {
     materials,
     placement: input.placement,
     radius,
+    turnTo,
     spinAt(seconds) {
-      // En el eje LOCAL del modelo completo: módulos, trusses, planeta y hábitat
-      // conservan sus relaciones y no bambolean alrededor del eje del mundo.
-      model.root.quaternion.setFromAxisAngle(axis, spin * seconds);
+      turnTo(spin * seconds);
       // Y lo que se mueve DENTRO del cuerpo: anillos en su plano, hábitat en su
       // órbita, retículas contrarrotando. Es lo que reparte la vida por toda la
       // escena en lugar de concentrarla en el único cuerpo que tenía módulos.
       model.animate?.(seconds);
     },
     animateAt(seconds) {
-      // La segunda mitad de `spinAt`, sin la primera. El cuaternión de la raíz
-      // no se toca, así que el modelo se queda en su orientación de reposo —que
-      // es justamente la que el preset de observación encuadra.
+      /*
+        La segunda mitad de `spinAt`, sin la primera. El cuaternión de la raíz
+        no se toca, así que el modelo se queda donde lo dejaron: en su
+        orientación de reposo —la que encuadra el preset— o en la que haya
+        pedido el mando `EJE` del Observatorio.
+
+        Que no lo toque es justo lo que hace convivibles las dos cosas. El
+        movimiento propio de la Endurance y de la Ranger vive en un grupo HIJO
+        de la raíz (`endurance-assembly`, `craft`), así que la corrección de
+        actitud subgrado se suma a la vuelta que haya pedido el visitante en vez
+        de pelearse con ella fotograma a fotograma.
+      */
       model.animate?.(seconds);
     },
   };

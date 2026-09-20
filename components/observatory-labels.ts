@@ -122,6 +122,21 @@ export const LIGHT_LABELS = {
   roll: "Giro de la luz en la pantalla",
 } as const;
 
+/**
+ * El mando `EJE`, dicho entero.
+ *
+ * En la consola se ve como `EJE`, tres letras, debajo del rótulo `FIGURA`. El
+ * nombre accesible tiene que decir qué mueve, y sobre todo tiene que decir que
+ * mueve el ESPÉCIMEN y no la cámara: es la diferencia entre este mando y el
+ * arrastre, y escuchando no hay nada más que la distinga.
+ *
+ * Y no dice «giro» a propósito, aunque sea la palabra natural. `GIRO` ya es el
+ * segundo dial de `LUZ` —«Giro de la luz en la pantalla»— y dos controles
+ * deslizantes que empiezan igual en la misma consola se confunden al oírlos, y
+ * se vuelven ambiguos para cualquiera que los busque por nombre.
+ */
+export const TURN_LABEL = "Rotación del espécimen sobre su eje";
+
 export const OBSERVATION_LABELS = {
   view: "Vista",
   azimuth: "Azimut",

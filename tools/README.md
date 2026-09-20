@@ -30,7 +30,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `star-streaks.mjs` | cuánto se estiran las estrellas del fondo, por anillo de distancia al agujero |
 | `body-metrics.mjs` | reparto de valores dentro del disco de un cuerpo secundario |
 | `gargantua-metrics.mjs` | luminancia por anillo de la sombra, negro de verdad, recorte blanco y asimetría de la banda |
-| `gargantua-ab.mjs` | A/B de Gargantúa en laboratorio y portada, con y sin halo, reloj clavado y recortes de los dos brazos |
+| `gargantua-ab.mjs` | A/B de Gargantúa en laboratorio y portada, con y sin halo, reloj clavado y recortes de los dos brazos; `--diag=densidad,directo,lensado` captura los modos de diagnóstico del banco y `--doppler=0` apaga el instrumento DOPPLER |
 | `disk-cohesion.mjs` | si el disco se lee como una masa: familia de tono, estratos, energía fina y coherencia por región |
 | `disk-silhouette.mjs` | perfil de luz columna a columna: si el brazo termina en punta o se disuelve |
 | `shot-diff.mjs` | diferencia entre dos capturas, con su suelo de ruido, para probar que un refactor no cambió la imagen |

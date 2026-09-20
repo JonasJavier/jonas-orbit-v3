@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { FULL_VISUAL_BENCH, parseVisualBench } from "./visual-bench";
+import {
+  FULL_VISUAL_BENCH,
+  diagnosticCode,
+  parseVisualBench,
+} from "./visual-bench";
 
 /*
   El banco de pruebas apaga el bloom y los emisivos para juzgar material y
@@ -156,5 +160,47 @@ describe("capas de atmósfera", () => {
         roto,
       ).toEqual(FULL_VISUAL_BENCH.atmosphere);
     }
+  });
+
+  it("los modos de diagnóstico sólo se encienden con un true literal", () => {
+    // Polaridad contraria a la atmósfera: cada modo QUITA una parte de la
+    // imagen, así que nadie puede caer en él por un JSON a medias.
+    expect(parseVisualBench(null).diagnostic).toEqual({
+      density: false,
+      direct: false,
+      lensed: false,
+    });
+    for (const otro of ['"true"', "1", "null", "false"]) {
+      expect(
+        parseVisualBench(`{"diagnostico":{"densidad":${otro}}}`).diagnostic
+          .density,
+        otro,
+      ).toBe(false);
+    }
+    for (const roto of ['"densidad"', "7", "null", "[]"]) {
+      expect(
+        parseVisualBench(`{"diagnostico":${roto}}`).diagnostic,
+        roto,
+      ).toEqual(FULL_VISUAL_BENCH.diagnostic);
+    }
+    expect(
+      parseVisualBench('{"diagnostico":{"densidad":true,"lensado":true}}')
+        .diagnostic,
+    ).toEqual({ density: true, direct: false, lensed: true });
+  });
+
+  it("empaqueta los modos como bits para el uniforme del raymarch", () => {
+    expect(diagnosticCode(FULL_VISUAL_BENCH)).toBe(0);
+    expect(
+      diagnosticCode(parseVisualBench('{"diagnostico":{"densidad":true}}')),
+    ).toBe(1);
+    expect(
+      diagnosticCode(parseVisualBench('{"diagnostico":{"directo":true}}')),
+    ).toBe(2);
+    expect(
+      diagnosticCode(
+        parseVisualBench('{"diagnostico":{"densidad":true,"lensado":true}}'),
+      ),
+    ).toBe(5);
   });
 });

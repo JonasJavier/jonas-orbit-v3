@@ -5,6 +5,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { WorldId } from "@/content/worlds.data";
 import {
+  hasTurnInstrument,
   instrumentsFor,
   lightPlacement,
   observationPlacement,
@@ -248,6 +249,24 @@ export interface ObservatoryHandle {
    * nada — un mando que existe y no obedece es peor que un mando que no está.
    */
   setLight?(light: LightGeometry): void;
+  /**
+   * Instrumento `EJE`: gira la FIGURA sobre su propio eje, en grados.
+   *
+   * El tercer gesto del laboratorio, y el único que enseña otra cara SIN tocar
+   * la luz. Orbitar cambia la cara y la clave a la vez —la lámpara es el
+   * origen—; `LUZ` cambia la clave y conserva la cara; esto cambia la cara y
+   * conserva la clave, porque el cuerpo no se mueve del sitio del mundo donde
+   * está: `lightGeometry` devuelve los mismos dos números antes y después.
+   *
+   * Absoluto y no incremental, por lo mismo que `spinAt`: el dial es una
+   * posición, no un empujón, y `Reajustar` tiene que poder volver a cero sin
+   * llevar la cuenta de cuánto se giró.
+   *
+   * **Ausente en Gargantúa y en el Tesseracto.** La primera no tiene malla que
+   * girar; el segundo tiene su lectura entera en la orientación de reposo. El
+   * motivo largo de los dos vive en `hasTurnInstrument`.
+   */
+  setTurn?(degrees: number): void;
   /** Enciende la sonda. Sin ella el puntero sólo gira el espécimen. */
   setProbe(enabled: boolean): void;
   /** Vuelve a la pose del preset. No es «movimiento» y por eso no depende del
@@ -541,6 +560,22 @@ export function createObservatoryScene(
   let pointerY = 0;
 
   let motion = options.motion;
+  /*
+    EL GIRO PROPIO DE LA FIGURA, en grados, y por qué es una variable de esta
+    escena y no del cuerpo.
+
+    `SceneBody.turnTo` es absoluto —pone el cuaternión de la raíz— así que el
+    modelo no lleva memoria de cuánto se le pidió. Aquí sí hace falta: el bucle
+    llama a `animateAt` sesenta veces por segundo y `Reajustar` tiene que poder
+    volver a casa. Cero es la orientación de reposo, que es la que encuadra el
+    preset.
+
+    Y no lo toca nada más. Ni orbitar, ni el zoom, ni las vistas curadas, ni el
+    interruptor de movimiento: es el único número del aparato que sólo cambia
+    cuando alguien lo pide, y por eso es el único mando de la consola que no es
+    además una lectura.
+  */
+  let turn = 0;
   let emission = 1;
   let elapsed = 0;
   let last = 0;
@@ -878,6 +913,16 @@ export function createObservatoryScene(
       vista promete. Se devuelve la lámpara a su sitio antes de colocar la
       cámara — y eso es lo que mantiene en pie la prueba que dice que elegir
       `RASANTE` lleva `CLAVE` a los 92° que la vista declara.
+
+      LO QUE NO SE DEVUELVE ES LA CARA, y la asimetría con `Reajustar` es
+      deliberada. La luz hay que devolverla porque sin eso la vista INCUMPLE su
+      promesa: sus dos ángulos están declarados contra la luz canónica y sobre
+      una luz movida a mano darían otro ángulo de clave. El giro de la figura no
+      entra en ninguna de esas cuentas —ni en `keyAngle`, ni en `keyAzimuth`, ni
+      en el encuadre, que sale de una envolvente invariante por rotación— así
+      que devolverlo no corregiría nada y sí le quitaría al visitante lo que
+      acababa de elegir. Se escoge la cara y se barren las vistas sobre ella;
+      `Reajustar` sigue siendo el que devuelve las dos cosas.
     */
     target.copy(homeTarget);
     placeSpecimen();
@@ -894,12 +939,28 @@ export function createObservatoryScene(
     dirty = true;
   }
 
+  /**
+   * Gira la figura sobre su eje.
+   *
+   * Sólo se publica donde significa algo (`hasTurnInstrument`), y por eso se
+   * ata al handle con un reparto condicional en vez de con un método que
+   * compruebe el espécimen por dentro: el visor monta la fila SI el método
+   * existe, igual que hace con `LUZ`. Un mando que existe y no obedece es peor
+   * que un mando que no está.
+   */
+  function applyTurn(degrees: number) {
+    turn = degrees;
+    body!.turnTo(turn * (Math.PI / 180));
+    dirty = true;
+  }
+
   return {
     contract: specimenContract(body),
     views: views.map(({ id: key, label, study }) => ({ id: key, label, study })),
     canProbe: probeEdges !== null,
     canOrbit: true,
     instruments: instrumentsFor(world.id),
+    ...(hasTurnInstrument(world.id) ? { setTurn: applyTurn } : {}),
     setView(index) {
       if (index < 0 || index >= views.length) return;
       applyView(index);
@@ -952,6 +1013,16 @@ export function createObservatoryScene(
       // Y la luz. `Reajustar` significa «la pose del preset», y desde que el
       // instrumento `LUZ` existe la pose incluye de dónde viene la clave.
       target.copy(homeTarget);
+      /*
+        Y la cara. Con el mando `EJE`, «la pose del preset» incluye también qué
+        lado de la figura mira a la cámara: dejar el cuerpo girado y devolver
+        todo lo demás daría una pose que ningún preset describe, que es justo lo
+        que este botón existe para que no pueda pasar.
+
+        Donde no hay mando esto no hace nada, porque `turn` no ha salido de cero
+        en toda la vida del instrumento.
+      */
+      applyTurn(0);
       placeSpecimen();
     },
     setBloom(enabled) {

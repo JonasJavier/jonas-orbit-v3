@@ -254,6 +254,11 @@ uniform float uStepScale;
 uniform float uDoppler;
 uniform float uSecondary;
 uniform float uSkyLens;
+// Modos de diagnóstico del banco visual, empaquetados en bits (ver
+// diagnosticCode en lib/visual-bench.ts): 1 gris de densidad, 2 sólo la
+// imagen directa, 4 sólo las lensadas. 0 es producción, y es una rama
+// uniforme: el compilador la resuelve por invocación, no por píxel.
+uniform float uDiag;
 
 // Acumulación temporal. Ver la cabecera de scene.ts: la cámara fija convierte
 // el antialiasing en un promedio de fotogramas casi gratis.
@@ -459,6 +464,20 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   */
   float under = step(0.0, dir.y);
   order = max(order, under);
+  /*
+    MODOS DE DIAGNÓSTICO (2026-09-20, pase de gramática común). Se decodifican
+    con mod porque GLSL ES 1.0 no tiene operadores de bits. «Sólo directa»
+    devuelve vacío en cualquier cruce lensado —sin alpha, para que el rayo
+    siga—; «sólo lensada» conserva la OPACIDAD de la imagen directa y le quita
+    la luz, así que lo que se ve es la contribución lensada tal como llega a
+    la imagen final, con la banda frontal tapando lo que tapa. El gris de
+    densidad se resuelve al final, donde ya existe la densidad.
+  */
+  bool diagDensidad = mod(uDiag, 2.0) >= 1.0;
+  bool diagDirecta = mod(floor(uDiag * 0.5), 2.0) >= 1.0;
+  bool diagLensada = uDiag >= 4.0;
+  if (diagDirecta && order > 0.5) { alpha = 0.0; return vec3(0.0); }
+  float diagLuz = (diagLensada && order < 0.5) ? 0.0 : 1.0;
   float r = length(hit);
   float span = max(uDiskOuter - uDiskInner, 1e-3);
   float t = clamp((r - uDiskInner) / span, 0.0, 1.0);
@@ -694,19 +713,31 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
 
   /*
     LA DIRECCIÓN DEL FLUJO SE CONOCE ANTES DEL BUCLE (2026-09-19). mu —el
-    coseno entre la velocidad orbital y el rayo— decide el beaming, la
-    presencia por lado y, desde el pase de cohesión, también qué nivel de la
-    textura se ve en cada lado. Se calcula aquí porque el bucle de épocas lo
-    necesita: el lado que se acerca satura a blanco y lo único que sobrevive
-    dentro de ese blanco es lo que ABSORBE, así que el grano fino que en el lado
-    oscuro se ve como hebras claras entra allí como hebras oscuras en los
-    carriles. Sin eso cada lado enseña una octava distinta del mismo tejido
-    —masas oscuras sobre blanco a la izquierda, hebras claras sobre óxido a la
-    derecha— y el dueño lo leía como dos gramáticas.
+    coseno entre la velocidad orbital y el rayo— decide el beaming y la
+    presencia por lado. Se calcula aquí porque los dos se necesitan más abajo
+    y porque el pase de cohesión lo usó también dentro del bucle, para meter
+    el grano como polvo oscuro en los carriles SÓLO del lado que se acerca:
+    allí el material satura a blanco y lo único que sobrevive dentro del
+    blanco es lo que absorbe.
+
+    ── Y el polvo deja de tener lado (2026-09-20, pase de gramática común) ──
+
+    Aquella puerta era un modificador MORFOLÓGICO por sector: cambiaba la
+    topología del campo de carriles en una mitad del disco —hebras finas
+    dentro del carril a la izquierda, carril liso a la derecha— y el encargo
+    de este pase es que la gramática del material sea la misma en todo el
+    contorno y que lo que separe los lados sea cómo se ve (beaming, tinte,
+    profundidad óptica), no qué hay. Así que el polvo fino entra en los
+    carriles en TODO el disco, con la misma ventana radial: en el lado
+    claro sigue siendo lo único legible dentro del blanco, y en el oscuro
+    rompe el canto de los carriles con la misma hebra. Medido antes de
+    tocarlo: apagar uDoppler entero movía el gris de densidad 0.93 niveles
+    de media, o sea que este término no era el que separaba los lados; se
+    iguala por principio, no por efecto.
   */
   vec3 flow = normalize(vec3(hit.z, 0.0, -hit.x));
   float mu = dot(flow, -dir);
-  float approaching = clamp(mu / 0.6, 0.0, 1.0) * uDoppler * smoothstep(0.08, 0.30, t);
+  float laneDust = smoothstep(0.08, 0.30, t);
 
   float fabricSum = 0.0;
   float laneSum = 0.0;
@@ -911,8 +942,15 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
       grano sigue pesando menos fuera que dentro y sigue variando por sector con
       m2. Lo que cambia es cuanto menos.
     */
+    /* Y la variación por sector se estrecha, 0.55-1.0 → 0.75-1.0 (2026-09-20,
+       pase de gramática común). Con casi el doble de grano en unos sectores
+       que en otros, un sector salía granulado y el vecino liso, y cuando uno
+       cae a cada lado del agujero —que es lo que pasa con el campo estático de
+       este disco— los dos lados se leen como dos familias de textura. Sigue
+       habiendo sectores más estriados que otros; lo que no hay es sectores
+       de otro material. */
     float fine = mix(1.0, 0.55, smoothstep(0.12, 0.72, t))
-               * mix(0.55, 1.0, smoothstep(0.30, 0.70, m2));
+               * mix(0.75, 1.0, smoothstep(0.30, 0.70, m2));
     float grainFreq = 3.0 * mix(1.70, 0.85, t);
     float grain = fbmAA3(
       shearedFine * grainFreq + (wa - 0.5) * 1.4,
@@ -933,7 +971,20 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
       misma frecuencia por todas partes y se agrupan en sectores, que es como se
       interrumpe un flujo de verdad.
     */
-    float breakField = wb * 0.50 + macro * 0.22 + grain * 0.28;
+    /*
+      Y el macro SALE del campo de cortes (2026-09-20, pase de gramática
+      común). Con macro·0.22 dentro, los cortes se agrupaban justo donde el
+      macro está en su valle: los sectores VACÍOS salían además troceados en
+      segmentos cortos y los DENSOS continuos, y ésa es una regla que hace
+      que el material tenue sea de otra familia —hebras cortas, mota— que el
+      denso —corrientes largas—. Medido en el gris de densidad de la vista
+      canónica: el brazo que cae en el valle (derecha) se leía moteado y el
+      que cae en la masa (izquierda) laminar, y apagar todos los términos por
+      lado no lo cambiaba. Los cortes se siguen agrupando por sectores —wb es
+      un campo de deformación con celdas de ~4 unidades— pero ya no por
+      densidad: un flujo tenue se interrumpe con el mismo ritmo que uno denso.
+    */
+    float breakField = wb * 0.72 + grain * 0.28;
     float breaks = smoothstep(0.22, 0.70, breakField);
     // Y la PROFUNDIDAD del corte también varía: con una profundidad fija el
     // resultado es un ritmo de «segmento, hueco» tan reconocible como la línea
@@ -961,11 +1012,34 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
       smoothstep(0.26, 0.68), tan suave que sólo teñía— para que haya carril y
       no-carril en vez de un degradado continuo.
     */
-    float lanes = fbm3(warped * 0.145 + 11.3) * 0.58 + macro * 0.42;
-    // Y en el lado que se acerca el grano entra como polvo fino: ver la nota
-    // de approaching, encima del bucle. Misma frecuencia que las hebras claras
-    // del otro lado, otra polaridad.
-    lanes -= (grain - 0.5) * 0.22 * approaching;
+    /*
+      Y EL POLVO DEJA DE SEGUIR AL MACRO (2026-09-20, pase de gramática común).
+
+      Con macro·0.42 dentro del campo de carriles, el carril más ancho caía
+      SIEMPRE donde el macro está en su valle: el mismo sector perdía densidad
+      por la envolvente de masas y, encima, absorbía como polvo. Medido en el
+      gris de densidad de la vista canónica, el brazo derecho lleva a r ≈ 10-11
+      rs una franja de 1.2 rs de ancho en la que el gris cae a la décima parte
+      —y casi todo lo pone laneAbs, no la densidad—, y ésa es la «depresión
+      oscura» entre la corriente superior y el abanico que el dueño leía como
+      dos materiales: masa clara de plasma a un lado y polvo opaco al otro.
+      La MITAD de ese peso pasa a wb, el campo de deformación gruesa, que tiene
+      celdas del mismo orden (≈4 unidades) y NO está correlado con las masas:
+      con eso hay carriles también dentro de las masas —la referencia cruza su
+      crema con polvo, no lo deja liso— y un valle deja de ser el doble de
+      oscuro. Se probó primero con el macro fuera del todo y salió medido: el
+      polvo caía entero sobre lo brillante y el blanco recortado del cuadro
+      bajaba de 2 411 a 578 px, o sea un cuarto, con la cara lejana izquierda
+      convertida en óxido. Eso ya no era redistribuir el polvo, era apagar el
+      disco, y el blanco no es palanca de este pase. Con la mitad, el valle
+      derecho se rellena y el crema conserva su núcleo. La escala de los
+      carriles no cambia —sigue siendo la del fbm de 0.145— ni su ventana ni
+      su absorción.
+    */
+    float lanes = fbm3(warped * 0.145 + 11.3) * 0.58 + mix(macro, wb, 0.5) * 0.42;
+    // Y el grano entra en los carriles como polvo fino, en todo el disco: ver
+    // la nota de laneDust, encima del bucle.
+    lanes -= (grain - 0.5) * 0.22 * laneDust;
     fabricSum += fabric * weight;
     laneSum += lanes * weight;
     macroSum += macro * weight;
@@ -1186,10 +1260,23 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     rodillo y cortan hasta el borde— y no un contraste que sólo actúa en un
     lado y le da una estadística de textura distinta.
   */
-  float receding = clamp(-mu / 0.6, 0.0, 1.0) * uDoppler;
-  fabric = clamp((fabric - 0.5) * (1.0 + 0.15 * receding) + 0.5, 0.0, 1.0);
+  /*
+    ── Y SE RETIRA DEL TEJIDO (2026-09-20, pase de gramática común) ────────────
 
-  float gauge = (wa - 0.5) * 0.22 * (1.0 + 0.1 * receding);
+    El contraste extra del tejido y el calibre extra del lado que se aleja eran
+    modificadores MORFOLÓGICOS —cambiaban la varianza de la textura y el ancho
+    de los filamentos en una mitad del disco— y el principio de este pase es
+    que el campo base (masas, turbulencia, escala y orientación de los
+    filamentos, nudos, disolución del borde) sea el mismo en todo el contorno.
+    receding se queda sólo para lo FOTOMÉTRICO: cuánto emite un nudo en el
+    lado oscuro (knotLuz, abajo). Medido: con uDoppler apagado el gris de
+    densidad cambiaba 0.93 niveles de media, así que estos dos términos no
+    eran la causa de la asimetría; se retiran por principio y porque cada uno
+    era un sitio donde un lado podía volver a separarse del otro.
+  */
+  float receding = clamp(-mu / 0.6, 0.0, 1.0) * uDoppler;
+
+  float gauge = (wa - 0.5) * 0.22;
   float density = mix(mix(0.10, 0.24, cohesion), 2.48, smoothstep(0.28 + gauge, 0.74 + gauge, fabric));
 
   /*
@@ -1237,9 +1324,14 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      doble no se funde con nada — sale como una mota blanca suelta sobre óxido
      oscuro, «sal» junto al agujero. En el lado que se acerca el mismo nudo
      clipa DENTRO del blanco y es el que da el blanco. */
-  float knot = smoothstep(0.60, 0.90, fabric * 0.55 + macro * 0.45)
-             * (1.0 - 0.5 * receding);
-  float pit = min(1.0, smoothstep(0.34, 0.14, fabric) * mass * (1.0 + 0.15 * receding));
+  /* Y desde el pase de gramática común (2026-09-20) el nudo es el mismo a
+     los dos lados en DENSIDAD —dónde se apelotona el material no depende de
+     hacia dónde va— y lo que pierde en el lado que se aleja es sólo LUZ:
+     knotLuz entra en la función fuente y knot en la densidad. El pozo también
+     se iguala: el ×1.15 del lado oscuro ponía más agujeros en una mitad. */
+  float knot = smoothstep(0.60, 0.90, fabric * 0.55 + macro * 0.45);
+  float knotLuz = knot * (1.0 - 0.5 * receding);
+  float pit = min(1.0, smoothstep(0.34, 0.14, fabric) * mass);
 
   /*
     EL ARCO INFERIOR SE ROMPE (2026-09-12, ronda final). Con el envés tratado
@@ -1268,7 +1360,22 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     tocar su nivel: el factor promedia 0.95, así que la densidad media de la zona
     se queda donde estaba y lo único que cambia es que deja de ser uniforme.
   */
-  density *= mix(mix(0.34, 0.78, cohesion) * mix(0.55, 1.35, fabric), 1.48, mass);
+  /*
+    Y EL SUELO SE MODULA CON LAS CORRIENTES, NO CON EL TEJIDO (2026-09-20,
+    pase de gramática común). fabric lleva dentro el grano —hasta un 42 %— y
+    entra aquí LINEAL, mientras que en las masas la densidad la pone la
+    ventana de arriba, que satura: dentro de una masa el grano desaparece en
+    la meseta y dentro de un valle se ve entero como moteado. Dos mapeos
+    distintos para el mismo campo son dos texturas distintas, y el gris de
+    densidad las enseñaba a cada lado del agujero: valle moteado a la
+    derecha, masa laminar a la izquierda. streams es el campo cizallado
+    —fibra tangencial, la misma que dibuja las bandas de las masas—, así que
+    con él los filamentos que aparecen dentro del hueco son de la misma
+    familia que los de fuera. El rango baja de (0.55, 1.35) a (0.45, 1.25)
+    porque streams promedia ~0.65 y fabric ~0.45: el factor sigue
+    promediando ~0.97 y la densidad media del valle no se mueve.
+  */
+  density *= mix(mix(0.34, 0.78, cohesion) * mix(0.45, 1.25, streams), 1.48, mass);
   density *= (1.0 + 0.6 * knot) * (1.0 - 0.35 * pit) * presence * arcMask;
   /* El carril de polvo tambien afloja hacia fuera, y por una razon fisica: un
      carril OSCURECE porque hay polvo que absorbe, y en el extremo del disco no
@@ -1696,7 +1803,7 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      ya tiene estructura que mirar en vez de ser fondo. */
   float source = mix(mix(0.30, 0.42, cohesion), 1.85, fabric)
                * mix(mix(0.45, 0.80, cohesion), 1.40, mass)
-               * (1.0 + 1.3 * knot);
+               * (1.0 + 1.3 * knotLuz);
   /*
     Los carriles emiten menos dentro de la banda (0.34/0.48 → 0.30/0.40, ronda
     final; → 0.36/0.46 en el pase de cohesión, porque ahora entran DESPUÉS del
@@ -1736,10 +1843,23 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   // siga clipando: el pico se mantiene incandescente y el resto recupera
   // pendiente donde dibujar la textura. Se usa el canal máximo y no la luminancia
   // para no desplazar el tono al comprimir.
+  /*
+    GRIS DE DENSIDAD (banco visual). Es el material y nada más: la densidad
+    que decide la opacidad —con sus masas, nudos, pozos, presencia, carriles,
+    envolvente y caída por orden— comprimida con Reinhard para que quepan a la
+    vez un hueco y una masa, y con la absorción del polvo, que es medio
+    óptico y no luz. Fuera quedan la rampa térmica, el perfil radial de
+    energía, el beaming, el tinte Doppler, la función fuente y el rodillo:
+    todo lo que es CÓMO SE VE el material y no QUÉ material hay. Comparar los
+    dos lados aquí es comparar estadística de materia, que es la pregunta.
+  */
+  if (diagDensidad) {
+    return vec3(density / (0.8 + density)) * laneAbs * diagLuz;
+  }
   float peak = max(max(emission.r, emission.g), emission.b);
   float rolled = peak / (1.0 + peak / HIGHLIGHT_KNEE);
   // Y el polvo absorbe la luz ya comprimida: ver la nota de laneAbs.
-  return emission * (rolled / max(peak, 1e-4)) * laneAbs;
+  return emission * (rolled / max(peak, 1e-4)) * laneAbs * diagLuz;
 }
 
 // ---------------------------------------------------------------------------

@@ -33,6 +33,7 @@ import {
   RAYMARCH_LABELS,
   REGISTRO_SECTIONS,
   RENDER_LABELS,
+  TURN_LABEL,
 } from "./observatory-labels";
 import "./observatory.css";
 
@@ -532,6 +533,13 @@ export function ObservatoryViewer({
     mantener en paralelo.
   */
   const [hasLight, setHasLight] = useState(true);
+  /*
+    Si esta figura se puede girar sobre su eje. Misma fuente y mismo criterio
+    que la luz —el método opcional del handle— y dos ausencias en vez de una:
+    Gargantúa no tiene malla y el Tesseracto tiene su lectura entera en la
+    orientación de reposo. El motivo largo vive en `hasTurnInstrument`.
+  */
+  const [hasTurn, setHasTurn] = useState(false);
   /** Si la cámara se lleva con la mano. Falso sólo en Gargantúa (§7). */
   const [canOrbit, setCanOrbit] = useState(true);
   const [probe, setProbe] = useState(false);
@@ -626,10 +634,15 @@ export function ObservatoryViewer({
   /*
     El paso compacto de móvil: anterior y siguiente entre las muestras MONTADAS.
 
-    No recorre las seis: llevar a alguien a un espécimen que no existe sería
-    peor que no ofrecer el salto. Y no da la vuelta al llegar al final — con dos
-    muestras montadas, envolver haría que las dos flechas apuntaran al mismo
-    sitio y el control mentiría sobre dónde estás.
+    Filtra por `href` y no por índice: llevar a alguien a un espécimen que no
+    existe sería peor que no ofrecer el salto. Desde Miller y Edmunds el filtro
+    deja pasar las seis, y se queda porque es lo que hace que montar la séptima
+    —o retirar una— no tenga que pasar por aquí.
+
+    Y no da la vuelta al llegar al final. La razón se escribió cuando había dos
+    montadas —envolver habría hecho que las dos flechas apuntaran al mismo
+    sitio— y con seis sigue valiendo por lo de fondo: un paso que envuelve no
+    dice dónde estás, y esto es lo único que lo dice en táctil.
   */
   const mounted = rail.filter((slot) => slot.href);
   const here = mounted.findIndex((slot) => slot.id === id);
@@ -663,7 +676,7 @@ export function ObservatoryViewer({
   }
 
   /**
-   * Un dial de la consola de luz.
+   * Un dial de la consola.
    *
    * También es una función y no un componente, y por la misma razón que
    * `readout`: su `<input>` lo escribimos a mano desde el bucle de la escena, y
@@ -671,11 +684,22 @@ export function ObservatoryViewer({
    * valor escrito— en cuanto se pulsara cualquier otro mando.
    *
    * Sin estado de React: el valor lo pone el aparato y lo cambia el pulgar. La
-   * única obligación es que `commitLight` lea SIEMPRE los dos, porque la luz se
-   * coloca con los dos números a la vez.
+   * única obligación es que `commitLight` lea SIEMPRE los dos suyos, porque la
+   * luz se coloca con los dos números a la vez.
+   *
+   * ── Sirve a dos instrumentos, y la rama va DENTRO ───────────────────────────
+   *
+   * Los dos diales de `LUZ` son un PAR: mover uno manda los dos, porque una
+   * geometría de luz con un solo ángulo no existe. `EJE` es un número solo y
+   * manda solo. Lo natural sería recibir el `commit` como parámetro y que esta
+   * función no supiera de qué instrumento es cada dial — y no se puede: pasar
+   * una función que lee refs como VALOR durante el render es exactamente lo que
+   * prohíbe `react-hooks/refs`, y con razón, porque un valor leído en render
+   * puede quedarse con una versión vieja. En un atributo de JSX no hay ese
+   * riesgo. Así que la rama vive aquí, en la única línea que la necesita.
    */
   function dial(
-    slot: "key" | "roll",
+    slot: "key" | "roll" | "turn",
     code: string,
     label: string,
     min: number,
@@ -692,7 +716,7 @@ export function ObservatoryViewer({
           defaultValue={0}
           max={max}
           min={min}
-          onInput={commitLight}
+          onInput={slot === "turn" ? commitTurn : commitLight}
           onPointerDown={() => {
             grab.current = slot;
           }}
@@ -737,6 +761,43 @@ export function ObservatoryViewer({
     const roll = Number(dials.current.roll?.value ?? light.current.roll);
     // Opcional porque Gargantúa no lo trae: su espécimen ES la fuente de luz.
     handleRef.current?.setLight?.({ key, roll });
+  }
+
+  /**
+   * Escribe el dial del eje y su cifra. Sin pasar por React, como los otros.
+   *
+   * Hace falta una función propia —y no sólo el `onInput` del mando— porque
+   * este número tiene una segunda fuente: `Reajustar` devuelve la figura a su
+   * orientación de reposo, y un dial que se quedara en +140 después de eso
+   * estaría mintiendo sobre lo que se está viendo.
+   */
+  function writeTurn(value: number) {
+    const node = dials.current.turn;
+    if (node) node.value = String(Math.round(value));
+    const cifra = readouts.current["dial-turn"];
+    if (cifra) cifra.textContent = `${signed(value, 0)}°`;
+  }
+
+  /**
+   * Manda la figura al ángulo que dice el dial.
+   *
+   * ── El único mando de la consola que NO es además una lectura ─────────────
+   *
+   * `CLAVE` y `GIRO` se mueven solos mientras el visitante orbita, porque
+   * rodear el espécimen cambia de dónde le llega la luz: son lecturas que
+   * además se arrastran, y por eso las escribe `writeReadouts` desde el bucle.
+   * Aquí no hay nada que leer. La orientación propia de la figura no la cambia
+   * ningún otro gesto del aparato —ni orbitar, ni el zoom, ni las vistas, ni el
+   * interruptor de movimiento—, así que el valor de este dial es el valor que
+   * alguien pidió, y publicarlo en cada fotograma sería un temporizador
+   * disfrazado de telemetría.
+   */
+  function commitTurn() {
+    const value = Number(dials.current.turn?.value ?? 0);
+    writeTurn(value);
+    // Opcional por dos motivos distintos: Gargantúa no tiene malla que girar y
+    // el Tesseracto tiene su lectura entera en la orientación de reposo.
+    handleRef.current?.setTurn?.(value);
   }
 
   /**
@@ -953,6 +1014,7 @@ export function ObservatoryViewer({
         setCanProbe(handle.canProbe);
         setInstruments(handle.instruments);
         setHasLight(typeof handle.setLight === "function");
+        setHasTurn(typeof handle.setTurn === "function");
         setCanOrbit(handle.canOrbit);
       })
       .catch(() => {
@@ -1005,6 +1067,24 @@ export function ObservatoryViewer({
   useEffect(() => {
     handleRef.current?.setProbe(probe);
   }, [probe]);
+
+  /*
+    La cifra del eje, al encender.
+
+    Los otros dos diales los rellena el primer fotograma de telemetría, porque
+    son lecturas. Éste no lo es: su valor sólo cambia cuando alguien lo pide, y
+    sin esta línea el hueco de la cifra se quedaría vacío hasta el primer
+    arrastre — un mando con la casilla en blanco al lado de dos que ya llevan
+    número parece roto antes de que nadie lo toque.
+
+    `writeTurn` no entra en las dependencias a propósito: se redefine en cada
+    render, así que listarla volvería a disparar el efecto en cada render. Lo
+    que hace es escribir en dos nodos que ya existen, y sólo depende de que la
+    fila exista.
+  */
+  useEffect(() => {
+    if (hasTurn) writeTurn(0);
+  }, [hasTurn]);
 
   /* Al abrir `DATOS` hay que rellenar sus huecos a mano: el bucle es bajo
      demanda y con el instrumento quieto no va a llegar ningún fotograma. */
@@ -1091,8 +1171,17 @@ export function ObservatoryViewer({
   ) : mode === "estudio" ? (
     <>Mantén un mando para comparar</>
   ) : canOrbit ? (
+    /*
+      «Orbitar» y no «girar», y el cambio de palabra lo obligó el mando `EJE`.
+
+      Hasta ahora las dos cosas eran la misma porque sólo había una: arrastrar
+      movía la cámara y en la pantalla el espécimen daba vueltas. Desde que se
+      puede girar la FIGURA sobre su eje —dejando la luz donde está— llamar
+      «girar» al arrastre haría que dos gestos distintos se anunciaran igual, y
+      el que se enseña aquí es justo el que NO conserva la iluminación.
+    */
     <>
-      Arrastra para girar
+      Arrastra para orbitar
       <span aria-hidden="true" className="observatory__sep">
         ·
       </span>
@@ -1659,6 +1748,47 @@ export function ObservatoryViewer({
               ) : null}
 
               {/*
+                FIGURA · el tercer gesto, y el que Jonás echó en falta.
+
+                El laboratorio ya dejaba ver otra cara —arrastrando— y ya dejaba
+                cambiar la luz —con `LUZ`—, pero no las dos cosas por separado:
+                como la lámpara ES el origen del mundo, rodear el espécimen
+                cambia la cara Y la clave a la vez. Este dial es el único que
+                enseña otro lado del cuerpo dejando la iluminación intacta, y
+                por eso es el que contesta la pregunta de un catálogo: «¿qué hay
+                en la otra mitad?».
+
+                Lo que enseña cada uno no es retórico. La Endurance gira sobre
+                el eje de su aro, así que los doce módulos desfilan; la Ranger
+                alabea sobre su eje proa-popa y saca el vientre, que desde la
+                pose del preset no se ve nunca; y los dos planetas giran sobre
+                su polo, que es la ÚNICA forma de ver las provincias minerales
+                de Edmunds o las corrientes de Miller que caen al otro lado.
+
+                Falta en dos muestras y por motivos de distinta clase: Gargantúa
+                no tiene malla, y el Tesseracto tiene su lectura entera en la
+                orientación de reposo —el eje de la recursión enfilado a la
+                cámara— así que girarlo no ofrece otra cara, le quita la suya.
+              */}
+              {hasTurn ? (
+                <div className="observatory__row">
+                  <p className="observatory__legend">Figura</p>
+                  <div className="observatory__dials">
+                    {/*
+                      De −180 a 180 y no de 0 a 360, aunque la vuelta sea la
+                      misma: así el reposo cae en el CENTRO del recorrido. El
+                      visitante ve de un vistazo cuánto se ha alejado de la pose
+                      que encuadra el preset, y llega a cualquier cara en un
+                      solo arrastre hacia el lado que le pille más cerca. Con el
+                      cero en el tope izquierdo, media figura quedaba a una
+                      travesía entera del mando.
+                    */}
+                    {dial("turn", "Eje", TURN_LABEL, -180, 180)}
+                  </div>
+                </div>
+              ) : null}
+
+              {/*
                 CÁMARA: dónde se ha sentado el visitante.
 
                 Baja aquí desde la cabecera, y el sitio es la mitad del
@@ -1859,6 +1989,16 @@ export function ObservatoryViewer({
                 */
                 handleRef.current?.reset();
                 setView(0);
+                /*
+                  Y el dial del eje vuelve al centro. El instrumento ya devolvió
+                  la figura —`reset()` la pone en su orientación de reposo— así
+                  que esto no gira nada: sincroniza el mando con lo que se está
+                  viendo. Sin esta línea, `Reajustar` dejaba un dial en +140
+                  sobre una figura sin girar, que es la misma clase de mentira
+                  que el rótulo de vista que este botón ya tuvo que aprender a
+                  devolver.
+                */
+                writeTurn(0);
               }}
             >
               <span className="observatory__ink">Reajustar</span>

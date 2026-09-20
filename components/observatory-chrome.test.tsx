@@ -151,6 +151,15 @@ const escena = {
   instruments: ["bloom", "material", "datos"] as const,
   reset: vi.fn(),
   setLight: vi.fn(),
+  /*
+    El doble publica TODOS los mandos, incluido el del eje, aunque el espécimen
+    que le da nombre —el Tesseracto— no lo tenga en producción. Es la misma
+    licencia que ya se toma con `canProbe` y las vistas: aquí no se comprueba
+    qué muestra ofrece qué, sino que el cromo monte lo que el instrumento
+    publica. El reparto real lo fija `hasTurnInstrument`, y sus dos ausencias
+    tienen prueba propia en `lib/observatory.test.ts` y en el e2e.
+  */
+  setTurn: vi.fn(),
   setView: vi.fn(),
   setProbe: vi.fn(),
   setBloom: vi.fn(),
@@ -1042,6 +1051,68 @@ describe("Observatorio · cromo instrumental", () => {
       ...document.querySelectorAll(".observatory__readout .observatory__value"),
     ].map((nodo) => nodo.textContent);
     expect(lecturas).toEqual(["12.5°", "−8.3°", "4.50"]);
+  });
+
+  it("el eje gira la FIGURA, y `Reajustar` lo devuelve al centro", async () => {
+    /*
+      EL TERCER GESTO, y lo que lo separa de los otros dos.
+
+      Arrastrar mueve la cámara y, como la luz es el origen del mundo, cambia
+      también de dónde le llega la clave al espécimen. `LUZ` cambia la clave y
+      conserva la cara. Éste conserva la clave y cambia la cara, que es la única
+      forma de contestar «qué hay en la otra mitad» sin cambiar dos cosas a la
+      vez.
+
+      De −180 a 180 y no de 0 a 360: el reposo cae en el centro del recorrido,
+      así que se ve de un vistazo cuánto se ha girado y se llega a cualquier
+      cara en un solo arrastre. Y el cero significa algo —la orientación que
+      encuadra el preset— así que `Reajustar` tiene que devolver el mando ahí:
+      un dial en +140 sobre una figura sin girar es la misma mentira que el
+      rótulo de vista que ese botón ya tuvo que aprender a devolver.
+    */
+    await mount();
+    const eje = screen.getByRole("slider", { name: /rotación/i });
+    expect(eje).toHaveAttribute("min", "-180");
+    expect(eje).toHaveAttribute("max", "180");
+    expect(eje).toHaveValue("0");
+
+    escena.setTurn.mockClear();
+    fireEvent.input(eje, { target: { value: "140" } });
+    expect(escena.setTurn).toHaveBeenCalledWith(140);
+
+    /* Y la cifra es del mando, no del bucle: este número no lo publica la
+       telemetría porque nada más en el aparato lo cambia. */
+    const cifra = () =>
+      eje.parentElement?.querySelector(".observatory__value")?.textContent;
+    expect(cifra()).toBe("+140°");
+
+    fireEvent.click(screen.getByRole("button", { name: "Reajustar" }));
+    expect(escena.reset).toHaveBeenCalled();
+    expect(eje).toHaveValue("0");
+    expect(cifra()).toBe("+0°");
+  });
+
+  it("sin eje que girar no hay fila, en vez de un mando que no obedece", async () => {
+    /*
+      Las dos muestras sin este mando lo están por motivos distintos —Gargantúa
+      no tiene malla, el Tesseracto tiene su lectura entera en la pose de
+      reposo— y las dos llegan aquí por el mismo camino: el handle no publica el
+      método. Es el mismo criterio que ya reparte `LUZ`, y es deliberado que la
+      interfaz no deduzca nada: quien sabe si un mando va a hacer algo es quien
+      lo va a ejecutar.
+    */
+    const guardado = escena.setTurn;
+    delete (escena as Partial<typeof escena>).setTurn;
+    try {
+      await mount();
+      expect(
+        screen.queryByRole("slider", { name: /rotación/i }),
+      ).not.toBeInTheDocument();
+      // Y los de la luz siguen ahí: lo que desaparece es una fila, no la consola.
+      expect(screen.getByRole("slider", { name: /clave/i })).toBeInTheDocument();
+    } finally {
+      escena.setTurn = guardado;
+    }
   });
 
   it("DATOS se lee en tres familias y en este orden", async () => {

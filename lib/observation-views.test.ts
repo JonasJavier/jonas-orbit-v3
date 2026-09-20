@@ -7,6 +7,7 @@ import {
   resolveView,
 } from "./observation-views";
 import { GARGANTUA_VIEWS } from "./gargantua-views";
+import { OBSERVATORY_SLUGS } from "./observatory-catalog";
 import {
   OBSERVATION_ORDER,
   OBSERVATION_PRESETS,
@@ -46,8 +47,22 @@ describe("las vistas de observación", () => {
     */
     expect(observationViews("gargantua")).toHaveLength(0);
     expect(GARGANTUA_VIEWS).toHaveLength(4);
-    expect(observationViews("tesseract").length).toBeGreaterThan(1);
-    expect(observationViews("endurance").length).toBeGreaterThan(1);
+
+    /*
+      Y AL REVÉS: toda muestra montada tiene vistas, derivado del catálogo y no
+      de una lista escrita aquí.
+
+      Esto decía `tesseract` y `endurance` a mano, y por eso no dijo nada
+      cuando se montaron Miller y Edmunds sin ellas — el mando `VISTA` habría
+      aparecido vacío en dos de las seis muestras y la suite habría seguido
+      verde. Lo que hace de verdad una muestra observable es tener una fila en
+      `OBSERVATORY_SLUGS`, así que la invariante se lee de ahí: montar la
+      séptima —si algún día hay séptima— vuelve a caer aquí.
+    */
+    for (const id of Object.values(OBSERVATORY_SLUGS)) {
+      if (id === "gargantua") continue; // otro contrato, comprobado arriba
+      expect(observationViews(id).length, id).toBeGreaterThan(1);
+    }
   });
 
   it("la canónica no repite los números del preset", () => {

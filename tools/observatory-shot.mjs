@@ -536,6 +536,32 @@ if (await hay(clave)) {
   await page.waitForTimeout(600);
 }
 
+/*
+  7 bis · EJE. La otra cara del espécimen, con la misma luz.
+
+  Es el único mando que no cambia ninguna lectura: ni las tres de cámara ni el
+  ángulo de clave. Por eso la captura ES la prueba — si estas dos imágenes
+  salieran iguales a la de arriba, el dial no estaría conectado a nada y las
+  lecturas quietas no lo dirían.
+
+  Por teclado y no arrastrando, igual que `LUZ` y por lo mismo: el cuarto y la
+  media vuelta son ángulos que se pueden nombrar al comparar dos capturas, y el
+  píxel donde se suelte el ratón no.
+
+  Falta en Gargantúa —no hay malla que girar— y en el Tesseracto, cuya lectura
+  entera es su orientación de reposo.
+*/
+const eje = page.getByRole("slider", { name: /rotación/i });
+if (await hay(eje)) {
+  await eje.focus();
+  for (let i = 0; i < 90; i++) await page.keyboard.press("ArrowRight");
+  await paso("07b-eje-cuarto", 900);
+  for (let i = 0; i < 90; i++) await page.keyboard.press("ArrowRight");
+  await paso("07c-eje-media-vuelta", 900);
+  await boton("Reajustar").click();
+  await page.waitForTimeout(600);
+}
+
 // 8 · DATOS. Las métricas viven aquí dentro y no en la vista normal.
 await boton("Datos").click();
 await paso("08-datos", 700);
