@@ -199,9 +199,18 @@ export function createGargantuaObservatory(
     : null;
   if (savePass) composer.addPass(savePass);
 
+  /*
+    El banco visual también manda aquí. El mapa multiplica la fuerza del bloom
+    por `bench.bloom` desde que existe el bloom-off test; el laboratorio no lo
+    hacía, y por eso las capturas «sin halo» del pase de cohesión (2026-09-19)
+    salieron idénticas a las «con halo» hasta que se midió la diferencia entre
+    las dos: 0.000. Sin esto, un A/B del material en el laboratorio sólo se
+    puede hacer con la consola abierta y el mando BLOOM pulsado, que es una
+    captura con el cromo encima.
+  */
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(1, 1),
-    BLOOM[tier].strength,
+    BLOOM[tier].strength * bench.bloom,
     BLOOM[tier].radius,
     BLOOM_THRESHOLD,
   );
