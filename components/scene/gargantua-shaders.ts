@@ -295,7 +295,23 @@ ${NOISE_CHUNK}
   región. Los medios apenas se mueven porque el rodillo casi no los toca.
 */
 const float DISK_GAIN = 5.9;
-const float HIGHLIGHT_KNEE = 5.5;
+/*
+  5.5 → 4.2 (pase de borde, 2026-09-21). Con el enrollado a 0.60 el blanco
+  recortado volvió a 2 177 px y el dueño lo leyó como demasiado: no de
+  intensidad —el horizonte y el arco lensado tienen que quemar— sino de
+  EXTENSIÓN, porque la cara lejana izquierda salía como una pared blanca
+  lisa donde la referencia tiene crema con fibra y una franja fina quemada
+  junto al agujero. La palanca es ésta y no la exposición ni el bloom, como
+  fijó el pase final del 2026-09-12: la rodilla comprime la meseta y deja que
+  el pico siga clipando, así que el blanco pierde anchura sin perder brillo
+  en el horizonte y el crema recupera pendiente para dibujar sus carriles.
+  Medido a 4.8 y a 4.2: el blanco ≥ 250 baja de 2 177 a 1 791 y a 1 268 px,
+  todo él a menos de 1.7 radios de sombra del centro —no hay blanco puro en
+  la cara lejana con ninguna rodilla; lo que ahí se lee como pared es la
+  meseta ≥ 235, que baja de 6 009 a 4 745 px—. Se toma 4.2, que es la mitad
+  del blanco que el dueño encontró excesivo.
+*/
+const float HIGHLIGHT_KNEE = 4.2;
 
 // ---------------------------------------------------------------------------
 // Fondo: estrellas + velo de nebulosa. Se evalúa UNA vez por rayo, al escapar.
@@ -565,7 +581,25 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     La primitiva de la tasa es analítica: ∫(a + b·cos(kx+φ))dx = a·x + (b/k)·sin(kx+φ).
     Nada de esto cuesta una evaluación de ruido más que antes.
   */
-  const float WIND_MEAN = 1.15;
+  /*
+    1.15 → 0.60 (pase de borde, 2026-09-21). El dueño marcó el contorno: «el
+    borde izquierdo se ve unificado, forma de disco; el derecho deformado
+    totalmente». Se midió con la silueta espejada del gris de densidad y se
+    probaron por orden la envolvente, el techo y el suelo exteriores del
+    macro y cinco fases azimutales del campo: ninguna movió la forma del
+    borde derecho más de unos puntos. Lo que sí la movió fue INVERTIR el
+    sentido del enrollado (prueba temporal, Q-quiral-dens): la corriente fina
+    de la cara lejana y el lóbulo inferior cambiaron de lado enteros. O sea
+    que no es una realización ni un lado: es la QUIRALIDAD de la espiral
+    trailing vista a 9° de elevación, en la que el brazo que sale hacia fuera
+    barre siempre hacia el ansa del mismo lado. La palanca sin lado es este
+    enrollado GLOBAL, que es la integral de la cizalla: baja de 0.43 a 0.22
+    vueltas. La cizalla LOCAL (WIND_SWING), que es la que estira los
+    filamentos en tangencial, no cambia; lo que cambia es cuánto se lleva una
+    masa alrededor del disco mientras cae, que es justo lo que descentraba
+    las ansas.
+  */
+  const float WIND_MEAN = 0.60;
   const float WIND_SWING = 1.35;
   const float WIND_FREQ = 2.40;
   float pitchNoise = 0.55 * (valueNoise(vec2(logR * 0.50, 3.7)) - 0.5);
@@ -699,7 +733,10 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   const float AA_SHEAR = 0.5;
 
   float spin = omega * 0.30;
-  float windStatic = wind + pitchNoise * logR;
+  /* Fase azimutal del campo estático: gira la realización entera alrededor
+     del disco. 0 es la de siempre. Ver el barrido del pase de borde. */
+  const float DISK_PHASE = 0.00;
+  float windStatic = wind + pitchNoise * logR + DISK_PHASE;
   float cycle = uTime / EPOCH;
 
   /*
