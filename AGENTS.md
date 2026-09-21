@@ -6,6 +6,28 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**Endurance — doce módulos de tres familias (2026-09-21):** el apartado
+`Cuarto pase — doce módulos y tres siluetas` de `docs/design/endurance-jerarquia.md`
+sustituye el tercer pase. El dueño pidió menos módulos y diferencias reales
+según dos referencias nuevas. Doce: cuatro estaciones largas de doble panel
+oscuro, cuatro hábitats con casetes y cuatro bodegas blancas cortas, anchas y
+más profundas. Dieciséis caras térmicas, ninguna en las bodegas. Doce nudos
+con escotillas circulares por ambas caras. Anillo 1.22, dos brazos, núcleo y
+Rangers conservados. Cuatro draws, 12 123 vértices; radio medido 6.2575212966.
+SVG, conteos y registro factual actualizados. Valoración visual pendiente.
+
+**Endurance — catorce módulos y forma de referencia (2026-09-21):** el apartado
+`Tercer pase — catorce módulos y cuerpos prismáticos` de
+`docs/design/endurance-jerarquia.md` manda sobre el segundo pase. El dueño pide
+retirar dos módulos y corregir su forma contra las mismas tres referencias.
+Son 14, más largos y menos gruesos, con pie estrecho, hombros inclinados en
+anchura y profundidad y cuerpo prismático. Paneles longitudinales de tres
+franjas, seis aberturas en la zona de servicio y tres registros en la tapa.
+`endurancePod` construye cuatro secciones reales; el bisel genérico queda para
+las Rangers atracadas. 28 caras térmicas expuestas. Radio del anillo 1.22,
+`boundsFill` 0.96 y cuatro draws conservados; radio físico medido 6.0906807906.
+El SVG y los conteos reflejan los 14 módulos. Valoración visual pendiente.
+
 **Endurance — segundo pase con referencias (2026-09-21):** el apartado
 `Segundo pase — referencias de la Endurance` de `docs/design/endurance-jerarquia.md`
 manda sobre el pase anterior. El dueño retiró explícitamente las alas térmicas

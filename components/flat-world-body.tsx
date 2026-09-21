@@ -8,10 +8,11 @@ type FlatWorld = Pick<
   "id" | "visual" | "accent" | "secondary"
 >;
 
-/** Dieciséis módulos y dos tubos de acoplamiento, como en el modelo 3D. */
-const ENDURANCE_MODULES = Array.from({ length: 16 }, (_, index) => ({
-  angle: index * 22.5,
-  primary: index % 4 === 0,
+/** Doce módulos de tres familias, como en el modelo 3D. */
+const ENDURANCE_MODULES = Array.from({ length: 12 }, (_, index) => ({
+  angle: index * 30,
+  primary: [0, 3, 6, 9].includes(index),
+  cargo: [2, 4, 8, 10].includes(index),
 }));
 
 /** El hipercubo de cristal, congelado: la misma topología que WebGL y su
@@ -100,9 +101,10 @@ function Endurance() {
       </defs>
       <g transform="rotate(-18 75 75)">
         {ENDURANCE_MODULES.map(({ angle }) => (
-          <g key={angle} transform={`rotate(${angle + 11.25} 75 75)`} data-flat-part="connector">
-            <path d="M63.5 23H86.5" stroke="#36424a" strokeWidth="3.8" />
+          <g key={angle} transform={`rotate(${angle + 15} 75 75)`} data-flat-part="connector">
+            <path d="M59 24H91" stroke="#a8b4b8" strokeWidth="4.8" />
             <path d="M72 23H73.5M76.5 23H78" stroke="#c5cece" strokeWidth="5.4" />
+            <circle cx="75" cy="24" r="3.2" fill="#35434b" stroke="#dde1dd" strokeWidth="1" />
           </g>
         ))}
         {[0, 180].map((angle) => (
@@ -111,18 +113,22 @@ function Endurance() {
             <path d="M72 34H78M72 47H78M72 59H78" stroke="#68747b" strokeWidth="2" />
           </g>
         ))}
-        {ENDURANCE_MODULES.map(({ angle, primary }) => (
+        {ENDURANCE_MODULES.map(({ angle, primary, cargo }) => (
           <g key={angle} transform={`rotate(${angle} 75 75)`}
-            data-flat-part="module" data-flat-module={primary ? "primary" : "satellite"}>
-            <rect x={primary ? 68.4 : 69} y={primary ? 13.5 : 14.5}
-              width={primary ? 13.2 : 12} height={primary ? 15 : 13.5}
-              rx="0.8" fill="url(#flat-endurance-hull)" stroke="#dde1dd" strokeWidth="0.45" />
-            <g data-flat-part="thermal-panel">
-              <rect x="70.8" y="15.5" width="8.4" height="8.5" fill="#303f49" stroke="#e4e6db" strokeWidth="0.5" />
-              <path d="M71 18h8M71 20h8M71 22h8" stroke="#76898e" strokeWidth="0.5" />
-              <path d="M75 15.5v8.5" stroke="#c4cdcc" strokeWidth="0.5" />
-            </g>
-            <path d="M71 26h1M74 26h1M77 26h1" stroke="#28343d" strokeWidth="1.2" />
+            data-flat-part="module" data-flat-module={cargo ? "cargo" : primary ? "primary" : "habitat"}>
+            <path data-flat-part="pod-hull"
+              d={cargo ? "M69 13H81L83 15V26L81 28H69L67 26V15Z" : primary ? "M70 4H80L81 5V24L79 29H71L69 24V5Z" : "M69.5 6H80.5L82 7.5V23L79 28H71L68 23V7.5Z"}
+              fill="url(#flat-endurance-hull)" stroke="#dde1dd" strokeWidth="0.45" />
+            <path d="M69.5 23H80.5" stroke="#9caeb3" strokeWidth="0.5" />
+            {cargo ? <g data-flat-part="cargo-plating" stroke="#71818a" strokeWidth="0.5" fill="none">
+              <path d="M69 15H81V26H69ZM75 15V26M69 20.5H81" />
+              <circle cx="71" cy="24" r="0.8" />
+            </g> : <g data-flat-part="thermal-panel">
+              <rect x="71" y={primary ? 6 : 8} width="8" height={primary ? 16 : 13} fill="#263640" stroke="#e4e6db" strokeWidth="0.5" />
+              {!primary && <path d="M71 11h8M71 14h8M71 17h8" stroke="#76898e" strokeWidth="0.6" />}
+              <path d={primary ? "M75 6V22" : "M75 8V21"} stroke="#dce1dc" strokeWidth="1" />
+            </g>}
+            <path d="M72 22.5h1M74.5 22.5h1M77 22.5h1M72 24.5h1M74.5 24.5h1M77 24.5h1" stroke="#28343d" strokeWidth="0.8" />
           </g>
         ))}
         <g data-flat-part="engine-bank" fill="#11191d" stroke="#a9b6be" strokeWidth="0.7">

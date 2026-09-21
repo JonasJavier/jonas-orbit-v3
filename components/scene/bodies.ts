@@ -1250,7 +1250,17 @@ const BODY_FRAGMENT = /* glsl */ `
       specularStrength = 0.60;
       shipEdge = 0.65;
 
-      if (vSurfaceMask > 2.5) {
+      if (vSurfaceMask > 3.5) {
+        // Paños largos de las estaciones: grafito continuo, sin la rejilla
+        // de los casetes del hábitat. Una junta fina conserva su escala.
+        float joint = 1.0 - smoothstep(0.008, 0.008 + fwidth(vUv.x), abs(vUv.x - 0.5));
+        albedo = mix(vec3(0.020, 0.028, 0.038), vec3(0.052, 0.067, 0.081), panel * 0.4);
+        albedo *= 1.0 - joint * 0.3;
+        gloss = 0.24;
+        specularPower = 110.0;
+        specularStrength = 0.30;
+        shipEdge = 0.10;
+      } else if (vSurfaceMask > 2.5) {
         // Casetes térmicos integrados: canales y divisiones de placa. El
         // antialias mantiene el detalle estable al volver al System Map.
         float pitch = vUv.x * 16.0;
@@ -1260,7 +1270,7 @@ const BODY_FRAGMENT = /* glsl */ `
         float jointWidth = max(fwidth(jointPitch), 0.009);
         float joint = 1.0 - smoothstep(0.025, 0.025 + jointWidth, abs(fract(jointPitch) - 0.5));
         albedo = mix(vec3(0.022, 0.036, 0.047), vec3(0.085, 0.12, 0.15), rib);
-        albedo = mix(albedo, vec3(0.20, 0.24, 0.25), joint * 0.65);
+        albedo = mix(albedo, vec3(0.12, 0.16, 0.19), joint * 0.25);
         gloss = 0.13 + rib * 0.10;
         specularPower = 100.0;
         specularStrength = 0.26;
@@ -3037,12 +3047,13 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   const PRIMARY_BLANKET = 1;
   const GRAPHITE = 2;
   const RADIATOR = 3;
+  const LONG_PANEL = 4;
 
-  const PRIMARY_MODULES = [0, 3, 7, 10] as const;
-  const SERVICE_MODULES = [2, 5, 9, 12] as const;
+  const PRIMARY_MODULES = [0, 3, 6, 9] as const;
+  const SERVICE_MODULES = [2, 4, 8, 10] as const;
   /** Radio de la circunferencia de módulos. Todo lo demás se mide contra esto. */
   const RING = 1.22;
-  const MODULES = 14;
+  const MODULES = 12;
   const MODULE_STEP = (Math.PI * 2) / MODULES;
   const ARM_ANGLES = [Math.PI / 2, -Math.PI / 2] as const;
   const DOCKED_RANGERS = [-1, 1] as const;
@@ -3127,7 +3138,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       )),
     );
   };
-  const RIM_THRUSTER_ANGLES = [1, 4, 8, 11].map((index) => Math.PI / 2 - (index + 0.5) * MODULE_STEP);
+  const RIM_THRUSTER_ANGLES = [1, 4, 7, 10].map((index) => Math.PI / 2 - (index + 0.5) * MODULE_STEP);
   RIM_THRUSTER_ANGLES.forEach((angle, index) => {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
@@ -3185,12 +3196,24 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       Math.sin(angle) * radius + Math.cos(angle) * tangent, -0.025,
     ];
     hullParts.push(surfaceMasked(placed(
-      new THREE.CylinderGeometry(0.047, 0.047, length, 8, 1, true),
-      at(0), [0, 0, angle]), GRAPHITE));
+      new THREE.CylinderGeometry(0.068, 0.068, length, 8, 1, true),
+      at(0), [0, 0, angle]), BLANKET));
     for (const side of [-1, 1]) {
       hullParts.push(surfaceMasked(placed(
-        new THREE.CylinderGeometry(0.062, 0.062, 0.042, 8, 1, true),
-        at(side * 0.065), [0, 0, angle]), BLANKET));
+        new THREE.CylinderGeometry(0.078, 0.078, 0.032, 8, 1, true),
+        at(side * 0.095), [0, 0, angle]), PRIMARY_BLANKET));
+    }
+    // Nudo de inspección octogonal con escotillas en ambas caras del anillo.
+    hullParts.push(surfaceMasked(placed(
+      new THREE.CylinderGeometry(0.093, 0.093, 0.16, 8, 1, true).rotateX(Math.PI / 2),
+      at(0), [0, 0, angle]), BLANKET));
+    for (const side of [-1, 1]) {
+      const node = at(0);
+      const origin: VectorTuple = [node[0], node[1], node[2] + side * 0.081];
+      hullParts.push(surfaceMasked(placed(new THREE.RingGeometry(0.060, 0.093, 8),
+        origin, [side < 0 ? Math.PI : 0, 0, angle]), PRIMARY_BLANKET));
+      hullParts.push(surfaceMasked(placed(new THREE.CircleGeometry(0.060, 12),
+        origin, [side < 0 ? Math.PI : 0, 0, angle]), GRAPHITE));
     }
   }
 
@@ -3215,10 +3238,9 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       [Math.cos(angle) * 0.67 + 0.055, Math.sin(angle) * 0.67, -0.025]));
   }
 
-  /* ── 4. Catorce cuerpos prismáticos con hombros de conexión ──────────────
-     Cuatro estaciones, seis hábitats y cuatro unidades de servicio. El largo
-     se orienta radialmente; el pie interior se estrecha en dos planos y deja
-     una franja de servicio antes de los paneles longitudinales. */
+  /* ── 4. Doce módulos, tres familias reconocibles en silueta ──────────────
+     Cuatro estaciones largas con dos paños oscuros, cuatro hábitats con
+     casetes térmicos y cuatro bodegas cortas, anchas y cerradas. */
   let warmApertures = 0;
   let thermalPanels = 0;
   for (let index = 0; index < MODULES; index++) {
@@ -3227,22 +3249,35 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     const angle = Math.PI / 2 - index * MODULE_STEP;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    const radial = primary ? 0.48 : bus ? 0.43 : 0.46;
-    const tangent = primary ? 0.27 : 0.25;
-    const depth = primary ? 0.22 : bus ? 0.19 : 0.20;
-    const center = RING + 0.075;
+    const radial = primary ? 0.56 : bus ? 0.36 : 0.51;
+    const tangent = bus ? 0.36 : primary ? 0.29 : 0.31;
+    const depth = bus ? 0.34 : primary ? 0.28 : 0.30;
+    const center = RING + (bus ? 0.035 : 0.075);
     const z = 0;
     const at = (r: number, t: number, axial: number): VectorTuple => [
       cos * r - sin * t, sin * r + cos * t, axial,
     ];
     const face = z + depth / 2;
     hullParts.push(surfaceMasked(placed(
-      endurancePod(radial, tangent, depth),
+      bus ? chamferedModule(radial, tangent, depth, 0.045) : endurancePod(radial, tangent, depth),
       at(center, 0, z), [0, 0, angle],
     ), primary ? PRIMARY_BLANKET : BLANKET));
     for (const side of [-1, 1]) {
       const axial = z + side * (depth / 2 + 0.006);
-      const panelRadial = radial * 0.55;
+      if (bus) {
+        // Bodega cerrada: cuatro placas de cerámica, sin falso radiador negro.
+        for (const r of [-1, 1]) for (const t of [-1, 1]) {
+          hullParts.push(surfaceMasked(placed(
+            new THREE.BoxGeometry(0.132, 0.137, 0.012),
+            at(center + r * 0.069, t * 0.072, axial), [0, 0, angle],
+          ), PRIMARY_BLANKET));
+        }
+        hullParts.push(surfaceMasked(placed(new THREE.RingGeometry(0.016, 0.023, 8),
+          at(center - 0.09, 0.085, axial + side * 0.008),
+          [side < 0 ? Math.PI : 0, 0, angle]), GRAPHITE));
+        continue;
+      }
+      const panelRadial = radial * 0.61;
       const panelTangent = tangent * 0.72;
       const panelCenter = center + radial * 0.13;
       // El panel queda por debajo del marco: negro en las juntas, no un
@@ -3250,7 +3285,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       hullParts.push(surfaceMasked(placed(
         new THREE.BoxGeometry(panelRadial, panelTangent, 0.010),
         at(panelCenter, 0, axial), [0, 0, angle],
-      ), RADIATOR));
+      ), primary ? LONG_PANEL : RADIATOR));
       thermalPanels++;
       for (const edge of [-1, 1]) {
         hullParts.push(surfaceMasked(placed(
@@ -3259,12 +3294,14 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
           [0, 0, angle],
         ), PRIMARY_BLANKET));
       }
-      // Tres franjas largas, como las caras de las referencias del dueño.
-      for (const divider of [-1, 1]) {
-        hullParts.push(surfaceMasked(placed(
-          new THREE.BoxGeometry(panelRadial, 0.008, 0.014),
-          at(panelCenter, divider * panelTangent / 6, axial), [0, 0, angle],
-        ), PRIMARY_BLANKET));
+      // Dos franjas largas. Los hábitats las dividen en casetes cortos.
+      hullParts.push(surfaceMasked(placed(
+        new THREE.BoxGeometry(panelRadial, 0.012, 0.016),
+        at(panelCenter, 0, axial), [0, 0, angle],
+      ), PRIMARY_BLANKET));
+      if (!primary) for (const r of [-1, 0, 1]) {
+        hullParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.007, panelTangent, 0.012),
+          at(panelCenter + r * panelRadial / 4, 0, axial), [0, 0, angle]), GRAPHITE));
       }
     }
     // Toma de servicio y una hilera de pequeñas aberturas en la franja blanca.
@@ -3276,14 +3313,14 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     }
     // Junta perimetral de la tapa lateral.
     for (const t of [-0.065, 0, 0.065]) {
-      hullParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.004, 0.045, depth * 0.64),
+      hullParts.push(surfaceMasked(placed(new THREE.PlaneGeometry(depth * 0.64, 0.045).rotateY(Math.PI / 2),
         at(center + radial / 2 + 0.002, t, z), [0, 0, angle]), GRAPHITE));
     }
     if (primary) {
       serviceParts.push(placed(new THREE.BoxGeometry(0.035, 0.009, 0.006),
         at(center - radial * 0.11, 0, face + 0.009), [0, 0, angle]));
     }
-    if (index % 7 === 1 || index % 7 === 4 || index === 0) {
+    if ([0, 1, 4, 7, 10].includes(index)) {
       const pos = at(center - radial * 0.19, tangent * 0.35, face + 0.008);
       lightParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.021, 0.012, 0.005),
         pos, [0, 0, angle]), 0));

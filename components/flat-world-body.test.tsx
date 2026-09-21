@@ -82,12 +82,12 @@ describe("FlatWorldBody", () => {
 
     /*
       La misma arquitectura que el modelo 3D, y por el mismo motivo que allí:
-      dos brazos, dieciséis módulos y paneles térmicos integrados. En un equipo con movimiento reducido este
+      dos brazos, doce módulos y paneles térmicos integrados. En un equipo con movimiento reducido este
       dibujo es la ÚNICA Endurance que se ve; si divergiera del modelo, el
       mismo destino contaría dos cosas distintas según el equipo del visitante.
     */
     expect(container.querySelectorAll('[data-flat-part="module"]')).toHaveLength(
-      16,
+      12,
     );
     expect(
       container.querySelectorAll('[data-flat-module="primary"]'),
@@ -95,7 +95,9 @@ describe("FlatWorldBody", () => {
     expect(container.querySelectorAll('[data-flat-part="arm"]')).toHaveLength(2);
     expect(
       container.querySelectorAll('[data-flat-part="thermal-panel"]'),
-    ).toHaveLength(16);
+    ).toHaveLength(8);
+    expect(container.querySelectorAll('[data-flat-module="cargo"]')).toHaveLength(4);
+    expect(container.querySelectorAll('[data-flat-module="habitat"]')).toHaveLength(4);
     expect(container.querySelector('[data-flat-part="radiator"]')).toBeNull();
     expect(container.querySelector('[data-flat-part="docking-cavity"]')).not.toBeNull();
     expect(container.querySelectorAll('[data-flat-part="docked-craft"]')).toHaveLength(2);
