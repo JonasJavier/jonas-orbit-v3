@@ -409,7 +409,9 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        Lander atracadas, así que cada punto que cede se lo devuelve al centro
        más que ningún otro. Su ventaja aparente baja de 2.014 a 1.954, todavía
        medio cuerpo por encima del 1.4 de la suite. */
-    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 4.388 },
+    // 2026-09-21: el dueño pide un 10 % menos de presencia en el inicio.
+    // El Observatorio encuadra por radio y conserva su ocupación del visor.
+    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 3.9492 },
     sceneName: "scene-endurance",
   },
   edmunds: {

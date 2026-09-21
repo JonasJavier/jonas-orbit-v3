@@ -123,34 +123,61 @@ describe("cuerpos del Sistema Gargantúa", () => {
       const vertex = new THREE.Vector3();
       for (let i = 0; i < position.count; i++) {
         vertex.fromBufferAttribute(position, i);
-        if (mask.getX(i) !== 3) continue;
+        if (![3, 4].includes(mask.getX(i))) continue;
         const radius = Math.hypot(vertex.x, vertex.y);
         // Todos los paneles térmicos pertenecen a una cara de módulo.
         // Ninguna pala fina vuelve a extenderse por fuera del anillo.
-        expect(radius).toBeGreaterThan(1.10);
-        expect(radius).toBeLessThan(1.37);
-        const sector = Math.round(Math.atan2(vertex.y, vertex.x) / (Math.PI / 8));
-        sectors.add((sector + 16) % 16);
+        expect(radius).toBeGreaterThan(1.19);
+        expect(radius).toBeLessThan(1.55);
+        const sector = Math.round(Math.atan2(vertex.y, vertex.x) / (Math.PI / 6));
+        sectors.add((sector + 12) % 12);
       }
-      expect(sectors.size).toBe(16);
+      expect(sectors.size).toBe(8);
       const local = new THREE.Mesh(mesh.geometry,
         new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
-      // Las 32 caras térmicas están expuestas. Una placa de soporte trasera
-      // llegó a tapar dieciséis: contarlas sin lanzar rayos no lo detectaba.
-      for (let index = 0; index < 16; index++) {
-        const angle = Math.PI / 2 - index * Math.PI / 8;
-        const x = Math.cos(angle) * 1.28 - Math.sin(angle) * 0.035;
-        const y = Math.sin(angle) * 1.28 + Math.cos(angle) * 0.035;
+      // Las 16 caras térmicas están expuestas. Una placa de soporte trasera
+      // llegó a tapar el reverso: contarlas sin lanzar rayos no lo detectaba.
+      for (let index = 0; index < 12; index++) {
+        if ([2, 4, 8, 10].includes(index)) continue;
+        const angle = Math.PI / 2 - index * Math.PI / 6;
+        const x = Math.cos(angle) * 1.40 - Math.sin(angle) * 0.065;
+        const y = Math.sin(angle) * 1.40 + Math.cos(angle) * 0.065;
         for (const side of [-1, 1]) {
           const surface = new THREE.Raycaster(new THREE.Vector3(x, y, side * 2),
             new THREE.Vector3(0, 0, -side)).intersectObject(local)[0];
           expect(surface?.face, `módulo ${index}, cara ${side}`).toBeDefined();
-          expect(mask.getX(surface.face!.a)).toBe(3);
+          expect(mask.getX(surface.face!.a)).toBe(index % 3 === 0 ? 4 : 3);
         }
       }
       const hit = (x: number, y: number) => new THREE.Raycaster(
         new THREE.Vector3(x, y, 2), new THREE.Vector3(0, 0, -1),
       ).intersectObject(local);
+      // El módulo superior tiene un pie más estrecho y menos grueso que el
+      // cuerpo. Un simple cubo alargado no satisface ninguna de las dos.
+      expect(hit(-0.115, 1.035)).toHaveLength(0);
+      expect(hit(-0.115, 1.39).length).toBeGreaterThan(0);
+      expect(hit(-0.115, 1.39)[0].point.z - hit(0, 1.035)[0].point.z).toBeGreaterThan(0.015);
+      // La bodega a 30° es más corta y ancha que el módulo largo superior.
+      const cargoAngle = Math.PI / 6;
+      const cargoHit = (r: number, t: number) => hit(
+        Math.cos(cargoAngle) * r - Math.sin(cargoAngle) * t,
+        Math.sin(cargoAngle) * r + Math.cos(cargoAngle) * t,
+      );
+      expect(cargoHit(1.25, 0.15).length).toBeGreaterThan(0);
+      expect(cargoHit(1.50, 0)).toHaveLength(0);
+      expect(hit(0, 1.55).length).toBeGreaterThan(0);
+      expect(mask.getX(cargoHit(1.25, 0.07)[0].face!.a)).not.toBe(3);
+      // Los doce nudos muestran una escotilla oscura completa, no un tubo
+      // atravesando el disco por una composición incorrecta de rotaciones.
+      for (let index = 0; index < 12; index++) {
+        const angle = Math.PI / 2 - (index + 0.5) * Math.PI / 6;
+        const r = 1.22 * Math.cos(Math.PI / 12);
+        for (const offset of [-0.035, 0.035]) {
+          const surface = hit(Math.cos(angle) * r - Math.sin(angle) * offset,
+            Math.sin(angle) * r + Math.cos(angle) * offset)[0];
+          expect(mask.getX(surface.face!.a)).toBe(2);
+        }
+      }
       // Ventanas abiertas en los cuatro cuadrantes; los dos tubos sí conectan.
       for (const x of [-0.58, 0.58]) {
         for (const y of [-0.58, 0.58]) expect(hit(x, y)).toHaveLength(0);
@@ -196,18 +223,18 @@ describe("cuerpos del Sistema Gargantúa", () => {
         expect(mesh.geometry.getAttribute("position").count, name).toBeGreaterThan(0);
       }
 
-      // La telemetría describe el modelo nuevo: dieciséis módulos, dos brazos
+      // La telemetría describe el modelo nuevo: doce módulos, dos brazos
       // y caras térmicas integradas. Las alas exteriores ya no existen.
       const enduranceRoot = endurance.object.getObjectByName(
         "endurance-module-ring",
       )?.parent;
       expect(enduranceRoot?.userData.enduranceArchitecture).toEqual({
-        modules: 16,
+        modules: 12,
         groups: 4,
         arms: 2,
         primaryModules: 4,
         engineBells: 4,
-        thermalPanels: 32,
+        thermalPanels: 16,
         dockedRangers: 2,
         dockedLanders: 0,
         /*

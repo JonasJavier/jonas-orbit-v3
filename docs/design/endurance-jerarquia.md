@@ -163,3 +163,91 @@ el resto del registro conserva la voz de Jonás.
 
 La valoración visual de este segundo pase queda pendiente de Jonás. No es una
 implementación de la página Proyectos ni una animación de despliegue de proyectos.
+
+## Tercer pase — catorce módulos y cuerpos prismáticos (2026-09-21)
+
+Jonás pide quitar dos módulos y revisar su FORMA contra las mismas referencias.
+Este apartado sustituye al segundo pase en cantidad y forma del casco modular.
+La dirección nueva mantiene anillo, núcleo, dos brazos y dos Rangers.
+
+El problema era de proporción: las carcasas anteriores tenían casi el mismo
+largo, ancho y grosor. Ahora las cuatro estaciones miden **0.48 × 0.27 × 0.22**,
+los seis hábitats **0.46 × 0.25 × 0.20** y las cuatro unidades de servicio
+**0.43 × 0.25 × 0.19**, en ejes radial/tangencial/axial. El centro de cada
+carcasa está 0.075 más afuera que la línea de conexiones.
+
+`endurancePod` construye cuatro secciones: pie con 66 % de anchura y 70 % de
+grosor, hombros inclinados, cuerpo prismático y tapa exterior con canto
+facetado. La inclinación tiene volumen en dos planos; no es simplemente un
+bisel más grande sobre una caja. La cara principal tiene tres franjas térmicas
+longitudinales y una zona blanca de servicio con seis aberturas. La tapa
+exterior lleva tres registros estrechos. Los paneles del reverso siguen expuestos.
+
+Los **14 módulos** se distribuyen uniformemente; las cuatro cápsulas de
+maniobra se recolocan en huecos reales de esa distribución para que no
+atraviesen los módulos. Las dos uniones con los brazos siguen opuestas.
+El SVG dibuja los mismos hombros y franjas; `DATOS` cuenta **28 paneles
+térmicos**. La frase factual del MDX se actualiza a catorce.
+
+Se conservan radio del anillo **1.22**, `boundsFill` **0.96**, las vistas,
+el movimiento y la luz. La envolvente física se mide en **6.0906807906** por
+el nuevo largo radial. Cuerpo: **11 891 vértices**, **8 996 triángulos** y
+**cuatro draws**; total de escena con órbitas: **21 701 vértices**. No se
+amplía ningún presupuesto y el resto de los modelos conserva sus medidas.
+
+Pruebas: rayos comprueban que el pie es más estrecho y menos grueso que el
+cuerpo, y que los 28 paneles están a la vista desde ambas caras. Los encuadres
+de todas las vistas y el barrido del eje pasan en escritorio y móvil. Pasan
+las 405 pruebas unitarias, lint, TypeScript, Knip y build de producción.
+También pasan seis pruebas de navegador en escritorio/móvil sobre producción:
+fallback sin WebGL, ruta sin JavaScript y contrato del laboratorio.
+Capturas reales en `output/playwright/endurance-14/`.
+
+La valoración visual del tercer pase queda pendiente de Jonás.
+
+
+## Cuarto pase — doce módulos y tres siluetas (2026-09-21)
+
+El dueño pide menos módulos y diferencias reales entre ellos, con dos nuevas
+referencias: `0_gnBG2kpf8MolPY_M.png` y `871b815ab6044bfca60967012be12a04.jpeg`.
+Este apartado sustituye al tercero en cantidad, familias, conexiones y paneles.
+Se interpreta el patrón de doce de la vista frontal: cuatro cuerpos blancos
+cerrados intercalados con ocho largos, no doce copias con cambios de color.
+
+- Cuatro estaciones, en los ejes principales: **0.56 × 0.29 × 0.28**, con pie
+  estrecho y dos paños longitudinales oscuros, satinados y de junta contenida.
+- Cuatro hábitats: **0.51 × 0.31 × 0.30**, hombros inclinados y dos columnas de
+  casetes térmicos acanalados con divisiones transversales.
+- Cuatro bodegas en sectores 2/4/8/10: **0.36 × 0.36 × 0.34**, carcasa corta
+  biselada, cuatro placas blancas por cara y registro de inspección. Sin panel
+  térmico. La anchura, el grosor y el extremo radial difieren físicamente.
+
+Cada hueco lleva un cuello blanco con abrazaderas y un nudo octogonal con
+escotilla circular en ambas caras. Se corrige la composición de rotaciones
+para que el cilindro no atraviese sus propias tapas. Los cuatro propulsores
+periféricos se recolocan en huecos de la distribución de doce. Dos brazos,
+núcleo y Rangers conservados; sin alas añadidas. No cambia la luz compartida.
+
+Los ocho módulos con paneles tienen **16 caras térmicas**. La máscara 4 da a
+las estaciones un paño continuo y oscuro; la 3 conserva los casetes, con
+menos contraste en la rejilla. El SVG también distingue las tres familias.
+`DATOS` y la frase factual del registro reflejan doce módulos y dieciséis caras.
+
+Anillo **1.22**, `boundsFill` **0.96** y cámaras conservados. Radio físico
+**6.2575212966**; **12 123 vértices**, **9 472 triángulos**, **cuatro draws**.
+Total con órbitas y quad: **21 933 vértices**, bajo el techo de 22 500.
+Los otros cuerpos mantienen exactamente geometría, radio y coste.
+
+La verificación geométrica cubre los 16 paneles expuestos, la bodega más corta
+y ancha, los hombros de los módulos largos, las escotillas completas y los
+vacíos interiores. Capturas reales de las cuatro vistas, giro y móvil en
+`output/playwright/endurance-12/`. Valoración visual pendiente del dueño.
+
+Verificación del cuarto pase: 405 pruebas unitarias aprobadas con dos workers,
+lint, TypeScript, Knip y build de producción aprobados. La primera suite sin
+limitar workers agotó los 5 s de un test de Edmunds; la suite completa repetida
+con dos workers pasó sin cambiar pruebas ni límites. Seis pruebas de navegador
+aprobadas sobre producción en escritorio/móvil (HTML sin JS, fallback sin WebGL
+y contrato de instrumentos). Las capturas en desarrollo tuvieron avisos
+transitorios de framebuffer durante Fast Refresh; las imágenes finales se
+revisaron completas y no hubo errores de consola.

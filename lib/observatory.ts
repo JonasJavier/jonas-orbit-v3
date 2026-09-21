@@ -196,7 +196,7 @@ export const OBSERVATION_PRESETS: Record<
     rim: 0,
     instruments: ["bloom", "material", "datos"],
     // Sin alas exteriores, el propio anillo ocupa la envolvente. El margen
-    // cubre también los dieciséis módulos al cambiar de cara o de vista.
+    // cubre también los doce módulos al cambiar de cara o de vista.
     boundsFill: 0.96,
   },
   /*
