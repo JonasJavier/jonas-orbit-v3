@@ -187,7 +187,7 @@ export const OBSERVATION_VIEWS: Partial<
       */
       distance: 1.18,
       study:
-        "Contraluz. El aro, el eje y los cuatro radiadores se leen como estructura y no como superficie.",
+        "Contraluz. El aro, el muelle axial y las dos alas térmicas se leen como estructura y no como superficie.",
     },
     {
       id: "operaciones",

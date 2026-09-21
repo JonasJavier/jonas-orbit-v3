@@ -134,14 +134,29 @@ describe("cuerpos del Sistema Gargantúa", () => {
         }
       }
       const hubSize = hub.getSize(new THREE.Vector3());
-      expect(hubSize.x).toBeLessThan(0.42);
-      expect(hubSize.z / hubSize.x).toBeGreaterThan(2);
+      // El núcleo gana hombro, pero deja libre el intervalo hasta el aro.
+      expect(hubSize.x).toBeGreaterThan(0.47);
+      expect(hubSize.x).toBeLessThan(0.54);
+      expect(hubSize.z / hubSize.x).toBeGreaterThan(1.2);
       const lengths = panels.map((panel, quadrant) => {
         const size = panel.getSize(new THREE.Vector3());
         return quadrant % 2 === 0 ? size.x : size.y;
       });
-      expect(lengths.filter((length) => length > 0.44)).toHaveLength(2);
-      expect(lengths.filter((length) => length < 0.38)).toHaveLength(2);
+      // Las lamas de los buses también usan acabado radiador, pero sólo dos
+      // superficies térmicas superan el radio del anillo.
+      expect(panels.filter((panel) => panel.max.y > 1.4 || panel.min.y < -1.4)).toHaveLength(2);
+      expect(lengths.every(Number.isFinite)).toBe(true);
+      expect(body.radius).toBeCloseTo(6.268943081511735, 6);
+
+      // La boca es una cavidad real: un rayo axial entra 15 cm más que uno
+      // sobre el labio. Evita volver a taparla con un cono o una tapa clara.
+      const local = new THREE.Mesh(mesh.geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+      const axialHit = (x: number) => {
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, 0, 2), new THREE.Vector3(0, 0, -1));
+        return ray.intersectObject(local)[0]?.point.z ?? -Infinity;
+      };
+      expect(axialHit(0.20) - axialHit(0)).toBeGreaterThan(0.14);
+      local.material.dispose();
     } finally {
       disposeBody(body);
     }
@@ -194,9 +209,9 @@ describe("cuerpos del Sistema Gargantúa", () => {
         arms: 4,
         primaryModules: 4,
         engineBells: 4,
-        radiators: 4,
-        dockedRangers: 2,
-        dockedLanders: 2,
+        radiators: 2,
+        dockedRangers: 1,
+        dockedLanders: 0,
         /*
           El pase de fase 1 amplía el contrato con la propulsión visible. Está
           aquí y no en una captura porque es exactamente la clase de detalle que
@@ -299,11 +314,11 @@ describe("cuerpos del Sistema Gargantúa", () => {
         La resolución dejó de ser la misma en las dos naves, y el número va
         aquí porque es una decisión y no un detalle: la Ranger se observa de
         cerca en el laboratorio y a 128 sus juntas salían de seis píxeles de
-        ancho, o sea franjas pintadas. La Endurance sigue a 128 porque su manta
-        térmica no tiene juntas que afinar y está aprobada.
+        ancho, o sea franjas pintadas. La Endurance usa 256 para las juntas
+        contenidas de sus carcasas, sin cambiar la textura de la Ranger.
       */
       for (const [name, mesh, textureName, lado] of [
-        ["Endurance", enduranceHull, "endurance-thermal-surface", 128],
+        ["Endurance", enduranceHull, "endurance-thermal-surface", 256],
         ["Ranger", rangerHull, "ranger-thermal-surface", 384],
       ] as const) {
         const texture = mesh.material.uniforms.uSurfaceMap.value as THREE.DataTexture;

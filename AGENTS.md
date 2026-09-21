@@ -6,6 +6,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**Endurance — jerarquía y muelle de misión (2026-09-20):**
+`docs/design/endurance-jerarquia.md` manda sobre los pases anteriores en
+geometría y materiales de la Endurance. Pedido explícito del dueño: mejorar
+la nave, usando sus capturas del Observatorio como referencia. Doce módulos
+tangenciales en tres familias, núcleo facetado con collar hueco, muelle de
+misión en +X, dos alas térmicas y una Ranger atracada. Se retiran el cono,
+mástil central, horquillas y bultos superpuestos. Cuatro draws y radio
+6.2689430815 conservados; 32.6 % menos triángulos. Grafito y radiadores tienen
+respuesta de reflejo propia; no se toca la luz común ni los otros cuerpos.
+El esquema SVG refleja la misma arquitectura. No es la implementación de la
+página Proyectos ni un despliegue interactivo de proyectos. Su valoración
+visual queda pendiente de Jonás.
+
 **Sobre mí — constelación personal (2026-09-14):**
 `docs/design/sobre-mi-constelacion.md` manda en contenido y composición de
 `/es/sobre-mi`. El dueño aprobó la maqueta y pidió construir conservando la
@@ -874,7 +887,23 @@ blanco recortado baja un 29 % de área** porque el grano y el polvo cruzan
 ahora el crema (palanca: rango de `fine`). Cero ruidos nuevos, un uniforme;
 exposición, rodilla, beaming, bloom, lensado, envolvente y cámara no cambian.
 **Trampa:** el servidor de otra sesión murió dos veces a mitad de captura; las
-capturas van contra un `next dev` propio. Su valoración visual queda abierta.
+capturas van contra un `next dev` propio. Una **segunda entrega** el mismo
+día (`Segunda entrega: equilibrio de macro-densidad` en la misma sección)
+atiende el encargo siguiente del dueño —«la mitad izquierda conserva una masa
+continua muy fuerte mientras la derecha cae persistentemente en un valle
+amplio»— y lo primero que midió cambió el objetivo: **el gran valle del ansa
+derecha no es un hueco de densidad, es un carril de polvo ancho** (sin la
+absorción, el gris de densidad sube de 22-86 a 71-192). Comprimir el macro no
+lo movía (74 → 73) y cruzarlo con las corrientes tampoco. Lo que lo rellena es
+físico y sin lado: **el polvo sigue a la masa** (`dustCol`: un carril en un
+valle del macro absorbe la mitad; en una masa, igual que antes), más una
+subida de SUELO del macro —y sólo del suelo, `max(macroRaw, mix(0.5, macroRaw,
+0.68))`— porque la compresión simétrica apagaba las masas y bajaba el blanco
+recortado de 1 715 a 1 319 px. Medido: valle derecho 22-86 → 49-143, blanco
+1 715 → 1 756 px, familia de tono intacta, silueta intacta (`reach` lee el
+macro crudo). Quedan abiertos, por orden del dueño, el núcleo blanco como
+pulido posterior y la rotación lenta del macro sólo después de aprobar el
+campo congelado. Su valoración visual queda abierta.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la

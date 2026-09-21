@@ -689,6 +689,9 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     disco roto.
   */
   const float EPOCH = 20.0;
+  /** Cuánta amplitud conserva el campo macro alrededor de su línea base: 1 es
+   *  el campo crudo, 0 un disco sin masas. Ver la nota de macroRaw. */
+  const float MACRO_SWING = 0.68;
   /*
     Exponente del filtro sobre la cizalla. Ver la nota larga en streamsRaw: es
     el mismo compromiso que pow(slant, 0.24), medido con tools/stability.mjs.
@@ -742,6 +745,7 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   float fabricSum = 0.0;
   float laneSum = 0.0;
   float macroSum = 0.0;
+  float macroRawSum = 0.0;
   float streamSum = 0.0;
   float waSum = 0.0;
 
@@ -839,7 +843,34 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     float m1 = valueNoise(macroP + 4.1);
     float m2 = valueNoise(macroP + 19.3);
     vec2 coarse = vec2(m1, m2) - 0.5;
-    float macro = m1 * 0.62 + valueNoise(macroP * 2.35 + 12.7) * 0.38;
+    float macroRaw = m1 * 0.62 + valueNoise(macroP * 2.35 + 12.7) * 0.38;
+    /*
+      EQUILIBRIO DE MACRO-DENSIDAD (2026-09-20, pase de gramática común, segunda
+      entrega). El campo macro es estático —ver la nota de las épocas: la
+      realización de edad cero se repite cada EPOCH— y en esta realización el
+      ansa derecha cae en un valle ancho del componente de frecuencia más baja
+      mientras la izquierda cae en una masa. En el gris de densidad, sin
+      Doppler y antes del lensado, una mitad se leía LLENA y la otra VACÍA, y
+      eso ya no es turbulencia: es la identidad permanente del disco. El dueño
+      pidió limitar cuánto puede vaciar una región entera el componente de
+      frecuencia más baja, sin simetría bilateral ni copiar ruido entre lados.
+
+      La solución es estadística y sin lado: se le sube el SUELO al macro
+      hacia una línea base estable (0.5, o sea el disco medio a ese radio; la
+      variación radial la pone la envolvente) con MACRO_SWING, y sólo el
+      suelo. Un valle de 0.15 pasa a 0.255; una masa de 0.85 sigue en 0.85.
+      Se probó primero comprimir por los dos lados (mix hacia 0.5 también en
+      las masas) y salió medido: las masas pierden techo, y como la densidad
+      y la función fuente escalan con mass, el blanco recortado del cuadro
+      caía de 1 715 a 1 319 px, que es justo lo que el dueño pidió no seguir
+      perdiendo. Con el suelo solo, ningún valle puede vaciar media ansa y
+      ninguna masa se apaga. El caos de escala menor no se toca: corrientes,
+      grano, cortes y carriles son campos aparte, y el macro sigue entrando
+      en ellos con su forma. La ENVOLVENTE lee el macro crudo (macroRaw,
+      abajo, en reach): dónde muere el material y la silueta no cambian ni
+      un píxel.
+    */
+    float macro = max(macroRaw, mix(0.5, macroRaw, MACRO_SWING));
 
     /*
       Deformación de dominio, fina y gruesa. La amplitud de la gruesa va como
@@ -1043,6 +1074,7 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     fabricSum += fabric * weight;
     laneSum += lanes * weight;
     macroSum += macro * weight;
+    macroRawSum += macroRaw * weight;
     streamSum += streams * weight;
     waSum += wa * weight;
   }
@@ -1063,6 +1095,7 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
   */
   float fabric = fabricSum;
   float macro = macroSum;
+  float macroRaw = macroRawSum;
   float streams = streamSum;
   float wa = waSum;
 
@@ -1437,7 +1470,8 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
      Dándole más peso a streams —que es el campo fino— el borde se rompe a
      escala de filamento y la cinta se deshace en hebras. La forma general no
      cambia: la sigue decidiendo el macro con casi la mitad del peso. */
-  float reach = mix(streams * 0.55 + macro * 0.45, 0.5, soften);
+  // Con el macro CRUDO: la silueta no es de este pase (ver MACRO_SWING).
+  float reach = mix(streams * 0.55 + macroRaw * 0.45, 0.5, soften);
   /*
     ── ENVOLVENTE Y TURBULENCIA, QUE ERAN UNA SOLA COSA Y SON DOS ──────────────
 
@@ -1815,8 +1849,28 @@ vec3 diskSample(vec3 hit, vec3 dir, float order, float travelled, out float alph
     siendo un pozo.
   */
   float laneSrc = mix(mix(0.36, 0.46, cohesion), 0.60, smoothstep(0.52, 0.94, t));
-  float laneAbs = mix(0.52, 1.0, laneMask) * mix(laneSrc, 1.0, laneMask)
-                * (1.0 - 0.55 * pit);
+  float laneAbsRaw = mix(0.52, 1.0, laneMask) * mix(laneSrc, 1.0, laneMask)
+                   * (1.0 - 0.55 * pit);
+  /*
+    EL POLVO SIGUE A LA MASA (2026-09-20, segunda entrega del pase de gramática
+    común). Medido con el gris de densidad SIN esta absorción: el «gran valle»
+    del ansa derecha no es un hueco de densidad —sin absorber, el gris de la
+    columna a 320 px sube de 22-86 a 71-192— sino un carril de polvo ancho
+    que cae justo donde la cara lejana y el brazo cercano se encuentran, y
+    que a plena absorción borra la banda entera: «corriente arriba, masa
+    abajo, nada en medio». Comprimir el macro (MACRO_SWING) no lo movía —el
+    carril lo pone el fbm de 0.145— y cruzarlo con las corrientes tampoco
+    (probado a 0.32: misma depresión, otra textura). Lo que faltaba es
+    físico: el polvo viaja con el gas, así que la COLUMNA de polvo de un
+    carril es proporcional a la masa que lo rodea. En una masa el carril
+    absorbe como hasta ahora; en un valle del macro absorbe la mitad, y el
+    valle deja de ser el doble de oscuro —menos gas Y polvo opaco— para ser
+    lo que es: el mismo material, más tenue, con sus carriles dentro. Sin
+    lado, sin tocar la ventana ni la escala de los carriles, y la banda
+    frontal —que es masa— conserva sus carriles opacos.
+  */
+  float dustCol = mix(0.50, 1.0, mass);
+  float laneAbs = 1.0 - (1.0 - laneAbsRaw) * dustCol;
 
   /*
     Y EL DESVANECIDO EXTERIOR DE LAS LENSADAS ENTRA TAMBIÉN EN LA EMISIÓN

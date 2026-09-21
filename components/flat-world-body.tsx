@@ -19,9 +19,9 @@ type FlatWorld = Pick<
 const ENDURANCE_GROUPS = [0, 90, 180, 270] as const;
 const ENDURANCE_SLOT_SPREAD = 22;
 const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
-  { angle: group - ENDURANCE_SLOT_SPREAD, primary: false },
-  { angle: group, primary: true },
-  { angle: group + ENDURANCE_SLOT_SPREAD, primary: false },
+  { angle: group - ENDURANCE_SLOT_SPREAD, primary: false, bus: true },
+  { angle: group, primary: true, bus: false },
+  { angle: group + ENDURANCE_SLOT_SPREAD, primary: false, bus: false },
 ]);
 
 /** El hipercubo de cristal, congelado: la misma topología que WebGL y su
@@ -137,10 +137,10 @@ function Endurance() {
         {ENDURANCE_GROUPS.map((angle) => (
           <g key={`bay-${angle}`} transform={`rotate(${angle} 75 75)`}>
             {/* Radiador en el plano del anillo, alineado con el brazo. */}
-            <g data-flat-part="radiator">
+            {angle % 180 === 0 && <g data-flat-part="radiator">
               <rect x="64" y="4" width="22" height="14" rx="1" fill="#161d24" stroke="#5d686f" strokeOpacity="0.8" strokeWidth="0.8" />
               <path d="M68 5v12M72 5v12M76 5v12M80 5v12" stroke="#3d4750" strokeWidth="0.7" />
-            </g>
+            </g>}
             {/* Brazo: dos cordones, travesaños y diagonales alternas. */}
             <g data-flat-part="arm" fill="none">
               <path d="M71 58V27M79 58V27" stroke="#ccd3d7" strokeWidth="2.6" />
@@ -150,7 +150,7 @@ function Endurance() {
           </g>
         ))}
 
-        {ENDURANCE_MODULES.map(({ angle, primary }) => (
+        {ENDURANCE_MODULES.map(({ angle, primary, bus }) => (
           <g
             data-flat-part="module"
             data-flat-module={primary ? "primary" : "satellite"}
@@ -158,12 +158,12 @@ function Endurance() {
             transform={`rotate(${angle} 75 75)`}
           >
             <rect
-              x={primary ? 62 : 65.5}
-              y={primary ? 14 : 17}
-              width={primary ? 26 : 19}
-              height={primary ? 18 : 14}
-              rx="2.5"
-              fill={primary ? "url(#flat-endurance-hull)" : "url(#flat-endurance-blanket)"}
+              x={primary ? 60 : 65.5}
+              y={primary ? 15 : 18}
+              width={primary ? 30 : 19}
+              height={primary ? 17 : bus ? 10 : 13}
+              rx="1"
+              fill={bus ? "#202b34" : primary ? "url(#flat-endurance-hull)" : "url(#flat-endurance-blanket)"}
               stroke="#f4f1e8"
               strokeOpacity={primary ? 0.6 : 0.34}
             />
@@ -179,23 +179,17 @@ function Endurance() {
                 <circle cx="75" cy="38" r="1.5" fill="var(--flat-secondary)" />
               </>
             ) : null}
+            {angle === 90 && <g data-flat-part="mission-dock">
+              <rect x="65" y="19" width="20" height="9" fill="#080e14" stroke="#747d85" strokeWidth="0.7" />
+              <path d="M66 20h18" stroke="#c0793d" strokeWidth="1.3" />
+              <path d="M69 23v3M75 23v3M81 23v3" stroke="#88959f" strokeWidth="0.8" />
+            </g>}
           </g>
         ))}
 
-        {/* Naves atracadas: dos Ranger y dos Lander junto a los módulos
-            principales. Van a un lado del brazo, no encima: en planta, una
-            nave centrada sobre el brazo se lee como una pieza más de la
-            celosía y deja de contar la escala, que es lo único que aporta. */}
+        {/* Una sola lanzadera de escala, frente al muelle de misión. */}
         <g data-flat-part="docked-craft" fill="#c8cfd3" stroke="#151a1e" strokeWidth="0.7">
-          {ENDURANCE_GROUPS.map((angle, index) => (
-            <g key={angle} transform={`rotate(${angle} 75 75)`}>
-              {index % 2 === 0 ? (
-                <path d="m92 32-8 6 8 5 8-5Z" />
-              ) : (
-                <rect x="85" y="32" width="13" height="10" rx="2" />
-              )}
-            </g>
-          ))}
+          <path d="m92 32-8 6 8 5 8-5Z" transform="rotate(270 75 75)" />
         </g>
 
         {/* Núcleo: barril axial visto de frente, con su collar de atraque y las
@@ -208,7 +202,8 @@ function Endurance() {
         </g>
         <circle cx="75" cy="75" r="16" fill="url(#flat-endurance-hub)" stroke="#e8ecee" strokeOpacity="0.72" />
         <circle cx="75" cy="75" r="9.5" fill="none" stroke="#0d1216" strokeOpacity="0.65" strokeWidth="1.4" />
-        <circle cx="75" cy="75" r="5" fill="#090d11" stroke="var(--flat-secondary)" strokeOpacity="0.5" />
+        <circle data-flat-part="docking-cavity" cx="75" cy="75" r="8" fill="#090d11" stroke="#d0d5d6" strokeWidth="2.2" />
+        {[0, 60, 120, 180, 240, 300].map((angle) => <rect key={angle} x="73.5" y="64.8" width="3" height="3" fill="#202830" transform={`rotate(${angle} 75 75)`} />)}
       </g>
     </svg>
   );
