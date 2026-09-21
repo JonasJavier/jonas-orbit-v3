@@ -1251,11 +1251,16 @@ const BODY_FRAGMENT = /* glsl */ `
       shipEdge = 0.65;
 
       if (vSurfaceMask > 2.5) {
-        // Aletas de carbono con canales finos; antialias analítico en el Hero.
-        float pitch = vUv.x * 22.0;
+        // Casetes térmicos integrados: canales y divisiones de placa. El
+        // antialias mantiene el detalle estable al volver al System Map.
+        float pitch = vUv.x * 16.0;
         float width = max(fwidth(pitch), 0.012);
         float rib = 1.0 - smoothstep(0.06, 0.06 + width, abs(fract(pitch) - 0.5));
-        albedo = mix(vec3(0.016, 0.023, 0.031), vec3(0.13, 0.17, 0.20), rib);
+        float jointPitch = vUv.y * 3.0;
+        float jointWidth = max(fwidth(jointPitch), 0.009);
+        float joint = 1.0 - smoothstep(0.025, 0.025 + jointWidth, abs(fract(jointPitch) - 0.5));
+        albedo = mix(vec3(0.022, 0.036, 0.047), vec3(0.085, 0.12, 0.15), rib);
+        albedo = mix(albedo, vec3(0.20, 0.24, 0.25), joint * 0.65);
         gloss = 0.13 + rib * 0.10;
         specularPower = 100.0;
         specularStrength = 0.26;
@@ -2875,6 +2880,58 @@ function chamferedModule(
   return indexed;
 }
 
+/** Módulo de carga alargado: pie estrecho, hombros inclinados y caja prismática.
+ * Las secciones cambian anchura Y grosor; no es un cubo con un bisel mayor. */
+function endurancePod(length: number, width: number, depth: number): THREE.BufferGeometry {
+  const sections = [
+    [-length / 2, width * 0.66, depth * 0.70],
+    [-length * 0.28, width, depth],
+    [length / 2 - 0.014, width, depth],
+    [length / 2, width * 0.90, depth * 0.90],
+  ];
+  const rings = sections.map(([x, w, d]) => {
+    const y = w / 2, z = d / 2, c = 0.012;
+    return [
+      [x, -y + c, -z], [x, y - c, -z], [x, y, -z + c], [x, y, z - c],
+      [x, y - c, z], [x, -y + c, z], [x, -y, z - c], [x, -y, -z + c],
+    ];
+  });
+  const vertices: number[] = [];
+  const triangle = (a: number[], b: number[], c: number[]) => vertices.push(...a, ...b, ...c);
+  for (let ring = 0; ring < rings.length - 1; ring++) {
+    for (let edge = 0; edge < 8; edge++) {
+      const next = (edge + 1) % 8;
+      const a = rings[ring][edge], b = rings[ring + 1][edge];
+      const c = rings[ring + 1][next], d = rings[ring][next];
+      triangle(a, d, c);
+      triangle(a, c, b);
+    }
+  }
+  for (const ring of [0, rings.length - 1]) {
+    const center = [sections[ring][0], 0, 0];
+    for (let edge = 0; edge < 8; edge++) {
+      const a = rings[ring][edge], b = rings[ring][(edge + 1) % 8];
+      if (ring === 0) triangle(center, b, a);
+      else triangle(center, a, b);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.computeVertexNormals();
+  const positions = geometry.getAttribute("position"), normals = geometry.getAttribute("normal");
+  const uv = new Float32Array(positions.count * 2);
+  for (let i = 0; i < positions.count; i++) {
+    const end = Math.abs(normals.getX(i)) > 0.8;
+    uv[i * 2] = end ? positions.getY(i) / width + 0.5 : positions.getX(i) / length + 0.5;
+    uv[i * 2 + 1] = Math.abs(normals.getZ(i)) > 0.5
+      ? positions.getY(i) / width + 0.5 : positions.getZ(i) / depth + 0.5;
+  }
+  geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  const indexed = mergeVertices(geometry);
+  geometry.dispose();
+  return indexed;
+}
+
 /** Una malla por familia material: detalle real sin pagar un draw por módulo. */
 function mergedMesh(
   geometries: THREE.BufferGeometry[],
@@ -2943,12 +3000,10 @@ function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
 }
 
 /**
- * Endurance — anillo portante, muelle axial y cuatro estaciones de misión.
- * Los doce módulos siguen, pero envuelven el aro en vez de pincharlo como los
- * dientes de un engranaje. Ocho carcasas cerámicas y cuatro buses de grafito;
- * dos alas térmicas, una sola lanzadera y un muelle de misión abierto a +X.
- * El collar es hueco: la profundidad sale de chapa real, no de un cono blanco.
- * Cuatro draws, la misma envolvente, la misma pose y el mismo reloj de maniobra.
+ * Endurance — catorce módulos conectados y dos brazos de acoplamiento.
+ * Paneles térmicos integrados, vacío central y dos Rangers atracadas.
+ * La referencia del dueño sustituye las alas externas y el aro de dos rieles.
+ * Cuatro draws; el radio se mide de nuevo sobre la chapa, como en cada cuerpo.
  */
 function enduranceModel(input: SceneBodyInput): BodyModel {
   const hull = bodyMaterial(input, KIND.ship, {
@@ -2983,15 +3038,14 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   const GRAPHITE = 2;
   const RADIATOR = 3;
 
-  const GROUPS = 4;
-  const MODULES_PER_GROUP = 3;
+  const PRIMARY_MODULES = [0, 3, 7, 10] as const;
+  const SERVICE_MODULES = [2, 5, 9, 12] as const;
   /** Radio de la circunferencia de módulos. Todo lo demás se mide contra esto. */
-  const RING = 0.88;
-  const GROUP_STEP = (Math.PI * 2) / GROUPS;
-  /** Los grupos dejan ventanas de estructura desnuda entre las estaciones. */
-  const SLOT_SPREAD = (22 * Math.PI) / 180;
-  /** Semiseparación axial de los dos rieles primarios. */
-  const RAIL_Z = 0.125;
+  const RING = 1.22;
+  const MODULES = 14;
+  const MODULE_STEP = (Math.PI * 2) / MODULES;
+  const ARM_ANGLES = [Math.PI / 2, -Math.PI / 2] as const;
+  const DOCKED_RANGERS = [-1, 1] as const;
 
   const hullParts: THREE.BufferGeometry[] = [];
   const structureParts: THREE.BufferGeometry[] = [];
@@ -3003,80 +3057,42 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     lightParts.push(surfaceMasked(placed(new THREE.SphereGeometry(radius, 6, 4), position), 40 + mask));
   };
 
-  /* ── 1. Muelle axial ───────────────────────────────────────────────────────
-     Barril facetado, hombro portante y boca hueca. El negro del atraque es una
-     cavidad con fondo retraído, no una tapa pintada en la punta de un cono. */
+  /* ── 1. Núcleo compacto y collar hueco ──────────────────────────────────
+     El núcleo recibe los dos tubos habitables. Su boca mantiene profundidad,
+     pero el barril ya no domina la nave como un telescopio. */
   hullParts.push(
-    surfaceMasked(
-      placed(
-        new THREE.CylinderGeometry(0.245, 0.245, 0.48, 12),
-        [0, 0, -0.015],
-        [Math.PI / 2, 0, 0],
-      ),
-      PRIMARY_BLANKET,
-    ),
-    // Hombro mecanizado: escalón axial, sin ocupar el vacío entre los brazos.
-    surfaceMasked(
-      placed(
-        new THREE.CylinderGeometry(0.205, 0.255, 0.13, 12, 1, true),
-        [0, 0, 0.29],
-        [Math.PI / 2, 0, 0],
-      ),
-      PRIMARY_BLANKET,
-    ),
-    // Popa: sección de servicio en grafito, más estrecha y claramente distinta.
-    surfaceMasked(
-      placed(
-        new THREE.CylinderGeometry(0.20, 0.215, 0.19, 12),
-        [0, 0, -0.345],
-        [Math.PI / 2, 0, 0],
-      ),
-      GRAPHITE,
-    ),
+    surfaceMasked(placed(new THREE.CylinderGeometry(0.23, 0.23, 0.24, 12, 1, true),
+      [0, 0, -0.015], [Math.PI / 2, 0, 0]), PRIMARY_BLANKET),
+    surfaceMasked(placed(new THREE.CylinderGeometry(0.20, 0.235, 0.08, 12, 1, true),
+      [0, 0, 0.145], [Math.PI / 2, 0, 0]), PRIMARY_BLANKET),
+    surfaceMasked(placed(new THREE.CylinderGeometry(0.19, 0.21, 0.13, 12),
+      [0, 0, -0.195], [Math.PI / 2, 0, 0]), GRAPHITE),
+    surfaceMasked(placed(new THREE.RingGeometry(0.145, 0.204, 24),
+      [0, 0, 0.217]), PRIMARY_BLANKET),
+    surfaceMasked(placed(new THREE.TorusGeometry(0.19, 0.018, 5, 24),
+      [0, 0, 0.208]), PRIMARY_BLANKET),
+    surfaceMasked(placed(new THREE.CylinderGeometry(0.14, 0.14, 0.012, 16),
+      [0, 0, 0.048], [Math.PI / 2, 0, 0]), GRAPHITE),
   );
-
   structureParts.push(
-    new THREE.TorusGeometry(0.265, 0.035, 6, 32),
-    placed(new THREE.TorusGeometry(0.251, 0.014, 4, 24), [0, 0, -0.20]),
-    // Pared interior y mamparo al fondo de la boca.
-    placed(
-      new THREE.CylinderGeometry(0.178, 0.178, 0.155, 24, 1, true),
-      [0, 0, 0.32],
-      [Math.PI / 2, 0, 0],
-    ),
+    new THREE.TorusGeometry(0.239, 0.023, 5, 24),
+    placed(new THREE.CylinderGeometry(0.145, 0.145, 0.16, 16, 1, true),
+      [0, 0, 0.13], [Math.PI / 2, 0, 0]),
   );
-  hullParts.push(
-    surfaceMasked(placed(new THREE.RingGeometry(0.178, 0.226, 32), [0, 0, 0.402]), PRIMARY_BLANKET),
-    surfaceMasked(placed(new THREE.TorusGeometry(0.214, 0.022, 6, 32), [0, 0, 0.388]), PRIMARY_BLANKET),
-    surfaceMasked(placed(new THREE.CylinderGeometry(0.17, 0.17, 0.012, 24),
-      [0, 0, 0.24], [Math.PI / 2, 0, 0]), GRAPHITE),
-  );
-  // Seis garras y juntas axiales: escala de fabricación, sin añadir satélites.
   for (let index = 0; index < 6; index++) {
     const angle = index * Math.PI / 3;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    hullParts.push(surfaceMasked(placed(
-      new THREE.BoxGeometry(0.054, 0.037, 0.029),
-      [cos * 0.212, sin * 0.212, 0.408], [0, 0, angle],
-    ), GRAPHITE));
-    structureParts.push(placed(new THREE.BoxGeometry(0.012, 0.026, 0.34),
-      [cos * 0.245, sin * 0.245, -0.015], [0, 0, angle]));
+    hullParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.04, 0.026, 0.018),
+      [Math.cos(angle) * 0.185, Math.sin(angle) * 0.185, 0.226],
+      [0, 0, angle]), GRAPHITE));
   }
-
-  // Propulsión principal: cuatro campanas alrededor del eje, no doce repartidas
-  // por el anillo. Una nave empuja desde su centro de masas.
   for (let index = 0; index < 4; index++) {
-    const angle = Math.PI / 4 + index * (Math.PI / 2);
-    const x = Math.cos(angle) * 0.115;
-    const y = Math.sin(angle) * 0.115;
+    const angle = Math.PI / 4 + index * Math.PI / 2;
+    const x = Math.cos(angle) * 0.112;
+    const y = Math.sin(angle) * 0.112;
     structureParts.push(
-      placed(
-        new THREE.CylinderGeometry(0.05, 0.082, 0.22, 10, 1, true),
-        [x, y, -0.645],
-        [Math.PI / 2, 0, 0],
-      ),
-      placed(new THREE.TorusGeometry(0.079, 0.011, 5, 12), [x, y, -0.75]),
+      placed(new THREE.CylinderGeometry(0.046, 0.072, 0.15, 10, 1, true),
+        [x, y, -0.327], [Math.PI / 2, 0, 0]),
+      placed(new THREE.TorusGeometry(0.068, 0.009, 4, 12), [x, y, -0.403]),
     );
   }
 
@@ -3111,7 +3127,7 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       )),
     );
   };
-  const RIM_THRUSTER_ANGLES = [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4];
+  const RIM_THRUSTER_ANGLES = [1, 4, 8, 11].map((index) => Math.PI / 2 - (index + 0.5) * MODULE_STEP);
   RIM_THRUSTER_ANGLES.forEach((angle, index) => {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
@@ -3154,230 +3170,150 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
       );
     }
   });
-  jet([0.235, 0.055, 0.22], new THREE.Vector3(1, 0.25, 0.5), 12, 0.021, 0.09);
-  jet([-0.235, -0.055, 0.22], new THREE.Vector3(-1, -0.25, 0.5), 13, 0.021, 0.09);
+  jet([0.235, 0.055, 0.10], new THREE.Vector3(1, 0.25, 0.5), 12, 0.021, 0.09);
+  jet([-0.235, -0.055, 0.10], new THREE.Vector3(-1, -0.25, 0.5), 13, 0.021, 0.09);
 
-  /* ── 2. Estructura primaria: la circunferencia completa ────────────────────
-     Dos rieles y sus travesaños. Es la pieza que faltaba: sin ella los módulos
-     eran cubos suspendidos a la misma distancia del centro por casualidad. */
-  /* Los rieles van en el material de CASCO, no en el de estructura. Es una
-     decisión de lectura, no de física: a tamaño de Hero el metal oscuro
-     desaparece contra el fondo, y lo que tiene que verse desde el primer
-     píxel es la circunferencia. Un aro claro dice «nave de anillo» antes de
-     que se distinga un solo módulo. */
-  const rail = () => new THREE.LatheGeometry([
-    new THREE.Vector2(RING - 0.020, -0.023),
-    new THREE.Vector2(RING + 0.020, -0.023),
-    new THREE.Vector2(RING + 0.020, 0.023),
-    new THREE.Vector2(RING - 0.020, 0.023),
-    new THREE.Vector2(RING - 0.020, -0.023),
-  ], 64).rotateX(Math.PI / 2);
-  hullParts.push(
-    surfaceMasked(
-      placed(rail(), [0, 0, RAIL_Z]),
-      BLANKET,
-    ),
-    surfaceMasked(
-      placed(rail(), [0, 0, -RAIL_Z]),
-      BLANKET,
-    ),
-  );
-  const TIES = 24;
-  for (let index = 0; index < TIES; index++) {
-    const angle = (index / TIES) * Math.PI * 2;
-    structureParts.push(
-      placed(
-        new THREE.BoxGeometry(0.028, 0.024, RAIL_Z * 2),
-        [Math.cos(angle) * RING, Math.sin(angle) * RING, 0],
-        [0, 0, angle],
-      ),
-    );
-  }
-
-  /* ── 3. Cuatro puentes portantes ──────────────────────────────────────────
-     Dos largueros claros, un alma oscura y tres vanos. Se retiran las cuatro
-     cajas encima del cinturón y las ocho horquillas: el esfuerzo llega al aro
-     por el propio puente, sin otra familia de bloques compitiendo con él. */
-  const ARM_INNER = 0.27;
-  const ARM_OUTER = RING - 0.14;
-  const CHORD = 0.065;
-  for (let group = 0; group < GROUPS; group++) {
-    const angle = Math.PI / 2 - group * GROUP_STEP;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const at = (radius: number, side: number, z = 0): VectorTuple => [
-      cos * radius - sin * side * CHORD,
-      sin * radius + cos * side * CHORD,
-      z,
+  /* ── 2. Cuellos de conexión ─────────────────────────────────────────────
+     La cadena de cilindros ES el anillo. El casco de cada módulo oculta sus
+     extremos; entre módulos se leen el fuelle oscuro y sus dos abrazaderas. */
+  for (let index = 0; index < MODULES; index++) {
+    const angle = Math.PI / 2 - (index + 0.5) * MODULE_STEP;
+    const radius = RING * Math.cos(MODULE_STEP / 2);
+    const length = 2 * RING * Math.sin(MODULE_STEP / 2);
+    const at = (tangent: number): VectorTuple => [
+      Math.cos(angle) * radius - Math.sin(angle) * tangent,
+      Math.sin(angle) * radius + Math.cos(angle) * tangent, -0.025,
     ];
+    hullParts.push(surfaceMasked(placed(
+      new THREE.CylinderGeometry(0.047, 0.047, length, 8, 1, true),
+      at(0), [0, 0, angle]), GRAPHITE));
     for (const side of [-1, 1]) {
       hullParts.push(surfaceMasked(placed(
-        new THREE.BoxGeometry(ARM_OUTER - ARM_INNER, 0.03, 0.095),
-        at((ARM_INNER + ARM_OUTER) / 2, side), [0, 0, angle],
-      ), BLANKET));
+        new THREE.CylinderGeometry(0.062, 0.062, 0.042, 8, 1, true),
+        at(side * 0.065), [0, 0, angle]), BLANKET));
     }
-    for (let bay = 0; bay < 3; bay++) {
-      const from = ARM_INNER + (ARM_OUTER - ARM_INNER) * bay / 3;
-      const to = ARM_INNER + (ARM_OUTER - ARM_INNER) * (bay + 1) / 3;
-      structureParts.push(strut(
-        new THREE.Vector3(...at(from, bay % 2 ? 1 : -1)),
-        new THREE.Vector3(...at(to, bay % 2 ? -1 : 1)), 0.022,
-      ));
-    }
-    // Canal técnico sobre un larguero; sigue la carga hasta el núcleo.
-    serviceParts.push(placed(new THREE.BoxGeometry(0.30, 0.009, 0.008),
-      at(0.51, 1, 0.051), [0, 0, angle]));
   }
 
-  /* ── 4. Doce módulos, tres oficios ────────────────────────────────────────
-     4 estaciones anchas + 4 hábitats + 4 buses bajos en grafito. No se añaden
-     cajas encima: el detalle se recorta en la carcasa, y los cantos son
-     mecanizados, no esquinas redondas de juguete. */
-  const RADIATOR_GROUPS = [0, 2] as const;
-  const DOCKED_RANGER_GROUPS = [3] as const;
-  const COMMAND_GROUP = 1;
+  /* ── 3. Dos tubos habitables ──────────────────────────────────────────── */
+  const ARM_INNER = 0.22;
+  const ARM_OUTER = RING - 0.14;
+  for (const angle of ARM_ANGLES) {
+    const at = (r: number, z = -0.025): VectorTuple => [
+      Math.cos(angle) * r, Math.sin(angle) * r, z,
+    ];
+    hullParts.push(surfaceMasked(placed(
+      new THREE.CylinderGeometry(0.047, 0.057, ARM_OUTER - ARM_INNER, 12),
+      at((ARM_INNER + ARM_OUTER) / 2), [0, 0, angle - Math.PI / 2],
+    ), BLANKET));
+    for (const r of [0.30, 0.61, 0.91, ARM_OUTER]) {
+      hullParts.push(surfaceMasked(placed(
+        new THREE.CylinderGeometry(0.064, 0.064, 0.036, 12),
+        at(r), [0, 0, angle - Math.PI / 2],
+      ), r === 0.61 ? GRAPHITE : PRIMARY_BLANKET));
+    }
+    structureParts.push(placed(new THREE.BoxGeometry(0.012, 0.70, 0.014),
+      [Math.cos(angle) * 0.67 + 0.055, Math.sin(angle) * 0.67, -0.025]));
+  }
+
+  /* ── 4. Catorce cuerpos prismáticos con hombros de conexión ──────────────
+     Cuatro estaciones, seis hábitats y cuatro unidades de servicio. El largo
+     se orienta radialmente; el pie interior se estrecha en dos planos y deja
+     una franja de servicio antes de los paneles longitudinales. */
   let warmApertures = 0;
-  for (let group = 0; group < GROUPS; group++) {
-    const groupAngle = Math.PI / 2 - group * GROUP_STEP;
-    const primaryZ = [0.065, -0.025, 0.025, -0.04][group];
-
-    for (let slot = -1; slot <= 1; slot++) {
-      const primary = slot === 0;
-      const bus = slot === -1;
-      const command = primary && group === COMMAND_GROUP;
-      const angle = groupAngle + slot * SLOT_SPREAD;
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      const radial = primary ? 0.34 : bus ? 0.22 : 0.27;
-      const tangent = primary ? (command ? 0.51 : 0.46) : 0.28;
-      const depth = primary ? 0.30 : bus ? 0.17 : 0.24;
-      const z = primary ? primaryZ : primaryZ + (bus ? -0.025 : 0.025);
-      const at = (r: number, t: number, axial: number): VectorTuple => [
-        cos * r - sin * t, sin * r + cos * t, axial,
-      ];
-      const skin = bus ? GRAPHITE : primary ? PRIMARY_BLANKET : BLANKET;
-      const face = z + depth / 2;
-
+  let thermalPanels = 0;
+  for (let index = 0; index < MODULES; index++) {
+    const primary = PRIMARY_MODULES.some((value) => value === index);
+    const bus = SERVICE_MODULES.some((value) => value === index);
+    const angle = Math.PI / 2 - index * MODULE_STEP;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const radial = primary ? 0.48 : bus ? 0.43 : 0.46;
+    const tangent = primary ? 0.27 : 0.25;
+    const depth = primary ? 0.22 : bus ? 0.19 : 0.20;
+    const center = RING + 0.075;
+    const z = 0;
+    const at = (r: number, t: number, axial: number): VectorTuple => [
+      cos * r - sin * t, sin * r + cos * t, axial,
+    ];
+    const face = z + depth / 2;
+    hullParts.push(surfaceMasked(placed(
+      endurancePod(radial, tangent, depth),
+      at(center, 0, z), [0, 0, angle],
+    ), primary ? PRIMARY_BLANKET : BLANKET));
+    for (const side of [-1, 1]) {
+      const axial = z + side * (depth / 2 + 0.006);
+      const panelRadial = radial * 0.55;
+      const panelTangent = tangent * 0.72;
+      const panelCenter = center + radial * 0.13;
+      // El panel queda por debajo del marco: negro en las juntas, no un
+      // rectángulo gris pegado sobre el blanco. También existe en el reverso.
       hullParts.push(surfaceMasked(placed(
-        chamferedModule(radial, tangent, depth, 0.022),
-        at(RING, 0, z), [0, 0, angle],
-      ), skin));
-      // Una única silla transmite al doble riel; queda bajo el módulo.
-      hullParts.push(surfaceMasked(placed(
-        new THREE.BoxGeometry(0.19, tangent * 0.72, 0.042),
-        at(RING, 0, z - depth / 2 - 0.019), [0, 0, angle],
-      ), GRAPHITE));
-
-      // Juntas de separación y cinchas: siguen las caras, no cambian la silueta.
-      for (const side of [-1, 1]) {
-        hullParts.push(surfaceMasked(placed(
-          new THREE.BoxGeometry(radial - 0.044, 0.009, 0.007),
-          at(RING, side * tangent * 0.29, face + 0.003), [0, 0, angle],
-        ), GRAPHITE));
-      }
-
-      if (command) {
-        /* Muelle de misión: un hueco rectangular sobre un zócalo en grafito,
-           dos hojas de cerámica apartadas y un umbral de cobre. Se distingue
-           sin encender nada y sin inventar una interacción en Proyectos. */
-        hullParts.push(surfaceMasked(placed(
-          new THREE.BoxGeometry(0.22, 0.27, 0.015),
-          at(RING, 0, face + 0.009), [0, 0, angle],
-        ), GRAPHITE));
-        for (const side of [-1, 1]) {
-          hullParts.push(surfaceMasked(placed(
-            chamferedModule(0.25, 0.08, 0.048, 0.008),
-            at(RING, side * 0.18, face + 0.034), [0, 0, angle],
-          ), PRIMARY_BLANKET));
-        }
-        serviceParts.push(placed(new THREE.BoxGeometry(0.024, 0.26, 0.016),
-          at(RING + 0.10, 0, face + 0.023), [0, 0, angle]));
-        // Tres guías de captura en el fondo del muelle.
-        for (const t of [-0.085, 0, 0.085]) {
-          structureParts.push(placed(new THREE.BoxGeometry(0.12, 0.015, 0.018),
-            at(RING - 0.025, t, face + 0.02), [0, 0, angle]));
-        }
-      } else if (primary) {
-        // Escotilla enrasada, con marco de chapa y panel interior oscuro.
-        hullParts.push(surfaceMasked(placed(
-          new THREE.RingGeometry(0.037, 0.053, 12),
-          at(RING, 0, face + 0.012), [0, 0, angle],
-        ), PRIMARY_BLANKET));
-        hullParts.push(surfaceMasked(placed(
-          new THREE.CircleGeometry(0.037, 12),
-          at(RING, 0, face + 0.010), [0, 0, angle],
-        ), GRAPHITE));
-      } else if (bus) {
-        // Equipamiento al ras: ocho lamas, no otra caja sobre la caja.
-        for (let louver = 0; louver < 6; louver++) {
-          hullParts.push(surfaceMasked(placed(
-            new THREE.BoxGeometry(0.13, 0.012, 0.011),
-            at(RING, (louver - 2.5) * 0.026, face + 0.006), [0, 0, angle],
-          ), RADIATOR));
-        }
-      }
-
-      // Parches térmicos localizados. Se retiran las ocho placas naranjas.
-      if (primary && !command) {
-        serviceParts.push(placed(new THREE.BoxGeometry(0.07, 0.027, 0.009),
-          at(RING + 0.06, tangent * 0.37, face + 0.006), [0, 0, angle]));
-      }
-      const occupied = (primary && group !== 2) || (slot === 1 && group !== 3);
-      if (occupied) {
-        const pos = at(RING - 0.06, tangent * 0.36, face + 0.010);
-        lightParts.push(surfaceMasked(placed(
-          new THREE.BoxGeometry(0.040, 0.016, 0.005), pos, [0, 0, angle],
-        ), 0));
-        halo(pos, 0.033, 0);
-        warmApertures++;
-      }
-    }
-
-    const cos = Math.cos(groupAngle);
-    const sin = Math.sin(groupAngle);
-    if (RADIATOR_GROUPS.some((value) => value === group)) {
-      /* Dos alas, no cuatro palas. Las puntas conservan las coordenadas
-         originales: el radio físico, el proxy y la cámara no crecen. */
-      const length = group === 0 ? 0.50 : 0.46;
-      const rotation: VectorTuple = [0, 0, groupAngle + 0.06];
-      const position: VectorTuple = [
-        cos * (RING + 0.19 + length / 2),
-        sin * (RING + 0.19 + length / 2), primaryZ,
-      ];
-      hullParts.push(surfaceMasked(placed(
-        new THREE.BoxGeometry(length, 0.32, 0.014), position, rotation,
+        new THREE.BoxGeometry(panelRadial, panelTangent, 0.010),
+        at(panelCenter, 0, axial), [0, 0, angle],
       ), RADIATOR));
-      // Marco dentro de la envolvente del ala, bisagra y una junta central.
-      for (const side of [-1, 1]) {
+      thermalPanels++;
+      for (const edge of [-1, 1]) {
         hullParts.push(surfaceMasked(placed(
-          new THREE.BoxGeometry(length - 0.018, 0.012, 0.012),
-          [position[0] - Math.sin(rotation[2]) * side * 0.145,
-            position[1] + Math.cos(rotation[2]) * side * 0.145, primaryZ + 0.009],
-          rotation,
-        ), GRAPHITE));
-      }
-      structureParts.push(placed(new THREE.BoxGeometry(0.19, 0.045, 0.045),
-        [cos * (RING + 0.19), sin * (RING + 0.19), primaryZ], [0, 0, groupAngle]));
-      hullParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.014, 0.30, 0.012),
-        [position[0], position[1], primaryZ + 0.009], rotation), GRAPHITE));
-    }
-
-    if (DOCKED_RANGER_GROUPS.some((value) => value === group)) {
-      /* Una lanzadera basta para dar escala. Se retiran las otras tres,
-         que se confundían con bultos del casco al superponerse en planta. */
-      const dockZ = primaryZ + 0.23;
-      for (const side of [-1, 1]) {
-        hullParts.push(surfaceMasked(placed(
-          foil(0.14, -0.14, side * 0.14, 0.01, -0.10, 0.024),
-          [cos * RING, sin * RING, dockZ], [0, 0, groupAngle],
+          new THREE.BoxGeometry(panelRadial + 0.020, 0.009, 0.016),
+          at(panelCenter, edge * (panelTangent / 2 + 0.005), axial),
+          [0, 0, angle],
         ), PRIMARY_BLANKET));
       }
-      hullParts.push(surfaceMasked(placed(
-        chamferedModule(0.17, 0.065, 0.045, 0.008),
-        [cos * (RING + 0.015), sin * (RING + 0.015), dockZ + 0.025],
-        [0, 0, groupAngle],
-      ), GRAPHITE));
+      // Tres franjas largas, como las caras de las referencias del dueño.
+      for (const divider of [-1, 1]) {
+        hullParts.push(surfaceMasked(placed(
+          new THREE.BoxGeometry(panelRadial, 0.008, 0.014),
+          at(panelCenter, divider * panelTangent / 6, axial), [0, 0, angle],
+        ), PRIMARY_BLANKET));
+      }
     }
+    // Toma de servicio y una hilera de pequeñas aberturas en la franja blanca.
+    for (const r of [-0.23, -0.18]) {
+      for (const t of [-0.042, 0, 0.042]) {
+        hullParts.push(surfaceMasked(placed(new THREE.PlaneGeometry(0.014, 0.018),
+          at(center + radial * r, t, face + 0.004), [0, 0, angle]), GRAPHITE));
+      }
+    }
+    // Junta perimetral de la tapa lateral.
+    for (const t of [-0.065, 0, 0.065]) {
+      hullParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.004, 0.045, depth * 0.64),
+        at(center + radial / 2 + 0.002, t, z), [0, 0, angle]), GRAPHITE));
+    }
+    if (primary) {
+      serviceParts.push(placed(new THREE.BoxGeometry(0.035, 0.009, 0.006),
+        at(center - radial * 0.11, 0, face + 0.009), [0, 0, angle]));
+    }
+    if (index % 7 === 1 || index % 7 === 4 || index === 0) {
+      const pos = at(center - radial * 0.19, tangent * 0.35, face + 0.008);
+      lightParts.push(surfaceMasked(placed(new THREE.BoxGeometry(0.021, 0.012, 0.005),
+        pos, [0, 0, angle]), 0));
+      halo(pos, 0.017, 0);
+      warmApertures++;
+    }
+  }
+
+  /* ── 5. Dos Rangers atracadas al núcleo ─────────────────────────────────
+     Silueta en flecha, cabina facetada y dos motores. No son bultos en el aro:
+     se lee su morro, orientado hacia el vacío interior, y el cuello de atraque. */
+  for (const side of DOCKED_RANGERS) {
+    const rotation: VectorTuple = [0, 0, side > 0 ? 0 : Math.PI];
+    const origin: VectorTuple = [side * 0.46, 0, -0.018];
+    const craft = (geometry: THREE.BufferGeometry, mask = PRIMARY_BLANKET) =>
+      hullParts.push(surfaceMasked(placed(geometry, origin, rotation), mask));
+    craft(chamferedModule(0.40, 0.095, 0.075, 0.012).translate(0.015, 0, 0.05));
+    for (const wing of [-1, 1]) {
+      craft(foil(0.25, -0.18, wing * 0.18, -0.05, -0.17, 0.035));
+      craft(new THREE.BoxGeometry(0.19, 0.011, 0.009)
+        .translate(-0.055, wing * 0.10, 0.023), GRAPHITE);
+      structureParts.push(placed(
+        new THREE.CylinderGeometry(0.028, 0.038, 0.055, 8, 1, true)
+          .rotateZ(Math.PI / 2).translate(-0.196, wing * 0.065, 0.035),
+        origin, rotation,
+      ));
+    }
+    craft(chamferedModule(0.14, 0.073, 0.043, 0.009).translate(0.075, 0, 0.097), GRAPHITE);
+    craft(new THREE.BoxGeometry(0.009, 0.077, 0.046).translate(0.075, 0, 0.098));
+    craft(new THREE.BoxGeometry(0.18, 0.07, 0.055).translate(-0.22, 0, -0.015), GRAPHITE);
   }
 
   // Three more warm sources: two inner-ring service points and one recessed
@@ -3386,20 +3322,20 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
     lightParts.push(surfaceMasked(placed(new THREE.SphereGeometry(radius, 8, 6), position), mask));
     halo(position, radius * 2.7, mask);
   };
-  lamp([0.49, 0.065, 0.048], 0.011, 2);
-  lamp([-0.065, -0.62, 0.048], 0.012, 0);
-  lamp([0.185, -0.072, 0.409], 0.010, 4);
+  lamp([0.018, 0.61, 0.04], 0.011, 2);
+  lamp([-0.018, -0.61, 0.04], 0.012, 0);
+  lamp([0.185, -0.072, 0.227], 0.010, 4);
   // Four cold technical points, at docking / truss / axial connections.
-  lamp([-0.185, 0.072, 0.409], 0.009, 1);
-  lamp([0, -0.20, -0.45], 0.009, 3);
-  lamp([0.62, 0.065, 0.048], 0.009, 1);
-  lamp([-0.62, -0.065, 0.048], 0.009, 1);
+  lamp([-0.185, 0.072, 0.227], 0.009, 1);
+  lamp([0, -0.17, -0.25], 0.009, 3);
+  lamp([0.018, 0.91, 0.04], 0.009, 1);
+  lamp([-0.018, -0.91, 0.04], 0.009, 1);
 
   const hullMesh = mergedMesh(hullParts, hull);
-  hullMesh.name = "endurance-twelve-module-ring";
+  hullMesh.name = "endurance-module-ring";
   assembly.add(hullMesh);
   const structureMesh = mergedMesh(structureParts, structure);
-  structureMesh.name = "endurance-radial-trusses-connectors-and-engines";
+  structureMesh.name = "endurance-connectors-and-engines";
   assembly.add(structureMesh);
   const serviceMesh = mergedMesh(serviceParts, service);
   serviceMesh.name = "endurance-service-panels";
@@ -3410,13 +3346,13 @@ function enduranceModel(input: SceneBodyInput): BodyModel {
   assembly.add(lightMesh);
 
   assembly.userData.enduranceArchitecture = {
-    modules: GROUPS * MODULES_PER_GROUP,
-    groups: GROUPS,
-    arms: GROUPS,
-    primaryModules: GROUPS,
+    modules: MODULES,
+    groups: PRIMARY_MODULES.length,
+    arms: ARM_ANGLES.length,
+    primaryModules: PRIMARY_MODULES.length,
     engineBells: 4,
-    radiators: RADIATOR_GROUPS.length,
-    dockedRangers: DOCKED_RANGER_GROUPS.length,
+    thermalPanels,
+    dockedRangers: DOCKED_RANGERS.length,
     dockedLanders: 0,
     manoeuvringPods: 4,
     manoeuvringNozzles: 4,

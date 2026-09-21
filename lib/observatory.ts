@@ -195,22 +195,9 @@ export const OBSERVATION_PRESETS: Record<
     environment: 0.04,
     rim: 0,
     instruments: ["bloom", "material", "datos"],
-    /*
-      Mayor que uno, y no es un error: con 0.91 —el número del Tesseracto— la
-      Endurance ocupaba el 58.3 % del alto contra el 70-85 % que pide el §5.
-
-      La causa es la que este campo existe para admitir: su esfera envolvente la
-      fijan las PUNTAS DE LOS RADIADORES, que son lo más fino que tiene y
-      además apuntan fuera del plano de la silueta. Encuadrar por esa esfera es
-      encuadrar por algo que casi no se ve. Que el valor pase de uno significa
-      exactamente eso — la envolvente se sale del cuadro y la nave no.
-
-      Y basta UNA medida, al revés que con el Tesseracto: la Endurance no
-      reconfigura nada. Con el giro genérico apagado, lo único que se mueve en
-      su silueta es la corrección de actitud de ±0.4°, así que su ocupación es
-      un número y no una banda de treinta puntos. Medido: 76.9 % del alto.
-    */
-    boundsFill: 1.15,
+    // Sin alas exteriores, el propio anillo ocupa la envolvente. El margen
+    // cubre también los dieciséis módulos al cambiar de cara o de vista.
+    boundsFill: 0.96,
   },
   /*
     Contraluz alto por babor, y el camino hasta ahí es la muestra entera.

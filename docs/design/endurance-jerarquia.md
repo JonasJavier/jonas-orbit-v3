@@ -89,6 +89,77 @@ una lanzadera y los muelles, para que el perfil ligero represente la misma nave.
 - Capturas reales bajo `output/playwright/endurance-redesign/`: antes,
   canónica, rasante, silueta, operaciones, giro a 90°, sin bloom, móvil y mapa.
   Las maquetas de ImageGen de la conversación anterior no son estas pruebas.
+- 14 pruebas de navegador aprobadas sobre el build de producción, en Chromium
+  de escritorio y móvil: pausa con manipulación viva, reposo sin renders,
+  fallback sin WebGL, HTML sin JavaScript, blancos accesibles a 375/768/1440,
+  mandos alcanzables, contrato común del laboratorio y giro sin cambiar la luz.
 
 Los controles `EJE`, `LUZ`, vistas, comparación y movimiento global conservan
 su comportamiento. La voz del `registro` del MDX queda intacta.
+
+## Segundo pase — referencias de la Endurance (2026-09-21)
+
+Este apartado sustituye el anterior en arquitectura, tamaño y encuadre. Jonás
+señaló las dos alas térmicas como piezas que no pertenecen a la Endurance y
+pidió más módulos, más pequeños, con un anillo mayor. Adjuntó una imagen de
+la nave y dos modelos de referencia. Es una nueva dirección autorizada; las
+restricciones de doce módulos, dos alas y radio fijo del primer pase caducan.
+
+### Forma
+
+- **Dieciséis módulos**: cuatro estaciones, ocho hábitats y cuatro unidades
+  de servicio. Las estaciones pasan de 0.46–0.51 a 0.30 de ancho tangencial;
+  las demás piezas miden 0.27. Los cantos tienen un bisel contenido.
+- **Anillo de radio 1.22**, antes 0.88: 38.6 % más diámetro en la cadena de
+  módulos. Cilindros y abrazaderas conectan sus cuerpos; desaparecen ambos
+  rieles continuos y las dos alas externas.
+- **Dos tubos habitables**, en vez de cuatro puentes de celosía. Los cuatro
+  cuadrantes interiores quedan abiertos.
+- **Núcleo más corto**, con collar realmente hueco, seis garras y cuatro
+  campanas. Dos Rangers pequeñas se acoplan a sus costados. Se retira el
+  muelle rectangular del anillo: el acoplamiento se concentra en el centro.
+- **32 caras térmicas integradas**, una por delante y otra por detrás de cada
+  módulo. Marco, nervio, juntas y aberturas pertenecen a la carcasa. El shader
+  representa canales y divisiones de casete, con antialias por derivadas.
+
+Se mantienen cuatro cápsulas de maniobra, catorce toberas con su reloj, ocho
+luces cálidas y cuatro técnicas. Todas están ancladas a superficies físicas.
+La textura continúa en 256 y los otros cuerpos no cambian con este pase.
+
+### Envolvente y coste
+
+El anillo crece; la envolvente total disminuye porque ya no incluye las alas:
+**6.2689430815 → 5.6365331193**. El radio y el blanco de selección siguen
+derivándose de la geometría. No se cambia `placement`, la pose ni la cámara
+del System Map. En el Observatorio `boundsFill` pasa de 1.15 a **0.96**: el
+anillo ahora ocupa la envolvente y ya no procede compensar unas puntas finas.
+
+El cuerpo pasa de **10 157 a 12 043 vértices** y de **8 848 a 9 080 triángulos**,
+con **cuatro draws**. El conjunto con las órbitas y el quad suma **21 853
+vértices**, dentro del techo de 22 500. Las conexiones no llevan tapas internas
+ocultas y las pequeñas aberturas frontales son superficies enrasadas. No se
+afirma una mejora de FPS.
+
+El SVG representa la misma arquitectura (16 módulos, dos tubos, dos Rangers,
+paneles integrados). `DATOS` publica 32 paneles térmicos integrados, no dos
+radiadores exteriores. En el MDX sólo cambia la frase factual de construcción;
+el resto del registro conserva la voz de Jonás.
+
+### Verificación del segundo pase
+
+- Rayos sobre las 32 caras térmicas comprueban que están expuestas. Esta prueba
+  detecta una placa de soporte que ocultaba el panel trasero y fue retirada.
+- Rayos sobre los cuatro vacíos, ambos tubos y el collar verifican la geometría.
+- Pasan las vistas de escritorio/móvil y el barrido de rotación, sin relajar
+  los límites de encuadre ni el presupuesto global.
+- Capturas reales en `output/playwright/endurance-reference-v2/`: canónica,
+  rasante, silueta, operaciones, giro a 90°, móvil, consola móvil, reverso y mapa.
+- Suite completa: 405 pruebas; tras retirar las placas traseras, 42 pruebas
+  del modelo, contrato y encuadre repetidas y aprobadas. Lint, TypeScript, Knip y
+  compilación de producción aprobados.
+- 14 pruebas de navegador aprobadas sobre producción, en escritorio y móvil:
+  pausa y manipulación, reposo sin renders, fallback sin WebGL, HTML sin JS,
+  mandos accesibles y giro sin cambiar la luz.
+
+La valoración visual de este segundo pase queda pendiente de Jonás. No es una
+implementación de la página Proyectos ni una animación de despliegue de proyectos.

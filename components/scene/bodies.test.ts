@@ -113,49 +113,52 @@ function apparentSize(id: Exclude<WorldId, "gargantua">, radius: number): number
 }
 
 describe("cuerpos del Sistema Gargantúa", () => {
-  it("conserva el vacío central y dos extensiones selectivas en Endurance", () => {
+  it("integra los paneles en el anillo y deja libre el vacío entre los dos brazos", () => {
     const body = bodyFor("endurance");
     try {
-      const mesh = body.object.getObjectByName("endurance-twelve-module-ring") as THREE.Mesh;
+      const mesh = body.object.getObjectByName("endurance-module-ring") as THREE.Mesh;
       const position = mesh.geometry.getAttribute("position");
       const mask = mesh.geometry.getAttribute("aSurfaceMask");
-      const hub = new THREE.Box3();
-      const panels = Array.from({ length: 4 }, () => new THREE.Box3());
+      const sectors = new Set<number>();
       const vertex = new THREE.Vector3();
       for (let i = 0; i < position.count; i++) {
         vertex.fromBufferAttribute(position, i);
-        if (mask.getX(i) === 1 && Math.hypot(vertex.x, vertex.y) < 0.5) {
-          hub.expandByPoint(vertex);
-        }
-        if (mask.getX(i) === 3) {
-          const angle = Math.atan2(vertex.y, vertex.x);
-          const quadrant = ((Math.round(angle / (Math.PI / 2)) % 4) + 4) % 4;
-          panels[quadrant].expandByPoint(vertex);
+        if (mask.getX(i) !== 3) continue;
+        const radius = Math.hypot(vertex.x, vertex.y);
+        // Todos los paneles térmicos pertenecen a una cara de módulo.
+        // Ninguna pala fina vuelve a extenderse por fuera del anillo.
+        expect(radius).toBeGreaterThan(1.10);
+        expect(radius).toBeLessThan(1.37);
+        const sector = Math.round(Math.atan2(vertex.y, vertex.x) / (Math.PI / 8));
+        sectors.add((sector + 16) % 16);
+      }
+      expect(sectors.size).toBe(16);
+      const local = new THREE.Mesh(mesh.geometry,
+        new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+      // Las 32 caras térmicas están expuestas. Una placa de soporte trasera
+      // llegó a tapar dieciséis: contarlas sin lanzar rayos no lo detectaba.
+      for (let index = 0; index < 16; index++) {
+        const angle = Math.PI / 2 - index * Math.PI / 8;
+        const x = Math.cos(angle) * 1.28 - Math.sin(angle) * 0.035;
+        const y = Math.sin(angle) * 1.28 + Math.cos(angle) * 0.035;
+        for (const side of [-1, 1]) {
+          const surface = new THREE.Raycaster(new THREE.Vector3(x, y, side * 2),
+            new THREE.Vector3(0, 0, -side)).intersectObject(local)[0];
+          expect(surface?.face, `módulo ${index}, cara ${side}`).toBeDefined();
+          expect(mask.getX(surface.face!.a)).toBe(3);
         }
       }
-      const hubSize = hub.getSize(new THREE.Vector3());
-      // El núcleo gana hombro, pero deja libre el intervalo hasta el aro.
-      expect(hubSize.x).toBeGreaterThan(0.47);
-      expect(hubSize.x).toBeLessThan(0.54);
-      expect(hubSize.z / hubSize.x).toBeGreaterThan(1.2);
-      const lengths = panels.map((panel, quadrant) => {
-        const size = panel.getSize(new THREE.Vector3());
-        return quadrant % 2 === 0 ? size.x : size.y;
-      });
-      // Las lamas de los buses también usan acabado radiador, pero sólo dos
-      // superficies térmicas superan el radio del anillo.
-      expect(panels.filter((panel) => panel.max.y > 1.4 || panel.min.y < -1.4)).toHaveLength(2);
-      expect(lengths.every(Number.isFinite)).toBe(true);
-      expect(body.radius).toBeCloseTo(6.268943081511735, 6);
-
-      // La boca es una cavidad real: un rayo axial entra 15 cm más que uno
-      // sobre el labio. Evita volver a taparla con un cono o una tapa clara.
-      const local = new THREE.Mesh(mesh.geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
-      const axialHit = (x: number) => {
-        const ray = new THREE.Raycaster(new THREE.Vector3(x, 0, 2), new THREE.Vector3(0, 0, -1));
-        return ray.intersectObject(local)[0]?.point.z ?? -Infinity;
-      };
-      expect(axialHit(0.20) - axialHit(0)).toBeGreaterThan(0.14);
+      const hit = (x: number, y: number) => new THREE.Raycaster(
+        new THREE.Vector3(x, y, 2), new THREE.Vector3(0, 0, -1),
+      ).intersectObject(local);
+      // Ventanas abiertas en los cuatro cuadrantes; los dos tubos sí conectan.
+      for (const x of [-0.58, 0.58]) {
+        for (const y of [-0.58, 0.58]) expect(hit(x, y)).toHaveLength(0);
+      }
+      expect(hit(0, 0.70).length).toBeGreaterThan(0);
+      expect(hit(0, -0.70).length).toBeGreaterThan(0);
+      // Boca con fondo retraído, no una tapa que finja un atraque.
+      expect(hit(0.18, 0)[0].point.z - hit(0, 0)[0].point.z).toBeGreaterThan(0.14);
       local.material.dispose();
     } finally {
       disposeBody(body);
@@ -169,11 +172,11 @@ describe("cuerpos del Sistema Gargantúa", () => {
 
     try {
       expect(
-        endurance.object.getObjectByName("endurance-twelve-module-ring"),
+        endurance.object.getObjectByName("endurance-module-ring"),
       ).toBeDefined();
       expect(
         endurance.object.getObjectByName(
-          "endurance-radial-trusses-connectors-and-engines",
+          "endurance-connectors-and-engines",
         ),
       ).toBeDefined();
       expect(
@@ -184,8 +187,8 @@ describe("cuerpos del Sistema Gargantúa", () => {
       ).toBeDefined();
 
       for (const name of [
-        "endurance-twelve-module-ring",
-        "endurance-radial-trusses-connectors-and-engines",
+        "endurance-module-ring",
+        "endurance-connectors-and-engines",
         "endurance-service-panels",
         "endurance-airlock-lights",
       ]) {
@@ -193,24 +196,19 @@ describe("cuerpos del Sistema Gargantúa", () => {
         expect(mesh.geometry.getAttribute("position").count, name).toBeGreaterThan(0);
       }
 
-      /*
-        La arquitectura publicada es el CONTRATO DE LECTURA de la nave: núcleo,
-        estructura primaria, cuatro brazos, cuatro grupos de tres y sistemas
-        secundarios. Si alguien vuelve a repartir doce módulos iguales cada 30°
-        —que es lo que hacía que la Endurance se leyera como una nube de cubos—
-        este objeto deja de cuadrar antes de que nadie mire una captura.
-      */
+      // La telemetría describe el modelo nuevo: dieciséis módulos, dos brazos
+      // y caras térmicas integradas. Las alas exteriores ya no existen.
       const enduranceRoot = endurance.object.getObjectByName(
-        "endurance-twelve-module-ring",
+        "endurance-module-ring",
       )?.parent;
       expect(enduranceRoot?.userData.enduranceArchitecture).toEqual({
-        modules: 12,
+        modules: 16,
         groups: 4,
-        arms: 4,
+        arms: 2,
         primaryModules: 4,
         engineBells: 4,
-        radiators: 2,
-        dockedRangers: 1,
+        thermalPanels: 32,
+        dockedRangers: 2,
         dockedLanders: 0,
         /*
           El pase de fase 1 amplía el contrato con la propulsión visible. Está
@@ -228,7 +226,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
         manoeuvringNozzles: 4,
         rcsNozzles: 10,
         firingNozzles: 2,
-        warmLights: 9,
+        warmLights: 8,
         technicalLights: 4,
       });
 
@@ -304,7 +302,7 @@ describe("cuerpos del Sistema Gargantúa", () => {
       expect(ranger.object.getObjectByName("ranger-violet-beacon")).toBeDefined();
 
       const enduranceHull = endurance.object.getObjectByName(
-        "endurance-twelve-module-ring",
+        "endurance-module-ring",
       ) as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
       const rangerHull = ranger.object.getObjectByName(
         "ranger-metallic-hull",

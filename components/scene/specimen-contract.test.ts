@@ -82,10 +82,10 @@ describe("contrato del espécimen", () => {
     */
     const { architecture } = contractFor("endurance");
     expect(architecture).not.toBeNull();
-    expect(architecture?.modules).toBe(12);
-    expect(architecture?.radiators).toBe(2);
-    expect(architecture?.dockedRangers).toBe(1);
-    expect(architecture?.radiators).not.toBe(8);
+    expect(architecture?.modules).toBe(16);
+    expect(architecture?.thermalPanels).toBe(32);
+    expect(architecture?.dockedRangers).toBe(2);
+    expect(architecture).not.toHaveProperty("radiators");
   });
 
   it("el Tesseracto deduce su topología del circuito, sin escribir el 16", () => {

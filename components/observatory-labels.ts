@@ -46,7 +46,7 @@ export const ARCHITECTURE_LABELS: Readonly<Record<string, string>> = {
   arms: "Brazos",
   primaryModules: "Módulos principales",
   engineBells: "Campanas de motor",
-  radiators: "Radiadores",
+  thermalPanels: "Paneles térmicos integrados",
   dockedRangers: "Rangers atracadas",
   dockedLanders: "Módulos de descenso",
   manoeuvringPods: "Cápsulas de maniobra",
