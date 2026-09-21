@@ -83,7 +83,8 @@ describe("contrato del espécimen", () => {
     const { architecture } = contractFor("endurance");
     expect(architecture).not.toBeNull();
     expect(architecture?.modules).toBe(12);
-    expect(architecture?.radiators).toBe(4);
+    expect(architecture?.radiators).toBe(2);
+    expect(architecture?.dockedRangers).toBe(1);
     expect(architecture?.radiators).not.toBe(8);
   });
 

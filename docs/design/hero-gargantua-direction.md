@@ -1441,6 +1441,69 @@ no avanza, así que dos relojes múltiplos de 20 dan la MISMA imagen (60, 200 y
 captura —lo hizo dos veces—: las capturas de este pase van contra un
 `next dev` propio. **Su valoración visual queda abierta.**
 
+### Segunda entrega: equilibrio de macro-densidad (2026-09-20)
+
+El dueño dio por buena la primera entrega —«G3 es la dirección correcta;
+no quiero volver a introducir modificadores morfológicos por lado»— y
+acotó lo que queda: «en `density only`, incluso sin Doppler y antes del
+lensado, la mitad izquierda conserva una masa continua muy fuerte mientras
+la derecha cae persistentemente en un valle amplio». Encargo: limitar cuánto
+puede vaciar una región entera el componente de frecuencia más baja, sin
+simetría bilateral ni copiar ruido, conservando la envolvente radial y la
+turbulencia meso y fina; rellenar parcialmente —no eliminar— el valle del
+ansa derecha; no tocar color, Doppler, lensado, bloom, exposición, cámara ni
+silueta.
+
+**Lo que se midió antes de tocar nada, y cambió el objetivo.** Se capturó el
+gris de densidad SIN la absorción del polvo, y el «gran valle» desapareció:
+en la columna a 320 px a la derecha del centro el gris sube de 22-86 a
+71-192. El valle no es un hueco de DENSIDAD: es un carril de polvo ancho que
+cae justo donde la cara lejana y el brazo cercano se encuentran, y a plena
+absorción borra la banda entera. Dos intentos lo confirmaron por el lado
+contrario: comprimir el macro un 32 % hacia su media (`MACRO_SWING`) movió
+el valle de 74 a 73 de gris, y cruzar el campo de carriles con las
+corrientes (0.32) lo dejó igual y sólo cambió la textura del polvo. Los dos
+se retiraron o rehicieron.
+
+**Lo que cambia, para los dos lados:**
+
+1. **El polvo sigue a la masa** (`dustCol = mix(0.50, 1.0, mass)`;
+   `laneAbs = 1 − (1 − laneAbsRaw)·dustCol`). Físico: el polvo viaja con el
+   gas, así que la columna de polvo de un carril es proporcional a la masa
+   que lo rodea. En una masa el carril absorbe como hasta ahora —la banda
+   frontal conserva sus carriles opacos—; en un valle del macro absorbe la
+   mitad, y el valle deja de ser el doble de oscuro (menos gas Y polvo opaco).
+   Ni la ventana ni la escala de los carriles cambian.
+2. **Al macro se le sube el suelo, y sólo el suelo**
+   (`macro = max(macroRaw, mix(0.5, macroRaw, 0.68))`): un valle de 0.15
+   pasa a 0.255; una masa de 0.85 sigue en 0.85. La versión simétrica —mix
+   hacia 0.5 también en las masas— se probó y salió medida: como la densidad
+   y la función fuente escalan con `mass`, el blanco recortado caía de 1 715
+   a 1 319 px, que es justo lo que el dueño pidió no seguir perdiendo. La
+   envolvente lee el macro CRUDO (`macroRaw` en `reach`): la silueta no
+   cambia ni un píxel.
+
+**Medido** (laboratorio, reloj 60 s; «valle» = filas de la depresión en la
+columna a 320 px, gris de densidad):
+
+| | G3 (primera entrega) | ahora |
+| --- | --- | --- |
+| valle derecho, dx 320 | 22-86 | 49-143 |
+| valle derecho, dx 220 | 63-135 | 128-177 |
+| mínimo del valle desenfocado, der. a 320 px | 74 | 93 |
+| hf izq/der, abajo (color) | 0.72 | 0.68 |
+| tono > 30° / beige / caqui | 1.6 % / 0 / 0 | 1.7 % / 0 / 0 |
+| blanco ≥ 250 en el cuadro del disco | 1 715 px | 1 756 px |
+
+El blanco no baja más —era la condición— y la familia de tono no se mueve.
+Coste: dos multiplicar-sumar y un `max`; ninguna evaluación de ruido nueva.
+**Las palancas:** el suelo de `dustCol` (0.50) para cuánto se rellena un
+valle; `MACRO_SWING` para el suelo del macro. Lo que sigue abierto, por
+orden del dueño: el núcleo blanco como pulido posterior (rango de `fine`
+cerca del disco interior), y la rotación lenta del campo macro —que pidió
+sólo DESPUÉS de que el campo se vea bien congelado—. **Su valoración visual
+queda abierta.**
+
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
 Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas

@@ -83,7 +83,7 @@ describe("FlatWorldBody", () => {
     /*
       La misma arquitectura que el modelo 3D, y por el mismo motivo que allí:
       cuatro brazos, cuatro grupos de tres módulos —uno principal y dos
-      satélites— y cuatro radiadores. En un equipo con movimiento reducido este
+      satélites— y dos radiadores. En un equipo con movimiento reducido este
       dibujo es la ÚNICA Endurance que se ve; si divergiera del modelo, el
       mismo destino contaría dos cosas distintas según el equipo del visitante.
     */
@@ -96,7 +96,9 @@ describe("FlatWorldBody", () => {
     expect(container.querySelectorAll('[data-flat-part="arm"]')).toHaveLength(4);
     expect(
       container.querySelectorAll('[data-flat-part="radiator"]'),
-    ).toHaveLength(4);
+    ).toHaveLength(2);
+    expect(container.querySelector('[data-flat-part="mission-dock"]')).not.toBeNull();
+    expect(container.querySelector('[data-flat-part="docking-cavity"]')).not.toBeNull();
     expect(container.querySelector('[data-flat-part="docked-craft"]')).not.toBeNull();
     expect(container.querySelector('[data-flat-part="engine-bank"]')).not.toBeNull();
   });
