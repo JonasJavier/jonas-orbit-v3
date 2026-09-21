@@ -6,6 +6,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**Endurance — segundo pase con referencias (2026-09-21):** el apartado
+`Segundo pase — referencias de la Endurance` de `docs/design/endurance-jerarquia.md`
+manda sobre el pase anterior. El dueño retiró explícitamente las alas térmicas
+y pidió más módulos, menores, con un anillo mayor. Ahora son dieciséis, unidos
+por cuellos cilíndricos; anillo de radio 1.22 frente a 0.88, dos tubos habitables,
+núcleo corto con collar hueco y dos Rangers centrales. Paneles térmicos integrados
+en ambas caras: 32, expuestos y comprobados con rayos. Fuera los dos rieles,
+las alas y el muelle rectangular del anillo. Cuatro draws; radio físico
+5.6365331193 y `boundsFill` 0.96, porque la envolvente ya no la fijan unas alas.
+El SVG y `DATOS` reflejan la arquitectura. No cambia `placement`, la cámara del
+mapa ni la luz compartida. Valoración visual pendiente de Jonás.
+
 **Endurance — jerarquía y muelle de misión (2026-09-20):**
 `docs/design/endurance-jerarquia.md` manda sobre los pases anteriores en
 geometría y materiales de la Endurance. Pedido explícito del dueño: mejorar

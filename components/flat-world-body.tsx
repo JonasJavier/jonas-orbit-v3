@@ -8,21 +8,11 @@ type FlatWorld = Pick<
   "id" | "visual" | "accent" | "secondary"
 >;
 
-/**
- * Los cuatro brazos de la Endurance, y sus tres módulos cada uno.
- *
- * Espeja la arquitectura del modelo 3D (`enduranceModel`): un módulo principal
- * en el eje del brazo, dos satélites a 22° y riel desnudo entre grupos. Doce
- * módulos repartidos cada 30° —que es lo que había aquí— era justo la lectura
- * de «nube de cubos» que el rediseño retiró.
- */
-const ENDURANCE_GROUPS = [0, 90, 180, 270] as const;
-const ENDURANCE_SLOT_SPREAD = 22;
-const ENDURANCE_MODULES = ENDURANCE_GROUPS.flatMap((group) => [
-  { angle: group - ENDURANCE_SLOT_SPREAD, primary: false, bus: true },
-  { angle: group, primary: true, bus: false },
-  { angle: group + ENDURANCE_SLOT_SPREAD, primary: false, bus: false },
-]);
+/** Dieciséis módulos y dos tubos de acoplamiento, como en el modelo 3D. */
+const ENDURANCE_MODULES = Array.from({ length: 16 }, (_, index) => ({
+  angle: index * 22.5,
+  primary: index % 4 === 0,
+}));
 
 /** El hipercubo de cristal, congelado: la misma topología que WebGL y su
  *  misma pose inicial, sin una sola animación. En un equipo con movimiento
@@ -98,112 +88,58 @@ function Miller() {
 }
 
 
-/**
- * Endurance en `flat`, con la MISMA arquitectura que el modelo 3D.
- *
- * No es una ilustración libre: si el frame estático dibujara doce módulos
- * iguales cada 30° y la escena WebGL cuatro grupos de tres con cuatro brazos,
- * el mismo destino contaría dos cosas distintas según el equipo del visitante
- * —y en un equipo con movimiento reducido, ÉSTA es la única versión que se ve.
- * El orden de lectura es el mismo: núcleo, rieles, brazos, grupos, secundarios.
- */
+/** Esquema del mismo anillo modular para la versión sin WebGL. */
 function Endurance() {
   return (
     <svg viewBox="0 0 150 150" focusable="false">
       <defs>
         <linearGradient id="flat-endurance-hull" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#ffffff" />
-          <stop offset="0.34" stopColor="#c9cdd0" />
-          <stop offset="0.72" stopColor="#777d83" />
-          <stop offset="1" stopColor="#272d33" />
+          <stop stopColor="#f2f1e8" /><stop offset="0.6" stopColor="#b8c0c3" />
+          <stop offset="1" stopColor="#53616b" />
         </linearGradient>
-        <linearGradient id="flat-endurance-blanket" x1="0" y1="0" x2="0.7" y2="1">
-          <stop stopColor="#b5bbc0" />
-          <stop offset="0.55" stopColor="#7d858b" />
-          <stop offset="1" stopColor="#2c3238" />
-        </linearGradient>
-        <radialGradient id="flat-endurance-hub">
-          <stop stopColor="#e9edf0" />
-          <stop offset="0.58" stopColor="#70777e" />
-          <stop offset="1" stopColor="#12171c" />
-        </radialGradient>
       </defs>
       <g transform="rotate(-18 75 75)">
-        {/* Estructura primaria: dos rieles continuos cierran la circunferencia
-            entera, también donde no hay módulos. */}
-        <circle cx="75" cy="75" r="48" fill="none" stroke="#8d99a1" strokeOpacity="0.6" strokeWidth="1.8" />
-        <circle cx="75" cy="75" r="56" fill="none" stroke="#8d99a1" strokeOpacity="0.6" strokeWidth="1.8" />
-
-        {ENDURANCE_GROUPS.map((angle) => (
-          <g key={`bay-${angle}`} transform={`rotate(${angle} 75 75)`}>
-            {/* Radiador en el plano del anillo, alineado con el brazo. */}
-            {angle % 180 === 0 && <g data-flat-part="radiator">
-              <rect x="64" y="4" width="22" height="14" rx="1" fill="#161d24" stroke="#5d686f" strokeOpacity="0.8" strokeWidth="0.8" />
-              <path d="M68 5v12M72 5v12M76 5v12M80 5v12" stroke="#3d4750" strokeWidth="0.7" />
-            </g>}
-            {/* Brazo: dos cordones, travesaños y diagonales alternas. */}
-            <g data-flat-part="arm" fill="none">
-              <path d="M71 58V27M79 58V27" stroke="#ccd3d7" strokeWidth="2.6" />
-              <path d="M71 55h8M71 47h8M71 39h8M71 31h8" stroke="#78838b" strokeWidth="1.1" />
-              <path d="m71 55 8-8M79 47l-8-8M71 39l8-8" stroke="#78838b" strokeWidth="0.9" />
+        {ENDURANCE_MODULES.map(({ angle }) => (
+          <g key={angle} transform={`rotate(${angle + 11.25} 75 75)`} data-flat-part="connector">
+            <path d="M63.5 23H86.5" stroke="#36424a" strokeWidth="3.8" />
+            <path d="M72 23H73.5M76.5 23H78" stroke="#c5cece" strokeWidth="5.4" />
+          </g>
+        ))}
+        {[0, 180].map((angle) => (
+          <g key={angle} transform={`rotate(${angle} 75 75)`} data-flat-part="arm">
+            <path d="M75 29V65" stroke="#bac6ca" strokeWidth="4.3" />
+            <path d="M72 34H78M72 47H78M72 59H78" stroke="#68747b" strokeWidth="2" />
+          </g>
+        ))}
+        {ENDURANCE_MODULES.map(({ angle, primary }) => (
+          <g key={angle} transform={`rotate(${angle} 75 75)`}
+            data-flat-part="module" data-flat-module={primary ? "primary" : "satellite"}>
+            <rect x={primary ? 68.4 : 69} y={primary ? 13.5 : 14.5}
+              width={primary ? 13.2 : 12} height={primary ? 15 : 13.5}
+              rx="0.8" fill="url(#flat-endurance-hull)" stroke="#dde1dd" strokeWidth="0.45" />
+            <g data-flat-part="thermal-panel">
+              <rect x="70.8" y="15.5" width="8.4" height="8.5" fill="#303f49" stroke="#e4e6db" strokeWidth="0.5" />
+              <path d="M71 18h8M71 20h8M71 22h8" stroke="#76898e" strokeWidth="0.5" />
+              <path d="M75 15.5v8.5" stroke="#c4cdcc" strokeWidth="0.5" />
             </g>
+            <path d="M71 26h1M74 26h1M77 26h1" stroke="#28343d" strokeWidth="1.2" />
           </g>
         ))}
-
-        {ENDURANCE_MODULES.map(({ angle, primary, bus }) => (
-          <g
-            data-flat-part="module"
-            data-flat-module={primary ? "primary" : "satellite"}
-            key={angle}
-            transform={`rotate(${angle} 75 75)`}
-          >
-            <rect
-              x={primary ? 60 : 65.5}
-              y={primary ? 15 : 18}
-              width={primary ? 30 : 19}
-              height={primary ? 17 : bus ? 10 : 13}
-              rx="1"
-              fill={bus ? "#202b34" : primary ? "url(#flat-endurance-hull)" : "url(#flat-endurance-blanket)"}
-              stroke="#f4f1e8"
-              strokeOpacity={primary ? 0.6 : 0.34}
-            />
-            <path
-              d={primary ? "M68 15v16M75 15v16M82 15v16" : "M70 18v12M76 18v12M81 18v12"}
-              stroke="#333a40"
-              strokeOpacity="0.5"
-              strokeWidth="0.8"
-            />
-            {primary ? (
-              <>
-                <rect x="70" y="30" width="10" height="3.2" rx="0.8" fill="var(--flat-accent)" opacity="0.8" />
-                <circle cx="75" cy="38" r="1.5" fill="var(--flat-secondary)" />
-              </>
-            ) : null}
-            {angle === 90 && <g data-flat-part="mission-dock">
-              <rect x="65" y="19" width="20" height="9" fill="#080e14" stroke="#747d85" strokeWidth="0.7" />
-              <path d="M66 20h18" stroke="#c0793d" strokeWidth="1.3" />
-              <path d="M69 23v3M75 23v3M81 23v3" stroke="#88959f" strokeWidth="0.8" />
-            </g>}
+        <g data-flat-part="engine-bank" fill="#11191d" stroke="#a9b6be" strokeWidth="0.7">
+          {[[-4, -4], [-4, 4], [4, -4], [4, 4]].map(([x, y]) =>
+            <circle key={`${x}/${y}`} cx={75 + x} cy={75 + y} r="3" />)}
+        </g>
+        <circle cx="75" cy="75" r="10.3" fill="url(#flat-endurance-hull)" stroke="#89999e" strokeWidth="1.2" />
+        <circle data-flat-part="docking-cavity" cx="75" cy="75" r="6.5"
+          fill="#121b20" stroke="#e4e6dd" strokeWidth="1.6" />
+        {[0, 180].map((angle) => (
+          <g key={angle} transform={`rotate(${angle} 75 75)`} data-flat-part="docked-craft">
+            <path d="M85 73h7v4h-7Z" fill="#35434b" />
+            <path d="M109 75 89 67 90 83Z" fill="url(#flat-endurance-hull)" stroke="#283740" strokeWidth="0.7" />
+            <path d="M105 74 96 72 96 78 105 76Z" fill="#152830" />
+            <path d="M101 73v4" stroke="#c4cecc" strokeWidth="0.7" />
           </g>
         ))}
-
-        {/* Una sola lanzadera de escala, frente al muelle de misión. */}
-        <g data-flat-part="docked-craft" fill="#c8cfd3" stroke="#151a1e" strokeWidth="0.7">
-          <path d="m92 32-8 6 8 5 8-5Z" transform="rotate(270 75 75)" />
-        </g>
-
-        {/* Núcleo: barril axial visto de frente, con su collar de atraque y las
-            cuatro campanas del bloque de popa asomando alrededor. */}
-        <g data-flat-part="engine-bank" fill="#080d11" stroke="#c2c9cd" strokeWidth="0.8">
-          <circle cx="62" cy="62" r="3.4" />
-          <circle cx="88" cy="62" r="3.4" />
-          <circle cx="88" cy="88" r="3.4" />
-          <circle cx="62" cy="88" r="3.4" />
-        </g>
-        <circle cx="75" cy="75" r="16" fill="url(#flat-endurance-hub)" stroke="#e8ecee" strokeOpacity="0.72" />
-        <circle cx="75" cy="75" r="9.5" fill="none" stroke="#0d1216" strokeOpacity="0.65" strokeWidth="1.4" />
-        <circle data-flat-part="docking-cavity" cx="75" cy="75" r="8" fill="#090d11" stroke="#d0d5d6" strokeWidth="2.2" />
-        {[0, 60, 120, 180, 240, 300].map((angle) => <rect key={angle} x="73.5" y="64.8" width="3" height="3" fill="#202830" transform={`rotate(${angle} 75 75)`} />)}
       </g>
     </svg>
   );
