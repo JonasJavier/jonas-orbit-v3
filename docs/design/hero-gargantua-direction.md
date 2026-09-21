@@ -1504,6 +1504,80 @@ cerca del disco interior), y la rotación lenta del campo macro —que pidió
 sólo DESPUÉS de que el campo se vea bien congelado—. **Su valoración visual
 queda abierta.**
 
+### Tercera entrega: el borde, y la quiralidad de la espiral (2026-09-21)
+
+El dueño marcó el contorno sobre una captura: «el borde izquierdo se ve
+unificado, forma de disco; el derecho deformado totalmente» —una corriente
+fina que asoma arriba a la derecha y un lóbulo blando abajo, con muesca entre
+los dos—. Pidió tres puntos: envolvente leyendo el macro con suelo, rango de
+alcance estrechado y medir los dos brazos espejados.
+
+**Lo que se midió, por orden, y lo que no movió nada.** La silueta espejada
+del gris de densidad (luz por columna a los dos lados del centro;
+`.shots/cohesion/_scratch/silueta.mjs`) da a la izquierda una caída
+monótona y a la derecha una caída al 38 % a 330 px seguida de una subida al
+49 % a 400 px: la joroba. Tres palancas sin lado, aplicadas y medidas una a
+una, movieron esa joroba menos de tres puntos cada una y se **retiraron**:
+la envolvente estrechada (`bordeFin` 0.90 → 0.94, `bordeCaida` 0.34 →
+0.42, con `reach` leyendo el macro con suelo: media |Δ| 0.10 sobre el
+cuadro), el techo del macro bajando hacia fuera y el suelo del macro
+subiendo hacia fuera. Un barrido de **cinco fases azimutales** del campo
+estático (`DISK_PHASE` 0, 0.8, 1.6, 2.4, 3.2 rad; panel en
+`.shots/cohesion/barrido-fase.png`) movió las masas de sitio pero conservó
+en TODAS la corriente fina arriba a la derecha y la cuña a la izquierda: no
+era una realización.
+
+**La prueba que decidió.** Invertir temporalmente el sentido del enrollado
+(`windStatic` y `spin` negados; `Q-quiral-dens`) cambió la deformación de
+lado entera: corriente fina y lóbulo a la izquierda, borde de disco a la
+derecha. La asimetría del contorno es la **quiralidad de la espiral
+trailing vista a 9° de elevación**: el brazo que sale hacia fuera barre
+siempre hacia el ansa del mismo lado, así que en un ansa el material llega
+en cuña y en la otra en dos púas. No es Doppler, no es lensado, no es el
+macro y no es una fase: es el signo de la cizalla integrada.
+
+**Lo que cambia.** El enrollado GLOBAL —`WIND_MEAN`, la integral de la
+cizalla, lo que una masa se lleva alrededor del disco mientras cae— baja de
+1.15 a **0.60** (0.43 → 0.22 vueltas). La cizalla LOCAL (`WIND_SWING`), que
+es la que estira los filamentos en tangencial, no cambia. Se probó también
+el extremo 0 (`W2-dens`): los dos bordes salen casi iguales y el disco se
+vuelve bandas puras, que es más referencia y menos gesto; queda como
+alternativa del dueño. `DISK_PHASE` se queda en 0 como palanca documentada.
+
+**Medido** (laboratorio, reloj 60 s):
+
+| | enrollado 1.15 (G7) | 0.60 (ahora) | 0 (alternativa) |
+| --- | --- | --- | --- |
+| silueta der. en gris, 330 → 400 px | 38 → 49 % (joroba) | 44 → 42 → 36 % (monótona) | 56 → 42 → 39 % |
+| alcance15 izq / der (color) | 444 / 408 px | 444 / 492 px | — |
+| blanco ≥ 250 | 1 756 px | 2 177 px | — |
+| tono > 30° | 1.7 % | 2.8 % | — |
+
+El blanco SUBE porque con menos vuelta las masas del núcleo se apilan menos
+en diagonal y más en tangencial, y el crema vuelve a ser una meseta: recupera
+casi todo lo que perdió el pase de gramática común (2 411 px de partida). El
+tono sigue en la familia. Coste: ninguno, es una constante. El dueño eligió
+0.60 («creo que ese es»).
+
+**Y la rodilla baja de 5.5 a 4.2.** Con el enrollado elegido el blanco
+recortado había vuelto a 2 177 px y el dueño lo leyó como demasiado. El
+diagnóstico, medido con `.shots/cohesion/_scratch/blanco.mjs`: no es
+intensidad —el horizonte y el arco lensado tienen que quemar— sino
+extensión; y no hay blanco puro en la cara lejana con ninguna rodilla, lo que
+ahí se lee como pared es la meseta ≥ 235. La palanca es la que fijó el pase
+final del 2026-09-12 —la rodilla, no la exposición ni el bloom—, y se probó en
+dos pasos:
+
+| rodilla | blanco ≥ 250 | meseta ≥ 235 | tono > 30° |
+| --- | --- | --- | --- |
+| 5.5 | 2 177 px | 6 009 px | 2.8 % |
+| 4.8 | 1 791 px | 5 477 px | 2.5 % |
+| **4.2** | **1 268 px** | **4 745 px** | 2.3 % |
+
+Se toma 4.2, que es la mitad del blanco que sobraba, todo él a menos de 1.7
+radios de sombra del centro. **Su valoración visual queda abierta**, con la
+alternativa de enrollado 0 capturada.
+
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
 Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas

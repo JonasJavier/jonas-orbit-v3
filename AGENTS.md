@@ -903,7 +903,20 @@ recortado de 1 715 a 1 319 px. Medido: valle derecho 22-86 → 49-143, blanco
 1 715 → 1 756 px, familia de tono intacta, silueta intacta (`reach` lee el
 macro crudo). Quedan abiertos, por orden del dueño, el núcleo blanco como
 pulido posterior y la rotación lenta del macro sólo después de aprobar el
-campo congelado. Su valoración visual queda abierta.
+campo congelado. Una **tercera entrega** (2026-09-21, `Tercera entrega: el
+borde, y la quiralidad de la espiral`) atiende «el borde izquierdo se ve
+unificado, forma de disco; el derecho deformado»: envolvente, techo y suelo
+exteriores del macro y cinco fases azimutales del campo se probaron y medidos
+no movían la joroba del borde derecho más de tres puntos; **invertir el
+enrollado la cambió de lado entera**. La deformación es la QUIRALIDAD de la
+espiral trailing vista a 9°, y la palanca sin lado es el enrollado global:
+`WIND_MEAN` 1.15 → 0.60 (0.43 → 0.22 vueltas), con la cizalla local intacta.
+El blanco recortado vuelve a 2 177 px. Alternativa capturada a 0 (bandas
+puras). `DISK_PHASE` queda como palanca documentada en 0. El dueño eligió
+0.60 y pidió menos blanco: **la rodilla baja de 5.5 a 4.2** (blanco ≥ 250
+2 177 → 1 268 px, meseta ≥ 235 6 009 → 4 745 px, todo a menos de 1.7 radios
+de sombra del centro; no hay blanco puro en la cara lejana con ninguna
+rodilla). Exposición y bloom intactos. Su valoración visual queda abierta.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
