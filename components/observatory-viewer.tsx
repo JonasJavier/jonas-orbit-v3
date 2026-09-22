@@ -8,6 +8,7 @@ import {
   useLightEffectsMode,
   useMotionEnabled,
 } from "@/lib/effects-mode";
+import { playSfx } from "@/lib/sfx";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVisualBench } from "@/lib/visual-bench";
 import type {
@@ -215,7 +216,11 @@ function Instrument({
         const comparado = held.current;
         since.current = null;
         held.current = false;
-        if (!comparado) onToggle();
+        if (comparado) return;
+        // La muesca es del PESTILLO, no del botón: una comparación sostenida
+        // no conmuta nada y por eso tampoco suena.
+        playSfx("detent");
+        onToggle();
       }}
       onPointerDown={
         onHold
@@ -816,6 +821,9 @@ export function ObservatoryViewer({
    * efecto, React lo señala —con razón— como un re-render en cascada.
    */
   function chooseMode(value: Mode) {
+    // Desplegar y plegar la consola es el gesto más grande del aparato, así
+    // que es el único con sonido de superficie y no de mando.
+    playSfx(value === "estudio" ? "deploy" : "stow");
     setMode(value);
     if (value === "observar") {
       setProbe(false);
@@ -1607,7 +1615,10 @@ export function ObservatoryViewer({
                     className="observatory__tab"
                     id={`registro-tab-${key}`}
                     key={key}
-                    onClick={() => setSection(key)}
+                    onClick={() => {
+                      setSection(key);
+                      playSfx("detent");
+                    }}
                     onKeyDown={onTabKey}
                     role="tab"
                     /* Tabulador roving: un solo punto de entrada al grupo, y
@@ -1675,7 +1686,10 @@ export function ObservatoryViewer({
                           aria-checked={index === view}
                           className="observatory__view"
                           key={option.id}
-                          onClick={() => setView(index)}
+                          onClick={() => {
+                            setView(index);
+                            playSfx("detent");
+                          }}
                           role="radio"
                           /* Tabulador roving, igual que las pestañas del
                              registro: un punto de entrada y flechas dentro. */
@@ -1989,6 +2003,9 @@ export function ObservatoryViewer({
                 */
                 handleRef.current?.reset();
                 setView(0);
+                // Vuelve TODO a la vez: no es una muesca, es el aparato
+                // recogiéndose.
+                playSfx("stow");
                 /*
                   Y el dial del eje vuelve al centro. El instrumento ya devolvió
                   la figura —`reset()` la pone en su orientación de reposo— así

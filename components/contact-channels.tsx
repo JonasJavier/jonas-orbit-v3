@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SITE_PROFILE } from "@/content/site.data";
 import { useRangerCockpit, type Frequency } from "./ranger-cockpit";
+import { playSfx } from "@/lib/sfx";
 
 const WHATSAPP_HREF = `https://wa.me/${SITE_PROFILE.whatsapp}?text=Hola%20Jon%C3%A1s%2C%20quiero%20conversar%20sobre%20un%20proyecto.`;
 const DISPLAY_PHONE = SITE_PROFILE.phone.replace(/^(\+\d)(\d{3})(\d{3})(\d{4})$/, "$1 ($2) $3-$4");
@@ -48,10 +49,16 @@ export function ContactChannels() {
     }
   }
 
-  const tune = (frequency: Frequency) => ({
-    onPointerEnter: () => setFrequency(frequency),
+  /*
+    Sintonizar un canal. El blip es el mismo que el del mapa —apuntar es
+    apuntar— y sube de altura con la frecuencia, que es lo que ya dice el
+    panel en pantalla: los tres canales son tres frecuencias y suenan como
+    tres frecuencias.
+  */
+  const tune = (frequency: Frequency, pitch: number) => ({
+    onPointerEnter: () => { setFrequency(frequency); playSfx("proximity", { pitch }); },
     onPointerLeave: () => setFrequency(null),
-    onFocus: () => setFrequency(frequency),
+    onFocus: () => { setFrequency(frequency); playSfx("proximity", { pitch }); },
     onBlur: () => setFrequency(null),
   });
 
@@ -59,7 +66,7 @@ export function ContactChannels() {
     <div className="ranger-channels" aria-label="Canales directos">
       <div className="ranger-module__label"><span>Frecuencias</span><span aria-hidden="true">Tierra ↔ Ranger</span></div>
       <div className="ranger-freq-list">
-        <article className="ranger-freq" {...tune(FREQUENCIES.email)}>
+        <article className="ranger-freq" {...tune(FREQUENCIES.email, 1)}>
           <a href={`mailto:${SITE_PROFILE.email}`}>
             <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" style={{ "--i": 0 } as React.CSSProperties} />01 / CORREO</span>
             <span className="ranger-freq__value"><strong>{SITE_PROFILE.email}</strong><span className="ranger-freq__hint">Las buenas conversaciones empiezan aquí.</span></span>
@@ -67,14 +74,14 @@ export function ContactChannels() {
           </a>
           <button type="button" onClick={() => copy(SITE_PROFILE.email, "email")} data-copied={copied === "email"} aria-label={copied === "email" ? "Copiado" : `Copiar ${SITE_PROFILE.email}`}>{copied === "email" ? "✓" : <CopyIcon />}</button>
         </article>
-        <article className="ranger-freq" {...tune(FREQUENCIES.whatsapp)}>
+        <article className="ranger-freq" {...tune(FREQUENCIES.whatsapp, 1.25)}>
           <a href={WHATSAPP_HREF} rel="noreferrer" target="_blank">
             <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" style={{ "--i": 1 } as React.CSSProperties} />02 / WHATSAPP</span>
             <span className="ranger-freq__value"><strong>Un hola, sin rodeos.</strong><span className="ranger-freq__hint">Abrir conversación</span></span>
             <span className="ranger-freq__arrow" aria-hidden="true">↗</span>
           </a>
         </article>
-        <article className="ranger-freq" {...tune(FREQUENCIES.phone)}>
+        <article className="ranger-freq" {...tune(FREQUENCIES.phone, 1.5)}>
           <a href={`tel:${SITE_PROFILE.phone}`}>
             <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" style={{ "--i": 2 } as React.CSSProperties} />03 / TELÉFONO</span>
             <span className="ranger-freq__value"><strong>{DISPLAY_PHONE}</strong><span className="ranger-freq__hint">Hablemos de tu próxima idea.</span></span>

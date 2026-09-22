@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { SpecimenEntry } from "@/lib/observatory-catalog";
+import { playSfx, type SfxName } from "@/lib/sfx";
 import { shouldNavigateToWorld } from "@/lib/world-navigation";
 import {
   useForcedEffects,
@@ -41,10 +42,10 @@ import {
  * poco para convertirse en un peaje al tercer uso.
  */
 const STAGES = [
-  { at: 0, label: "Adquiriendo" },
-  { at: 420, label: "Bloqueo" },
-  { at: 760, label: "Montando" },
-] as const;
+  { at: 0, label: "Adquiriendo", sound: "acquire" },
+  { at: 420, label: "Bloqueo", sound: "lock" },
+  { at: 760, label: "Montando", sound: "mount" },
+] as const satisfies readonly { at: number; label: string; sound: SfxName }[];
 
 const ARRIVAL_MS = 1080;
 
@@ -119,10 +120,20 @@ export function ExperimentsIndex({
     clear();
     setAcquiring(entry.id);
     setStage(0);
+    /*
+      Cada fase lleva su golpe, y los tres suben: `acquire` mira, `lock`
+      engancha y lo confirma en quinta, y `mount` es la máquina poniéndose en
+      marcha de verdad. El sonido va pegado al MISMO temporizador que el
+      rótulo, no a un reloj propio, para que no puedan separarse nunca.
+    */
+    playSfx(STAGES[0].sound);
     for (const [index, phase] of STAGES.entries()) {
       if (index === 0) continue;
       timers.current.push(
-        window.setTimeout(() => setStage(index), phase.at),
+        window.setTimeout(() => {
+          setStage(index);
+          playSfx(phase.sound);
+        }, phase.at),
       );
     }
     /*

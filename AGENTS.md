@@ -6,6 +6,82 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**EL SONIDO DEL SITIO (2026-09-22) — manda sobre todo lo anterior en qué suena,
+con qué peso y quién lo apaga:** `docs/design/sonido-del-sitio.md`. Lo pidió el
+dueño tras aprobar la travesía: sonido leve al apuntar los objetos de la
+portada, agua en Miller, y carta blanca para el resto. **Un solo bus**
+(`lib/audio-bus.ts`): un `AudioContext`, un maestro, un limitador y un único
+sitio donde se mira si el visitante silenció; la travesía se refactorizó encima
+sin cambiar ni una de sus voces. **Lo apaga el control de AUDIO y nadie más** —
+el de MOVIMIENTO no entra, porque un sonido no se mueve; única excepción
+razonada: el encendido de motores de la Ranger, que cuelga del mismo `data-boot`
+que el vuelo. `lib/sfx.ts` son **catorce recetas y un renderizador**, sin un
+solo archivo, con el criterio de un instrumento y no de una aplicación: **nada
+suena como una notificación**. Cada receta trae su `gap` —cruzar el mapa no
+puede ametrallar; los tres del encendido van a cero porque son UNA secuencia—.
+`worldPitch` hace del mapa un instrumento: razones de entonación justa por orden
+narrativo, con Gargantúa una cuarta por debajo; medido con 2 % de error. El mar
+de Miller (`lib/ocean-ambience.ts`) es el único sonido sostenido y sus dos
+lavados van a periodos **primos entre sí** (23 y 37 s) porque un mar no tiene
+compás. Tres defectos que sólo aparecieron midiendo: **el primer sonido después
+de que el bus duerma se pierde** —`resume()` es asíncrono y `currentTime` está
+congelado, así que la envolvente caduca; la corrección es `WAKE_LOOKAHEAD` de
+80 ms al despertar, y alargar el temporizador NO lo arregla—; **una Q alta sobre
+ruido deja pasar muy poca energía**, que es lo que dejaba el barrido del anillo
+a la mitad que un simple hover; y el limitador no es opcional porque el
+visitante puede subir el volumen al 100 %. Y dos trampas de medición: **`next
+start` no recoge una reconstrucción en caliente** (medir contra un servidor
+viejo dio por buena una corrección no desplegada) y **con la ventana detrás no
+se disparan los eventos `focus`** aunque `document.activeElement` sí cambie, así
+que ahí se verifica por clic. **Segundo pase (§7 del documento), pedido por el
+dueño de oído:** el mar de Miller sonaba a **plena escala** porque su entrada
+larga llevaba `out.gain` a 1 y pisaba el peso declarado en `LEVEL` —una
+constante muerta que ninguna medición cazó porque el mar se midió una vez y se
+comparó consigo mismo; **un valor sólo está verificado cuando se ha comprobado
+que MOVERLO mueve la medida**—, así que la rampa sube ahora hasta `LEVEL` y
+`LEVEL` es 0,4, el 60 % menos que pidió (pico 0,223 → 0,083, RMS 0,046 → 0,019,
+exacto porque el limitador no llega a actuar). Y el blip de apuntar la portada
+se rehace entero: lo que lo hacía un AVISO no era el volumen sino el ataque de
+4 ms (un clic), la onda triangular (armónicos impares donde el oído es más
+sensible) y el chasquido de aire de encima (el «tick» de una interfaz); pasa a
+seno, ataque de 16 ms, un rastro de aire y una quinta más grave —la escala del
+mapa baja de 1110-2497 Hz a 785-1765—, con peso 0,2 → 0,07 y pico medido
+0,0223 → 0,012. **Tercer pase (§8), y manda sobre los dos anteriores en qué
+suena en la portada y en Miller:** el dueño rechazó también esa versión y trajo
+**dos archivos** (`public/audio/hover.mp3` y `public/audio/miller-ocean.mp3`),
+así que ahí se acabó la síntesis. **El principio de «cero bytes» era un medio y
+no un fin** —era la forma de no arrastrar una licencia por un pitido—, y cuando
+el dueño escucha dos versiones y ninguna le gusta, el equivocado es el
+argumento. Los grabados viven APARTE (`lib/audio-samples.ts`), sin disfrazarse
+de receta dentro de `sfx.ts`, y siguen colgando del bus. Con ellos se retiran
+`worldPitch` y sus tres pruebas —**el mapa ya no es un instrumento**: la
+grabación es la misma para los seis y afinarla por `playbackRate` le cambiaría
+el largo; el sitio por donde volvería está señalado en `ping()`— y el mar
+sintetizado entero con sus periodos primos. El mar **no se reproduce con
+`loop`** porque el archivo entra desde el silencio y termina en el cero digital:
+son DOS elementos que se cruzan con cinco segundos de solape, medido sin hueco.
+El dueño oyó los dos archivos y pidió menos volumen en los dos, así que los
+pesos bajan al **40 %**: blip **0,06** (pico medido 0,0072) y mar **1,6**
+—mayor que uno porque la grabación viene a RMS 0,0071: el número no dice
+cuánto suena, dice cuánto hay que levantarla— con salida medida en diez
+segundos continuos pico 0,064 y RMS 0,0035, una quinta parte de RMS que el
+sintetizado. Y dos trampas de medición, la segunda de las cuales **corrige por
+escrito una nota anterior de este mismo párrafo**: el sitio tiene **DOS
+`AudioContext`** —el bus para los efectos y el de `soundtrack.ts` para la
+música, que en la portada es el que primero llega a la salida—, así que lo que
+se anotó como «un `ScriptProcessor` dispersa sobre un golpe corto» (ocho
+disparos entre 0,0033 y 0,0307) era la sonda midiendo LA MÚSICA: con una sonda
+por contexto el mismo disparo mide 0,00722 cuatro veces seguidas, idéntico a
+cinco decimales. Y **un limitador no es transparente por debajo de su umbral**:
+reproducida la cadena en un `OfflineAudioContext` con un golpe a −44 dB, sin
+limitador sale 0,00635 (la aritmética exacta), con él asentado 0,00722 (+1,1 dB
+fijo) y en el primer medio segundo del contexto 0,00365, porque el detector
+arranca frío. O sea: la aritmética predice el orden, no el dígito, y **el
+primer sonido de una sesión no sirve de muestra**. **Queda abierto declarar la
+procedencia y la licencia de los dos archivos.** Escena, cámara, materiales y
+composición no cambian. Su valoración sonora queda abierta.
+
+
 **Travesía — el sonido, el pestillo y el alabeo (2026-09-22):** el apartado
 `Segundo pase — el sonido, el pestillo y el alabeo` de
 `docs/design/travesia-espaciotemporal.md` manda sobre el resto de ese documento

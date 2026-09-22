@@ -1,5 +1,13 @@
 import type { WorldId } from "@/content/worlds.data";
 import {
+  CUT,
+  cut,
+  hit,
+  openAudio,
+  swell,
+  type AudioSession,
+} from "./audio-bus";
+import {
   voyageFlavourFor,
   voyageTimeline,
   type VoyageFlavour,
@@ -34,11 +42,11 @@ import {
  * en el pico de la distorsión, que ningún nivel se pasa de uno y que los seis
  * mundos suenan diferente.
  *
- * ── Quién lo apaga ──────────────────────────────────────────────────────────
+ * ── Quién lo apaga, y quién pone el contexto ───────────────────────────────
  *
- * El control de AUDIO de la bandeja, el mismo que la música. Es el principio
- * del interruptor único de movimiento aplicado al oído: **un solo mando para
- * todo lo que suena**. Si el visitante pausó o silenció, aquí no se oye nada.
+ * `audio-bus.ts`, que es de donde cuelga esto y todo lo demás que suena: un
+ * solo `AudioContext`, un solo maestro, un solo limitador y un solo sitio
+ * donde se mira si el visitante silenció. Aquí sólo se construyen las voces.
  * El interruptor de MOVIMIENTO no entra: el sonido no se mueve, y quien viaja
  * en modo reducido oye la versión corta.
  */
@@ -221,135 +229,24 @@ export function voyageSoundFor(id: WorldId, mode: VoyageMode): VoyageSound {
    El reproductor
 
    Un módulo con estado, como el controlador: un viaje a la vez en toda la
-   pestaña. Sin React, sin biblioteca, sin RAF — todo se programa de una vez
-   en el reloj del `AudioContext`, que es el único reloj que no se salta un
-   fotograma cuando la GPU se atasca.
+   pestaña. Sin React, sin biblioteca, sin RAF — todo se programa en el reloj
+   del `AudioContext`, que es el único que no se salta un fotograma cuando la
+   GPU se atasca.
+
+   El contexto, el maestro, el limitador y el búfer de ruido NO viven aquí:
+   son del bus (`audio-bus.ts`), que es el que sabe si el visitante silenció.
    ═════════════════════════════════════════════════════════════════════════ */
-
-/** Lo que el control de AUDIO de la bandeja dice sobre el sonido del sitio. */
-interface VoyageAudioPreference {
-  enabled: boolean;
-  volume: number;
-}
-
-/** Cuánto dura el corte cuando el visitante salta la travesía o se cancela. */
-const CUT = 0.09;
-
-/*
-  ── Las envolventes, y por qué no son exponenciales ────────────────────────
-
-  La primera versión hinchaba y apagaba cada capa con
-  `exponentialRampToValueAtTime` desde y hasta un épsilon, que es el idiom que
-  se ve por todas partes. Medido en el navegador con un `ScriptProcessor` en el
-  hilo de audio, la caída entera —de 0,4 s a 1,05 s, justo el tramo en el que
-  la cámara se desploma— daba un RMS de 0,0009: SILENCIO. La razón es
-  aritmética y conviene no volver a tropezar con ella: una exponencial de
-  0,0001 a 0,55 multiplica por 5 500, así que a mitad de recorrido lleva sólo
-  la raíz de eso —el 1,3 % del objetivo— y **todo el rango audible se apila en
-  el último quinto del tiempo**. Lo mismo apagaba la cola del cruce a los
-  250 ms de nacer.
-
-  Así que: el hinchado va LINEAL en amplitud (dos tramos, que es lo que imita
-  la potencia 2,6 de la aceleración sin desaparecer por el camino), y la caída
-  va exponencial pero hasta −34 dB del pico, no hasta cero, con un corte lineal
-  final. Una exponencial que termina en un valor real es una caída natural; una
-  que persigue el cero se pasa la vida en él.
-*/
-
-/** Hinchado: dos tramos lineales que imitan la aceleración sin enmudecer. */
-function swell(param: AudioParam, peak: number, from: number, until: number) {
-  const span = Math.max(until - from, 0.001);
-  param.setValueAtTime(0, from);
-  param.linearRampToValueAtTime(peak * 0.22, from + span * 0.55);
-  param.linearRampToValueAtTime(peak, until);
-}
-
-/** Golpe: ataque lineal, caída exponencial a −34 dB y corte limpio al cero. */
-function hit(
-  param: AudioParam,
-  peak: number,
-  at: number,
-  attack: number,
-  decay: number,
-) {
-  param.setValueAtTime(0, at);
-  param.linearRampToValueAtTime(peak, at + attack);
-  param.exponentialRampToValueAtTime(peak * 0.02, at + attack + decay);
-  param.linearRampToValueAtTime(0, at + attack + decay * 1.15);
-}
-
-/** Retirada inmediata de una capa, sin el baile del épsilon. */
-function cut(param: AudioParam, at: number) {
-  param.cancelScheduledValues(at);
-  param.setValueAtTime(param.value, at);
-  param.linearRampToValueAtTime(0, at + CUT);
-}
 
 type Source = AudioScheduledSourceNode;
 
 class VoyageAudio {
-  private context: AudioContext | null = null;
-  private noise: AudioBuffer | null = null;
-  private master: GainNode | null = null;
+  private session: AudioSession | null = null;
   private close: BiquadFilterNode | null = null;
   private sources: Source[] = [];
   /** Envolventes de la caída y la distorsión: hay que poder cortarlas. */
   private departing: GainNode[] = [];
   private sound: VoyageSound | null = null;
   private crossed = false;
-  private idleTimer: ReturnType<typeof setTimeout> | undefined;
-  private preference: VoyageAudioPreference = { enabled: true, volume: 0.28 };
-
-  /** El control de la bandeja publica aquí; un solo mando para todo lo que suena. */
-  configure(preference: VoyageAudioPreference) {
-    this.preference = preference;
-    if (!preference.enabled || preference.volume <= 0) this.stop();
-  }
-
-  private audible(): boolean {
-    return (
-      this.preference.enabled &&
-      this.preference.volume > 0 &&
-      typeof AudioContext !== "undefined" &&
-      // Un golpe en una pestaña que el visitante ya no mira es ruido.
-      !(typeof document !== "undefined" && document.hidden)
-    );
-  }
-
-  private ensure(): AudioContext | null {
-    if (this.context) return this.context;
-    try {
-      const context = new AudioContext();
-      this.context = context;
-      const frames = Math.ceil(context.sampleRate * 3);
-      const buffer = context.createBuffer(1, frames, context.sampleRate);
-      const channel = buffer.getChannelData(0);
-      for (let i = 0; i < frames; i++) channel[i] = Math.random() * 2 - 1;
-      this.noise = buffer;
-      return context;
-    } catch {
-      // Sin Web Audio el viaje sigue existiendo; simplemente no se oye.
-      this.context = null;
-      return null;
-    }
-  }
-
-  private noiseSource(context: AudioContext): AudioBufferSourceNode {
-    const source = context.createBufferSource();
-    source.buffer = this.noise;
-    source.loop = true;
-    // Cada travesía entra por un punto distinto del ruido: dos viajes seguidos
-    // al mismo mundo no son el mismo archivo sonando otra vez.
-    source.playbackRate.value = 0.92 + Math.random() * 0.16;
-    return source;
-  }
-
-  private keep<T extends Source>(source: T, start: number, stop: number): T {
-    source.start(start);
-    source.stop(stop);
-    this.sources.push(source);
-    return source;
-  }
 
   /**
    * Arranca el sonido del despegue: pestillo, caída y distorsión. El cruce NO
@@ -359,42 +256,22 @@ class VoyageAudio {
    */
   depart(id: WorldId, mode: VoyageMode) {
     this.stop();
-    if (!this.audible()) return;
-    const context = this.ensure();
-    if (!context) return;
-    void context.resume().catch(() => {});
-    clearTimeout(this.idleTimer);
-
     const sound = voyageSoundFor(id, mode);
+    const session = openAudio(1, sound.duration);
+    if (!session) return;
+
+    this.session = session;
     this.sound = sound;
     this.crossed = false;
 
-    const t0 = context.currentTime + 0.01;
+    const { context, out } = session;
+    const t0 = session.now + 0.01;
+
     const close = context.createBiquadFilter();
     close.type = "lowpass";
     close.frequency.setValueAtTime(20000, t0);
     close.Q.value = 0.7;
-    const master = context.createGain();
-    master.gain.value = this.preference.volume;
-    master.connect(close);
-
-    /*
-      Un limitador al final, y no por gusto: en el cruce suenan a la vez el
-      golpe (0,62), el sub (hasta 0,92) y la cola (0,26). A volumen 28 % eso
-      mide 0,295 de pico y no pasa nada, pero el visitante puede subir el
-      mando al 100 % y entonces la suma teórica se va por encima de 1 — o sea
-      recorte, que en un golpe grave suena a chasquido roto y no a impacto.
-      Con umbral en −4 dB y ataque de 3 ms el limitador sólo toca ese pico.
-    */
-    const limiter = context.createDynamicsCompressor();
-    limiter.threshold.value = -4;
-    limiter.knee.value = 6;
-    limiter.ratio.value = 12;
-    limiter.attack.value = 0.003;
-    limiter.release.value = 0.25;
-    close.connect(limiter);
-    limiter.connect(context.destination);
-    this.master = master;
+    close.connect(out);
     this.close = close;
 
     // ── El pestillo ───────────────────────────────────────────────────────
@@ -411,7 +288,7 @@ class VoyageAudio {
       hit(gain.gain, blip.gain, at, 0.006, blip.decay);
       osc.connect(band);
       band.connect(gain);
-      gain.connect(master);
+      gain.connect(close);
       this.keep(osc, at, at + blip.decay + 0.02);
     }
 
@@ -427,11 +304,11 @@ class VoyageAudio {
     const subGain = context.createGain();
     swell(subGain.gain, fall.subGain, fallStart, fallEnd);
     sub.connect(subGain);
-    subGain.connect(master);
+    subGain.connect(close);
     this.departing.push(subGain);
     this.keep(sub, fallStart, t0 + sound.duration);
 
-    const air = this.noiseSource(context);
+    const air = session.noise();
     const airFilter = context.createBiquadFilter();
     airFilter.type = "lowpass";
     airFilter.Q.value = 1.1;
@@ -441,7 +318,7 @@ class VoyageAudio {
     swell(airGain.gain, fall.airGain, fallStart, fallEnd);
     air.connect(airFilter);
     airFilter.connect(airGain);
-    airGain.connect(master);
+    airGain.connect(close);
     this.departing.push(airGain);
     this.keep(air, fallStart, t0 + sound.duration);
 
@@ -451,7 +328,7 @@ class VoyageAudio {
       const warpStart = t0 + warp.start;
       const warpEnd = t0 + warp.end;
 
-      // El filtro maestro se cierra sólo si el destino tiene sabor negro.
+      // El filtro se cierra sólo si el destino tiene sabor negro.
       if (warp.close > 0) {
         close.frequency.setValueAtTime(20000, warpStart);
         close.frequency.exponentialRampToValueAtTime(
@@ -460,7 +337,7 @@ class VoyageAudio {
         );
       }
 
-      const sweep = this.noiseSource(context);
+      const sweep = session.noise();
       const band = context.createBiquadFilter();
       band.type = "bandpass";
       band.Q.value = warp.sweepQ;
@@ -470,13 +347,13 @@ class VoyageAudio {
       swell(sweepGain.gain, warp.sweepGain, warpStart, warpEnd);
       sweep.connect(band);
       band.connect(sweepGain);
-      sweepGain.connect(master);
+      sweepGain.connect(close);
       this.departing.push(sweepGain);
       this.keep(sweep, warpStart, t0 + sound.duration);
 
       const toneGain = context.createGain();
       swell(toneGain.gain, warp.toneGain, warpStart, warpEnd);
-      toneGain.connect(master);
+      toneGain.connect(close);
       this.departing.push(toneGain);
 
       // Vibrato compartido: un solo LFO para las dos voces del par, porque si
@@ -507,18 +384,26 @@ class VoyageAudio {
     }
   }
 
+  private keep<T extends Source>(source: T, start: number, stop: number): T {
+    source.start(start);
+    source.stop(stop);
+    this.sources.push(source);
+    return source;
+  }
+
   /**
    * El cruce. Lo llama el controlador cuando enciende la luz y también cuando
    * el visitante salta la travesía: en el segundo caso todo lo anterior se
    * corta en 90 ms y el golpe suena igual. Es idempotente por viaje.
    */
   cross() {
-    const context = this.context;
-    const master = this.master;
+    const session = this.session;
     const sound = this.sound;
-    if (!context || !master || !sound || this.crossed) return;
+    if (!session || !sound || this.crossed) return;
     this.crossed = true;
 
+    const { context } = session;
+    const target = this.close ?? session.out;
     const now = context.currentTime;
     const { cross } = sound;
 
@@ -526,7 +411,7 @@ class VoyageAudio {
     for (const gain of this.departing) cut(gain.gain, now);
     this.close?.frequency.cancelScheduledValues(now);
 
-    const impact = this.noiseSource(context);
+    const impact = session.noise();
     const shape = context.createBiquadFilter();
     shape.type = "highpass";
     shape.frequency.setValueAtTime(140, now);
@@ -535,7 +420,7 @@ class VoyageAudio {
     hit(impactGain.gain, cross.impactGain, now, 0.008, cross.impactDecay);
     impact.connect(shape);
     shape.connect(impactGain);
-    impactGain.connect(master);
+    impactGain.connect(target);
     this.keep(impact, now, now + cross.impactDecay + 0.02);
 
     const thump = context.createOscillator();
@@ -545,11 +430,11 @@ class VoyageAudio {
     const thumpGain = context.createGain();
     hit(thumpGain.gain, cross.thumpGain, now, 0.012, cross.thumpDecay);
     thump.connect(thumpGain);
-    thumpGain.connect(master);
+    thumpGain.connect(target);
     this.keep(thump, now, now + cross.thumpDecay + 0.02);
 
     // La cola: el aire del otro lado, mientras la página nueva emerge.
-    const tail = this.noiseSource(context);
+    const tail = session.noise();
     const tailBand = context.createBiquadFilter();
     tailBand.type = "bandpass";
     tailBand.Q.value = 1.6;
@@ -562,23 +447,19 @@ class VoyageAudio {
     hit(tailGain.gain, cross.tailGain, now, 0.05, cross.tailDecay);
     tail.connect(tailBand);
     tailBand.connect(tailGain);
-    tailGain.connect(master);
+    tailGain.connect(target);
     this.keep(tail, now, now + cross.tailDecay + 0.02);
-
-    this.sleepIn(cross.tailDecay + Math.max(cross.impactDecay, cross.thumpDecay) + 0.4);
   }
 
   /** Corta el viaje en curso. Lo usan el desmontaje de la capa y los tests. */
   stop() {
-    clearTimeout(this.idleTimer);
-    this.idleTimer = undefined;
-    const context = this.context;
-    if (!context) {
+    const session = this.session;
+    if (!session) {
       this.release();
       return;
     }
-    const now = context.currentTime;
-    if (this.master) cut(this.master.gain, now);
+    const now = session.context.currentTime;
+    cut(session.out.gain, now);
     for (const source of this.sources) {
       try {
         source.stop(now + CUT + 0.01);
@@ -587,31 +468,16 @@ class VoyageAudio {
       }
     }
     this.release();
-    this.sleepIn(CUT + 0.3);
   }
 
-  /** Suelta las referencias del viaje; los nodos ya programados se apagan solos. */
+  /** Suelta las referencias; los nodos ya programados se apagan solos. */
   private release() {
     this.sources = [];
     this.departing = [];
-    this.master = null;
+    this.session = null;
     this.close = null;
     this.sound = null;
     this.crossed = false;
-  }
-
-  /**
-   * El contexto se suspende cuando no queda nada sonando. Un `AudioContext`
-   * despierto mantiene ocupado un hilo de audio y en móvil eso se nota en la
-   * batería; despertarlo cuesta un `resume()` que ya hace `depart()`.
-   */
-  private sleepIn(seconds: number) {
-    clearTimeout(this.idleTimer);
-    this.idleTimer = setTimeout(() => {
-      this.idleTimer = undefined;
-      this.release();
-      void this.context?.suspend().catch(() => {});
-    }, Math.round(seconds * 1000));
   }
 }
 

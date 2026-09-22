@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { playSfx } from "@/lib/sfx";
 import type { World } from "@/lib/worlds";
 
 type Certificate = NonNullable<World["prose"]["education"]>["certificates"][number];
@@ -26,7 +27,7 @@ export function MillerCertificates({ certificates }: { certificates: Certificate
       <div className="miller-archive__toolbar">
         <div className="miller-filters" role="group" aria-label="Filtrar certificados por área">
           {filters.map(({ id, label }) => (
-            <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}><span className="miller-filter-light" aria-hidden="true" />{label}</button>
+            <button key={id} type="button" aria-pressed={filter === id} onClick={() => { setFilter(id); playSfx("detent"); }}><span className="miller-filter-light" aria-hidden="true" />{label}</button>
           ))}
         </div>
         <p aria-live="polite" aria-atomic="true">{visible.length} documentos</p>
@@ -50,9 +51,15 @@ export function MillerCertificates({ certificates }: { certificates: Certificate
 }
 
 function CertificateCard({ certificate, index }: { certificate: Certificate; index: number }) {
+  /*
+    Una gota por documento apuntado. La receta trae 260 ms de separación, que
+    es lo que impide que barrer la rejilla con el ratón suene a lluvia: en un
+    archivo de treinta tarjetas eso sería ruido, no ambiente.
+  */
+  const drip = () => playSfx("drop");
   return (
           <li className={certificate.kind === "program" ? "miller-certificate miller-certificate--program" : "miller-certificate"}>
-            <a href={certificate.href} target="_blank" rel="noopener noreferrer" aria-label={`Ver certificado: ${certificate.title} (PDF, nueva pestaña)`}>
+            <a href={certificate.href} target="_blank" rel="noopener noreferrer" onPointerEnter={drip} onFocus={drip} aria-label={`Ver certificado: ${certificate.title} (PDF, nueva pestaña)`}>
               <div className="miller-certificate__registry" aria-hidden="true"><span>M / {String(index).padStart(2, "0")}</span><span>{certificate.category === "code" ? "CÓDIGO" : certificate.category === "design" ? "DISEÑO / UX" : "MARKETING"}</span><i /></div>
               {certificate.preview ? (
                 <div className="miller-certificate__preview">

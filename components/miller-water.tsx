@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 import { useMotionEnabled } from "@/lib/effects-mode";
+import { startOcean } from "@/lib/ocean-ambience";
 
 type WaterMotion = { running: boolean };
 const WaterContext = createContext<WaterMotion | null>(null);
@@ -13,6 +14,17 @@ const WaterContext = createContext<WaterMotion | null>(null);
 export function MillerWater({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLElement>(null);
   const running = useMotionEnabled();
+
+  /*
+    El mar, mientras dure la página.
+
+    NO depende de `running`: el interruptor de movimiento gobierna lo que se
+    MUEVE y un sonido no se mueve — quien lo apaga suele estar evitando mareo,
+    no ruido. De encenderlo y apagarlo se ocupa el control de AUDIO, a través
+    del bus. Y se retira al desmontar, porque un ambiente que sobrevive a su
+    habitación es un fallo y no una función.
+  */
+  useEffect(() => startOcean(), []);
 
   useEffect(() => {
     const root = rootRef.current;
