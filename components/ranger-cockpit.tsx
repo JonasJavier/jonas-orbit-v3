@@ -17,14 +17,16 @@ import { useMotionEnabled } from "@/lib/effects-mode";
 import { playSfx } from "@/lib/sfx";
 
 /**
- * Cabina de la Ranger: el visitante va sentado dentro de la nave de enlace.
+ * Cabina de la Ranger: el visitante va sentado dentro de la nave de enlace,
+ * cruzando la garganta de un agujero de gusano.
  *
- * Un solo estado gobierna todo lo que se mueve en la primera pantalla — el
- * vuelo del ventanal (WebGL2), el barrido del radar, el paralaje de cabeza y
- * el encendido de los instrumentos — y es el interruptor único de movimiento
- * del sitio (la bandeja inferior derecha). Los instrumentos son HTML real:
- * canales, formulario, CV y prosa se sirven sin JavaScript; sólo la animación
- * necesita el cliente.
+ * Un solo estado gobierna todo lo que se mueve — el vuelo del ventanal
+ * (WebGL2), el barrido del radar, el paralaje de cabeza y el encendido de los
+ * instrumentos — y es el interruptor único de movimiento del sitio (la bandeja
+ * inferior derecha). La primera pantalla es el ventanal entero; el panel de
+ * instrumentos va justo debajo, dentro del mismo estado. Los instrumentos son
+ * HTML real: canales, formulario, CV y prosa se sirven sin JavaScript; sólo la
+ * animación necesita el cliente.
  */
 
 export type Frequency = { id: string; name: string; value: string } | null;
@@ -67,7 +69,7 @@ function subscribeNever() {
   return noop;
 }
 
-export function RangerCockpit({ children }: { children: ReactNode }) {
+export function RangerCockpit({ children, panel }: { children: ReactNode; panel?: ReactNode }) {
   const bridgeRef = useRef<HTMLElement>(null);
   const look = useRef<Look>({ x: 0, y: 0 });
   const running = useMotionEnabled();
@@ -111,17 +113,19 @@ export function RangerCockpit({ children }: { children: ReactNode }) {
 
   return (
     <CockpitContext.Provider value={{ running, supported, markUnsupported, look, frequency, setFrequency }}>
-      <section
-        ref={bridgeRef}
-        className="ranger-bridge"
-        aria-label="Cabina de la Ranger"
-        data-motion={running ? "on" : "off"}
-        data-boot={mounted && running ? "on" : "off"}
-        onPointerMove={moveHead}
-        onPointerLeave={restHead}
-      >
-        {children}
-      </section>
+      <div className="ranger-cockpit" data-motion={running ? "on" : "off"} data-boot={mounted && running ? "on" : "off"}>
+        <section
+          ref={bridgeRef}
+          className="ranger-bridge"
+          aria-label="Cabina de la Ranger"
+          data-motion={running ? "on" : "off"}
+          onPointerMove={moveHead}
+          onPointerLeave={restHead}
+        >
+          {children}
+        </section>
+        {panel}
+      </div>
     </CockpitContext.Provider>
   );
 }
@@ -141,10 +145,13 @@ function subscribeClock(callback: () => void) {
 
 /**
  * Lecturas del HUD proyectadas sobre el cristal. La hora es real —un reclutador
- * sabe a qué hora escribe— y la frecuencia refleja el canal que se apunta.
+ * sabe a qué hora escribe— y el vuelo dice lo que hace el interruptor de
+ * movimiento: en travesía o detenido, sin cifras inventadas. (La frecuencia
+ * que se apunta se lee en el propio módulo de frecuencias, bajo el ventanal.)
  */
 export function RangerReadouts({ destination }: { destination: string }) {
-  const { frequency } = useRangerCockpit();
+  const { running } = useRangerCockpit();
+  const mounted = useMounted();
   const time = useSyncExternalStore(subscribeClock, localTime, () => "--:--");
   return (
     <dl className="ranger-readouts">
@@ -161,8 +168,8 @@ export function RangerReadouts({ destination }: { destination: string }) {
         <dd data-live="clock">{time}</dd>
       </div>
       <div>
-        <dt>Frecuencia</dt>
-        <dd data-live={frequency ? "frequency" : undefined}>{frequency ? `${frequency.id} · ${frequency.name}` : "— elige una —"}</dd>
+        <dt>Vuelo</dt>
+        <dd data-live={mounted && running ? "flight" : undefined}><i className="ranger-led" data-state={mounted && running ? "cyan" : undefined} aria-hidden="true" /> {mounted && running ? "En travesía" : "Detenido"}</dd>
       </div>
     </dl>
   );

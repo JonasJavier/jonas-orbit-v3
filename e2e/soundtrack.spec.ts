@@ -16,6 +16,10 @@ test("audio starts by default and survives route navigation with the same media"
   const control = page.getByRole("complementary", { name: "Banda sonora" });
   const audioButton = control.locator('summary[aria-label="Audio"]');
   await expect(audioButton).toBeVisible();
+  // ON from the first paint, even while the browser holds audible autoplay
+  // back; the first gesture (here a key) is what lets it sound.
+  await expect(control).toHaveAttribute("data-state", "on");
+  await page.keyboard.press("Tab");
   await expect(control).toHaveAttribute("data-playing", "true", { timeout: 15000 });
   await expect.poll(() => requests.length).toBeGreaterThan(0);
   await page.getByRole("link", { name: "Proyectos Endurance", exact: true }).click();
@@ -99,3 +103,31 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }
     expect(panel!.y + panel!.height).toBeLessThanOrEqual(viewport.height);
   });
 }
+
+test("the tray reads ON / OFF / MUTE at rest, without relying on animation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/es?no3d=0");
+  const audio = page.locator(".soundtrack");
+  const audioButton = page.locator('summary[aria-label="Audio"]');
+  const motion = page.locator(".motion-toggle");
+  // Both are on by default.
+  await expect(audio).toHaveAttribute("data-state", "on");
+  await expect(audioButton.locator(".tray-state")).toHaveText("on");
+  await expect(motion).toHaveAttribute("data-state", "on");
+  await expect(motion.locator(".tray-state")).toHaveText("On");
+  await expect(motion.locator(".tray-slash")).toHaveCount(0);
+  // Off is struck through, with a dashed rim.
+  await motion.click();
+  await expect(motion).toHaveAttribute("data-state", "off");
+  await expect(motion.locator(".tray-state")).toHaveText("Off");
+  await expect(motion.locator(".tray-slash")).toHaveCount(1);
+  expect(await motion.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe("dashed");
+  await audioButton.click();
+  await page.getByRole("button", { name: "Silenciar", exact: true }).click();
+  await expect(audio).toHaveAttribute("data-state", "muted");
+  await expect(audioButton.locator(".tray-state")).toHaveText("Mute");
+  await page.getByRole("button", { name: "Restaurar sonido" }).click();
+  await page.getByRole("button", { name: "Pausar música" }).click();
+  await expect(audio).toHaveAttribute("data-state", "off");
+  await expect(audioButton.locator(".tray-slash")).toHaveCount(1);
+});

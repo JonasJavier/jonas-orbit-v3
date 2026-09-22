@@ -12,6 +12,36 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Ranger — travesía por el agujero de gusano (2026-09-22):** la sección
+`Travesía por el agujero de gusano` de `docs/design/ranger-contacto.md` manda
+sobre `Cabina de mando` en **ventanal, vuelo, marco y composición de la primera
+pantalla de `/es/contacto`**. Pedido del dueño: vuelo ligado al interruptor
+global, «que el espacio y el tiempo se doblen como al cruzar el agujero de
+gusano de Interstellar», sin planetas, continuo, y **el hero al 100 % del
+viewport**. El ventanal pasa a sangre (`100svh`), se retiran el casco y el
+montante (queda un visor de esquinas) y el panel de instrumentos baja justo
+debajo, con enlace «Canales directos». El shader es otro: tres paredes de hilos
+de luz con Doppler cian/ámbar, ángulo que gira con la profundidad (espirales),
+sección del tubo que se retuerce, boca que se desplaza sin deformar el anillo,
+gas violeta y cian, y el cielo del otro lado lensado con anillo de Einstein.
+**Todo es periódico en profundidad (48) y la distancia se envuelve ahí**: sin
+fin, sin costura, sin pérdida de precisión. **Apagar el movimiento congela el
+último fotograma** (canvas y contexto se quedan; se liberan al salir), que
+sustituye a «pausar retira el canvas». HUD: VUELO «En travesía / Detenido»
+sustituye a FRECUENCIA, que pasa a la cabecera de su módulo. Con reduced-motion
+del sistema la cabina devuelve sus animaciones CSS mientras el interruptor esté
+en «on». Medido en GPU integrada a 2048 px: 16,2 cuadros/s contra 14,7 del
+ventanal anterior. Valoración visual abierta.
+
+**Bandeja — ON/OFF legible y audio encendido por defecto (2026-09-22):**
+`docs/design/movimiento-unificado.md` §«El icono» y
+`docs/design/sonido-del-sitio.md` §2. El dueño no distinguía encendido de
+apagado: con reduced-motion el satélite no gira, y sólo cambiaba un punto de
+5 px. Ahora ON = icono y borde cian, halo y etiqueta `ON`; OFF = borde
+discontinuo, icono tachado y `OFF`; el audio añade `MUTE` en ámbar. El audio
+retenido por el navegador hasta el primer gesto es `armed` y se muestra ON; la
+clave guardada pasa a `jonas-orbit:audio-on` para olvidar «apagados» viejos.
+
 **EL SONIDO DEL SITIO (2026-09-22) — manda sobre todo lo anterior en qué suena,
 con qué peso y quién lo apaga:** `docs/design/sonido-del-sitio.md`. Lo pidió el
 dueño tras aprobar la travesía: sonido leve al apuntar los objetos de la

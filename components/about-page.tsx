@@ -213,29 +213,43 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
             id="mis-raices"
             aria-labelledby="roots-title"
           >
-            <div className="about-roots-head">
-              <div>
+            <div className="about-roots-layout">
+              <div className="about-roots-copy">
                 <span className="about-eyebrow">01 / EL PUNTO DE PARTIDA</span>
                 <h2 tabIndex={-1} id="roots-title">
                   Mis raíces.
                 </h2>
+                <p className="about-place">
+                  <span>Bonao · República Dominicana</span>
+                  <span className="about-coordinates">18°56′ N · 70°25′ O</span>
+                </p>
+                <h3 className="about-roots-words">
+                  Crecí entre ríos y montañas.
+                </h3>
+                <p className="about-roots-story">
+                  Bonao es mi punto de partida. Crecer rodeado de montañas, ríos
+                  y tanto verde dejó algo en mí: todavía busco esos lugares
+                  cuando quiero desconectarme, pensar o simplemente mirar. De
+                  ahí viene buena parte de mi gusto por explorar.
+                </p>
               </div>
-              <p className="about-place">Bonao, República Dominicana.</p>
+              <figure className="about-roots-landscape">
+                <a
+                  className="about-photo-button"
+                  data-photo="F23"
+                  data-title="Mis raíces"
+                  data-caption="Entre ríos y montañas, con mis amigos."
+                  aria-label="Ampliar fotografía de la cascada con mis amigos"
+                  href={aboutPhotoPath("F23")}
+                >
+                  <AboutImage
+                    id="F23"
+                    alt="Jonás con sus amigos frente a una cascada rodeada de vegetación"
+                    sizes="(max-width: 700px) 92vw, (min-width: 1400px) 780px, 58vw"
+                  />
+                </a>
+              </figure>
             </div>
-            <div className="about-roots-landscape">
-              <AboutImage
-                id="F23"
-                alt="Jonás con sus amigos frente a una cascada rodeada de vegetación"
-                sizes="(max-width: 1400px) 94vw, 1400px"
-              />
-            </div>
-            <h3 className="about-roots-words">Crecí entre ríos y montañas.</h3>
-            <p className="about-roots-story">
-              Bonao es mi punto de partida. Crecer rodeado de montañas, ríos y
-              tanto verde dejó algo en mí: todavía busco esos lugares cuando
-              quiero desconectarme, pensar o simplemente mirar. De ahí viene
-              buena parte de mi gusto por explorar.
-            </p>
             <a className="about-section-end" href="#mi-gente">
               Y LAS PERSONAS QUE ME ACOMPAÑAN
             </a>
@@ -253,12 +267,12 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                   <h2 tabIndex={-1} id="people-title">
                     Mi gente.
                   </h2>
-                  <div className="about-section-lead">La vida, compartida.</div>
-                  <p>
-                    Mi familia es mi primer hogar. Mi madre tiene una alegría
-                    difícil de ignorar; de mi padre admiro su capacidad de
-                    trabajar y cuidar de los suyos; y en mi hermana tengo una
-                    compañera y amiga.
+                  <p className="about-section-lead">
+                    Mi familia es mi primer hogar.
+                  </p>
+                  <p className="about-people-sub">
+                    La alegría de mi madre, el esfuerzo de mi padre y la amistad
+                    de mi hermana.
                   </p>
                 </div>
                 <figure className="about-paper">
@@ -337,8 +351,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                   <div>
                     <span className="about-eyebrow">MIS ABUELOS</span>
                     <p className="about-memory-line">
-                      De mis abuelos me llevo el cariño, la sabiduría y tantos
-                      recuerdos juntos.
+                      Cariño, sabiduría y muchos recuerdos.
                     </p>
                   </div>
                 </article>
@@ -419,23 +432,30 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 <h2 tabIndex={-1} id="self-title">
                   Cómo soy.
                 </h2>
-                <div className="about-section-lead">Todavía aprendiendo.</div>
+                <p className="about-section-lead">Curioso por naturaleza.</p>
                 <p>
-                  Soy curioso por naturaleza. Me gusta conocer personas,
-                  entender cómo funcionan las cosas y aprender algo nuevo casi
-                  todo el tiempo. Antes era bastante tímido; con los años he
-                  aprendido a abrirme más, aunque sigo disfrutando mucho mis
-                  ratos a solas.
+                  Me gusta conocer personas, entender cómo funcionan las cosas y
+                  aprender algo nuevo cada día. Antes era tímido; hoy me abro
+                  más, aunque sigo disfrutando mis ratos a solas.
                 </p>
+                <div className="about-traits">
+                  <span className="about-eyebrow">
+                    Así me describen mis amigos
+                  </span>
+                  <ul>
+                    <li>Tranquilo</li>
+                    <li>Auténtico</li>
+                    <li>Amable</li>
+                    <li>Servicial</li>
+                  </ul>
+                </div>
                 <p>
-                  Mis amigos suelen describirme como alguien tranquilo,
-                  auténtico, amable y servicial. Mi fe también ocupa un lugar
-                  importante en mi vida y orienta muchas de las decisiones que
-                  tomo.
+                  Mi fe ocupa un lugar importante en mi vida y orienta muchas de
+                  mis decisiones.
                 </p>
                 <p className="about-script">
-                  También le doy demasiadas vueltas a algunas cosas. Estoy
-                  trabajando en eso.
+                  Le doy demasiadas vueltas a algunas cosas. Estoy trabajando en
+                  eso.
                 </p>
               </div>
             </div>
@@ -548,8 +568,8 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                   <span className="about-eyebrow">MÚSICA</span>
                   <h3>La música que me acompaña.</h3>
                   <p>
-                    Bandas sonoras, synthwave y canciones con un poco de
-                    nostalgia.
+                    Bandas sonoras, baladas de siempre y canciones con un poco
+                    de nostalgia.
                   </p>
                   <AboutShelf group="music" />
                 </article>

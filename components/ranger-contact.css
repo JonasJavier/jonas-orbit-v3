@@ -37,63 +37,78 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-led[data-state="ok"] { background: var(--rg-green); box-shadow: 0 0 10px #8cf2c299; }
 .ranger-led[data-state="cyan"] { background: var(--rg-cyan); box-shadow: 0 0 10px #7fe5ff99; }
 
-/* ── Bridge ────────────────────────────────────────────────────────────── */
-.ranger-bridge { --rx: 0; --ry: 0; position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: max(780px, 100svh); overflow: hidden; background: var(--rg-void); }
+/* ── Bridge: the whole first screen is the view ───────────────────────── */
+.ranger-cockpit { position: relative; }
+.ranger-bridge { --rx: 0; --ry: 0; position: relative; isolation: isolate; display: grid; min-height: 100vh; min-height: 100svh; overflow: hidden; background: var(--rg-void); }
 
-/* The view: WebGL canvas over a still CSS/SVG sky with the same composition. */
+/* The view: WebGL canvas over a still SVG tunnel with the same composition.
+   The throat sits right of centre in landscape, centred and high in portrait;
+   the shader reads the same numbers (throatFor in ranger-viewport.tsx). */
 .ranger-view { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #04060d; container-type: size; }
-.ranger-view__still { position: absolute; inset: -4%; transform: translate(calc(var(--rx) * 6px), calc(var(--ry) * 4px)); transition: transform .6s ease-out; }
-.ranger-view__stars { position: absolute; inset: 0; width: 100%; height: 100%; fill: #dfe9ff; }
-.ranger-view__nebula { position: absolute; inset: 0; background: radial-gradient(54% 50% at 58% 30%, #c58cff3d, transparent 70%), radial-gradient(38% 34% at 46% 18%, #72ddff2a, transparent 70%), radial-gradient(30% 26% at 66% 36%, #ff8fa61a, transparent 70%); }
-.ranger-view__world { position: absolute; width: calc(244cqh); aspect-ratio: 1; left: calc(50% - 66cqh); top: calc(50% - 8cqh); border-radius: 50%; background: radial-gradient(circle at 76% 24%, #86adc4 0, #34648a 16%, #143753 40%, #070d19 62%); box-shadow: 0 0 34px 5px #7fe5ff48, 0 0 130px 30px #3ab8ff22, inset 12px 10px 70px #7fe5ff52; }
+.ranger-view__still, .ranger-view__reticle { --vp-x: .27; --vp-y: .03; --throat: .078; }
+@container (max-aspect-ratio: 6/5) { .ranger-view__still, .ranger-view__reticle { --vp-x: 0; --vp-y: .17; --throat: .08; } }
+.ranger-view__still { position: absolute; inset: 0; transform: translate(calc(var(--rx) * 6px), calc(var(--ry) * 4px)); transition: transform .6s ease-out; }
+.ranger-view__tunnel { position: absolute; width: 400cqh; height: 400cqh; left: calc(50% + var(--vp-x) * 100cqh - 200cqh); top: calc(50% - var(--vp-y) * 100cqh - 200cqh); overflow: visible; fill: none; stroke-linecap: round; }
+.ranger-view__tunnel path[data-tone="far"] { stroke: #c4e8ff; }
+.ranger-view__tunnel path[data-tone="mid"] { stroke: #cfc6ff; }
+.ranger-view__tunnel path[data-tone="near"] { stroke: #ffc58e; }
+.ranger-view__ring { stroke: #eaf8ff; stroke-width: 2.6; filter: drop-shadow(0 0 5px #9fdcff) drop-shadow(0 0 18px #6d8dff); }
 .ranger-view > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ranger-view__shade { position: absolute; inset: 0; background: linear-gradient(90deg, #04060da8, #04060d40 30%, transparent 55%), linear-gradient(0deg, #04060d 0%, #04060d99 12%, transparent 38%); pointer-events: none; }
+/* The reticle rides the throat: the loop publishes the bend (--bend-x/y). */
+.ranger-view__reticle { position: absolute; left: calc(50% + var(--vp-x) * 100cqh); top: calc(50% - var(--vp-y) * 100cqh); width: calc(var(--throat) * 520cqh); aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) translate(calc(var(--bend-x, 0) * 100cqh), calc(var(--bend-y, 0) * -100cqh)); background: linear-gradient(90deg, #7fe5ff66, #7fe5ff66) 50% 0 / 1px 9px no-repeat, linear-gradient(90deg, #7fe5ff66, #7fe5ff66) 50% 100% / 1px 9px no-repeat, linear-gradient(#7fe5ff66, #7fe5ff66) 0 50% / 9px 1px no-repeat, linear-gradient(#7fe5ff66, #7fe5ff66) 100% 50% / 9px 1px no-repeat; border: 1px solid #7fe5ff1f; pointer-events: none; }
+.ranger-view__reticle > i { position: absolute; inset: -14px; border-radius: 50%; border: 1px dashed #7fe5ff2b; }
+.ranger-view__shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 56% 64% at 20% 52%, #04060dd0, #04060d70 55%, transparent 82%), linear-gradient(90deg, #04060d8c, transparent 46%), linear-gradient(0deg, #04060d 0, #04060d00 15%), linear-gradient(180deg, #04060db0 0, transparent 20%); }
 
-/* Canopy: hull around the glass, one strut, glass reflections. Near planes
-   move against the head; the frame is the nearest of all. */
-.ranger-canopy { position: absolute; inset: 0; z-index: 2; pointer-events: none; transform: translate(calc(var(--rx) * -9px), calc(var(--ry) * -6px)); transition: transform .6s ease-out; }
-.ranger-canopy__frame { position: absolute; inset: -14px; width: calc(100% + 28px); height: calc(100% + 28px); }
-.ranger-canopy__frame--tall { display: none; }
-.ranger-canopy__hull { fill: url(#ranger-hull); }
-.ranger-canopy__bevel { fill: none; stroke: #000; stroke-opacity: .5; stroke-width: 12; vector-effect: non-scaling-stroke; }
-.ranger-canopy__edge { fill: none; stroke: url(#ranger-edge); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
-.ranger-canopy__strut { fill: #0a0d15; }
-.ranger-canopy__strut-edge { fill: none; stroke: #f2c87966; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.ranger-canopy__glass { position: absolute; inset: 0; background: linear-gradient(112deg, transparent 28%, rgb(255 255 255 / 3.5%) 41%, transparent 55%), radial-gradient(180px 40px at 28% 93%, #ffb65c22, transparent), radial-gradient(240px 50px at 70% 95%, #ffb65c1a, transparent); mix-blend-mode: screen; transform: translate(calc(var(--rx) * 14px), calc(var(--ry) * 8px)); transition: transform .6s ease-out; }
+/* Visor: four reticle corners at the edge of the glass and the reflections of
+   the instruments. The nearest plane: it moves most against the head. */
+.ranger-visor { position: absolute; inset: calc(var(--rg-header) + 18px) 22px 22px; z-index: 2; pointer-events: none; transform: translate(calc(var(--rx) * -9px), calc(var(--ry) * -6px)); transition: transform .6s ease-out; }
+.ranger-visor__corner { position: absolute; width: 34px; height: 34px; border: 0 solid #7fe5ff5c; }
+.ranger-visor__corner[data-corner="tl"] { top: 0; left: 0; border-width: 1px 0 0 1px; }
+.ranger-visor__corner[data-corner="tr"] { top: 0; right: 0; border-width: 1px 1px 0 0; }
+.ranger-visor__corner[data-corner="bl"] { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+/* The bottom-right corner belongs to the system tray (motion and audio). */
+.ranger-visor__corner[data-corner="br"] { display: none; }
+.ranger-visor__glass { position: absolute; inset: calc(-18px - var(--rg-header)) -22px -22px; background: linear-gradient(112deg, transparent 30%, rgb(255 255 255 / 2.6%) 42%, transparent 54%), radial-gradient(260px 60px at 26% 100%, #ffb65c1c, transparent), radial-gradient(320px 70px at 72% 100%, #ffb65c14, transparent); mix-blend-mode: screen; transform: translate(calc(var(--rx) * 14px), calc(var(--ry) * 8px)); transition: transform .6s ease-out; }
 
 /* HUD projected on the glass. */
-.ranger-hud { position: relative; z-index: 3; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 40px; padding: calc(var(--rg-header) + 58px) var(--rg-gutter) 34px; transform: translate(calc(var(--rx) * -4px), calc(var(--ry) * -3px)); transition: transform .6s ease-out; }
+.ranger-hud { position: relative; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 1fr auto; align-items: center; gap: 20px 40px; min-height: 100vh; min-height: 100svh; padding: calc(var(--rg-header) + 44px) var(--rg-gutter) 28px; transform: translate(calc(var(--rx) * -4px), calc(var(--ry) * -3px)); transition: transform .6s ease-out; }
 .ranger-hud__copy { position: relative; max-width: 640px; padding: 24px 28px; }
 .ranger-hud__copy::before, .ranger-hud__copy::after { content: ""; position: absolute; width: 24px; height: 24px; border: 1px solid var(--rg-cyan); opacity: .85; }
 .ranger-hud__copy::before { top: 0; left: 0; border-width: 1px 0 0 1px; }
 .ranger-hud__copy::after { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
-.ranger-hud__copy h1 { margin-top: 18px; font: 350 clamp(4rem, 7.4vw, 6.6rem)/1 var(--font-display); letter-spacing: -.045em; text-shadow: 0 0 28px #7fe5ff33; }
-.ranger-hud__line { margin-top: 18px; max-width: 460px; font: 400 clamp(1.25rem, 1.9vw, 1.6rem)/1.35 var(--font-body); letter-spacing: -.02em; color: #dbe6ff; text-wrap: balance; }
-.ranger-hud__intro { margin-top: 16px; max-width: 390px; color: var(--rg-muted); font-size: .94rem; line-height: 1.8; }
+.ranger-hud__copy h1 { margin-top: 18px; font: 350 clamp(4rem, 7.4vw, 6.6rem)/1 var(--font-display); letter-spacing: -.045em; text-shadow: 0 0 28px #7fe5ff33, 0 2px 24px #04060d; }
+.ranger-hud__line { margin-top: 18px; max-width: 460px; font: 400 clamp(1.25rem, 1.9vw, 1.6rem)/1.35 var(--font-body); letter-spacing: -.02em; color: #dbe6ff; text-wrap: balance; text-shadow: 0 1px 16px #04060d; }
+.ranger-hud__intro { margin-top: 16px; max-width: 390px; color: #a7b2c9; font-size: .94rem; line-height: 1.8; text-shadow: 0 1px 12px #04060d; }
 .ranger-hud__actions { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; margin-top: 28px; }
-.ranger-cta { display: inline-flex; align-items: center; gap: 34px; min-height: 50px; padding: 12px 20px; border: 1px solid #7fe5ff99; color: #eafaff; background: #0b1c2acc; font: 600 .8rem var(--font-body); letter-spacing: .02em; border-radius: 2px; box-shadow: inset 0 0 0 1px #7fe5ff14, 0 0 24px #7fe5ff14; transition: background .2s, box-shadow .2s, border-color .2s; }
+.ranger-cta { display: inline-flex; align-items: center; gap: 34px; min-height: 50px; padding: 12px 20px; border: 1px solid #7fe5ff99; color: #eafaff; background: #0b1c2acc; font: 600 .8rem var(--font-body); letter-spacing: .02em; border-radius: 2px; box-shadow: inset 0 0 0 1px #7fe5ff14, 0 0 24px #7fe5ff14; backdrop-filter: blur(6px); transition: background .2s, box-shadow .2s, border-color .2s; }
 .ranger-cta:hover { background: #12344a; border-color: var(--rg-cyan); box-shadow: inset 0 0 0 1px #7fe5ff33, 0 0 30px #7fe5ff33; }
 .ranger-cta > span { color: var(--rg-cyan); }
-.ranger-hud__link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: #a9bfd6; font-size: .8rem; border-bottom: 1px solid #7fe5ff33; }
+.ranger-hud__link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: #b3c6da; font-size: .8rem; border-bottom: 1px solid #7fe5ff33; }
 .ranger-hud__link:hover { color: var(--rg-cyan); border-color: var(--rg-cyan); }
-.ranger-readouts { display: grid; gap: 14px; min-width: 220px; margin-top: 8px; padding: 16px 20px; border-left: 1px solid #7fe5ff55; font-family: var(--font-mono); }
+.ranger-readouts { display: grid; gap: 14px; min-width: 220px; padding: 16px 20px; border-left: 1px solid #7fe5ff55; background: linear-gradient(90deg, #04060d8c, #04060d33); font-family: var(--font-mono); }
 .ranger-readouts > div { display: grid; gap: 5px; }
-.ranger-readouts dt { font-size: .52rem; letter-spacing: .2em; color: #7f93b5; text-transform: uppercase; }
+.ranger-readouts dt { font-size: .52rem; letter-spacing: .2em; color: #8ea2c2; text-transform: uppercase; }
 .ranger-readouts dd { display: flex; align-items: center; gap: 8px; font-size: .74rem; letter-spacing: .08em; color: #c9f4ff; text-transform: uppercase; overflow-wrap: anywhere; }
 .ranger-readouts dd[data-live] { color: #fff; text-shadow: 0 0 12px #7fe5ff66; }
-.ranger-tape { grid-column: 1 / -1; position: relative; width: min(100%, 560px); height: 44px; margin: 28px auto 0; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.ranger-hud__foot { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; }
+.ranger-tape { position: relative; width: min(100%, 560px); height: 44px; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
 .ranger-tape__scale { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #7fe5ff55 0 1px, transparent 1px 13px), repeating-linear-gradient(90deg, #7fe5ffaa 0 1px, transparent 1px 130px); background-size: auto 8px, auto 15px; background-repeat: repeat-x; background-position: calc(50% + 0px) bottom; transform: translateX(calc(var(--rx) * -22px + var(--yaw, 0) * -34px)); transition: transform .6s ease-out; }
 .ranger-tape__scale > span { position: absolute; bottom: 18px; font: .52rem var(--font-mono); letter-spacing: .12em; color: #9ed9ea; transform: translateX(-50%); }
 .ranger-tape__caret { position: absolute; left: 50%; bottom: 0; width: 0; height: 0; border: 6px solid transparent; border-bottom-color: var(--rg-cyan); transform: translateX(-50%); }
 .ranger-tape__reading { position: absolute; left: 50%; top: 0; transform: translateX(-50%); font: .52rem var(--font-mono); letter-spacing: .2em; color: var(--rg-cyan); text-transform: uppercase; }
+.ranger-hud__down { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding-inline: 10px; font: .58rem var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: #9fb8cc; transition: color .2s; }
+.ranger-hud__down > span { color: var(--rg-cyan); }
+.ranger-hud__down:hover { color: var(--rg-cyan); }
+[data-motion="on"] .ranger-hud__down > span { animation: ranger-nudge 2.4s ease-in-out infinite; }
 
-/* Dashboard: the opaque panel that closes the cabin. */
-.ranger-dash { position: relative; z-index: 4; margin-top: auto; padding: 22px var(--rg-gutter) 26px; background: linear-gradient(#151a28, #0b0e16 55%, #080a10); border-top: 1px solid #ffb65c66; box-shadow: 0 -1px 0 #ffb65c22, 0 -30px 60px -20px #ff9d4d2e; overflow: hidden; }
+/* Instrument panel: right under the view, it closes the cabin. */
+.ranger-dash { position: relative; z-index: 4; scroll-margin-top: 67px; padding: 26px var(--rg-gutter) 30px; background: linear-gradient(#151a28, #0b0e16 55%, #080a10); border-top: 1px solid #ffb65c66; box-shadow: 0 -1px 0 #ffb65c22, 0 -30px 60px -20px #ff9d4d2e; overflow: hidden; }
 .ranger-dash::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, #ffd08a 30%, #ffd08a 70%, transparent); opacity: .9; }
 .ranger-dash__grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(190px, .7fr) minmax(230px, .8fr); gap: 16px; }
 .ranger-module { position: relative; min-width: 0; padding: 14px 16px; border: 1px solid #ffffff12; background: linear-gradient(#0d111b, #0a0d15); box-shadow: inset 0 1px #ffffff0a, inset 0 0 0 1px #00000066; border-radius: 3px; }
 .ranger-module__label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: .56rem var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: #a98d63; }
 .ranger-channels { position: relative; }
+.ranger-channels__tuned[data-live] { color: #ffd9a0; text-shadow: 0 0 10px #ffb65c77; }
 .ranger-freq-list { display: grid; margin-top: 10px; }
 .ranger-freq { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-top: 1px solid #ffffff0c; transition: background .2s; }
 .ranger-freq:hover, .ranger-freq:focus-within { background: #ffb65c0d; }
@@ -115,6 +130,7 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-scope__blip { position: absolute; left: var(--bx); top: var(--by); width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ffd08a; box-shadow: 0 0 8px #ffd08a; opacity: .55; }
 [data-motion="on"] .ranger-scope__sweep { animation: ranger-sweep 5s linear infinite; }
 [data-motion="on"] .ranger-scope__blip { animation: ranger-blip 5s ease-out infinite; animation-delay: var(--bd); }
+[data-motion="on"] .ranger-view__reticle > i { animation: ranger-sweep 90s linear infinite; }
 .ranger-dash__status { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; font: .6rem var(--font-mono); letter-spacing: .12em; color: #cdbb95; text-transform: uppercase; }
 .ranger-module--ctrl { display: flex; flex-direction: column; gap: 10px; }
 .ranger-module--ctrl > .ranger-module__label { margin-bottom: 2px; }
@@ -128,7 +144,8 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 [data-boot="on"] .ranger-dash::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 28%; background: linear-gradient(90deg, transparent, #ffd08a24, transparent); animation: ranger-scan 1.5s ease-out .2s both; pointer-events: none; }
 [data-boot="on"] .ranger-hud__copy::before, [data-boot="on"] .ranger-hud__copy::after { animation: ranger-bracket .8s var(--ease-orbit) both; }
 [data-boot="on"] .ranger-readouts { animation: ranger-fade-in .8s ease-out .3s both; }
-[data-boot="on"] .ranger-tape { animation: ranger-fade-in 1s ease-out .6s both; }
+[data-boot="on"] .ranger-hud__foot { animation: ranger-fade-in 1s ease-out .6s both; }
+[data-boot="on"] .ranger-view__reticle { animation: ranger-lock 1.4s var(--ease-orbit) .5s both; }
 
 /* ── Transmission console ──────────────────────────────────────────────── */
 .ranger-transmission { scroll-margin-top: 90px; position: relative; padding: 118px var(--rg-gutter) 96px; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(40px, 6vw, 96px); align-items: start; background: radial-gradient(ellipse at 8% 18%, #c58cff16, transparent 55%), radial-gradient(ellipse at 92% 85%, #ffb65c10, transparent 50%); }
@@ -206,27 +223,37 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 @keyframes ranger-bracket { from { transform: scale(2.4); opacity: 0; } to { transform: none; opacity: .85; } }
 @keyframes ranger-led-boot { from { filter: brightness(.2); } 55% { filter: brightness(1.9); } to { filter: none; } }
 @keyframes ranger-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ranger-lock { from { scale: 1.9; opacity: 0; } 60% { opacity: 1; } to { scale: 1; opacity: 1; } }
+@keyframes ranger-nudge { 0%, 100% { transform: none; } 50% { transform: translateY(3px); } }
 
-@media (min-width: 1800px) { .ranger-bridge { min-height: max(860px, 100svh); } }
 @media (max-width: 1180px) {
   .ranger-dash__grid { grid-template-columns: minmax(0, 1fr) minmax(220px, .55fr); }
   .ranger-module--scope { display: none; }
   .ranger-readouts { min-width: 190px; }
 }
 @media (max-width: 960px) { .ranger-route { --rg-header: 63px; } }
+/* Short landscape (phones on their side): the copy alone fills the glass. */
+@media (max-height: 560px) and (min-aspect-ratio: 1/1) {
+  .ranger-hud { padding-top: calc(var(--rg-header) + 20px); padding-bottom: 14px; }
+  .ranger-hud__copy { padding: 16px 20px; }
+  .ranger-hud__copy h1 { margin-top: 10px; font-size: clamp(2.8rem, 9vh, 4rem); }
+  .ranger-hud__line { margin-top: 10px; font-size: 1.15rem; }
+  .ranger-hud__intro { margin-top: 8px; line-height: 1.6; }
+  .ranger-hud__actions { margin-top: 16px; }
+  .ranger-readouts, .ranger-tape { display: none; }
+}
 @media (max-width: 760px) {
-  .ranger-bridge { min-height: 0; }
-  .ranger-view, .ranger-canopy { bottom: auto; height: 640px; }
-  .ranger-view__shade { background: linear-gradient(0deg, #04060d 0%, #04060dcc 16%, #04060d55 40%, transparent 66%); }
-  .ranger-canopy__frame--wide { display: none; }
-  .ranger-canopy__frame--tall { display: block; }
-  .ranger-hud { grid-template-columns: 1fr; gap: 0; min-height: 640px; padding: calc(var(--rg-header) + 40px) var(--page-gutter) 26px; align-content: end; }
-  .ranger-hud__copy { padding: 18px 20px; }
+  .ranger-view__shade { background: linear-gradient(0deg, #04060d 0%, #04060de0 24%, #04060d80 44%, transparent 62%), linear-gradient(180deg, #04060da0 0, transparent 16%); }
+  .ranger-visor { inset: calc(var(--rg-header) + 12px) 12px 12px; }
+  .ranger-visor__corner { width: 22px; height: 22px; }
+  .ranger-hud { grid-template-columns: 1fr; grid-template-rows: 1fr auto; gap: 8px; padding: calc(var(--rg-header) + 24px) var(--page-gutter) 18px; }
+  .ranger-hud__copy { align-self: end; padding: 18px 20px; }
   .ranger-hud__copy h1 { font-size: clamp(3.6rem, 16vw, 5rem); }
   .ranger-hud__line { font-size: 1.2rem; max-width: 320px; }
   .ranger-hud__intro { font-size: .86rem; }
   .ranger-hud__actions { margin-top: 22px; }
   .ranger-readouts, .ranger-tape { display: none; }
+  .ranger-hud__foot { grid-column: 1; }
   .ranger-dash { padding: 16px var(--page-gutter) 22px; }
   .ranger-dash__grid { grid-template-columns: 1fr; gap: 12px; }
   .ranger-module--scope { display: block; }
@@ -251,6 +278,25 @@ body:has(.ranger-route) .scene-toggle { display: none; }
   .ranger-dossier { flex-direction: column; align-items: start; }
   .ranger-farewell { padding-block: 56px; }
   .ranger-neighbours > .ranger-kicker { max-width: 130px; text-align: right; line-height: 1.8; }
+}
+/*
+  Movimiento reducido del sistema. La regla general de globals.css aplasta
+  toda animación y transición a 0,01 ms, pero aquí manda el interruptor único
+  (movimiento-unificado.md): encendido, la cabina se mueve. Se devuelve valor a
+  valor —nada deshace un !important ajeno— y sólo con el interruptor en «on».
+*/
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="off"]) .ranger-cockpit[data-motion="on"] :is(.ranger-scope__sweep, .ranger-scope__blip) { animation-duration: 5s !important; animation-iteration-count: infinite !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-motion="on"] .ranger-view__reticle > i { animation-duration: 90s !important; animation-iteration-count: infinite !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-motion="on"] .ranger-hud__down > span { animation-duration: 2.4s !important; animation-iteration-count: infinite !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-led { animation-duration: .6s !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-dash::after { animation-duration: 1.5s !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-hud__copy::before,
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-hud__copy::after,
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-readouts { animation-duration: .8s !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-hud__foot { animation-duration: 1s !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-boot="on"] .ranger-view__reticle { animation-duration: 1.4s !important; }
+  html:not([data-motion="off"]) .ranger-cockpit[data-motion="on"] :is(.ranger-view__still, .ranger-visor, .ranger-visor__glass, .ranger-hud, .ranger-tape__scale) { transition-duration: .6s !important; }
 }
 /* El interruptor único de movimiento para también el CSS de la cabina. */
 html[data-motion="off"] .ranger-page *, html[data-motion="off"] .ranger-page *::before, html[data-motion="off"] .ranger-page *::after { animation: none !important; transition: none !important; }

@@ -5,15 +5,16 @@ import { ContactChannels } from "./contact-channels";
 import { DownloadIcon } from "./download-icon";
 import { RangerCockpit, RangerReadouts } from "./ranger-cockpit";
 import { RangerConsole } from "./ranger-console";
-import { RangerCanopy, RangerScope, RangerTape } from "./ranger-instruments";
+import { RangerScope, RangerTape, RangerVisor } from "./ranger-instruments";
 import { RangerViewport } from "./ranger-viewport";
 import { StructuredData } from "./structured-data";
 import "./ranger-contact.css";
 
 /**
  * Ranger — cabina de mando. El visitante va sentado dentro de la nave de
- * enlace: ventanal al frente, HUD sobre el cristal y un panel de instrumentos
- * donde viven los canales reales. Todo lo que importa —prosa, tres canales,
+ * enlace, cruzando un agujero de gusano: el ventanal ocupa la pantalla entera,
+ * el HUD va sobre el cristal y justo debajo está el panel de instrumentos donde
+ * viven los canales reales. Todo lo que importa —prosa, tres canales,
  * formulario, CV y vecinos— es HTML servido; la cabina sólo lo enmarca.
  */
 export function RangerContact({ world, locale }: { world: World; locale: Locale }) {
@@ -24,24 +25,8 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
   return (
     <article className="ranger-page" data-world="ranger">
       <StructuredData locale={locale} breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }} />
-      <RangerCockpit>
-        <RangerViewport />
-        <RangerCanopy />
-        <div className="ranger-hud">
-          <header className="ranger-hud__copy">
-            <p className="ranger-kicker"><span className="ranger-led" data-state="cyan" aria-hidden="true" /><span>Destino {destination}</span><span className="ranger-kicker__sep" aria-hidden="true">·</span><span>Cabina de enlace</span></p>
-            <h1>{prose.title}</h1>
-            <p className="ranger-hud__line">{prose.eyebrow}</p>
-            <p className="ranger-hud__intro">{prose.introduction}</p>
-            <div className="ranger-hud__actions">
-              <a className="ranger-cta" href="#transmision">Escribir un mensaje <span aria-hidden="true">↓</span></a>
-              <a className="ranger-hud__link" href={`mailto:${SITE_PROFILE.email}`}>o abre el correo directamente <span aria-hidden="true">↗</span></a>
-            </div>
-          </header>
-          <RangerReadouts destination={destination.toUpperCase()} />
-          <RangerTape heading={world.placement.phase} />
-        </div>
-        <div className="ranger-dash">
+      <RangerCockpit panel={
+        <div className="ranger-dash" id="instrumentos">
           <div className="ranger-dash__grid">
             <div className="ranger-module ranger-module--freq"><ContactChannels /></div>
             <div className="ranger-module ranger-module--scope">
@@ -54,6 +39,26 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
               <a className="ranger-dash__cta" href="#transmision">Abrir consola de transmisión <span aria-hidden="true">↓</span></a>
               <p className="ranger-dash__note">Sin compromiso. Una idea es un buen comienzo.</p>
             </div>
+          </div>
+        </div>
+      }>
+        <RangerViewport />
+        <RangerVisor />
+        <div className="ranger-hud">
+          <header className="ranger-hud__copy">
+            <p className="ranger-kicker"><span className="ranger-led" data-state="cyan" aria-hidden="true" /><span>Destino {destination}</span><span className="ranger-kicker__sep" aria-hidden="true">·</span><span>Cabina de enlace</span></p>
+            <h1>{prose.title}</h1>
+            <p className="ranger-hud__line">{prose.eyebrow}</p>
+            <p className="ranger-hud__intro">{prose.introduction}</p>
+            <div className="ranger-hud__actions">
+              <a className="ranger-cta" href="#transmision">Escribir un mensaje <span aria-hidden="true">↓</span></a>
+              <a className="ranger-hud__link" href={`mailto:${SITE_PROFILE.email}`}>o abre el correo directamente <span aria-hidden="true">↗</span></a>
+            </div>
+          </header>
+          <RangerReadouts destination={destination.toUpperCase()} />
+          <div className="ranger-hud__foot">
+            <RangerTape heading={world.placement.phase} />
+            <a className="ranger-hud__down" href="#instrumentos">Canales directos <span aria-hidden="true">↓</span></a>
           </div>
         </div>
       </RangerCockpit>

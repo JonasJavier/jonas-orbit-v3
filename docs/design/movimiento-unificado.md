@@ -63,10 +63,20 @@ tres botones locales. Ninguna página guarda ya estado de pausa o activación.
 Un sistema en miniatura: un cuerpo central y un satélite en una órbita
 inclinada. Encendido, el satélite recorre la órbita (animación CSS) y el
 núcleo brilla; apagado, la órbita queda punteada y el satélite se detiene.
-Lleva la lectura `MOVIMIENTO · ON/OFF` en el mismo mono que la banda sonora
-—en móvil sólo el icono— y nombre accesible «Desactivar movimiento» /
-«Activar movimiento» con `aria-pressed`. 44 px, foco visible, sin JavaScript
-no aparece (no habría nada que apagar).
+Nombre accesible «Desactivar movimiento» / «Activar movimiento» con
+`aria-pressed`. 44 px, foco visible, sin JavaScript no aparece (no habría nada
+que apagar).
+
+**El estado se lee quieto (2026-09-22).** El dueño pidió que fuera «más claro
+cuando están desactivados y activados». La causa: con `prefers-reduced-motion`
+activo en su equipo, `globals.css` aplasta toda animación y el satélite nunca
+giraba, así que ON y OFF sólo se distinguían por un punto de 5 px. Ahora cada
+estado cambia cuatro cosas estáticas a la vez, en el icono de movimiento y en
+el de audio por igual (`motion-toggle.css`): **ON** — icono y borde cian, halo
+y una etiqueta `ON` encendida sobre el borde; **OFF** — icono gris, borde
+discontinuo, el icono tachado y `OFF` apagada. El audio añade **MUTE** en
+ámbar con la cruz. El giro del satélite y el pulso de las ondas se devuelven
+con reduced-motion mientras el interruptor esté encendido.
 
 ## Verificación
 

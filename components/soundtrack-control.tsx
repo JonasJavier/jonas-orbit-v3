@@ -6,11 +6,16 @@ import { configureAudio } from "@/lib/audio-bus";
 import { playSfx } from "@/lib/sfx";
 import "./soundtrack-control.css";
 
-function Speaker({ quiet }: { quiet: boolean }) {
+type TrayState = "on" | "off" | "muted";
+
+/** Waves when it sounds, a cross when muted, silent and struck through when off. */
+function Speaker({ state }: { state: TrayState }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
       <path d="M11 5 6 9H3v6h3l5 4V5Z" strokeLinejoin="round" />
-      {quiet ? <path d="m16 9 6 6m0-6-6 6" /> : <><path d="M15 8a6 6 0 0 1 0 8" /><path d="M18 4a11 11 0 0 1 0 16" /></>}
+      {state === "muted" ? <path d="m16 9 6 6m0-6-6 6" /> : null}
+      {state === "on" ? <><path className="soundtrack__wave" d="M15 8a6 6 0 0 1 0 8" /><path className="soundtrack__wave" d="M18 4a11 11 0 0 1 0 16" /></> : null}
+      {state === "off" ? <path className="tray-slash" d="M3.5 20.5 20.5 3.5" /> : null}
     </svg>
   );
 }
@@ -30,9 +35,12 @@ export function SoundtrackControl() {
   const details = useRef<HTMLDetailsElement>(null);
   const active = state.playback === "playing" || state.playback === "loading";
   const quiet = state.muted || state.volume === 0;
+  // ON is the default, and it stays ON while the browser waits for the first
+  // gesture to let it sound (`armed`): the tray shows the intent, not the wait.
+  const tray: TrayState = quiet ? "muted" : active || state.playback === "armed" ? "on" : "off";
   const status = quiet ? "Mute" : state.playback === "loading" ? "Cargando" : state.playback === "error" ? "Reintentar"
-    : state.playback === "paused" ? "Pausa" : active ? "On" : "Off";
-  const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : "Audio detenido";
+    : state.playback === "paused" ? "Pausa" : state.playback === "armed" ? "Listo" : active ? "On" : "Off";
+  const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : state.playback === "armed" ? "Activado · suena al primer clic" : "Audio detenido";
 
   /*
     Un solo mando para todo lo que suena. La música es un archivo; la travesía,
@@ -74,7 +82,7 @@ export function SoundtrackControl() {
   }, [player]);
 
   return (
-    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active} data-muted={quiet}>
+    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active} data-muted={quiet} data-state={tray}>
       <details className="soundtrack__settings" ref={details} onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -82,8 +90,9 @@ export function SoundtrackControl() {
           event.currentTarget.querySelector("summary")?.focus();
         }
       }}>
-        <summary aria-label="Audio" title="Audio">
-          <Speaker quiet={quiet} />
+        <summary aria-label="Audio" title={tray === "on" ? "Audio activado" : tray === "muted" ? "Audio silenciado" : "Audio desactivado"}>
+          <Speaker state={tray} />
+          <span className="tray-state" aria-hidden="true">{tray === "muted" ? "Mute" : tray}</span>
         </summary>
         <div className="soundtrack__panel">
           <div className="soundtrack__heading">
@@ -113,7 +122,7 @@ export function SoundtrackControl() {
           <input id="soundtrack-volume" type="range" min="0" max="100" step="1" value={Math.round(state.volume * 100)}
             onChange={(event) => player.setVolume(Number(event.target.value) / 100)} />
           <button className="soundtrack__mute" type="button" aria-pressed={quiet} onClick={() => player.toggleMute()}>
-            <Speaker quiet={quiet} />{quiet ? "Restaurar sonido" : "Silenciar"}
+            <Speaker state={quiet ? "muted" : "on"} />{quiet ? "Restaurar sonido" : "Silenciar"}
           </button>
         </div>
       </details>

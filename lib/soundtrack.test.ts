@@ -38,8 +38,18 @@ describe("enabled-by-default, persistent soundtrack", () => {
     expect(media.src).toContain("/audio/orbit-ambient.m4a");
   });
 
-  it("stays off only after the visitor explicitly disables it", () => {
+  it("forgets the retired key and a saved zero volume: the visit starts audible", async () => {
     localStorage.setItem("jonas-orbit:audio-enabled", "false");
+    localStorage.setItem("jonas-orbit:audio-volume", "0");
+    player.setHidden(false);
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBeNull();
+    expect(player.getSnapshot()).toEqual({ playback: "playing", volume: 0.28, muted: false });
+  });
+
+  it("stays off only after the visitor explicitly disables it", () => {
+    localStorage.setItem("jonas-orbit:audio-on", "false");
     player.startDefault();
     expect(player.getSnapshot().playback).toBe("off");
     expect(Audio).not.toHaveBeenCalled();
@@ -50,8 +60,9 @@ describe("enabled-by-default, persistent soundtrack", () => {
     vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
     player.startDefault();
     await Promise.resolve(); await Promise.resolve();
-    expect(player.getSnapshot().playback).toBe("paused");
-    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBeNull();
+    // Armed, not paused: the tray keeps showing ON while the browser waits.
+    expect(player.getSnapshot().playback).toBe("armed");
+    expect(localStorage.getItem("jonas-orbit:audio-on")).toBeNull();
     player.resumeWanted();
     await Promise.resolve(); await Promise.resolve();
     expect(player.getSnapshot().playback).toBe("playing");
@@ -67,10 +78,10 @@ describe("enabled-by-default, persistent soundtrack", () => {
     expect(ramp).toHaveBeenLastCalledWith(0.4, 1.2);
     media.currentTime = 42;
     player.pause();
-    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBe("false");
+    expect(localStorage.getItem("jonas-orbit:audio-on")).toBe("false");
     await vi.advanceTimersByTimeAsync(250);
     await player.play();
-    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBe("true");
+    expect(localStorage.getItem("jonas-orbit:audio-on")).toBe("true");
     expect(Audio).toHaveBeenCalledTimes(1);
     expect(media.currentTime).toBe(42);
   });

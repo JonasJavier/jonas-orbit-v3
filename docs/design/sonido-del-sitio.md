@@ -51,6 +51,19 @@ es una sola: **el encendido de motores de la Ranger**, que cuelga del mismo
 vuelo, no un aviso de interfaz, y con el vuelo apagado no hay nada que
 encender.
 
+**Encendido por defecto, y se ve (2026-09-22).** El dueño pidió asegurar que
+música y sonido arranquen activados. Ya lo estaban en el código, pero no lo
+parecía: el navegador retiene el sonido hasta el primer gesto y ese estado se
+llamaba `paused`, así que el icono se pintaba apagado. Ahora es `armed`
+(«Activado · suena al primer clic» en el panel) y la bandeja lo muestra como
+**ON**: el estado que se enseña es la intención, no la espera. Además la
+elección guardada cambia de clave (`jonas-orbit:audio-enabled` →
+`jonas-orbit:audio-on`, la vieja se borra) para que un «apagado» escrito
+mientras se construía el sitio no siga respondiendo por él, y un volumen
+guardado de 0 —un silencio disfrazado, que no se recuerda— ya no se restaura.
+El lenguaje visual ON / OFF / MUTE es el del interruptor de movimiento
+(`movimiento-unificado.md`, §«El icono»).
+
 ## 3 · La paleta
 
 `lib/sfx.ts`: catorce recetas y **un** renderizador. Cada receta es una lista de

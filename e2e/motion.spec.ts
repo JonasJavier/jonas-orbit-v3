@@ -69,13 +69,14 @@ test("movimiento: encendido por defecto, un solo icono lo apaga todo y se recuer
   await expect(page).toHaveURL(/\/es\/contacto$/);
   await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
   await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "off");
-  await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
+  // Apagado, el túnel queda en un fotograma quieto: no vuela.
+  await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
   expect(await page.locator(".ranger-scope__sweep").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
 
   await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
   await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "on");
-  await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
+  await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "on");
 });
 
 test("movimiento: ?no3d=1 apaga el interruptor y la portada queda en mapa plano", async ({ page }) => {
@@ -98,7 +99,7 @@ test("movimiento: el icono es alcanzable con teclado en móvil y no tapa la band
   const box = await toggle.boundingBox();
   expect(box!.width).toBeGreaterThanOrEqual(44);
   expect(box!.height).toBeGreaterThanOrEqual(44);
-  const audio = await page.getByRole("button", { name: /música/ }).boundingBox();
+  const audio = await page.locator('summary[aria-label="Audio"]').boundingBox();
   expect(box!.x + box!.width).toBeLessThanOrEqual(audio!.x + 1);
   await toggle.focus();
   await page.keyboard.press("Enter");

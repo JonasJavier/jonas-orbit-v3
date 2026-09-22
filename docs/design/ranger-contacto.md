@@ -1,8 +1,100 @@
 # Ranger — cabina de mando
 
-Implementación de `/es/contacto`. La sección `Cabina de mando (2026-09-13)`
-manda sobre `Cabina de comunicaciones (2026-09-12)`, que queda abajo como
-referencia histórica sustituida.
+Implementación de `/es/contacto`. La sección `Travesía por el agujero de
+gusano (2026-09-22)` manda sobre `Cabina de mando (2026-09-13)` en el ventanal,
+el vuelo, el marco y la composición de la primera pantalla; el resto de la
+cabina (HUD, panel, consola, datos, límites) sigue vigente. `Cabina de
+comunicaciones (2026-09-12)` queda abajo como referencia histórica sustituida.
+
+## Travesía por el agujero de gusano (2026-09-22)
+
+Petición del dueño: «el modo vuelo tiene que estar vinculado con el botón
+global del movimiento […] que el espacio y el tiempo se doblen como el efecto
+de Interstellar al cruzar el agujero de gusano; no tiene que haber planetas,
+sólo estrellas y espacio; que sea continuo, que no se pare a menos que el
+usuario desactive el movimiento […] me gustaría que el hero de Ranger ocupe el
+100 % de todo el viewport». Carta blanca en el diseño del hero y en mejoras.
+
+### Composición
+
+- **El ventanal es la primera pantalla entera.** `.ranger-bridge` mide
+  `100svh` (sube por debajo de la cabecera con el margen negativo de siempre)
+  y el canvas va a sangre, sin casco. El panel de instrumentos (`#instrumentos`:
+  frecuencias, radar, mandos) sale del hero y va justo debajo, dentro del mismo
+  estado de cabina; «Canales directos ↓» al pie del HUD lleva a él.
+- **Sin casco ni montante.** La nave se sugiere con el **visor**
+  (`RangerVisor`): tres esquinas de retículo al borde del cristal —la cuarta es
+  de la bandeja de movimiento y audio— y los reflejos ámbar de los
+  instrumentos, con el paralaje de cabeza de siempre.
+- **La garganta** va a la derecha en apaisado (0,27 / 0,03 en unidades de
+  alto) para que la copia quede sobre la pared oscura, y centrada y alta en
+  vertical (0 / 0,17) con la copia debajo. `throatFor()` en el componente y
+  `--vp-x/--vp-y/--throat` en el CSS (consulta de contenedor por proporción)
+  llevan los mismos números. Un **retículo** fino sigue a la garganta con la
+  curvatura que publica el bucle (`--bend-x/--bend-y`).
+- **HUD**: `ENLACE / DESTINO / HORA EN SANTO DOMINGO / VUELO`. La lectura
+  VUELO dice «En travesía» o «Detenido» según el interruptor de movimiento: sin
+  cifras inventadas. La frecuencia que se apunta pasa a la cabecera de su
+  propio módulo («Sintonizando 01 · Correo»), que es donde está el puntero.
+
+### El shader
+
+Un triángulo, ningún asset, WebGL2 propio como antes:
+
+1. **Tres paredes de hilos de luz** (radios 0,2 / 0,36 / 0,6): cada sector de
+   la pared lleva un hilo por periodo de profundidad; la perspectiva deja el
+   ancho constante en unidades de sector (`r · z = R`). Se apagan donde serían
+   un borrón (demasiado cerca) o más finos que un píxel (demasiado hondos).
+   Doppler: lo que viene de frente llega frío, lo que pasa se calienta — el
+   cian y el ámbar de la cabina.
+2. **El espacio se dobla.** El ángulo gira con la profundidad (`uTwist`, 0,55 ±
+   0,15) y despacio con el tiempo: los hilos son espirales que se abren desde
+   la garganta. La sección del tubo es una elipse cuyo eje gira con la
+   profundidad (el túnel se retuerce como una manga) y la boca se desplaza
+   (`uBend`) con un peso de meseta que la mueve entera, así que el anillo no
+   se deforma.
+3. **Gas violeta y cian** sobre las paredes, con ruido de retícula periódica, y
+   un brillo tenue de pared para que el túnel se lea como volumen.
+4. **La boca**: el cielo del otro lado lensado por una masa puntual —estrellas
+   amontonadas en el anillo de Einstein, la banda de una galaxia lejana
+   convertida en arcos— con el anillo nítido, un halo ancho y un anillo oscuro
+   de fotones donde las paredes le ceden el paso. Sólo pagan este cálculo los
+   píxeles cercanos a la garganta.
+
+**Continuo y sin saltos.** Todo patrón es periódico en profundidad con periodo
+48 (hilos, gas, costillas) y la distancia se envuelve exactamente ahí: el vuelo
+no tiene fin ni costura, y la precisión de `float` no se degrada con las horas.
+
+### El interruptor
+
+El vuelo cuelga del interruptor único de movimiento, y nada más. **Apagarlo
+congela el último fotograma**: el canvas y su contexto se quedan, el bucle deja
+de pedir cuadros y la velocidad se conserva, así que reanudar no salta. Quien
+llega con el movimiento apagado recibe el túnel a velocidad de crucero, quieto.
+El primer arranque con movimiento sube los motores en 2,8 s. Sin WebGL2 —o sin
+JavaScript— queda la **vista fija**: el mismo túnel en SVG, 150 hilos curvados
+desde la garganta, el anillo y el resplandor. El contexto se libera al salir de
+la página (`WEBGL_lose_context`).
+
+Con `prefers-reduced-motion` del sistema, `globals.css` aplasta toda animación
+CSS; la cabina devuelve la suya (radar, retículo, encendido, paralaje) valor a
+valor y sólo con el interruptor en «on», como Edmunds.
+
+### Presupuesto medido
+
+30 fps, DPR ≤ 1,5, 2048 px de ancho, suspensión fuera de pantalla y en segundo
+plano. En la GPU integrada del equipo de desarrollo (AMD Radeon, ANGLE D3D11,
+Chromium sin cabeza) a 2048 × 1152: **16,2 cuadros/s el túnel contra 14,7 el
+ventanal anterior** en la misma medida — no cuesta más que lo aprobado.
+
+### Verificación
+
+`components/ranger-contact.test.tsx`: vista fija del túnel sin WebGL2,
+congelar sin soltar el canvas ni el contexto y liberarlo al desmontar, lectura
+VUELO, frecuencia en su módulo y el panel fuera del hero. `e2e/ranger.spec.ts`:
+el hero cubre el viewport a 375, 1440 y 1920 y el panel empieza debajo; draws
+que paran al apagar y en segundo plano; con reduced-motion el radar gira a 5 s.
+Veredicto visual pendiente del dueño.
 
 ## Cabina de mando (2026-09-13)
 
