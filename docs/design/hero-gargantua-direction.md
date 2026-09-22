@@ -1811,6 +1811,15 @@ que pidió, sin haber tocado ni una densidad en este paso. Las dos cajas de
 núcleo dejan de ser comparables entre pasadas a partir de aquí, porque el
 banco ya no las llena: quedan en 7.54 el azul y 9.12 el morado.
 
+**Y el morado encoge otra vez, y sólo él** (0.195/0.165 → 0.118/0.100, otro
+0.61 sobre el anterior). Los dos bancos dejan de ser simétricos en tamaño a
+propósito: el azul el dueño lo da por bueno desde el primer diagnóstico y el
+morado venía siendo el elemento más presente del cielo desde antes del pase,
+así que es el único que sigue cediendo. Con eso el negro llega al **61.8 %** y
+la energía de estrella al **14.5 %**, y el núcleo morado queda en 6.06 contra
+los 14.26 de partida — un 57 % menos. Si el dueño lo quiere de vuelta, la
+palanca son esos dos números y nada más.
+
 ### Endurance, un 8 % menos
 
 Mismo encargo, misma sesión: «reducir el tamaño de Endurance de un 5 a 10 %,

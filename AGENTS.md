@@ -1023,15 +1023,55 @@ historial en cada `pointermove`: ése es el fallo contrario y deja a Gargantúa
 granulada). Medido con `.shots/_scratch/paralaje.mjs`: la energía de estrella
 caía de 11.2 % a 9.9 % sólo por mover el ratón, y ahora va de 11.6 % a 12.4 %.
 **Y las nebulosas encogen** por segundo encargo del dueño: los cuatro semiejes
-a 0.61 (−63 % de superficie por banco), que es lo que cierra las cifras — el
-cielo realmente negro sube de 30.9 % a **56.0 %** y la energía de estrella de
-9.4 % a **12.2 %**, o sea el 12 % que pidió. **Dos trampas de lectura:** las
+a 0.61 (−63 % de superficie por banco), y el morado otra vez a 0.61 sobre eso
+—sólo él, porque el azul le gusta como está—, que es lo que cierra las cifras:
+el cielo realmente negro sube de 30.9 % a **61.8 %**, la energía de estrella de
+9.4 % a **14.5 %** y el núcleo morado cae un 57 %. **Dos trampas de lectura:** las
 trazas orbitales del mapa son curvas finas que el segmentador de
 `star-streaks.mjs` cuenta como manchas alargadas, así que el veredicto se lee
 en el recorte de la banda encima de la sombra y no en la media del anillo de
 400-550 px; y cualquier herramienta de captura nueva tiene que escribir
 `jonas-orbit:reducir-efectos = "false"` en `localStorage` o sirve el perfil
 plano y no mide la escena. Su valoración visual queda abierta.
+
+**System Map — dos respuestas al puntero (2026-09-21):** la sección `14` de
+`docs/design/endurance-navigation-interface.md` manda sobre `6`, `7` y `12` en
+**qué ocurre al apuntar un destino**. Pedido del dueño: «quiero probar quitar
+el target lock y esos efectos de hover […] guárdalo, no lo elimines». Apuntar
+encendía SEIS cosas colgadas del mismo `data-target-state` —escuadras de
+adquisición, nombre + etiqueta, lectura del HUD hasta `TARGET LOCKED`, raíl
+resaltado, tinte `uFocus` del cuerpo (que además CONGELA el paralaje) y los
+arcos del retículo—; ahora enciende una: **su nombre cósmico**, con el
+trazo de 1 px bajo el rótulo dibujándose hacia fuera. `lib/map-hover.ts` tiene UNA constante,
+`MAP_HOVER_MODE` (`instrumento` | `sencillo`, hoy `sencillo`), y nada se ha
+borrado: las escuadras, el cableado del tinte y las reglas del HUD siguen
+detrás de una condición. `SystemMap` la acepta además como propiedad, y eso no
+es comodidad de tests — **es lo que impide que el camino apagado se pudra
+mientras está apagado**: los cinco tests de adquisición siguen ejercitándola a
+mano, cuatro nuevos cubren el modo sencillo y uno comprueba que los dos
+caminos son EXCLUYENTES en el DOM. Dos reglas del pase: **el estado bloqueado
+se sigue escribiendo y lo que se apaga es quien lo pinta** —`activate` lo
+necesita y la travesía lo lee— y **el modo sencillo no añade ni un nodo al
+cuadro**. Esto último es la segunda versión: la primera fue un aro de 1 px
+sobre el cuerpo y el dueño la rechazó al verla, con razón, porque repetía el
+error que la propia hoja ya había documentado al retirar el marcador —no se
+dibuja un círculo de interfaz encima de un cuerpo iluminado de verdad, y menos
+uno cuyo diámetro respira con la órbita—. Lo que se usa en su lugar ya estaba
+escrito y **muerto**: el trazo de `.system-map__label::after` sólo se encendía
+con `.system-map__body:hover`, y ese `:hover` no llega nunca desde que el
+rótulo lleva `pointer-events: none`. El raíl conserva su revelado del nombre
+cósmico, que es del §6 y no de la adquisición, y **Gargantúa recupera el suyo
+al apuntarla** —su bloque lo prometía y la regla que lo oculta en reposo lleva
+un atributo más que la que lo encendía, así que ganaba siempre—. En el mismo
+pase se corrigió **la cruz que flotaba bajo el disco**, reportada por el dueño
+como artefacto: la regla que devuelve el marcador de Gargantúa con la escena
+viva dice «el punto del marcador, sin su aro» y quita el aro con
+`border-color`, pero las cuatro barras del marcador son `linear-gradient` de
+FONDO escritos por una regla posterior — dos reglas de momentos distintos que
+se contradicen sin que ninguna esté mal por sí sola. Ahora es el punto de 3 px
+que siempre dijo ser. **No se ha tocado el retículo del puntero**,
+que sigue abriendo sus arcos sobre un cuerpo: es la sexta de la lista y sale
+con una condición más en el mismo interruptor si el dueño lo quiere fuera.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la

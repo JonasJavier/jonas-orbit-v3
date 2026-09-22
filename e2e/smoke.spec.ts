@@ -124,27 +124,33 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     });
     const target = page.locator(".hud__target");
 
+    /*
+      MODO `sencillo` (2026-09-21, ver lib/map-hover.ts). Apuntar un destino ya
+      no adquiere un blanco: marca su slot y su entrada del raíl, y el HUD se
+      queda quieto. Este test pasó de comprobar que el panel se enciende a
+      comprobar las dos mitades — que la marca llega y que el panel NO.
+    */
     await expect(target).toHaveAttribute("data-target-state", "idle");
     await endurance.hover();
-    await expect(target).toHaveAttribute("data-target-state", "target");
-    await expect(target).toContainText(/Target lock/i);
-    // El NAV TARGET dice a dónde vas y para qué sirve. La posición en la lista
-    // dejó de imprimirse: el orden narrativo vive en el DOM y en el tabulador.
-    await expect(target).not.toContainText(/\d\d/);
-    await expect(target).toContainText(/Endurance/i);
-    await expect(
-      page.locator(
-        '.system-map__slot:has([data-system-body="endurance"])',
-      ),
-    ).toHaveAttribute("data-target-state", "target");
+    const enduranceSlot = page.locator(
+      '.system-map__slot:has([data-system-body="endurance"])',
+    );
+    await expect(enduranceSlot).toHaveAttribute("data-map-hover", "true");
+    await expect(enduranceSlot.locator(".system-map__label")).toHaveCSS(
+      "opacity",
+      "1",
+    );
+    await expect(target).toHaveAttribute("data-target-state", "idle");
+    await expect(target).not.toContainText(/Target lock/i);
+    await expect(enduranceSlot).toHaveAttribute("data-target-state", "idle");
 
     const miller = map.getByRole("link", {
       name: /Formación Miller/i,
     });
     await miller.focus();
     await expect(miller).toBeFocused();
-    await expect(miller).toHaveAttribute("data-target-state", "target");
-    await expect(target).toContainText(/Miller/i);
+    await expect(miller.locator("..")).toHaveAttribute("data-map-hover", "true");
+    await expect(miller).toHaveAttribute("data-target-state", "idle");
   });
 
   test("G1 · cada mundo responde 200 en su ruta y una desconocida da 404", async ({
