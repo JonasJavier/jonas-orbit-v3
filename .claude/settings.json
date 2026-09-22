@@ -45,7 +45,20 @@
       "WebFetch(domain:r3f.docs.pmnd.rs)",
       "WebFetch(domain:nextjs.org)",
       "WebFetch(domain:developers.cloudflare.com)",
-      "WebFetch(domain:developer.mozilla.org)"
+      "WebFetch(domain:developer.mozilla.org)",
+      "mcp__codebase-memory-mcp__list_projects",
+      "mcp__codebase-memory-mcp__get_graph_schema",
+      "mcp__Claude_Browser__get_page_text",
+      "mcp__Claude_Browser__read_page",
+      "mcp__Claude_Browser__find",
+      "mcp__Claude_Browser__read_console_messages",
+      "mcp__Claude_Browser__read_network_requests",
+      "mcp__Claude_Browser__tabs_context",
+      "mcp__Claude_Browser__preview_list",
+      "mcp__Claude_Browser__preview_logs",
+      "mcp__ccd_session__mark_chapter",
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell(Get-NetTCPConnection *)"
     ],
     "ask": [
       "Bash(npm install:*)",
@@ -107,6 +120,18 @@
     "sanity@inline": false,
     "servicenow-sdk@inline": false,
     "twilio-developer-kit@inline": false,
-    "vpai@inline": false
+    "vpai@inline": false,
+    "mcp-server-dev@claude-plugins-official": false
+  },
+  "skillOverrides": {
+    "ios-clean": "off",
+    "ios-design-review": "off",
+    "ios-fix": "off",
+    "ios-qa": "off",
+    "ios-sync": "off",
+    "setup-gbrain": "off",
+    "sync-gbrain": "off",
+    "pair-agent": "off",
+    "benchmark-models": "off"
   }
 }
