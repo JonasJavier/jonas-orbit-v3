@@ -1,0 +1,21 @@
+# codebase-memory-mcp: lo que NO entra en el grafo (sintaxis de .gitignore).
+# Lo que ya ignora .gitignore tampoco entra. Ver docs/ai/codebase-memory.md.
+
+# Código de la v2 guardado sólo como referencia: duplica nombres (useReducedMotion…)
+# y ensucia las búsquedas por símbolo.
+docs/reference/v2/
+
+# Scripts de medición sueltos en la raíz (temporales, no son parte del sitio).
+/tmp-metrics.mjs
+/tools-*-tmp.mjs
+/_rev_measure.mjs
+/.tmp-*.png
+
+# Material de trabajo y scripts de OTROS proyectos.
+portfolio-content/omsta/scripts/
+portfolio-content/omsta/screenshots/
+assets/**/_curaduria/
+output/
+Disenos/
+Fotos/
+music/

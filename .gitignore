@@ -75,3 +75,7 @@ crash.log
 
 # copias locales de trabajo (backups recuperables, no viajan al repo)
 /output/archive/
+
+# codebase-memory-mcp: el índice es por máquina (~/.cache/codebase-memory-mcp).
+# La opción de artefacto versionado quedó obsoleta y con conflictos (2026-09-22).
+/.codebase-memory/
