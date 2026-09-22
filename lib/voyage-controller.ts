@@ -1,4 +1,5 @@
 import type { WorldId } from "@/content/worlds.data";
+import { voyageAudio } from "./voyage-audio";
 import { voyageTimeline, voyageTintFor, type VoyageMode } from "./voyage";
 
 /**
@@ -135,6 +136,10 @@ function push() {
   clearTimers();
   releaseSkip();
   publish({ ...state, status: "pushed" });
+  // Por el camino del salto la luz y el pico son el mismo instante y el golpe
+  // no ha sonado todavía. `cross()` es idempotente: por el camino normal ya
+  // sonó con el fogonazo y aquí no hace nada.
+  voyageAudio.cross();
   navigate?.(departure.href);
   // Tope duro de la llegada. Si el router tarda más, la luz se retira igual.
   later(voyageTimeline(departure.mode).arriveCap, arrive);
@@ -205,9 +210,15 @@ export function startVoyage(input: StartVoyageInput): boolean {
   root.style.setProperty("--voyage-tint", voyageTintFor(input.id).hex);
 
   publish({ status: "depart", departure, skipped: false });
+  // El sonido se arranca DENTRO del gesto que activó el destino: es lo que
+  // permite al navegador dejar sonar el audio sin pedir nada más.
+  voyageAudio.depart(departure.id, departure.mode);
   attachSkip();
   later(timeline.push - timeline.flashLead, () => {
-    if (state.status === "depart") publish({ ...state, status: "flash" });
+    if (state.status === "depart") {
+      publish({ ...state, status: "flash" });
+      voyageAudio.cross();
+    }
   });
   later(timeline.push, push);
   return true;
@@ -228,6 +239,7 @@ export function markVoyageArrived() {
 export function cancelVoyage() {
   clearTimers();
   releaseSkip();
+  voyageAudio.stop();
   navigate = null;
   publish(IDLE);
 }

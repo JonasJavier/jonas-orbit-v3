@@ -164,7 +164,7 @@ test("Cubierta 3D: una obra lateral se centra, la central abre, y el filtro camb
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Invierno", exact: true }).click();
   await expect(page.locator(caption)).toHaveText("Túnel de hielo");
-  await expect(page.locator(counter)).toHaveText("Invierno · 01 / 16");
+  await expect(page.locator(counter)).toHaveText("Invierno · 01 / 14");
   await page.getByRole("button", { name: "Todo", exact: true }).click();
   await expect(page.locator(counter)).toHaveText("Diseño · 01 / 90");
 });

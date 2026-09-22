@@ -174,6 +174,21 @@ void main() {
   // Bloqueo de objetivo: el resto del cuadro baja un poco de intensidad.
   col *= 1.0 - uLock * 0.10 * smoothstep(rE * 1.5, rE * 4.0 + 0.3, r);
 
+  /*
+    El pestillo: un latido de exposición al enganchar el objetivo.
+
+    uLock sube de 0 a 1 y se queda ahí, así que 4·u·(1−u) es un pulso exacto
+    —cero al arrancar, cero al terminar, pico a los 80 ms— y no deja residuo
+    durante el resto del viaje. Es la cámara cerrando el diafragma y volviendo,
+    a la vez que los dos golpes del pestillo del audio.
+
+    NO es un aro. Un círculo de interfaz dibujado encima de un cuerpo iluminado
+    de verdad ya se rechazó una vez (endurance-navigation-interface §14) y la
+    razón sigue en pie: sería instrumentación, no luz.
+  */
+  float latch = 4.0 * uLock * (1.0 - uLock);
+  col *= 1.0 - 0.16 * latch;
+
   // Compresión luminosa: la luz se recoge hacia el centro justo antes del
   // cruce. La capa del DOM termina el trabajo sobre el cambio de página.
   float core = exp(-r * r / (rE * rE * 2.2 + 0.01));

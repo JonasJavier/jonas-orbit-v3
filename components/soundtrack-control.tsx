@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Soundtrack } from "@/lib/soundtrack";
+import { voyageAudio } from "@/lib/voyage-audio";
 import "./soundtrack-control.css";
 
 function Speaker({ quiet }: { quiet: boolean }) {
@@ -31,6 +32,20 @@ export function SoundtrackControl() {
   const status = quiet ? "Mute" : state.playback === "loading" ? "Cargando" : state.playback === "error" ? "Reintentar"
     : state.playback === "paused" ? "Pausa" : active ? "On" : "Off";
   const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : "Audio detenido";
+
+  /*
+    Un solo mando para todo lo que suena. El sonido de la travesía se sintetiza
+    aparte —no es esta pista— pero obedece a este control: pausar o silenciar
+    aquí deja el sitio entero en silencio. «Pausa» sin intención (autoplay
+    bloqueado, pestaña oculta) no cuenta: ahí el visitante sigue queriendo
+    audio y el primer clic en un destino es justo el gesto que lo desbloquea.
+  */
+  useEffect(() => {
+    voyageAudio.configure({
+      enabled: state.playback !== "off" && !quiet,
+      volume: state.volume,
+    });
+  }, [state.playback, state.volume, quiet]);
 
   useEffect(() => {
     const visibility = () => player.setHidden(document.hidden);
