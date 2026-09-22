@@ -29,6 +29,15 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("movimiento: la portada arranca activa incluso con reduced-motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/es");
+  await expect(page.getByRole("button", { name: "Desactivar movimiento", exact: true })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+  await expect(page.locator("html")).toHaveAttribute("data-effects-forced", "true");
+  await expect(page.getByTestId("gargantua-canvas")).toHaveCount(1);
+});
+
 test("movimiento: encendido por defecto, un solo icono lo apaga todo y se recuerda entre rutas", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/formacion");

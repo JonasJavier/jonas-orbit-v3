@@ -166,23 +166,33 @@ export function useMotionEnabled() {
 }
 
 /**
- * Encendido EXPLÍCITO: el visitante pulsó el icono. (`?no3d=0` sólo retira el
- * perfil ligero; no fuerza la escena en un equipo que el gate desaconseja.)
+ * Encendido efectivo: es el estado por defecto y también el que deja el
+ * visitante al pulsar el icono. (`?no3d=1` o una elección guardada de apagado
+ * son las únicas excepciones.)
  *
- * Distingue «encendido porque es el defecto» de «encendido porque lo pedí».
- * Las páginas animan en ambos casos; la escena 3D y su gate de capacidad
- * sólo saltan por encima de reduced-motion y de las heurísticas (GPU por
- * software, red lenta, memoria corta) con la petición explícita, igual que
- * hacía la activación de antes. Un solo icono, dos lecturas.
+ * La escena 3D recibe la misma decisión que el resto del sistema. Antes, el
+ * estado visual podía decir ON mientras el gate seguía congelado por
+ * reduced-motion o por una heurística: de ahí el arranque intermitente que se
+ * veía al entrar. La falta real de WebGL sigue degradando a mapa plano.
  */
+export function resolveForcedEffects(
+  search: string,
+  stored: string | null,
+): boolean {
+  if (readLightEffectsParam(search) === true) return false;
+  return stored !== "true";
+}
+
 function getForcedSnapshot() {
-  if (typeof window === "undefined") return false;
-  if (readLightEffectsParam(window.location.search) === true) return false;
-  return readStored(STORAGE_KEY) === "false";
+  if (typeof window === "undefined") return true;
+  return resolveForcedEffects(
+    window.location.search,
+    readStored(STORAGE_KEY),
+  );
 }
 
 export function useForcedEffects() {
-  return useSyncExternalStore(subscribe, getForcedSnapshot, () => false);
+  return useSyncExternalStore(subscribe, getForcedSnapshot, () => true);
 }
 
 /**

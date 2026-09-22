@@ -108,6 +108,115 @@ peticiones del dueño con una verificación previa cada una.
   `medium`, `caption`, dimensiones reales y `source`, `npm run content` y
   `node tools/prepare-edmunds.mjs`.
 
+**Séptimo pase (2026-09-22): una salida limpia al proyecto.** Jonás pidió que
+X Tecno invite a ver más sin poner cromo encima de la captura. La pieza sigue
+siendo UNA obra —no se infla el catálogo con cada pantalla del flujo—, pero
+`prototypeHref` distingue las interfaces con prototipo vivo. Hay un solo botón
+`VER PROYECTO EN FIGMA` fuera de la imagen: bajo el título en mosaico y en el
+pie cuando X Tecno está centrada en la cubierta. Pulsar la captura conserva el
+gesto normal de ampliar; dentro del visor aparece el mismo botón y sustituye a
+`Abrir imagen`, para no ofrecer dos salidas equivalentes. El enlace primario de
+la captura sigue apuntando al WebP sin JavaScript, y una obra lateral todavía
+se centra antes de abrirse.
+
+**Octavo pase (2026-09-22): el giro del anillo lo apagaba el sistema
+operativo.** Jonás reportó que el arrastre gira precioso y que las flechas no
+tienen esa animación. No era del componente: `go()` estaba bien y las cuatro
+vías —flechas, teclas, salto de sector y centrar una obra lateral— creaban su
+transición. Lo que fallaba es que duraba **0,01 ms**. La regla general de
+`app/globals.css` bajo `prefers-reduced-motion` aplasta con `!important` la
+duración de TODA transición del documento, y Jonás tiene movimiento reducido
+activado en su equipo. De ahí la asimetría exacta que describió: **el arrastre
+no usa transición** —son escrituras directas de `--drag`, fotograma a
+fotograma— y sobrevivía entero, mientras que todo lo demás del anillo depende
+de la ÚNICA transición de 0,95 s que el sexto pase dejó como único movimiento
+del sistema. Un solo número animándolo todo es lo que hace el anillo rígido, y
+es también lo que lo deja colgando de una sola regla.
+
+La regla del sitio ya estaba escrita y es la que manda: el movimiento lo
+decide UN interruptor (`docs/design/movimiento-unificado.md`), y
+`prefers-reduced-motion` no apaga nada por sí solo. Así que la corrección es
+devolver esa duración a `.edmunds-stage` mientras el interruptor esté
+encendido, y sin tocar la regla general, que sigue gobernando el resto del
+sitio. Con el interruptor apagado mandan las dos reglas de `Motion off` de esta
+hoja, que retiran la PROPIEDAD y no sólo su duración, así que ganan igual.
+Medido en el navegador con `prefers-reduced-motion: reduce` activo: antes
+`transition-duration` = 1e-05 s en el escenario; después 0,95 s, y las cuatro
+vías producen una transición de 950 ms sobre `--drag` con los fotogramas clave
+correctos (`1 → 0`, `-1 → 0`, `3 → 0` en el salto de sector). Durante el
+arrastre sigue sin haber transición ninguna.
+
+**Y a continuación, el resto de la cubierta.** Anotado el punto anterior, Jonás
+pidió expresamente lo que quedaba fuera, así que la restauración pasa de una
+línea a un bloque: el cielo entero (deriva, centelleo de las tres capas, las dos
+cortinas y el polvo), la emersión de la obra que entra (`edmunds-enter`, 0,9 s),
+el crossfade de la luz ambiente, las escuadras, el barrido del marco, el rótulo,
+el modo cine y el suavizado del paralaje por planos. Hay que restaurar **valor a
+valor**: no existe forma de decir «vuelve a lo que escribió el autor» por encima
+de un `!important` ajeno, así que quien añada una animación a esta página tiene
+que añadirla también ahí. Quedan fuera a propósito las microtransiciones de los
+controles (hover y foco, .2 s): no son la cubierta. Un efecto de borde que sí
+hubo que atender: el polvo se apaga en móvil con `animation: none`, y una regla
+sin `!important` pierde contra la restauración — pasa a llevarlo.
+
+**Décimo pase (2026-09-22): el cielo de la cubierta.** Segundo encargo del
+mismo día: «me gustaría el fondo 3D, que realmente parezca una noche
+estrellada con auroras», y a media faena, **«lo mejor es hacer el
+fondo más oscuro»**. Las dos frases dicen lo mismo desde lados distintos: lo que
+convierte un cielo en noche no es el tono medio del cuadro, es **cuánto hay de
+negro**. El anterior no tenía casi nada — arrancaba en azul marino (#070a1c →
+#131a3e), llevaba dos cortinas de aurora al 92 % y al 60 % ocupando el 70 % del
+alto, una nebulosa al 15-17 %, y encima la luz de la obra activa al 30 % en modo
+`screen` SIN MÁSCARA, o sea una mancha desenfocada del tamaño del viewport. Con
+«Fantasía» centrada —magenta de arriba abajo— el cuadro entero se teñía. Medido
+en la franja de cielo puro (bajo la navbar, sobre la obra más alta): **fondo
+p50 = 30,2 y ni un píxel de negro real**.
+
+Cuatro frentes, y de los cuatro el que más mandó fue el último.
+
+- **La base.** Negro casi puro arriba (#01020a) y calor sólo en los dos últimos
+  tramos, donde ya empieza el limbo del planeta.
+- **El campo estelar es propio** (`tools/prepare-edmunds-sky.mjs`, mosaico de
+  1200 × 750 en `public/brand/edmunds-night-stars.svg`, 222 estrellas, 2,4 KiB
+  en brotli). La cubierta usaba `navigation-stars.svg`, que es el mosaico de la
+  NAVBAR: 640 × 160 y medio centenar de puntos **del mismo calibre**. Estirado a
+  un viewport daba las dos cosas que delatan un papel pintado: todas las
+  estrellas iguales y la trama repitiéndose cuatro veces a lo ancho. Lo que hace
+  creíble un campo estelar no es la cantidad, es el **reparto de magnitud**
+  (`Math.pow(azar, 2.6)`), con radio y opacidad saliendo del mismo número. La
+  banda lechosa es **densidad**, no un velo pintado: un velo de baja frecuencia
+  se delata al repetirse el mosaico; la densidad no, porque no tiene borde. Y
+  una regla que costó una medición: **por debajo de medio píxel una estrella se
+  reparte entre dos y pierde brillo con el CUADRADO del radio** — con el suelo
+  en r = 0,3 la franja de cielo puro daba CERO píxeles por encima de 110; el
+  suelo pasa a 0,58 y la magnitud la lleva la opacidad, que sí es lineal.
+- **La aurora es una cortina, no un velo.** Tres cosas la hacen aurora y la
+  versión anterior no tenía ninguna: **rayos casi verticales** —ya iban a 101° y
+  86°, o sea casi verticales, pero con un periodo de 214 px y paradas blandas,
+  que es una mancha; ahora tres periodos primos entre sí, 43 / 97 / 179 px—, un
+  **pie brillante y definido** que se difumina hacia arriba (`linear-gradient(0deg,
+  …)`, que mide desde el pie, porque en el cielo el borde nítido es el de abajo),
+  y un **arco irregular con hueco en el centro**, para que la obra activa se
+  recorte contra cielo negro y no contra pintura. Baja de 70 % a 50 % de alto y
+  de .92 a .5 de opacidad. Y la deriva **no puede tumbar los rayos**: el sesgo
+  de −14° a −4° los convertía en rayos de luz oblicuos, que es otra cosa; pasa a
+  −4°..+3°. El verde se corre hacia el amarillo (557 nm) y arriba se abre en
+  magenta.
+- **La luz de la obra ilumina la SALA, no repinta el cielo.** Es la que más
+  pesaba y la que nadie había acotado. Lleva máscara radial apozada alrededor de
+  la obra y sobre el suelo, con el tercio superior libre; conserva su .3 y deja de
+  existir donde estorba.
+
+Medido en la misma franja de cielo puro, 1440 × 900 con `prefers-reduced-motion`
+activo: **fondo p50 30,2 → 14,1** y p05 14,7 → 7,9, o sea que el cielo pasa a
+valer menos de la mitad y las mismas estrellas tienen el doble de contraste
+contra él. En la banda ancha (58-190 px, que ya incluye las obras) la mediana
+cae de 37,3 a 16,8 y el negro real sube del 0,1 % al 2,4 %. Presupuesto: ni un
+`filter` nuevo, ni un elemento nuevo, ni una animación nueva — lo único que se
+añade al peso de la página es el mosaico de estrellas.
+
+**Su valoración visual queda abierta.**
+
 ## Qué cambia y por qué
 
 La primera versión tenía la galería como una franja entre una portada editorial
@@ -341,6 +450,80 @@ estático; **30 pruebas E2E** de Edmunds en Chromium de escritorio y móvil, y
 las suites de smoke y navbar sin regresiones. Revisión visual con capturas de
 Playwright a 1440 × 900 y 375 × 812: cubierta, mosaico, visor, bitácora y
 cierre. Capturas en `output/playwright/edmunds/` (ignorado por git).
+
+## Noveno pase — el mosaico en filas justificadas (2026-09-22)
+
+Esta sección manda sobre el resto del documento en **cómo se compone la vista
+Mosaico**. La abrió el dueño con cinco capturas: «hay espacios en la galería
+versión mosaico que hay que eliminar […] no es que todas las fotos tengan el
+mismo tamaño, sino que no existan espacios tan grandes».
+
+El diagnóstico no era de medidas, era de mecanismo. **El mosaico era CSS
+multi-columna** (`columns: 4 / 3 / 2`), y una columna CSS no reparte obras: las
+apila buscando que todas las columnas midan LO MISMO DE ALTO. Con fotos que no
+se pueden cortar —`break-inside: avoid`— y una mezcla de 0.56 y 1.78 de
+relación de aspecto, ese equilibrio no existe: el navegador fija la altura por
+la columna que peor le cuadra y las demás terminan donde terminan. De ahí los
+huecos negros de las capturas, que no eran un fallo de espaciado sino la forma
+normal de fallar de las columnas, y que además crecían con el sector porque
+cada uno tiene su propio equilibrio.
+
+La corrección es cambiar de figura: **filas justificadas**. Dentro de una fila,
+el factor de crecimiento de cada obra es su relación de aspecto y la base es
+sólo su marco, así que los anchos salen proporcionales al aspecto, **todas las
+obras de una fila caen exactamente a la misma altura** y la fila ocupa el ancho
+entero. El sobrante no se reparte mejor: no existe.
+
+Lo único que queda por decidir es dónde se corta cada fila, y eso no puede ser
+el `flex-wrap` del navegador —que llena mientras cabe y deja el resto en una
+última fila a medias, siete veces, una por sector—. Lo decide
+`lib/mosaic-rows.ts`: una programación dinámica sobre el orden de las obras, que
+es curaduría y no se toca, donde cada fila cuesta lo que se separa del objetivo
+al cuadrado y se elige el reparto más barato del sector entero. **La última fila
+se decide con el mismo criterio que las demás**, así que también va llena. El
+número de filas no se calcula aparte: sale solo.
+
+Tres reglas que costaron una medición cada una:
+
+1. **La altura de una fila la fija el ancho disponible**, así que un solo juego
+   de cortes no sirve para todas las ventanas: con una sola banda de teléfono,
+   de 320 px a 700 px, la misma fila pasa de 137 px a 950 px de alto. Son cinco
+   bandas (`xl / lg / md / sm / xs`) y sus cortes viajan **todos a la vez en el
+   HTML servido** —un elemento de ancho completo y alto cero por corte, con las
+   bandas donde aplica en `data-at`—; la hoja de estilo enciende el que toca. No
+   hay medición en JavaScript, ni `ResizeObserver`, ni salto al hidratar.
+2. **Cuando los factores de crecimiento de una línea suman menos de uno,
+   flexbox reparte sólo esa fracción del espacio libre.** Una obra vertical sola
+   —0.87 de aspecto— se quedaba en 543 px de una fila de 619 y dejaba justo el
+   hueco que el pase venía a quitar. El factor va multiplicado por diez, que no
+   cambia ningún reparto porque el espacio se distribuye en proporción.
+3. **Los topes son penalizaciones y no prohibiciones**, porque un sector puede
+   no tener ningún reparto que las cumpla. `maxPerRow` impide que ocho carteles
+   verticales entren en la misma fila convertidos en astillas; `maxRatio` impide
+   la fila achatada —una panorámica junto a un cartel en un teléfono dejaba el
+   cartel en 71 px de ancho y la fila en 90 px de alto—; y `minSolo` impide que
+   una obra estrecha se quede sola ocupando el ancho entero, que es lo que la
+   estira hasta la altura de la página.
+
+El separador vertical lo ponen los márgenes de las obras y no `row-gap`, que
+contaría dos veces alrededor de cada corte. El `max-width` por aspecto queda
+como red de seguridad para un sector degenerado, y hoy no llega a aplicarse en
+ninguna banda.
+
+Medido en el navegador sobre las 90 obras, en 320, 375, 430, 540, 680, 820,
+1000, 1200, 1425 y 1905 px de ancho: **holgura máxima al canto derecho 0 px** en
+todas las filas de todos los sectores, **desalineación dentro de una fila 0 px**,
+ningún desbordamiento horizontal, alturas de fila entre 144 px y 702 px y
+ninguna obra por debajo de 108 px de ancho. Las mismas comprobaciones quedan en
+`e2e/edmunds.spec.ts` (holgura y desalineación por debajo de 1,5 px) y el
+reparto tiene prueba propia en `lib/mosaic-rows.test.ts`.
+
+La cubierta 3D, el visor, el catálogo, la curaduría y la paleta no cambian.
+`sizes` sí: la anchura que pinta el mosaico ya no es una columna sino
+`aspecto × altura de fila`, y se declara por banda. Su valoración visual queda
+abierta.
+
+---
 
 ---
 

@@ -536,6 +536,30 @@ ligero (el dueño tiene movimiento reducido en su equipo y no veía nada). El
 estado previo vive en
 `output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`.
 
+**Edmunds — el mosaico en filas justificadas (2026-09-22):** la sección
+`Noveno pase — el mosaico en filas justificadas` de
+`docs/design/edmunds-creatividad.md` manda sobre el resto de ese documento en
+**cómo se compone la vista Mosaico**. El dueño reportó huecos negros con cinco
+capturas y pidió que no existan, sin igualar los tamaños. No era espaciado:
+**CSS multi-columna no reparte obras, apila buscando columnas de la misma
+altura**, y con fotos que no se pueden cortar y aspectos de 0.56 a 1.78 ese
+equilibrio no existe. Ahora son filas justificadas —dentro de una fila el
+factor de crecimiento es el aspecto y la base es sólo el marco, así que los
+anchos son proporcionales, las alturas idénticas y la fila llena el ancho—, y
+dónde se corta lo decide `lib/mosaic-rows.ts` con una programación dinámica
+sobre el orden curado: **la última fila se decide con el mismo criterio que las
+demás, así que no hay resto**. Tres reglas: **la altura de una fila la fija el
+ancho disponible**, así que hay cinco bandas y sus cortes viajan todos en el
+HTML servido (un elemento de ancho completo y alto cero con `data-at`), sin
+medir en JavaScript; **cuando los factores de crecimiento de una línea suman
+menos de uno, flexbox reparte sólo esa fracción del espacio libre** —una obra
+sola de 0.87 se quedaba en 543 px de 619 y dejaba justo el hueco que el pase
+venía a quitar—, así que el factor va ×10; y los topes son **penalizaciones y
+no prohibiciones**, porque un sector puede no tener reparto que las cumpla.
+Medido en diez anchos de 320 a 1905 px: holgura 0 px en todas las filas,
+desalineación 0 px, sin desbordamiento. Cubierta 3D, visor, catálogo y paleta
+no cambian. Su valoración visual queda abierta.
+
 **Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de
 `docs/design/edmunds-creatividad.md` manda en **nitidez de las obras, gesto de
 arrastre, transición del anillo y cielo de la cubierta**. Tres reglas que

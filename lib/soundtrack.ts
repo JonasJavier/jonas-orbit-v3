@@ -3,9 +3,11 @@ type SoundtrackState = { playback: Playback; volume: number; muted: boolean };
 
 const INITIAL: SoundtrackState = { playback: "off", volume: 0.28, muted: false };
 const VOLUME_KEY = "jonas-orbit:audio-volume";
+const ENABLED_KEY = "jonas-orbit:audio-enabled";
 
-/** One streaming source, created by a gesture. No decoded eight-minute buffer,
- * animation loop, autoplay preference, or dependency on the scene/router. */
+/** One streaming source with an enabled-by-default preference. Browsers may
+ * postpone audible playback until the first gesture; `resumeWanted` completes
+ * that start without changing the visitor's saved choice. */
 export class Soundtrack {
   private state = INITIAL;
   private listeners = new Set<() => void>();
@@ -42,8 +44,6 @@ export class Soundtrack {
 
   private prepare() {
     if (this.media) return;
-    // Volume is the only persisted preference. Opening a fresh document never
-    // grants playback consent, even after the visitor previously enabled it.
     try {
       const saved = localStorage.getItem(VOLUME_KEY);
       const volume = saved === null ? NaN : Number(saved);
@@ -81,12 +81,39 @@ export class Soundtrack {
     media.src = "/audio/orbit-ambient.m4a";
   }
 
-  async play() {
+  /** Starts on entry unless the visitor explicitly disabled the soundtrack. */
+  startDefault() {
+    let enabled = true;
+    try { enabled = localStorage.getItem(ENABLED_KEY) !== "false"; } catch { /* Default stays on. */ }
+    if (!enabled) {
+      this.wanted = false;
+      this.update({ playback: "off" });
+      return;
+    }
+    this.wanted = true;
+    if (this.hidden) {
+      this.update({ playback: "paused" });
+      return;
+    }
+    void this.play(false);
+  }
+
+  /** Retries a browser-blocked autoplay inside the next real user gesture. */
+  resumeWanted() {
+    if (this.wanted && !this.hidden && this.state.playback !== "playing") {
+      void this.play(false);
+    }
+  }
+
+  async play(remember = true) {
     const attempt = ++this.attempt;
     clearTimeout(this.pauseTimer);
     this.pauseTimer = undefined;
     this.wanted = true;
     this.update({ playback: "loading" });
+    if (remember) {
+      try { localStorage.setItem(ENABLED_KEY, "true"); } catch { /* Optional. */ }
+    }
     try {
       this.prepare();
       if (this.media!.error) this.media!.load();
@@ -99,8 +126,14 @@ export class Soundtrack {
       if (this.hidden) { this.suspend(); return; }
       this.update({ playback: "playing" });
       this.level(1.2);
-    } catch {
+    } catch (error) {
       if (attempt === this.attempt) {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          // Audible autoplay is browser-controlled. Keep the default ON intent
+          // and finish starting synchronously on the next pointer/key gesture.
+          this.update({ playback: "paused" });
+          return;
+        }
         // A partially constructed audio graph must never be reused as an
         // unattenuated HTML player on retry.
         if (!this.media?.getAttribute("src")) this.dispose();
@@ -109,10 +142,13 @@ export class Soundtrack {
     }
   }
 
-  pause() {
+  pause(remember = true) {
     this.wanted = false;
     ++this.attempt;
     this.update({ playback: "off" });
+    if (remember) {
+      try { localStorage.setItem(ENABLED_KEY, "false"); } catch { /* Optional. */ }
+    }
     this.level(0.22);
     clearTimeout(this.pauseTimer);
     this.pauseTimer = setTimeout(() => {
@@ -131,8 +167,14 @@ export class Soundtrack {
   }
 
   toggleMute() {
-    this.update({ muted: !this.state.muted });
+    const quiet = this.state.muted || this.state.volume === 0;
+    const volume = quiet && this.state.volume === 0 ? INITIAL.volume : this.state.volume;
+    const restoredVolume = volume !== this.state.volume;
+    this.update({ muted: !quiet, volume });
     this.level(0.08);
+    if (restoredVolume) {
+      try { localStorage.setItem(VOLUME_KEY, String(volume)); } catch { /* Optional. */ }
+    }
   }
 
   private suspend() {
