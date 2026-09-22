@@ -1,9 +1,16 @@
-type Playback = "off" | "loading" | "playing" | "paused" | "error";
+/** `armed`: on by default, waiting for the browser's first user gesture. */
+type Playback = "off" | "loading" | "playing" | "armed" | "paused" | "error";
 type SoundtrackState = { playback: Playback; volume: number; muted: boolean };
 
 const INITIAL: SoundtrackState = { playback: "off", volume: 0.28, muted: false };
 const VOLUME_KEY = "jonas-orbit:audio-volume";
-const ENABLED_KEY = "jonas-orbit:audio-enabled";
+/*
+  The saved choice. Renamed on 2026-09-22, when the owner asked for music and
+  sound to be ON by default: a stale «off» written while the site was being
+  built would otherwise keep answering for him. The old key is dropped.
+*/
+const ENABLED_KEY = "jonas-orbit:audio-on";
+const RETIRED_ENABLED_KEY = "jonas-orbit:audio-enabled";
 
 /** One streaming source with an enabled-by-default preference. Browsers may
  * postpone audible playback until the first gesture; `resumeWanted` completes
@@ -47,7 +54,9 @@ export class Soundtrack {
     try {
       const saved = localStorage.getItem(VOLUME_KEY);
       const volume = saved === null ? NaN : Number(saved);
-      if (Number.isFinite(volume) && volume >= 0 && volume <= 1) {
+      // A saved zero is a mute in disguise; mute is not remembered, so the
+      // visit starts audible at the default level.
+      if (Number.isFinite(volume) && volume > 0 && volume <= 1) {
         this.update({ volume });
       }
     } catch { /* Storage can be unavailable; audio still works. */ }
@@ -84,7 +93,10 @@ export class Soundtrack {
   /** Starts on entry unless the visitor explicitly disabled the soundtrack. */
   startDefault() {
     let enabled = true;
-    try { enabled = localStorage.getItem(ENABLED_KEY) !== "false"; } catch { /* Default stays on. */ }
+    try {
+      localStorage.removeItem(RETIRED_ENABLED_KEY);
+      enabled = localStorage.getItem(ENABLED_KEY) !== "false";
+    } catch { /* Default stays on. */ }
     if (!enabled) {
       this.wanted = false;
       this.update({ playback: "off" });
@@ -131,7 +143,7 @@ export class Soundtrack {
         if (error instanceof DOMException && error.name === "NotAllowedError") {
           // Audible autoplay is browser-controlled. Keep the default ON intent
           // and finish starting synchronously on the next pointer/key gesture.
-          this.update({ playback: "paused" });
+          this.update({ playback: "armed" });
           return;
         }
         // A partially constructed audio graph must never be reused as an

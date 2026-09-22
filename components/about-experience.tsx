@@ -194,8 +194,9 @@ export function AboutExperience({ children }: { children: ReactNode }) {
           entry.isIntersecting,
         );
     });
+    // The sky twinkles and the shelves drift only while on screen.
     root
-      .querySelectorAll("[data-about-sky]")
+      .querySelectorAll("[data-about-sky], .about-shelf")
       .forEach((element) => observer.observe(element));
     visible();
     root.dataset.enhanced = "true";
@@ -209,27 +210,6 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       attributes: true,
       attributeFilter: ["data-about-motion"],
     });
-    const tracks = [
-      ...root.querySelectorAll<HTMLElement>(".about-shelf-track"),
-    ];
-    const updateShelves = () => {
-      for (const track of tracks) {
-        const shelf = track.closest(".about-shelf")!;
-        shelf.querySelector<HTMLButtonElement>(
-          '[data-shelf-step="-1"]',
-        )!.disabled = track.scrollLeft <= 2;
-        shelf.querySelector<HTMLButtonElement>(
-          '[data-shelf-step="1"]',
-        )!.disabled =
-          track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
-      }
-    };
-    const resize = new ResizeObserver(updateShelves);
-    for (const track of tracks) {
-      resize.observe(track);
-      track.addEventListener("scroll", updateShelves, { passive: true });
-    }
-    updateShelves();
     reduced.addEventListener("change", stopMotion);
     root.addEventListener("click", navigate);
     window.addEventListener("popstate", restore);
@@ -239,9 +219,6 @@ export function AboutExperience({ children }: { children: ReactNode }) {
     return () => {
       observer.disconnect();
       motionObserver.disconnect();
-      resize.disconnect();
-      for (const track of tracks)
-        track.removeEventListener("scroll", updateShelves);
       animation?.cancel();
       window.clearTimeout(exitTimer);
       ++revision;
@@ -256,96 +233,6 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", visible);
     };
   }, []);
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || !motion) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const cleanups = [
-      ...root.querySelectorAll<HTMLElement>(".about-shelf"),
-    ].map((shelf) => {
-      const track = shelf.querySelector<HTMLElement>(".about-shelf-track")!;
-      let timer = 0;
-      let visible = false;
-      let hovered = false;
-      // Reading or operating a shelf gives control to the visitor for the rest
-      // of this motion session. The shared movement switch can restart it.
-      let interacted = shelf.contains(document.activeElement);
-      const stop = () => {
-        window.clearTimeout(timer);
-        track.scrollTo({ left: track.scrollLeft, behavior: "instant" });
-      };
-      const schedule = () => {
-        window.clearTimeout(timer);
-        if (
-          !visible ||
-          hovered ||
-          interacted ||
-          document.hidden ||
-          reduced.matches ||
-          photo
-        ) {
-          stop();
-          return;
-        }
-        timer = window.setTimeout(() => {
-          const first = track.firstElementChild as HTMLElement | null;
-          const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-          const end = track.scrollWidth - track.clientWidth;
-          track.scrollTo({
-            left:
-              track.scrollLeft >= end - 2
-                ? 0
-                : Math.min(
-                    end,
-                    track.scrollLeft + (first?.offsetWidth ?? 200) + gap,
-                  ),
-            behavior: "smooth",
-          });
-          schedule();
-        }, 5500);
-      };
-      const enter = () => {
-        hovered = true;
-        schedule();
-      };
-      const leave = () => {
-        hovered = false;
-        schedule();
-      };
-      const takeControl = () => {
-        interacted = true;
-        stop();
-      };
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          visible = entry.isIntersecting && entry.intersectionRatio >= 0.6;
-          schedule();
-        },
-        { threshold: [0, 0.6] },
-      );
-      observer.observe(track);
-      shelf.addEventListener("pointerenter", enter);
-      shelf.addEventListener("pointerleave", leave);
-      shelf.addEventListener("pointerdown", takeControl);
-      shelf.addEventListener("focusin", takeControl);
-      shelf.addEventListener("wheel", takeControl, { passive: true });
-      document.addEventListener("visibilitychange", schedule);
-      reduced.addEventListener("change", schedule);
-      return () => {
-        stop();
-        observer.disconnect();
-        shelf.removeEventListener("pointerenter", enter);
-        shelf.removeEventListener("pointerleave", leave);
-        shelf.removeEventListener("pointerdown", takeControl);
-        shelf.removeEventListener("focusin", takeControl);
-        shelf.removeEventListener("wheel", takeControl);
-        document.removeEventListener("visibilitychange", schedule);
-        reduced.removeEventListener("change", schedule);
-      };
-    });
-    return () => cleanups.forEach((cleanup) => cleanup());
-  }, [motion, photo]);
 
   useEffect(() => {
     if (!photo) return;
@@ -372,21 +259,6 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       return;
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const step = target.closest<HTMLButtonElement>("button[data-shelf-step]");
-    if (step) {
-      const track = document.getElementById(
-        step.getAttribute("aria-controls") ?? "",
-      );
-      track?.scrollBy({
-        left: Number(step.dataset.shelfStep) * track.clientWidth * 0.8,
-        behavior:
-          motion &&
-          !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? "smooth"
-            : "instant",
-      });
-      return;
-    }
     const anchor = target.closest<HTMLAnchorElement>("a[data-photo]");
     if (!anchor || !rootRef.current?.contains(anchor)) return;
     // Unsupported browsers keep the ordinary image navigation.

@@ -433,52 +433,6 @@ html:has(.about-page) {
 .about-page .about-roots {
   padding-top: 95px;
 }
-.about-page .about-roots-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 30px;
-  margin-bottom: 36px;
-}
-.about-page .about-roots-head .about-place {
-  font-size: 12px;
-  color: var(--muted);
-  padding-bottom: 8px;
-}
-.about-page .about-roots-landscape {
-  position: relative;
-  min-height: 470px;
-  background: #15283b;
-  overflow: hidden;
-}
-.about-page .about-roots-landscape > img {
-  position: absolute;
-  height: 100%;
-  object-fit: cover;
-}
-.about-page .about-roots-landscape:after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, #06121ae6, transparent 80%);
-}
-.about-page .about-roots-words {
-  position: relative;
-  z-index: 1;
-  padding: 300px 55px 45px;
-  font: clamp(30px, 4vw, 52px)/1.1 Georgia;
-  max-width: 630px;
-}
-.about-page .about-roots-credit {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.about-page .about-roots-credit a {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
 .about-page .about-people {
   background: radial-gradient(ellipse at 80% 35%, #62533d16, transparent 65%);
 }
@@ -926,19 +880,6 @@ body:has(.about-page dialog[open]) {
   }
   .about-page .about-chapter {
     padding: 75px 0;
-  }
-  .about-page .about-roots-head {
-    display: block;
-  }
-  .about-page .about-roots-head .about-place {
-    margin-top: 18px;
-  }
-  .about-page .about-roots-landscape {
-    min-height: 410px;
-  }
-  .about-page .about-roots-words {
-    padding: 270px 25px 32px;
-    font-size: 38px;
   }
   .about-page .about-people-opening,
   .about-page .about-people-stories,
@@ -1500,11 +1441,6 @@ body:has(.about-route) .site-footer {
   font-size: 12px;
   letter-spacing: 0.08em;
 }
-.about-page .about-roots-story {
-  margin-top: 30px;
-  max-width: 74ch;
-  color: var(--muted);
-}
 .about-page .about-chosen-family,
 .about-page .about-adventures {
   margin-top: 64px;
@@ -1761,88 +1697,8 @@ body:has(.about-route) .site-footer {
     transition: none;
   }
 }
-.about-page .about-shelf {
-  margin-top: 22px;
-  min-width: 0;
-}
 .about-page .about-enjoy-side {
   min-width: 0;
-}
-.about-page .about-shelf-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.about-page .about-shelf-toolbar > span {
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: var(--muted);
-}
-.about-page .about-shelf-controls {
-  display: none;
-  gap: 6px;
-}
-.about-page[data-enhanced] .about-shelf-controls {
-  display: flex;
-}
-.about-page .about-shelf-controls button {
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  background: transparent;
-}
-.about-page .about-shelf-controls button:disabled {
-  opacity: 0.25;
-  cursor: default;
-}
-.about-page .about-shelf-track {
-  list-style: none;
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  margin: 8px 0 0;
-  padding: 8px 4px 14px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-  scroll-snap-type: x proximity;
-}
-.about-page .about-shelf-track:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 4px;
-}
-.about-page .about-shelf-track li {
-  flex: 0 0 148px;
-  scroll-snap-align: start;
-}
-.about-page .about-shelf-track a {
-  display: block;
-}
-.about-page .about-cover {
-  display: flex;
-  align-items: center;
-  background: #17212c;
-  aspect-ratio: 1;
-  border: 1px solid #ffffff1a;
-}
-.about-page .about-cover img {
-  height: 100%;
-  object-fit: contain;
-}
-.about-page .about-shelf-track strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 10px;
-}
-.about-page .about-shelf-track strong span {
-  color: var(--gold);
-}
-.about-page .about-shelf-note {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 2px;
 }
 .about-page .about-enjoy-side > * {
   min-width: 0;
@@ -1906,28 +1762,6 @@ body:has(.about-route) .site-footer {
   height: 1px;
   background: linear-gradient(90deg, #d3b477, transparent);
 }
-.about-page .about-roots-landscape {
-  min-height: 0;
-  background: transparent;
-}
-.about-page .about-roots-landscape > img {
-  position: static;
-  height: auto;
-  max-height: 680px;
-  object-fit: contain;
-}
-.about-page .about-roots-landscape::after {
-  content: none;
-}
-.about-page .about-roots-words {
-  padding: 0;
-  margin-top: 32px;
-  max-width: none;
-  font-size: clamp(28px, 3vw, 42px);
-}
-.about-page .about-roots-story {
-  margin-top: 20px;
-}
 .about-page .about-enjoy-grid {
   gap: 48px;
   align-items: center;
@@ -1958,24 +1792,6 @@ body:has(.about-route) .site-footer {
   max-width: 800px;
   font-size: 17px;
 }
-.about-page .about-shelf-track {
-  gap: 24px;
-}
-.about-page .about-shelf-track li {
-  flex-basis: 200px;
-}
-.about-page .about-shelf[data-group="stories"] .about-cover {
-  aspect-ratio: 4/3;
-}
-.about-page .about-shelf-credit {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 10px;
-}
-.about-page .about-shelf-credit a {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 @media (max-width: 900px) {
   .about-page .about-hero-bottom {
     padding-right: 0;
@@ -2005,12 +1821,6 @@ body:has(.about-route) .site-footer {
     gap: 42px;
     margin-top: 42px;
   }
-  .about-page .about-shelf-track {
-    gap: 16px;
-  }
-  .about-page .about-shelf-track li {
-    flex-basis: 164px;
-  }
 }
 /* CSS-only navigation retains an active cue before hydration and without JS. */
 .about-page:not([data-enhanced]):has(#mis-raices:target) a[href="#mis-raices"],
@@ -2024,15 +1834,9 @@ body:has(.about-route) .site-footer {
   text-decoration: underline;
   text-underline-offset: 6px;
 }
-.about-page .about-shelf-track {
-  scroll-padding-inline: 4px;
-}
 
 .about-page .about-node-roots img {
   object-position: center bottom;
-}
-.about-page .about-taste .about-shelf-credit {
-  font-size: 11px;
 }
 
 /* Short memories and a full-width caption beneath the photo composition. */
@@ -2097,5 +1901,319 @@ body:has(.about-route) .site-footer {
   }
   .about-page .about-plans p {
     font-size: 17px;
+  }
+}
+
+/* Pase 2026-09-22 (docs/design/sobre-mi-constelacion.md, «Pase de pulido»). */
+
+/* Mis raíces: text and photograph side by side, the photo whole and framed. */
+.about-page .about-roots-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(48px, 6vw, 96px);
+  align-items: center;
+}
+.about-page .about-place {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  max-width: none;
+  margin-top: 22px;
+  font-size: 14px;
+  color: #e1e4e6;
+}
+.about-page .about-place::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px 1px #f5c77790;
+}
+.about-page .about-coordinates {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.about-page .about-roots-words {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+  font-size: clamp(28px, 2.5vw, 38px);
+}
+.about-page .about-roots-story {
+  margin-top: 18px;
+  max-width: 44ch;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.75;
+}
+.about-page .about-roots-landscape {
+  position: relative;
+}
+.about-page .about-roots-landscape::before {
+  content: "";
+  position: absolute;
+  inset: 22px -22px -22px 22px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+.about-page .about-roots-landscape .about-photo-button {
+  aspect-ratio: 4/3;
+  box-shadow: 0 30px 60px #0008;
+}
+@media (max-width: 900px) {
+  .about-page .about-roots-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .about-page .about-roots-copy {
+    display: contents;
+  }
+  .about-page .about-roots-landscape {
+    order: 1;
+    margin: 36px 14px 14px 0;
+  }
+  .about-page .about-roots-landscape::before {
+    inset: 14px -14px -14px 14px;
+  }
+  .about-page .about-roots-words,
+  .about-page .about-roots-story {
+    order: 2;
+  }
+  .about-page .about-roots-words {
+    margin-top: 44px;
+  }
+}
+
+/* Mi gente: one phrase and its echo, no paragraph. */
+.about-page .about-people-copy .about-section-lead {
+  margin-top: 30px;
+  color: var(--ink);
+  font-size: clamp(26px, 2.4vw, 34px);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.about-page .about-self-copy .about-script,
+.about-page .about-story .about-memory-line {
+  text-wrap: balance;
+}
+.about-page .about-people-copy .about-people-sub {
+  margin-top: 16px;
+  max-width: 34ch;
+  font-size: 17px;
+}
+
+/* Cómo soy: the friends' four words become the pause in the text. */
+.about-page .about-traits {
+  margin-top: 30px;
+}
+.about-page .about-traits .about-eyebrow {
+  margin-bottom: 10px;
+}
+.about-page .about-traits ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font:
+    24px/1.35 Georgia,
+    serif;
+  color: var(--ink);
+}
+.about-page .about-traits li + li::before {
+  content: "✦";
+  margin: 0 14px;
+  color: var(--gold);
+  font-size: 11px;
+  vertical-align: 0.3em;
+}
+
+/* Tastes: an automatic drift, no controls. Two copies of the list make the
+   loop; the copy is aria-hidden and out of the tab order. Without JavaScript,
+   with the movement switch off, or while a keyboard user is inside, the row is
+   an ordinary horizontal scroller. Hover and the photo viewer pause it. */
+.about-page .about-listening-room .about-taste > p {
+  max-width: 60ch;
+}
+.about-page .about-shelf {
+  --cover: 188px;
+  --gap: 26px;
+  --drift: 100s;
+  margin-top: 28px;
+  min-width: 0;
+}
+.about-page .about-shelf[data-group="stories"] {
+  --cover: 292px;
+  --drift: 150s;
+}
+.about-page .about-shelf-viewport {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.about-page .about-marquee {
+  display: flex;
+  width: max-content;
+}
+.about-page .about-shelf-track {
+  display: flex;
+  gap: var(--gap);
+  margin: 0;
+  padding: 10px var(--gap) 18px 0;
+  list-style: none;
+}
+.about-page .about-shelf-copy {
+  display: none;
+}
+.about-page .about-shelf-track li {
+  flex: 0 0 var(--cover);
+}
+.about-page .about-shelf-track a {
+  display: block;
+}
+.about-page .about-cover {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid #ffffff1c;
+  border-radius: 3px;
+  background: #17212c;
+  box-shadow: 0 16px 34px #0007;
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s,
+    box-shadow 0.35s;
+}
+.about-page .about-shelf[data-group="stories"] .about-cover {
+  aspect-ratio: 16/9;
+}
+.about-page .about-cover img {
+  height: 100%;
+  object-fit: cover;
+}
+.about-page .about-shelf-track a:hover .about-cover,
+.about-page .about-shelf-track a:focus-visible .about-cover {
+  transform: translateY(-4px);
+  border-color: #d9b97eb0;
+  box-shadow:
+    0 22px 40px #0009,
+    0 0 26px #d9b97e26;
+}
+.about-page .about-shelf-track strong {
+  display: block;
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.about-page .about-shelf-track a:hover strong {
+  color: var(--gold);
+}
+.about-page .about-shelf-note {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.about-page[data-enhanced][data-about-motion="on"] .about-shelf-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+}
+.about-page[data-enhanced][data-about-motion="on"] .about-shelf-copy {
+  display: flex;
+}
+.about-page[data-enhanced][data-about-motion="on"] .about-marquee {
+  animation: about-drift var(--drift) linear infinite;
+  animation-play-state: paused;
+}
+.about-page[data-enhanced][data-about-motion="on"]
+  .about-shelf[data-group="stories"]
+  .about-marquee {
+  animation-direction: reverse;
+}
+.about-page[data-enhanced][data-about-motion="on"][data-page-visible="true"]:not(
+    :has(dialog[open])
+  )
+  .about-shelf[data-in-view="true"]:not(:hover)
+  .about-marquee {
+  animation-play-state: running;
+}
+.about-page[data-enhanced][data-about-motion="on"]
+  .about-shelf:has(:focus-visible)
+  .about-shelf-viewport {
+  overflow-x: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.about-page[data-enhanced][data-about-motion="on"]
+  .about-shelf:has(:focus-visible)
+  .about-marquee {
+  animation: none;
+}
+.about-page[data-enhanced][data-about-motion="on"]
+  .about-shelf:has(:focus-visible)
+  .about-shelf-copy {
+  display: none;
+}
+@keyframes about-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (max-width: 700px) {
+  .about-page .about-shelf {
+    --cover: 150px;
+    --gap: 18px;
+    --drift: 80s;
+  }
+  .about-page .about-shelf[data-group="stories"] {
+    --cover: 236px;
+    --drift: 120s;
+  }
+  .about-page .about-traits ul {
+    font-size: 21px;
+  }
+  .about-page .about-traits li + li::before {
+    margin: 0 10px;
+  }
+}
+
+/* The movement switch is the consent (docs/design/movimiento-unificado.md):
+   the owner browses with reduced motion, and the blanket rule in globals.css
+   would squash these loops to one 0.01 ms pass. Restored value by value while
+   the switch is on; with it off, the rules above remove the animation itself. */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="off"]) .about-page[data-about-motion="on"] {
+    & .about-marquee {
+      animation-duration: var(--drift) !important;
+      animation-iteration-count: infinite !important;
+    }
+    & .about-stars i {
+      animation-duration: 5.5s !important;
+      animation-iteration-count: infinite !important;
+    }
+    & .about-cover {
+      transition-duration: 0.35s !important;
+    }
   }
 }

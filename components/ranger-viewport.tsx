@@ -4,20 +4,27 @@ import { useEffect, useRef } from "react";
 import { useMounted, useRangerCockpit } from "./ranger-cockpit";
 
 /**
- * Ventanal de la Ranger: lo que se ve desde el asiento.
+ * Ventanal de la Ranger: la travesía por la garganta de un agujero de gusano.
  *
- * Un contexto WebGL2 propio con un triángulo y ningún asset: campo estelar
- * profundo con paralaje de cabeza, cuatro capas de estrellas que se abren desde
- * el punto de fuga —la nave avanza—, una nebulosa violeta y cian en el cuadrante
- * superior izquierdo y un mundo azul grisáceo cuyo limbo cruza la parte baja
- * del cristal con su atmósfera encendida por un sol fuera de cuadro. El mismo
- * desplazamiento del puntero mueve cada plano a un ritmo distinto: eso es lo
- * que convierte una imagen en una ventana.
+ * Un contexto WebGL2 propio con un triángulo y ningún asset. La nave va DENTRO
+ * del túnel: tres paredes concéntricas de hilos de luz —estrellas estiradas por
+ * la velocidad— que vienen desde el fondo y pasan de largo, retorcidas por la
+ * curvatura (el ángulo gira con la profundidad: el espacio se dobla); gas
+ * violeta y cian sobre las paredes; y al fondo la boca, donde el cielo del otro
+ * lado llega lensado por una masa puntual, con su anillo de Einstein. El túnel
+ * se curva despacio —la boca se desplaza y las paredes cercanas no— y respira.
+ * Sin planetas: sólo estrellas y espacio.
  *
- * Presupuesto: 30 fps, DPR ≤ 1,5, suspensión fuera de pantalla y en segundo
- * plano, contexto liberado al pausar. Sin WebGL2 —o si el contexto se pierde—
- * queda la vista fija, que es la misma composición en CSS y SVG y la que
- * recibe quien navega sin JavaScript o con reduced-motion.
+ * Es continuo. Todo patrón es periódico en profundidad con periodo PERIOD y la
+ * distancia recorrida se envuelve exactamente ahí, así que el vuelo no se
+ * detiene ni salta mientras el interruptor único de movimiento esté encendido.
+ * Apagado, el ventanal se queda en el último fotograma: la nave se detiene
+ * donde estaba y el bucle deja de pedir cuadros.
+ *
+ * Presupuesto: 30 fps, DPR ≤ 1,5, 2048 px de ancho máximo, suspensión fuera de
+ * pantalla y en segundo plano. Sin WebGL2 —o si el contexto se pierde— queda la
+ * vista fija en SVG, la misma composición que recibe quien navega sin
+ * JavaScript.
  */
 
 const VERTEX_SHADER = `#version 300 es
@@ -28,6 +35,9 @@ void main() {
   gl_Position = vec4(aPosition, 0.0, 1.0);
 }`;
 
+/** Depth period of every pattern in the tunnel; the distance wraps here. */
+const PERIOD = 48;
+
 const FRAGMENT_SHADER = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
@@ -35,8 +45,14 @@ uniform float uTime;
 uniform vec2 uLook;
 uniform float uDist;
 uniform float uSpeed;
+uniform vec2 uVp;
+uniform vec2 uBend;
+uniform float uTwist;
+uniform float uThroat;
 in vec2 vUv;
 out vec4 outColor;
+
+const float TAU = 6.2831853;
 
 float hash21(vec2 p) {
   p = fract(p * vec2(233.34, 851.73));
@@ -48,18 +64,26 @@ float vnoise(vec2 p) {
   f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
 }
-float fbm(vec2 p) {
+// Value noise whose lattice repeats every per cells: the wall has no seam and
+// the flight no jump when the distance wraps.
+float pnoise(vec2 p, vec2 per) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  vec2 a = mod(i, per), b = mod(i + 1.0, per);
+  return mix(mix(hash21(a), hash21(vec2(b.x, a.y)), f.x), mix(hash21(vec2(a.x, b.y)), hash21(b), f.x), f.y);
+}
+float pfbm(vec2 p, vec2 per) {
   float v = 0.0, a = 0.5;
-  for (int i = 0; i < 4; i++) {
-    v += a * vnoise(p);
-    p = p * 2.03 + vec2(17.3, 9.1);
+  for (int i = 0; i < 3; i++) {
+    v += a * pnoise(p, per);
+    p *= 2.0;
+    per *= 2.0;
     a *= 0.5;
   }
   return v;
 }
-// At most one star per cell. p and radius in cell units. Stars are far
-// smaller than half a cell, so the four nearest cells are an exact search.
-float starField(vec2 p, float density, float radius, float t) {
+// Far-side stars, at most one per cell, four nearest cells.
+float starField(vec2 p, float density, float radius) {
   vec2 base = floor(p - 0.5), f = p - base;
   float acc = 0.0;
   for (int y = 0; y <= 1; y++) {
@@ -68,143 +92,128 @@ float starField(vec2 p, float density, float radius, float t) {
       vec2 c = base + o;
       float h = hash21(c);
       if (h > density) continue;
-      vec2 jitter = vec2(hash21(c + 1.3), hash21(c + 2.7));
-      float d = length(o + jitter - f);
-      float b = 0.35 + 0.65 * hash21(c + 5.1);
-      float twinkle = 0.8 + 0.2 * sin(t * (1.0 + 3.0 * h) + h * 40.0);
+      float d = length(o + vec2(hash21(c + 1.3), hash21(c + 2.7)) - f);
       float q = (d * d) / (radius * radius);
-      acc += b * twinkle * (exp(-4.0 * q) + 0.1 * exp(-q * 0.35));
+      acc += (0.35 + 0.65 * hash21(c + 5.1)) * (exp(-4.0 * q) + 0.08 * exp(-q * 0.3));
     }
   }
   return acc;
 }
-// Same field, but each star is stretched along dir by stretch: the
-// motion blur of a point light passing a moving window.
-float starStreaks(vec2 p, float density, float radius, float stretch, vec2 dir, float t) {
-  vec2 base = floor(p - 0.5), f = p - base;
-  float acc = 0.0;
-  for (int y = 0; y <= 1; y++) {
-    for (int x = 0; x <= 1; x++) {
-      vec2 o = vec2(float(x), float(y));
-      vec2 c = base + o;
-      float h = hash21(c);
-      if (h > density) continue;
-      vec2 rel = o + vec2(hash21(c + 1.3), hash21(c + 2.7)) - f;
-      float along = dot(rel, dir);
-      float across = length(rel - along * dir);
-      float d = length(vec2(along / stretch, across));
-      float b = 0.35 + 0.65 * hash21(c + 5.1);
-      float twinkle = 0.85 + 0.15 * sin(t * (1.0 + 3.0 * h) + h * 40.0);
-      float q = (d * d) / (radius * radius);
-      acc += b * twinkle * (exp(-4.0 * q) + 0.1 * exp(-q * 0.35)) * inversesqrt(stretch) * 1.2;
-    }
+
+// One wall of the tunnel, radius R. Every sector of the wall carries one thread
+// of light per period L of depth; the ship's advance brings it toward the
+// viewer. Perspective keeps the width constant in sector units (screen width
+// is W / z and r z = R); threads fade where they would be a blur (too near) or
+// finer than a pixel (too deep).
+vec3 wall(float ang, float r, float R, float N, float L, float W, float len, float px) {
+  float z = R / r;
+  float sector = 6.2831853 * r / N;
+  float vis = smoothstep(0.26, 0.7, z) * smoothstep(0.7 * px, 2.6 * px, sector) * smoothstep(0.5 * L, 0.12 * L, R * px / (r * r));
+  if (vis <= 0.001) return vec3(0.0);
+  float s = ang / TAU * N;
+  float base = floor(s - 0.5);
+  float width = W / z;
+  float cover = min(1.0, width / px);
+  width = max(width, px);
+  // Doppler: what lies ahead arrives blue, what passes goes warm.
+  vec3 near = vec3(1.0, 0.64, 0.4);
+  vec3 far = vec3(0.64, 0.86, 1.0);
+  vec3 tint = mix(near, far, smoothstep(0.45, 2.6, z));
+  vec3 acc = vec3(0.0);
+  for (int k = 0; k < 2; k++) {
+    float c = base + float(k);
+    float cw = mod(c, N);
+    float h1 = hash21(vec2(cw, R * 17.0));
+    float h2 = hash21(vec2(cw + 3.1, R * 29.0));
+    float h3 = hash21(vec2(cw + 7.7, R * 41.0));
+    if (h3 < 0.22) continue;
+    float across = (s - c - 0.5 - (h1 - 0.5) * 0.6) * sector;
+    float prof = exp(-across * across / (width * width));
+    float f = fract((z + uDist) / L + h2);
+    float l = len * (0.3 + 0.7 * h3);
+    float body = smoothstep(0.0, 0.01, f) * (exp(-f / l) + 0.6 * exp(-f / (0.08 * l)));
+    vec3 col = mix(tint, vec3(0.8, 0.6, 1.0), step(0.86, h1) * 0.75);
+    acc += col * prof * body * (0.4 + 0.6 * h3);
   }
-  return acc;
+  return acc * cover * vis;
 }
 
 void main() {
   vec2 frag = vUv * uRes;
   vec2 uv = (frag - 0.5 * uRes) / uRes.y;
+  float px = 1.0 / uRes.y;
   float t = uTime;
-  // The ship rides, it does not sit: a slow roll and drift on two harmonics
-  // each, applied to the whole view — rotation moves near and far alike.
-  float roll = 0.012 * sin(t * 0.13 + 2.0) + 0.006 * sin(t * 0.37);
-  vec2 sway = vec2(0.018 * sin(t * 0.21) + 0.010 * sin(t * 0.53 + 1.3), 0.011 * sin(t * 0.17 + 0.7) + 0.006 * sin(t * 0.41));
-  uv = vec2(uv.x * cos(roll) - uv.y * sin(roll), uv.x * sin(roll) + uv.y * cos(roll)) + sway;
-  vec3 col = vec3(0.012, 0.016, 0.03);
 
-  // Deep field: two still layers, the farther one barely follows the head.
-  float s1 = starField((uv + uLook * 0.006 + vec2(3.2, 1.7)) * 26.0, 0.42, 1.5 * 26.0 / uRes.y, t);
-  float s2 = starField((uv + uLook * 0.010 + vec2(8.9, 4.1)) * 14.0, 0.30, 2.3 * 14.0 / uRes.y, t);
-  float tint = hash21(floor((uv + vec2(8.9, 4.1)) * 14.0));
-  vec3 starCol = mix(vec3(0.72, 0.84, 1.0), vec3(1.0, 0.9, 0.78), smoothstep(0.55, 0.85, tint));
-  col += vec3(0.85, 0.9, 1.0) * s1 * 0.8 + starCol * s2 * 1.05;
+  // The throat sits where the ship is headed; the head moves it a little.
+  vec2 p0 = uv - uVp - uLook * 0.03;
+  // The tunnel bends: the far end swings, the near walls stay. A flat-topped
+  // weight moves the throat whole, so the ring keeps its shape.
+  vec2 p = p0 - uBend * exp(-dot(p0, p0) / 0.2);
+  float th = uThroat;
+  // Space folds: the cross-section of the tube is an ellipse whose axis turns
+  // with depth and with time, so the walls wring like a twisted sleeve.
+  float r0 = max(length(p), 1e-4);
+  float phi = t * 0.07 + 0.3 * (0.4 / r0);
+  float fold = 0.09 * sin(t * 0.11 + 0.8) * smoothstep(th * 1.6, th * 4.5, r0);
+  vec2 axis = vec2(cos(phi), sin(phi));
+  p += axis * dot(p, axis) * fold;
+  float r = max(length(p), 1e-4);
+  // Frame dragging: the angle turns with depth and slowly with time.
+  float ang = atan(p.y, p.x) + uTwist * (0.4 / r) + t * 0.03;
 
-  // Flight: five shells of stars open from the vanishing point and streak
-  // past, driven by distance travelled — the engines ramp, the field follows.
-  vec2 vp = vec2(0.24, 0.10);
-  vec2 dir = normalize(uv - vp + vec2(1e-4, 0.0));
-  for (int k = 0; k < 5; k++) {
-    float ph = fract(uDist * 0.085 + float(k) * 0.2);
-    float z = exp2(ph * 2.6);
-    float fade = smoothstep(0.0, 0.25, ph) * (1.0 - smoothstep(0.75, 1.0, ph));
-    vec2 p = vp + (uv - vp) / z + uLook * (0.012 + 0.03 * ph) + vec2(float(k) * 4.7, float(k) * 2.3);
-    float sc = 9.0;
-    float r = (1.2 + 2.6 * ph) * sc / (uRes.y * z);
-    float stretch = 1.0 + uSpeed * (2.0 + 14.0 * ph * ph);
-    col += vec3(0.8, 0.9, 1.0) * starStreaks(p * sc, 0.34, r, stretch, dir, t) * fade * (1.0 + 0.5 * ph);
+  vec3 col = vec3(0.008, 0.01, 0.022);
+
+  // Gas on the walls, streaming along the depth.
+  float zg = 0.5 / r;
+  vec2 gq = vec2(ang / TAU * 6.0, (zg + uDist) * 0.5);
+  float g1 = pfbm(gq, vec2(6.0, 24.0));
+  float g2 = pnoise(gq * vec2(2.0, 1.0) + vec2(3.0, 7.0), vec2(12.0, 24.0));
+  float gas = smoothstep(0.38, 0.8, g1) * smoothstep(0.35, 1.1, zg) * smoothstep(12.0, 3.0, zg);
+  vec3 gasCol = mix(vec3(0.5, 0.3, 0.95), vec3(0.24, 0.72, 1.0), smoothstep(0.3, 0.7, g2));
+  col += gasCol * gas * 0.5;
+  // A faint glow of the walls themselves, so the tunnel reads as a volume.
+  col += vec3(0.16, 0.2, 0.42) * smoothstep(0.35, 2.4, zg) * smoothstep(14.0, 4.0, zg) * 0.18;
+
+  // Three walls of threads: far and fine, middle, near and bold.
+  vec3 threads = wall(ang, r, 0.2, 150.0, 2.4, 0.0012, 0.32 * (0.18 + 0.82 * uSpeed), px) * 0.9;
+  threads += wall(ang + 1.7, r, 0.36, 96.0, 4.0, 0.002, 0.3 * (0.18 + 0.82 * uSpeed), px) * 0.95;
+  threads += wall(ang + 3.9, r, 0.6, 54.0, 6.0, 0.0034, 0.26 * (0.18 + 0.82 * uSpeed), px);
+  col += threads * smoothstep(th * 1.05, th * 2.6, r);
+
+  // Ribs: a faint luminous ring every few units of depth, passing by.
+  float zr = 0.45 / r;
+  float rib = exp(-pow(fract((zr + uDist) / 6.0) * 6.0 - 0.4, 2.0) * 18.0);
+  col += vec3(0.4, 0.6, 1.0) * rib * smoothstep(0.5, 1.6, zr) * smoothstep(9.0, 3.0, zr) * 0.07;
+
+  // The mouth: the far side's sky, lensed by a point mass. Stars pile up on
+  // the Einstein ring; the band of a far galaxy becomes arcs around it.
+  // Only the pixels near the throat pay for it.
+  float mouth = 1.0 - smoothstep(th * 1.3, th * 4.2, r);
+  if (mouth > 0.0) {
+    float lens = th * th / (r * r);
+    vec2 b = p * (1.0 - lens);
+    float mag = clamp(1.0 / abs(1.0 - lens * lens), 0.0, 7.0);
+    float ca = cos(t * 0.012), sa = sin(t * 0.012);
+    vec2 bb = mat2(ca, -sa, sa, ca) * b;
+    float sky = starField(bb * 44.0 + vec2(3.0, 7.0), 0.46, 1.5 * 44.0 * px) + starField(bb * 20.0 + vec2(9.0, 1.0), 0.3, 1.9 * 20.0 * px) * 1.3;
+    float band = exp(-pow(dot(bb, vec2(-0.45, 0.89)) * 7.0, 2.0)) * (0.3 + 0.7 * vnoise(bb * 16.0));
+    vec3 farCol = vec3(0.86, 0.92, 1.0) * sky * sqrt(mag) + mix(vec3(0.62, 0.62, 1.0), vec3(1.0, 0.82, 0.66), vnoise(bb * 5.0)) * band * min(mag, 5.0) * 0.5;
+    col += farCol * mouth;
   }
-  // Two shells of near dust: sparse, fast and long — what the eye reads as speed.
-  for (int k = 0; k < 2; k++) {
-    float ph = fract(uDist * 0.3 + float(k) * 0.5 + 0.37);
-    float z = exp2(ph * 3.0);
-    float fade = smoothstep(0.0, 0.2, ph) * (1.0 - smoothstep(0.7, 1.0, ph));
-    vec2 p = vp + (uv - vp) / z + uLook * 0.05 + vec2(float(k) * 6.1 + 9.0, float(k) * 3.7 + 5.0);
-    float sc = 5.0;
-    float r = (2.0 + 3.6 * ph) * sc / (uRes.y * z);
-    float stretch = 1.0 + uSpeed * (5.0 + 26.0 * ph);
-    col += vec3(0.9, 0.9, 0.95) * starStreaks(p * sc, 0.08, r, stretch, dir, t) * fade * 1.1 * uSpeed;
-  }
+  // Light from the other side fills the throat; the ring is sharp, the halo wide.
+  col += vec3(0.55, 0.78, 1.0) * exp(-r / th * 1.25) * 0.42;
+  col += vec3(0.42, 0.6, 1.0) * smoothstep(th, th * 0.2, r) * 0.12;
+  float ring = r - th;
+  col += vec3(0.8, 0.93, 1.0) * (exp(-ring * ring / pow(1.4 * px + 0.0012, 2.0)) * 0.85 + exp(-abs(ring) * 34.0) * 0.22);
+  // A darker annulus just outside the ring: the photon region, where the
+  // walls hand over to the mouth.
+  col *= 1.0 - 0.45 * exp(-pow((r - th * 2.0) / (th * 0.7), 2.0));
 
-  // Nebula: violet dust with cyan veins, upper left, drifting very slowly.
-  vec2 nq = uv * 1.25 + uLook * 0.015 + vec2(0.35, 0.05) + vec2(t * 0.004, t * 0.002);
-  float n1 = fbm(nq * 1.5);
-  float n2 = fbm(nq * 3.2 + vec2(5.0, 2.0));
-  float veins = vnoise(nq * 1.6 + vec2(11.0, 3.0));
-  float neb = smoothstep(0.36, 0.78, n1) * 0.6 + smoothstep(0.5, 0.88, n2) * 0.3;
-  float ndist = length((uv - vec2(0.18, 0.2)) * vec2(0.62, 1.25));
-  float nmask = smoothstep(1.25, 0.1, ndist);
-  // A soft core keeps the cloud where the strut can cross it, whatever the noise does there.
-  neb += smoothstep(0.9, 0.0, ndist) * (0.18 + 0.22 * n2);
-  vec3 nebCol = mix(vec3(0.66, 0.42, 1.0), vec3(0.38, 0.84, 1.0), smoothstep(0.35, 0.65, veins));
-  nebCol = mix(nebCol, vec3(1.0, 0.58, 0.66), smoothstep(0.68, 0.95, n1) * 0.4);
-  col += nebCol * neb * nmask * 1.0;
-  // A faint dust band leaning across the upper sky.
-  float band = exp(-pow((uv.y - 0.12 - uv.x * 0.22) * 2.6, 2.0));
-  col += vec3(0.55, 0.62, 0.85) * band * vnoise(uv * 6.0 + vec2(2.0, 7.0)) * 0.11;
-  // Sun just outside the top-right corner: the warmth every surface answers to.
-  col += vec3(1.0, 0.8, 0.55) * exp(-length(uv - vec2(1.0, 0.45)) * 1.9) * 0.34;
-  // A second, cooler wisp low on the right, behind the world's lit rim.
-  float wisp = smoothstep(0.42, 0.8, fbm(uv * 2.2 + vec2(9.0, 1.0) + t * 0.003)) * smoothstep(0.8, 0.1, length((uv - vec2(0.62, 0.05)) * vec2(0.9, 1.6)));
-  col += vec3(0.4, 0.8, 1.0) * wisp * 0.22;
-
-  // The world below: blue-grey ocean bands under a thin lit atmosphere.
-  vec3 sun = normalize(vec3(0.72, 0.5, 0.42));
-  vec2 pc = vec2(0.56 + 0.05 * sin(uDist * 0.01), -1.14);
-  float pr = 1.22;
-  vec2 rel = (uv - pc) / pr + uLook * 0.004;
-  float r2 = dot(rel, rel);
-  float rim = length(rel) - 1.0;
-  if (r2 < 1.0) {
-    float zz = sqrt(1.0 - r2);
-    vec3 n = vec3(rel, zz);
-    float diff = dot(n, sun);
-    vec2 sp = vec2(atan(n.x, n.z) * 1.1 + uDist * 0.018, n.y * 2.4);
-    float f = fbm(sp * 2.6 + vec2(0.0, 3.0));
-    float bands = smoothstep(0.3, 0.7, 0.5 + 0.5 * sin(n.y * 14.0 + f * 5.0 + 1.0));
-    float clouds = smoothstep(0.58, 0.86, fbm(sp * 5.0 + vec2(uDist * 0.03, 1.5)));
-    vec3 deep = vec3(0.04, 0.08, 0.17);
-    vec3 sea = vec3(0.09, 0.27, 0.42);
-    vec3 teal = vec3(0.17, 0.46, 0.54);
-    vec3 pale = vec3(0.74, 0.79, 0.85);
-    vec3 alb = mix(deep, sea, bands);
-    alb = mix(alb, teal, smoothstep(0.55, 0.8, f) * 0.8);
-    alb = mix(alb, pale, clouds * 0.9);
-    float light = smoothstep(-0.12, 0.55, diff);
-    vec3 surf = alb * (0.03 + light * 1.25) * mix(vec3(1.0), vec3(1.0, 0.86, 0.68), 0.35);
-    surf += vec3(1.0, 0.55, 0.22) * exp(-abs(diff - 0.02) * 9.0) * 0.14;
-    float fres = pow(1.0 - zz, 3.2);
-    surf += vec3(0.5, 0.85, 1.0) * fres * (0.12 + 0.6 * light);
-    col = mix(col, surf, smoothstep(0.0, -0.008, rim));
-  }
-  float haloSide = smoothstep(-0.4, 0.7, dot(normalize(vec3(rel, 0.0)), sun));
-  float halo = exp(-max(rim, 0.0) * 18.0) * step(0.0, rim);
-  col += vec3(0.42, 0.82, 1.0) * halo * (0.10 + 0.55 * haloSide);
-
-  // Vignette and a breath of grain: a window, not a render.
-  float vig = smoothstep(1.35, 0.35, length(uv * vec2(0.8, 1.0)));
-  col *= 0.75 + 0.25 * vig;
-  col += (hash21(frag + fract(t) * 100.0) - 0.5) * 0.018;
+  // Vignette, a soft shoulder for the highlights and a breath of grain.
+  float vig = smoothstep(1.45, 0.3, length(uv * vec2(0.78, 1.0)));
+  col *= 0.6 + 0.4 * vig;
+  col = 1.0 - exp(-col * 1.25);
+  col += (hash21(frag + fract(t) * 100.0) - 0.5) * 0.014;
   outColor = vec4(col, 1.0);
 }`;
 
@@ -220,7 +229,30 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string) {
   return shader;
 }
 
-/** Same numbers on the server and the client: the still sky never re-rolls. */
+/**
+ * Where the throat sits, in height units from the centre. Apaisado, a la
+ * derecha, para que la copia del HUD quede sobre la pared oscura; vertical,
+ * centrado y alto, con la copia debajo. The still view reads the same numbers
+ * from CSS (`--vp-x`, `--vp-y` in `ranger-contact.css`).
+ */
+function throatFor(aspect: number) {
+  return aspect >= 1.2 ? { x: 0.27, y: 0.03, radius: 0.078 } : { x: 0, y: 0.17, radius: 0.08 };
+}
+
+/**
+ * The slow motions of the tunnel, shared by the shader and the HUD (the
+ * heading tape rides the bend, the reticle follows the throat).
+ */
+function tunnelAt(time: number) {
+  return {
+    bendX: 0.07 * Math.sin(time * 0.083) + 0.035 * Math.sin(time * 0.21 + 1.1),
+    bendY: 0.045 * Math.sin(time * 0.067 + 0.6) + 0.02 * Math.sin(time * 0.19),
+    twist: 0.55 + 0.15 * Math.sin(time * 0.05),
+    breath: 1 + 0.045 * Math.sin(time * 0.4),
+  };
+}
+
+/** Same numbers on the server and the client: the still tunnel never re-rolls. */
 function seeded(seed: number) {
   let state = seed;
   return () => {
@@ -228,14 +260,30 @@ function seeded(seed: number) {
     return state / 4294967296;
   };
 }
-const STILL_STARS = (() => {
+/**
+ * La vista fija: 150 hilos de luz desde la garganta, curvados por el mismo
+ * giro que el shader, en un lienzo cuadrado centrado en la boca (1 unidad =
+ * 0,1 % del alto del ventanal). Cerca de la boca, fríos; hacia fuera, cálidos.
+ */
+const STILL_THREADS = (() => {
   const random = seeded(97);
-  return Array.from({ length: 170 }, () => ({
-    x: Number((random() * 1440).toFixed(1)),
-    y: Number((random() * 800).toFixed(1)),
-    r: Number((0.4 + random() * 1.3).toFixed(2)),
-    o: Number((0.35 + random() * 0.65).toFixed(2)),
-  }));
+  return Array.from({ length: 150 }, () => {
+    const angle = random() * Math.PI * 2;
+    const start = 90 + random() ** 1.6 * 520;
+    const end = start + 60 + random() * (220 + start * 1.4);
+    const twist = 0.22 * (0.4 / (start / 1000) - 0.4 / (end / 1000)) * 0.35;
+    const mid = (start + end) / 2;
+    const point = (radius: number, turn: number) => [Math.cos(angle + turn) * radius, Math.sin(angle + turn) * radius].map((v) => Number(v.toFixed(1)));
+    const [x1, y1] = point(start, twist);
+    const [cx, cy] = point(mid, twist * 0.45);
+    const [x2, y2] = point(end, 0);
+    return {
+      d: `M${x1} ${y1}Q${cx} ${cy} ${x2} ${y2}`,
+      tone: start < 220 ? "far" : start < 420 ? "mid" : "near",
+      width: Number((0.8 + (start / 600) * 2.4).toFixed(2)),
+      opacity: Number((0.25 + random() * 0.6).toFixed(2)),
+    };
+  });
 })();
 
 export function RangerViewport() {
@@ -243,12 +291,21 @@ export function RangerViewport() {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const { running, supported, markUnsupported, look } = useRangerCockpit();
   const mounted = useMounted();
-  const flying = mounted && running && supported;
+  const live = mounted && supported;
+  // The loop reads the switch through a ref: turning motion off freezes the
+  // current frame instead of tearing the context down and redrawing a still.
+  const runningRef = useRef(running);
+  const syncRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    runningRef.current = running;
+    syncRef.current();
+  }, [running]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const surface = surfaceRef.current;
-    if (!canvas || !surface || !flying) return;
+    if (!canvas || !surface || !live) return;
     if (typeof WebGL2RenderingContext === "undefined") {
       markUnsupported();
       return;
@@ -278,12 +335,17 @@ export function RangerViewport() {
     const position = gl.getAttribLocation(program, "aPosition");
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    const uniform = (name: string) => gl.getUniformLocation(program, name);
     const uniforms = {
-      res: gl.getUniformLocation(program, "uRes"),
-      time: gl.getUniformLocation(program, "uTime"),
-      look: gl.getUniformLocation(program, "uLook"),
-      dist: gl.getUniformLocation(program, "uDist"),
-      speed: gl.getUniformLocation(program, "uSpeed"),
+      res: uniform("uRes"),
+      time: uniform("uTime"),
+      look: uniform("uLook"),
+      dist: uniform("uDist"),
+      speed: uniform("uSpeed"),
+      vp: uniform("uVp"),
+      bend: uniform("uBend"),
+      twist: uniform("uTwist"),
+      throat: uniform("uThroat"),
     };
     const bridge = surface.closest<HTMLElement>(".ranger-bridge");
 
@@ -291,47 +353,64 @@ export function RangerViewport() {
     let visible = false;
     let lost = false;
     let previous = 0;
-    let time = 0;
-    // Distance travelled: the engines ramp up over the first seconds after
-    // (re)activation and the star field follows the distance, not the clock.
-    let dist = 0;
-    // The head follows the pointer with inertia: a window, not a cursor.
+    // A visitor who arrives with motion off still gets a tunnel at full
+    // speed, frozen; one who arrives with it on watches the engines spool up.
+    const startsStill = !runningRef.current;
+    let time = startsStill ? 37 : 0;
+    let dist = startsStill ? 11.3 : 0;
+    let speed = startsStill ? 1 : 0;
     let lookX = 0;
     let lookY = 0;
 
-    function draw(timestamp: number) {
-      if (!gl || !canvas || lost) return;
-      frame = requestAnimationFrame(draw);
-      if (timestamp - previous < 1000 / 30) return;
-      const dt = Math.min((timestamp - previous) / 1000, 0.05);
-      time += dt;
-      previous = timestamp;
-      const ramp = Math.min(1, time / 2.8);
-      const speed = ramp * ramp * (3 - 2 * ramp);
-      dist += dt * speed;
-      lookX += (look.current.x - lookX) * 0.08;
-      lookY += (look.current.y - lookY) * 0.08;
+    function render() {
+      if (!gl || !canvas) return;
+      const aspect = canvas.width / Math.max(canvas.height, 1);
+      const throat = throatFor(aspect);
+      const tunnel = tunnelAt(time);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uniforms.res, canvas.width, canvas.height);
       gl.uniform1f(uniforms.time, time);
       gl.uniform2f(uniforms.look, lookX, -lookY);
       gl.uniform1f(uniforms.dist, dist);
-      gl.uniform1f(uniforms.speed, speed);
+      gl.uniform1f(uniforms.speed, speed * speed * (3 - 2 * speed));
+      gl.uniform2f(uniforms.vp, throat.x, throat.y);
+      gl.uniform2f(uniforms.bend, tunnel.bendX, tunnel.bendY);
+      gl.uniform1f(uniforms.twist, tunnel.twist);
+      gl.uniform1f(uniforms.throat, throat.radius * tunnel.breath);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      // The same sway the shader applies, handed to the HUD so the heading
-      // tape rides with the ship (yaw in [-1, 1]).
-      const yaw = (0.018 * Math.sin(time * 0.21) + 0.01 * Math.sin(time * 0.53 + 1.3)) / 0.028;
-      bridge?.style.setProperty("--yaw", yaw.toFixed(3));
+      // The HUD rides the same tunnel: the tape follows the bend (yaw in
+      // [-1, 1]) and the reticle sits on the throat.
+      bridge?.style.setProperty("--yaw", (tunnel.bendX / 0.105).toFixed(3));
+      bridge?.style.setProperty("--bend-x", (tunnel.bendX + lookX * 0.03).toFixed(4));
+      bridge?.style.setProperty("--bend-y", (tunnel.bendY - lookY * 0.03).toFixed(4));
+    }
+
+    function draw(timestamp: number) {
+      if (lost) return;
+      frame = requestAnimationFrame(draw);
+      if (timestamp - previous < 1000 / 30) return;
+      const dt = Math.min((timestamp - previous) / 1000, 0.05);
+      previous = timestamp;
+      time += dt;
+      // Engines: from rest to cruise in 2.8 s after the first start. Resuming
+      // picks up from the frozen speed, so the view never jumps.
+      speed = Math.min(1, speed + dt / 2.8);
+      const eased = speed * speed * (3 - 2 * speed);
+      dist = (dist + dt * 1.7 * eased) % PERIOD;
+      lookX += (look.current.x - lookX) * 0.08;
+      lookY += (look.current.y - lookY) * 0.08;
+      render();
     }
 
     function sync() {
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
-      if (visible && !document.hidden && !lost) {
+      if (visible && !document.hidden && !lost && runningRef.current) {
         previous = performance.now();
         frame = requestAnimationFrame(draw);
       }
     }
+    syncRef.current = sync;
 
     const onLost = (event: Event) => {
       event.preventDefault();
@@ -347,6 +426,8 @@ export function RangerViewport() {
       const height = Math.round((bounds.height * width) / bounds.width);
       if (canvas.width !== width) canvas.width = width;
       if (canvas.height !== height) canvas.height = height;
+      // Resizing clears the canvas: a frozen view redraws its frame once.
+      if (!frame && !lost) render();
     });
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
@@ -358,29 +439,40 @@ export function RangerViewport() {
     document.addEventListener("visibilitychange", sync);
     return () => {
       cancelAnimationFrame(frame);
+      syncRef.current = () => {};
       resize.disconnect();
       observer.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);
       document.removeEventListener("visibilitychange", sync);
-      bridge?.style.removeProperty("--yaw");
+      for (const property of ["--yaw", "--bend-x", "--bend-y"]) bridge?.style.removeProperty(property);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [flying, look, markUnsupported]);
+  }, [live, look, markUnsupported]);
 
   return (
-    <div className="ranger-view" ref={surfaceRef} data-flight={flying ? "on" : "off"} aria-hidden="true">
+    <div className="ranger-view" ref={surfaceRef} data-flight={live && running ? "on" : "off"} aria-hidden="true">
       <div className="ranger-view__still">
-        <svg className="ranger-view__stars" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" focusable="false">
-          {STILL_STARS.map((star, index) => <circle key={index} cx={star.x} cy={star.y} r={star.r} opacity={star.o} />)}
+        <svg className="ranger-view__tunnel" viewBox="-2000 -2000 4000 4000" focusable="false">
+          <defs>
+            <radialGradient id="ranger-throat">
+              <stop offset="0" stopColor="#dff4ff" stopOpacity=".95" />
+              <stop offset=".035" stopColor="#9fdcff" stopOpacity=".55" />
+              <stop offset=".12" stopColor="#6d7dff" stopOpacity=".16" />
+              <stop offset=".3" stopColor="#8a55e6" stopOpacity=".08" />
+              <stop offset="1" stopColor="#04060d" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <circle r="1500" fill="url(#ranger-throat)" />
+          {STILL_THREADS.map((thread, index) => <path key={index} d={thread.d} data-tone={thread.tone} strokeWidth={thread.width} opacity={thread.opacity} />)}
+          <circle className="ranger-view__ring" r="78" />
         </svg>
-        <i className="ranger-view__nebula" />
-        <i className="ranger-view__world" />
       </div>
-      {flying ? <canvas ref={canvasRef} /> : null}
+      {live ? <canvas ref={canvasRef} /> : null}
+      <div className="ranger-view__reticle"><i /></div>
       <div className="ranger-view__shade" />
     </div>
   );

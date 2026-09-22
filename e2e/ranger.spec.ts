@@ -26,9 +26,9 @@ test.describe("Ranger · cabina de mando", () => {
       }
     }
     await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "off");
-    await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
+    await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
     await page.getByRole("link", { name: /01 \/ CORREO/ }).hover();
-    await expect(page.locator(".ranger-readouts")).toContainText("01 · Correo");
+    await expect(page.locator(".ranger-channels__tuned")).toContainText("Sintonizando 01 · Correo");
     await page.getByRole("link", { name: "Escribir un mensaje" }).click();
     await expect(page).toHaveURL(/#transmision$/);
     await expect(page.getByRole("form", { name: "Enviar un mensaje a Jonás" })).toBeVisible();
@@ -39,6 +39,24 @@ test.describe("Ranger · cabina de mando", () => {
     await page.getByLabel("Correo", { exact: true }).fill("ada@example.com");
     await page.getByLabel("Mensaje", { exact: true }).fill("Quiero construir una herramienta clara para el equipo.");
     await expect(page.getByText(/Señal 4\/4 · lista para transmitir/)).toBeVisible();
+  });
+
+  test("el ventanal ocupa el viewport entero y los canales empiezan justo debajo", async ({ page }) => {
+    for (const viewport of [{ width: 375, height: 812 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/es/contacto?no3d=1");
+      const bridge = await page.getByRole("region", { name: "Cabina de la Ranger" }).boundingBox();
+      const view = await page.locator(".ranger-view").boundingBox();
+      expect(bridge!.y).toBeLessThanOrEqual(0);
+      expect(bridge!.x).toBe(0);
+      expect(bridge!.width).toBe(viewport.width);
+      expect(Math.round(bridge!.y + bridge!.height)).toBeGreaterThanOrEqual(viewport.height);
+      expect(Math.round(view!.height)).toBe(Math.round(bridge!.height));
+      const dash = await page.locator("#instrumentos").boundingBox();
+      expect(Math.round(dash!.y)).toBeGreaterThanOrEqual(viewport.height);
+      await page.getByRole("link", { name: "Canales directos" }).click();
+      await expect(page.getByRole("link", { name: /01 \/ CORREO/ })).toBeInViewport();
+    }
   });
 
   test("el vuelo pausa, reanuda y deja de dibujar en segundo plano o fuera de pantalla", async ({ page }) => {
@@ -62,7 +80,9 @@ test.describe("Ranger · cabina de mando", () => {
     await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "on");
     await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
     await pause.click();
-    await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
+    // Apagado congela el último fotograma: el canvas se queda, los draws paran.
+    await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
+    await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
     expect(await flightDrawsOverFrames(page)).toBe(0);
     await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
     await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
@@ -78,8 +98,8 @@ test.describe("Ranger · cabina de mando", () => {
     await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
     await page.getByRole("link", { name: "Abrir consola de transmisión" }).click();
     await expect(page).toHaveURL(/#transmision$/);
-    // El ancla deja el borde del ventanal asomando bajo la cabecera; bajar
-    // hasta la consola lo saca del todo y el vuelo tiene que detenerse.
+    // Bajar hasta la consola saca el ventanal de la pantalla y el vuelo tiene
+    // que detenerse.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
     await expect(page.locator(".ranger-view")).not.toBeInViewport();
     await expect.poll(() => flightDrawsOverFrames(page)).toBe(0);
@@ -97,12 +117,16 @@ test.describe("Ranger · cabina de mando", () => {
     await toggle.focus();
     await page.keyboard.press("Enter");
     await expect(bridge).toHaveAttribute("data-motion", "off");
-    await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
+    await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
+    await expect(page.locator(".ranger-readouts")).toContainText("Detenido");
     expect(await page.locator(".ranger-scope__sweep").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
     await expect(page.getByRole("button", { name: "Activar movimiento", exact: true })).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(bridge).toHaveAttribute("data-motion", "on");
-    await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
+    await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "on");
+    await expect(page.locator(".ranger-readouts")).toContainText("En travesía");
+    // Con reduced-motion del sistema el radar gira igual: el interruptor manda.
+    expect(await page.locator(".ranger-scope__sweep").evaluate((el) => getComputedStyle(el).animationDuration)).toBe("5s");
   });
 
   test("sin JavaScript mantiene los tres canales, CV y contenido real", async ({ browser }) => {
@@ -118,7 +142,7 @@ test.describe("Ranger · cabina de mando", () => {
       await expect(page.getByText(/Para enviar el formulario necesitas JavaScript/)).toBeVisible();
       await expect(page.getByRole("button", { name: /vuelo/ })).toHaveCount(0);
       await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
-      await expect(page.locator(".ranger-view__stars circle")).toHaveCount(170);
+      await expect(page.locator(".ranger-view__tunnel path")).toHaveCount(150);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     } finally { await context.close(); }
   });

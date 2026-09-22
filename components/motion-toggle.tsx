@@ -17,7 +17,10 @@ import "./motion-toggle.css";
  *
  * El icono es un sistema en miniatura: un cuerpo central y un satélite en una
  * órbita inclinada. Con el movimiento encendido el satélite recorre la órbita;
- * apagado, se detiene donde estaba.
+ * apagado, se detiene donde estaba. Como el giro no basta —con movimiento
+ * reducido del sistema no llega a verse—, el estado se lee también quieto:
+ * encendido lleva halo cian y la etiqueta ON; apagado, borde discontinuo, el
+ * icono tachado y OFF. La banda sonora usa el mismo lenguaje.
  */
 export function MotionToggle() {
   const enabled = useMotionEnabled();
@@ -32,7 +35,7 @@ export function MotionToggle() {
       type="button"
       aria-pressed={enabled}
       aria-label={enabled ? "Desactivar movimiento" : "Activar movimiento"}
-      title={enabled ? "Desactivar movimiento" : "Activar movimiento"}
+      title={enabled ? "Movimiento activado · pulsa para detenerlo" : "Movimiento detenido · pulsa para activarlo"}
       data-state={enabled ? "on" : "off"}
       onClick={() => setMotionEnabled(!enabled)}
     >
@@ -44,9 +47,9 @@ export function MotionToggle() {
           </g>
         </g>
         <circle className="motion-toggle__core" cx="12" cy="12" r="2.6" />
-        <path className="motion-toggle__pause" d="M9.6 9v6M14.4 9v6" />
+        {enabled ? null : <path className="tray-slash" d="M3.5 20.5 20.5 3.5" />}
       </svg>
-      <span className="motion-toggle__readout"><span>Movimiento</span><strong>{enabled ? "On" : "Off"}</strong></span>
+      <span className="tray-state" aria-hidden="true">{enabled ? "On" : "Off"}</span>
     </button>
   );
 }

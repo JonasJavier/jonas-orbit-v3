@@ -68,7 +68,9 @@ MDX**, nunca en `worlds.data.ts`.
   navega por temporizador, nunca desde un fotograma; versión reducida sin escena.
 - **Un solo interruptor de movimiento** (09-13)
   `docs/design/movimiento-unificado.md` — `components/motion-toggle.tsx` apaga
-  todo; por defecto encendido; ninguna página guarda pausa propia.
+  todo; por defecto encendido; ninguna página guarda pausa propia. §«El icono»
+  (09-22): ON/OFF se leen quietos (halo + `ON` / discontinuo, tachado + `OFF`),
+  mismo lenguaje en AUDIO, que arranca ON (`armed` hasta el primer gesto).
 - **System Map — respuesta al puntero** (09-21)
   `docs/design/endurance-navigation-interface.md` §14 — `MAP_HOVER_MODE`
   (`sencillo`); el modo `instrumento` se conserva, no se borra. §12 y §13:
@@ -95,8 +97,10 @@ MDX**, nunca en `worlds.data.ts`.
   OBSERVAR/ESTUDIO (09-18), V3 Gargantúa (09-19), V4 Ranger (09-19), V5 Miller
   y Edmunds, catálogo 06/06 (09-20), V6 mando EJE (09-20). Los `registro` de
   cada espécimen son la voz de Jonás: no se escriben.
-- **Contacto / Ranger** `docs/design/ranger-contacto.md` §«Cabina de mando»
-  (09-13, aprobada) y §«Vuelo».
+- **Contacto / Ranger** `docs/design/ranger-contacto.md` §«Travesía por el
+  agujero de gusano» (09-22: hero al 100 % del viewport, vuelo continuo
+  periódico, apagar congela el cuadro) manda en ventanal y primera pantalla;
+  §«Cabina de mando» (09-13, aprobada) en el resto.
 
 ### Cuerpos y escena del System Map
 

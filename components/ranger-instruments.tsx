@@ -1,41 +1,23 @@
 /**
- * Instrumentos sin estado de la cabina: el marco del ventanal, el radar y la
- * cinta de rumbo. Son SVG y HTML puros — se sirven desde el servidor, no
- * dependen de JavaScript y sólo el CSS los anima cuando el vuelo está activo.
+ * Instrumentos sin estado de la cabina: el visor, el radar y la cinta de
+ * rumbo. Son SVG y HTML puros — se sirven desde el servidor, no dependen de
+ * JavaScript y sólo el CSS los anima cuando el vuelo está activo.
  */
 
 /**
- * Marco del ventanal. Dos siluetas, una por orientación, dibujadas con
- * `preserveAspectRatio="none"` para que el cristal siempre llene la cabina;
- * los trazos usan `non-scaling-stroke` y no se deforman con el estirado.
+ * Visor de la cabina. El ventanal ocupa toda la pantalla, así que la nave ya
+ * no se dibuja como un marco: se sugiere con cuatro esquinas de retículo al
+ * borde del cristal y los reflejos de los instrumentos sobre el vidrio. Es el
+ * plano más cercano y el que más se mueve contra la cabeza.
  */
-export function RangerCanopy() {
+export function RangerVisor() {
   return (
-    <div className="ranger-canopy" aria-hidden="true">
-      <svg className="ranger-canopy__frame ranger-canopy__frame--wide" viewBox="0 0 1440 900" preserveAspectRatio="none" focusable="false">
-        <defs>
-          <linearGradient id="ranger-hull" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#0d111b" />
-            <stop offset="1" stopColor="#04060b" />
-          </linearGradient>
-          <linearGradient id="ranger-edge" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#7fe5ff" stopOpacity=".55" />
-            <stop offset=".5" stopColor="#ffd08a" stopOpacity=".7" />
-            <stop offset="1" stopColor="#ffb65c" stopOpacity=".9" />
-          </linearGradient>
-        </defs>
-        <path className="ranger-canopy__hull" fillRule="evenodd" d="M0 0H1440V900H0Z M120 210C120 128 156 84 236 84H1204C1284 84 1320 128 1320 210L1404 900H36Z" />
-        <path className="ranger-canopy__bevel" d="M36 900L120 210C120 128 156 84 236 84H1204C1284 84 1320 128 1320 210L1404 900" />
-        <path className="ranger-canopy__edge" d="M36 900L120 210C120 128 156 84 236 84H1204C1284 84 1320 128 1320 210L1404 900" />
-        <path className="ranger-canopy__strut" d="M896 84H924L1002 900H968Z" />
-        <path className="ranger-canopy__strut-edge" d="M924 84L1002 900" />
-      </svg>
-      <svg className="ranger-canopy__frame ranger-canopy__frame--tall" viewBox="0 0 400 700" preserveAspectRatio="none" focusable="false">
-        <path className="ranger-canopy__hull" fillRule="evenodd" d="M0 0H400V700H0Z M28 150C28 102 48 80 96 80H304C352 80 372 102 372 150L400 700H0Z" />
-        <path className="ranger-canopy__bevel" d="M0 700L28 150C28 102 48 80 96 80H304C352 80 372 102 372 150L400 700" />
-        <path className="ranger-canopy__edge" d="M0 700L28 150C28 102 48 80 96 80H304C352 80 372 102 372 150L400 700" />
-      </svg>
-      <i className="ranger-canopy__glass" />
+    <div className="ranger-visor" aria-hidden="true">
+      <i className="ranger-visor__corner" data-corner="tl" />
+      <i className="ranger-visor__corner" data-corner="tr" />
+      <i className="ranger-visor__corner" data-corner="bl" />
+      <i className="ranger-visor__corner" data-corner="br" />
+      <i className="ranger-visor__glass" />
     </div>
   );
 }

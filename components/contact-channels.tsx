@@ -17,7 +17,8 @@ const FREQUENCIES = {
 /**
  * Las tres frecuencias del panel: correo, WhatsApp y teléfono. Enlaces reales
  * (mailto, wa.me, tel) que funcionan sin JavaScript; apuntarlas enciende su
- * LED y escribe la frecuencia en el HUD; copiar confirma de forma accesible.
+ * LED y escribe la frecuencia sintonizada en la cabecera del módulo; copiar
+ * confirma de forma accesible.
  *
  * Los botones de copiar se nombran por el DATO que copian y no por «correo» o
  * «teléfono»: el formulario de abajo tiene un campo «Correo», y un botón cuyo
@@ -25,7 +26,7 @@ const FREQUENCIES = {
  * busca el campo por su etiqueta —lector de pantalla o Playwright por igual.
  */
 export function ContactChannels() {
-  const { setFrequency } = useRangerCockpit();
+  const { frequency, setFrequency } = useRangerCockpit();
   const [feedback, setFeedback] = useState("");
   const [copied, setCopied] = useState<"email" | "phone" | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -64,7 +65,7 @@ export function ContactChannels() {
 
   return (
     <div className="ranger-channels" aria-label="Canales directos">
-      <div className="ranger-module__label"><span>Frecuencias</span><span aria-hidden="true">Tierra ↔ Ranger</span></div>
+      <div className="ranger-module__label"><span>Frecuencias</span><span className="ranger-channels__tuned" aria-hidden="true" data-live={frequency ? "frequency" : undefined}>{frequency ? `Sintonizando ${frequency.id} · ${frequency.name}` : "Tierra ↔ Ranger"}</span></div>
       <div className="ranger-freq-list">
         <article className="ranger-freq" {...tune(FREQUENCIES.email, 1)}>
           <a href={`mailto:${SITE_PROFILE.email}`}>

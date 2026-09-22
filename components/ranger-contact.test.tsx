@@ -57,44 +57,64 @@ describe("Ranger · cabina de mando", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Enviar transmisión" })).toBeEnabled());
   });
 
-  it("sin WebGL2 se queda con la vista fija, sin canvas", async () => {
+  it("sin WebGL2 se queda con la vista fija del túnel, sin canvas", async () => {
     render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     await waitFor(() => expect(document.querySelector(".ranger-view canvas")).toBeNull());
     expect(screen.queryByRole("button", { name: /vuelo/ })).not.toBeInTheDocument();
-    expect(document.querySelectorAll(".ranger-view__stars circle")).toHaveLength(170);
+    expect(document.querySelectorAll(".ranger-view__tunnel path")).toHaveLength(150);
+    expect(document.querySelector(".ranger-view__ring")).not.toBeNull();
     expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "off");
   });
 
-  it("obedece al interruptor único de movimiento: vuela, se detiene y suelta el contexto", () => {
+  it("obedece al interruptor único de movimiento: vuela, se congela sin soltar el cuadro y libera el contexto al salir", () => {
     const { loseContext } = stubWebGL2();
-    const { rerender } = render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    const { rerender, unmount } = render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     const bridge = screen.getByRole("region", { name: "Cabina de la Ranger" });
+    const flight = () => screen.getByText("Vuelo").nextElementSibling as HTMLElement;
     expect(bridge).toHaveAttribute("data-motion", "on");
-    expect(document.querySelector(".ranger-view canvas")).not.toBeNull();
+    expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "on");
+    expect(flight()).toHaveTextContent("En travesía");
+    const canvas = document.querySelector(".ranger-view canvas");
+    expect(canvas).not.toBeNull();
     // Ningún interruptor propio: el de la bandeja gobierna todo el sitio.
     expect(screen.queryByRole("button", { name: /vuelo/ })).toBeNull();
     settings.motion = false;
     rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     expect(bridge).toHaveAttribute("data-motion", "off");
-    expect(document.querySelector(".ranger-view canvas")).toBeNull();
-    expect(loseContext).toHaveBeenCalledTimes(1);
+    expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "off");
+    expect(flight()).toHaveTextContent("Detenido");
+    // Apagar congela el último fotograma: el mismo canvas, el mismo contexto.
+    expect(document.querySelector(".ranger-view canvas")).toBe(canvas);
+    expect(loseContext).not.toHaveBeenCalled();
     settings.motion = true;
     rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
-    expect(document.querySelector(".ranger-view canvas")).not.toBeNull();
+    expect(document.querySelector(".ranger-view canvas")).toBe(canvas);
+    unmount();
+    expect(loseContext).toHaveBeenCalledTimes(1);
   });
 
-  it("apuntar una frecuencia la escribe en el HUD y soltarla lo limpia", () => {
+  it("apuntar una frecuencia la sintoniza en su módulo y soltarla lo limpia", () => {
     stubWebGL2();
     render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
-    const readout = screen.getByText("Frecuencia").nextElementSibling as HTMLElement;
-    expect(readout).toHaveTextContent("— elige una —");
+    const tuned = document.querySelector(".ranger-channels__tuned") as HTMLElement;
+    expect(tuned).toHaveTextContent("Tierra ↔ Ranger");
     const email = screen.getByRole("link", { name: /01 \/ CORREO/ });
     fireEvent.pointerEnter(email.closest("article")!);
-    expect(readout).toHaveTextContent("01 · Correo");
+    expect(tuned).toHaveTextContent("Sintonizando 01 · Correo");
     fireEvent.pointerLeave(email.closest("article")!);
-    expect(readout).toHaveTextContent("— elige una —");
+    expect(tuned).toHaveTextContent("Tierra ↔ Ranger");
     fireEvent.focus(screen.getByRole("link", { name: /03 \/ TELÉFONO/ }));
-    expect(readout).toHaveTextContent("03 · Teléfono");
+    expect(tuned).toHaveTextContent("Sintonizando 03 · Teléfono");
+  });
+
+  it("el ventanal ocupa la primera pantalla y el panel de canales va justo debajo", () => {
+    render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    const bridge = screen.getByRole("region", { name: "Cabina de la Ranger" });
+    const dash = document.getElementById("instrumentos")!;
+    expect(bridge.contains(dash)).toBe(false);
+    expect(bridge.nextElementSibling).toBe(dash);
+    expect(within(dash).getByRole("link", { name: /01 \/ CORREO/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Canales directos" })).toHaveAttribute("href", "#instrumentos");
   });
 
   it("la hora del HUD es la de Santo Domingo, en HH:MM", () => {
