@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
-import { DownloadIcon } from "./download-icon";
 import { StructuredData } from "./structured-data";
 import { MillerCertificates } from "./miller-certificates";
+import { MillerCvDownload } from "./miller-cv-download";
 import { MillerOcean } from "./miller-ocean";
 import { MillerWater } from "./miller-water";
 import "./miller-page.css";
@@ -44,10 +44,10 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
           <div className="miller-hero__actions">
             <a href="#trayectoria" className="miller-button">Ver mi recorrido <span aria-hidden="true">↓</span></a>
             <a href="#certificados" className="miller-text-link">Ver certificados <span aria-hidden="true">↗</span></a>
-            <a download href="/cv/jonas-javier-cv-es.pdf" className="miller-text-link miller-text-link--cv"><DownloadIcon />Descargar CV <span aria-hidden="true">PDF</span></a>
+            <MillerCvDownload />
           </div>
         </div>
-        <div className="miller-hero__foot"><span>APRENDIZAJE EN MOVIMIENTO</span><span aria-hidden="true">01 — DESCENDER ↓</span></div>
+        <a href="#trayectoria" className="miller-hero__descend"><span>Descender</span><i aria-hidden="true">↓</i></a>
       </header>
 
       <section className="miller-philosophy" data-water-section aria-labelledby="miller-philosophy-title">
@@ -78,20 +78,27 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
               <h3 id="miller-now-title">Lo que estoy aprendiendo <em>ahora mismo.</em></h3>
               <p>Frentes abiertos hoy. Ninguno tiene todavía documento en la bitácora: cuando lo tenga, aparecerá abajo con los demás.</p>
             </div>
-            <ul className="miller-now__list" aria-label="Aprendizaje en curso">
-              {inProgress.map((course) => (
+            <ol className="miller-now__list" aria-label="Aprendizaje en curso">
+              {inProgress.map((course, index) => (
                 <li key={course.id} className="miller-now__item">
-                  <div className="miller-now__strip" aria-hidden="true"><span>{course.area === "code" ? "CÓDIGO" : "IDIOMAS"}</span><i /></div>
+                  <div className="miller-now__marker" aria-hidden="true"><span>{String(index + 1).padStart(2, "0")}</span><i /></div>
+                  <div className="miller-now__course">
+                    <span className="miller-now__area">{course.area === "code" ? "CÓDIGO" : "IDIOMAS"}</span>
+                    <h4>{course.title}</h4>
+                    {course.issuer ? <p className="miller-now__issuer">{course.issuer}</p> : null}
+                  </div>
+                  <p className="miller-now__detail">{course.detail}</p>
                   <span className="miller-now__badge"><i aria-hidden="true" />En curso</span>
-                  <h4>{course.title}</h4>
-                  {course.issuer ? <p className="miller-now__issuer">{course.issuer}</p> : null}
-                  <p>{course.detail}</p>
                 </li>
               ))}
-            </ul>
+            </ol>
+            <aside className="miller-origin">
+              <span className="miller-origin__year">2022</span>
+              <div><span className="miller-eyebrow">EL PUNTO DE PARTIDA</span><h3>{prose.panels[4].title}</h3></div>
+              <p>{prose.panels[4].description}</p>
+            </aside>
           </section>
         ) : null}
-        <aside className="miller-origin"><span className="miller-eyebrow">EL PUNTO DE PARTIDA / 2022</span><h3>{prose.panels[4].title}</h3><p>{prose.panels[4].description}</p></aside>
       </section>
 
       <section id="certificados" className="miller-proof" data-water-section aria-labelledby="miller-proof-title">

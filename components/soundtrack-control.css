@@ -4,9 +4,9 @@
   display: flex;
   align-items: center;
   color: var(--ink-soft);
-  background: #070d17ed;
-  border: 1px solid var(--space-line);
-  border-radius: 2px;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
   font-family: var(--font-mono);
 }
 .soundtrack button, .soundtrack summary {
@@ -21,37 +21,48 @@
 .soundtrack button:hover, .soundtrack summary:hover { color: var(--cyan); }
 .soundtrack :is(button, summary, input):focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
 .soundtrack svg { width: 19px; height: 19px; flex: none; }
-.soundtrack__switch { display: flex; gap: 0.65rem; align-items: center; padding: 0.45rem 0.8rem; min-width: 110px; }
-.soundtrack__readout { display: grid; gap: 0.3rem; text-align: left; text-transform: uppercase; line-height: 1; }
-.soundtrack__readout > span { font-size: 9px; letter-spacing: 0.18em; color: var(--ink-muted); }
-.soundtrack__readout strong { font-size: 10px; letter-spacing: 0.12em; font-weight: 600; }
+.soundtrack__switch { display: flex; gap: 0.65rem; align-items: center; padding: 0.42rem 0.72rem 0.42rem 0.88rem; min-width: 92px; border-radius: 999px !important; transition: color .2s, background .2s; }
+.soundtrack__switch:hover { background: rgb(127 229 255 / 6%); }
+.soundtrack__readout { display: grid; gap: 0.22rem; text-align: left; text-transform: uppercase; line-height: 1; }
+.soundtrack__readout > span { font-size: 8px; letter-spacing: 0.16em; color: var(--ink-muted); }
+.soundtrack__readout strong { font-size: 9px; letter-spacing: 0.11em; font-weight: 600; }
 .soundtrack[data-playing="true"] .soundtrack__switch { color: var(--cyan); }
-.soundtrack__settings summary { display: grid; place-items: center; min-width: 44px; list-style: none; }
+.soundtrack__settings summary { display: grid; place-items: center; min-width: 44px; border-radius: 50%; list-style: none; transition: color .2s, background .2s; }
+.soundtrack__settings summary:hover, .soundtrack__settings[open] summary { background: rgb(127 229 255 / 7%); }
 .soundtrack__settings summary::-webkit-details-marker { display: none; }
-.soundtrack__settings summary::before { content: ""; position: absolute; height: 16px; margin-left: -44px; border-left: 1px solid var(--space-line); }
 .soundtrack__panel {
   position: absolute;
   right: 0;
-  bottom: calc(100% + 0.75rem);
-  width: min(270px, calc(100vw - 2rem));
-  padding: 1.1rem 1.2rem 0.6rem;
-  border: 1px solid #7fe5ff40;
-  border-top-color: #7fe5ff80;
-  background: #080f1bf5;
-  box-shadow: 0 12px 40px #0008;
+  bottom: calc(100% + 0.65rem);
+  width: min(294px, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid rgb(127 229 255 / 28%);
+  border-radius: 15px 15px 4px 15px;
+  background:
+    radial-gradient(circle at 88% 0%, rgb(62 147 177 / 18%), transparent 45%),
+    linear-gradient(145deg, rgb(8 19 31 / 98%), rgb(4 10 19 / 98%));
+  box-shadow: inset 0 1px rgb(213 250 255 / 8%), 0 18px 50px #000a;
+  backdrop-filter: blur(18px);
 }
+.soundtrack__panel::after { content: ""; position: absolute; right: 23px; bottom: -5px; width: 9px; height: 9px; border-right: 1px solid rgb(127 229 255 / 28%); border-bottom: 1px solid rgb(127 229 255 / 28%); background: #06101c; transform: rotate(45deg); }
 .soundtrack__panel p { margin: 0; }
-.soundtrack__eyebrow { display: flex; justify-content: space-between; text-transform: uppercase; font-size: 9px; letter-spacing: 0.09em; color: var(--cyan); }
-.soundtrack__title { padding-top: 0.65rem; font-family: var(--font-display); font-size: 19px; font-weight: 600; color: var(--ink); }
-.soundtrack__description { padding-top: 0.2rem; font-family: var(--font-body); font-size: 12px; color: var(--ink-muted); }
-.soundtrack__volume-label { display: flex; justify-content: space-between; margin-top: 1.1rem; font-size: 11px; }
-.soundtrack input { display: block; width: 100%; height: 32px; margin: 0; accent-color: var(--cyan); cursor: pointer; }
-.soundtrack__mute { display: flex; gap: 0.6rem; align-items: center; padding: 0; font-size: 11px !important; }
+.soundtrack__heading { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 10px; padding-bottom: .85rem; border-bottom: 1px solid rgb(153 202 218 / 14%); }
+.soundtrack__signal { width: 7px; height: 7px; border-radius: 50%; background: #72e5f3; box-shadow: 0 0 10px #72e5f3; }
+.soundtrack__heading p { color: var(--ink); font: 600 .76rem var(--font-body); }
+.soundtrack__heading div > span { display: block; margin-top: 2px; color: var(--ink-muted); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+.soundtrack__heading > strong { color: var(--cyan); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+.soundtrack__volume-label { display: flex; justify-content: space-between; margin-top: .9rem; color: var(--ink-soft); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.soundtrack__volume-label output { color: var(--cyan); }
+.soundtrack input { display: block; width: 100%; height: 34px; margin: .18rem 0 .35rem; accent-color: var(--cyan); cursor: pointer; }
+.soundtrack__mute { display: flex; gap: 0.6rem; align-items: center; width: 100%; padding: .35rem .1rem 0; color: var(--ink-soft); font-size: 10px !important; }
+.soundtrack__mute::after { content: ""; height: 1px; flex: 1; margin-left: 6px; background: linear-gradient(90deg, rgb(127 229 255 / 24%), transparent); }
 /* Home: the whole tray (motion + audio) sits where the HUD's lower-right
    instrument strip used to be, on transparent glass. */
 body:has(.system-home) .system-tray { right: clamp(1rem, 3.4vw, 3.4rem); bottom: 3.65rem; }
 body:has(.system-home) .soundtrack, body:has(.system-home) .motion-toggle { background: transparent; border-color: transparent; }
-body:not(:has(.system-home)):has(.system-tray) { padding-bottom: 8rem; }
+/* El espacio seguro vive dentro del footer; nunca queda una franja de escena
+   3D después del cierre de la página. */
+body:not(:has(.system-home)):has(.system-tray) { padding-bottom: 0; }
 @media (max-width: 60rem) {
   .system-tray { right: max(0.85rem, env(safe-area-inset-right)); bottom: max(0.85rem, env(safe-area-inset-bottom)); }
   body:has(.system-home) .system-tray { right: auto; left: max(0.85rem, env(safe-area-inset-left)); bottom: calc(7.25rem + env(safe-area-inset-bottom)); }
@@ -59,7 +70,8 @@ body:not(:has(.system-home)):has(.system-tray) { padding-bottom: 8rem; }
   /* En pantallas estrechas el panel se ancla al viewport, no a la bandeja:
      la bandeja puede estar arriba (home vertical) o junto al borde, y un
      panel de 270 px colgado de ella se salía por un lado u otro. */
-  .soundtrack__panel { position: fixed; top: auto; left: max(0.85rem, env(safe-area-inset-left)); right: max(0.85rem, env(safe-area-inset-right)); bottom: max(0.85rem, env(safe-area-inset-bottom)); width: auto; max-width: 22rem; margin-left: auto; }
+  .soundtrack__panel { position: fixed; top: auto; left: max(0.85rem, env(safe-area-inset-left)); right: max(0.85rem, env(safe-area-inset-right)); bottom: max(0.85rem, env(safe-area-inset-bottom)); width: auto; max-width: 20rem; margin-left: auto; border-radius: 15px 15px 4px 15px; }
+  .soundtrack__panel::after { display: none; }
 }
 @media (max-height: 540px) and (min-aspect-ratio: 1/1) {
   body:has(.system-home) .system-tray { bottom: 4.7rem; }
@@ -71,7 +83,7 @@ body:not(:has(.system-home)):has(.system-tray) { padding-bottom: 8rem; }
   html:not([data-scene-live="true"]) body:has(.system-home) .system-tray { top: 3.3rem; bottom: auto; }
 }
 @media (forced-colors: active) {
-  .soundtrack, .soundtrack__panel { border: 1px solid ButtonText; background: Canvas; color: CanvasText; }
+  .soundtrack__panel { border: 1px solid ButtonText; background: Canvas; color: CanvasText; }
 }
 @media print { .soundtrack { display: none; } }
 @media (scripting: none) { .soundtrack { display: none; } }

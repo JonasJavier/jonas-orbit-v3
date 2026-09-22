@@ -985,6 +985,31 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   function resetAccumulation() {
     accumulated = 0;
   }
+  /*
+    ¿SE HA MOVIDO LA CÁMARA EN ESTE FOTOGRAMA?
+
+    La acumulación temporal del raymarch sólo es válida con la cámara quieta:
+    el historial describe ESTE píxel desde ESTA pose. `temporalBlend` ya lo
+    contempla —sube el peso de la mezcla mientras algo se mueve, en vez de
+    reproyectar, que sería TAA de motor de juego— pero hasta ahora la única
+    cosa que se declaraba en movimiento era la travesía.
+
+    Y el paralaje también mueve la cámara. Hasta grado y medio, suavizado con
+    una constante de 0.32 s, o sea decenas de fotogramas en los que el
+    historial se mezcla al 82 % con la pose ANTERIOR. Sobre un cielo hecho de
+    puntos de un píxel eso no se ve como un suavizado: se ve como que cada
+    estrella arrastra una cola en la dirección del ratón. El dueño lo dijo
+    tal cual —«el campo estelar sigue deformándose con el movimiento del MOUSE
+    aunque esté fuera de la órbita de Gargantúa»— y es la MITAD del «warp
+    speed» que abrió el pase del cielo: la otra mitad era el lente, y ésta
+    sólo aparece en movimiento, así que ninguna captura estática la enseña.
+
+    El flag se levanta en el mismo sitio donde se decide reorientar y se baja
+    al final del fotograma. Cuando el paralaje llega a su destino —por debajo
+    de una diezmilésima— deja de levantarse y la acumulación vuelve a
+    converger, que es exactamente lo que ya hacía con el ratón quieto.
+  */
+  let cameraMoved = false;
 
   function endVoyage() {
     voyage = null;
@@ -1320,6 +1345,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       ) {
         parallaxX = nextX;
         parallaxY = nextY;
+        cameraMoved = true;
         // Sólo orientar: la distancia de encuadre no depende del paralaje.
         orientCamera(cssWidth / cssHeight);
       }
@@ -1374,7 +1400,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         marchMaterial.uniforms.uJitter.value.set(jx / pixelWidth, jy / pixelHeight);
         marchMaterial.uniforms.uBlend.value = temporalBlend(
           accumulated,
-          voyage !== null,
+          voyage !== null || cameraMoved,
         );
         marchMaterial.uniforms.tHistory.value = historyRead.texture;
 
@@ -1396,6 +1422,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       onFailure(error instanceof Error ? error.message : String(error));
       return;
     }
+    cameraMoved = false;
   }
 
   function handleVisibility() {

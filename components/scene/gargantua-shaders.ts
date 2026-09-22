@@ -321,7 +321,7 @@ const float HIGHLIGHT_KNEE = 4.2;
  *  celdas. Al ser 3D no hay acumulación en los polos, y como el lente magnifica
  *  brutalmente la vecindad del anillo, ahí las estrellas se estiran en arcos
  *  solas: es el anillo de Einstein del fondo, y no hay que dibujarlo. */
-float starLayer(vec3 dir, float scale, float density, float bright) {
+float starLayer(vec3 dir, float scale, float density, float grade) {
   vec3 cell = floor(dir * scale);
   vec3 h = hash33(cell);
   float present = step(1.0 - density, h.z);
@@ -333,14 +333,41 @@ float starLayer(vec3 dir, float scale, float density, float bright) {
   vec3 starDir = normalize(cell + 0.5 + (h - 0.5) * 0.9);
   float d = length(dir - starDir) * scale;
 
-  // Muchas diminutas y unas pocas legibles. El brillo conserva una cola corta:
-  // suficiente para dar profundidad, sin fabricar copos blancos ni competir
-  // con el disco cuando el lente las estira.
-  float magnitude = 0.30 + 0.80 * pow(h.y, 12.0) * bright;
-  return present * magnitude * exp(-d * d * 245.0);
+  /*
+    MUCHÍSIMAS DIMINUTAS Y OSCURAS, UNAS POCAS BRILLANTES (2026-09-21).
+
+    El suelo de 0.30 era lo que impedía las dos mitades del encargo a la vez.
+    TODA estrella, en las cuatro escalas, salía con casi un tercio del brillo
+    de una notable: el cielo quedaba uniformemente poblado —sin zonas
+    realmente negras— y la jerarquía entre estrellas la decidía sólo la cola
+    de la potencia. Baja a 0.13 y el reparto pasa a ser del exponente: con
+    pow(h.y, 9) una de cada diez pasa de 0.5 y el resto vive por debajo de
+    0.2, que es el «muchísimas estrellas diminutas y oscuras + unas pocas
+    brillantes» de la dirección.
+
+    Y el CALIBRE se reparte con el mismo número, que es lo que lo hace
+    legible: una estrella de esta escala cubre doce veces más ángulo que una
+    de la fina, así que el trazo grande lo dejan siempre las mismas. Atando la
+    anchura al brillo, las pocas con cuerpo son también las pocas que se ven,
+    y la mayoría son puntos. tight multiplica el exponente, así que por
+    encima de 1 la gaussiana se estrecha.
+
+    grade es POR CAPA y no por estrella, y la primera versión de este pase se
+    equivocó ahí: apretaba las cuatro escalas por igual y el cielo se quedó
+    casi sin estrellas. El motivo es que las dos capas finas ya son subpíxel
+    —a escala 520 la gaussiana mide 1.2e-4 rad contra los 1.0e-3 rad que mide
+    un píxel del encuadre—, así que sólo se encienden cuando el centro del
+    píxel cae dentro. Estrecharlas divide esa probabilidad por el CUADRADO del
+    factor, y eso son las 86 estrellas que midió la primera captura contra las
+    270 de antes del pase. El apriete vale para la escala gruesa, que es la
+    que deja trazo, y no para la fina, que es EL cielo.
+  */
+  float magnitude = 0.13 + 0.92 * pow(h.y, 9.0);
+  float tight = mix(grade, 1.0, pow(h.y, 3.0));
+  return present * magnitude * exp(-d * d * 245.0 * tight);
 }
 
-vec3 skySample(vec3 dir, float lensing, float presence) {
+vec3 skySample(vec3 dir, float lensing, float clearance) {
   /*
     EL ESTIRAMIENTO SE RESERVA PARA LA VECINDAD DEL AGUJERO (2026-09-06).
 
@@ -354,52 +381,116 @@ vec3 skySample(vec3 dir, float lensing, float presence) {
     desviada que a las de dentro.
 
     lensing llega ya medido desde el integrador: es cuánto se ha desviado ESE
-    rayo, así que la puerta la abre la física y no una máscara de pantalla.
-    Fuera, la cola brillante de la magnitud paga un 22 % — son las estrellas
-    grandes las que dejan trazo, y el campo fino no se toca. El velo de nebulosa
-    también, porque es lo único continuo que el lente puede curvar y por tanto
-    la otra mitad de la sensación de remolino.
+    rayo, así que la puerta la abre la física y no una máscara de pantalla. El
+    velo de nebulosa la usa también, porque es lo único continuo que el lente
+    puede curvar y por tanto la otra mitad de la sensación de remolino.
   */
-  // Tres escalas perceptuales. La capa lejana aporta densidad subpíxel; la media
-  // establece paralaje óptico por el lente; la cercana se reserva para muy pocos
-  // puntos con más presencia. El campo sigue siendo negro y el disco continúa
-  // ocultándolo naturalmente donde domina su luminancia.
-  float bright = mix(0.58, 1.0, presence);
+  /*
+    EL CIELO NO ES HOMOGÉNEO, Y ESO ES LO QUE LO HACÍA RUIDO (2026-09-21).
+
+    El encargo pide «crear áreas de espacio casi completamente negro» y
+    «reducir estrellas inmediatamente alrededor de Gargantúa para darle una
+    especie de negative space natural». Son dos modulaciones de DENSIDAD
+    APARENTE, no de brillo global, y hasta ahora no existía ninguna de las dos:
+    el campo se sembraba con densidad constante sobre toda la esfera.
+
+    · voids reaprovecha el mismo warp que deforma el velo de gas —una
+      evaluación que este rayo ya paga— así que los claros caen donde el gas se
+      adelgaza y los cúmulos donde se espesa, que es como se ve un cielo de
+      verdad. Se calcula antes que las estrellas por eso, y por eso el bloque
+      del gas de abajo ya no lo recalcula.
+    · clearance es el inverso de la vieja presence: 0 pegado al agujero y 1
+      lejos. El campo hacía LO CONTRARIO: la escala gruesa llevaba DOS factores
+      atados a la cercanía —el de la magnitud y el del peso—, así que la
+      estrella mediana salía un 72 % más brillante pegada al disco y la notable
+      casi el triple. Justo donde el lente además la estira, y justo donde el
+      ojo tiene que encontrar el disco y no el cielo.
+  */
+  vec2 p = vec2(dir.x * 6.0, dir.y * 8.0);
+  float warp = fbm3(p * 0.7 + vec2(4.7, 9.2));
+  float voids = mix(0.24, 1.0, smoothstep(0.20, 0.52, warp));
+  float field = voids * mix(0.45, 1.0, clearance);
+
+  // Cuatro escalas perceptuales. La lejana aporta densidad subpíxel; las
+  // medias establecen paralaje óptico por el lente; la gruesa se reserva para
+  // muy pocos puntos con cuerpo.
   vec3 color = vec3(0.0);
-  /* Y las dos escalas gruesas pagan además un peso, porque el trazo largo lo
-     dejan ellas: una estrella de la capa fina no llega a tres píxeles ni
-     estirada. Medido con tools/star-streaks.mjs sobre el render, los trazos de
-     la periferia —manchas de aspecto > 1.7 Y más de 5 px de largo— son casi
-     todos de la escala 44. */
-  color += starLayer(dir, 44.0, 0.100, bright)
-         * vec3(1.00, 0.97, 0.92) * 0.48 * mix(0.58, 1.0, presence);
-  color += starLayer(dir, 112.0, 0.150, bright)
-         * vec3(0.88, 0.93, 1.00) * 0.33 * mix(0.72, 1.0, presence);
-  color += starLayer(dir, 246.0, 0.205, bright)
-         * vec3(1.00, 0.93, 0.84) * 0.19 * mix(0.90, 1.0, presence);
+  /* Las dos escalas gruesas son las que dejan trazo: una estrella de la capa
+     fina no llega a tres píxeles ni estirada, y medido con
+     tools/star-streaks.mjs los trazos de la periferia —manchas de aspecto > 1.7
+     Y más de 5 px de largo— son casi todos de la escala 44. El encargo pide
+     «30-40 % menos estrellas alargadas», así que el recorte se aplica donde
+     nacen y no al cielo entero: densidad 0.100 → 0.060 en la escala 44 y
+     0.150 → 0.105 en la 112, que son −40 % y −30 %. */
+  color += starLayer(dir, 44.0, 0.060, 3.2) * vec3(1.00, 0.97, 0.92) * 0.44;
+  color += starLayer(dir, 112.0, 0.105, 2.3) * vec3(0.88, 0.93, 1.00) * 0.33;
+  color += starLayer(dir, 246.0, 0.460, 1.4) * vec3(1.00, 0.93, 0.84) * 0.22;
   // Cuarta escala, la más fina: densidad subpíxel que rellena el cielo entre
   // las tres anteriores. Sin ella, subir sólo el brillo daba estrellas más
-  // gordas en vez de un cielo más poblado, que es lo que se pedía. Es EL campo
-  // fino, así que se queda entera: lo que se retira de la periferia son los
-  // trazos grandes, no el cielo.
-  color += starLayer(dir, 520.0, 0.235, 1.0) * vec3(0.94, 0.96, 1.00) * 0.10;
+  // gordas en vez de un cielo más poblado. Es EL campo fino de «muchísimas
+  // estrellas diminutas», así que sube en vez de bajar —0.235 → 0.85— y no se
+  // aprieta: lo que se retira son los trazos grandes, no el cielo. La escala
+  // 246 la acompaña (0.205 → 0.46) porque es la que da el calibre intermedio;
+  // entre las dos, el recorte de las gruesas no deja un cielo vacío.
+  color += starLayer(dir, 520.0, 0.850, 1.0) * vec3(0.94, 0.96, 1.00) * 0.15;
+  color *= field;
 
   // Distant, static gas banks in world direction, without a spherical UV seam.
   // Only escaping rays see them: the shadow and the disk still occlude the sky.
-  vec2 p = vec2(dir.x * 6.0, dir.y * 8.0);
-  float warp = fbm3(p * 0.7 + vec2(4.7, 9.2));
-  float gas = fbm(p * 1.8 + vec2(warp * 2.0, -warp));
-  float filament = pow(max(0.0, gas - 0.24), 1.6);
-  vec2 leftOffset = vec2((dir.x + 0.38) / 0.30,
-                         (dir.y - 0.03 + dir.x * 0.25) / 0.23);
-  vec2 rightOffset = vec2((dir.x - 0.42) / 0.32,
-                          (dir.y + 0.30 - dir.x * 0.2) / 0.27);
+  float gas = fbm3(p * 1.45 + vec2(warp * 2.0, -warp));
+  /*
+    MÁS PROFUNDO, MÁS DIFUSO Y MÁS LEJOS (2026-09-21).
+
+    Diagnóstico del dueño sobre el banco derecho: «se nota más como una
+    textura/procedural nebula colocada detrás que como algo realmente lejano en
+    el espacio». Lo que delata a un procedural no es su color, es su GRANO: el
+    velo tenía detalle a la misma frecuencia en todas partes y un dust que
+    recorría de 0.3 a 1.0 en un cuarto de octava, o sea contraste local de
+    banda ancha sobre un objeto que debería estar a años luz.
+
+    Cuatro palancas, y ninguna de ellas la opacidad global: bajarla habría
+    hecho el banco más tenue sin hacerlo más lejano, que es la mitad del
+    encargo que importa.
+    · el gas pierde su cuarta octava (fbm → fbm3). Es el cambio que de verdad
+      lo aleja, porque esa octava es la que tiene el tamaño del píxel, y de
+      paso ahorra una evaluación de ruido por cada rayo que escapa;
+    · la frecuencia base baja de 1.8 a 1.45, así que la estructura es más
+      ancha;
+    · el umbral del filamento sube de 0.24 a 0.26 y su exponente de 1.6 a 1.7,
+      que es lo que deja «únicamente algunas zonas moradas visibles»: la bruma
+      de fondo se va y sobreviven las masas;
+    · el grano del polvo se aplana (suelo 0.3 → 0.62, pendiente 7.0 → 4.0).
+
+    Las dos elipses NO se ensanchan, y ése fue un intento fallido: un banco
+    ancho y tenue parecía que se leería lejos y el resultado medido fue el
+    contrario —el azul subió un 21 % de luma y pasó de insinuación a nube—.
+    La distancia la da el grano, no el tamaño.
+
+    Lo que sí hacen es ENCOGER, y lo pidió el dueño al ver el pase montado:
+    «las nebulosas muy grandes, las quiero mucho más pequeñas». Los cuatro
+    semiejes caen a 0.61 de lo que eran, o sea un 63 % menos de superficie por
+    banco. El pico de la gaussiana vale 1 en el centro pase lo que pase, así
+    que el núcleo de cada banco conserva su color y lo que se va es la falda:
+    dejan de ser dos medias pantallas y pasan a ser dos manchas contra el
+    canto, que es lo que significa «notas después de mirar unos segundos».
+  */
+  float filament = pow(max(0.0, gas - 0.26), 1.7);
+  vec2 leftOffset = vec2((dir.x + 0.38) / 0.185,
+                         (dir.y - 0.03 + dir.x * 0.25) / 0.145);
+  vec2 rightOffset = vec2((dir.x - 0.42) / 0.195,
+                          (dir.y + 0.30 - dir.x * 0.2) / 0.165);
   // pow(x, 2.0) is undefined for negative x in GLSL. Squared lengths are not.
   float leftBank = exp(-dot(leftOffset, leftOffset));
   float rightBank = exp(-dot(rightOffset, rightOffset));
-  float dust = 0.3 + 0.7 * min(1.0, abs(gas - warp) * 7.0);
-  vec3 gasColor = leftBank * vec3(0.11, 0.25, 0.44)
-                + rightBank * vec3(0.24, 0.144, 0.38);
+  float dust = 0.62 + 0.38 * min(1.0, abs(gas - warp) * 4.0);
+  /* Los dos colores son el resultado de DOS cuentas distintas, y conviene no
+     leerlos como una paleta nueva. El azul de la izquierda el dueño lo da por
+     bueno tal cual está —«aparece casi como una insinuación […] esa dirección
+     la conservaría»—, así que su cifra sólo compensa lo que se lleva el
+     filamento nuevo: el banco medido tiene que quedarse donde estaba. El
+     morado sí baja: un 25 % por encargo, sobre esa misma compensación. */
+  vec3 gasColor = leftBank * vec3(0.173, 0.392, 0.690)
+                + rightBank * vec3(0.268, 0.160, 0.423);
   color += gasColor * filament * dust * mix(1.0, 0.4, lensing);
 
   return color;
@@ -2223,7 +2314,37 @@ void main() {
       hay que conservar, quedan dentro de las dos.
     */
     float lensing = 1.0 - smoothstep(uRs * 16.0, uRs * 34.0, impact);
-    float presence = 1.0 - smoothstep(uRs * 15.0, uRs * 23.0, impact);
+    /*
+      Y LA SEGUNDA PUERTA CAMBIA DE SIGNO (2026-09-21).
+
+      presence existía para quitarle brillo a las estrellas de FUERA, porque
+      en la pasada del 2026-09-06 seguían saliendo alargadas y un óvalo tenue
+      se lee menos como trazo. Su efecto colateral era que las de DENTRO
+      brillaban más, y el dueño lo ha señalado desde el otro lado: «reducir
+      estrellas inmediatamente alrededor de Gargantúa para darle una especie de
+      negative space natural».
+
+      Se invierte: clearance vale 0 pegado al agujero y 1 lejos, y el campo se
+      apaga hacia el centro en vez de hacia el borde.
+
+      DÓNDE CIERRA, y la primera versión se pasó. Arrancaba en 5 rs y cerraba
+      en 22 con suelo 0.18. Suena a «el disco y su borde», y en el encuadre de
+      captura lo es —100 a 440 px—, pero la conversión de radios a píxeles va
+      con el ALTO del viewport: en una pantalla de 1060 px de alto son 540 px
+      de radio, o sea todo el hueco entre el Tesseracto y la Ranger. El dueño
+      lo cazó a la primera: «¿por qué no hay estrellas cerca de Gargantúa como
+      antes?». Un espacio negativo que crece con la ventana no es espacio
+      negativo, es un agujero en el cielo.
+
+      Ahora 3-12 rs, dentro del radio del propio disco (17 rs) en cualquier
+      tamaño de ventana, y el suelo sube de 0.18 a 0.45: cerca del agujero hay
+      estrellas, sólo que menos y más tenues. Eso es lo que pedía la dirección
+      —«reducir», no vaciar— y deja los trazos muy tenues que sí quería.
+
+      La periferia ya no necesita pagar brillo porque ahora se endereza de
+      verdad: ver la nota de abajo.
+    */
+    float clearance = smoothstep(uRs * 3.0, uRs * 12.0, impact);
     /*
       FUERA DE LA PUERTA EL CIELO SE ENDEREZA, y ésta es la línea del encargo.
 
@@ -2252,11 +2373,33 @@ void main() {
       La primera versión de esta puerta no lo demostraba porque valía 1 en toda
       la pantalla —ver la nota del parámetro de impacto—, así que bajar esta
       mezcla no cambiaba nada y parecía que la causa era otra.
+
+      ── El residuo del 25 %, y por qué se va (2026-09-21) ──────────────────
+
+      Aquella pasada dejó mix(0.25, 1.0, lensing): fuera de la puerta la
+      mezcla NO caía a cero, se quedaba en un cuarto. El motivo estaba escrito
+      —la propia pendiente de la mezcla entra en el jacobiano, así que taparla
+      deprisa alarga las manchas justo por fuera de la rampa— y el precio
+      también: un cuarto de la deflexión aplicada a TODO el cuadro. Medido en
+      el estado anterior a este pase, el anillo de 400-550 px daba aspecto 2.07
+      con tangencia 0.98 y más allá de 550 px aspecto 1.68 con tangencia 0.85.
+      Tangencia 0.98 es la firma del lente, no la del muestreo, que marca 0.64:
+      o sea que el cielo entero seguía participando del remolino, tal como lo
+      leyó el dueño.
+
+      La salida es cerrar ENTERO sin cerrar más deprisa. La rampa pasa a llevar
+      la mezcla de 1 a 0 entre 14 y 34 rs: termina donde terminaba, arranca dos
+      radios antes y no deja residuo. Su pendiente media (1/20 rs) es apenas
+      1.2 veces la de la rampa anterior —que recorría 0.75 en 18 rs, o sea
+      1/24— así que el artefacto del jacobiano queda del mismo orden, y a
+      cambio todo lo que hay más allá de 34 rs es recto por construcción:
+      mix(straight, dir, 0) es straight. Las esquinas del encuadre de 1440×860
+      caen entre 40 y 44 rs, o sea fuera con margen.
     */
-    vec3 skyDir = normalize(
-      mix(straight, dir, uSkyLens * mix(0.25, 1.0, lensing))
-    );
-    color += transmit * skySample(skyDir, lensing, presence);
+    float skyBend = uSkyLens
+      * (1.0 - smoothstep(uRs * 14.0, uRs * 34.0, impact));
+    vec3 skyDir = normalize(mix(straight, dir, skyBend));
+    color += transmit * skySample(skyDir, lensing, clearance);
   }
 
   /*

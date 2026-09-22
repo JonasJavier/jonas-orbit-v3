@@ -1735,24 +1735,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   font-size: 0.68rem;
 }
 
-.site-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  width: min(100%, var(--content-max));
-  margin-inline: auto;
-  padding: 2.2rem var(--page-gutter);
-  border-top: 1px solid var(--space-line);
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-}
-
-.site-footer p {
-  margin: 0;
-}
-
 @keyframes orbit-spin {
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
@@ -1925,10 +1907,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
     min-height: 15.5rem;
   }
 
-  .site-footer {
-    align-items: flex-start;
-    flex-direction: column;
-  }
 
   .case-page {
     padding-top: 1.3rem;

@@ -409,9 +409,18 @@ export const worldsData: Record<WorldId, WorldStructuralData> = {
        Lander atracadas, así que cada punto que cede se lo devuelve al centro
        más que ningún otro. Su ventaja aparente baja de 2.014 a 1.954, todavía
        medio cuerpo por encima del 1.4 de la suite. */
-    // 2026-09-21: el dueño pide un 10 % menos de presencia en el inicio.
-    // El Observatorio encuadra por radio y conserva su ocupación del visor.
-    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 3.9492 },
+    /* 2026-09-21: el dueño pide un 10 % menos de presencia en el inicio.
+       El Observatorio encuadra por radio y conserva su ocupación del visor.
+
+       Y el mismo día, viendo ya la arquitectura de doce módulos montada, pide
+       otro recorte «de un 5 a un 10 %». Se toma el 8 % (3.9492 → 3.6333). Los
+       tres extremos, medidos: al 5 % la ventaja aparente sobre el siguiente
+       cuerpo queda en 1.667, al 8 % en 1.6147 y al 10 % en 1.579. El 10 % es
+       la primera vez en siete recortes que este cuerpo bajaría de 1.6, y la
+       otra guarda —la Ranger por debajo del 65 % de la Endurance— pasa de
+       0.619 a 0.633 en la misma pasada. El 8 % mueve la silueta lo suficiente
+       para que se note y deja las dos guardas con la holgura de siempre. */
+    placement: { orbitRadius: 25, phase: 42, inclination: 16, size: 3.6333 },
     sceneName: "scene-endurance",
   },
   edmunds: {

@@ -68,9 +68,11 @@ export function SoundtrackControl() {
           </svg>
         </summary>
         <div className="soundtrack__panel">
-          <p className="soundtrack__eyebrow">Canal de audio <span aria-hidden="true">{"// 01"}</span></p>
-          <p className="soundtrack__title">Sonido del sistema</p>
-          <p className="soundtrack__description">Una banda sonora para explorar.</p>
+          <div className="soundtrack__heading">
+            <span className="soundtrack__signal" aria-hidden="true" />
+            <div><p>Audio del sistema</p><span>{active ? quiet ? "Activo · en silencio" : "Reproduciendo" : "En pausa"}</span></div>
+            <strong>{status}</strong>
+          </div>
           <div className="soundtrack__volume-label"><label htmlFor="soundtrack-volume">Volumen</label><output htmlFor="soundtrack-volume">{Math.round(state.volume * 100)} %</output></div>
           <input id="soundtrack-volume" type="range" min="0" max="100" step="1" value={Math.round(state.volume * 100)}
             onChange={(event) => player.setVolume(Number(event.target.value) / 100)} />

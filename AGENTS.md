@@ -6,6 +6,23 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**Proyectos — la mesa de ingeniería (2026-09-21, plan aprobado, sin construir):**
+`docs/design/endurance-proyectos.md` manda sobre `WorldPage` + `ProjectGrid` en
+**composición, interacción, contenido de arquitectura y límites de
+`/es/proyectos`**. Dirección del dueño: una sala oscura con una mesa de
+proyección donde el proyecto elegido se lee a tres profundidades —Resultado,
+Diseño, Ingeniería— con los MISMOS objetos en tres disposiciones, no tres
+pantallas. Tres principios: una sola escena y tres poses por pantalla movidas
+por `data-layer`; la arquitectura es CONTENIDO (`architecture` en el frontmatter
+del MDX, validado por Velite; el diagrama del boceto no es OMSTA y no se dibuja);
+y las decisiones van pegadas a los nodos. Sin WebGL, sin arrastre, sin modo
+cine; `endurance` entra en `COVERED_WORLDS`; capturas en peldaños WebP por
+`tools/prepare-projects.mjs` a 1,5× lo pintado. Tres entregas y matriz P1-P12
+en el documento. Abiertas para Jonás: Delicaté (F1B) en la mesa, confirmar los
+borradores de arquitectura del §6, y la fotografía de la sala
+(`assets/proyectos/FUENTES.md`). `/es/proyectos/[slug]` no cambia.
+
+
 **Endurance — doce módulos de tres familias (2026-09-21):** el apartado
 `Cuarto pase — doce módulos y tres siluetas` de `docs/design/endurance-jerarquia.md`
 sustituye el tercer pase. El dueño pidió menos módulos y diferencias reales
@@ -951,6 +968,70 @@ puras). `DISK_PHASE` queda como palanca documentada en 0. El dueño eligió
 2 177 → 1 268 px, meseta ≥ 235 6 009 → 4 745 px, todo a menos de 1.7 radios
 de sombra del centro; no hay blanco puro en la cara lejana con ninguna
 rodilla). Exposición y bloom intactos. Su valoración visual queda abierta.
+
+**El cielo del mapa — menos trazo, más negro y un gas lejano (2026-09-21):**
+la sección `14 quindecies` de `docs/design/hero-gargantua-direction.md` manda
+sobre `6` y sobre `14 octies` en **cuánto se estira el cielo y dónde, con qué
+densidad y qué reparto de brillo se siembra el campo estelar, y cuánto pesa
+cada banco de gas**, y sustituye la fila `Endurance` del recorte de escala del
+mismo día (`size` 3.9492 → 3.6333, el 8 % de la banda 5-10 % que pidió el
+dueño; ventaja aparente 1.6147). Diagnóstico del dueño: «muchas partículas
+grandes y alargadas […] el cerebro interpreta warp speed», el banco morado
+«demasiado presente […] se nota como una textura colocada detrás», el azul se
+conserva tal cual, y la meta en cifras es 80 % negro / 12 % estrellas / 8 %
+nebulosa contra un 60/20/20 percibido. Tres hallazgos medidos: **el residuo
+del 25 % que dejó `14 octies` era el remolino entero** —tangencia 0.98 a
+400-550 px contra un suelo de muestreo de 0.64, o sea firma del lente hasta
+las esquinas—, así que la rampa pasa a llevar la mezcla de 1 a **0** entre 14
+y 34 rs, con pendiente sólo 1.2 veces la anterior para no fabricar el
+artefacto del jacobiano; **el campo estelar brillaba MÁS cerca del agujero**
+—la escala gruesa llevaba dos factores atados a `presence`, +72 % la estrella
+mediana y casi el triple la notable— y `presence` se invierte en `clearance`
+(0 pegado al agujero, 1 lejos, rampa **3-12 rs**, suelo **0.45**), que es el
+«negative space natural» pedido; y **el suelo de magnitud 0.30 era lo que impedía las
+dos mitades del encargo** —baja a 0.13 y el reparto lo decide `pow(h.y, 9)`,
+con las gruesas a −40 %/−30 % de densidad y las finas subiendo a 0.46 y 0.85—,
+más un campo de vacíos que reutiliza el `warp` del gas. Dos reglas que costaron
+una entrega cada una: **apretar la gaussiana de una capa SUBPÍXEL divide su
+población por el CUADRADO del factor** (86 estrellas medidas contra 270: el
+apriete es sólo para la escala gruesa) y **la distancia de una nebulosa la da
+el GRANO, no el tamaño** (ensanchar las elipses subió el azul un 21 % y lo
+convirtió en nube; lo que la aleja de verdad es perder la cuarta octava,
+`fbm` → `fbm3`). El morado baja un 23.5 % medido y el azul se queda donde
+estaba (+3 %). Nace `tools/sky-budget.mjs` (negro / energía de estrella /
+nivel por tercio). Cero ruidos, uniformes o draws nuevos —el rayo que escapa
+cuesta menos que antes—; `rs`, exposición, rodilla, bloom, cámara, HUD y el
+material del disco no cambian. Y una TERCERA regla, que el
+dueño cazó en la primera mirada —«¿por qué no hay estrellas cerca de Gargantúa
+como antes?»— con el espacio negativo puesto en 5-22 rs: **un espacio negativo
+que crece con la ventana no es espacio negativo, es un agujero en el cielo**.
+La conversión de radios a píxeles va con el ALTO del viewport, así que 22 rs
+son 440 px en el encuadre de captura y 540 en una pantalla de 1060 de alto, o
+sea todo el hueco entre el Tesseracto y la Ranger; el cierre se ata ahora a
+12 rs, dentro del radio del propio disco (`DISK_OUTER` = 17 rs) en cualquier
+ventana. Medido al cerrar: energía de estrella 9.4 % → 9.0 %, negro 30.9 % →
+33.6 %, trazos en el núcleo 14 → 2 y en la periferia 18 → 4, tangencia lejana
+0.85 → 0.71. **Y el ratón arrastraba el cielo, que es la OTRA mitad
+del «warp speed» y no vive en el shader:** la acumulación temporal sólo
+declaraba en movimiento la travesía, pero el paralaje del puntero también
+mueve la cámara —grado y medio con constante de 0.32 s—, así que el historial
+se mezclaba al 82 % con la pose anterior y cada estrella arrastraba una cola
+de unos siete píxeles; la corrección es una condición,
+`temporalBlend(accumulated, voyage !== null || cameraMoved)`, con la bandera
+levantada donde se reorienta y bajada al cerrar el fotograma (nunca tirar el
+historial en cada `pointermove`: ése es el fallo contrario y deja a Gargantúa
+granulada). Medido con `.shots/_scratch/paralaje.mjs`: la energía de estrella
+caía de 11.2 % a 9.9 % sólo por mover el ratón, y ahora va de 11.6 % a 12.4 %.
+**Y las nebulosas encogen** por segundo encargo del dueño: los cuatro semiejes
+a 0.61 (−63 % de superficie por banco), que es lo que cierra las cifras — el
+cielo realmente negro sube de 30.9 % a **56.0 %** y la energía de estrella de
+9.4 % a **12.2 %**, o sea el 12 % que pidió. **Dos trampas de lectura:** las
+trazas orbitales del mapa son curvas finas que el segmentador de
+`star-streaks.mjs` cuenta como manchas alargadas, así que el veredicto se lee
+en el recorte de la banda encima de la sombra y no en la media del anillo de
+400-550 px; y cualquier herramienta de captura nueva tiene que escribir
+`jonas-orbit:reducir-efectos = "false"` en `localStorage` o sirve el perfil
+plano y no mide la escena. Su valoración visual queda abierta.
 
 **ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
 significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
