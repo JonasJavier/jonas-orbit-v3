@@ -151,6 +151,23 @@ const VOYAGE_FOV = 50;
 const VOYAGE_STOP_RADII = 3.2;
 /** Con Gargantúa se para al borde del disco: el destino es la propia sombra. */
 const VOYAGE_GARGANTUA_STOP = DISK_OUTER * 1.35;
+/**
+ * Alabeo del cuadro durante la distorsión, en radianes (3,4°).
+ *
+ * Entre 1,35 s y el pico la aceleración ya vale 1 y la cámara se quedaba
+ * CLAVADA: siete décimas de distorsión sin un solo movimiento debajo. Cerrar
+ * más la distancia de parada era lo obvio y está descartado con números — el
+ * anillo de Einstein se dibuja a 1,08 limbos y el limbo ya llega al borde del
+ * cuadro con la compresión del shader, así que acercarse más echa el anillo
+ * fuera de pantalla y con él toda la lente.
+ *
+ * El alabeo no tiene ese problema: girar el cuadro sobre el eje de la mirada
+ * no cambia ni el tamaño aparente del destino ni el radio del anillo. Es el
+ * único grado de libertad que queda gratis, y además es el correcto — el
+ * espacio se dobla y la nave rueda con él. La mirada ya está en el centro del
+ * cuerpo cuando el alabeo entra, así que el cuadro gira ALREDEDOR del destino.
+ */
+const VOYAGE_ROLL = 0.06;
 /** Muestras del desenfoque radial por nivel. Ver `createVoyagePass`. */
 const VOYAGE_TAPS: Record<QualityTier, number> = { orbit: 8, deep: 12 };
 
@@ -755,6 +772,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       .crossVectors(compositionBaseRight, compositionForward)
       .normalize();
 
+    /*
+      La composición NO alabea con la travesía, y esto es el contrato entero:
+      aquí se decide dónde se COLOCAN los cuerpos en el mundo para que caigan
+      en el sitio compuesto de la pantalla. Si rodara con la cámara, los
+      cuerpos rodarían con ella, el alabeo se cancelaría a la vista y de paso
+      cada destino se movería en el mundo a mitad de viaje —con él, su
+      proyección y su blanco de clic—. Rueda la cámara; el sistema, no.
+    */
     const cos = Math.cos(pose.roll);
     const sin = Math.sin(pose.roll);
     compositionRight
@@ -891,8 +916,11 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     right.crossVectors(forward, WORLD_UP).normalize();
     up.crossVectors(right, forward).normalize();
 
-    const cos = Math.cos(pose.roll);
-    const sin = Math.sin(pose.roll);
+    // El alabeo de la travesía se suma al de la pose y desaparece con ella:
+    // fuera de un viaje `voyageSample` es null y el cuadro es el de siempre.
+    const roll = pose.roll + VOYAGE_ROLL * (voyageSample?.warp ?? 0);
+    const cos = Math.cos(roll);
+    const sin = Math.sin(roll);
     rolledRight.copy(right).multiplyScalar(cos).addScaledVector(up, sin);
     rolledUp.copy(up).multiplyScalar(cos).addScaledVector(right, -sin);
 

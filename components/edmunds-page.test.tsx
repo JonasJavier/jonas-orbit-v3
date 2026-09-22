@@ -28,6 +28,36 @@ describe("Edmunds · cubierta de observación", () => {
     expect(collections).toHaveLength(7);
     expect(collections[0].id).toBe("disenos");
     expect(artworks.filter((art) => art.collection === "disenos")).toHaveLength(12);
+    expect(Object.fromEntries(collections.map(({ id }) => [id, artworks.filter((art) => art.collection === id).length]))).toEqual({
+      disenos: 12,
+      horizontes: 25,
+      cerca: 5,
+      criaturas: 15,
+      retratos: 8,
+      invierno: 14,
+      noche: 11,
+    });
+    expect(Object.fromEntries([
+      "frente-al-horizonte",
+      "de-pie-en-el-lago",
+      "caminar-sin-prisa",
+      "la-ultima-luz",
+      "mirar-hacia-arriba",
+      "suelo-de-pinar",
+      "un-instante-en-el-aire",
+      "encuentro-de-invierno",
+      "desayuno-en-la-nieve",
+    ].map((id) => [id, artworks.find((art) => art.id === id)?.collection]))).toEqual({
+      "frente-al-horizonte": "horizontes",
+      "de-pie-en-el-lago": "horizontes",
+      "caminar-sin-prisa": "horizontes",
+      "la-ultima-luz": "noche",
+      "mirar-hacia-arriba": "horizontes",
+      "suelo-de-pinar": "horizontes",
+      "un-instante-en-el-aire": "criaturas",
+      "encuentro-de-invierno": "criaturas",
+      "desayuno-en-la-nieve": "criaturas",
+    });
     expect(artworks.filter((art) => art.medium === "photo")).toHaveLength(78);
     const xTecno = artworks.find((art) => art.id === "diseno-x-tecno");
     expect(xTecno?.prototypeHref).toMatch(/^https:\/\/www\.figma\.com\/proto\//);
@@ -139,7 +169,7 @@ describe("Edmunds · cubierta de observación", () => {
       expect(dialog).not.toHaveTextContent("letras de neón");
       fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
       fireEvent.click(screen.getByRole("button", { name: "Invierno" }));
-      expect(screen.getByRole("status")).toHaveTextContent("16 piezas");
+      expect(screen.getByRole("status")).toHaveTextContent("14 piezas");
       expect(caption().querySelector("h2")).toHaveTextContent("Túnel de hielo");
     } finally {
       proto.showModal = original.showModal;

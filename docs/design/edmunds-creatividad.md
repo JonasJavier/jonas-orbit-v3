@@ -215,6 +215,26 @@ cae de 37,3 a 16,8 y el negro real sube del 0,1 % al 2,4 %. Presupuesto: ni un
 `filter` nuevo, ni un elemento nuevo, ni una animación nueva — lo único que se
 añade al peso de la página es el mosaico de estrellas.
 
+**Undécimo pase (2026-09-22): nombres concretos y sectores por sujeto.** Jonás
+confirmó el problema que el sexto pase había dejado pendiente: varios títulos
+eran demasiado genéricos y algunas figuras en el paisaje se habían archivado
+como retratos. La corrección conserva las 90 obras y los siete sectores, pero
+aplica una regla legible: el sector lo decide el sujeto con mayor peso visual,
+no la carpeta de origen ni una persona o un copo de nieve que aparezcan en el
+cuadro. De Retratos salen `frente-al-horizonte`, `de-pie-en-el-lago` y
+`caminar-sin-prisa` hacia Horizontes; `la-ultima-luz` pasa a Después del sol.
+`mirar-hacia-arriba` y `suelo-de-pinar` dejan De cerca porque son espacios, no
+detalles. `un-instante-en-el-aire`, `encuentro-de-invierno` y
+`desayuno-en-la-nieve` pasan a Criaturas porque el ave o la ardilla son el
+sujeto. Invierno conserva las escenas donde el viaje, el hielo o la actividad
+invernal son la historia completa, aunque haya personas.
+
+Los títulos editoriales dejan de pedir que el visitante adivine: «Otro
+universo» pasa a «Medusa violeta», «Luz de campo» a «Gato entre hierbas
+doradas», «Compañía» a «Perro frente al mar» y «Curiosidad» a «Cachorro entre
+hojas», entre otras correcciones. Los `id`, `source`, WebP y dimensiones no se
+tocan: cambia la lectura del archivo, no sus recursos ni sus enlaces.
+
 **Su valoración visual queda abierta.**
 
 ## Qué cambia y por qué
@@ -356,12 +376,12 @@ comprueba que el MDX respeta el orden por sector, la apertura y el cierre:
 | # | Sector | Obras | Qué entra |
 | --- | --- | --- | --- |
 | 01 | Diseño | 12 | Carteles, fotomontajes, portada e interfaz |
-| 02 | Horizontes | 21 | Paisajes, agua, cielos, cañones y la ciudad desde arriba |
-| 03 | De cerca | 7 | Hojas, flores, texturas, el bosque desde abajo |
-| 04 | Criaturas | 12 | Fauna, acuarios, la llama y la alpaca |
-| 05 | Retratos | 12 | Personas, gestos, figuras en el paisaje |
-| 06 | Invierno | 16 | Nieve, hielo, túneles, pistas y vasos de hielo |
-| 07 | Después del sol | 10 | Aurora, hogueras, caminos y ciudades encendidas |
+| 02 | Horizontes | 25 | Paisajes, agua, cielos y figuras subordinadas al lugar |
+| 03 | De cerca | 5 | Hojas, flores y texturas que llenan el encuadre |
+| 04 | Criaturas | 15 | Fauna, acuarios y encuentros con animales |
+| 05 | Retratos | 8 | Personas y gestos que llevan el peso de la imagen |
+| 06 | Invierno | 14 | Nieve, hielo, túneles, pistas y vasos de hielo |
+| 07 | Después del sol | 11 | Aurora, atardeceres, hogueras, caminos y ciudades encendidas |
 
 Se incorporan **30 fotografías** que la primera selección dejó fuera: 17 en el
 segundo pase y 13 más en el tercero, cuando el dueño pidió ampliar el

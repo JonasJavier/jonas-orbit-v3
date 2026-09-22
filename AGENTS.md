@@ -6,6 +6,45 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Jonás Orbit v3 — reglas del repositorio
 
+**Travesía — el sonido, el pestillo y el alabeo (2026-09-22):** el apartado
+`Segundo pase — el sonido, el pestillo y el alabeo` de
+`docs/design/travesia-espaciotemporal.md` manda sobre el resto de ese documento
+en **qué se oye al viajar, quién lo apaga y qué hace la cámara durante la
+distorsión**. Lo pidió el dueño: «algún sonido para la animación en 3D cuando
+se le da click a un planeta». El sonido **se sintetiza y no se descarga**
+(`lib/voyage-audio.ts`): sin licencia que justificar —la banda sonora ya
+arrastra esa deuda—, cero bytes, y sobre todo porque hay SEIS destinos y
+`VOYAGE_FLAVOURS` ya les da cuatro números; leyéndolos, **el sonido no acompaña
+al efecto, sale de sus mismos números**. `voyageSoundFor(id, mode)` es una
+función pura —la partitura— y el reproductor sólo la renderiza, igual que
+`voyage.ts` con la línea de tiempo. Cuatro capas: pestillo, caída, distorsión y
+cruce, con lente → el tono CAE (sólo Gargantúa) y el golpe pesa más; líquido →
+Q 13 y vibrato; retícula → onda cuadrada y confirmación en octava; negro → el
+filtro maestro se cierra. Lo apaga **el control de AUDIO, no el de movimiento**
+—un solo mando para todo lo que suena—; medido con MUTE: cero `AudioContext` y
+pico 0,000000. Una trampa que costó la entrega: **una exponencial que arranca
+en épsilon no es un hinchado, es silencio** —de 0,0001 a 0,55 multiplica por
+5 500, así que a mitad de camino lleva el 1,3 % y todo el rango audible se
+apila en el último quinto; la caída entera medía RMS 0,0009—: los hinchados van
+lineales en amplitud y las caídas exponenciales terminan en −34 dB del pico, no
+en cero. Y dos trampas de MEDICIÓN nuevas: **un medidor por
+`requestAnimationFrame` no sirve para medir audio** (con el panel oculto rAF se
+para: 6 muestras en 4,5 s contra 352 bloques de un `ScriptProcessor`), y **la
+escena no publica `data-scene-live` con el panel oculto**, así que sin empujar
+pantallazos se acaba midiendo la travesía reducida. De la animación cambian dos
+cosas: un **latido de exposición** en el pestillo (`4·u·(1−u)` sobre `uLock`,
+pulso exacto sin residuo; NO es un aro, eso ya se rechazó) y **3,4° de alabeo**
+del cuadro durante la distorsión, porque entre 1,35 s y el pico la cámara se
+quedaba clavada. Cerrar más la distancia de parada queda **descartado con
+números**: el anillo de Einstein va a 1,08 limbos y el limbo ya toca el borde
+con la compresión del shader, así que acercarse lo echa fuera de pantalla; el
+alabeo es el único grado de libertad gratis porque no cambia ni el tamaño
+aparente ni el radio del anillo. **La composición NO alabea** —rueda la cámara,
+el sistema no— o los cuerpos rodarían con ella y se moverían en el mundo a
+mitad de viaje. Duración, fases, momento del cambio de ruta, versión reducida y
+flavours no cambian. Su valoración visual y sonora queda abierta.
+
+
 **Proyectos — la mesa de ingeniería (2026-09-21, plan aprobado, sin construir):**
 `docs/design/endurance-proyectos.md` manda sobre `WorldPage` + `ProjectGrid` en
 **composición, interacción, contenido de arquitectura y límites de
