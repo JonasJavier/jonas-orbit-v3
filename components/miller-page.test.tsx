@@ -45,6 +45,22 @@ describe("Miller · formación documentada", () => {
     expect(inProgress.some((course) => /completad|terminad|finalizad/i.test(course.detail))).toBe(false);
   });
 
+  it("ofrece el CV en español e inglés y cierra el selector con Escape", () => {
+    const { container } = render(<MillerPage world={world} locale="es" />);
+    const details = container.querySelector<HTMLDetailsElement>(".miller-cv")!;
+    const summary = details.querySelector("summary")!;
+    fireEvent.click(summary);
+    expect(details.open).toBe(true);
+    const links = within(details).getAllByRole("link");
+    expect(links.map((link) => [link.textContent, link.getAttribute("href"), link.hasAttribute("download")])).toEqual([
+      ["EspañolPDF · ES", "/cv/jonas-javier-cv-es.pdf", true],
+      ["EnglishPDF · EN", "/cv/jonas-javier-cv-en-ats.pdf", true],
+    ]);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(details.open).toBe(false);
+    expect(summary).toHaveFocus();
+  });
+
   it("publica 23 documentos únicos y sus recursos existen", () => {
     expect(certificates).toHaveLength(23);
     expect(certificates.filter((certificate) => certificate.kind === "course")).toHaveLength(15);

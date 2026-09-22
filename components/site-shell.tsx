@@ -1,8 +1,8 @@
-import Link from "next/link";
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import { getWorldNavItems } from "@/lib/worlds";
 import { SiteHeader } from "./site-header";
+import { SiteFooter } from "./site-footer";
 
 /**
  * Envoltorio común de todas las páginas: cabecera, `<main>` y pie.
@@ -42,10 +42,7 @@ export function SiteShell({
         {children}
       </main>
 
-      <footer className="site-footer">
-        <p>{footerLabel}</p>
-        <Link href={`/${locale}`}>Volver al Sistema Gargantúa ↑</Link>
-      </footer>
+      <SiteFooter locale={locale} activeWorldId={activeWorldId} label={footerLabel} />
     </>
   );
 }

@@ -1578,6 +1578,262 @@ Se toma 4.2, que es la mitad del blanco que sobraba, todo él a menos de 1.7
 radios de sombra del centro. **Su valoración visual queda abierta**, con la
 alternativa de enrollado 0 capturada.
 
+## 14 quindecies. El cielo: menos trazo, más negro y un gas lejano (2026-09-21)
+
+Manda sobre §6 y sobre §14 octies en **cuánto se estira el cielo y dónde, con
+qué densidad y qué reparto de brillo se siembra el campo estelar, y cuánto
+pesa cada banco de gas**. Sustituye además la fila `Endurance` de la escala
+que dejó el recorte anterior del mismo día. No toca `rs`, posición,
+inclinación, cámara, HUD, exposición, rodilla de altas luces, bloom, raymarch,
+geodésica, el material del disco ni ninguno de los otros cinco cuerpos.
+
+Lo abrió el dueño con un diagnóstico largo y en porcentajes: la nebulosa azul
+de la izquierda «está bastante oscura, aparece casi como una insinuación y da
+profundidad sin pedir atención — esa dirección la conservaría»; la morada de
+la derecha «también funciona compositivamente […] pero está un poco demasiado
+presente. En esa zona se nota más como una textura/procedural nebula colocada
+detrás que como algo realmente lejano»; y las estrellas son el cambio grande,
+«hay muchas partículas grandes y alargadas […] y eso hace que el cerebro
+interprete cierta velocidad / warp speed / motion blur». El objetivo lo puso
+él en tres cifras — **80 % negro / 12 % estrellas / 8 % nebulosa**, contra un
+60/20/20 percibido— y con una condición: **no quitar las nebulosas**, porque
+«azul izquierda → negro central → púrpura derecha […] le da muchísimo más
+carácter a Jonas Orbit que un starfield genérico». Y la frase que ordena el
+pase: «puede ganar muchísimo en sofisticación simplemente quitando cosas, no
+añadiendo más».
+
+Nace `tools/sky-budget.mjs` para poder discutir esas cifras: separa fondo de
+estrella por la mediana de bloques de 16 px —el velo es de baja frecuencia por
+construcción y una estrella es un pico de dos o tres píxeles— y publica el
+porcentaje de cielo realmente negro, el reparto de energía entre estrella y
+fondo, y el nivel medio de cada tercio por canal. `star-streaks.mjs` sigue
+siendo quien mide la FORMA.
+
+### 1. El residuo del 25 % era el remolino entero
+
+§14 octies dejó la mezcla del cielo en `mix(0.25, 1.0, lensing)`: fuera de la
+puerta la deflexión no caía a cero, se quedaba en un cuarto. El motivo estaba
+escrito —la propia pendiente de la mezcla entra en el jacobiano, así que
+taparla deprisa alarga las manchas justo por fuera de la rampa— pero el precio
+no se había vuelto a medir. Medido ahora sobre el estado de partida: el anillo
+de 400-550 px daba **aspecto 2.07 con tangencia 0.98** y más allá de 550 px
+**1.68 con tangencia 0.85**. Tangencia 0.98 es la firma del lente; el ruido de
+muestreo del retículo marca 0.64. O sea que el cielo entero seguía
+participando del remolino, exactamente como lo leyó el dueño.
+
+La salida no es cerrar antes, es **cerrar entero sin cerrar más deprisa**. La
+rampa pasa a llevar la mezcla de 1 a 0 entre 14 y 34 rs: termina donde
+terminaba, arranca dos radios antes y no deja residuo. Su pendiente media
+(1/20 rs) es 1.2 veces la de la rampa anterior —que recorría 0.75 en 18 rs, o
+sea 1/24—, así que el artefacto del jacobiano queda del mismo orden. Las
+esquinas del encuadre de 1440×860 caen entre 40 y 44 rs: fuera con margen, y
+ahí `mix(straight, dir, 0)` es `straight` por construcción.
+
+### 2. El campo estelar brillaba MÁS cerca del agujero
+
+`presence` existía para quitarle brillo a las estrellas de fuera. Su efecto
+colateral nunca se había mirado desde el otro lado: la escala gruesa llevaba
+**dos** factores atados a la cercanía —el de la magnitud y el del peso—, así
+que la estrella mediana salía un 72 % más brillante pegada al disco y la
+notable casi el triple. Justo donde el lente además la estira, y justo donde
+el ojo tiene que encontrar el disco y no el cielo. El encargo lo dice desde
+fuera: «reducir estrellas inmediatamente alrededor de Gargantúa para darle una
+especie de negative space natural».
+
+Se invierte en `clearance`, que vale 0 pegado al agujero y 1 lejos, con rampa
+de **3 a 12 rs** y suelo **0.45**: cerca del agujero hay estrellas, sólo que
+menos y más tenues, que es el «mantener algunos trazos muy tenues» de la
+dirección.
+
+**Y ahí está el tercer intento fallido, que el dueño cazó en la primera
+mirada.** La rampa salió de esta mesa en 5-22 rs con suelo 0.18, razonando
+«el disco y su borde» sobre el encuadre de captura, donde 22 rs son 440 px.
+Pero la conversión de radios a píxeles va con el ALTO DEL VIEWPORT: en una
+pantalla de 1060 px de alto esos 22 rs son 540 px de radio, o sea todo el
+hueco entre el Tesseracto y la Ranger. Su pregunta fue literal —«¿por qué no
+hay estrellas cerca de Gargantúa como antes?»— y la regla que deja es
+**un espacio negativo que crece con la ventana no es espacio negativo, es un
+agujero en el cielo**. El cierre se ata ahora a algo que no depende de la
+ventana: 12 rs cae dentro del radio del propio disco (`DISK_OUTER` = 17 rs)
+en cualquier tamaño.
+
+El resto del campo se rehace con un principio y ninguna caja nueva: **el suelo
+de la magnitud era lo que impedía las dos mitades del encargo a la vez**. Toda
+estrella, en las cuatro escalas, salía con 0.30 —casi un tercio del brillo de
+una notable—, así que el cielo quedaba uniformemente poblado, sin zonas
+realmente negras, y la jerarquía la decidía sólo la cola de la potencia. Baja
+a 0.13 y el reparto pasa a ser del exponente: con `pow(h.y, 9)` una de cada
+diez pasa de 0.5 y el resto vive por debajo de 0.2.
+
+| capa | densidad | peso | apriete |
+| --- | --- | --- | --- |
+| 44 (gruesa, la que deja trazo) | 0.100 → **0.060** | 0.48 → 0.44 | 3.2 |
+| 112 | 0.150 → **0.105** | 0.33 → 0.33 | 2.3 |
+| 246 | 0.205 → **0.460** | 0.19 → 0.22 | 1.4 |
+| 520 (el campo fino) | 0.235 → **0.850** | 0.10 → 0.15 | 1.0 |
+
+Y un campo de **vacíos** que reaprovecha el mismo `warp` que deforma el gas
+—una evaluación que el rayo ya paga—, así que los claros caen donde el gas se
+adelgaza y los cúmulos donde se espesa: eso es «crear áreas de espacio casi
+completamente negro» sin una sola evaluación de ruido nueva.
+
+**La trampa, y costó una entrega:** el apriete de la gaussiana se aplicó al
+principio a las cuatro escalas por igual y el cielo se quedó casi sin
+estrellas — **86 medidas en el cuadro contra 270**. Las dos capas finas ya son
+subpíxel (a escala 520 la gaussiana mide 1.2e-4 rad contra los 1.0e-3 rad de
+un píxel), así que sólo se encienden cuando el centro del píxel cae dentro:
+estrecharlas divide esa probabilidad por el **cuadrado** del factor. El
+apriete vale para la escala gruesa, que es la que deja trazo, y no para la
+fina, que es EL cielo.
+
+### 3. La distancia de una nebulosa la da el grano, no el tamaño
+
+Lo que delata a un procedural no es su color: es que tenga detalle a la escala
+del píxel. El velo llevaba una cuarta octava y un `dust` que recorría de 0.3 a
+1.0 en un cuarto de octava, o sea contraste local de banda ancha sobre un
+objeto que debería estar a años luz. Cuatro palancas, y ninguna de ellas la
+opacidad global —bajarla habría hecho el banco más tenue sin hacerlo más
+lejano—:
+
+* el gas pierde su cuarta octava (`fbm` → `fbm3`). Es el cambio que de verdad
+  lo aleja, y ahorra una evaluación de ruido por cada rayo que escapa;
+* la frecuencia base baja de 1.8 a 1.45;
+* el filamento sube umbral (0.24 → 0.26) y exponente (1.6 → 1.7), que es lo
+  que deja «únicamente algunas zonas moradas visibles»: la bruma de fondo se
+  va y sobreviven las masas;
+* el grano del polvo se aplana (suelo 0.3 → 0.62, pendiente 7.0 → 4.0).
+
+**Las dos elipses no se tocan, y ése fue el segundo intento fallido.** La
+primera versión las ensanchó, razonando que un banco ancho y tenue se lee
+lejos; el resultado medido fue el contrario — el azul subió un **21 %** de
+luma y pasó de insinuación a nube. Se revirtieron.
+
+Los dos colores son entonces el resultado de dos cuentas distintas y no de una
+paleta nueva: el azul sólo compensa lo que se lleva el filamento nuevo, porque
+el dueño lo da por bueno tal cual está; el morado baja un 25 % **sobre** esa
+misma compensación.
+
+### Medido
+
+Todo a 1440×860, `.shots/cielo-antes.png` y `.shots/cielo-final.png`.
+
+| | antes | ahora |
+| --- | --- | --- |
+| trazos en el núcleo (< 400 px) · energía | 14 · 29.6 k | **2 · 8.6 k** |
+| trazos en la periferia (≥ 400 px) · energía | 18 · 58.1 k | **4 · 31.7 k** |
+| tangencia a 550-1200 px (suelo de muestreo 0.64) | 0.85 | **0.71** |
+| aspecto a 550-1200 px | 1.68 | 1.70 |
+| núcleo azul (caja 0-320 × 60-320), luma | 10.39 | **10.84** (+4 %) |
+| núcleo morado (caja 1240-1440 × 90-770), luma | 14.26 | **11.02** (−22.7 %) |
+| cielo con fondo < 4 | 30.9 % | **33.6 %** |
+| energía de estrella sobre el total del cielo | 9.4 % | 9.0 % |
+
+Dos lecturas que hay que conservar para no discutirlas otra vez. La primera:
+**el aspecto medio del anillo de 400-550 px sube (2.07 → 2.48) y eso no es una
+regresión, es selección** — de 77 manchas quedan 14, y las que desaparecen son
+las redondas, que eran las que bajaban la media; el cuartil alto apenas se
+mueve (2.74 → 3.04) y la energía del anillo cae un 23 %. La segunda: **en ese
+anillo y más adentro quedan las trazas orbitales del mapa**, que son curvas
+finas de la escena y no cielo, y el segmentador las cuenta como manchas muy
+alargadas. Por eso el veredicto del pase se lee en la imagen recortada
+(`.shots/cmp-v6-arriba.png` contra `.shots/cmp-a-arriba.png`, la banda
+inmediatamente encima de la sombra) y no en la media de ese anillo.
+
+Y una tercera que es el resultado de la corrección del espacio negativo: la
+energía de estrella sobre el total del cielo vuelve casi a donde estaba
+(9.4 % → 9.0 %) mientras el negro sube y los trazos se van. Eso es lo que
+significa el encargo: no hay menos cielo, hay el mismo cielo sin remolino.
+
+### 4. El ratón arrastraba el cielo, y eso no era el lente
+
+Con el pase montado el dueño señaló lo que ninguna captura estática podía
+enseñar: «el campo estelar sigue deformándose con el movimiento del MOUSE
+aunque esté fuera de la órbita de Gargantúa». Era la OTRA mitad del «warp
+speed», y no vive en el shader.
+
+La acumulación temporal del raymarch sólo es válida con la cámara quieta: el
+historial describe ese píxel desde esa pose. `temporalBlend` ya lo contempla
+—sube el peso de la mezcla mientras algo se mueve, en vez de reproyectar, que
+sería TAA de motor de juego— pero la única cosa que se declaraba en movimiento
+era la travesía. **El paralaje del puntero también mueve la cámara**: hasta
+grado y medio, suavizado con una constante de 0.32 s, o sea decenas de
+fotogramas mezclándose al 82 % con la pose anterior. Sobre un cielo hecho de
+puntos de un píxel eso no se lee como suavizado: cada estrella arrastra una
+cola en la dirección del ratón, de unos siete píxeles, que es exactamente el
+largo de los trazos que abrieron el pase.
+
+El comentario que había en `setParallax` decía lo contrario —«lo que la cámara
+se desplaza entre dos fotogramas es una fracción de píxel y la mezcla del 18 %
+lo absorbe sin dejar fantasma»— y la aritmética no lo sostiene: una fracción
+de píxel por fotograma multiplicada por la longitud efectiva del historial
+(1/0.18 ≈ 5.5 fotogramas) es justo una raya corta. La corrección es una
+condición: `temporalBlend(accumulated, voyage !== null || cameraMoved)`, con
+la bandera levantada en el mismo sitio donde se decide reorientar y bajada al
+cerrar el fotograma. Cuando el paralaje llega a su destino la bandera deja de
+levantarse y la acumulación vuelve a converger, que es lo que ya hacía con el
+ratón quieto — no se tira el historial en cada `pointermove`, que es el fallo
+contrario y el que dejaba a Gargantúa granulada.
+
+Medido con `.shots/_scratch/paralaje.mjs`, que mueve el puntero de verdad por
+cielo vacío (adquirir un destino CONGELA el paralaje, así que un barrido que
+pase por encima de un cuerpo no mide nada):
+
+| | quieto | en marcha |
+| --- | --- | --- |
+| energía de estrella, antes | 11.2 % | **9.9 %** (−12 %) |
+| energía de estrella, ahora | 11.6 % | **12.4 %** |
+
+El campo perdía un octavo de su presencia sólo por mover el ratón. Al píxel
+(`.shots/zm-antes.png` contra `.shots/zm-despues.png`, zoom 6× sin
+interpolación) se ve directamente: antes manchas arrastradas, ahora puntos de
+un píxel.
+
+**Trampa, y costó dos intentos:** la prueba tiene que escribir
+`jonas-orbit:reducir-efectos = "false"` en `localStorage`. Con cualquier otra
+clave la página sirve el perfil plano y el barrido no mueve nada — es el mismo
+error que se corrigió en `shot.mjs` el 2026-09-19, y volvió a aparecer en
+cuanto se escribió una herramienta nueva a mano.
+
+### 5. Y las nebulosas, mucho más pequeñas
+
+Segundo encargo del dueño sobre el pase ya montado: «las nebulosas muy
+grandes, las quiero mucho más pequeñas». Los cuatro semiejes de las dos
+elipses caen a **0.61** de lo que eran (izquierda 0.30/0.23 → 0.185/0.145,
+derecha 0.32/0.27 → 0.195/0.165), o sea un 63 % menos de superficie por banco.
+El pico de la gaussiana vale 1 en el centro pase lo que pase, así que el
+núcleo conserva su color y lo que se va es la falda: dejan de ser dos medias
+pantallas y pasan a ser dos manchas contra el canto.
+
+Y es el cambio que cierra las cifras del encargo. Medido sobre el cuadro
+entero: el cielo realmente negro sube de **30.9 % a 56.0 %** y la energía de
+estrella sobre el total del cielo pasa de 9.4 % a **12.2 %** — que es el 12 %
+que pidió, sin haber tocado ni una densidad en este paso. Las dos cajas de
+núcleo dejan de ser comparables entre pasadas a partir de aquí, porque el
+banco ya no las llena: quedan en 7.54 el azul y 9.12 el morado.
+
+### Endurance, un 8 % menos
+
+Mismo encargo, misma sesión: «reducir el tamaño de Endurance de un 5 a 10 %,
+lo que te parezca mejor». Sustituye la fila `Endurance` del recorte anterior
+del mismo día: `size` 3.9492 → **3.6333**. Los tres extremos, medidos con
+`bodies.test.ts`: al 5 % la ventaja aparente sobre el siguiente cuerpo queda
+en 1.667, al 8 % en **1.6147** y al 10 % en 1.579 —la primera vez en siete
+recortes que este cuerpo bajaría de 1.6—, y la otra guarda, la Ranger por
+debajo del 65 % de la Endurance, pasa de 0.619 a 0.633. Se toma el 8 %: mueve
+la silueta lo suficiente para que se note y deja las dos guardas con la
+holgura de siempre. Gargantúa y los otros cuatro cuerpos no se tocan.
+
+### Coste y estado
+
+Cero ruidos nuevos —el velo pierde una octava y los vacíos reutilizan `warp`,
+así que el rayo que escapa cuesta **menos** que antes—, cero uniformes, cero
+llamadas de dibujo. La corrección del paralaje es una condición más en una
+llamada que ya existía. Lint, typecheck, knip, 406 tests y build en verde. **Su valoración visual queda
+abierta**, y con ella dos preguntas para el dueño: si el morado ha bajado lo
+suficiente dentro de la banda del 20-30 % que pidió, y si el cielo plano de
+`lib/starfield.ts` —que sólo se ve sin escena viva y nunca tuvo trazos— debe
+seguir a esta dirección o quedarse como está.
+
 ## 14 ter. World Asset & Material Pass (2026-09-01)
 
 Esta pasada es exclusivamente 3D. `FlatWorldBody`, sus tamaños, sus coordenadas

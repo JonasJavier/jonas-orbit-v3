@@ -187,10 +187,20 @@ test("navbar: con reduced-motion la línea no viaja y el CV sigue en el menú m�
   await expect(page.locator(".voyage-destinations")).toHaveAttribute("data-marker", "ready");
 });
 
-test("Miller: el hero ofrece la descarga del CV junto a recorrido y certificados", async ({ page }) => {
+test("Miller: el hero elige el idioma del CV y conserva un único descenso", async ({ page }) => {
   await page.goto("/es/formacion?no3d=1");
-  const cv = page.locator(".miller-hero__actions").getByRole("link", { name: "Descargar CV", exact: true });
-  await expect(cv).toBeVisible();
-  await expect(cv).toHaveAttribute("href", "/cv/jonas-javier-cv-es.pdf");
-  await expect(cv).toHaveAttribute("download", "");
+  const cv = page.locator(".miller-hero__actions").getByLabel("Descargar CV");
+  await cv.click();
+  for (const [name, href] of [["Español PDF · ES", "/cv/jonas-javier-cv-es.pdf"], ["English PDF · EN", "/cv/jonas-javier-cv-en-ats.pdf"]]) {
+    const link = page.getByRole("link", { name, exact: true });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", href);
+    await expect(link).toHaveAttribute("download", "");
+  }
+  await page.keyboard.press("Escape");
+  await expect(cv).toBeFocused();
+  await expect(page.getByText("APRENDIZAJE EN MOVIMIENTO", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Descender", exact: true })).toHaveAttribute("href", "#trayectoria");
+  const footer = page.getByRole("contentinfo");
+  await expect(footer.getByRole("navigation", { name: "Navegación del pie" })).toBeVisible();
 });
