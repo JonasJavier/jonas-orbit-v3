@@ -4,6 +4,7 @@ import Script from "next/script";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { playSfx } from "@/lib/sfx";
 import {
   MISSION_OPTIONS,
   TURNSTILE_TEST_TOKEN,
@@ -159,6 +160,9 @@ export function ContactForm() {
       const errors = fieldErrorsFromZod(parsed.error);
       setFieldErrors(errors);
       setFormMessage("Revisa los campos señalados antes de transmitir.");
+      // Dos notas graves que bajan. Un error es una información, no un
+      // castigo: nada de pitido agudo ni de disonancia.
+      playSfx("reject");
       focusFirstError(errors);
       return;
     }
@@ -184,10 +188,13 @@ export function ContactForm() {
       };
 
       if (response.ok && result.ok) {
+        // El mensaje sale: dos pulsos que suben y aire que se va con ellos.
+        playSfx("transmit");
         router.push("/es/contacto/gracias");
         return;
       }
 
+      playSfx("reject");
       if (response.status === 429) {
         setFormState("rate-limited");
         setFormMessage(
@@ -205,6 +212,7 @@ export function ContactForm() {
       resetVerification();
     } catch (error) {
       setFormState("error");
+      playSfx("reject");
       setFormMessage(
         error instanceof DOMException && error.name === "AbortError"
           ? "La transmisión tardó demasiado. Tus datos siguen aquí; puedes reintentar."

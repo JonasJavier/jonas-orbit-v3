@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { WorldId } from "@/content/worlds.data";
 import { MAP_HOVER_MODE, type MapHoverMode } from "@/lib/map-hover";
+import { playSample } from "@/lib/audio-samples";
 import { projectPlacement } from "@/lib/system-map";
 import { flatCompositionFor } from "@/lib/flat-composition";
 import {
@@ -82,6 +83,16 @@ export function SystemMap({
   const [pointerTarget, setPointerTarget] = useState<WorldId | null>(null);
   const [focusTarget, setFocusTarget] = useState<WorldId | null>(null);
   const [lockedTarget, setLockedTarget] = useState<WorldId | null>(null);
+  /*
+    Qué destino sonó la última vez.
+
+    El blip de proximidad tiene que sonar UNA vez por cuerpo apuntado, y
+    `acquire` se dispara más de una vez por el mismo: los blancos se tocan —el
+    proxy de Gargantúa cubre media escena— así que entrar en un vecino y volver
+    reentra en el mismo enlace. Sin esta referencia, cruzar el mapa despacio
+    repica la misma nota. No es estado de React a propósito: no pinta nada.
+  */
+  const sounded = useRef<WorldId | null>(null);
 
   /*
     LA MISMA SEÑAL, DOS LECTURAS. Ver `lib/map-hover.ts`.
@@ -135,20 +146,46 @@ export function SystemMap({
     adquisición que ya era del primero: el cuerpo se encendía y se apagaba solo
     en el mismo gesto. Soltar solo puede apagar lo que uno mismo encendió.
   */
+  /*
+    Es una grabación y no una receta, y además es la MISMA para los seis. Antes
+    cada destino tenía su altura y recorrer el mapa tocaba una escala; el dueño
+    rechazó dos veces aquel blip y trajo este archivo, así que la escala se
+    retira con él. Si algún día vuelve a querer el mapa afinado, el sitio donde
+    entra es aquí y el precio es que la grabación cambia de largo al cambiar de
+    tono.
+
+    Va en `acquire`/`focusOn` y no en el JSX porque el raíl entra por aquí
+    también: apuntar un nombre de la lista es el mismo acto que apuntar su
+    cuerpo, y con teclado tiene que sonar igual.
+  */
+  function ping(id: WorldId) {
+    if (sounded.current === id) return;
+    sounded.current = id;
+    playSample("hover");
+  }
+
+  function unping(id: WorldId) {
+    if (sounded.current === id) sounded.current = null;
+  }
+
   function acquire(id: WorldId) {
     setPointerTarget(id);
+    ping(id);
   }
 
   function release(id: WorldId) {
     setPointerTarget((current) => (current === id ? null : current));
+    unping(id);
   }
 
   function focusOn(id: WorldId) {
     setFocusTarget(id);
+    ping(id);
   }
 
   function blurFrom(id: WorldId) {
     setFocusTarget((current) => (current === id ? null : current));
+    unping(id);
   }
 
   function activate(

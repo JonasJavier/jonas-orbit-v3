@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { MISSION_OPTIONS } from "@/lib/contact-schema";
+import { playSfx } from "@/lib/sfx";
 import { ContactForm } from "./contact-form";
 
 /**
@@ -53,6 +54,7 @@ export function RangerConsole() {
     if (!select) return;
     select.value = value;
     sync();
+    playSfx("detent");
   }
 
   return (

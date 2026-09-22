@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useMotionEnabled } from "@/lib/effects-mode";
+import { playSfx } from "@/lib/sfx";
 
 type Photo = { src: string; alt: string; title: string; caption: string };
 
@@ -21,6 +22,11 @@ export function AboutExperience({ children }: { children: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLAnchorElement | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
+  /** El visor se cierra por cuatro caminos; el sonido tiene uno solo. */
+  const closePhoto = () => {
+    setPhoto(null);
+    playSfx("close");
+  };
   const motion = useMotionEnabled();
 
   useEffect(() => {
@@ -63,6 +69,13 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       if (intent === "history" && hash === lastHash) return;
       lastHash = hash;
       const next = chapters.find((chapter) => `#${chapter.id}` === hash);
+      /*
+        Una constelación se abre o se cierra. Sólo con `select` —el gesto del
+        visitante—: `initial` es el estado con el que llega la página y
+        `history` es el botón de atrás, y ninguno de los dos es algo que se
+        acabe de hacer. Sonar al cargar sería el sitio hablando solo.
+      */
+      if (intent === "select") playSfx(next ? "open" : "close");
       const previous = active;
       const token = ++revision;
       animation?.cancel();
@@ -384,6 +397,7 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       return;
     event.preventDefault();
     openerRef.current = anchor;
+    playSfx("open");
     setPhoto({
       src: anchor.href,
       alt: anchor.querySelector("img")?.alt ?? "",
@@ -408,8 +422,8 @@ export function AboutExperience({ children }: { children: ReactNode }) {
           ref={dialogRef}
           aria-labelledby="about-photo-title"
           aria-describedby="about-photo-caption"
-          onCancel={() => setPhoto(null)}
-          onClose={() => setPhoto(null)}
+          onCancel={() => closePhoto()}
+          onClose={() => closePhoto()}
           onClick={(event) => {
             if (event.target !== event.currentTarget) return;
             const box = event.currentTarget.getBoundingClientRect();
@@ -419,12 +433,12 @@ export function AboutExperience({ children }: { children: ReactNode }) {
               event.clientY < box.top ||
               event.clientY > box.bottom
             )
-              setPhoto(null);
+              closePhoto();
           }}
         >
           <div className="about-dialog-head">
             <h2 id="about-photo-title">{photo.title}</h2>
-            <button type="button" autoFocus onClick={() => setPhoto(null)}>
+            <button type="button" autoFocus onClick={() => closePhoto()}>
               Cerrar ×
             </button>
           </div>

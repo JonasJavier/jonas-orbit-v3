@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -13,6 +14,7 @@ import {
 } from "react";
 import { SITE_PROFILE } from "@/content/site.data";
 import { useMotionEnabled } from "@/lib/effects-mode";
+import { playSfx } from "@/lib/sfx";
 
 /**
  * Cabina de la Ranger: el visitante va sentado dentro de la nave de enlace.
@@ -73,6 +75,23 @@ export function RangerCockpit({ children }: { children: ReactNode }) {
   const [supported, setSupported] = useState(true);
   const [frequency, setFrequency] = useState<Frequency>(null);
   const markUnsupported = useCallback(() => setSupported(false), []);
+
+  /*
+    Encendido de motores.
+
+    Es el único sonido del sitio que NO cuelga de una interacción: cuelga del
+    mismo `data-boot` que arranca el vuelo del ventanal, así que sienta al
+    visitante dentro de la nave y enciende. Y por eso sí depende del
+    interruptor de movimiento —con el vuelo apagado no hay nada que encender—,
+    que es la excepción a la regla general de que el sonido lo gobierna sólo
+    AUDIO: aquí el motor es parte del vuelo, no un aviso de interfaz.
+  */
+  const lit = useRef(false);
+  useEffect(() => {
+    if (!mounted || !running || lit.current) return;
+    lit.current = true;
+    playSfx("ignite");
+  }, [mounted, running]);
 
   function moveHead(event: PointerEvent<HTMLElement>) {
     if (!running || event.pointerType !== "mouse" || !window.matchMedia("(pointer: fine)").matches) return;

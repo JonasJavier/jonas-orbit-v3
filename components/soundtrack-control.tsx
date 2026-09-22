@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Soundtrack } from "@/lib/soundtrack";
-import { voyageAudio } from "@/lib/voyage-audio";
+import { configureAudio } from "@/lib/audio-bus";
+import { playSfx } from "@/lib/sfx";
 import "./soundtrack-control.css";
 
 function Speaker({ quiet }: { quiet: boolean }) {
@@ -34,18 +35,17 @@ export function SoundtrackControl() {
   const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : "Audio detenido";
 
   /*
-    Un solo mando para todo lo que suena. El sonido de la travesía se sintetiza
-    aparte —no es esta pista— pero obedece a este control: pausar o silenciar
-    aquí deja el sitio entero en silencio. «Pausa» sin intención (autoplay
-    bloqueado, pestaña oculta) no cuenta: ahí el visitante sigue queriendo
-    audio y el primer clic en un destino es justo el gesto que lo desbloquea.
+    Un solo mando para todo lo que suena. La música es un archivo; la travesía,
+    el mapa, el mar de Miller, el Observatorio y la Ranger se sintetizan en el
+    bus de audio. Los dos obedecen a este control: pausar o silenciar aquí deja
+    el sitio entero en silencio. «Pausa» sin intención (autoplay bloqueado,
+    pestaña oculta) no cuenta: ahí el visitante sigue queriendo audio y su
+    primer gesto es justo el que lo desbloquea.
   */
+  const audible = state.playback !== "off" && !quiet;
   useEffect(() => {
-    voyageAudio.configure({
-      enabled: state.playback !== "off" && !quiet,
-      volume: state.volume,
-    });
-  }, [state.playback, state.volume, quiet]);
+    configureAudio({ enabled: audible, volume: state.volume });
+  }, [audible, state.volume]);
 
   useEffect(() => {
     const visibility = () => player.setHidden(document.hidden);
@@ -94,7 +94,16 @@ export function SoundtrackControl() {
               type="button"
               aria-label={active ? "Pausar música" : state.playback === "error" ? "Reintentar música" : "Activar música"}
               aria-pressed={active}
-              onClick={() => active ? player.pause() : void player.play()}
+              onClick={() => {
+                if (active) {
+                  player.pause();
+                  return;
+                }
+                void player.play();
+                // El único efecto que se oye a sí mismo: encender el audio sin
+                // respuesta audible deja al visitante sin saber si funcionó.
+                playSfx("confirm");
+              }}
             >
               <PlaybackIcon active={active} />
               <span className="visually-hidden">{status}</span>
