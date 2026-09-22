@@ -3,6 +3,7 @@ import {
   isLightEffectsMode,
   pointerLifeEnabled,
   readLightEffectsParam,
+  resolveForcedEffects,
   resolveLightEffectsMode,
 } from "./effects-mode";
 
@@ -144,5 +145,12 @@ describe("movimiento por defecto", () => {
   it("apagarlo con el icono equivale a recordar el perfil ligero", () => {
     expect(resolveLightEffectsMode("", "true")).toBe(true);
     expect(resolveLightEffectsMode("?no3d=0", "true")).toBe(false);
+  });
+
+  it("el arranque tiene la misma prioridad que una activación manual", () => {
+    expect(resolveForcedEffects("", null)).toBe(true);
+    expect(resolveForcedEffects("", "false")).toBe(true);
+    expect(resolveForcedEffects("", "true")).toBe(false);
+    expect(resolveForcedEffects("?no3d=1", null)).toBe(false);
   });
 });

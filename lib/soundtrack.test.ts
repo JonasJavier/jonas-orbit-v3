@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Soundtrack } from "./soundtrack";
 
-describe("voluntary, persistent soundtrack", () => {
+describe("enabled-by-default, persistent soundtrack", () => {
   let player: Soundtrack;
   let media: HTMLAudioElement;
   let context: { resume: ReturnType<typeof vi.fn>; suspend: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
@@ -27,13 +27,34 @@ describe("voluntary, persistent soundtrack", () => {
   });
   afterEach(() => { player.dispose(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-  it("does not create, request, or play audio on entry, even with saved volume", () => {
+  it("starts on entry with the saved volume", async () => {
     localStorage.setItem("jonas-orbit:audio-volume", "0.6");
     player.setHidden(false);
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot()).toEqual({ playback: "playing", volume: 0.6, muted: false });
+    expect(Audio).toHaveBeenCalledTimes(1);
+    expect(AudioContext).toHaveBeenCalledTimes(1);
+    expect(media.src).toContain("/audio/orbit-ambient.m4a");
+  });
+
+  it("stays off only after the visitor explicitly disables it", () => {
+    localStorage.setItem("jonas-orbit:audio-enabled", "false");
+    player.startDefault();
     expect(player.getSnapshot().playback).toBe("off");
     expect(Audio).not.toHaveBeenCalled();
     expect(AudioContext).not.toHaveBeenCalled();
-    expect(media).not.toHaveAttribute("src");
+  });
+
+  it("keeps the default-on intent when autoplay waits for a gesture", async () => {
+    vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("paused");
+    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBeNull();
+    player.resumeWanted();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("playing");
   });
 
   it("streams one source after activation and fades to the visitor's volume", async () => {
@@ -46,8 +67,10 @@ describe("voluntary, persistent soundtrack", () => {
     expect(ramp).toHaveBeenLastCalledWith(0.4, 1.2);
     media.currentTime = 42;
     player.pause();
+    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBe("false");
     await vi.advanceTimersByTimeAsync(250);
     await player.play();
+    expect(localStorage.getItem("jonas-orbit:audio-enabled")).toBe("true");
     expect(Audio).toHaveBeenCalledTimes(1);
     expect(media.currentTime).toBe(42);
   });
@@ -88,7 +111,7 @@ describe("voluntary, persistent soundtrack", () => {
   });
 
   it("handles rejection and lets the visitor retry", async () => {
-    vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
+    vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Decode failed", "NotSupportedError"));
     await player.play();
     expect(player.getSnapshot().playback).toBe("error");
     player.setHidden(true); player.setHidden(false);
@@ -106,6 +129,17 @@ describe("voluntary, persistent soundtrack", () => {
     player.toggleMute();
     expect(ramp).toHaveBeenLastCalledWith(0.65, 0.08);
     expect(localStorage.getItem("jonas-orbit:audio-volume")).toBe("0.65");
+  });
+
+  it("updates mute while playback is off and restores audible volume from zero", () => {
+    player.toggleMute();
+    expect(player.getSnapshot()).toEqual({ playback: "off", volume: 0.28, muted: true });
+    player.toggleMute();
+    expect(player.getSnapshot()).toEqual({ playback: "off", volume: 0.28, muted: false });
+    player.setVolume(0);
+    player.toggleMute();
+    expect(player.getSnapshot()).toEqual({ playback: "off", volume: 0.28, muted: false });
+    expect(localStorage.getItem("jonas-orbit:audio-volume")).toBe("0.28");
   });
 
   it("survives blocked storage and releases the media and audio context", async () => {

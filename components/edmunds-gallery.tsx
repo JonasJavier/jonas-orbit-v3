@@ -3,10 +3,11 @@
 /* Images have build-time WebP variants, so the browser can use srcset without
    a second image transformation service. */
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
 import type { World } from "@/lib/worlds";
 import { useMotionEnabled } from "@/lib/effects-mode";
+import { MOSAIC_SCALES, mosaicRows } from "@/lib/mosaic-rows";
 
 type Creativity = NonNullable<World["prose"]["creativity"]>;
 type Artwork = Creativity["artworks"][number];
@@ -43,8 +44,30 @@ const deckSizes = (ratio: number) => {
     paint("clamp(260px, 56vh, 620px)", "min(760px, 84vw)"),
   ].join(", ");
 };
-/** Mosaic columns: two, three or four, plus the capped 1560 px layout. */
-const GRID_SIZES = `(max-width: 700px) calc(${OVERSAMPLE} * (50vw - 20px)), (max-width: 1080px) calc(${OVERSAMPLE} * (33vw - 30px)), (min-width: 1800px) ${Math.round(OVERSAMPLE * 375)}px, calc(${OVERSAMPLE} * (25vw - 30px))`;
+/** What the mosaic paints: a justified row is as tall as the width left over
+ * divided by the aspect ratios it carries (`lib/mosaic-rows.ts`), and a work is
+ * that height times its own ratio. One term per band of widths. */
+const gridSizes = (ratio: number) => {
+  const r = ratio.toFixed(3);
+  const row = (width: string, target: number) => `calc(${OVERSAMPLE} * ${r} * (${width}) / ${target})`;
+  return [
+    `(max-width: 480px) ${row("100vw - 55px", 1.25)}`,
+    `(max-width: 700px) ${row("100vw - 80px", 1.7)}`,
+    `(max-width: 1080px) ${row("100vw - 140px", 2.4)}`,
+    `(max-width: 1439px) ${row("100vw - 200px", 3.4)}`,
+    row("min(100vw - 144px, 1560px) - 110px", 4.4),
+  ].join(", ");
+};
+
+/** Where every width cuts this sector into rows. The five bands live at once in
+ * the HTML served —five tokens on one element, not five layouts— and the
+ * stylesheet turns on the one that applies. */
+function mosaicCuts(items: Artwork[]) {
+  const ratios = items.map((art) => art.width / art.height);
+  const bands = new Map<number, string[]>();
+  for (const scale of MOSAIC_SCALES) for (const index of mosaicRows(ratios, scale)) bands.set(index, [...(bands.get(index) ?? []), scale.key]);
+  return new Map([...bands].map(([index, keys]) => [index, keys.join(" ")] as const));
+}
 
 function ArtImage({ art, large = false, eager = false, sizes }: { art: Artwork; large?: boolean; eager?: boolean; sizes?: string }) {
   const [failed, setFailed] = useState(false);
@@ -83,7 +106,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const mode = view ?? (motion ? "space" : "grid");
   // El interruptor único de movimiento del sitio decide si la cubierta gira.
   const still = !motion;
-  const filtered = collection === "all" ? artworks : artworks.filter((art) => art.collection === collection);
+  const filtered = useMemo(() => collection === "all" ? artworks : artworks.filter((art) => art.collection === collection), [artworks, collection]);
   const current = filtered[active];
   const viewed = viewer === null ? null : filtered[viewer];
   const stageRef = useRef<HTMLDivElement>(null);
@@ -109,9 +132,12 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
     });
     return list;
   }, [filtered, collections]);
-  const groups = collection === "all"
-    ? collections.map((item) => ({ collection: item, items: filtered.filter((art) => art.collection === item.id) })).filter((group) => group.items.length)
-    : segments.map((segment) => ({ collection: segment.collection, items: filtered.slice(segment.start, segment.start + segment.count) }));
+  const groups = useMemo(() => {
+    const list = collection === "all"
+      ? collections.map((item) => ({ collection: item, items: filtered.filter((art) => art.collection === item.id) })).filter((group) => group.items.length)
+      : segments.map((segment) => ({ collection: segment.collection, items: filtered.slice(segment.start, segment.start + segment.count) }));
+    return list.map((group) => ({ ...group, cuts: mosaicCuts(group.items) }));
+  }, [collection, collections, filtered, segments]);
 
   useEffect(() => {
     if (!window.matchMedia) return;
@@ -230,6 +256,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
 
   const renderWork = (art: Artwork, index: number, distance: number) => {
     const visible = mode === "grid" || Math.abs(distance) <= VISIBLE_SPAN;
+    const hasPrototype = Boolean(art.prototypeHref);
     return <li className="edmunds-artwork" key={art.id} data-offset={distance} data-visible={visible} data-sector={sector(art.collection)} style={{ "--art-ratio": art.width / art.height, "--o": distance, "--oa": Math.abs(distance) } as CSSProperties}>
       <figure>
         <a href={`/art/edmunds/${art.id}-1920.webp`} aria-label={`Ampliar: ${art.title}`} aria-current={mode === "space" && distance === 0 ? "true" : undefined} draggable={false} onDragStart={(event) => event.preventDefault()} onClick={(event) => {
@@ -239,11 +266,11 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
           if (mode === "space" && distance !== 0) { go(index); return; }
           showViewer(index, event.currentTarget);
         }}>
-          <ArtImage art={art} eager={mode === "space" && distance === 0} sizes={mode === "space" ? deckSizes(art.width / art.height) : GRID_SIZES} />
+          <ArtImage art={art} eager={mode === "space" && distance === 0} sizes={(mode === "space" ? deckSizes : gridSizes)(art.width / art.height)} />
           <span className="edmunds-artwork__brackets" aria-hidden="true"><i /><i /><i /><i /></span>
           <span className="edmunds-artwork__expand" aria-hidden="true">↗</span>
         </a>
-        <figcaption><h3>{art.title}</h3></figcaption>
+        <figcaption><h3>{art.title}</h3>{hasPrototype && <a className="edmunds-project-link" href={art.prototypeHref} target="_blank" rel="noopener noreferrer">Ver proyecto en Figma <span aria-hidden="true">↗</span></a>}</figcaption>
       </figure>
     </li>;
   };
@@ -339,17 +366,22 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
                 </div>
               </div>
             </>
-          ) : groups.map(({ collection: item, items }) => (
+          ) : groups.map(({ collection: item, items, cuts }) => (
             <section className="edmunds-group" key={item.id} data-sector={collections.indexOf(item)} aria-labelledby={`edmunds-group-${item.id}`}>
               <h2 id={`edmunds-group-${item.id}`} className="edmunds-group__label"><i aria-hidden="true" />{item.label}</h2>
-              <ol className="edmunds-artworks">{items.map((art) => renderWork(art, filtered.indexOf(art), 0))}</ol>
+              <ol className="edmunds-artworks">{items.map((art, index) => (
+                <Fragment key={art.id}>
+                  {cuts.has(index) && <li className="edmunds-mosaic-cut" data-at={cuts.get(index)} aria-hidden="true" />}
+                  {renderWork(art, filtered.indexOf(art), 0)}
+                </Fragment>
+              ))}</ol>
             </section>
           ))}
         </div>
       )}
       {mode === "space" && current && <div className="edmunds-gallery__foot">
         <button type="button" aria-label="Obra anterior" disabled={filtered.length < 2} onClick={() => step(-1)}>←</button>
-        <div className="edmunds-gallery__caption" key={current.id} aria-live="polite" aria-atomic="true"><span>{label(current.collection)} · {pad(active + 1)} / {pad(filtered.length)}</span><h2>{current.title}</h2><button type="button" className="edmunds-open" onClick={(event) => showViewer(active, event.currentTarget)}>Ampliar <span aria-hidden="true">↗</span></button></div>
+        <div className="edmunds-gallery__caption" key={current.id} aria-live="polite" aria-atomic="true"><span>{label(current.collection)} · {pad(active + 1)} / {pad(filtered.length)}</span><h2>{current.title}</h2>{current.prototypeHref ? <a className="edmunds-open" href={current.prototypeHref} target="_blank" rel="noopener noreferrer">Ver proyecto en Figma <span aria-hidden="true">↗</span></a> : <button type="button" className="edmunds-open" onClick={(event) => showViewer(active, event.currentTarget)}>Ampliar <span aria-hidden="true">↗</span></button>}</div>
         <button type="button" aria-label="Obra siguiente" disabled={filtered.length < 2} onClick={() => step(1)}>→</button>
       </div>}
       <p className="edmunds-grid-count" role="status">{filtered.length} piezas en esta selección</p>
@@ -363,7 +395,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
         }
         if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); stepViewer(event.key === "ArrowRight" ? 1 : -1); }
       }}>
-        {viewed && <><span className="edmunds-viewer__frame" aria-hidden="true"><i /><i /><i /><i /></span><div className="edmunds-viewer__bar"><span>{label(viewed.collection)} <span>· {pad(viewer! + 1)} / {pad(filtered.length)}</span></span><button type="button" autoFocus onClick={() => setViewer(null)}>Cerrar <span aria-hidden="true">×</span></button></div><figure className="edmunds-viewer__art"><ArtImage key={viewed.id} art={viewed} large /><figcaption id="edmunds-viewer-title" aria-live="polite">{viewed.title}</figcaption></figure><div className="edmunds-viewer__nav"><button type="button" aria-label="Anterior en el visor" disabled={filtered.length < 2} onClick={() => stepViewer(-1)}>← <span>Anterior</span></button><a href={`/art/edmunds/${viewed.id}-1920.webp`} target="_blank" rel="noopener noreferrer">Abrir imagen <span className="sr-only">en otra pestaña</span><span aria-hidden="true">↗</span></a><button type="button" aria-label="Siguiente en el visor" disabled={filtered.length < 2} onClick={() => stepViewer(1)}><span>Siguiente</span> →</button></div></>}
+        {viewed && <><span className="edmunds-viewer__frame" aria-hidden="true"><i /><i /><i /><i /></span><div className="edmunds-viewer__bar"><span>{label(viewed.collection)} <span>· {pad(viewer! + 1)} / {pad(filtered.length)}</span></span><button type="button" autoFocus onClick={() => setViewer(null)}>Cerrar <span aria-hidden="true">×</span></button></div><figure className="edmunds-viewer__art"><ArtImage key={viewed.id} art={viewed} large /><figcaption id="edmunds-viewer-title" aria-live="polite">{viewed.title}</figcaption></figure><div className="edmunds-viewer__nav"><button type="button" aria-label="Anterior en el visor" disabled={filtered.length < 2} onClick={() => stepViewer(-1)}>← <span>Anterior</span></button><span className="edmunds-viewer__actions">{viewed.prototypeHref ? <a className="edmunds-viewer__prototype" href={viewed.prototypeHref} target="_blank" rel="noopener noreferrer">Ver proyecto en Figma <span className="sr-only">en otra pestaña</span><span aria-hidden="true">↗</span></a> : <a href={`/art/edmunds/${viewed.id}-1920.webp`} target="_blank" rel="noopener noreferrer">Abrir imagen <span className="sr-only">en otra pestaña</span><span aria-hidden="true">↗</span></a>}</span><button type="button" aria-label="Siguiente en el visor" disabled={filtered.length < 2} onClick={() => stepViewer(1)}><span>Siguiente</span> →</button></div></>}
       </dialog>
     </section>
   );

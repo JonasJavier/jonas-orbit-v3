@@ -13,6 +13,14 @@ function Speaker({ quiet }: { quiet: boolean }) {
   );
 }
 
+function PlaybackIcon({ active }: { active: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      {active ? <><path d="M8 6v12" /><path d="M16 6v12" /></> : <path d="m9 6 9 6-9 6V6Z" strokeLinejoin="round" />}
+    </svg>
+  );
+}
+
 /** Mounted beside the pages in the locale layout, never inside a world. */
 export function SoundtrackControl() {
   const [player] = useState(() => new Soundtrack());
@@ -20,22 +28,29 @@ export function SoundtrackControl() {
   const details = useRef<HTMLDetailsElement>(null);
   const active = state.playback === "playing" || state.playback === "loading";
   const quiet = state.muted || state.volume === 0;
-  const status = state.playback === "loading" ? "Cargando" : state.playback === "error" ? "Reintentar"
-    : state.playback === "paused" ? "Pausa" : active ? quiet ? "Mute" : "On" : "Off";
+  const status = quiet ? "Mute" : state.playback === "loading" ? "Cargando" : state.playback === "error" ? "Reintentar"
+    : state.playback === "paused" ? "Pausa" : active ? "On" : "Off";
+  const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : "Audio detenido";
 
   useEffect(() => {
     const visibility = () => player.setHidden(document.hidden);
     const pageHide = () => player.setHidden(true);
+    const unlock = () => player.resumeWanted();
     const outside = (event: PointerEvent) => {
       if (details.current && !details.current.contains(event.target as Node)) details.current.open = false;
     };
     visibility();
+    player.startDefault();
     document.addEventListener("visibilitychange", visibility);
+    document.addEventListener("pointerdown", unlock);
+    document.addEventListener("keydown", unlock);
     window.addEventListener("pagehide", pageHide);
     window.addEventListener("pageshow", visibility);
     document.addEventListener("pointerdown", outside);
     return () => {
       document.removeEventListener("visibilitychange", visibility);
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("keydown", unlock);
       window.removeEventListener("pagehide", pageHide);
       window.removeEventListener("pageshow", visibility);
       document.removeEventListener("pointerdown", outside);
@@ -44,17 +59,7 @@ export function SoundtrackControl() {
   }, [player]);
 
   return (
-    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active}>
-      <button
-        className="soundtrack__switch"
-        type="button"
-        aria-label={active ? "Pausar música" : state.playback === "error" ? "Reintentar música" : "Activar música"}
-        aria-pressed={active}
-        onClick={() => active ? player.pause() : void player.play()}
-      >
-        <Speaker quiet={!active || quiet} />
-        <span className="soundtrack__readout"><span>Audio</span><strong>{status}</strong></span>
-      </button>
+    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active} data-muted={quiet}>
       <details className="soundtrack__settings" ref={details} onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -62,22 +67,29 @@ export function SoundtrackControl() {
           event.currentTarget.querySelector("summary")?.focus();
         }
       }}>
-        <summary aria-label="Ajustes de música" title="Ajustes de música">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
-            <path d="M5 4v6m0 4v6M12 4v10m0 4v2M19 4v2m0 4v10M2 10h6m1 8h6m1-12h6" />
-          </svg>
+        <summary aria-label="Audio" title="Audio">
+          <Speaker quiet={quiet} />
         </summary>
         <div className="soundtrack__panel">
           <div className="soundtrack__heading">
             <span className="soundtrack__signal" aria-hidden="true" />
-            <div><p>Audio del sistema</p><span>{active ? quiet ? "Activo · en silencio" : "Reproduciendo" : "En pausa"}</span></div>
-            <strong>{status}</strong>
+            <div><p>Audio</p><span>{panelStatus}</span></div>
+            <button
+              className="soundtrack__power"
+              type="button"
+              aria-label={active ? "Pausar música" : state.playback === "error" ? "Reintentar música" : "Activar música"}
+              aria-pressed={active}
+              onClick={() => active ? player.pause() : void player.play()}
+            >
+              <PlaybackIcon active={active} />
+              <span className="visually-hidden">{status}</span>
+            </button>
           </div>
           <div className="soundtrack__volume-label"><label htmlFor="soundtrack-volume">Volumen</label><output htmlFor="soundtrack-volume">{Math.round(state.volume * 100)} %</output></div>
           <input id="soundtrack-volume" type="range" min="0" max="100" step="1" value={Math.round(state.volume * 100)}
             onChange={(event) => player.setVolume(Number(event.target.value) / 100)} />
-          <button className="soundtrack__mute" type="button" aria-pressed={state.muted} onClick={() => player.toggleMute()}>
-            <Speaker quiet={quiet} />{state.muted ? "Restaurar sonido" : "Silenciar"}
+          <button className="soundtrack__mute" type="button" aria-pressed={quiet} onClick={() => player.toggleMute()}>
+            <Speaker quiet={quiet} />{quiet ? "Restaurar sonido" : "Silenciar"}
           </button>
         </div>
       </details>

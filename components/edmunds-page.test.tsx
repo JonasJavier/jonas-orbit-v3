@@ -8,7 +8,7 @@ import { EdmundsPage } from "./edmunds-page";
 
 const world = getWorld("edmunds", "es");
 const { artworks, collections } = world.prose.creativity!;
-const caption = () => document.querySelector(".edmunds-gallery__caption")!;
+const caption = () => document.querySelector<HTMLElement>(".edmunds-gallery__caption")!;
 
 describe("Edmunds · cubierta de observación", () => {
   it("conserva el significado, el hobby, la cabecera y los destinos narrativos", () => {
@@ -29,6 +29,9 @@ describe("Edmunds · cubierta de observación", () => {
     expect(collections[0].id).toBe("disenos");
     expect(artworks.filter((art) => art.collection === "disenos")).toHaveLength(12);
     expect(artworks.filter((art) => art.medium === "photo")).toHaveLength(78);
+    const xTecno = artworks.find((art) => art.id === "diseno-x-tecno");
+    expect(xTecno?.prototypeHref).toMatch(/^https:\/\/www\.figma\.com\/proto\//);
+    expect(artworks.filter((art) => art.prototypeHref)).toHaveLength(1);
     expect(new Set(artworks.map((art) => art.id)).size).toBe(artworks.length);
     expect(new Set(artworks.map((art) => art.source)).size).toBe(artworks.length);
     // The archive is ordered sector by sector so the deck reads as one journey;
@@ -81,13 +84,16 @@ describe("Edmunds · cubierta de observación", () => {
     expect(active.srcset.split(",")).toHaveLength(6);
     expect(active.srcset).toContain("-1280.webp 1280w");
     // The deck's sizes mirror the stylesheet: aspect ratio × art height, capped,
-    // times the oversampling factor; the mosaic uses its column widths.
+    // times the oversampling factor; the mosaic derives its own from the height
+    // of a justified row, which is the width left over divided by the aspect
+    // ratios the row carries.
     expect(active.sizes).toContain("calc(1.5 * min(");
     expect(active.sizes).toContain("clamp(260px, 56vh, 620px)");
     expect(active.sizes).toContain("(max-width: 700px)");
     fireEvent.click(screen.getByRole("button", { name: "Mosaico" }));
     const tile = container.querySelector<HTMLImageElement>(".edmunds-artwork img")!;
-    expect(tile.sizes).toContain("25vw");
+    expect(tile.sizes).toContain("/ 4.4)");
+    expect(tile.sizes).toContain("(max-width: 480px)");
     expect(tile.sizes).toContain("(max-width: 700px)");
   });
 
@@ -141,6 +147,46 @@ describe("Edmunds · cubierta de observación", () => {
     }
   });
 
+  it("ofrece el proyecto de X Tecno fuera de la captura y dentro del visor", () => {
+    const proto = HTMLDialogElement.prototype;
+    const original = { showModal: proto.showModal, close: proto.close };
+    proto.showModal = vi.fn(function (this: HTMLDialogElement) { this.setAttribute("open", ""); });
+    proto.close = vi.fn(function (this: HTMLDialogElement) { this.removeAttribute("open"); });
+    try {
+      render(<EdmundsGallery artworks={artworks} collections={collections} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Diseño" }));
+      for (let index = 0; index < 6; index += 1) {
+        fireEvent.click(screen.getByRole("button", { name: "Obra siguiente" }));
+      }
+      expect(caption().querySelector("h2")).toHaveTextContent("X Tecno");
+      expect(within(caption()).getByRole("link", { name: /Ver proyecto en Figma/ })).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^https:\/\/www\.figma\.com\/proto\//),
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Mosaico" }));
+      const card = screen.getByRole("link", { name: "Ampliar: X Tecno" });
+      const figure = card.closest<HTMLElement>("figure");
+      expect(figure).not.toBeNull();
+      expect(within(figure!).getByRole("link", { name: /Ver proyecto en Figma/ })).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^https:\/\/www\.figma\.com\/proto\//),
+      );
+      fireEvent.click(card);
+      const dialog = screen.getByRole("dialog", { name: "Visor de obras" });
+      expect(within(dialog).getByRole("link", { name: /Ver proyecto en Figma/ })).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^https:\/\/www\.figma\.com\/proto\//),
+      );
+      expect(within(dialog).queryByRole("link", { name: /Abrir imagen/ })).not.toBeInTheDocument();
+      fireEvent.click(within(dialog).getByRole("button", { name: "Cerrar" }));
+    } finally {
+      proto.showModal = original.showModal;
+      proto.close = original.close;
+    }
+  });
+
   it("modo cine: los controles se atenúan tras unos segundos quietos y vuelven con cualquier entrada", () => {
     vi.useFakeTimers();
     try {
@@ -170,6 +216,28 @@ describe("Edmunds · cubierta de observación", () => {
     expect(screen.queryByText(/Ejercicios personales/)).not.toBeInTheDocument();
     expect(screen.queryByText("Un valle de roca y nieve vieja bajo un techo de nubes bajas.")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Galería 3D" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("el mosaico corta cada sector en filas y ningún corte queda suelto", () => {
+    const { container } = render(<EdmundsGallery artworks={artworks} collections={collections} />);
+    fireEvent.click(screen.getByRole("button", { name: "Mosaico" }));
+    const lists = [...container.querySelectorAll(".edmunds-gallery[data-view='grid'] .edmunds-artworks")];
+    expect(lists).toHaveLength(7);
+    let cuts = 0;
+    for (const list of lists) {
+      const children = [...list.children];
+      const isCut = (node: Element | undefined) => node?.classList.contains("edmunds-mosaic-cut") ?? false;
+      // Un corte al principio, al final o pegado a otro sería una fila vacía.
+      expect(isCut(children[0])).toBe(false);
+      expect(isCut(children[children.length - 1])).toBe(false);
+      children.forEach((node, index) => {
+        if (!isCut(node)) return;
+        cuts += 1;
+        expect(isCut(children[index + 1])).toBe(false);
+        expect(node.getAttribute("data-at")?.split(" ").every((band) => ["xl", "lg", "md", "sm", "xs"].includes(band))).toBe(true);
+      });
+    }
+    expect(cuts).toBeGreaterThan(lists.length);
   });
 
   it("A14: admite un archivo vacío", () => {

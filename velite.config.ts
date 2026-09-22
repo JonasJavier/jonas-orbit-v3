@@ -102,6 +102,8 @@ const worldProse = defineCollection({
           caption: s.string(),
           collection: s.string(),
           medium: s.enum(["photo", "poster", "composite", "editorial", "interface"]),
+          /** Enlace opcional al prototipo vivo de una pieza de interfaz. */
+          prototypeHref: s.string().regex(/^https:\/\/www\.figma\.com\/proto\//).optional(),
           source: s.string(),
           width: s.number().positive(),
           height: s.number().positive(),

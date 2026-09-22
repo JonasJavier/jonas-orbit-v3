@@ -30,6 +30,33 @@ test("Edmunds: cabecera, sectores, mosaico, imágenes reales y rutas", async ({ 
   // nothing but the sector's name as a label.
   await expect(page.locator(".edmunds-group__label")).toHaveText(["Diseño", "Horizontes", "De cerca", "Criaturas", "Retratos", "Invierno", "Después del sol"]);
   await expect(page.getByText("Ejercicios personales.")).toHaveCount(0);
+  // Y lo reparte en filas justificadas: cada fila llega al canto derecho y
+  // todas las obras de una fila miden lo mismo de alto. Un solo píxel de
+  // holgura ya sería el hueco que las columnas dejaban a puñados.
+  const mosaic = await page.evaluate(() => {
+    let slack = 0;
+    let uneven = 0;
+    let rows = 0;
+    for (const list of document.querySelectorAll(".edmunds-gallery[data-view='grid'] .edmunds-artworks")) {
+      const edge = list.getBoundingClientRect().right;
+      const lines = new Map<number, HTMLElement[]>();
+      for (const work of list.querySelectorAll<HTMLElement>(".edmunds-artwork")) {
+        const top = Math.round(work.getBoundingClientRect().top);
+        lines.set(top, [...(lines.get(top) ?? []), work]);
+      }
+      for (const line of lines.values()) {
+        rows += 1;
+        slack = Math.max(slack, edge - Math.max(...line.map((work) => work.getBoundingClientRect().right)));
+        const heights = line.map((work) => work.querySelector("img")!.getBoundingClientRect().height);
+        uneven = Math.max(uneven, Math.max(...heights) - Math.min(...heights));
+      }
+    }
+    return { rows, slack, uneven, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+  });
+  expect(mosaic.rows).toBeGreaterThan(7);
+  expect(mosaic.slack).toBeLessThan(1.5);
+  expect(mosaic.uneven).toBeLessThan(1.5);
+  expect(mosaic.overflow).toBeLessThanOrEqual(0);
   const neighbours = page.getByRole("navigation", { name: "Destinos contiguos" });
   await expect(neighbours.locator("a").first()).toHaveAttribute("href", "/es/proyectos");
   await expect(neighbours.locator("a").last()).toHaveAttribute("href", "/es/experimentos");
@@ -167,6 +194,66 @@ test("A14: un 404 en el visor permite reintentar y seguir explorando", async ({ 
   await expect.poll(() => dialog.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await dialog.getByRole("button", { name: "Siguiente en el visor" }).click();
   await expect(dialog.locator("figcaption")).toHaveText("Fuego de campamento");
+});
+
+test("Edmunds: con reduced-motion del sistema, las flechas giran el anillo como el arrastre", async ({ page }) => {
+  // El movimiento lo decide UN interruptor, no el sistema operativo. La regla
+  // general de `prefers-reduced-motion` de globals.css aplasta con
+  // `!important` la duración de toda transición, y la cubierta entera se mueve
+  // con UNA: por eso el arrastre —escrituras directas de `--drag`, sin
+  // transición— seguía perfecto y las flechas daban un corte seco.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/es/creatividad");
+  const stage = page.locator(".edmunds-stage");
+  await expect(stage).toBeVisible();
+  expect(await stage.evaluate((node) => getComputedStyle(node).transitionDuration)).toBe("0.95s");
+  // Las cuatro vías pasan por `go()`: flecha, tecla, salto de sector y centrar
+  // una obra lateral. Cada una deja UNA transición de 950 ms sobre `--drag`.
+  const turn = await stage.evaluate((node) => {
+    const press = (label: string) => document.querySelector<HTMLButtonElement>(`.edmunds-gallery__foot button[aria-label="${label}"]`)!.click();
+    const read = () => {
+      const animation = node.getAnimations().find((item) => (item as CSSTransition).transitionProperty === "--drag") as CSSTransition | undefined;
+      const effect = animation?.effect as KeyframeEffect | undefined;
+      return effect ? { duration: effect.getComputedTiming().duration, keyframes: effect.getKeyframes().map((frame) => (frame as unknown as Record<string, unknown>)["--drag"]) } : null;
+    };
+    press("Obra siguiente");
+    const next = read();
+    press("Obra anterior");
+    return { next, previous: read() };
+  });
+  expect(turn.next).toEqual({ duration: 950, keyframes: ["1", "0"] });
+  expect(turn.previous).toEqual({ duration: 950, keyframes: ["-1", "0"] });
+  // Y el anillo llega a su sitio: `--drag` vuelve a cero, como al soltar.
+  await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: 3000 }).toBeLessThan(0.01);
+  // La misma regla dejaba sin movimiento el resto de la cubierta: el cielo, la
+  // obra que entra y el paralaje. Se restauran uno a uno porque no hay forma de
+  // decir «vuelve a lo que escribió el autor» por encima de un `!important`.
+  const deck = await page.evaluate(() => {
+    const read = (selector: string) => {
+      const style = getComputedStyle(document.querySelector(selector)!);
+      return `${style.animationDuration} / ${style.animationIterationCount}`;
+    };
+    return {
+      aurora: read(".edmunds-deck__aurora"),
+      dust: read(".edmunds-deck__dust"),
+      bright: read(".edmunds-deck__stars--bright"),
+      entering: getComputedStyle(document.querySelector(".edmunds-artwork figure")!).animationDuration,
+      parallax: getComputedStyle(document.querySelector(".edmunds-deck")!).transitionDuration,
+    };
+  });
+  expect(deck).toEqual({
+    aurora: "26s / infinite",
+    dust: "48s / infinite",
+    bright: "5.5s / infinite",
+    entering: "0.9s",
+    parallax: "0.45s",
+  });
+  // Y las dos capas de profundidad usan el mosaico propio de la cubierta, no el
+  // de la navbar. La tercera —`--bright`— no: son doce estrellas en degradados,
+  // cada una con su centelleo.
+  const tiles = await page.locator(".edmunds-deck__stars:not(.edmunds-deck__stars--bright)").evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).backgroundImage));
+  expect(tiles).toHaveLength(2);
+  expect(tiles.every((image) => image.includes("edmunds-night-stars.svg"))).toBe(true);
 });
 
 test("Edmunds: con el movimiento apagado conserva el archivo, evita transiciones y nunca atenúa los controles", async ({ page }) => {
