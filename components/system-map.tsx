@@ -9,6 +9,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import type { WorldId } from "@/content/worlds.data";
+import { MAP_HOVER_MODE, type MapHoverMode } from "@/lib/map-hover";
 import { projectPlacement } from "@/lib/system-map";
 import { flatCompositionFor } from "@/lib/flat-composition";
 import {
@@ -66,19 +67,43 @@ function interactionVolumeFor(world: WorldNavItem): InteractionVolume {
  * progresiva sin duplicar las seis paradas de teclado. Ambos comparten un solo
  * estado y la misma costura de navegación. El canvas nunca crea UI.
  */
-export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
+export function SystemMap({
+  worlds,
+  /* Cuál de las dos respuestas al puntero corre. Es propiedad y no sólo
+     constante para que los tests recorran las dos: un camino apagado que nadie
+     ejecuta se pudre en silencio, y éste está apagado a propósito. */
+  hoverMode = MAP_HOVER_MODE,
+}: {
+  worlds: readonly WorldNavItem[];
+  hoverMode?: MapHoverMode;
+}) {
   const mapRef = useRef<HTMLElement>(null);
   const navigateToWorld = useWorldNavigation();
   const [pointerTarget, setPointerTarget] = useState<WorldId | null>(null);
   const [focusTarget, setFocusTarget] = useState<WorldId | null>(null);
   const [lockedTarget, setLockedTarget] = useState<WorldId | null>(null);
 
-  const activeWorldId = lockedTarget ?? focusTarget ?? pointerTarget;
-  const navigationState: WorldNavigationState = lockedTarget
-    ? "locked"
-    : activeWorldId
-      ? "target"
-      : "idle";
+  /*
+    LA MISMA SEÑAL, DOS LECTURAS. Ver `lib/map-hover.ts`.
+
+    Apuntar y enfocar se recogen igual en los dos modos —es el mismo evento del
+    mismo enlace— y lo único que cambia es a dónde va la señal. En
+    `instrumento` alimenta `navigationState`, que es lo que encienden las
+    escuadras, el HUD, el raíl y el tinte del cuerpo. En `sencillo` ese estado
+    se queda en `idle` para todo el mundo y la señal sale por un canal aparte,
+    `hoveredWorldId`, que sólo ve el slot apuntado.
+
+    Se hace así y no quitando los manejadores porque el estado bloqueado tiene
+    que seguir existiendo: `activate` lo escribe antes de navegar y la travesía
+    lo lee. Lo que se apaga es lo que se PINTA con él.
+  */
+  const instrument = hoverMode === "instrumento";
+  const activeWorldId = instrument
+    ? (lockedTarget ?? focusTarget ?? pointerTarget)
+    : null;
+  const hoveredWorldId = instrument ? null : (focusTarget ?? pointerTarget);
+  const navigationState: WorldNavigationState =
+    !instrument || !activeWorldId ? "idle" : lockedTarget ? "locked" : "target";
 
   /*
    * Instrumentación de desarrollo deliberadamente DOM-only. No crea geometría,
@@ -164,12 +189,14 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
             const hitbox = interactionVolumeFor(world);
             const itemState =
               world.id === activeWorldId ? navigationState : "idle";
+            const hovered = world.id === hoveredWorldId;
 
             return (
               <li
                 key={world.id}
                 className="system-map__slot"
                 data-centre={isCentre ? "true" : undefined}
+                data-map-hover={hovered ? "true" : undefined}
                 data-flat-visual={world.visual}
                 data-flat-side={
                   isCentre ? "centre" : point.x < 50 ? "left" : "right"
@@ -219,7 +246,16 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                 {world.id === "gargantua" ? null : (
                   <FlatWorldBody world={world} />
                 )}
-                <span className="system-map__target-brackets" aria-hidden="true" />
+                {/* Las escuadras son del modo instrumento y sólo existen
+                    ahí. El modo sencillo no pone NADA en su lugar: su
+                    respuesta es el trazo que ya vive bajo el rótulo. Ver
+                    `lib/map-hover.ts`. */}
+                {instrument ? (
+                  <span
+                    className="system-map__target-brackets"
+                    aria-hidden="true"
+                  />
+                ) : null}
                 <Link
                   aria-hidden="true"
                   className="system-map__hit-target"
@@ -229,6 +265,7 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
                   data-hitbox-proxy={world.id}
                   data-world={world.id}
                   data-system-body={world.id}
+                  data-map-hover={hovered ? "true" : undefined}
                   data-target-state={itemState}
                   onPointerEnter={() => acquire(world.id)}
                   onPointerLeave={() => release(world.id)}
@@ -263,6 +300,7 @@ export function SystemMap({ worlds }: { worlds: readonly WorldNavItem[] }) {
 
         <NavRail
           activeWorldId={activeWorldId}
+          hoveredWorldId={hoveredWorldId}
           navigationState={navigationState}
           onActivate={activate}
           onFocusAcquire={focusOn}

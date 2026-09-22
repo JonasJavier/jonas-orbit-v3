@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
 import { useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
+import { MAP_HOVER_MODE } from "@/lib/map-hover";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVoyageDeparture, subscribeVoyage } from "@/lib/voyage-controller";
@@ -361,7 +362,23 @@ function bindLabels(getHandle: () => SceneHandle | null): LabelBinding {
   }
 
   const teardown: Array<() => void> = [];
-  for (const [id, group] of focusable) {
+  /*
+    EL TINTE DE FOCO ES DEL MODO INSTRUMENTO (2026-09-21).
+
+    `setFocus` no sólo tiñe el cuerpo: también CONGELA el paralaje mientras
+    dura la adquisición (§12 de endurance-navigation-interface). Las dos cosas
+    son la respuesta a adquirir un blanco, así que las dos se van con el modo
+    sencillo, que responde con un aro y un nombre y deja el sistema
+    respirando. Ver `lib/map-hover.ts`.
+
+    Se apaga aquí, en el cableado, y no dentro de `setFocus`: la escena tiene
+    que seguir sabiendo enfocar, porque el clic y la travesía lo usan.
+  */
+  const focusWiring =
+    MAP_HOVER_MODE === "instrumento"
+      ? focusable
+      : new Map<string, HTMLElement[]>();
+  for (const [id, group] of focusWiring) {
     for (const node of group) {
       const enter = () => getHandle()?.setFocus(id as WorldId);
       const leave = () => getHandle()?.setFocus(null);

@@ -201,7 +201,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     llegara a tardar de verdad quince segundos, seguiría fallando.
   */
   it("todo el volumen conceptual —centro y cuatro bordes— adquiere target", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
     const samplePoints = [
       { clientX: 50, clientY: 50 },
       { clientX: 0, clientY: 50 },
@@ -236,7 +236,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("hover despierta HUD, raíl y brackets sólo para el destino apuntado", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const endurance = within(map).getByRole("link", {
       name: /^Proyectos Endurance$/i,
@@ -272,7 +272,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("focus de teclado produce el mismo TARGET sin depender de glow", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
     const miller = screen.getByRole("link", {
       name: /^Formación Miller$/i,
     });
@@ -297,7 +297,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("clic principal bloquea el destino y navega por la abstracción", () => {
     vi.useFakeTimers();
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
     const endurance = screen.getByRole("link", {
       name: /^Proyectos Endurance$/i,
     });
@@ -319,6 +319,107 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     vi.advanceTimersByTime(SHORT_PUSH_MS);
     expect(routerPush).toHaveBeenCalledTimes(1);
     expect(routerPush).toHaveBeenCalledWith("/es/proyectos");
+  });
+
+  /*
+    EL MODO SENCILLO, que es el que corre por defecto desde el 2026-09-21.
+
+    Estos cuatro no duplican los de arriba: comprueban lo CONTRARIO. Lo que un
+    modo enciende, el otro tiene que dejar apagado, y la única forma de que eso
+    no se rompa en silencio es que las dos listas estén escritas. Ver
+    `lib/map-hover.ts`.
+  */
+  it("sencillo · apuntar marca el slot y no enciende el panel de adquisición", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const map = screen.getByRole("navigation", { name: MAP_LABEL });
+    const endurance = within(map).getByRole("link", {
+      name: /^Proyectos Endurance$/i,
+    });
+
+    fireEvent.pointerEnter(endurance);
+
+    const slot = container.querySelector('[data-map-world="endurance"]');
+    const proxy = container.querySelector('[data-hitbox-proxy="endurance"]');
+    expect(slot).toHaveAttribute("data-map-hover", "true");
+    expect(proxy).toHaveAttribute("data-map-hover", "true");
+
+    // Y nada de lo del otro modo: ni escuadras, ni HUD, ni raíl.
+    expect(proxy).toHaveAttribute("data-target-state", "idle");
+    expect(slot?.querySelector(".system-map__target-brackets")).toBeNull();
+    const target = container.querySelector(".hud__target");
+    expect(target).toHaveAttribute("data-target-state", "idle");
+    expect(target).not.toHaveTextContent(/Target lock/i);
+    expect(
+      container.querySelector('.nav-rail__item[data-target-state="target"]'),
+    ).toBeNull();
+
+    fireEvent.pointerLeave(endurance);
+    expect(slot).not.toHaveAttribute("data-map-hover");
+  });
+
+  it("sencillo · el foco de teclado responde igual que el puntero", () => {
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const miller = screen.getByRole("link", { name: /^Formación Miller$/i });
+
+    fireEvent.focus(miller);
+    expect(container.querySelector('[data-map-world="miller"]')).toHaveAttribute(
+      "data-map-hover",
+      "true",
+    );
+    expect(
+      container.querySelector('.nav-rail__item[data-map-hover="true"]'),
+    ).not.toBeNull();
+
+    fireEvent.blur(miller);
+    expect(
+      container.querySelector('[data-map-world="miller"][data-map-hover]'),
+    ).toBeNull();
+  });
+
+  it("sencillo · el clic sigue navegando aunque el bloqueo no se pinte", () => {
+    vi.useFakeTimers();
+    const { container } = render(<SystemMap worlds={worlds} />);
+    const endurance = screen.getByRole("link", {
+      name: /^Proyectos Endurance$/i,
+    });
+
+    fireEvent.click(endurance, { button: 0 });
+
+    /* El estado bloqueado se sigue escribiendo —la travesía lo necesita— y lo
+       único que cambia es que nadie lo pinta. Si algún día se borra el estado
+       en vez de dejar de pintarlo, esto cae. */
+    expect(endurance).toHaveAttribute("data-target-state", "idle");
+    expect(container.querySelector(".hud__target")).not.toHaveTextContent(
+      /Target locked/i,
+    );
+    expect(document.documentElement.dataset.voyageWorld).toBe("endurance");
+
+    vi.advanceTimersByTime(SHORT_PUSH_MS);
+    expect(routerPush).toHaveBeenCalledWith("/es/proyectos");
+  });
+
+  it("el modo sencillo no añade ni un nodo al cuadro", () => {
+    /*
+      Es la regla del pase y por eso se prueba: la respuesta sencilla NO dibuja
+      nada encima del cuerpo —ni escuadras ni aro, que fue el primer intento y
+      el dueño lo rechazó—. Lo único que usa es el trazo que ya cuelga del
+      rótulo, que está en el marcado en los dos modos.
+    */
+    const sencillo = render(<SystemMap worlds={worlds} />);
+    expect(
+      sencillo.container.querySelectorAll(".system-map__target-brackets"),
+    ).toHaveLength(0);
+    expect(
+      sencillo.container.querySelectorAll(".system-map__label"),
+    ).toHaveLength(worlds.length);
+    sencillo.unmount();
+
+    const instrumento = render(
+      <SystemMap worlds={worlds} hoverMode="instrumento" />,
+    );
+    expect(
+      instrumento.container.querySelectorAll(".system-map__target-brackets"),
+    ).toHaveLength(worlds.length);
   });
 
   it("G9 · una tecla durante la travesía pide la ruta al instante", () => {
@@ -360,7 +461,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("el proxy visual comparte lock y respeta clicks modificados", () => {
     vi.useFakeTimers();
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
     const millerProxy = container.querySelector<HTMLElement>(
       '[data-hitbox-proxy="miller"]',
     );

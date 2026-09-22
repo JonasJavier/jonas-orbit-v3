@@ -473,12 +473,18 @@ vec3 skySample(vec3 dir, float lensing, float clearance) {
     que el núcleo de cada banco conserva su color y lo que se va es la falda:
     dejan de ser dos medias pantallas y pasan a ser dos manchas contra el
     canto, que es lo que significa «notas después de mirar unos segundos».
+
+    Y el banco DERECHO encoge otra vez, a petición suya y sólo él: 0.195/0.165
+    → 0.118/0.100, que es otro 0.61 sobre el anterior. Los dos bancos dejan de
+    ser simétricos en tamaño a propósito — el azul le gusta como está y el
+    morado venía siendo el elemento más presente del cielo desde el principio,
+    así que es el único que sigue cediendo.
   */
   float filament = pow(max(0.0, gas - 0.26), 1.7);
   vec2 leftOffset = vec2((dir.x + 0.38) / 0.185,
                          (dir.y - 0.03 + dir.x * 0.25) / 0.145);
-  vec2 rightOffset = vec2((dir.x - 0.42) / 0.195,
-                          (dir.y + 0.30 - dir.x * 0.2) / 0.165);
+  vec2 rightOffset = vec2((dir.x - 0.42) / 0.118,
+                          (dir.y + 0.30 - dir.x * 0.2) / 0.100);
   // pow(x, 2.0) is undefined for negative x in GLSL. Squared lengths are not.
   float leftBank = exp(-dot(leftOffset, leftOffset));
   float rightBank = exp(-dot(rightOffset, rightOffset));

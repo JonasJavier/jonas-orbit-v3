@@ -28,6 +28,7 @@ import type {
 export function NavRail({
   worlds,
   activeWorldId,
+  hoveredWorldId,
   navigationState,
   onPointerAcquire,
   onPointerRelease,
@@ -37,6 +38,10 @@ export function NavRail({
 }: {
   worlds: readonly WorldNavItem[];
   activeWorldId: WorldId | null;
+  /* El modo sencillo no enciende el raíl (ver `lib/map-hover.ts`), pero la
+     entrada apuntada sí se marca: sin eso, apuntar un nombre de la lista no
+     tendría ninguna respuesta y el raíl dejaría de parecer pulsable. */
+  hoveredWorldId: WorldId | null;
   navigationState: WorldNavigationState;
   /* Soltar lleva el id, no `null`: quien deja un destino sólo puede apagar ESE
      destino. Ver la nota de `release` en system-map.tsx — el orden de
@@ -60,6 +65,7 @@ export function NavRail({
           <li
             key={world.id}
             className="nav-rail__item"
+            data-map-hover={world.id === hoveredWorldId ? "true" : undefined}
             data-target-state={itemState}
           >
             <Link

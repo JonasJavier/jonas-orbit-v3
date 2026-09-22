@@ -394,3 +394,114 @@ N del viewport*, más la contraparte: que el atlas plano sigue componiéndose
 dentro de la columna. Verificado que discrimina — con la regla anterior,
 `.system-map` mide [224, 0, 1472, 1080] a 1920 y un destino puesto en x = 1574
 aterriza en 1798.
+
+## 14. Dos respuestas al puntero (2026-09-21)
+
+Manda sobre §6, §7 y §12 en **qué ocurre al apuntar un destino**. No toca el
+volumen de interacción, ni el orden del raíl, ni el marco del overlay, ni la
+navegación: el clic sigue haciendo exactamente lo mismo y los seis enlaces
+siguen siendo seis enlaces. Lo que cambia es la RESPUESTA.
+
+Lo pidió el dueño: «quiero probar quitar el target lock y esos efectos de
+hover, puedes guardarlo no lo elimines simplemente quiero desactivarlo y
+agregar algún hover o algo sencillo pero bonito». Las dos mitades importan: la
+prueba y la reversibilidad.
+
+### Lo que hacía apuntar un planeta
+
+Seis cosas a la vez, todas colgando del mismo `data-target-state`:
+
+1. las escuadras de adquisición sobre la silueta, medidas con el radio que
+   publica el proyector 3D;
+2. el nombre cósmico **y** la etiqueta de contenido, desplegados;
+3. la lectura del HUD, de `SELECT TARGET` al nombre y, al pulsar, a
+   `TARGET LOCKED`;
+4. la entrada del raíl, resaltada con su acento;
+5. el tinte de foco del cuerpo en WebGL (`setFocus` → `uFocus`), que además
+   **congela el paralaje** mientras dura la adquisición (§12);
+6. el retículo del puntero, que abre sus arcos.
+
+Ninguna sobraba por sí sola. Lo que sobra es que sean seis, y que un gesto tan
+barato como pasar el ratón por encima encienda un procedimiento.
+
+### Lo que hace ahora
+
+**Su nombre cósmico**, que sube dos píxeles y aparece, con **el trazo de 1 px
+bajo el rótulo dibujándose** desde el lado del cuerpo hacia fuera. Y nada más.
+
+El HUD no cambia, el cuerpo no se tiñe, el paralaje no se congela y el estado
+bloqueado deja de pintarse. El raíl conserva su revelado —apuntar «Proyectos»
+sigue descubriendo «Endurance», que es lo que le da sentido a la lista según
+§6— y gana una línea fina bajo el nombre.
+
+**El modo sencillo no añade ni un nodo al cuadro, y ésa es la versión buena.**
+La primera fue un aro de 1 px alrededor del cuerpo, colgado del radio que
+publica el proyector, y el dueño la rechazó nada más verla: «no me gusta el
+aro, puede ser otra cosa más simple». Tenía razón por un motivo que ya estaba
+escrito en la hoja, en la nota que retiró el marcador con la escena viva:
+**no hace falta dibujar un círculo de interfaz encima de un cuerpo iluminado
+de verdad**, y menos uno cuyo diámetro respira con la órbita. El aro repetía
+el mismo error con otra forma. (De la versión descartada queda una cosa útil
+por si alguien vuelve a intentarlo: un aro por ejes SE SALE de la silueta,
+porque la caja de impacto de la Endurance es un tercio más ancha que alta y
+le cortaba los módulos; hay que tomar `max()` de las dos mitades.)
+
+Lo que se usa en su lugar ya estaba en el archivo, escrito, probado y
+**muerto**: el trazo de `.system-map__label::after`, «el único elemento que
+aparece al apuntar, y aparece dibujándose — un gesto, no un contenedor». Sólo
+se encendía con `.system-map__body:hover`, y ese `:hover` no llega nunca desde
+que el blanco de pulsación se mudó al proxy y el rótulo se quedó con
+`pointer-events: none`. Es el tipo de regla que sobrevive meses sin que nadie
+note que no hace nada, porque su ausencia no rompe nada.
+
+**Gargantúa recupera su nombre al apuntarla.** Su propio bloque lo dice desde
+que se escribió —«el nombre aparece al apuntarlo, como en cualquier otro
+cuerpo»— y no ocurría: la regla que lo oculta en reposo lleva un atributo más
+que la que lo encendía, así que ganaba siempre. Con el modo sencillo eso
+dejaba al centro sin ninguna respuesta.
+
+### Y la cruz que flotaba bajo el disco
+
+El dueño la reportó como un artefacto —«hay un signo de más volando por ahí»—
+y lo era, aunque llevaba meses ahí. Con la escena viva los seis marcadores se
+esconden (`display: none`) salvo el de Gargantúa, que una regla devuelve
+diciendo, literalmente, «la marca que sí se queda: el punto del marcador, sin
+su aro». Quita el aro con `border-color: transparent`… y las cuatro barras del
+marcador no son borde: son cuatro `linear-gradient` de fondo, escritos por una
+regla **posterior** a ésa. Resultado: la única marca que la escena viva dejaba
+en el cuadro era un signo de más de 14 px flotando bajo el disco.
+
+La posición era correcta —bajo el borde del disco, que es donde su bloque dice
+que va— y lo que estaba mal era el glifo. Se apaga el fondo y queda el
+`::after`: el punto de 3 px que ese bloque lleva describiendo desde el
+principio. Es un caso puro de **dos reglas escritas en momentos distintos que
+se contradicen sin que ninguna esté equivocada por sí sola**, y por eso no lo
+cazó nadie leyendo.
+
+### Cómo se apaga y se enciende
+
+`lib/map-hover.ts` tiene **una** constante, `MAP_HOVER_MODE`, con dos valores:
+`instrumento` y `sencillo`. Nada se ha borrado — las escuadras, el cableado del
+tinte y las reglas del HUD siguen en su sitio detrás de una condición.
+
+`SystemMap` lo acepta además como propiedad (`hoverMode`), y eso no es
+comodidad de tests: **es lo que impide que el camino apagado se pudra mientras
+está apagado**. Los cinco tests que ejercían la adquisición siguen ejercitando
+la adquisición, pasándola a mano; cuatro nuevos comprueban el modo sencillo, y
+el último comprueba lo que nunca hay que dar por supuesto en un interruptor de
+dos posiciones: **que los dos caminos son excluyentes en el DOM** —seis aros y
+cero escuadras, o al revés—.
+
+Y uno de esos cuatro comprueba algo que parece un detalle y es el contrato:
+**el estado bloqueado se sigue escribiendo, lo que se apaga es quien lo
+pinta**. `activate` lo necesita y la travesía lo lee. Si algún día alguien
+«limpia» el modo sencillo borrando el estado en vez de dejar de dibujarlo, ese
+test cae.
+
+### Lo que NO se ha tocado, y hay que decirlo
+
+**El retículo del puntero sigue abriendo sus arcos sobre un cuerpo.** Es la
+sexta de la lista de arriba y se ha dejado a propósito: vive en `PointerLife`,
+tiene su propia historia de aprobación (§11 bis y §14 nonies de la dirección
+del hero) y es la única respuesta que queda en el propio cursor. Apagarlo es
+una condición más en el mismo interruptor si el dueño lo quiere fuera.

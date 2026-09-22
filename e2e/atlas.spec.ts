@@ -60,10 +60,14 @@ test("rail explains content at rest and reveals the world on focus", async ({ pa
   await expect(projects.locator(".nav-rail__name")).toHaveText("Proyectos", { ignoreCase: true });
   await expect(projects.locator(".nav-rail__role")).toHaveCSS("opacity", "0");
   await projects.focus();
-  await expect(projects).toHaveAttribute("data-target-state", "target");
+  /* El modo de hover por defecto es `sencillo` desde el 2026-09-21 (ver
+     lib/map-hover.ts): el raíl marca la entrada apuntada y NO enciende el
+     panel de adquisición. Lo que este test protege es que el nombre cósmico
+     siga apareciendo al enfocar, que es lo que le da sentido al raíl. */
+  await expect(projects.locator("..")).toHaveAttribute("data-map-hover", "true");
+  await expect(projects).toHaveAttribute("data-target-state", "idle");
   await expect(projects.locator(".nav-rail__role")).toHaveText("Endurance", { ignoreCase: true });
   await expect(projects.locator(".nav-rail__role")).toHaveCSS("opacity", "0.95");
-  await expect(page.locator(".hud__target-name")).toHaveText("Endurance", { ignoreCase: true });
   await projects.press("Enter");
   await expect(page).toHaveURL(/\/es\/proyectos$/);
 });
