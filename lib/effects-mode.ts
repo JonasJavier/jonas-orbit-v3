@@ -196,6 +196,31 @@ export function useForcedEffects() {
 }
 
 /**
+ * Encendido PEDIDO: el visitante pulsó el icono (o entró por `?no3d=0`, que se
+ * guarda igual). Es la única lectura que deja montar la escena en un equipo
+ * que el gate de capacidad desaconseja —GPU por software, red 2G, 2 GB—;
+ * el encendido por defecto supera reduced-motion, no a la máquina
+ * (`explicit` en components/scene/capability.ts).
+ */
+export function resolveExplicitEffects(
+  search: string,
+  stored: string | null,
+): boolean {
+  const fromUrl = readLightEffectsParam(search);
+  if (fromUrl !== null) return !fromUrl;
+  return stored === "false";
+}
+
+function getExplicitSnapshot() {
+  if (typeof window === "undefined") return false;
+  return resolveExplicitEffects(window.location.search, readStored(STORAGE_KEY));
+}
+
+export function useExplicitEffects() {
+  return useSyncExternalStore(subscribe, getExplicitSnapshot, () => false);
+}
+
+/**
  * Las rutas son estáticas (SSG), así que el servidor nunca ve el parámetro: la
  * instantánea de servidor es siempre `false` y `useSyncExternalStore` re-renderiza
  * tras la hidratación sin provocar mismatch (mismo patrón que reduced-motion).

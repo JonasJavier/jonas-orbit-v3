@@ -79,25 +79,29 @@ test("hero cerrado, seis estados, foco, visor por teclado y carruseles", async (
   }
   await navLink(page, "lo-que-disfruto").click();
   await expect(page.locator(".about-taste details")).toHaveCount(0);
-  await expect(page.locator("#about-shelf-music > li")).toHaveCount(10);
-  const track = page.locator("#about-shelf-music");
-  await page
-    .getByRole("button", { name: "Selección de música: siguientes" })
-    .click();
+  await expect(page.locator("#about-shelf-music > li")).toHaveCount(18);
+  await expect(page.locator(".about-shelf button")).toHaveCount(0);
+  // A keyboard user gets an ordinary scroller: the drift and the copy leave.
+  const music = page.locator('.about-shelf[data-group="music"]');
+  await page.locator("#about-shelf-music a").first().focus();
+  for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
+  await expect(music.locator(".about-marquee")).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+  await expect(music.locator(".about-shelf-copy")).toBeHidden();
+  await expect(page.locator("#about-shelf-music li:nth-child(9) a")).toBeFocused();
+  const viewport = music.locator(".about-shelf-viewport");
   await expect
-    .poll(() => track.evaluate((el) => el.scrollLeft))
-    .toBeGreaterThan(10);
-  await page
-    .getByRole("button", { name: "Selección de música: anteriores" })
-    .click();
-  await expect
-    .poll(() => track.evaluate((el) => el.scrollLeft))
-    .toBeLessThan(3);
-  await track.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect
-    .poll(() => track.evaluate((el) => el.scrollLeft))
+    .poll(() => viewport.evaluate((el) => el.scrollLeft))
     .toBeGreaterThan(0);
+  expect(
+    await viewport.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const focus = document.activeElement!.getBoundingClientRect();
+      return focus.left >= box.left - 1 && focus.right <= box.right + 1;
+    }),
+  ).toBe(true);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     /\/es\/sobre-mi$/,
@@ -134,48 +138,54 @@ test("enlaces directos, recarga, atrás/adelante y hash desconocido", async ({
   await expect(current(page)).toHaveCount(0);
 });
 
-test("carrusel automático visible, pausa al leer y control global de movimiento", async ({
+test("cintas automáticas: avanzan con reduced-motion, pausa al pasar y interruptor global", async ({
   page,
 }) => {
-  test.setTimeout(65_000);
+  // The owner browses with reduced motion: the switch is the consent.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await openPage(page, "#lo-que-disfruto");
-  const track = page.locator("#about-shelf-music");
-  const x = () => track.evaluate((el) => el.scrollLeft);
-  const show = async () => {
-    await track.evaluate((el) =>
-      el.scrollIntoView({ block: "center", behavior: "instant" }),
-    );
-    await page.mouse.move(0, 0);
-  };
   await page
     .getByRole("button", { name: "Activar movimiento", exact: true })
     .click();
-  await show();
-  await expect.poll(x, { timeout: 9000 }).toBeGreaterThan(100);
-  await track.hover();
+  const shelf = page.locator('.about-shelf[data-group="music"]');
+  const marquee = shelf.locator(".about-marquee");
+  const x = () =>
+    marquee.evaluate(
+      (el) => new DOMMatrix(getComputedStyle(el).transform).m41,
+    );
+  // Headless Chromium only advances animations while something paints.
+  const settle = async (ms: number) => {
+    for (let t = 0; t < ms; t += 250) {
+      await page.screenshot({ clip: { x: 0, y: 0, width: 8, height: 8 } });
+      await page.waitForTimeout(250);
+    }
+  };
+  await shelf.evaluate((el) =>
+    el.scrollIntoView({ block: "center", behavior: "instant" }),
+  );
+  await page.mouse.move(0, 0);
+  await expect(marquee).toHaveCSS("animation-iteration-count", "infinite");
+  await expect(shelf.locator(".about-shelf-copy")).toBeVisible();
+  const start = await x();
+  await settle(1500);
+  expect(await x()).toBeLessThan(start - 20);
+  await expect(
+    page.locator('.about-shelf[data-group="stories"] .about-marquee'),
+  ).toHaveCSS("animation-direction", "reverse");
+  await shelf.hover();
   const hovered = await x();
-  await page.waitForTimeout(6000);
+  await settle(1500);
   expect(await x()).toBeCloseTo(hovered, 0);
   await page.mouse.move(0, 0);
-  await track.focus();
-  await page.locator("#enjoy-title").focus();
-  const focused = await x();
-  await page.waitForTimeout(6000);
-  expect(await x()).toBeCloseTo(focused, 0);
   await page
     .getByRole("button", { name: "Desactivar movimiento", exact: true })
     .click();
-  await show();
-  const off = await x();
-  await page.waitForTimeout(6000);
-  expect(await x()).toBeCloseTo(off, 0);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page
-    .getByRole("button", { name: "Activar movimiento", exact: true })
-    .click();
-  await show();
-  await page.waitForTimeout(6000);
-  expect(await x()).toBeCloseTo(off, 0);
+  await expect(marquee).toHaveCSS("animation-name", "none");
+  await expect(shelf.locator(".about-shelf-copy")).toBeHidden();
+  await expect(shelf.locator(".about-shelf-viewport")).toHaveCSS(
+    "overflow-x",
+    "auto",
+  );
 });
 
 test("transición discreta, selección rápida y reduced-motion incluso con interruptor encendido", async ({
@@ -290,7 +300,7 @@ test("sin JavaScript: selector, un solo capítulo, hashes y fotos reales", async
   await page.locator('.about-node[href="#como-soy"]').click();
   await expect(current(page)).toHaveCount(1);
   await expect(
-    page.getByText(/Mi fe también ocupa un lugar importante/),
+    page.getByText(/Mi fe ocupa un lugar importante/),
   ).toBeVisible();
   await navLink(page, "lo-que-disfruto").click();
   await expect(current(page)).toHaveAttribute("id", "lo-que-disfruto");

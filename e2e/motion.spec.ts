@@ -35,6 +35,14 @@ test("movimiento: la portada arranca activa incluso con reduced-motion", async (
   await expect(page.getByRole("button", { name: "Desactivar movimiento", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
   await expect(page.locator("html")).toHaveAttribute("data-effects-forced", "true");
+  // Reduced-motion ya no decide la escena. Aquí no hay GPU —Chromium dibuja
+  // con SwiftShader—, así que el gate responde por el equipo y no por la
+  // preferencia: el encendido por defecto no monta el raymarch en un
+  // rasterizador por software (components/scene/capability.ts, `explicit`).
+  await expect(page.locator("html")).toHaveAttribute("data-scene-reason", /.+/);
+  await expect(page.locator("html")).not.toHaveAttribute("data-scene-reason", "movimiento-reducido");
+  // Pedirlo explícitamente sí lo monta, también en este equipo.
+  await page.goto("/es?no3d=0");
   await expect(page.getByTestId("gargantua-canvas")).toHaveCount(1);
 });
 

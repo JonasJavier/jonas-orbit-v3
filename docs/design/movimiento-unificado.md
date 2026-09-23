@@ -54,6 +54,27 @@ Dos lecturas del mismo valor:
   mapa plano aunque las páginas animen. `useLightEffectsMode()` es la
   negación de la primera lectura y se conserva para la escena y el fondo.
 
+**Tres lecturas desde 2026-09-22/23.** El commit 5711581 («motion defaults»,
+09-22) hizo que `useForcedEffects()` fuera verdadero **por defecto** —para
+que reduced-motion no dejara la escena congelada mientras el icono decía ON,
+el «arranque intermitente»— sin actualizar este documento. Con eso el gate
+dejó de mirar también al equipo: la escena del System Map se montaba sobre
+un rasterizador por software, donde cada fotograma bloquea el hilo principal
+unos 6 s y el sitio deja de responder (medido en Chromium sin cabeza con
+SwiftShader: clics del mapa que no navegan, travesías que no empiezan). El
+09-23 se separan las dos cosas:
+
+- `useForcedEffects()` — encendido por defecto o a propósito: supera
+  **reduced-motion** (lo que pedía 5711581).
+- `useExplicitEffects()` — encendido **pedido** (icono pulsado o `?no3d=0`):
+  el único que supera además las tres heurísticas de equipo —GPU por
+  software, red 2G, 2 GB— en `components/scene/capability.ts` (`explicit`).
+  Un equipo que no puede con la escena recibe el mapa plano con
+  `data-scene-reason` que lo dice, y el icono sigue pudiendo montarla.
+
+Por ahora sólo el gate del System Map lee `explicit`; el Observatorio y el
+índice de Experimentos conservan la lectura de 5711581 (ver el registro).
+
 Desaparecen la clave `jonas-orbit:efectos-forzados`, `setForcedEffects`, el
 control de efectos del HUD, el `scene-toggle` de las páginas de mundo y los
 tres botones locales. Ninguna página guarda ya estado de pausa o activación.

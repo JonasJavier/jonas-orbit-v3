@@ -693,18 +693,15 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
       "data-starfield",
       "ready",
     );
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-starfield-motion",
-      "static",
-    );
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-pointer-life",
-      "off",
-    );
+    // Desde el interruptor único (movimiento-unificado.md, 2026-09-13) la
+    // preferencia del sistema ya no apaga nada por sí sola: el movimiento
+    // arranca encendido y sólo el icono o `?no3d=1` lo apagan. Entrar quieto
+    // y volver a encenderlo es el test siguiente.
     await expect(page.locator("html")).toHaveAttribute(
       "data-reduced-motion",
       "true",
     );
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
 
     // La navegación entre mundos sigue siendo una navegación normal.
     await systemMap(page).getByRole("link", { name: /Contacto/ }).click();

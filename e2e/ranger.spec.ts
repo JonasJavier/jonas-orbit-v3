@@ -10,6 +10,18 @@ async function flightDrawsOverFrames(page: Page) {
 }
 
 test.describe("Ranger · cabina de mando", () => {
+  /*
+    Solos pasan en segundos. Con la suite entera en paralelo comparten la CPU
+    con los workers que dibujan WebGL por software (el vuelo de esta misma
+    cabina, el Observatorio), y hasta un `evaluate` trivial se queda sin turno
+    más de 30 s, también con `?no3d=1` y ningún contexto en la página. Es el
+    mismo remedio que A29: el triple de presupuesto no relaja ninguna
+    aserción, sólo deja de medir la carga de la máquina.
+  */
+  test.beforeEach(() => {
+    test.slow();
+  });
+
   test("canales, HUD y formulario accesibles, sin desbordamiento en cuatro tamaños", async ({ page }) => {
     await page.goto("/es/contacto?no3d=1");
     for (const viewport of [{ width: 375, height: 812 }, { width: 844, height: 390 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
@@ -27,6 +39,8 @@ test.describe("Ranger · cabina de mando", () => {
     }
     await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "off");
     await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
+    // El perfil ligero (`?no3d=1`) no crea contexto WebGL: vista fija en SVG.
+    await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
     await page.getByRole("link", { name: /01 \/ CORREO/ }).hover();
     await expect(page.locator(".ranger-channels__tuned")).toContainText("Sintonizando 01 · Correo");
     await page.getByRole("link", { name: "Escribir un mensaje" }).click();
@@ -78,14 +92,14 @@ test.describe("Ranger · cabina de mando", () => {
     await expect(pause).toBeVisible();
     await expect(page.getByRole("button", { name: /vuelo/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Cabina de la Ranger" })).toHaveAttribute("data-motion", "on");
-    await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => flightDrawsOverFrames(page), { timeout: 15_000 }).toBeGreaterThan(0);
     await pause.click();
     // Apagado congela el último fotograma: el canvas se queda, los draws paran.
     await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
     await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
     expect(await flightDrawsOverFrames(page)).toBe(0);
     await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
-    await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => flightDrawsOverFrames(page), { timeout: 15_000 }).toBeGreaterThan(0);
     await page.evaluate(() => {
       Object.defineProperty(document, "hidden", { configurable: true, value: true });
       document.dispatchEvent(new Event("visibilitychange"));
@@ -95,7 +109,7 @@ test.describe("Ranger · cabina de mando", () => {
       Reflect.deleteProperty(document, "hidden");
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    await expect.poll(() => flightDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => flightDrawsOverFrames(page), { timeout: 15_000 }).toBeGreaterThan(0);
     await page.getByRole("link", { name: "Abrir consola de transmisión" }).click();
     await expect(page).toHaveURL(/#transmision$/);
     // Bajar hasta la consola saca el ventanal de la pantalla y el vuelo tiene

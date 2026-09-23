@@ -3,6 +3,7 @@ import {
   isLightEffectsMode,
   pointerLifeEnabled,
   readLightEffectsParam,
+  resolveExplicitEffects,
   resolveForcedEffects,
   resolveLightEffectsMode,
 } from "./effects-mode";
@@ -152,5 +153,13 @@ describe("movimiento por defecto", () => {
     expect(resolveForcedEffects("", "false")).toBe(true);
     expect(resolveForcedEffects("", "true")).toBe(false);
     expect(resolveForcedEffects("?no3d=1", null)).toBe(false);
+  });
+
+  it("pero sólo el icono pulsado (o ?no3d=0) cuenta como petición explícita", () => {
+    expect(resolveExplicitEffects("", null)).toBe(false);
+    expect(resolveExplicitEffects("", "false")).toBe(true);
+    expect(resolveExplicitEffects("", "true")).toBe(false);
+    expect(resolveExplicitEffects("?no3d=0", null)).toBe(true);
+    expect(resolveExplicitEffects("?no3d=1", "false")).toBe(false);
   });
 });

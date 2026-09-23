@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
-import { useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
+import { useExplicitEffects, useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
 import { MAP_HOVER_MODE } from "@/lib/map-hover";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
@@ -101,6 +101,8 @@ export function GargantuaSystem({
   // La activación no es estado de este componente: es una preferencia del
   // visitante que el cielo y el polvo también leen. Vive en `effects-mode`.
   const forced = useForcedEffects();
+  // Sólo un encendido pedido monta la escena en un equipo que no la aguanta.
+  const explicit = useExplicitEffects();
 
   /**
    * El nivel se lee como una fuente externa, no como estado calculado en un
@@ -113,7 +115,7 @@ export function GargantuaSystem({
   // compara la instantánea con `Object.is`: devolver un objeto nuevo en cada
   // llamada lo metería en un bucle infinito de re-renders.
   const readVerdict = () =>
-    evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced }));
+    evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced, explicit }));
 
   const detected = useSyncExternalStore(
     subscribeNothing,

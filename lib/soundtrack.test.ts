@@ -6,6 +6,7 @@ describe("enabled-by-default, persistent soundtrack", () => {
   let media: HTMLAudioElement;
   let context: { resume: ReturnType<typeof vi.fn>; suspend: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
   let ramp: ReturnType<typeof vi.fn>;
+  let contextState: AudioContextState;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -15,10 +16,11 @@ describe("enabled-by-default, persistent soundtrack", () => {
     vi.spyOn(media, "pause").mockImplementation(() => {});
     vi.spyOn(media, "load").mockImplementation(() => {});
     ramp = vi.fn();
+    contextState = "running";
     context = { resume: vi.fn().mockResolvedValue(undefined), suspend: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined) };
     vi.stubGlobal("Audio", vi.fn(function () { return media; }));
     vi.stubGlobal("AudioContext", vi.fn(function () {
-      return { ...context, currentTime: 0, destination: {},
+      return { ...context, get state() { return contextState; }, currentTime: 0, destination: {},
         createGain: () => ({ gain: { value: 0, cancelAndHoldAtTime: vi.fn(), linearRampToValueAtTime: ramp }, connect: vi.fn() }),
         createMediaElementSource: () => ({ connect: vi.fn() }),
       };
@@ -64,6 +66,39 @@ describe("enabled-by-default, persistent soundtrack", () => {
     expect(player.getSnapshot().playback).toBe("armed");
     expect(localStorage.getItem("jonas-orbit:audio-on")).toBeNull();
     player.resumeWanted();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("playing");
+  });
+
+  it("a playing element behind a suspended context is not sound: the next gesture resumes it", async () => {
+    // The browser let the <audio> start but kept the graph suspended: resume()
+    // stays pending until a gesture, so the start never settles on its own.
+    contextState = "suspended";
+    context.resume.mockReturnValueOnce(new Promise(() => {}));
+    player.startDefault();
+    media.dispatchEvent(new Event("playing"));
+    expect(player.getSnapshot().playback).toBe("armed");
+    // The gesture arrives: resume again, now allowed.
+    contextState = "running";
+    player.resumeWanted();
+    await Promise.resolve(); await Promise.resolve();
+    expect(context.resume).toHaveBeenCalledTimes(2);
+    expect(player.getSnapshot().playback).toBe("playing");
+    // Once it truly sounds, further gestures do nothing.
+    player.resumeWanted();
+    expect(context.resume).toHaveBeenCalledTimes(2);
+  });
+
+  it("a gesture that is not an activation (touch pointerdown) leaves it armed for the next event", async () => {
+    vi.mocked(media.play)
+      .mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"))
+      .mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    player.resumeWanted(); // pointerdown of a tap: still not allowed
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("armed");
+    player.resumeWanted(); // touchend of the same tap: allowed
     await Promise.resolve(); await Promise.resolve();
     expect(player.getSnapshot().playback).toBe("playing");
   });

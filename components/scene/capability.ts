@@ -62,6 +62,18 @@ export interface CapabilitySignals {
    * equipo no llegaba, lo prudente es empezar por el nivel barato.
    */
   forced?: boolean;
+  /**
+   * `forced` fue una PETICIÓN del visitante (icono pulsado o `?no3d=0`) y no
+   * sólo el encendido por defecto. Desde que el movimiento arranca encendido
+   * (2026-09-22), `forced` es verdadero para casi todos, y eso sirve para que
+   * reduced-motion deje de apagar la escena — pero no puede servir para montar
+   * el raymarch en un rasterizador por software, con red 2G o con 2 GB: ahí un
+   * fotograma bloquea el hilo principal segundos y el sitio deja de responder
+   * (movimiento-unificado.md: «un equipo flojo sigue recibiendo el mapa
+   * plano»). Sólo la petición explícita salta esas tres heurísticas.
+   * Sin definir, `forced` cuenta como petición (su lectura histórica).
+   */
+  explicit?: boolean;
 }
 
 /** Rasterizadores por software conocidos. */
@@ -104,7 +116,10 @@ export function evaluateCapabilities(
   // sólo DESPUÉS de comprobar WebGL2. El estado inicial con reduced-motion
   // sigue siendo `flat`: únicamente una acción inequívoca cambia este valor.
   if (signals.forced) {
-    return { level: "orbit", reason: "ok", canOverride: false };
+    // El encendido por defecto supera reduced-motion; sólo la petición
+    // explícita supera además a un equipo que no puede con la escena.
+    const weak = signals.explicit === false ? weakDevice(signals) : null;
+    return weak ?? { level: "orbit", reason: "ok", canOverride: false };
   }
 
   if (signals.reducedMotion) {
@@ -118,18 +133,8 @@ export function evaluateCapabilities(
   if (signals.lightEffects) {
     return { level: "flat", reason: "perfil-ligero", canOverride: true };
   }
-  if (signals.renderer && SOFTWARE_RENDERERS.test(signals.renderer)) {
-    return { level: "flat", reason: "gpu-por-software", canOverride: true };
-  }
-  // Red muy mala: el chunk de la escena tardaría más que la paciencia de nadie.
-  if (signals.effectiveType === "slow-2g" || signals.effectiveType === "2g") {
-    return { level: "flat", reason: "red-lenta", canOverride: true };
-  }
-  // Equipos claramente cortos de memoria: la escena arranca pero el navegador
-  // acaba tirando el contexto WebGL, que es peor que no ofrecerla.
-  if (signals.deviceMemory !== undefined && signals.deviceMemory <= 2) {
-    return { level: "flat", reason: "memoria-corta", canOverride: true };
-  }
+  const weak = weakDevice(signals);
+  if (weak) return weak;
 
   // `deep` pide señales verdes, no ausencia de rojas: pantalla de escritorio,
   // puntero fino y CPU holgada. Un móvil potente se queda en `orbit`, que es
@@ -147,6 +152,23 @@ export function evaluateCapabilities(
   };
 }
 
+/** Las tres heurísticas de equipo: lo que sólo una petición explícita salta. */
+function weakDevice(signals: CapabilitySignals): CapabilityVerdict | null {
+  if (signals.renderer && SOFTWARE_RENDERERS.test(signals.renderer)) {
+    return { level: "flat", reason: "gpu-por-software", canOverride: true };
+  }
+  // Red muy mala: el chunk de la escena tardaría más que la paciencia de nadie.
+  if (signals.effectiveType === "slow-2g" || signals.effectiveType === "2g") {
+    return { level: "flat", reason: "red-lenta", canOverride: true };
+  }
+  // Equipos claramente cortos de memoria: la escena arranca pero el navegador
+  // acaba tirando el contexto WebGL, que es peor que no ofrecerla.
+  if (signals.deviceMemory !== undefined && signals.deviceMemory <= 2) {
+    return { level: "flat", reason: "memoria-corta", canOverride: true };
+  }
+  return null;
+}
+
 export function detectLevel(signals: CapabilitySignals): EffectsLevel {
   return evaluateCapabilities(signals).level;
 }
@@ -156,10 +178,12 @@ export function readSignals({
   reducedMotion,
   lightEffects,
   forced,
+  explicit,
 }: {
   reducedMotion: boolean;
   lightEffects: boolean;
   forced?: boolean;
+  explicit?: boolean;
 }): CapabilitySignals {
   const nav = navigator as Navigator & {
     deviceMemory?: number;
@@ -174,6 +198,7 @@ export function readSignals({
     reducedMotion,
     lightEffects,
     forced,
+    explicit,
     deviceMemory: nav.deviceMemory,
     cores: nav.hardwareConcurrency,
     effectiveType: nav.connection?.effectiveType,

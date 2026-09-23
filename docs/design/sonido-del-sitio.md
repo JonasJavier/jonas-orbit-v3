@@ -64,6 +64,29 @@ guardado de 0 —un silencio disfrazado, que no se recuerda— ya no se restaura
 El lenguaje visual ON / OFF / MUTE es el del interruptor de movimiento
 (`movimiento-unificado.md`, §«El icono»).
 
+**«Dice ON pero no suena» (2026-09-23).** Informe del dueño: al entrar la
+bandeja marca ON, no se oye nada, y sólo suena al pulsar el icono. Medido en
+Chromium real con las cuatro políticas de autoplay:
+
+- En escritorio, **rueda y movimiento del puntero no son un gesto** para el
+  navegador: no hay código que pueda hacerlos sonar. Leer bajando con la rueda
+  deja la música en `armed` hasta el primer clic o tecla, en cualquier sitio de
+  la página (no hace falta que sea el icono).
+- En pantalla táctil sí había un defecto: el control sólo escuchaba
+  `pointerdown` y `keydown`, y un toque activa la página en `pointerup` /
+  `touchend`. **El primer toque se perdía; sonaba al segundo.** Ahora escucha
+  `pointerdown`, `pointerup`, `touchend`, `keydown` y `click`, en captura sobre
+  `window`, para que ningún manejador se lo trague. E2E «on a touch screen the
+  first tap…»: pasa con el arreglo y falla con el build anterior.
+- Blindaje: si el `<audio>` arranca pero el `AudioContext` sigue suspendido
+  (sonido entrando en un grafo parado = silencio), el estado queda en `armed`
+  y el siguiente gesto vuelve a intentar; antes se marcaba `playing` y el
+  desbloqueo lo daba por hecho. Prueba unitaria que falla con el código viejo.
+
+Para que el navegador del dueño suene sin clic, la vía es suya: permitir el
+sonido o la reproducción automática para el sitio en la configuración del
+navegador. Un visitante nuevo siempre necesitará un gesto.
+
 ## 3 · La paleta
 
 `lib/sfx.ts`: catorce recetas y **un** renderizador. Cada receta es una lista de

@@ -76,6 +76,8 @@ export class Soundtrack {
     };
     media.onplaying = () => {
       if (!this.wanted || this.hidden) { media.pause(); return; }
+      // Frames flowing into a suspended graph make no sound: still waiting.
+      if (context.state !== "running") { this.update({ playback: "armed" }); return; }
       this.update({ playback: "playing" });
       this.level(1.2);
     };
@@ -110,11 +112,13 @@ export class Soundtrack {
     void this.play(false);
   }
 
-  /** Retries a browser-blocked autoplay inside the next real user gesture. */
+  /** Retries a browser-blocked autoplay inside the next real user gesture.
+   * Also when the element reports `playing` through a context the browser
+   * still holds suspended: that is silence behind an ON tray. */
   resumeWanted() {
-    if (this.wanted && !this.hidden && this.state.playback !== "playing") {
-      void this.play(false);
-    }
+    if (!this.wanted || this.hidden) return;
+    const silent = this.context !== null && this.context.state !== "running";
+    if (this.state.playback !== "playing" || silent) void this.play(false);
   }
 
   async play(remember = true) {

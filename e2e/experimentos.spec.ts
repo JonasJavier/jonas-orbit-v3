@@ -41,10 +41,16 @@ test("la recepción cuenta seis muestras y sólo enlaza las montadas", async ({
   await expect(indice.locator("a")).toHaveCount(6);
   await expect(indice.locator("[aria-disabled='true']")).toHaveCount(0);
 
+  /*
+    Todo acotado al índice desde el pie de universo (7cdd907): su lista de
+    destinos lleva «Experimentos Tesseracto» y «Proyectos Endurance», así que
+    los seis nombres salen ya dos veces en la página. Las tres notas de abajo
+    explican por qué tres de ellos lo hacían desde antes.
+  */
   await expect(
-    page.getByRole("link", { name: /Tesseracto/ }),
+    indice.getByRole("link", { name: /Tesseracto/ }),
   ).toHaveAttribute("href", "/es/experimentos/observatorio/tesseracto");
-  await expect(page.getByRole("link", { name: /Endurance/ })).toHaveAttribute(
+  await expect(indice.getByRole("link", { name: /Endurance/ })).toHaveAttribute(
     "href",
     "/es/experimentos/observatorio/endurance",
   );
@@ -128,7 +134,10 @@ test("O1 · la recepción no crea un contexto WebGL propio", async ({ page }) =>
 test("la adquisición lleva al laboratorio", async ({ page }) => {
   await page.goto(RECEPCION);
 
-  const fila = page.getByRole("link", { name: /Tesseracto/ });
+  // Acotada al índice: el pie también enlaza «Experimentos Tesseracto».
+  const fila = page
+    .getByRole("region", { name: "Índice de especímenes" })
+    .getByRole("link", { name: /Tesseracto/ });
   await fila.click();
 
   /*
@@ -161,7 +170,7 @@ test("sin JavaScript la recepción sigue siendo una puerta", async ({
   );
   await expect(page.locator(".specimen-index__item")).toHaveCount(6);
 
-  await page.getByRole("link", { name: /Tesseracto/ }).click();
+  await page.locator(".specimen-index__item").getByRole("link", { name: /Tesseracto/ }).click();
   await expect(page).toHaveURL(/\/es\/experimentos\/observatorio\/tesseracto$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tesseracto");
 

@@ -226,7 +226,7 @@ for (const item of selections) {
   if (
     !refresh &&
     same &&
-    kept.width === widths[item.group] &&
+    Math.abs(kept.width - widths[item.group]) <= 2 &&
     existsSync(`public${src}`)
   ) {
     entry = kept;
