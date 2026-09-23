@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { SpecimenEntry } from "@/lib/observatory-catalog";
-import { playSfx, type SfxName } from "@/lib/sfx";
 import { shouldNavigateToWorld } from "@/lib/world-navigation";
 import {
+  useExplicitEffects,
   useForcedEffects,
   useLightEffectsMode,
   useMotionEnabled,
@@ -42,10 +42,10 @@ import {
  * poco para convertirse en un peaje al tercer uso.
  */
 const STAGES = [
-  { at: 0, label: "Adquiriendo", sound: "acquire" },
-  { at: 420, label: "Bloqueo", sound: "lock" },
-  { at: 760, label: "Montando", sound: "mount" },
-] as const satisfies readonly { at: number; label: string; sound: SfxName }[];
+  { at: 0, label: "Adquiriendo" },
+  { at: 420, label: "Bloqueo" },
+  { at: 760, label: "Montando" },
+] as const;
 
 const ARRIVAL_MS = 1080;
 
@@ -59,6 +59,8 @@ export function ExperimentsIndex({
   const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
   const forced = useForcedEffects();
+  // Sólo un encendido pedido monta WebGL en un equipo que no lo aguanta.
+  const explicit = useExplicitEffects();
 
   const [acquiring, setAcquiring] = useState<string | null>(null);
   const [stage, setStage] = useState(0);
@@ -103,7 +105,7 @@ export function ExperimentsIndex({
       gastarle la red justo a quien menos tiene.
     */
     const verdict = evaluateCapabilities(
-      readSignals({ reducedMotion, lightEffects, forced }),
+      readSignals({ reducedMotion, lightEffects, forced, explicit }),
     );
     if (verdict.level !== "flat") {
       void import("@/components/scene/observatory-scene");
@@ -120,21 +122,11 @@ export function ExperimentsIndex({
     clear();
     setAcquiring(entry.id);
     setStage(0);
-    /*
-      Cada fase lleva su golpe, y los tres suben: `acquire` mira, `lock`
-      engancha y lo confirma en quinta, y `mount` es la máquina poniéndose en
-      marcha de verdad. El sonido va pegado al MISMO temporizador que el
-      rótulo, no a un reloj propio, para que no puedan separarse nunca.
-    */
-    playSfx(STAGES[0].sound);
+    // Sin sonido desde 2026-09-23: el dueño pidió retirar los del
+    // Observatorio (sonido-del-sitio.md, tabla de la paleta).
     for (const [index, phase] of STAGES.entries()) {
       if (index === 0) continue;
-      timers.current.push(
-        window.setTimeout(() => {
-          setStage(index);
-          playSfx(phase.sound);
-        }, phase.at),
-      );
+      timers.current.push(window.setTimeout(() => setStage(index), phase.at));
     }
     /*
       La navegación va por TEMPORIZADOR y nunca desde un fotograma. Es la misma
@@ -195,8 +187,11 @@ export function ExperimentsIndex({
                 >
                   {cifra}
                   {cuerpo}
+                  {/* En reposo no dice nada: con las seis montadas, seis
+                      «LISTO» eran ruido (2026-09-23). Habla sólo mientras
+                      el aparato cambia de estado. */}
                   <span className="specimen-row__state">
-                    {activo ? STAGES[stage].label : "Listo"}
+                    {activo ? STAGES[stage].label : null}
                   </span>
                   <span aria-hidden="true" className="specimen-row__arrow">
                     →

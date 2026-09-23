@@ -27,7 +27,7 @@ test.describe("Ranger · cabina de mando", () => {
     for (const viewport of [{ width: 375, height: 812 }, { width: 844, height: 390 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
       await page.setViewportSize(viewport);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      for (const name of [/01 \/ CORREO/, /02 \/ WHATSAPP/, /03 \/ TELÉFONO/]) {
+      for (const name of [/01 \/ CORREO/, /02 \/ WHATSAPP/, /03 \/ LINKEDIN/]) {
         const channel = page.getByRole("link", { name });
         await channel.scrollIntoViewIfNeeded();
         await expect(channel).toBeVisible();
@@ -55,7 +55,7 @@ test.describe("Ranger · cabina de mando", () => {
     await expect(page.getByText(/Señal 4\/4 · lista para transmitir/)).toBeVisible();
   });
 
-  test("el ventanal ocupa el viewport entero y los canales empiezan justo debajo", async ({ page }) => {
+  test("el ventanal ocupa el viewport entero y su único botón lleva al formulario", async ({ page }) => {
     for (const viewport of [{ width: 375, height: 812 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
       await page.setViewportSize(viewport);
       await page.goto("/es/contacto?no3d=1");
@@ -66,10 +66,11 @@ test.describe("Ranger · cabina de mando", () => {
       expect(bridge!.width).toBe(viewport.width);
       expect(Math.round(bridge!.y + bridge!.height)).toBeGreaterThanOrEqual(viewport.height);
       expect(Math.round(view!.height)).toBe(Math.round(bridge!.height));
-      const dash = await page.locator("#instrumentos").boundingBox();
-      expect(Math.round(dash!.y)).toBeGreaterThanOrEqual(viewport.height);
-      await page.getByRole("link", { name: "Canales directos" }).click();
-      await expect(page.getByRole("link", { name: /01 \/ CORREO/ })).toBeInViewport();
+      const form = await page.locator("#transmision").boundingBox();
+      expect(Math.round(form!.y)).toBeGreaterThanOrEqual(viewport.height);
+      await page.getByRole("link", { name: "Escribir un mensaje" }).click();
+      // Aterriza en la consola: la misión y el formulario empiezan en pantalla.
+      await expect(page.locator(".ranger-console")).toBeInViewport();
     }
   });
 
@@ -86,7 +87,9 @@ test.describe("Ranger · cabina de mando", () => {
       } });
     });
     await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.goto("/es/contacto");
+    // `?no3d=0` es la petición explícita: esta suite dibuja con SwiftShader, y
+    // sin pedirlo la cabina no vuela en una GPU por software (vista fija).
+    await page.goto("/es/contacto?no3d=0");
     // El único interruptor: el icono de movimiento de la bandeja.
     const pause = page.getByRole("button", { name: "Desactivar movimiento", exact: true });
     await expect(pause).toBeVisible();
@@ -110,7 +113,7 @@ test.describe("Ranger · cabina de mando", () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     await expect.poll(() => flightDrawsOverFrames(page), { timeout: 15_000 }).toBeGreaterThan(0);
-    await page.getByRole("link", { name: "Abrir consola de transmisión" }).click();
+    await page.getByRole("link", { name: "Escribir un mensaje" }).click();
     await expect(page).toHaveURL(/#transmision$/);
     // Bajar hasta la consola saca el ventanal de la pantalla y el vuelo tiene
     // que detenerse.
@@ -119,10 +122,20 @@ test.describe("Ranger · cabina de mando", () => {
     await expect.poll(() => flightDrawsOverFrames(page)).toBe(0);
   });
 
+  test("sin aceleración gráfica el encendido por defecto no despega: vista fija y «Detenido»", async ({ page }) => {
+    // Esta suite dibuja con SwiftShader: es exactamente el equipo que no aguanta
+    // el túnel. El movimiento sigue encendido; el vuelo espera a que se pida.
+    await page.goto("/es/contacto");
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+    await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");
+    await expect(page.locator(".ranger-view canvas")).toHaveCount(0);
+    await expect(page.locator(".ranger-readouts")).toContainText("Detenido");
+  });
+
   test("el interruptor único apaga la cabina entera y la vuelve a encender por teclado", async ({ page }) => {
     // reduced-motion del sistema ya no apaga nada: el defecto es encendido.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/es/contacto");
+    await page.goto("/es/contacto?no3d=0");
     const bridge = page.getByRole("region", { name: "Cabina de la Ranger" });
     await expect(bridge).toHaveAttribute("data-motion", "on");
     await expect(page.locator(".ranger-view canvas")).toHaveCount(1);
@@ -150,7 +163,7 @@ test.describe("Ranger · cabina de mando", () => {
       await page.goto("/es/contacto");
       await expect(page.getByRole("heading", { level: 1, name: "Contacto" })).toBeVisible();
       await expect(page.getByRole("link", { name: /01 \/ CORREO/ })).toHaveAttribute("href", "mailto:jonasjavier.dev@gmail.com");
-      await expect(page.getByRole("link", { name: /03 \/ TELÉFONO/ })).toHaveAttribute("href", "tel:+18498625049");
+      await expect(page.getByRole("link", { name: /03 \/ LINKEDIN/ })).toHaveAttribute("href", /linkedin\.com\/in\//);
       await expect(page.getByRole("link", { name: /02 \/ WHATSAPP/ })).toBeVisible();
       await expect(page.getByRole("link", { name: /CV español/ })).toBeVisible();
       await expect(page.getByText(/Para enviar el formulario necesitas JavaScript/)).toBeVisible();

@@ -43,6 +43,12 @@ export function SoundtrackControl() {
   const status = quiet ? "Mute" : state.playback === "loading" ? "Cargando" : state.playback === "error" ? "Reintentar"
     : state.playback === "paused" ? "Pausa" : state.playback === "armed" ? "Listo" : active ? "On" : "Off";
   const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : state.playback === "armed" ? "Activado · suena al primer clic" : "Audio detenido";
+  /*
+    ON pero todavía mudo: el navegador espera un gesto (sonido-del-sitio.md §2).
+    El dueño lo leía como una avería, así que ese estado se enseña: una
+    etiqueta pequeña sobre el icono y el ON latiendo, hasta que suena.
+  */
+  const waiting = state.playback === "armed" && !quiet;
 
   /*
     Un solo mando para todo lo que suena. La música es un archivo; la travesía,
@@ -89,7 +95,13 @@ export function SoundtrackControl() {
   }, [player]);
 
   return (
-    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active} data-muted={quiet} data-state={tray}>
+    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active} data-muted={quiet} data-state={tray} data-waiting={waiting}>
+      {waiting ? (
+        <span className="soundtrack__hint" aria-hidden="true">
+          <span className="soundtrack__hint-click">Haz clic para escuchar</span>
+          <span className="soundtrack__hint-touch">Toca para escuchar</span>
+        </span>
+      ) : null}
       <details className="soundtrack__settings" ref={details} onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -97,7 +109,7 @@ export function SoundtrackControl() {
           event.currentTarget.querySelector("summary")?.focus();
         }
       }}>
-        <summary aria-label="Audio" title={tray === "on" ? "Audio activado" : tray === "muted" ? "Audio silenciado" : "Audio desactivado"}>
+        <summary aria-label="Audio" title={waiting ? "Audio activado · suena con tu primer clic" : tray === "on" ? "Audio activado" : tray === "muted" ? "Audio silenciado" : "Audio desactivado"}>
           <Speaker state={tray} />
           <span className="tray-state" aria-hidden="true">{tray === "muted" ? "Mute" : tray}</span>
         </summary>

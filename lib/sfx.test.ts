@@ -74,14 +74,6 @@ describe("paleta de efectos", () => {
     for (const name of NAMES) {
       expect(SFX[name].gap, name).toBeGreaterThanOrEqual(0);
     }
-    /*
-      Los tres del encendido van en `gap` 0 a propósito: son una secuencia de
-      1,08 s disparada por un solo clic, no tres pulsaciones del visitante. Con
-      separación, la tercera etapa podría caerse.
-    */
-    for (const name of ["acquire", "lock", "mount"] as const) {
-      expect(SFX[name].gap, name).toBe(0);
-    }
     // Los que cuelgan del puntero, en cambio, tienen que estar amortiguados:
     // cruzar el mapa o barrer una rejilla no puede ametrallar.
     expect(SFX.proximity.gap).toBeGreaterThanOrEqual(60);

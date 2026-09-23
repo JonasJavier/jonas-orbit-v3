@@ -6,8 +6,16 @@ import { RangerReadouts } from "./ranger-cockpit";
 import { RangerConsole } from "./ranger-console";
 import { RangerContact } from "./ranger-contact";
 
-const settings = vi.hoisted(() => ({ motion: true }));
-vi.mock("@/lib/effects-mode", () => ({ useMotionEnabled: () => settings.motion }));
+const settings = vi.hoisted(() => ({ motion: true, explicit: false, renderer: "ANGLE (AMD Radeon)" }));
+vi.mock("@/lib/effects-mode", () => ({ useMotionEnabled: () => settings.motion, useExplicitEffects: () => settings.explicit }));
+// Las señales del equipo, sin navegador: sólo cambia el renderer.
+vi.mock("@/components/scene/capability", async (original) => ({
+  ...(await original<typeof import("@/components/scene/capability")>()),
+  readSignals: ({ forced, explicit }: { forced?: boolean; explicit?: boolean }) => ({
+    hasWebGL2: true, renderer: settings.renderer, reducedMotion: false, lightEffects: false, forced, explicit,
+    coarsePointer: false, viewportWidth: 1440, devicePixelRatio: 1,
+  }),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 /**
@@ -36,6 +44,8 @@ function stubWebGL2() {
 describe("Ranger · cabina de mando", () => {
   beforeEach(() => {
     settings.motion = true;
+    settings.explicit = false;
+    settings.renderer = "ANGLE (AMD Radeon)";
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(JSON.stringify({ mode: "test", siteKey: "test" })))));
   });
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -45,7 +55,9 @@ describe("Ranger · cabina de mando", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Contacto" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Cabina de la Ranger" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Escribir un mensaje" })).toHaveAttribute("href", "#transmision");
-    expect(screen.getByRole("link", { name: "Abrir consola de transmisión" })).toHaveAttribute("href", "#transmision");
+    // Un solo botón hacia el formulario: el de la primera pantalla.
+    expect(document.querySelectorAll('a[href="#transmision"]')).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "o abrir mi correo" })).toHaveAttribute("href", "mailto:jonasjavier.dev@gmail.com");
     expect(screen.getByRole("form", { name: "Enviar un mensaje a Jonás" })).toBeVisible();
     expect(screen.getByRole("link", { name: /CV español/ })).toHaveAttribute("download");
     expect(screen.getByRole("link", { name: /CV English/ })).toHaveAttribute("href", "/cv/jonas-javier-cv-en-ats.pdf");
@@ -53,7 +65,6 @@ describe("Ranger · cabina de mando", () => {
     const navigation = screen.getByRole("navigation", { name: "Destinos contiguos" });
     expect(within(navigation).getByRole("link")).toHaveAttribute("href", "/es/experimentos");
     expect(document.querySelector('script[type="application/ld+json"]')?.textContent).toContain('"telephone":"+18498625049"');
-    expect(screen.getByText("Rumbo 097")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("button", { name: "Enviar transmisión" })).toBeEnabled());
   });
 
@@ -106,6 +117,20 @@ describe("Ranger · cabina de mando", () => {
     expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "on");
   });
 
+  it("sin aceleración gráfica no vuela salvo que se pida: vista fija, «Detenido», y el icono lo monta", () => {
+    stubWebGL2();
+    settings.renderer = "google swiftshader";
+    const { rerender } = render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    expect(document.querySelector(".ranger-view canvas")).toBeNull();
+    expect(HTMLCanvasElement.prototype.getContext).not.toHaveBeenCalledWith("webgl2", expect.anything());
+    expect(screen.getByText("Vuelo").nextElementSibling).toHaveTextContent("Detenido");
+    // Pulsar el icono es la petición explícita: ahí sí despega.
+    settings.explicit = true;
+    rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    expect(document.querySelector(".ranger-view canvas")).not.toBeNull();
+    expect(screen.getByText("Vuelo").nextElementSibling).toHaveTextContent("En travesía");
+  });
+
   it("apuntar una frecuencia la sintoniza en su módulo y soltarla lo limpia", () => {
     stubWebGL2();
     render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
@@ -116,32 +141,39 @@ describe("Ranger · cabina de mando", () => {
     expect(tuned).toHaveTextContent("Sintonizando 01 · Correo");
     fireEvent.pointerLeave(email.closest("article")!);
     expect(tuned).toHaveTextContent("Tierra ↔ Ranger");
-    fireEvent.focus(screen.getByRole("link", { name: /03 \/ TELÉFONO/ }));
-    expect(tuned).toHaveTextContent("Sintonizando 03 · Teléfono");
+    fireEvent.focus(screen.getByRole("link", { name: /03 \/ LINKEDIN/ }));
+    expect(tuned).toHaveTextContent("Sintonizando 03 · LinkedIn");
   });
 
-  it("el ventanal ocupa la primera pantalla y el panel de canales va justo debajo", () => {
+  it("el formulario va primero y después UN panel con canales, radar y registro de a bordo", () => {
     render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     const bridge = screen.getByRole("region", { name: "Cabina de la Ranger" });
-    const dash = document.getElementById("instrumentos")!;
-    expect(bridge.contains(dash)).toBe(false);
-    expect(bridge.nextElementSibling).toBe(dash);
-    expect(within(dash).getByRole("link", { name: /01 \/ CORREO/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Canales directos" })).toHaveAttribute("href", "#instrumentos");
+    const form = document.getElementById("transmision")!;
+    const relay = screen.getByRole("region", { name: "Canales directos y registro de a bordo" });
+    expect(bridge.contains(relay)).toBe(false);
+    expect(form.compareDocumentPosition(relay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(relay).getByRole("link", { name: /01 \/ CORREO/ })).toBeInTheDocument();
+    expect(within(relay).getByRole("link", { name: /CV español/ })).toHaveAttribute("download");
+    expect(within(relay).getByRole("link", { name: /GitHub/ })).toBeInTheDocument();
+    expect(relay.querySelector(".ranger-scope")).not.toBeNull();
+    // El teléfono no va aparte (es el número del WhatsApp) y no queda otro bloque de tripulación.
+    expect(screen.queryByRole("link", { name: /TELÉFONO/ })).toBeNull();
+    expect(document.querySelector(".ranger-dossier")).toBeNull();
   });
 
   it("la hora del HUD es la de Santo Domingo, en HH:MM", () => {
-    render(<RangerReadouts destination="06 / RANGER" />);
-    expect(screen.getByText("Hora en Santo Domingo").nextElementSibling).toHaveTextContent(/^\d{2}:\d{2}$/);
+    render(<RangerReadouts name="Ranger" />);
+    expect(screen.getByText("Hora").nextElementSibling).toHaveTextContent(/^\d{2}:\d{2}$/);
   });
 
-  it("expone las tres direcciones reales y copia correo y teléfono", async () => {
+  it("expone correo, WhatsApp (con su número) y LinkedIn, y copia correo y número", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText } });
     render(<ContactChannels />);
     expect(screen.getByRole("link", { name: /01 \/ CORREO/ })).toHaveAttribute("href", "mailto:jonasjavier.dev@gmail.com");
     expect(screen.getByRole("link", { name: /02 \/ WHATSAPP/ })).toHaveAttribute("href", expect.stringContaining("https://wa.me/18498625049"));
-    expect(screen.getByRole("link", { name: /03 \/ TELÉFONO/ })).toHaveAttribute("href", "tel:+18498625049");
+    expect(screen.getByRole("link", { name: /02 \/ WHATSAPP/ })).toHaveTextContent("+1 (849) 862-5049");
+    expect(screen.getByRole("link", { name: /03 \/ LINKEDIN/ })).toHaveAttribute("href", expect.stringContaining("linkedin.com/in/"));
     fireEvent.click(screen.getByRole("button", { name: "Copiar jonasjavier.dev@gmail.com" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Correo copiado."));
     expect(writeText).toHaveBeenLastCalledWith("jonasjavier.dev@gmail.com");

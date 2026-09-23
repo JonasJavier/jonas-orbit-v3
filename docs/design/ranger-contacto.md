@@ -1,10 +1,45 @@
 # Ranger — cabina de mando
 
-Implementación de `/es/contacto`. La sección `Travesía por el agujero de
-gusano (2026-09-22)` manda sobre `Cabina de mando (2026-09-13)` en el ventanal,
-el vuelo, el marco y la composición de la primera pantalla; el resto de la
-cabina (HUD, panel, consola, datos, límites) sigue vigente. `Cabina de
+Implementación de `/es/contacto`. La sección `Hero mínimo y panel de enlace
+(2026-09-23)` manda en qué lleva la primera pantalla y en el orden y contenido
+de lo que va debajo; `Travesía por el agujero de gusano (2026-09-22)` sigue
+mandando en el ventanal, el shader y el interruptor; `Cabina de mando
+(2026-09-13)` en la consola, los datos y los límites. `Cabina de
 comunicaciones (2026-09-12)` queda abajo como referencia histórica sustituida.
+
+## Hero mínimo y panel de enlace (2026-09-23)
+
+Petición del dueño, con una imagen de referencia: «simplificar más el hero
+[…] el panel derecho simplificarlo, cambiarlo de posición o eliminarlo […]
+dejar un solo botón de escribir un mensaje»; de los canales, «dejar sólo el
+WhatsApp» (es el mismo número que el teléfono), «agregar el LinkedIn y dejar
+el correo»; el formulario más arriba, con los canales debajo; y fundir el
+bloque «Tripulación / Registro de a bordo» con el de frecuencias y radar,
+«como te parezca mejor pero que se vea muy bien».
+
+- **Primera pantalla.** Kicker `Destino 06 / Ranger`, el h1, UNA línea (el
+  `eyebrow` del MDX; la introducción ya no va aquí), el único botón
+  «Escribir un mensaje ↓» y el enlace «o abrir mi correo ↗». Sin escuadras
+  alrededor de la copia, sin cinta de rumbo, sin retículo sobre la garganta y
+  sin «Canales directos ↓». El panel derecho pasa a un bloque pequeño abajo a
+  la derecha: `RANGER ——`, `● EN TRAVESÍA | DETENIDO`, `HORA 10:53`, a 150 px
+  del borde para no pisar la bandeja de audio y su aviso. En móvil se oculta.
+- **Orden.** Hero → consola del formulario (`#transmision`) → panel de enlace
+  (`#canales`) → despedida → vecinos. En una columna la consola sube justo
+  debajo del título y la frase, y el manifiesto y la firma van después: el
+  botón aterriza en el formulario y no 1.300 px antes.
+- **Panel de enlace** (`.ranger-relay`): una sola pieza de instrumentos ámbar
+  en dos columnas. A la izquierda las **frecuencias** —`01 Correo`,
+  `02 WhatsApp` con el número visible y copiable, `03 LinkedIn`—, que llenan su
+  columna a partes iguales y conservan el «Sintonizando 0X · …» de su
+  cabecera. A la derecha el **registro de a bordo**: el radar con «Canal
+  abierto», CV español, CV English y GitHub. Se retiran el teléfono aparte, el
+  módulo «Mandos» con su segundo botón y el bloque «Tripulación» suelto.
+- **Equipo.** El vuelo aplica la misma regla que el System Map y el
+  Observatorio (`movimiento-unificado.md`, §«Tres lecturas»): sin aceleración
+  gráfica, 2G o 2 GB, el encendido por defecto deja la vista fija y la lectura
+  dice «Detenido»; el icono (petición explícita) lo hace despegar, y una vez
+  en vuelo apagarlo congela el cuadro aunque la preferencia guardada cambie.
 
 ## Travesía por el agujero de gusano (2026-09-22)
 
