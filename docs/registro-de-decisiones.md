@@ -12,6 +12,24 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**La Ranger despega siempre al entrar (2026-09-23):** el dueño tenía que
+recargar varias veces para que el vuelo arrancara. Causa: la limpieza del
+efecto del ventanal llamaba a `loseContext()` sobre un `<canvas>` que React
+NO retira —el doble montaje de StrictMode en desarrollo, Fast Refresh—; el
+montaje siguiente pedía `getContext` a ese mismo canvas, recibía el contexto
+perdido, su `webglcontextlost` llamaba a `markUnsupported()` y la cabina
+quedaba «Detenida» hasta recargar. Al entrar navegando (desde Sobre mí, ida y
+vuelta) fallaba 8 de 8; recargando en la propia página, no, porque ahí
+`live` se enciende después de hidratar y el doble montaje ocurre en vacío.
+Ahora `lib/webgl-release.ts` (`releaseWhenDetached`) suelta el contexto una
+tarea después y sólo si el canvas ya salió del documento; lo usan la Ranger y
+el océano de Miller (mismo patrón). Medido con GPU real y ventana visible:
+15/15 despegues (directo, recarga, desde la portada, desde Sobre mí, ida y
+vuelta), ~28 cuadros/s. **Trampa**: con Chromium sin cabeza el rAF se frena
+y los draws salen a 0–22/s; para medir el ritmo, `HEADED=1`
+(`node .shots/ranger-boot-probe.mjs`). La suite e2e corre el build de
+producción, sin StrictMode: no habría visto este fallo.
+
 **El encendido por defecto no monta la escena en un equipo que no puede
 (2026-09-23):** `docs/design/movimiento-unificado.md` §«Tres lecturas». El
 commit 5711581 (09-22) hizo `useForcedEffects()` verdadero por defecto para

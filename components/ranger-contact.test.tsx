@@ -77,7 +77,7 @@ describe("Ranger · cabina de mando", () => {
     expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "off");
   });
 
-  it("obedece al interruptor único de movimiento: vuela, se congela sin soltar el cuadro y libera el contexto al salir", () => {
+  it("obedece al interruptor único de movimiento: vuela, se congela sin soltar el cuadro y libera el contexto al salir", async () => {
     const { loseContext } = stubWebGL2();
     const { rerender, unmount } = render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     const bridge = screen.getByRole("region", { name: "Cabina de la Ranger" });
@@ -101,6 +101,9 @@ describe("Ranger · cabina de mando", () => {
     rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
     expect(document.querySelector(".ranger-view canvas")).toBe(canvas);
     unmount();
+    // Se suelta una tarea después, cuando el canvas ya no está en el documento.
+    expect(loseContext).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(loseContext).toHaveBeenCalledTimes(1);
   });
 
