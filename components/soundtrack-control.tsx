@@ -8,6 +8,8 @@ import "./soundtrack-control.css";
 
 type TrayState = "on" | "off" | "muted";
 
+const UNLOCK_EVENTS = ["pointerdown", "pointerup", "touchend", "keydown", "click"] as const;
+
 /** Waves when it sounds, a cross when muted, silent and struck through when off. */
 function Speaker({ state }: { state: TrayState }) {
   return (
@@ -65,15 +67,20 @@ export function SoundtrackControl() {
     visibility();
     player.startDefault();
     document.addEventListener("visibilitychange", visibility);
-    document.addEventListener("pointerdown", unlock);
-    document.addEventListener("keydown", unlock);
+    /*
+      Every event a browser may count as the activating gesture, in capture so
+      no handler can swallow it. `pointerdown` alone left touch screens mute on
+      the first tap (a touch activates on `pointerup`/`touchend`, measured
+      2026-09-23: the music started only on the second tap). Wheel and pointer
+      movement never activate; nothing can make them sound.
+    */
+    for (const type of UNLOCK_EVENTS) window.addEventListener(type, unlock, { capture: true, passive: true });
     window.addEventListener("pagehide", pageHide);
     window.addEventListener("pageshow", visibility);
     document.addEventListener("pointerdown", outside);
     return () => {
       document.removeEventListener("visibilitychange", visibility);
-      document.removeEventListener("pointerdown", unlock);
-      document.removeEventListener("keydown", unlock);
+      for (const type of UNLOCK_EVENTS) window.removeEventListener(type, unlock, { capture: true });
       window.removeEventListener("pagehide", pageHide);
       window.removeEventListener("pageshow", visibility);
       document.removeEventListener("pointerdown", outside);

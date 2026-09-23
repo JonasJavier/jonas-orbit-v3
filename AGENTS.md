@@ -71,6 +71,10 @@ MDX**, nunca en `worlds.data.ts`.
   todo; por defecto encendido; ninguna página guarda pausa propia. §«El icono»
   (09-22): ON/OFF se leen quietos (halo + `ON` / discontinuo, tachado + `OFF`),
   mismo lenguaje en AUDIO, que arranca ON (`armed` hasta el primer gesto).
+  §«Tres lecturas» (09-23): el encendido por defecto supera reduced-motion;
+  sólo el pedido (`useExplicitEffects`) monta la escena en GPU por software,
+  2G o 2 GB. La suite e2e corre en SwiftShader: una sonda con la GPU real no
+  reproduce sus fallos.
 - **System Map — respuesta al puntero** (09-21)
   `docs/design/endurance-navigation-interface.md` §14 — `MAP_HOVER_MODE`
   (`sencillo`); el modo `instrumento` se conserva, no se borra. §12 y §13:
@@ -82,8 +86,9 @@ MDX**, nunca en `worlds.data.ts`.
 ### Por página
 
 - **Sobre mí** `docs/design/sobre-mi-constelacion.md` — constelación (09-14),
-  exploración (09-15), revisión editorial (09-15) y simplificación (09-15).
-  Publicación de E03/Bonao City pendiente.
+  exploración (09-15), revisión editorial (09-15), simplificación (09-15) y
+  pase de pulido (09-22: Raíces a dos columnas, cintas automáticas en CSS que
+  corren con reduced-motion). Publicación de E03/Bonao City pendiente.
 - **Formación / Miller** `docs/design/miller-formacion.md` §«Océano en WebGL2 y
   formación en curso» (09-12) — `education.inProgress`.
 - **Proyectos** `docs/design/endurance-proyectos.md` (09-21) — mesa de

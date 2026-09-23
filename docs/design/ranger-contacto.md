@@ -70,8 +70,11 @@ no tiene fin ni costura, y la precisión de `float` no se degrada con las horas.
 El vuelo cuelga del interruptor único de movimiento, y nada más. **Apagarlo
 congela el último fotograma**: el canvas y su contexto se quedan, el bucle deja
 de pedir cuadros y la velocidad se conserva, así que reanudar no salta. Quien
-llega con el movimiento apagado recibe el túnel a velocidad de crucero, quieto.
-El primer arranque con movimiento sube los motores en 2,8 s. Sin WebGL2 —o sin
+**llega** con el movimiento apagado —el icono o `?no3d=1`, el perfil con el que
+se audita— recibe la vista fija y **ningún contexto WebGL** (corregido el
+09-23: la primera versión montaba el contexto y dibujaba un cuadro también
+ahí, y el perfil ligero pagaba GPU). El contexto nace con el primer vuelo y
+los motores suben en 2,8 s. Sin WebGL2 —o sin
 JavaScript— queda la **vista fija**: el mismo túnel en SVG, 150 hilos curvados
 desde la garganta, el anillo y el resplandor. El contexto se libera al salir de
 la página (`WEBGL_lose_context`).

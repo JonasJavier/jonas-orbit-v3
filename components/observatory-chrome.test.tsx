@@ -591,8 +591,9 @@ describe("Observatorio · cromo instrumental", () => {
     // El punto sí: dice `NOMINAL` sin gastar la palabra.
     expect(cabecera.querySelector(".observatory__state-dot")).not.toBeNull();
 
-    /* Tres párrafos visibles y ni uno más: cifra, nombre y descriptor. */
-    const visibles = [...cabecera.querySelectorAll("p")].filter(
+    /* Tres líneas visibles y ni una más: cifra, nombre y descriptor. (Encendido,
+       el nombre es el h1 de la página; sigue siendo una de las tres.) */
+    const visibles = [...cabecera.querySelectorAll("p, h1")].filter(
       (nodo) => !nodo.closest('[aria-hidden="true"]'),
     );
     expect(visibles).toHaveLength(3);
@@ -636,6 +637,10 @@ describe("Observatorio · cromo instrumental", () => {
     const servida = container.querySelector(".observatory__served")!;
     expect(servida).toHaveAttribute("inert");
     expect(servida).toHaveAttribute("aria-hidden", "true");
+    // Y el título pasa al cromo: un h1 accesible, uno solo.
+    const titulos = [...container.querySelectorAll("h1")].filter((h) => !h.closest("[inert]"));
+    expect(titulos).toHaveLength(1);
+    expect(titulos[0]).toHaveClass("observatory__specimen");
 
     // Y el cromo, al revés: vivo y sin `inert`.
     expect(container.querySelector(".observatory__chrome")).not.toHaveAttribute(

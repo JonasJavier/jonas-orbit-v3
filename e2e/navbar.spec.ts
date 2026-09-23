@@ -202,5 +202,6 @@ test("Miller: el hero elige el idioma del CV y conserva un único descenso", asy
   await expect(page.getByText("APRENDIZAJE EN MOVIMIENTO", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Descender", exact: true })).toHaveAttribute("href", "#trayectoria");
   const footer = page.getByRole("contentinfo");
-  await expect(footer.getByRole("navigation", { name: "Navegación del pie" })).toBeVisible();
+  // El pie de universo (7cdd907) nombra su nav por lo que lista: los destinos.
+  await expect(footer.getByRole("navigation", { name: "Destinos del pie" })).toBeVisible();
 });

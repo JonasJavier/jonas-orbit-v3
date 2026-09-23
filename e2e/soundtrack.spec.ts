@@ -131,3 +131,16 @@ test("the tray reads ON / OFF / MUTE at rest, without relying on animation", asy
   await expect(audio).toHaveAttribute("data-state", "off");
   await expect(audioButton.locator(".tray-slash")).toHaveCount(1);
 });
+
+test("on a touch screen the first tap is enough to start the music", async ({ browser }) => {
+  // A touch activates the page on pointerup/touchend, not on pointerdown:
+  // listening only to pointerdown left the first tap mute (2026-09-23).
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto("/es/sobre-mi?no3d=1");
+  const control = page.getByRole("complementary", { name: "Banda sonora" });
+  await expect(control).toHaveAttribute("data-state", "on");
+  await page.touchscreen.tap(150, 420);
+  await expect(control).toHaveAttribute("data-playing", "true", { timeout: 15000 });
+  await context.close();
+});

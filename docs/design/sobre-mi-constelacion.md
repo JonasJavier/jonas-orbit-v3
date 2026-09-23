@@ -6,6 +6,59 @@ fondo semejante a la referencia de cielo y montañas, pulir y conservar la navba
 Este documento manda sobre las propuestas previas de Sobre mí en composición
 y contenido personal. No altera la arquitectura de rutas ni la cámara.
 
+## Pase de pulido · 2026-09-22 (vigente)
+
+Petición del dueño: «esta tiene que ser de las mejores páginas del sitio». Manda
+sobre los apartados inferiores en Raíces, copy de Mi gente, abuelos y Cómo soy,
+y en las listas y el comportamiento de los carruseles. Aprobación visual pendiente.
+
+- **Mis raíces.** No le gustaba la foto centrada con el texto debajo. Ahora dos
+  columnas: a la izquierda eyebrow, título, lugar con coordenadas de Bonao
+  (18°56′ N · 70°25′ O, dato público del municipio, no de la foto), frase y
+  relato; a la derecha F23 completa (4:3, sin recortar caras) con el marco
+  dorado desplazado que ya usa Cómo soy. Cabe entera en 1440×860. F23 es ahora
+  ampliable como el resto de fotos (16 enlaces de foto). Móvil: título, foto,
+  texto.
+- **Mi gente.** Sin párrafo: frase principal «Mi familia es mi primer hogar.» y
+  subfrase «La alegría de mi madre, el esfuerzo de mi padre y la amistad de mi
+  hermana.», condensada del texto anterior sin añadir nada.
+- **Abuelos.** «Cariño, sabiduría y muchos recuerdos.»
+- **Cómo soy.** Frase guía «Curioso por naturaleza.»; un párrafo corto; los
+  cuatro rasgos que usan sus amigos como fila tipográfica; la fe en una frase;
+  cierre «Le doy demasiadas vueltas a algunas cosas. Estoy trabajando en eso.»
+- **Música.** Sólo artistas, sin canción ni nota. 18 artistas; primero los
+  favoritos que nombró: Imagine Dragons, Hans Zimmer, José Luis Perales, Beach
+  House, Ed Sheeran, Of Monsters and Men. Se añaden Julio Iglesias, Camilo Sesto,
+  Snow Patrol, M83 y Daughter. Frase: «Bandas sonoras, baladas de siempre…».
+- **Zimmer.** Retirado el retrato CC BY y su línea de crédito, que el dueño pidió
+  quitar: la licencia exige atribución visible, así que el retrato se sustituye
+  por la portada de «The World of Hans Zimmer», con la misma base que el resto.
+- **Historias.** 18 títulos, todos en 16:9 de Apple TV/Netflix. Fuera Fight Club
+  y Psycho-Pass. Nuevos: Marvel (imagen de Avengers: Endgame, porque le gustan
+  todas), Spider-Man (No Way Home), Fullmetal Alchemist (imagen de Brotherhood),
+  El Rey León (1994), La isla siniestra, Ratatouille, Gurren Lagann, Superman
+  («Cine · Henry Cavill», imagen de Man of Steel) y The Flash («Serie · Grant
+  Gustin»).
+- **Carruseles → cintas automáticas.** Sin flechas ni barra de herramientas. CSS
+  puro: dos copias de la lista (la segunda `aria-hidden` y fuera del tabulador),
+  deriva continua a ~40 px/s (música hacia la izquierda, historias al revés),
+  bordes con fundido. Se pausa con el puntero encima, con el visor abierto,
+  fuera de pantalla o con la pestaña oculta. Un usuario de teclado recibe una
+  fila desplazable normal; sin JavaScript o con el interruptor apagado, también.
+  Retirados el temporizador de 5,5 s y el JavaScript de desplazamiento.
+- **Reduced-motion.** Revierte la excepción de la revisión editorial para las
+  cintas y el centelleo: el dueño navega con movimiento reducido y nunca vio el
+  autoplay. Siguen la doctrina de `movimiento-unificado.md` (el interruptor es el
+  consentimiento): `about-page.css` devuelve valor a valor duración e iteración
+  frente a la regla general de `globals.css`, igual que Edmunds. Las
+  transiciones entre capítulos y el scroll suave siguen apagándose con
+  reduced-motion.
+
+Herramienta: `tools/prepare-about-tastes.mjs` busca música por artista Y álbum
+y reutiliza lo ya descargado (`--refresh` para rehacerlo todo). Validación:
+lint, tipos, Knip, 437 unitarias, build; e2e de Sobre mí y movimiento en
+Chromium escritorio y móvil, incluida la deriva medida con reduced-motion.
+
 ## Simplificación de recuerdos · 2026-09-15 (vigente)
 
 Petición del dueño tras revisar las capturas: menos explicación, frases cortas

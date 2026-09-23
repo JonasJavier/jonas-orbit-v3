@@ -55,7 +55,7 @@ describe("Sobre mí · constelación personal", () => {
       within(index).getByRole("img", { name: "Jonás junto al mar" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Mi fe también ocupa un lugar importante/),
+      screen.getByText(/Mi fe ocupa un lugar importante/),
     ).toBeInTheDocument();
     expect(screen.getByText(/Predicar desde joven/)).toBeInTheDocument();
     expect(
@@ -77,7 +77,7 @@ describe("Sobre mí · constelación personal", () => {
     );
     const links =
       container.querySelectorAll<HTMLAnchorElement>("a[data-photo]");
-    expect(links).toHaveLength(15);
+    expect(links).toHaveLength(16);
     expect(
       container.querySelector(
         'img[src*="F13-"], img[src*="E03-"], img[src*="F42-"]',
@@ -105,6 +105,21 @@ describe("Sobre mí · constelación personal", () => {
         ).toBe(true);
     }
     expect(container.querySelector("audio")).not.toBeInTheDocument();
+    // Tastes: plain artist names, no player controls, no Zimmer credit line.
+    const music = container.querySelector("#about-shelf-music")!;
+    expect(music.querySelectorAll("li")).toHaveLength(18);
+    expect(music.querySelector("li strong")).toHaveTextContent(
+      "Imagine Dragons",
+    );
+    expect(music.querySelectorAll(".about-shelf-note")).toHaveLength(0);
+    expect(container.querySelector("button[data-shelf-step]")).toBeNull();
+    expect(container).not.toHaveTextContent(/ColliderVideo|Fight Club|Psycho/);
+    // The loop's second copy is invisible to assistive tech and to Tab.
+    for (const copy of container.querySelectorAll(".about-shelf-copy")) {
+      expect(copy).toHaveAttribute("aria-hidden", "true");
+      for (const link of copy.querySelectorAll("a"))
+        expect(link).toHaveAttribute("tabindex", "-1");
+    }
     expect(container.querySelectorAll("details")).toHaveLength(0);
   });
 });

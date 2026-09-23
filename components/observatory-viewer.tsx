@@ -1436,7 +1436,17 @@ export function ObservatoryViewer({
                 </span>
               )}
             </div>
-            <p className="observatory__specimen">{name}</p>
+            {/*
+              Encendido, el nombre del espécimen ES el título de la página: la
+              cara servida —y su h1— sale del árbol con `inert`, y sin esto
+              quien navega por encabezados no encontraba ninguno. En espera el
+              h1 sigue siendo el de la cara servida: nunca hay dos a la vez.
+            */}
+            {ready ? (
+              <h1 className="observatory__specimen">{name}</h1>
+            ) : (
+              <p className="observatory__specimen">{name}</p>
+            )}
             <p className="observatory__descriptor">{descriptor}</p>
           </div>
 

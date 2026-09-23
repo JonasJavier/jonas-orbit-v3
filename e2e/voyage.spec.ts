@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { MAP_HOVER_MODE } from "../lib/map-hover";
 
 /**
  * La travesía espacio-temporal, vista desde el DOM (G9 y G10 del pivote).
@@ -102,7 +103,10 @@ test("mientras se viaja, el mapa no recibe puntero y el destino queda bloqueado"
   expect(snapshot.tint).toBe("#f0bc72");
   expect(snapshot.origin).toMatch(/%$/);
   expect(snapshot.pointer).toBe("none");
-  expect(snapshot.locked).toBe("locked");
+  // El bloqueo se escribe siempre; PINTARLO en el raíl es cosa del modo
+  // `instrumento`. En `sencillo` (§14 de endurance-navigation-interface.md) el
+  // destino no se marca, y el mapa sin puntero es el bloqueo que se ve.
+  expect(snapshot.locked).toBe(MAP_HOVER_MODE === "instrumento" ? "locked" : "idle");
   await expect(page).toHaveURL(/\/es\/proyectos$/);
 });
 

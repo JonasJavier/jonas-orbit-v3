@@ -93,6 +93,19 @@ describe("Ranger · cabina de mando", () => {
     expect(loseContext).toHaveBeenCalledTimes(1);
   });
 
+  it("quien llega con el movimiento apagado no paga GPU: vista fija, sin contexto, hasta el primer vuelo", () => {
+    stubWebGL2();
+    settings.motion = false;
+    const { rerender } = render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    expect(document.querySelector(".ranger-view canvas")).toBeNull();
+    expect(HTMLCanvasElement.prototype.getContext).not.toHaveBeenCalled();
+    expect(document.querySelectorAll(".ranger-view__tunnel path")).toHaveLength(150);
+    settings.motion = true;
+    rerender(<RangerContact world={getWorld("ranger", "es")} locale="es" />);
+    expect(document.querySelector(".ranger-view canvas")).not.toBeNull();
+    expect(document.querySelector(".ranger-view")).toHaveAttribute("data-flight", "on");
+  });
+
   it("apuntar una frecuencia la sintoniza en su módulo y soltarla lo limpia", () => {
     stubWebGL2();
     render(<RangerContact world={getWorld("ranger", "es")} locale="es" />);

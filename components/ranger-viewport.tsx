@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMounted, useRangerCockpit } from "./ranger-cockpit";
 
 /**
@@ -18,8 +18,9 @@ import { useMounted, useRangerCockpit } from "./ranger-cockpit";
  * Es continuo. Todo patrón es periódico en profundidad con periodo PERIOD y la
  * distancia recorrida se envuelve exactamente ahí, así que el vuelo no se
  * detiene ni salta mientras el interruptor único de movimiento esté encendido.
- * Apagado, el ventanal se queda en el último fotograma: la nave se detiene
- * donde estaba y el bucle deja de pedir cuadros.
+ * Apagarlo en vuelo deja el ventanal en el último fotograma: la nave se detiene
+ * donde estaba y el bucle deja de pedir cuadros. Quien LLEGA con el movimiento
+ * apagado (perfil ligero) recibe la vista fija y ningún contexto WebGL.
  *
  * Presupuesto: 30 fps, DPR ≤ 1,5, 2048 px de ancho máximo, suspensión fuera de
  * pantalla y en segundo plano. Sin WebGL2 —o si el contexto se pierde— queda la
@@ -291,7 +292,13 @@ export function RangerViewport() {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const { running, supported, markUnsupported, look } = useRangerCockpit();
   const mounted = useMounted();
-  const live = mounted && supported;
+  // The light profile never pays for the GPU: arriving with motion off (the
+  // icon, or `?no3d=1`, the profile audits run with) keeps the still SVG and
+  // creates no context. The context is born with the first flight and then
+  // stays: turning motion off afterwards freezes the frame where it was.
+  const [engaged, setEngaged] = useState(false);
+  if (mounted && running && supported && !engaged) setEngaged(true);
+  const live = mounted && supported && engaged;
   // The loop reads the switch through a ref: turning motion off freezes the
   // current frame instead of tearing the context down and redrawing a still.
   const runningRef = useRef(running);
@@ -353,12 +360,10 @@ export function RangerViewport() {
     let visible = false;
     let lost = false;
     let previous = 0;
-    // A visitor who arrives with motion off still gets a tunnel at full
-    // speed, frozen; one who arrives with it on watches the engines spool up.
-    const startsStill = !runningRef.current;
-    let time = startsStill ? 37 : 0;
-    let dist = startsStill ? 11.3 : 0;
-    let speed = startsStill ? 1 : 0;
+    // The context only exists once motion is on: the engines spool up from rest.
+    let time = 0;
+    let dist = 0;
+    let speed = 0;
     let lookX = 0;
     let lookY = 0;
 

@@ -12,6 +12,33 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**El encendido por defecto no monta la escena en un equipo que no puede
+(2026-09-23):** `docs/design/movimiento-unificado.md` §«Tres lecturas». El
+commit 5711581 (09-22) hizo `useForcedEffects()` verdadero por defecto para
+que reduced-motion no congelara la escena, y de paso el gate dejó de mirar al
+equipo: el System Map se montaba sobre GPU por software, donde **un fotograma
+bloquea el hilo principal ~6 s** (medido con SwiftShader en Chromium sin
+cabeza, que es lo que corre la suite e2e). Ése era el origen común de siete
+e2e rojos en `main` —clics del mapa que no navegaban en 5 s (A20, A21, A29,
+«el fondo sobrevive»), la línea de la cabecera que no se podía leer
+(navbar:139)— y es un sitio congelado para cualquier visitante sin
+aceleración. Ahora `useExplicitEffects()` (icono o `?no3d=0`) es lo único que
+supera las tres heurísticas de equipo (`explicit` en `capability.ts`); el
+encendido por defecto sigue superando reduced-motion. **Trampa**: una sonda
+con `chromium.launch()` a secas usa la GPU real en Windows y NO reproduce
+nada de esto; la suite corre en SwiftShader. En el mismo pase: el pie de
+universo (7cdd907) se llama «Destinos del pie» y duplica los nombres de los
+mundos en cualquier página, así que los localizadores `/Tesseracto/` o
+`/Endurance/` se acotan a su región; en el modo `sencillo` del mapa (§14) el
+raíl no PINTA `locked` (el e2e lee `MAP_HOVER_MODE`); A28 ya no espera que
+reduced-motion apague nada; el Observatorio encendido no tenía **ningún**
+encabezado accesible (la cara servida, con el único h1, va `inert`) y ahora
+el nombre del espécimen es el h1 mientras está encendido; y la Ranger que se
+abre con el movimiento apagado ya no crea contexto WebGL. **Abierto para el
+dueño**: el Observatorio y el índice de Experimentos siguen montando WebGL
+sobre GPU por software por defecto (lectura de 5711581); sus e2e más pesados
+(O5, «la salida del Observatorio») fallan a veces con la suite en paralelo.
+
 **Ranger — travesía por el agujero de gusano (2026-09-22):** la sección
 `Travesía por el agujero de gusano` de `docs/design/ranger-contacto.md` manda
 sobre `Cabina de mando` en **ventanal, vuelo, marco y composición de la primera
@@ -250,6 +277,22 @@ y desplegables redundantes. Cielo detrás de todos los capítulos. Carruseles
 ampliados con autoplay de 5,5 s solicitado por el dueño: sólo visibles, pausa
 al interactuar, interruptor global y reduced-motion. Retrato real de Zimmer con
 crédito. Betel explicado. Navbar/cierre/footer intactos; aprobación visual pendiente.
+
+**Sonido — desbloqueo al primer gesto (2026-09-23):** `sonido-del-sitio.md`
+§2 «Dice ON pero no suena». Rueda y puntero nunca desbloquean (política del
+navegador); el primer toque en táctil sí se perdía y ya no: la banda sonora
+escucha los cinco eventos de activación en captura. Un `<audio>` que suena en
+un contexto suspendido cuenta como `armed`. Indicador de «esperando un clic»
+pendiente de decisión del dueño.
+
+**Sobre mí — pase de pulido (2026-09-22):** `Pase de pulido` en
+`docs/design/sobre-mi-constelacion.md` manda en Raíces (dos columnas, F23 entera
+y ampliable), copy de Mi gente, abuelos y Cómo soy, listas de gustos (sólo
+artistas; 18 + 18; sin Fight Club ni Psycho-Pass) y cintas automáticas en CSS
+sin botones. El retrato CC BY de Zimmer se sustituye por portada para poder
+quitar el crédito. Las cintas y el centelleo corren con reduced-motion mientras
+el interruptor esté encendido (restauración valor a valor, como Edmunds).
+Aprobación visual pendiente.
 
 **Sobre mí — simplificación (2026-09-15):** `Simplificación de recuerdos` en
 `docs/design/sobre-mi-constelacion.md` manda en copy de vínculos, disfrute y

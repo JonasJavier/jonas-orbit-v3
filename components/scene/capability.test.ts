@@ -87,6 +87,21 @@ describe("detectLevel — el gate de capacidad", () => {
       ).toBe("orbit");
     });
 
+    it("el encendido por defecto supera reduced-motion, pero no a un equipo que no puede con la escena", () => {
+      const byDefault = { ...capable, forced: true, explicit: false };
+      expect(detectLevel({ ...byDefault, reducedMotion: true })).toBe("orbit");
+      for (const [señal, reason] of [
+        [{ renderer: "google swiftshader" }, "gpu-por-software"],
+        [{ effectiveType: "2g" }, "red-lenta"],
+        [{ deviceMemory: 2 }, "memoria-corta"],
+      ] as const) {
+        const verdict = evaluateCapabilities({ ...byDefault, ...señal });
+        expect(verdict, JSON.stringify(señal)).toEqual({ level: "flat", reason, canOverride: true });
+        // Pulsar el icono sí lo monta: es la salida que ofrece `canOverride`.
+        expect(detectLevel({ ...byDefault, ...señal, explicit: true })).toBe("orbit");
+      }
+    });
+
     it("con el perfil ligero pedido por el visitante", () => {
       expect(detectLevel({ ...capable, lightEffects: true })).toBe("flat");
     });
