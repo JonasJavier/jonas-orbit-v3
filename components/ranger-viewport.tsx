@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { releaseWhenDetached } from "@/lib/webgl-release";
 import { useMounted, useRangerCockpit } from "./ranger-cockpit";
 
 /**
@@ -444,7 +445,7 @@ export function RangerViewport() {
       gl.deleteProgram(program);
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      releaseWhenDetached(canvas, gl);
     };
   }, [live, look, markUnsupported]);
 

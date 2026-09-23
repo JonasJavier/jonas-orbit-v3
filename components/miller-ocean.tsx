@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { releaseWhenDetached } from "@/lib/webgl-release";
 import { useMillerWater } from "./miller-water";
 
 /**
@@ -248,7 +249,7 @@ export function MillerOcean() {
       gl.deleteShader(fragment);
       // Apagar el movimiento retira el canvas: se suelta el contexto para no
       // ocupar uno de los pocos que concede el navegador mientras está quieto.
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      releaseWhenDetached(canvas, gl);
     };
   }, [ready, running, supported]);
 
