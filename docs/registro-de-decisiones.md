@@ -34,10 +34,25 @@ raíl no PINTA `locked` (el e2e lee `MAP_HOVER_MODE`); A28 ya no espera que
 reduced-motion apague nada; el Observatorio encendido no tenía **ningún**
 encabezado accesible (la cara servida, con el único h1, va `inert`) y ahora
 el nombre del espécimen es el h1 mientras está encendido; y la Ranger que se
-abre con el movimiento apagado ya no crea contexto WebGL. **Abierto para el
-dueño**: el Observatorio y el índice de Experimentos siguen montando WebGL
-sobre GPU por software por defecto (lectura de 5711581); sus e2e más pesados
-(O5, «la salida del Observatorio») fallan a veces con la suite en paralelo.
+abre con el movimiento apagado ya no crea contexto WebGL. **Cerrado el mismo
+día** («haz lo que recomiendes»): el Observatorio, el índice de Experimentos y
+el vuelo de la Ranger aplican la misma regla; en vez de adelgazar el shader
+del túnel (un 20 % más caro que el anterior en SwiftShader), un equipo sin
+aceleración ya no lo dibuja. Los e2e que prueban el render lo piden
+explícitamente (`conEscenaViva`, `?no3d=0`). Los más pesados (O5, la cubierta
+de Edmunds) todavía fallan a veces SÓLO con la suite entera en paralelo.
+
+**Ranger — hero mínimo y panel de enlace (2026-09-23):** la sección
+homónima de `docs/design/ranger-contacto.md` manda en la primera pantalla y
+en el orden de `/es/contacto`. Hero como la referencia del dueño: destino,
+título, una línea, UN botón y «o abrir mi correo»; el panel derecho baja a un
+bloque mínimo `RANGER / EN TRAVESÍA / HORA`. El formulario sube justo debajo
+del hero y los canales pasan a UN panel de enlace después: correo, WhatsApp
+(con el número: el teléfono aparte se retira) y LinkedIn a la izquierda;
+radar, CV ES/EN y GitHub a la derecha. Se retiran el módulo «Mandos», la
+cinta de rumbo, el retículo y el bloque «Tripulación» suelto. En móvil la
+consola sube antes del manifiesto para que el botón aterrice en el
+formulario. Valoración visual abierta.
 
 **Ranger — travesía por el agujero de gusano (2026-09-22):** la sección
 `Travesía por el agujero de gusano` de `docs/design/ranger-contacto.md` manda
@@ -277,6 +292,15 @@ y desplegables redundantes. Cielo detrás de todos los capítulos. Carruseles
 ampliados con autoplay de 5,5 s solicitado por el dueño: sólo visibles, pausa
 al interactuar, interruptor global y reduced-motion. Retrato real de Zimmer con
 crédito. Betel explicado. Navbar/cierre/footer intactos; aprobación visual pendiente.
+
+**Experimentos — simplificación y silencio (2026-09-23):**
+`tesseract-experimentos.md` §«Pase de simplificación» manda en el pie de
+`/es/experimentos` (una frase y su eco, sin hechos), en el estado de las filas
+(sin «LISTO» en reposo) y en la pista táctil del visor. El Observatorio deja de
+sonar: fuera `acquire`/`lock`/`mount`/`deploy`/`stow` y sus `detent`
+(`sonido-del-sitio.md`). La bandeja de audio enseña «Haz clic / Toca para
+escuchar» mientras la música espera el primer gesto. Aprobación visual
+pendiente.
 
 **Sonido — desbloqueo al primer gesto (2026-09-23):** `sonido-del-sitio.md`
 §2 «Dice ON pero no suena». Rueda y puntero nunca desbloquean (política del

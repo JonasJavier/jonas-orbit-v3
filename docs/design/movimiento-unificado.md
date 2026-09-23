@@ -72,8 +72,11 @@ SwiftShader: clics del mapa que no navegan, travesías que no empiezan). El
   Un equipo que no puede con la escena recibe el mapa plano con
   `data-scene-reason` que lo dice, y el icono sigue pudiendo montarla.
 
-Por ahora sólo el gate del System Map lee `explicit`; el Observatorio y el
-índice de Experimentos conservan la lectura de 5711581 (ver el registro).
+Desde el mismo 09-23, a petición del dueño («haz lo que recomiendes»), leen
+`explicit` los tres montajes WebGL grandes: el System Map, el Observatorio
+(`observatory-viewer.tsx`) con el índice de Experimentos que lo precalienta,
+y el vuelo de la Ranger (`ranger-cockpit.tsx`). Sin aceleración, el
+Observatorio deja la cara servida y la Ranger la vista fija con «Detenido».
 
 Desaparecen la clave `jonas-orbit:efectos-forzados`, `setForcedEffects`, el
 control de efectos del HUD, el `scene-toggle` de las páginas de mundo y los

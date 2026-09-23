@@ -2536,3 +2536,11 @@ html[data-motion="off"] .observatory-face *::after {
     flex: 1 0 100%;
   }
 }
+
+/* Sin rueda en una pantalla táctil, y el visor no tiene pellizco: la pista
+   se queda en «Arrastra para orbitar» (2026-09-23). */
+@media (hover: none) and (pointer: coarse) {
+  .observatory__wheel {
+    display: none;
+  }
+}

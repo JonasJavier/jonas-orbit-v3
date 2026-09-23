@@ -240,10 +240,7 @@ function throatFor(aspect: number) {
   return aspect >= 1.2 ? { x: 0.27, y: 0.03, radius: 0.078 } : { x: 0, y: 0.17, radius: 0.08 };
 }
 
-/**
- * The slow motions of the tunnel, shared by the shader and the HUD (the
- * heading tape rides the bend, the reticle follows the throat).
- */
+/** The slow motions of the tunnel: the throat swings, the twist breathes. */
 function tunnelAt(time: number) {
   return {
     bendX: 0.07 * Math.sin(time * 0.083) + 0.035 * Math.sin(time * 0.21 + 1.1),
@@ -354,7 +351,6 @@ export function RangerViewport() {
       twist: uniform("uTwist"),
       throat: uniform("uThroat"),
     };
-    const bridge = surface.closest<HTMLElement>(".ranger-bridge");
 
     let frame = 0;
     let visible = false;
@@ -383,11 +379,6 @@ export function RangerViewport() {
       gl.uniform1f(uniforms.twist, tunnel.twist);
       gl.uniform1f(uniforms.throat, throat.radius * tunnel.breath);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      // The HUD rides the same tunnel: the tape follows the bend (yaw in
-      // [-1, 1]) and the reticle sits on the throat.
-      bridge?.style.setProperty("--yaw", (tunnel.bendX / 0.105).toFixed(3));
-      bridge?.style.setProperty("--bend-x", (tunnel.bendX + lookX * 0.03).toFixed(4));
-      bridge?.style.setProperty("--bend-y", (tunnel.bendY - lookY * 0.03).toFixed(4));
     }
 
     function draw(timestamp: number) {
@@ -449,7 +440,6 @@ export function RangerViewport() {
       observer.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);
       document.removeEventListener("visibilitychange", sync);
-      for (const property of ["--yaw", "--bend-x", "--bend-y"]) bridge?.style.removeProperty(property);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
       gl.deleteShader(vertex);
@@ -477,7 +467,6 @@ export function RangerViewport() {
         </svg>
       </div>
       {live ? <canvas ref={canvasRef} /> : null}
-      <div className="ranger-view__reticle"><i /></div>
       <div className="ranger-view__shade" />
     </div>
   );

@@ -3421,3 +3421,40 @@ el que se anuncia ahí es justo el que **no** conserva la iluminación.
 escritorio y en móvil. El System Map, sus cuerpos, cámara y materiales no
 cambian: `spinAt` sigue dando exactamente lo mismo que antes. Pendiente el
 veredicto visual de Jonás, con cuatro barridos de seis ángulos enviados.*
+
+
+## Pase de simplificación — recepción y silencio (2026-09-23)
+
+Petición del dueño con captura del pie de `/es/experimentos`: «simplificarlo
+más, el texto no me convence ni el diseño»; «audita bien el observatorio y la
+página del teseracto»; y «los sonidos del observatorio no me gustan para nada,
+cambiarlos o mejor eliminarlos». Aprobación visual pendiente.
+
+1. **El pie es una frase y su eco.** Fuera divisa (`Curiosidad técnica
+   dirigida`), los tres hechos en mono y el cierre con `//`. Queda el cierre
+   del mundo como frase —«Aquí una idea se convierte en prototipo.»— con un
+   filete ámbar encima, y la introducción en una línea debajo: «Pruebo
+   movimiento, interfaces espaciales y render en tiempo real. Lo que funciona
+   acaba mejorando productos reales.» Los dos textos se reescribieron en
+   `content/es/worlds/tesseract.mdx` desde los anteriores, sin añadir nada. Los
+   `facts` se quedan en el MDX (el esquema los exige) pero esta página ya no
+   los pinta.
+2. **Sin «LISTO».** Con 06/06 montados, seis `LISTO` en cian repetían la cuenta
+   de la cabecera. La columna de estado sólo habla durante la adquisición
+   (`Adquiriendo`, `Bloqueo`, `Montando`) y en una muestra sin montar.
+3. **Se lee el par de cada muestra** (`CRISTAL / CUARTA DIMENSIÓN`): de 0,58 rem
+   al 62 % a 0,62 rem al 82 %; la cifra, del 55 % al 72 %.
+4. **Silencio.** Ver `sonido-del-sitio.md` §«El Observatorio calla».
+5. **La pista del visor no promete un gesto que no existe.** En táctil decía
+   «rueda para acercar» y el visor no tiene pellizco: con puntero grueso queda
+   «Arrastra para orbitar».
+
+Auditados y **no tocados a propósito**: el velo del modo cine en `OBSERVAR`
+(decisión del V2: controles al 6 % en reposo, cabecera y raíl al 30 %) y la
+consola de `ESTUDIO`, que al desplegarse tapa la parte baja de la figura. Si
+el dueño la nota pesada, la palanca barata sigue siendo el velo y el calibre de
+las filas. Pendiente de decidir: pellizco para acercar en móvil.
+
+Validación: lint, tipos, Knip, unitarias; e2e `experimentos`, `soundtrack` y
+`observatorio` en Chromium escritorio y móvil (26 + 38) sobre un build de
+producción aislado.

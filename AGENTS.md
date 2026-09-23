@@ -100,12 +100,14 @@ MDX**, nunca en `worlds.data.ts`.
 - **Experimentos / Observatorio** `docs/design/tesseract-experimentos.md` —
   recepción y encendido (09-17), V1.5 instrumentos, V2 dos modos
   OBSERVAR/ESTUDIO (09-18), V3 Gargantúa (09-19), V4 Ranger (09-19), V5 Miller
-  y Edmunds, catálogo 06/06 (09-20), V6 mando EJE (09-20). Los `registro` de
-  cada espécimen son la voz de Jonás: no se escriben.
-- **Contacto / Ranger** `docs/design/ranger-contacto.md` §«Travesía por el
-  agujero de gusano» (09-22: hero al 100 % del viewport, vuelo continuo
-  periódico, apagar congela el cuadro) manda en ventanal y primera pantalla;
-  §«Cabina de mando» (09-13, aprobada) en el resto.
+  y Edmunds, catálogo 06/06 (09-20), V6 mando EJE (09-20), simplificación y
+  silencio (09-23: pie en una frase, sin «LISTO», sin sonidos). Los `registro`
+  de cada espécimen son la voz de Jonás: no se escriben.
+- **Contacto / Ranger** `docs/design/ranger-contacto.md` §«Hero mínimo y
+  panel de enlace» (09-23: un botón, formulario antes que los canales, un solo
+  panel correo/WhatsApp/LinkedIn + radar/CV/GitHub) manda en primera pantalla
+  y orden; §«Travesía por el agujero de gusano» (09-22) en ventanal, shader e
+  interruptor; §«Cabina de mando» (09-13, aprobada) en el resto.
 
 ### Cuerpos y escena del System Map
 

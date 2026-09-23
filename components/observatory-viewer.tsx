@@ -4,11 +4,11 @@ import Link from "next/link";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
 import {
+  useExplicitEffects,
   useForcedEffects,
   useLightEffectsMode,
   useMotionEnabled,
 } from "@/lib/effects-mode";
-import { playSfx } from "@/lib/sfx";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVisualBench } from "@/lib/visual-bench";
 import type {
@@ -217,9 +217,6 @@ function Instrument({
         since.current = null;
         held.current = false;
         if (comparado) return;
-        // La muesca es del PESTILLO, no del botón: una comparación sostenida
-        // no conmuta nada y por eso tampoco suena.
-        playSfx("detent");
         onToggle();
       }}
       onPointerDown={
@@ -402,6 +399,8 @@ export function ObservatoryViewer({
   const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
   const forced = useForcedEffects();
+  // Sólo un encendido pedido monta WebGL en un equipo que no lo aguanta.
+  const explicit = useExplicitEffects();
 
   /*
     EL GATE DE CAPACIDAD, que hasta ahora no existía aquí.
@@ -421,15 +420,18 @@ export function ObservatoryViewer({
     metería el componente en un bucle infinito de re-renders. Es la misma
     trampa que el otro archivo documenta.
 
-    `forced` —el icono pulsado— salta por encima de las heurísticas, igual que
-    en la escena persistente: si alguien pide expresamente los efectos, los
-    tiene.
+    Como en la escena persistente (movimiento-unificado.md, §«Tres
+    lecturas»): el encendido por defecto supera reduced-motion, y sólo el
+    PEDIDO —icono pulsado o `?no3d=0`, `explicit`— supera además a un equipo
+    sin aceleración, 2G o 2 GB. Ahí un fotograma bloquea el hilo principal
+    segundos; sin la petición queda la cara servida, que es una página
+    terminada con su dibujo y su salida.
   */
   const flat = useSyncExternalStore(
     () => () => {},
     () => {
       const verdict = evaluateCapabilities(
-        readSignals({ reducedMotion, lightEffects, forced }),
+        readSignals({ reducedMotion, lightEffects, forced, explicit }),
       );
       if (verdict.level !== "flat") return false;
       /*
@@ -467,7 +469,7 @@ export function ObservatoryViewer({
   const tier = useSyncExternalStore<QualityTier>(
     () => () => {},
     () =>
-      evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced }))
+      evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced, explicit }))
         .level === "deep"
         ? "deep"
         : "orbit",
@@ -821,9 +823,6 @@ export function ObservatoryViewer({
    * efecto, React lo señala —con razón— como un re-render en cascada.
    */
   function chooseMode(value: Mode) {
-    // Desplegar y plegar la consola es el gesto más grande del aparato, así
-    // que es el único con sonido de superficie y no de mando.
-    playSfx(value === "estudio" ? "deploy" : "stow");
     setMode(value);
     if (value === "observar") {
       setProbe(false);
@@ -1190,10 +1189,14 @@ export function ObservatoryViewer({
     */
     <>
       Arrastra para orbitar
-      <span aria-hidden="true" className="observatory__sep">
-        ·
+      {/* En táctil no hay rueda ni pellizco: la pista no promete un gesto
+          que no existe (observatory.css, `observatory__wheel`). */}
+      <span className="observatory__wheel">
+        <span aria-hidden="true" className="observatory__sep">
+          ·
+        </span>
+        rueda para acercar
       </span>
-      rueda para acercar
     </>
   ) : (
     /*
@@ -1625,10 +1628,7 @@ export function ObservatoryViewer({
                     className="observatory__tab"
                     id={`registro-tab-${key}`}
                     key={key}
-                    onClick={() => {
-                      setSection(key);
-                      playSfx("detent");
-                    }}
+                    onClick={() => setSection(key)}
                     onKeyDown={onTabKey}
                     role="tab"
                     /* Tabulador roving: un solo punto de entrada al grupo, y
@@ -1696,10 +1696,7 @@ export function ObservatoryViewer({
                           aria-checked={index === view}
                           className="observatory__view"
                           key={option.id}
-                          onClick={() => {
-                            setView(index);
-                            playSfx("detent");
-                          }}
+                          onClick={() => setView(index)}
                           role="radio"
                           /* Tabulador roving, igual que las pestañas del
                              registro: un punto de entrada y flechas dentro. */
@@ -2013,9 +2010,6 @@ export function ObservatoryViewer({
                 */
                 handleRef.current?.reset();
                 setView(0);
-                // Vuelve TODO a la vez: no es una muesca, es el aparato
-                // recogiéndose.
-                playSfx("stow");
                 /*
                   Y el dial del eje vuelve al centro. El instrumento ya devolvió
                   la figura —`reset()` la pone en su orientación de reposo— así

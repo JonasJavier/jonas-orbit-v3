@@ -157,29 +157,15 @@ export function ExperimentsPage({
         <ExperimentsIndex specimens={specimens} />
 
         {/*
-          El pie. Lo que antes abría la página y ahora la cierra: la prosa del
-          mundo, sus tres hechos y el cierre. Va en cuerpo pequeño y detrás del
-          catálogo porque a la recepción se viene a elegir una muestra, no a
-          leer una presentación.
+          El pie: una frase y su eco, nada más (2026-09-23). Antes llevaba
+          divisa, párrafo, tres hechos y cierre, cuatro voces en mono gris que
+          el dueño no reconocía. El cierre del mundo es la frase; la
+          introducción, su explicación en una línea. Los hechos siguen en el
+          MDX para las demás lecturas del mundo.
         */}
         <div className="experiments-page__foot">
-          {/* La divisa del mundo no se pierde por cambiar la portada: baja
-              aquí, delante de su párrafo, que es de donde salió. */}
-          <p className="experiments-page__eyebrow">{prose.eyebrow}</p>
+          <p className="experiments-page__closing">{prose.closing}</p>
           <p className="experiments-page__intro">{prose.introduction}</p>
-
-          <dl className="experiments-facts">
-            {prose.facts.map((fact) => (
-              <div key={fact.label}>
-                <dt>{fact.label}</dt>
-                <dd>{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <p className="experiments-page__closing">
-            <span aria-hidden="true">{"//"}</span> {prose.closing}
-          </p>
         </div>
 
         <nav aria-label="Destinos contiguos" className="experiments-neighbours">

@@ -13,7 +13,8 @@ import {
   type RefObject,
 } from "react";
 import { SITE_PROFILE } from "@/content/site.data";
-import { useMotionEnabled } from "@/lib/effects-mode";
+import { evaluateCapabilities, readSignals } from "@/components/scene/capability";
+import { useExplicitEffects, useMotionEnabled } from "@/lib/effects-mode";
 import { playSfx } from "@/lib/sfx";
 
 /**
@@ -23,25 +24,21 @@ import { playSfx } from "@/lib/sfx";
  * Un solo estado gobierna todo lo que se mueve — el vuelo del ventanal
  * (WebGL2), el barrido del radar, el paralaje de cabeza y el encendido de los
  * instrumentos — y es el interruptor único de movimiento del sitio (la bandeja
- * inferior derecha). La primera pantalla es el ventanal entero; el panel de
- * instrumentos va justo debajo, dentro del mismo estado. Los instrumentos son
- * HTML real: canales, formulario, CV y prosa se sirven sin JavaScript; sólo la
- * animación necesita el cliente.
+ * inferior derecha). La primera pantalla es el ventanal entero. Todo lo que
+ * importa —canales, formulario, CV y prosa— es HTML real que se sirve sin
+ * JavaScript; sólo la animación necesita el cliente.
  */
 
-export type Frequency = { id: string; name: string; value: string } | null;
 type Look = { x: number; y: number };
 
 type Cockpit = {
   /** The site's motion switch: flight, radar sweep, parallax. */
   running: boolean;
-  /** False once WebGL2 is missing or the context is lost: the still view stays. */
+  /** False without WebGL2, once the context is lost, or on a device that cannot carry the flight (software GPU, 2G, 2 GB) unless explicitly asked: the still view stays. */
   supported: boolean;
   markUnsupported: () => void;
   /** Head offset in [-1, 1], read by the viewport every frame. */
   look: RefObject<Look>;
-  frequency: Frequency;
-  setFrequency: (frequency: Frequency) => void;
 };
 
 const CockpitContext = createContext<Cockpit | null>(null);
@@ -53,8 +50,6 @@ const STANDALONE: Cockpit = {
   supported: false,
   markUnsupported: noop,
   look: STILL_LOOK,
-  frequency: null,
-  setFrequency: noop,
 };
 
 export function useRangerCockpit(): Cockpit {
@@ -69,14 +64,38 @@ function subscribeNever() {
   return noop;
 }
 
-export function RangerCockpit({ children, panel }: { children: ReactNode; panel?: ReactNode }) {
+/*
+  ¿Aguanta este equipo el vuelo? Las tres heurísticas de equipo del gate del
+  System Map —GPU por software, red 2G, 2 GB— y la misma salida: el encendido
+  por defecto no las supera, el pedido (icono o `?no3d=0`) sí
+  (movimiento-unificado.md, §«Tres lecturas»). Sin aceleración, un fotograma
+  del túnel bloquea el hilo principal; ahí va la vista fija en SVG. La falta de
+  WebGL2 no se decide aquí: la detecta el propio ventanal al pedir el contexto.
+  Una señal que no se puede leer es neutral, como en el gate.
+*/
+function canCarryFlight(explicit: boolean) {
+  try {
+    const signals = readSignals({ reducedMotion: false, lightEffects: false, forced: true, explicit });
+    return evaluateCapabilities({ ...signals, hasWebGL2: true }).level !== "flat";
+  } catch {
+    return true;
+  }
+}
+
+export function RangerCockpit({ children }: { children: ReactNode }) {
   const bridgeRef = useRef<HTMLElement>(null);
   const look = useRef<Look>({ x: 0, y: 0 });
   const running = useMotionEnabled();
   const mounted = useMounted();
-  const [supported, setSupported] = useState(true);
-  const [frequency, setFrequency] = useState<Frequency>(null);
-  const markUnsupported = useCallback(() => setSupported(false), []);
+  const [webgl, setWebgl] = useState(true);
+  const explicit = useExplicitEffects();
+  const capable = useSyncExternalStore(subscribeNever, () => canCarryFlight(explicit), () => true);
+  // Once it has flown, the verdict holds: pausing rewrites the stored choice
+  // (no longer «explicit»), but a frozen frame costs nothing and must stay.
+  const [cleared, setCleared] = useState(false);
+  if (mounted && running && capable && !cleared) setCleared(true);
+  const supported = webgl && (capable || cleared);
+  const markUnsupported = useCallback(() => setWebgl(false), []);
 
   /*
     Encendido de motores.
@@ -90,10 +109,10 @@ export function RangerCockpit({ children, panel }: { children: ReactNode; panel?
   */
   const lit = useRef(false);
   useEffect(() => {
-    if (!mounted || !running || lit.current) return;
+    if (!mounted || !running || !supported || lit.current) return;
     lit.current = true;
     playSfx("ignite");
-  }, [mounted, running]);
+  }, [mounted, running, supported]);
 
   function moveHead(event: PointerEvent<HTMLElement>) {
     if (!running || event.pointerType !== "mouse" || !window.matchMedia("(pointer: fine)").matches) return;
@@ -112,7 +131,7 @@ export function RangerCockpit({ children, panel }: { children: ReactNode; panel?
   }
 
   return (
-    <CockpitContext.Provider value={{ running, supported, markUnsupported, look, frequency, setFrequency }}>
+    <CockpitContext.Provider value={{ running, supported, markUnsupported, look }}>
       <div className="ranger-cockpit" data-motion={running ? "on" : "off"} data-boot={mounted && running ? "on" : "off"}>
         <section
           ref={bridgeRef}
@@ -124,7 +143,6 @@ export function RangerCockpit({ children, panel }: { children: ReactNode; panel?
         >
           {children}
         </section>
-        {panel}
       </div>
     </CockpitContext.Provider>
   );
@@ -144,33 +162,30 @@ function subscribeClock(callback: () => void) {
 }
 
 /**
- * Lecturas del HUD proyectadas sobre el cristal. La hora es real —un reclutador
- * sabe a qué hora escribe— y el vuelo dice lo que hace el interruptor de
- * movimiento: en travesía o detenido, sin cifras inventadas. (La frecuencia
- * que se apunta se lee en el propio módulo de frecuencias, bajo el ventanal.)
+ * El estado de la nave, abajo a la derecha del cristal: su nombre, si vuela y
+ * la hora real en Santo Domingo —un reclutador sabe a qué hora escribe—. El
+ * vuelo dice lo que hace el interruptor de movimiento en este equipo, sin
+ * cifras inventadas.
  */
-export function RangerReadouts({ destination }: { destination: string }) {
-  const { running } = useRangerCockpit();
+export function RangerReadouts({ name }: { name: string }) {
+  const { running, supported } = useRangerCockpit();
   const mounted = useMounted();
+  // En travesía sólo si de verdad vuela: movimiento encendido y un equipo que lo aguanta.
+  const flying = mounted && running && supported;
   const time = useSyncExternalStore(subscribeClock, localTime, () => "--:--");
   return (
-    <dl className="ranger-readouts">
-      <div>
-        <dt>Enlace</dt>
-        <dd><i className="ranger-led" data-state="cyan" aria-hidden="true" /> Abierto</dd>
-      </div>
-      <div>
-        <dt>Destino</dt>
-        <dd>{destination}</dd>
-      </div>
-      <div>
-        <dt>Hora en {SITE_PROFILE.locality}</dt>
-        <dd data-live="clock">{time}</dd>
-      </div>
-      <div>
-        <dt>Vuelo</dt>
-        <dd data-live={mounted && running ? "flight" : undefined}><i className="ranger-led" data-state={mounted && running ? "cyan" : undefined} aria-hidden="true" /> {mounted && running ? "En travesía" : "Detenido"}</dd>
-      </div>
-    </dl>
+    <div className="ranger-readouts">
+      <p className="ranger-readouts__name">{name}</p>
+      <dl>
+        <div>
+          <dt className="visually-hidden">Vuelo</dt>
+          <dd data-live={flying ? "flight" : undefined}><i className="ranger-led" data-state={flying ? "cyan" : undefined} aria-hidden="true" /> {flying ? "En travesía" : "Detenido"}</dd>
+        </div>
+        <div>
+          <dt>Hora<span className="visually-hidden"> en {SITE_PROFILE.locality}</span></dt>
+          <dd data-live="clock">{time}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }

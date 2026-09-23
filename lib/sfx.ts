@@ -33,15 +33,10 @@ import { hit, openAudio } from "./audio-bus";
 export type SfxName =
   | "proximity"
   | "detent"
-  | "deploy"
-  | "stow"
   | "sweep"
   | "open"
   | "close"
   | "drop"
-  | "acquire"
-  | "lock"
-  | "mount"
   | "ignite"
   | "transmit"
   | "reject"
@@ -114,25 +109,6 @@ export const SFX: Readonly<Record<SfxName, Sfx>> = {
     noises: [{ filter: "bandpass", from: 2400, to: 1500, q: 2.4, attack: 0.001, decay: 0.06, gain: 0.4 }],
   },
 
-  /** La consola se despliega: algo sube y se abre. */
-  deploy: {
-    gap: 120,
-    level: 0.32,
-    tones: [
-      { shape: "sawtooth", from: 180, to: 420, attack: 0.01, decay: 0.34, gain: 0.2, detune: 9 },
-      { shape: "triangle", from: 720, to: 1080, attack: 0.02, decay: 0.3, gain: 0.12, delay: 0.06 },
-    ],
-    noises: [{ filter: "lowpass", from: 400, to: 3200, q: 1, attack: 0.02, decay: 0.32, gain: 0.3 }],
-  },
-
-  /** Y se repliega: el mismo gesto del revés. */
-  stow: {
-    gap: 120,
-    level: 0.3,
-    tones: [{ shape: "sawtooth", from: 420, to: 170, attack: 0.008, decay: 0.26, gain: 0.18, detune: 9 }],
-    noises: [{ filter: "lowpass", from: 3000, to: 420, q: 1, attack: 0.01, decay: 0.24, gain: 0.26 }],
-  },
-
   /*
     El anillo de Edmunds gira. Dos bandas de ruido que se cruzan —una sube y la
     otra baja— porque una sola barrida en un sentido suena a cortina y no a una
@@ -182,38 +158,6 @@ export const SFX: Readonly<Record<SfxName, Sfx>> = {
     level: 0.28,
     tones: [{ shape: "sine", from: 640, to: 1560, attack: 0.002, decay: 0.1, gain: 0.6 }],
     noises: [{ filter: "bandpass", from: 1800, to: 3000, q: 3, attack: 0.001, decay: 0.03, gain: 0.2 }],
-  },
-
-  /* ── El encendido del instrumento, en tres golpes ascendentes ─────────── */
-
-  /** `ADQUIRIENDO`: el aparato mira. */
-  acquire: {
-    gap: 0,
-    level: 0.3,
-    tones: [{ shape: "square", from: 520, to: 520, attack: 0.004, decay: 0.09, gain: 0.3 }],
-    noises: [{ filter: "bandpass", from: 1400, to: 1100, q: 3, attack: 0.002, decay: 0.07, gain: 0.3 }],
-  },
-
-  /** `BLOQUEO`: engancha, y lo confirma en quinta. */
-  lock: {
-    gap: 0,
-    level: 0.32,
-    tones: [
-      { shape: "square", from: 700, to: 700, attack: 0.004, decay: 0.1, gain: 0.34 },
-      { shape: "square", from: 1050, to: 1050, attack: 0.004, decay: 0.08, gain: 0.18, delay: 0.03 },
-    ],
-    noises: [{ filter: "bandpass", from: 1900, to: 1500, q: 3, attack: 0.002, decay: 0.08, gain: 0.26 }],
-  },
-
-  /** `MONTANDO`: la máquina se pone en marcha de verdad. */
-  mount: {
-    gap: 0,
-    level: 0.34,
-    tones: [
-      { shape: "sawtooth", from: 160, to: 320, attack: 0.02, decay: 0.5, gain: 0.26, detune: 12 },
-      { shape: "triangle", from: 960, to: 1440, attack: 0.03, decay: 0.45, gain: 0.14, delay: 0.04 },
-    ],
-    noises: [{ filter: "lowpass", from: 300, to: 3600, q: 1.1, attack: 0.03, decay: 0.5, gain: 0.3 }],
   },
 
   /** Los motores de la Ranger. Lo único de la paleta que pasa del segundo. */

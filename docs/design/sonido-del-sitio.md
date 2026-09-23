@@ -83,6 +83,14 @@ Chromium real con las cuatro políticas de autoplay:
   y el siguiente gesto vuelve a intentar; antes se marcaba `playing` y el
   desbloqueo lo daba por hecho. Prueba unitaria que falla con el código viejo.
 
+**Y ahora se ve (2026-09-23).** A petición del dueño, mientras la música está
+`armed` la bandeja lo dice: una etiqueta sobre el icono («Haz clic para
+escuchar»; «Toca para escuchar» con puntero táctil) y la etiqueta ON late
+suave. Desaparece en cuanto suena o al abrir el panel; con el movimiento
+apagado la etiqueta queda quieta, y con reduced-motion el latido se restaura
+valor a valor. En la portada móvil, donde la bandeja va arriba, se coloca
+debajo.
+
 Para que el navegador del dueño suene sin clic, la vía es suya: permitir el
 sonido o la reproducción automática para el sitio en la configuración del
 navegador. Un visitante nuevo siempre necesitará un gesto.
@@ -108,15 +116,20 @@ objeto haría, no un aviso de que has pulsado algo.
 | Receta | Dónde | Qué es |
 | --- | --- | --- |
 | `proximity` | Sintonizar un canal en la Ranger | Seno corto y sin filo, afinado por canal |
-| `detent` | Todo mando con estado | Muesca seca y mecánica |
-| `deploy` / `stow` | Consola del Observatorio, `Reajustar` | Una superficie que se abre y se cierra |
+| `detent` | Mandos de Edmunds, Miller y la Ranger | Muesca seca y mecánica |
 | `sweep` | Anillo de Edmunds, visor | Dos bandas de aire que se cruzan |
 | `open` / `close` | Visor de obras, capítulos de Sobre mí, fotos | Aire que sube o baja con cuerpo |
 | `drop` | Documentos del archivo de Miller | Gota: el tono SUBE |
-| `acquire` → `lock` → `mount` | `ACQUISITION LOCK` de Experimentos | Tres golpes ascendentes |
 | `ignite` | Arranque del vuelo de la Ranger | Lo único que pasa del segundo |
 | `transmit` / `reject` | Envío del formulario | Dos pulsos que suben / dos graves que bajan |
 | `confirm` | Encender el audio | La única que se oye a sí misma |
+
+**El Observatorio calla (2026-09-23).** El dueño: «los sonidos del observatorio
+no me gustan para nada, cambiarlos o mejor eliminarlos». Se eliminan: el
+encendido `acquire` → `lock` → `mount` del índice, `deploy` / `stow` de la
+consola y `Reajustar`, y las muescas `detent` de sus mandos, pestañas y vistas.
+Las cinco recetas que sólo usaba él salen de `lib/sfx.ts`; `detent` se queda
+para Edmunds, Miller y la Ranger. El protocolo de adquisición sigue, mudo.
 
 **La regla de la separación.** Cada receta trae su `gap`: cuánto tiene que
 pasar como mínimo entre dos disparos suyos. Sin eso, cruzar el mapa con el

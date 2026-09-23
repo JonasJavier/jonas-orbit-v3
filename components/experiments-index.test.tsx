@@ -95,7 +95,7 @@ describe("el índice de especímenes", () => {
     expect(within(fila as HTMLElement).getByText("Sin montar")).toBeTruthy();
   });
 
-  it("las montadas se anuncian listas y llevan a su laboratorio", () => {
+  it("las montadas llevan a su laboratorio sin un «LISTO» en reposo", () => {
     render(<ExperimentsIndex specimens={CATALOGO} />);
 
     const enlace = screen.getByRole("link", { name: /Endurance/ });
@@ -103,6 +103,6 @@ describe("el índice de especímenes", () => {
       "href",
       "/es/experimentos/observatorio/endurance",
     );
-    expect(within(enlace).getByText("Listo")).toBeTruthy();
+    expect(within(enlace).queryByText("Listo")).toBeNull();
   });
 });
