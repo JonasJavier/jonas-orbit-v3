@@ -40,10 +40,10 @@ function seeded(seed: number) {
   };
 }
 
-function buildStars(width: number, height: number): Star[] {
+function buildStars(width: number, height: number, density = 1): Star[] {
   const random = seeded(2026);
   const span = width + 400;
-  const count = Math.round(span * 0.034);
+  const count = Math.round(span * 0.034 * density);
   return Array.from({ length: count }, () => {
     // Distribución de magnitudes: casi todo es débil; una de cada veinte brilla.
     const magnitude = Math.pow(random(), 4.6);
@@ -61,7 +61,11 @@ function buildStars(width: number, height: number): Star[] {
   });
 }
 
-export function VoyageSky({ running }: { running: boolean }) {
+export function VoyageSky({ running, className = "voyage-sky__canvas", variant = "navigation" }: {
+  running: boolean;
+  className?: string;
+  variant?: "navigation" | "footer";
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -76,7 +80,12 @@ export function VoyageSky({ running }: { running: boolean }) {
     let frame = 0;
     let previous = 0;
     let meteor: Meteor | null = null;
-    let nextMeteor = 8 + Math.random() * 12;
+    const footer = variant === "footer";
+    const pan = footer ? 8 : PAN;
+    const meteorDuration = footer ? 1.3 : 0.75;
+    // The footer's first shooting star is scheduled from becoming visible,
+    // not page load: scrolling down should reveal it within a second.
+    let nextMeteor = footer ? (performance.now() - ORIGIN) / 1000 + 0.8 : 8 + Math.random() * 12;
     const random = seeded(Math.floor(ORIGIN) + 7);
 
     function draw() {
@@ -86,7 +95,7 @@ export function VoyageSky({ running }: { running: boolean }) {
       context.clearRect(0, 0, width, height);
 
       // Banda lechosa: una franja tenue e inclinada que también pasa, despacio.
-      const bandX = ((width * 0.5 + t * PAN * 0.3) % (width + 600)) - 300;
+      const bandX = ((width * 0.5 + t * pan * 0.3) % (width + 600)) - 300;
       context.save();
       context.translate(bandX, height * 0.5);
       context.rotate(-0.16);
@@ -101,7 +110,7 @@ export function VoyageSky({ running }: { running: boolean }) {
 
       const span = width + 400;
       for (const star of stars) {
-        const x = ((star.x + t * PAN * LAYER_SPEED[star.layer]) % span) - 200;
+        const x = ((star.x + t * pan * LAYER_SPEED[star.layer]) % span) - 200;
         if (x < -4 || x > width + 4) continue;
         // Centelleo: una onda lenta propia y, en las brillantes, un temblor rápido.
         let twinkle = 0.7 + 0.3 * Math.sin(t * star.f * TAU + star.p);
@@ -138,32 +147,51 @@ export function VoyageSky({ running }: { running: boolean }) {
         }
       }
 
-      // Meteoro: raro, breve, con cola que se apaga.
+      // Same stellar colors. The larger footer window gets longer, more
+      // frequent trails; the navbar keeps its original quiet cadence.
       if (running) {
         if (!meteor && t > nextMeteor) {
           const fromLeft = random() < 0.5;
-          meteor = { born: t, x: fromLeft ? width * (0.1 + random() * 0.3) : width * (0.6 + random() * 0.3), y: random() * height * 0.6, dx: (fromLeft ? 1 : -1) * (260 + random() * 160), dy: 30 + random() * 40 };
-          nextMeteor = t + 18 + random() * 26;
+          const speed = footer ? Math.min(width * 0.48, 420) : 260 + random() * 160;
+          meteor = {
+            born: t,
+            x: fromLeft ? width * (0.1 + random() * (footer ? 0.2 : 0.3)) : width * ((footer ? 0.7 : 0.6) + random() * (footer ? 0.2 : 0.3)),
+            y: random() * height * (footer ? 0.42 : 0.6),
+            dx: (fromLeft ? 1 : -1) * speed,
+            dy: footer ? speed * 0.42 : 30 + random() * 40,
+          };
+          nextMeteor = t + (footer ? 3.5 + random() * 3 : 18 + random() * 26);
         }
         if (meteor) {
           const age = t - meteor.born;
-          if (age > 0.75) meteor = null;
+          if (age > meteorDuration) meteor = null;
           else {
             const hx = meteor.x + meteor.dx * age;
             const hy = meteor.y + meteor.dy * age;
-            const tail = Math.min(age, 0.3) * 0.45;
+            const tail = footer ? Math.min(age, 0.4) : Math.min(age, 0.3) * 0.45;
             const tx = hx - meteor.dx * tail;
             const ty = hy - meteor.dy * tail;
-            const fade = age < 0.15 ? age / 0.15 : 1 - (age - 0.15) / 0.6;
+            const fade = age < 0.15 ? age / 0.15 : 1 - (age - 0.15) / (meteorDuration - 0.15);
             const streak = context.createLinearGradient(tx, ty, hx, hy);
             streak.addColorStop(0, "rgba(220, 232, 255, 0)");
             streak.addColorStop(1, `rgba(236, 243, 255, ${0.85 * fade})`);
             context.strokeStyle = streak;
-            context.lineWidth = 1.1;
+            context.lineWidth = footer ? 1.5 : 1.1;
             context.beginPath();
             context.moveTo(tx, ty);
             context.lineTo(hx, hy);
             context.stroke();
+            if (footer) {
+              context.strokeStyle = streak;
+              context.lineWidth = 5;
+              context.globalAlpha = 0.12;
+              context.stroke();
+              context.globalAlpha = 1;
+              context.fillStyle = `rgba(236, 243, 255, ${fade})`;
+              context.beginPath();
+              context.arc(hx, hy, 1.8, 0, TAU);
+              context.fill();
+            }
           }
         }
       }
@@ -192,7 +220,7 @@ export function VoyageSky({ running }: { running: boolean }) {
       height = bounds.height;
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
-      stars = buildStars(width, height);
+      stars = buildStars(width, height, footer ? 2.4 : 1);
       draw();
     });
     resize.observe(surface);
@@ -201,7 +229,7 @@ export function VoyageSky({ running }: { running: boolean }) {
       cancelAnimationFrame(frame);
       resize.disconnect();
     };
-  }, [running]);
+  }, [running, variant]);
 
-  return <canvas ref={canvasRef} className="voyage-sky__canvas" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }

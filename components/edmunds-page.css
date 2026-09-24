@@ -25,7 +25,6 @@
   background: var(--ed-ground);
   color: var(--ed-ink);
 }
-body:has(.edmunds-route) .site-footer { background: #100d0b; margin-top: 0; }
 body:has(.edmunds-route) .scene-toggle { display: none; }
 .edmunds-page { overflow: clip; }
 .edmunds-page :is(h1, h2, h3, p, figure, ol, dl, dd) { margin: 0; }

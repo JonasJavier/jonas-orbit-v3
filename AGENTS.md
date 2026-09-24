@@ -79,11 +79,19 @@ MDX**, nunca en `worlds.data.ts`.
   `docs/design/endurance-navigation-interface.md` §14 — `MAP_HOVER_MODE`
   (`sencillo`); el modo `instrumento` se conserva, no se borra. §12 y §13:
   marco del overlay (`fixed`) y condiciones del puntero.
+- **HUD de Gargantúa** (09-23)
+  `docs/design/hero-gargantua-direction.md` §7 bis — sin retículo fijo en el
+  centro; marco, TARGET y retículo móvil del puntero se conservan.
 - **Cabecera** (09-13) `docs/design/identity-gargantua.md` §«Observatorio y
   acento por mundo» — navbar minimalista, acento por mundo, siempre DOS CV
   (ES/EN), cielo en `voyage-sky.tsx`.
 
 ### Por página
+
+- **Footer** (09-23) `docs/design/footer-observatorio.md` — complemento de la
+  navbar: §«Segundo pase» manda en paleta exacta compartida y fugaces más
+  visibles; mapa orbital y seis destinos;
+  movimiento global y suspensión fuera de pantalla. Valoración visual pendiente.
 
 - **Sobre mí** `docs/design/sobre-mi-constelacion.md` — constelación (09-14),
   exploración (09-15), revisión editorial (09-15), simplificación (09-15) y
@@ -92,8 +100,9 @@ MDX**, nunca en `worlds.data.ts`.
 - **Formación / Miller** `docs/design/miller-formacion.md` §«Océano en WebGL2 y
   formación en curso» (09-12) — `education.inProgress`.
 - **Proyectos** `docs/design/endurance-proyectos.md` (09-21) — mesa de
-  ingeniería, plan aprobado **sin construir**; abiertos Delicaté F1B,
-  arquitecturas del §6 y foto de la sala.
+  ingeniería, plan aprobado **sin construir**; abiertos arquitecturas del §6
+  y foto de la sala. Delicaté publicado (09-23): cinco proyectos, §13.1
+  cerrado; caso reescrito sobre el código y ocho capturas nuevas.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

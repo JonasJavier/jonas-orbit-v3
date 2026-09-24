@@ -14,6 +14,8 @@ export const F1A_PROJECT_IDS = [
   "izaks-photos",
   "wikiverse",
   "network",
+  // Adelantado de F1B por decisión del dueño (2026-09-23), antes de la mesa.
+  "delicate",
 ] as const satisfies readonly ProjectId[];
 
 export interface ProjectStructuralData {
@@ -50,7 +52,7 @@ export const projectsData = {
   },
   delicate: {
     order: 5,
-    phase: "f1b",
+    phase: "f1a",
     kind: "case-study",
     status: "ready-for-production",
   },

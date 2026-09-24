@@ -42,6 +42,13 @@ describe("SystemHud — lecturas sin control propio", () => {
     expect(document.querySelector(".hud__effects-toggle")).toBeNull();
   });
 
+  it("no superpone marcas de calibración en el centro de Gargantúa", () => {
+    const { container } = renderHud();
+
+    expect(container.querySelector(".hud__reticle")).toBeNull();
+    expect(container.querySelectorAll(".hud__bracket")).toHaveLength(4);
+  });
+
   it("lee el nivel real de la escena desde el documento", async () => {
     setScene("orbit");
     renderHud();

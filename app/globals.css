@@ -1181,6 +1181,27 @@ html[data-starfield="ready"] .space-backdrop__stars {
   font-size: 0.82em;
 }
 
+/* Un artefacto literal del producto (p. ej. el mensaje que genera): va en la
+   columna del texto y ajusta la línea en vez de desbordar el móvil. */
+.case-narrative > pre {
+  grid-column: 2;
+  margin: 1rem 0 0;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--space-line);
+  border-radius: 0.35rem;
+  background: rgba(127,229,255,.04);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.case-narrative pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.86rem;
+}
+
 .case-narrative a {
   color: var(--cyan);
   text-decoration: underline;
@@ -3664,21 +3685,6 @@ html[data-scene-live="true"] .hud__glass::after {
   border-color: color-mix(in srgb, var(--ink-muted) 30%, transparent);
 }
 
-.hud__reticle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
-  color: color-mix(in srgb, var(--ink-muted) 20%, transparent);
-  background:
-    linear-gradient(currentColor, currentColor) center top / 1px 0.28rem no-repeat,
-    linear-gradient(currentColor, currentColor) center bottom / 1px 0.28rem no-repeat,
-    linear-gradient(currentColor, currentColor) left center / 0.28rem 1px no-repeat,
-    linear-gradient(currentColor, currentColor) right center / 0.28rem 1px no-repeat;
-  transform: translate(-50%, -50%);
-}
-
 .hud__top {
   align-items: center;
   color: color-mix(in srgb, var(--ink-muted) 74%, transparent);
@@ -4104,10 +4110,6 @@ html[data-scene-live="true"] .system-map__body {
 
 .hud__bracket {
   border-color: var(--hud-ghost);
-}
-
-.hud__reticle {
-  color: var(--hud-ghost);
 }
 
 .hud__top {

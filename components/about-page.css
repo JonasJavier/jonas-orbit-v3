@@ -976,10 +976,6 @@ body:has(.about-page dialog[open]) {
   position: relative;
   background: #060d16;
 }
-body:has(.about-route) .site-footer {
-  margin-top: 0;
-  background: #060d16;
-}
 .about-page {
   position: relative;
   font-family: var(--font-body);

@@ -12,6 +12,61 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — Delicaté publicado antes de la mesa (2026-09-23):** el dueño
+pidió incluir Delicaté antes de construir la mesa de ingeniería; cierra la
+decisión abierta §13.1 de `docs/design/endurance-proyectos.md` a favor de
+cinco proyectos y modifica el plan principal, que lo dejaba en F1B.
+`delicate` entra en `F1A_PROJECT_IDS` con `phase: "f1a"` y conserva
+`order: 5` (§13.4 sin cambios). El caso se reescribió contra el repositorio
+real (`65a15e7b`) y no contra el texto del 08-03, que afirmaba filtros por
+beneficio que el código no tiene: sólo filtra por categoría. Datos
+verificados ese día: 12 pruebas, `check` y migraciones limpios, lint y build
+del frontend correctos, 69 KB de JS comprimido, ~2.200 líneas sin
+migraciones. Ocho capturas nuevas en `public/media/projects/delicate/`
+(escritorio 1440 × 900 a 1,5×, móvil 390 × 844 a 2×) sustituyen a las seis
+anteriores, que cortaban «Hablemos», mostraban un carrito de un producto y un
+catálogo a medio desplazar; incluyen la administración de Django. Se
+capturaron con Playwright sobre una base SQLite desechable y una sesión de
+administrador sin contraseña creada sólo para capturar. **Trampas:** las
+variables de entorno globales de la máquina llevan la configuración de OMSTA
+(`DJANGO_ALLOWED_HOSTS` y otras) y hacen que Delicaté responda
+`DisallowedHost`, así que el frontend cae al catálogo de demostración sin
+avisar de la causa; hay que arrancarlo con esas variables anuladas. Y
+«Agregar» abre el carrito, que tapa la siguiente tarjeta. **Se retiró el
+enlace al repositorio**: es privado (los de Izak's, Wiki Universe y Network
+son públicos) y guarda en su historial tres `.env` versionados, uno con
+credenciales. Volverá cuando el dueño rote esas credenciales, limpie el
+historial y lo haga público. Pendiente del dueño: confirmar «negocio real»
+(el README de Delicaté lo llama «proyecto de portafolio personal»).
+
+**Gargantúa — sin retículo fijo en el centro (2026-09-23):** §7 bis de
+`docs/design/hero-gargantua-direction.md` sustituye §7 sólo en la marca de
+calibración centrada del visor. El dueño señaló sus dos trazos laterales como
+dos rayitas que parecían estar dentro de Gargantúa. Se retira el glifo completo,
+incluidos sus dos trazos verticales; marco, brackets, franja superior, TARGET y
+retículo móvil del puntero siguen intactos. No se toca Gargantúa, el raymarch,
+el bloom ni el rastro de polvo.
+
+**Footer — misma paleta exacta y más animación (2026-09-23):** el dueño
+corrige el primer pase: mismos colores que la navbar y movimiento más
+visible, con estrellas fugaces. `footer-observatorio.md` §«Segundo pase»
+manda en paleta y ritmo: tokens compartidos en `voyage-palette.css`, fuera
+el baño violeta y el degradado del título. Perfil de cielo del footer a
+8 px/s, fugaces de 1,3 s cada 3,5–6,5 s, primera al llegar y traza de 12 s.
+El interruptor global y la suspensión por visibilidad siguen mandando.
+La navbar conserva su paleta y ritmo. Valoración visual pendiente.
+
+**Footer — complemento vivo de la navbar (2026-09-23):** petición del dueño
+de mejorar el footer y darle una animación similar a la cabecera. El pase
+candidato se documenta en `docs/design/footer-observatorio.md`: mismo
+`VoyageSky`, marca y acento por mundo; invitación con acceso orbital al mapa,
+seis destinos en una franja adaptable y perfiles al cierre. El cielo y la
+traza sólo corren a la vista, en primer plano y con movimiento ON. HTML
+servido completo, sin sonido ni dependencias nuevas. El CTA de Contacto
+sigue abriendo el correo; los demás llevan a Contacto. Pruebas de servidor,
+pausa y reanudación añadidas; navbar, typecheck, Knip y build verificados.
+**La valoración visual del dueño sigue pendiente.**
+
 **La Ranger despega siempre al entrar (2026-09-23):** el dueño tenía que
 recargar varias veces para que el vuelo arrancara. Causa: la limpieza del
 efecto del ventanal llamaba a `loseContext()` sobre un `<canvas>` que React

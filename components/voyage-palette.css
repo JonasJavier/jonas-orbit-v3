@@ -1,0 +1,14 @@
+/* One palette for the two windows onto the same observatory. */
+:root {
+  --voyage-edge: rgb(178 209 216 / 15%);
+  --voyage-signal: #b5edf3;
+  --voyage-sky: linear-gradient(115deg, rgb(207 230 233 / 2%), transparent 32%, rgb(134 183 201 / 2%) 75%), radial-gradient(ellipse at 68% 0%, #14313e60, transparent 70%), #050d16;
+  --voyage-text: #b6c1c6;
+  --voyage-bright: #eef7fa;
+  --voyage-brand: #e1e6e7;
+  --voyage-tool: #b4d9e2;
+  --voyage-muted: #7f9bab;
+  --voyage-panel: #071019;
+  --voyage-hover: rgb(181 237 243 / 8%);
+  --voyage-focus: #a2e5eb;
+}

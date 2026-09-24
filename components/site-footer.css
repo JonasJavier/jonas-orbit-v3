@@ -1,64 +1,50 @@
+@import "./voyage-palette.css";
+
 .site-footer {
+  --footer-edge: var(--voyage-edge);
+  --footer-accent: var(--voyage-signal);
   position: relative;
   isolation: isolate;
   overflow: hidden;
   width: 100%;
   margin: 0;
-  border-top: 1px solid rgb(159 206 225 / 18%);
-  background: #040912;
-  color: #b1bfcd;
+  border-top: 1px solid var(--footer-edge);
+  background: var(--voyage-sky);
+  color: var(--voyage-text);
 }
-
-/* The sky is a separate, opaque layer so each world's background can meet it
-   without erasing the artwork. No canvas, image download or animation loop. */
+.site-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0 15% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--footer-accent), transparent);
+  opacity: .65;
+}
+/* The navbar's observatory, bounded to the invitation. The static texture
+   remains available before hydration and without canvas support. */
 .site-footer__sky {
   position: absolute;
   z-index: -1;
-  inset: 0;
+  inset: 0 0 auto;
+  height: 560px;
   overflow: hidden;
   pointer-events: none;
-  background:
-    radial-gradient(ellipse at 78% 18%, #16334470, transparent 45%),
-    radial-gradient(ellipse at 42% 0%, #25234040, transparent 45%),
-    linear-gradient(#060d17, #040912 70%);
+
+  mask-image: linear-gradient(#000 65%, transparent);
 }
 .site-footer__sky::before {
   content: "";
   position: absolute;
-  inset: 0 0 28%;
-  opacity: .65;
-  background:
-    radial-gradient(circle at 17% 24%, #d9e9fa 0 1px, transparent 1.5px),
-    radial-gradient(circle at 48% 62%, #91b0cd 0 .7px, transparent 1.2px),
-    radial-gradient(circle at 76% 12%, #cde7ef 0 .8px, transparent 1.4px),
-    radial-gradient(circle at 89% 71%, #cfbf9f 0 .7px, transparent 1.2px);
-  background-size: 337px 263px, 193px 211px, 419px 307px, 283px 349px;
-  mask-image: linear-gradient(#000, #0009 60%, transparent);
+  inset: 0;
+  background: url("/brand/navigation-stars.svg") center / 1100px 340px repeat;
+  opacity: .5;
 }
-.site-footer__planet {
-  position: absolute;
-  top: 110px;
-  right: -12%;
-  width: 62%;
-  height: 530px;
-  transform: rotate(-24deg);
-  border-radius: 50%;
-  border-top: 1px solid #c5ecf3;
-  background: radial-gradient(ellipse at 50% 0%, #193346 0, #091521 23%, #040912 61%);
-  box-shadow: 0 -2px 5px #a2def055, 0 -10px 32px #56b4d02b, 0 -28px 85px #58b5c81c;
-  mask-image: linear-gradient(110deg, transparent 3%, #000 27%, #000 70%, transparent 95%);
-}
-.site-footer__chart {
-  position: absolute;
-  top: 0;
-  right: 1%;
-  width: min(49%, 680px);
-  color: #93cbd452;
-}
+.site-footer__sky:has(canvas[data-ready])::before { display: none; }
+.site-footer__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .site-footer__inner {
   width: min(100% - 2 * var(--page-gutter), 1320px);
   margin-inline: auto;
-  padding-block: 27px calc(90px + env(safe-area-inset-bottom));
+  padding-block: 22px calc(92px + env(safe-area-inset-bottom));
 }
 .site-footer__topline, .site-footer__nav-heading, .site-footer__bottom {
   display: flex;
@@ -70,75 +56,131 @@
   display: inline-flex;
   align-items: center;
   gap: 11px;
-  font: 500 .65rem/1.5 var(--font-mono);
+  font: 500 .63rem/1.5 var(--font-mono);
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: #adcad6;
+  color: var(--voyage-tool);
 }
-.site-footer__eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: #b7edf5; box-shadow: 0 0 12px #9cddeb80; }
+.site-footer__eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: var(--footer-accent); box-shadow: 0 0 12px var(--footer-accent); }
 .site-footer__top { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; font-size: .75rem; }
+.site-footer__top .site-footer__arrow { width: 34px; height: 34px; padding: 8px; border: 1px solid var(--footer-edge); border-radius: 50%; }
 .site-footer__arrow { width: 20px; height: 20px; flex: none; }
-.site-footer__invitation { position: relative; padding-block: 47px 61px; }
-.site-footer__invitation h2 { margin: 0; max-width: 800px; color: #f0f5fa; font: 400 clamp(2.3rem, 4.6vw, 4.5rem)/1.12 var(--font-display); letter-spacing: -.045em; text-wrap: balance; }
-.site-footer__invitation h2 span { color: #a7ccd8; }
-.site-footer__invitation p { margin: 19px 0 25px; color: #b3c2cf; font-size: .95rem; }
-.site-footer__cta { display: inline-flex; min-height: 52px; gap: 28px; align-items: center; justify-content: space-between; padding: 12px 20px; border: 1px solid #f0ca893d; border-radius: 3px; background: #eed2a0; color: #171a1f; font-size: .88rem; font-weight: 600; transition: background .2s, box-shadow .2s; }
-.site-footer__cta:hover { background: #ffe5b6; box-shadow: 0 0 30px #f2c8791c; }
-.site-footer__directory { display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.3fr); gap: clamp(32px, 6vw, 90px); padding-block: 35px 32px; border-top: 1px solid #a0bdcf30; }
-.site-footer__brand { display: inline-flex; align-items: center; gap: 15px; min-height: 44px; color: #ecf3f6; font-size: .95rem; letter-spacing: .22em; }
-.site-footer__brand svg { width: 39px; height: 39px; color: #a9d3dc; flex: none; }
-.site-footer__brand strong { color: #a9d3dc; font-weight: 500; }
-.site-footer__identity p { margin: 16px 0 5px; font-size: .83rem; }
-.site-footer__location { font-size: .75rem; color: #95a8ba; }
-.site-footer__socials { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 13px; }
-.site-footer__socials a { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; font-size: .78rem; color: #d1dce5; }
-.site-footer__socials span { color: #94acbf; }
-.site-footer__nav-heading { min-height: 44px; margin-bottom: 13px; }
-.site-footer__nav-heading > a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: .75rem; color: #c5d6e1; }
-.site-footer__nav ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 20px; list-style: none; padding: 0; margin: 0; }
-.site-footer__nav li > a { display: flex; align-items: center; gap: 11px; min-height: 66px; padding: 8px 3px; border-bottom: 1px solid #90b2c61c; transition: border-color .2s, color .2s; }
-.site-footer__number { align-self: flex-start; padding-top: 3px; font: .6rem/1.5 var(--font-mono); color: #90a7b9; }
-.site-footer__destination { color: #dce5ee; font-size: .85rem; }
-.site-footer__destination small { display: block; margin-top: 2px; color: #94a9bc; font: .6rem/1.7 var(--font-mono); letter-spacing: .07em; text-transform: uppercase; }
-.site-footer__destination-arrow { margin-left: auto; color: #8da6b7; }
-.site-footer__nav li > a:is(:hover, [aria-current]) { border-color: var(--destination-accent); }
-.site-footer__nav li > a[aria-current] .site-footer__number { color: var(--destination-accent); }
-.site-footer a:focus-visible { outline: 2px solid #b2eaf5; outline-offset: 5px; }
+.site-footer__hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .48fr); align-items: center; gap: 36px; padding-block: 45px 62px; }
+.site-footer__invitation { position: relative; }
+.site-footer__invitation h2 { margin: 0; color: var(--voyage-bright); font: 400 clamp(2.35rem, 4.55vw, 4.4rem)/1.13 var(--font-display); letter-spacing: -.045em; }
+.site-footer__invitation h2 span { color: var(--voyage-tool); }
+.site-footer__invitation p { margin: 22px 0 28px; color: var(--voyage-text); font-size: .92rem; line-height: 1.65; }
+.site-footer__cta { display: inline-flex; min-height: 54px; gap: 30px; align-items: center; justify-content: space-between; padding: 7px 8px 7px 21px; border: 1px solid var(--voyage-tool); border-radius: 3px; background: var(--voyage-panel); color: var(--voyage-tool); font-size: .85rem; font-weight: 600; transition: background .3s, box-shadow .3s; }
+.site-footer__cta .site-footer__arrow { width: 38px; height: 38px; padding: 9px; border-left: 1px solid var(--voyage-edge); transition: transform .3s; }
+.site-footer__cta:is(:hover, :focus-visible) { background: var(--voyage-hover); color: #efffff; box-shadow: 0 0 32px color-mix(in srgb, var(--footer-accent) 14%, transparent); }
+.site-footer__cta:is(:hover, :focus-visible) .site-footer__arrow { transform: translateX(3px); }
+/* A quiet instrument and a real link, not a second scene or a moving body. */
+.site-footer__portal { position: relative; display: grid; place-items: center; justify-self: end; width: min(100%, 330px); aspect-ratio: 1; border-radius: 50%; color: var(--voyage-text); background: transparent; }
+.site-footer__orrery { position: absolute; inset: 0; width: 100%; height: 100%; stroke: var(--voyage-edge); stroke-width: .8; pointer-events: none; transition: transform .8s, stroke .4s; }
+.site-footer__orbit-outer { stroke: var(--voyage-edge); }
+.site-footer__orrery .site-footer__orbit-light { stroke: var(--footer-accent); stroke-width: 1.2; opacity: .8; transform-origin: center; transform: rotate(-75deg); }
+.site-footer__beacon { fill: var(--footer-accent); stroke: none; }
+.site-footer__portal-core { display: grid; justify-items: center; gap: 7px; padding: 20px; background: transparent; }
+.site-footer__portal-core > .site-footer__arrow { width: 31px; height: 31px; margin-bottom: 5px; transform: rotate(-45deg); color: var(--footer-accent); transition: transform .4s; }
+.site-footer__portal-core > span { font-size: .9rem; color: var(--voyage-bright); }
+.site-footer__portal-core > small { font: .55rem/1.5 var(--font-mono); text-transform: uppercase; letter-spacing: .14em; color: var(--voyage-muted); }
+.site-footer__portal:is(:hover, :focus-visible) .site-footer__orrery { transform: rotate(8deg); stroke: var(--voyage-tool); }
+.site-footer__portal:is(:hover, :focus-visible) .site-footer__arrow { transform: translate(3px, -3px) rotate(-45deg); }
+/* The observer and the global switch jointly start this trace. */
+.site-footer__orbit-light { animation: footer-signal 12s linear infinite paused; }
+.site-footer:has(.site-footer__sky[data-running="true"]) .site-footer__orbit-light { animation-play-state: running; }
+@keyframes footer-signal { to { stroke-dashoffset: -1030; } }
+.site-footer__directory { padding-block: 24px 0; border-top: 1px solid var(--footer-edge); }
+.site-footer__nav-heading { margin-bottom: 24px; }
+.site-footer__nav-caption { font-size: .7rem; color: var(--voyage-muted); }
+.site-footer__nav ol { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 0; margin: 0; }
+.site-footer__nav li { min-width: 0; }
+.site-footer__nav li > a { position: relative; display: grid; align-content: space-between; gap: 20px; min-height: 132px; padding: 18px 14px; border: 1px solid transparent; border-top-color: var(--footer-edge); background: transparent; transition: background .3s, border-color .3s; }
+.site-footer__nav li > a::after { content: ""; position: absolute; top: -1px; left: -1px; right: -1px; height: 1px; background: var(--destination-accent); transform: scaleX(0); transform-origin: left; transition: transform .4s; }
+.site-footer__number { display: inline-flex; align-items: center; gap: 8px; font: .6rem/1.5 var(--font-mono); color: var(--voyage-muted); }
+.site-footer__number i { width: 4px; height: 4px; border-radius: 50%; background: var(--destination-accent); opacity: .55; }
+.site-footer__destination { color: var(--voyage-text); font-size: .9rem; }
+.site-footer__destination small { display: block; margin-top: 6px; color: var(--voyage-muted); font: .56rem/1.7 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; }
+.site-footer__destination-arrow { position: absolute; right: 14px; top: 15px; color: var(--voyage-tool); transition: transform .3s, color .3s; }
+.site-footer__nav li > a:is(:hover, :focus-visible, [aria-current]) { background: var(--voyage-hover); }
+.site-footer__nav li > a:is(:hover, :focus-visible, [aria-current])::after { transform: scaleX(1); }
+.site-footer__nav li > a:is(:hover, :focus-visible, [aria-current]) .site-footer__number { color: var(--destination-accent); }
+.site-footer__nav li > a[aria-current] .site-footer__destination { color: var(--voyage-bright); }
+.site-footer__nav li > a:is(:hover, :focus-visible) .site-footer__destination { color: #effcff; }
+.site-footer__nav li > a:is(:hover, :focus-visible, [aria-current]) .site-footer__number i { opacity: 1; box-shadow: 0 0 9px var(--destination-accent); }
+.site-footer__nav li > a:is(:hover, :focus-visible) .site-footer__destination-arrow { transform: translate(2px, -2px); color: var(--destination-accent); }
+.site-footer__identity { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 38px 26px; }
+.site-footer__brand { display: inline-flex; align-items: center; gap: .8em; min-height: 44px; color: var(--voyage-brand); font: 300 .98rem/1 "Segoe UI", "Helvetica Neue", Arial, sans-serif; letter-spacing: .3em; white-space: nowrap; }
+.site-footer__wordmark-orbit { display: inline-flex; align-items: center; gap: .17em; }
+.site-footer__brand svg { width: 1.22em; height: 1.32em; flex: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+.site-footer__identity p { margin: 3px 0 0; font-size: .76rem; color: var(--voyage-text); }
+.site-footer__location { font-size: .66rem; color: var(--voyage-muted); line-height: 1.8; }
+.site-footer__location > span { font-size: .73rem; color: var(--voyage-text); }
+.site-footer__socials { display: flex; flex-wrap: wrap; gap: 22px; }
+.site-footer__socials a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: .75rem; color: var(--voyage-tool); }
+.site-footer__socials span { color: var(--voyage-muted); transition: transform .3s; }
+.site-footer__socials a:is(:hover, :focus-visible) span { transform: translate(2px, -2px); }
+.site-footer a:focus-visible { outline: 2px solid var(--voyage-focus); outline-offset: 5px; }
 .site-footer a:not(.site-footer__cta):hover { color: #fff; }
-.site-footer__nav li > a:hover .site-footer__destination { color: #fff; }
-.site-footer__bottom { border-top: 1px solid #a0bdcf26; padding-top: 16px; color: #94a8bb; font-size: .7rem; }
+.site-footer__bottom { border-top: 1px solid var(--footer-edge); padding-top: 12px; color: var(--voyage-muted); font-size: .67rem; }
 .site-footer__bottom small { font-size: inherit; }
-.site-footer__position { font: .57rem/1.7 var(--font-mono); letter-spacing: .075em; text-align: center; }
-.site-footer__bottom > a { display: inline-flex; align-items: center; min-height: 44px; color: #c1d0dc; }
-
+.site-footer__position { font: .55rem/1.7 var(--font-mono); letter-spacing: .075em; text-align: center; }
+.site-footer__bottom > a { display: inline-flex; align-items: center; min-height: 44px; color: var(--voyage-tool); }
 @media (max-width: 64rem) {
-  .site-footer__directory { grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr); gap: 30px; }
-  .site-footer__nav ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .site-footer__planet { right: -28%; width: 80%; }
-  .site-footer__position { max-width: 260px; }
+  .site-footer__hero { grid-template-columns: minmax(0, 1fr) 240px; gap: 20px; padding-block: 42px 48px; }
+  .site-footer__invitation h2 { font-size: clamp(2.15rem, 4.6vw, 3.3rem); }
+  .site-footer__nav ol { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .site-footer__nav li > a { min-height: 118px; gap: 14px; }
+  .site-footer__identity { flex-wrap: wrap; gap: 16px 24px; }
+  .site-footer__location { margin-left: auto; }
+  .site-footer__socials { flex-basis: 100%; }
 }
 @media (max-width: 44rem) {
-  .site-footer__inner { padding-top: 18px; }
+  .site-footer__inner { padding-top: 16px; }
   .site-footer__topline { gap: 12px; }
-  .site-footer__eyebrow { font-size: .58rem; letter-spacing: .13em; }
-  .site-footer__top { gap: 5px; font-size: .7rem; }
-  .site-footer__invitation { padding-block: 42px 45px; }
-  .site-footer__invitation h2 { font-size: clamp(2rem, 7.6vw, 3.3rem); }
-  .site-footer__invitation p { max-width: 250px; font-size: .85rem; }
-  .site-footer__cta { gap: 23px; font-size: .8rem; }
-  .site-footer__chart { top: 12px; right: -160px; width: 470px; opacity: .55; }
-  .site-footer__planet { top: 180px; right: -300px; width: 540px; height: 340px; opacity: .65; }
-  .site-footer__directory { grid-template-columns: 1fr; gap: 25px; padding-block: 27px; }
-  .site-footer__nav-heading { margin-bottom: 4px; }
-  .site-footer__nav ol { gap: 5px 25px; }
+  .site-footer__eyebrow { font-size: .56rem; letter-spacing: .11em; }
+  .site-footer__top { gap: 7px; font-size: .65rem; }
+  .site-footer__top .site-footer__arrow { width: 30px; height: 30px; padding: 7px; }
+  .site-footer__hero { grid-template-columns: 1fr; gap: 30px; padding-block: 38px 30px; }
+  .site-footer__invitation h2 { font-size: clamp(1.85rem, 7.5vw, 3.2rem); }
+  .site-footer__invitation p { max-width: 290px; font-size: .83rem; margin-block: 20px 24px; }
+  .site-footer__cta { font-size: .8rem; gap: 18px; }
+  .site-footer__portal { width: 100%; aspect-ratio: auto; min-height: 84px; justify-items: start; border: 1px solid var(--footer-edge); border-radius: 3px; overflow: hidden; background: var(--voyage-hover); }
+  .site-footer__orrery { width: 180px; height: 180px; left: auto; right: -38px; top: -50px; }
+  .site-footer__portal-core { width: 100%; grid-template-columns: 1fr auto; justify-items: start; gap: 5px 18px; padding: 18px 23px; background: none; }
+  .site-footer__portal-core > .site-footer__arrow { grid-column: 2; grid-row: 1 / 3; align-self: center; width: 25px; height: 25px; margin: 0; }
+  .site-footer__portal-core > span, .site-footer__portal-core > small { grid-column: 1; }
+  .site-footer__portal-core > small { font-size: .5rem; }
+  .site-footer__directory { padding-top: 22px; }
+  .site-footer__nav-heading { margin-bottom: 18px; }
+  .site-footer__nav-caption { display: none; }
+  .site-footer__nav ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+  .site-footer__nav li > a { padding: 14px 10px; min-height: 112px; }
+  .site-footer__destination { font-size: .83rem; }
+  .site-footer__destination-arrow { right: 10px; top: 11px; }
+  .site-footer__identity { display: grid; gap: 19px; padding-block: 28px 22px; }
+  .site-footer__identity p { font-size: .7rem; line-height: 1.65; }
+  .site-footer__location { margin: 0; }
+  .site-footer__location br { display: none; }
+  .site-footer__location > span::before { content: " "; }
+  .site-footer__socials { gap: 25px; }
   .site-footer__bottom { flex-wrap: wrap; gap: 4px 16px; }
-  .site-footer__position { order: 3; flex-basis: 100%; max-width: none; text-align: left; font-size: .55rem; }
+  .site-footer__position { order: 3; flex-basis: 100%; text-align: left; font-size: .5rem; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .site-footer a { transition: none; }
-}
+html[data-motion="on"] .site-footer__orbit-light { animation-duration: 12s !important; animation-iteration-count: infinite !important; }
+html[data-motion="on"] .site-footer__cta,
+html[data-motion="on"] .site-footer__cta .site-footer__arrow,
+html[data-motion="on"] .site-footer__orrery,
+html[data-motion="on"] .site-footer__portal-core > .site-footer__arrow,
+html[data-motion="on"] .site-footer__destination-arrow,
+html[data-motion="on"] .site-footer__socials span,
+html[data-motion="on"] .site-footer__nav li > a,
+html[data-motion="on"] .site-footer__nav li > a::after { transition-duration: .35s !important; }
+html[data-motion="off"] .site-footer *,
+html[data-motion="off"] .site-footer *::after { animation-play-state: paused !important; transition: none !important; }
 @media (forced-colors: active) {
-  .site-footer__sky { display: none; }
+  .site-footer__sky, .site-footer__orrery { display: none; }
+  .site-footer__invitation h2 span { background: none; -webkit-text-fill-color: currentColor; }
   .site-footer__cta { color: ButtonText; background: ButtonFace; border-color: ButtonText; }
   .site-footer__nav li > a[aria-current] { outline: 1px solid LinkText; }
 }
