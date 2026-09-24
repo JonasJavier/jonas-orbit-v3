@@ -4,162 +4,251 @@ slug: delicate-4-0
 title: Delicaté 4.0
 eyebrow: E-commerce y sitio de marca
 summary: >-
-  E-commerce y sitio de marca para un negocio de jabones artesanales: catálogo
-  administrable, filtros, carrito persistente y pedidos mediante WhatsApp.
+  Tienda y sitio de marca para un negocio de jabones artesanales: catálogo
+  administrable en Django, carrito persistente y pedidos que se cierran por
+  WhatsApp, sin cuentas de cliente ni cobros en línea.
 statusLabel: Listo para producción; salida comercial pendiente
 role: Levantamiento de necesidades, UX/UI y desarrollo full-stack
 problem: >-
   El negocio necesitaba presentar su catálogo con una identidad propia y recibir
-  pedidos sin adoptar todavía pagos en línea ni una operación logística compleja.
+  pedidos bien formados sin adoptar todavía pagos en línea ni una operación
+  logística que no existe detrás.
 contribution: >-
-  Diseñé y desarrollé el producto completo: catálogo administrable con Django
-  REST, experiencia responsive en React, filtros, carrito persistente y pedido final.
+  Rediseñé y reconstruí el producto completo: API de catálogo de sólo lectura en
+  Django REST, administración del inventario, experiencia responsive en React y
+  un flujo de pedido que termina en una conversación de WhatsApp.
 decision: >-
-  Convertí el carrito en un pedido estructurado por WhatsApp para ajustarlo al
-  proceso real del negocio, en vez de simular un checkout que aún no podía operar.
-technologies: [React, Vite, Django, Django REST Framework, PostgreSQL, WhatsApp]
+  Retiré el registro de clientes, el carrito en servidor y el checkout de la
+  versión anterior, y convertí el carrito en un pedido estructurado por
+  WhatsApp: el mismo canal donde el negocio ya confirma, cobra y entrega.
+technologies: [React 19, Vite, Django 5.2, Django REST Framework, PostgreSQL, WhatsApp]
 highlights:
-  - Catálogo administrable desde Django
-  - Filtros por categoría y beneficios
-  - Carrito persistente en el navegador
-  - Pedido formateado y enviado por WhatsApp
-  - Diálogos accesibles, foco controlado y soporte de movimiento reducido
+  - Catálogo administrable desde Django, sin tocar código ni recompilar
+  - Carrito persistente en el navegador, sin obligar a registrarse
+  - Pedido completo, con cantidades y total, preformateado para WhatsApp
+  - Configuración de producción endurecida y límites de frecuencia en la API
+  - 12 pruebas de API, lint y build de producción en verde
 featuredImage:
   src: /media/projects/delicate/01-home-desktop.png
-  alt: Página principal de Delicaté con identidad visual cálida, productos artesanales y llamada a explorar el catálogo
-  caption: La portada combina propuesta de valor, producto e identidad sin parecer una plantilla genérica de tienda.
+  alt: Portada de Delicaté con el titular «Cuidado hecho con amor», llamada a descubrir la colección y una composición de jabones artesanales con coco, naranja, avena y miel
+  caption: "La portada presenta la marca antes que la tienda: tipografía editorial, paleta cálida y una sola acción principal."
 gallery:
-  - src: /media/projects/delicate/02-catalog-desktop.png
-    alt: Catálogo de Delicaté con filtros y tarjetas de jabones artesanales
-    caption: El catálogo permite explorar por categoría y beneficios sin recargar la página.
-  - src: /media/projects/delicate/03-cart-desktop.png
-    alt: Carrito de Delicaté en escritorio con productos, cantidades, total y acción de pedido
-    caption: El resumen prepara un pedido claro antes de continuar a WhatsApp.
-  - src: /media/projects/delicate/04-cart-mobile.png
-    alt: Carrito de Delicaté adaptado a móvil con acción para pedir mediante WhatsApp
-    caption: El flujo de compra conserva cantidades, total y acción principal en una pantalla pequeña.
-  - src: /media/projects/delicate/05-home-mobile.png
-    alt: Página principal de Delicaté adaptada a una pantalla móvil
-    caption: La marca y la propuesta de valor mantienen jerarquía en móvil.
-  - src: /media/projects/delicate/06-product-detail-desktop.png
-    alt: Detalle de producto de Delicaté con fotografía, descripción y acción para añadir al carrito
-    caption: Cada producto presenta la información necesaria antes de incorporarlo al pedido.
+  - src: /media/projects/delicate/02-catalog-filter-desktop.png
+    alt: Catálogo de Delicaté con el filtro Botánicos activo y tres jabones de esa categoría
+    caption: Seis categorías filtran el catálogo al instante, sin recargar la página.
+  - src: /media/projects/delicate/03-product-detail-desktop.png
+    alt: Ficha del jabón Cacao & Almendras con precio, existencias, beneficio, tipo de piel, ingredientes y botón para agregar al carrito
+    caption: La ficha responde lo que se pregunta antes de comprar —beneficio, piel, ingredientes, peso y existencias— en un diálogo nativo.
+  - src: /media/projects/delicate/04-cart-desktop.png
+    alt: Carrito lateral de Delicaté con tres jabones, cantidades editables, total estimado y botón para finalizar por WhatsApp
+    caption: El carrito prepara el pedido y aclara que el sitio no cobra; el cierre ocurre en la conversación.
+  - src: /media/projects/delicate/07-admin-catalog-desktop.png
+    alt: Administración de Django de Delicaté con la lista de diez productos y precio, existencias, destacado y activo editables en la misma tabla
+    caption: El negocio ajusta precio, existencias, destacados y visibilidad desde la propia lista del administrador.
+  - src: /media/projects/delicate/05-cart-mobile.png
+    alt: Carrito de Delicaté en un teléfono con tres productos, total estimado y botón verde para finalizar por WhatsApp
+    caption: En móvil el carrito ocupa la pantalla y la acción de WhatsApp queda al alcance del pulgar.
+  - src: /media/projects/delicate/06-catalog-mobile.png
+    alt: Catálogo de Delicaté en un teléfono con el filtro Nutritivos activo y la tarjeta del jabón Miel Dorada con su botón Agregar
+    caption: En una pantalla de 390 px los filtros se desplazan en una fila y «Agregar» queda siempre visible, sin depender del hover.
+  - src: /media/projects/delicate/08-story-desktop.png
+    alt: Sección Nuestra historia de Delicaté con una fotografía de jabones cortándose a mano y el texto sobre el origen de la marca
+    caption: La historia de la marca sostiene el precio de un producto artesanal; la fotografía de ambiente se generó para esta versión.
 links:
-  - label: Ver repositorio
-    href: https://github.com/JonasJavier/Delicate-4.0
-    kind: repository
   - label: Hablemos de tu proyecto
-    href: /es#contacto
+    href: /es/contacto
     kind: contact
-seoTitle: Delicaté 4.0 — E-commerce artesanal full-stack
-seoDescription: Caso de un e-commerce de jabones con Django REST, React, catálogo administrable, carrito persistente y pedidos por WhatsApp.
+seoTitle: Delicaté 4.0 — E-commerce artesanal con Django y React
+seoDescription: Caso de Delicaté, una tienda de jabones artesanales con catálogo administrable en Django REST, React, carrito persistente y pedidos por WhatsApp.
 ---
 
 ## 1. Contexto
 
-Delicaté es un producto web para un negocio real de jabones artesanales. El
-objetivo era presentar la marca y el catálogo con una experiencia propia, y abrir
-un canal de pedidos que el negocio pudiera atender con su operación actual.
+Delicaté es una marca de jabones artesanales hechos en pequeñas tandas en
+República Dominicana. Vende por conversación: el cliente pregunta, elige y
+coordina la entrega por WhatsApp. El sitio tenía que presentar la marca y el
+catálogo con una experiencia propia y llevar al cliente a esa conversación con
+el pedido ya armado.
+
+Esta es la cuarta versión. La primera, de 2024, era una tienda convencional:
+inicio de sesión con Google, verificación por correo, carrito guardado en el
+servidor, historial de pedidos y blog. La versión 4.0, de agosto de 2026, parte
+de preguntar qué necesitaba de verdad el negocio.
 
 ## 2. Problema
 
-Una tienda con checkout, pagos e inventario promete una operación que no siempre
-existe detrás. En este caso el negocio necesitaba mostrar productos, ayudar al
-cliente a elegir y recibir un pedido bien formado, pero la confirmación y el cierre
-seguirían ocurriendo por WhatsApp.
+Una tienda con cuentas, checkout, pagos e inventario promete una operación que
+este negocio no tiene. Pedir registro para comprar un jabón añade fricción sin
+aportar nada, y un checkout que no puede cobrar es una promesa rota. Lo que sí
+hacía falta era mostrar bien los productos, ayudar a elegir y recibir un pedido
+claro, porque la confirmación, el cobro y la entrega seguirían ocurriendo por
+WhatsApp.
 
 ## 3. Objetivo
 
-Crear una experiencia responsive que conectara descubrimiento de marca, exploración
-del catálogo, selección de productos y envío del pedido, con un catálogo que el
-negocio pudiera administrar sin tocar código.
+Una experiencia responsive que conecte descubrimiento de marca, exploración del
+catálogo, selección y envío del pedido, con un catálogo que el negocio pueda
+mantener sin tocar código y sin volver a publicar el frontend.
 
 ## 4. Mi función
 
-Me encargué del levantamiento de necesidades, arquitectura de información, UX/UI,
-desarrollo de frontend y backend, integración del flujo de pedido y preparación de
-la entrega técnica.
+Levanté las necesidades, definí la arquitectura de información y el recorrido,
+diseñé la interfaz y desarrollé frontend y backend. También preparé la
+documentación técnica, la lista de salida a producción y la especificación de
+una futura línea de jabones personalizados.
 
 ## 5. Usuarios
 
-El cliente final explora productos, filtra por necesidades, revisa detalles y arma
-su carrito. El negocio administra el catálogo desde Django y recibe en WhatsApp un
-resumen legible con productos y cantidades.
+El cliente explora la colección, filtra por categoría, abre la ficha de cada
+jabón y arma su pedido sin crear una cuenta. El equipo del negocio administra
+productos, precios, existencias, fotografías y destacados desde Django, y recibe
+en WhatsApp un mensaje legible con cada producto, su cantidad y el total.
 
 ## 6. Restricciones
 
-El alcance no incluye pagos en línea, seguimiento logístico ni promesas de stock en
-tiempo real. El flujo debía funcionar bien en móvil, conservar el carrito entre
-visitas y permitir que el catálogo cambiara sin recompilar el frontend.
+Sin pagos en línea, sin seguimiento logístico y sin prometer existencias en
+tiempo real. El flujo tenía que funcionar primero en el teléfono, conservar el
+carrito entre visitas y dejar que el catálogo cambiara sin recompilar nada.
+Tampoco se guardan datos de compradores: ni perfiles, ni direcciones, ni datos
+de facturación.
 
 ## 7. Proceso
 
-Partí del recorrido comercial real: descubrir la marca, encontrar un producto,
-comparar beneficios, construir el pedido y abrir la conversación. Separé el
-catálogo administrable de la presentación pública y probé el flujo completo con
-datos de demostración.
+Partí del recorrido comercial real —descubrir la marca, encontrar un producto,
+entender sus beneficios, armar el pedido y abrir la conversación— y retiré todo
+lo que no servía a ese recorrido. La reconstrucción eliminó los modelos de la
+versión anterior con migraciones explícitas (carrito, líneas de carrito,
+reseñas y perfiles de usuario), añadió una migración de datos para dar a cada
+producto un slug único y separó el catálogo administrable de la presentación
+pública. Probé el flujo completo con diez productos de demostración.
 
 ## 8. Decisiones importantes
 
-- API pública de solo lectura para el catálogo y administración protegida en Django.
-- Carrito persistido en `localStorage` para evitar perder la selección.
-- Pedido estructurado por WhatsApp como cierre real del proceso.
-- Filtros por categoría y beneficio para reducir la exploración manual.
+- **Sin cuentas de cliente.** El usuario personalizado de Django existe sólo
+  para el equipo administrador; el comprador nunca se registra.
+- **API pública de sólo lectura.** El catálogo se consulta por la API y se
+  escribe únicamente desde el administrador de Django.
+- **Carrito en el navegador.** Se guarda en `localStorage`, sobrevive a la
+  recarga y limita cada cantidad a las existencias disponibles.
+- **WhatsApp como cierre.** El carrito genera el pedido completo como mensaje
+  y abre la conversación con el negocio.
+- **La demostración nunca sustituye a los datos reales.** El catálogo de
+  respaldo sólo aparece en desarrollo o si se activa explícitamente, y siempre
+  con un aviso visible. En producción, si la API falla, el cliente ve un error
+  con opción de reintentar, no productos inventados.
+
+Éste es el mensaje que genera el carrito de las capturas:
+
+```text
+Hola Delicaté 👋
+Quiero realizar este pedido:
+
+• 2 × Avena Calma — RD$700
+• 1 × Corazón de Lavanda — RD$425
+• 1 × Café Despierto — RD$450
+
+Total estimado: RD$1,575
+
+Mi nombre es:
+Prefiero: entrega / recoger
+
+¿Me confirman disponibilidad y forma de entrega? Gracias.
+```
 
 ## 9. Arquitectura y stack
 
-El backend usa Django 5.2 y Django REST Framework 3.17; el frontend usa React 19 y
-Vite 8. PostgreSQL es la base recomendada para producción. La API expone el
-catálogo y React mantiene el estado de exploración y carrito en el cliente.
+El backend usa Django 5.2 LTS y Django REST Framework 3.17, organizado en tres
+aplicaciones: `shop` (productos, API y administración), `contact` (mensajes y
+suscripciones) y `accounts` (usuario administrador por correo). La API expone
+el listado paginado con filtros por categoría, destacados y búsqueda, el
+detalle por slug y un endpoint de salud. La base es SQLite en desarrollo y
+PostgreSQL en producción mediante `DATABASE_URL`; los estáticos se sirven
+comprimidos con WhiteNoise.
+
+El frontend es React 19 con Vite 8 y CSS propio, sin librerías de estado ni de
+componentes: React es su única dependencia de ejecución. El JavaScript de
+producción pesa 69 KB comprimido. En desarrollo, Vite hace de proxy de la API y
+de las imágenes del catálogo, así que frontend y backend corren como dos
+servicios independientes.
 
 ## 10. Desafíos
 
-El principal desafío fue construir una experiencia de compra convincente sin
-inventar una infraestructura de pagos o logística. También hubo que mantener
-consistencia entre el catálogo administrado, los filtros, el detalle y un carrito
-que sobrevive a la recarga.
+El principal fue construir una experiencia de compra convincente sin fingir una
+infraestructura de pagos o logística. El segundo, mantener coherentes el
+catálogo administrado, los filtros, la ficha de producto y un carrito que
+sobrevive a la recarga, incluso cuando la API tarda, falla o una imagen no
+carga. Y el tercero fue reducir: pasar de una tienda sobredimensionada a un
+producto de unas 2.200 líneas que se puede mantener.
 
 ## 11. Soluciones implementadas
 
-El catálogo se consulta desde la API y se presenta con estados claros. El carrito
-normaliza cantidades, calcula el resumen y genera un mensaje de WhatsApp con el
-pedido. La aplicación contempla estados vacíos y de error, y mantiene separadas las
-responsabilidades de contenido, selección y cierre.
+- El catálogo tiene estados de carga, error con reintento, categoría vacía y
+  producto agotado; la petición se cancela si el componente se desmonta y cada
+  imagen tiene una copia local de respaldo.
+- El comando `seed_products` crea o actualiza el catálogo de demostración, se
+  puede repetir sin duplicar y se niega a continuar si dos productos comparten
+  fotografía o si falta alguna imagen.
+- Las imágenes del catálogo se validan por formato (JPG, PNG, WebP) y por peso
+  (5 MB como máximo).
+- Los endpoints públicos de escritura tienen límite de frecuencia: 10 mensajes
+  de contacto y 5 suscripciones por hora y visitante, además de un tope general
+  para la API.
+- La configuración sale de variables de entorno. Con `DEBUG` apagado, Django se
+  niega a arrancar con la clave de desarrollo y activa por defecto la
+  redirección a HTTPS, HSTS de un año, cookies seguras y protección contra
+  *clickjacking*.
 
 ## 12. Diseño y UX
 
-La dirección visual usa una paleta cálida, fotografía de producto y composición
-editorial para comunicar artesanía. En interacción, los diálogos controlan el foco,
-existe soporte para `prefers-reduced-motion` y el flujo conserva acciones claras en
-escritorio y móvil.
+La dirección visual usa una paleta cálida de crema, verde bosque y terracota,
+una serif editorial para los titulares y mucho aire para comunicar artesanía.
+La página cuenta una historia en orden: portada, valores, colección, historia
+de la marca, cómo pedir en tres pasos, preguntas frecuentes y contacto. Al
+agregar un producto, el carrito se abre para confirmar el gesto. En
+accesibilidad, la ficha es un `<dialog>` nativo, el carrito atrapa y devuelve el
+foco, el menú móvil se cierra con Escape, hay enlace para saltar al contenido,
+los filtros declaran su estado con `aria-pressed` y se respeta
+`prefers-reduced-motion`.
 
 ## 13. Capturas y demo
 
-La selección muestra portada, catálogo, detalle, carrito y variantes móviles. Los
-diez productos visibles durante la captura son datos de demostración preparados
-para validar la interfaz, no una afirmación sobre el inventario comercial actual.
+La selección muestra portada, catálogo filtrado en escritorio y en móvil, ficha
+de producto, carrito en escritorio y en móvil, la administración del catálogo y
+la historia de la marca. Se capturaron el 23 de septiembre de 2026 sobre la
+aplicación en local, con una base de datos desechable y los diez productos de
+demostración, que no son una afirmación sobre el inventario comercial. Las
+fotografías de producto proceden del proyecto original; las de ambiente de la
+portada y la historia se generaron para esta versión.
 
 ## 14. Resultados verificables
 
-La API y el frontend funcionan de extremo a extremo; las 12 pruebas automatizadas
-pasan; Django no reporta problemas de sistema ni migraciones pendientes; y el
-frontend supera lint y build de producción. No se atribuyen ventas ni conversiones
-porque todavía no existe evidencia de negocio publicada.
+Verificado el 23 de septiembre de 2026 sobre el último commit: las 12 pruebas
+automatizadas pasan (API de catálogo, formularios, límite de frecuencia y
+permisos de administrador); `manage.py check` no reporta problemas; no hay
+migraciones pendientes; y el frontend supera lint y build de producción. No se
+atribuyen ventas ni conversiones porque todavía no existe evidencia de negocio
+publicada.
 
 ## 15. Aprendizajes
 
-Un buen producto no necesita fingir más infraestructura de la que el negocio puede
-operar. Ajustar el cierre a WhatsApp convirtió una limitación real en un flujo
-coherente, medible y fácil de adoptar.
+Un buen producto no necesita fingir más infraestructura de la que el negocio
+puede operar. Quitar cuentas, carrito en servidor y checkout hizo el sistema más
+pequeño, más seguro y más fácil de adoptar, y convirtió una limitación real en
+un flujo coherente. La versión que más aporta no fue la que más hacía, sino la
+que mejor se ajustaba a cómo vende el negocio.
 
 ## 16. Estado actual
 
-El producto está técnicamente listo para desplegar. Antes de la salida comercial
-faltan las validaciones operativas indicadas por el negocio —contenido final,
-contacto, variables y revisión del proceso de atención—, por eso no se etiqueta aún
-como “en producción”.
+El producto está técnicamente listo para desplegar. Antes de la salida
+comercial faltan las validaciones que dependen del negocio y están recogidas en
+su lista de salida a producción: contenido y precios finales, políticas de
+entrega y privacidad, prueba del pedido en Android e iPhone, copias de
+seguridad y monitoreo. Por eso no se etiqueta aún como «en producción».
 
 ## 17. Enlaces y siguiente paso
 
-El código está disponible en el [repositorio de Delicaté](https://github.com/JonasJavier/Delicate-4.0).
-La URL pública se añadirá después del despliegue y la validación comercial.
+El código vive en un repositorio privado y la URL pública se añadirá después
+del despliegue y la validación comercial. La siguiente línea del producto ya
+está especificada: un configurador guiado de jabón personalizado cuyo resultado
+es una solicitud por WhatsApp, no una compra automática. Todavía no forma parte
+del sistema.

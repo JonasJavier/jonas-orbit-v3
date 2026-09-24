@@ -51,7 +51,6 @@ export function SystemHud({
         <span className="hud__bracket hud__bracket--tr" />
         <span className="hud__bracket hud__bracket--bl" />
         <span className="hud__bracket hud__bracket--br" />
-        <span className="hud__reticle" />
       </div>
 
       <div className="hud__top" aria-hidden="true">

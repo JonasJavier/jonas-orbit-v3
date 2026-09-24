@@ -9,7 +9,6 @@
   background: #06131c;
   color: #edf5f4;
 }
-body:has(.miller-route) .site-footer { margin-top: 0; background: #06131c; }
 body:has(.miller-route) .scene-toggle { display: none; }
 .miller-page { overflow: clip; }
 .miller-page :is(h1, h2, h3, p, ul, dl) { margin: 0; }

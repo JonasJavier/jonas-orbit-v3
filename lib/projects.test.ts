@@ -10,17 +10,19 @@ describe("projects", () => {
     expect(project.prose.slug).toBe("omsta");
   });
 
-  it("publica exactamente los cuatro proyectos aprobados para F1A", () => {
+  it("publica exactamente los cinco proyectos aprobados, en orden editorial", () => {
     expect(getF1AProjects("es").map((project) => project.id)).toEqual([
       "omsta",
       "izaks-photos",
       "wikiverse",
       "network",
+      "delicate",
     ]);
   });
 
-  it("resuelve por slug localizado y excluye el caso de F1B", () => {
+  it("resuelve por slug localizado, nunca por id", () => {
     expect(getF1AProjectBySlug("omsta", "es")?.id).toBe("omsta");
+    expect(getF1AProjectBySlug("delicate-4-0", "es")?.id).toBe("delicate");
     expect(getF1AProjectBySlug("delicate", "es")).toBeUndefined();
     expect(getF1AProjectBySlug("desconocido", "es")).toBeUndefined();
   });

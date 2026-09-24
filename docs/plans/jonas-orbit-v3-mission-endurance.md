@@ -143,6 +143,9 @@ OMSTA está autorizado para publicación: nombre, logo, pantallas, funcionalidad
   directa en Ranger (ver "Distribución y conversión") mientras el e-commerce madura.
 - **F1A — fichas breves (formato completo, NO placeholders):** portafolio fotográfico, Wiki Universe, red social. Cada ficha incluye como mínimo: nombre, problema/necesidad, mi función, tecnologías reales, una captura/visual, estado actual, enlace cuando sea publicable, y una decisión/desafío/aprendizaje relevante. Delicaté NO entra en F1A aunque su material y caso ya estén listos; se publica como caso completo en F1B.
 - **F1B:** Delicaté y el portafolio fotográfico se publican como segundo y tercer caso completo.
+  **Actualización 2026-09-23:** Delicaté se adelanta y se publica ya como
+  segundo caso completo, por decisión del dueño (registro de decisiones, misma
+  fecha). En F1B queda el portafolio fotográfico.
 - **F2A:** Wiki Universe y red social se convierten en casos completos. Al cerrar F2A: 5 casos reales completos en ES.
 
 ### Estructura de casos completos ("caja negra de misión", 17 secciones)

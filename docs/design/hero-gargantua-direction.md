@@ -206,6 +206,16 @@ no es color del HUD: pertenece a la baliza de Ranger y al stardust de puntero.
 La franja superior se limita a `ENDURANCE // NAV`, `JONAS ORBIT` y un indicador
 real `SYSTEM NOMINAL`, `SYSTEM FLAT` o equivalente.
 
+### 7 bis. Sin retículo fijo sobre Gargantúa (2026-09-23)
+
+Sustituye §7 únicamente en la marca de calibración del centro del visor. El
+dueño identificó sus dos trazos laterales como «dos rayitas muy muy pequeñas»
+dentro de Gargantúa: al coincidir el centro del HUD con la sombra se leían como
+un defecto de la escena 3D. Se retira el retículo fijo completo —los dos trazos
+laterales y los dos verticales del mismo glifo—, sin reemplazarlo por otra marca.
+El marco, los cuatro brackets del cristal, la franja superior, TARGET y el
+retículo móvil del puntero permanecen intactos.
+
 ## 8. TARGET, brackets y trayectorias
 
 TARGET se compone con texto, regla, micro marcadores y espacio negativo; nunca

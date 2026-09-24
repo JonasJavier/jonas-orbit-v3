@@ -53,10 +53,9 @@ marcada como bespoke (`BESPOKE_WORLD_IDS`) que sigue con la ficha genérica.
 - **La ruta del caso completo existe y funciona** (`/es/proyectos/[slug]`,
   `ProjectCase`, A20 y A30 cubiertos). La mesa no lo duplica: es el instrumento
   para elegir cuánto profundizar y el caso es la profundidad entera.
-- **El índice publica cuatro proyectos, no cinco.** `getF1AProjects` filtra por
-  `F1A_PROJECT_IDS` y Delicaté está en F1B por decisión del plan (2026-07-23,
-  ratificada 2026-08-03). Su caso está redactado y sus capturas existen. El
-  boceto muestra cinco; ver la decisión abierta en §13.
+- **El índice publica cinco proyectos** desde el 2026-09-23 (§13.1). Hasta
+  entonces eran cuatro: Delicaté estaba en F1B por decisión del plan
+  (2026-07-23, ratificada 2026-08-03).
 - **Las capturas son PNG reales de pantalla**, sin marco de dispositivo:
   escritorio a 1440 × 900 (Izak's a 2160 × 1500) y móvil a 390 × 844 (Izak's a
   780 × 1688). Pesan entre 29 KB y 3,2 MB; las tres de Izak's suman 5,7 MB.
@@ -318,11 +317,13 @@ durable de las tareas]*, Redis (colas y caché). Infraestructura: Django Q2
 —reservas → facturación → pagos → contabilidad → ledger → DGII—, nómina →
 ledger, todo servicio → PostgreSQL, worker → Redis y PostgreSQL.
 
-**Delicaté** — Cliente: Portada (01), Catálogo y filtros (02), Detalle (06),
-Carrito (03/04) *[decisión: carrito persistido en `localStorage`]*. Servicio:
-API pública de sólo lectura (DRF) *[decisión]*, Administración del catálogo
-(Django). Datos: PostgreSQL. Infraestructura: WhatsApp *[decisión: el pedido
-estructurado como cierre real del proceso]*.
+**Delicaté** (capturas renovadas 2026-09-23) — Cliente: Portada (01),
+Catálogo y filtro por categoría (02, 06 móvil), Detalle (03), Carrito (04, 05
+móvil) *[decisión: carrito persistido en `localStorage`, sin cuentas de
+cliente]*. Servicio: API pública de sólo lectura (DRF) *[decisión]*,
+Administración del catálogo (Django, 07). Datos: PostgreSQL. Infraestructura:
+WhatsApp *[decisión: el pedido estructurado como cierre real del proceso]*.
+La 08 (historia de la marca) es sólo de Resultado/Diseño.
 
 **Wiki Universe** — Cliente: Inicio (01), Artículo (02), Historial (03).
 Servicio: API DRF con JWT y esquema OpenAPI, Artículos en Markdown, Revisiones
@@ -475,11 +476,11 @@ fecha; este documento recibe las enmiendas con lo medido, como los demás.
 
 ## 13. Decisiones abiertas, para Jonás
 
-1. **Delicaté en la mesa.** El plan lo tiene en F1B y el boceto lo muestra. Su
-   caso y capturas están listos. Recomendación: la mesa lista **cuatro** hasta
-   que él declare F1B, y su `architecture` se redacta ya para que entrar sea
-   mover un id a `F1A_PROJECT_IDS`. Si prefiere cinco desde el primer día, es
-   un cambio del plan principal y se anota allí.
+1. ~~**Delicaté en la mesa.**~~ **Cerrada 2026-09-23: cinco.** El dueño lo
+   publicó antes de construir la mesa; `delicate` ya está en
+   `F1A_PROJECT_IDS` y la mesa lista cinco proyectos desde la primera
+   entrega. Sus capturas son ahora ocho (ver §6); no tiene enlace a
+   repositorio mientras éste sea privado.
 2. **Los borradores de arquitectura del §6.** Están sacados de su texto; los
    confirma o corrige antes de la segunda entrega. En particular: qué
    pantallas de OMSTA corresponden a qué módulo, y si Nómina va como nodo.
