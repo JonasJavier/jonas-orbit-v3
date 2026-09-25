@@ -564,6 +564,7 @@
   .table-fallback dt { color: var(--pj-ink); }
   .table-fallback dt small { color: var(--pj-muted); }
   .table-fallback dd { margin: 2px 0 0; }
+  .table-fallback li b { display: block; margin-top: 2px; font-weight: 400; color: var(--pj-ink); }
   /* El stack grabado calla antes de hidratar: sin guion, la lista se ve. */
   .table-read__stack { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 14px; font: 0.66rem/1.6 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--pj-muted); }
 }
@@ -1067,8 +1068,12 @@
 .table .holo-line { stroke-dashoffset: 1; }
 .table[data-layer="ingenieria"] .holo-line { stroke-dashoffset: 0; }
 /* LA RUTA se tiene que leer a distancia: lo que no está en ella baja más en
-   la mesa que en el caso, porque aquí compite con la sala y con el anillo. */
-.table .holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) { opacity: 0.26; }
+   la mesa que en el caso, porque aquí compite con la sala y con el anillo;
+   el nombre, al gris más apagado que aún se lee (`--pj-dim`, 5,9:1). */
+.table .holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) .holo-node__chip {
+  border-color: rgb(160 228 255 / 8%);
+  color: var(--pj-dim);
+}
 .table .holo-diagram[data-focus] .holo-line:not([data-on]) { opacity: 0.16; }
 
 /* En Ingeniería el esquema tapa el centro del haz: sólo asomarían sus
@@ -1094,6 +1099,11 @@
   left: calc(50% + var(--holo-x));
   bottom: 12px;
   z-index: 6;
+  /* Su propio ancho, no el que le deja `left: 50%`: encogido a ese hueco, las
+     columnas "iguales" salían desiguales y la luz, que se coloca por índice,
+     se montaba sobre el vecino. */
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--pj-gutter));
   display: flex;
   align-items: center;
   gap: 2px;
@@ -1160,7 +1170,7 @@
   justify-content: center;
   gap: 8px;
   min-height: 48px;
-  padding: 0 18px;
+  padding: 0 24px;
   color: #8a98ae;
   text-decoration: none;
   white-space: nowrap;
@@ -1432,6 +1442,12 @@ html[data-motion="off"] .projects-page *::after {
 .projects-neighbours a:hover, .projects-neighbours a:focus-visible { color: var(--pj-amber); }
 .projects-neighbours small { display: block; font: 0.6rem/1.6 var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--pj-muted); }
 .projects-neighbours a > span:not([aria-hidden]) { font-family: var(--font-mono); font-size: 0.86rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* Portátiles de 1300-1439 px: el muelle con flechas cabe entre la mesa y la
+   bandeja de sonido y movimiento sólo con columnas algo más prietas. */
+@media (min-width: 1300px) and (max-width: 1439px) {
+  .table-dock__item { padding: 0 18px; }
+}
 
 /* ── Escritorio estrecho: el muelle pierde sus flechas antes que pisar la
    bandeja de sonido y movimiento (el teclado, la rueda y el clic siguen) ── */

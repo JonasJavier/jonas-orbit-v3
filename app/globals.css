@@ -748,9 +748,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   font-style: normal;
 }
 
-/* Un artefacto literal del producto (p. ej. el mensaje que genera): va en la
-   columna del texto y ajusta la línea en vez de desbordar el móvil. */
-
 .not-found {
   position: relative;
   display: flex;

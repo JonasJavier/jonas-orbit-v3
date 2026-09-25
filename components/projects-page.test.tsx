@@ -263,9 +263,14 @@ describe("ProjectsPage", () => {
       expect([...sectionHtml.querySelectorAll(".holo-screen img")].map((img) => img.getAttribute("alt"))).toEqual(
         images.map((image) => image.alt),
       );
+      // Sin guion, la ficha dice lo que dice la capa Diseño: las decisiones de
+      // diseño si las hay; si no, los pies de las pantallas.
       const fallback = sectionHtml.querySelector(".table-fallback") as HTMLElement;
-      expect([...fallback.querySelectorAll("ol > li")].map((item) => item.textContent)).toEqual(
-        images.map((image) => image.caption),
+      const decisions = prose.designDecisions ?? [];
+      expect([...fallback.querySelectorAll("ol > li")].map((item) => item.textContent), id).toEqual(
+        decisions.length > 0
+          ? decisions.map((entry) => `Problema: ${entry.problem} Decisión: ${entry.decision}`)
+          : images.map((image) => image.caption),
       );
       const nodes = prose.architecture?.nodes ?? [];
       expect(fallback.querySelectorAll("dl dt"), id).toHaveLength(nodes.length);
@@ -339,7 +344,10 @@ describe("EngineeringTable · capas (P4)", () => {
     expect(note()).toHaveAttribute("inert");
 
     fireEvent.click(tab(/Diseño/));
-    expect(all(false, frames("omsta"))).toBe(true);
+    // Sólo las pantallas del carrete: una que no está en él no se elige
+    // (mientras se retiraba, un clic saltaba a la última decisión).
+    const inReel = new Set(table()[0].reel.map((step) => step.screen));
+    expect(inert(frames("omsta"))).toEqual(frames("omsta").map((_, index) => !inReel.has(index)));
     expect(all(true, nodes())).toBe(true);
     expect(note()).not.toHaveAttribute("inert");
     // Un proyecto oculto no se opera en ninguna capa.
@@ -891,11 +899,18 @@ describe("EngineeringTable · Producto y Diseño", () => {
         expect(description?.tagName).toBe("FIGCAPTION");
         expect(description).toHaveTextContent(omsta.screens[index].caption);
       }
-      // La lámina lleva el nombre y la imagen calla: no se lee dos veces.
+      // La lámina lleva el nombre y la imagen calla: no se lee dos veces. Una
+      // pantalla fuera del carrete no se elige: su lámina va inerte y su
+      // imagen conserva el `alt`.
       expect(frame).toHaveAttribute("aria-label", omsta.screens[index].alt);
       const image = frame.parentElement?.querySelector("img");
       expect(image).toHaveAttribute("alt", omsta.screens[index].alt);
-      expect(image).toHaveAttribute("aria-hidden", "true");
+      if (step) {
+        expect(image).toHaveAttribute("aria-hidden", "true");
+      } else {
+        expect(frame).toHaveAttribute("inert");
+        expect(image).not.toHaveAttribute("aria-hidden");
+      }
     }
   });
 

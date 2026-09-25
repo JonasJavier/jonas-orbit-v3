@@ -692,6 +692,113 @@ export function EngineeringTable({
         <h1 className="table-head__title">{head.title}</h1>
       </header>
 
+      {/*
+        EL MUELLE: la barra de misión. Sin JavaScript es una lista de enlaces
+        `#id` que `:target` resuelve; con él, el activo lleva `aria-current`,
+        una luz se desliza bajo él y apuntar otro proyecto lo previsualiza.
+        Va en el DOM justo tras la cabecera, aunque en escritorio se pinte al
+        pie: el orden de foco y de lectura es elegir proyecto → capa →
+        lectura, el mismo que se ve en móvil (chips arriba).
+      */}
+      <nav
+        ref={dockRef}
+        aria-label="Proyectos"
+        className="table-dock"
+        style={{ "--n": projects.length, "--active": currentIndex } as CSSProperties}
+      >
+        <button
+          aria-label="Proyecto anterior"
+          className="table-dock__step"
+          data-dir="prev"
+          onClick={() => stepProject(-1)}
+          type="button"
+        >
+          <Chevron direction="left" />
+        </button>
+        <div className="table-dock__rail">
+          <ul ref={listRef} className="table-dock__list" onKeyDown={onDockKey}>
+            {projects.map((entry, index) => (
+              <li
+                key={entry.id}
+                data-dist={enhanced ? Math.min(Math.abs(index - currentIndex), 2) : undefined}
+              >
+                <a
+                  aria-current={enhanced && entry.id === project ? "true" : undefined}
+                  className="table-dock__item"
+                  href={`#${entry.id}`}
+                  onBlur={closePeek}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    switchProject(entry.id);
+                  }}
+                  onFocus={(event: FocusEvent<HTMLAnchorElement>) => {
+                    prefetch(entry);
+                    if (focusVisible(event.currentTarget)) peekAt(entry);
+                  }}
+                  onPointerEnter={(event) => {
+                    prefetch(entry);
+                    if (event.pointerType === "mouse") peekAt(entry);
+                  }}
+                  onPointerLeave={releasePeek}
+                >
+                  <span className="visually-hidden">{entry.title}</span>
+                  <span aria-hidden="true" className="table-dock__index">
+                    {pad(index + 1)}
+                  </span>
+                  <span aria-hidden="true" className="table-dock__name">
+                    {entry.name}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {/* La luz del activo: nace ya en su sitio al hidratar (no viaja
+              desde el primero) y después se desliza de uno a otro. */}
+          {enhanced ? <span aria-hidden="true" className="table-dock__glow" /> : null}
+          {peeked ? (
+            <div
+              aria-hidden="true"
+              className="table-dock__peek"
+              data-open={peek?.open && peeked.id !== current.id ? "true" : undefined}
+              onPointerEnter={holdPeek}
+              onPointerLeave={releasePeek}
+              style={
+                {
+                  "--peek": projects.indexOf(peeked),
+                  ...(peeked.screens[0].sources.luma === null ? {} : { "--luma": peeked.screens[0].sources.luma }),
+                } as CSSProperties
+              }
+            >
+              <span className="table-dock__peek-shot" data-frame={peeked.screens[0].frame}>
+                {/* Una imagen por proyecto (`key`): con la red lenta, mientras
+                    llega, se ve el fondo oscuro, nunca la captura de otro. */}
+                <img
+                  key={peeked.id}
+                  alt=""
+                  decoding="async"
+                  height={peeked.screens[0].sources.height}
+                  src={peeked.screens[0].sources.thumb}
+                  width={peeked.screens[0].sources.width}
+                />
+              </span>
+              <span className="table-dock__peek-text">
+                <span className="table-dock__peek-name">{peeked.name}</span>
+                <span className="table-dock__peek-what">{peeked.descriptor}</span>
+              </span>
+            </div>
+          ) : null}
+        </div>
+        <button
+          aria-label="Proyecto siguiente"
+          className="table-dock__step"
+          data-dir="next"
+          onClick={() => stepProject(1)}
+          type="button"
+        >
+          <Chevron direction="right" />
+        </button>
+      </nav>
+
       <div aria-label="Profundidad de lectura" className="table-tabs" onKeyDown={onTabKey} role="tablist">
         {TABLE_LAYERS.map((entry) => (
           <button
@@ -815,8 +922,13 @@ export function EngineeringTable({
                         key={screen.src}
                         eager={projectIndex === 0 && screen.featured}
                         front={ring === 0}
-                        onPick={() => setFront(index)}
-                        operable={operable("diseno")}
+                        onPick={() => {
+                          if (index >= 0) setFront(index);
+                        }}
+                        // Fuera del carrete la pantalla no se elige: mientras se
+                        // retira (0,6 s) seguía apuntable y un clic saltaba a
+                        // la última decisión.
+                        operable={operable("diseno") && index >= 0}
                         projectId={entry.id}
                         ring={ring}
                         screen={screen}
@@ -894,12 +1006,27 @@ export function EngineeringTable({
               se pinta con `scripting: none`; con la mesa viva sobraría.
             */}
             <div className="table-fallback">
-              <h3>Pantallas</h3>
-              <ol>
-                {entry.screens.map((screen) => (
-                  <li key={screen.src}>{screen.caption}</li>
-                ))}
-              </ol>
+              {entry.reelKind === "decisions" ? (
+                <>
+                  <h3>Decisiones de diseño</h3>
+                  <ol>
+                    {entry.reel.map((step) => (
+                      <li key={step.screen}>
+                        <span>Problema: {step.problem}</span> <b>Decisión: {step.note}</b>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              ) : (
+                <>
+                  <h3>Pantallas</h3>
+                  <ol>
+                    {entry.screens.map((screen) => (
+                      <li key={screen.src}>{screen.caption}</li>
+                    ))}
+                  </ol>
+                </>
+              )}
               <h3>Sistema</h3>
               <dl>
                 {entry.architecture.nodes.map((node) => (
@@ -915,110 +1042,6 @@ export function EngineeringTable({
           </section>
         );
       })}
-
-      {/*
-        EL MUELLE: la barra de misión. Sin JavaScript es una lista de enlaces
-        `#id` que `:target` resuelve; con él, el activo lleva `aria-current`,
-        una luz se desliza bajo él y apuntar otro proyecto lo previsualiza.
-      */}
-      <nav
-        ref={dockRef}
-        aria-label="Proyectos"
-        className="table-dock"
-        style={{ "--n": projects.length, "--active": currentIndex } as CSSProperties}
-      >
-        <button
-          aria-label="Proyecto anterior"
-          className="table-dock__step"
-          data-dir="prev"
-          onClick={() => stepProject(-1)}
-          type="button"
-        >
-          <Chevron direction="left" />
-        </button>
-        <div className="table-dock__rail">
-          <ul ref={listRef} className="table-dock__list" onKeyDown={onDockKey}>
-            {projects.map((entry, index) => (
-              <li
-                key={entry.id}
-                data-dist={enhanced ? Math.min(Math.abs(index - currentIndex), 2) : undefined}
-              >
-                <a
-                  aria-current={enhanced && entry.id === project ? "true" : undefined}
-                  className="table-dock__item"
-                  href={`#${entry.id}`}
-                  onBlur={closePeek}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    switchProject(entry.id);
-                  }}
-                  onFocus={(event: FocusEvent<HTMLAnchorElement>) => {
-                    prefetch(entry);
-                    if (focusVisible(event.currentTarget)) peekAt(entry);
-                  }}
-                  onPointerEnter={(event) => {
-                    prefetch(entry);
-                    if (event.pointerType === "mouse") peekAt(entry);
-                  }}
-                  onPointerLeave={releasePeek}
-                >
-                  <span className="visually-hidden">{entry.title}</span>
-                  <span aria-hidden="true" className="table-dock__index">
-                    {pad(index + 1)}
-                  </span>
-                  <span aria-hidden="true" className="table-dock__name">
-                    {entry.name}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-          {/* La luz del activo: nace ya en su sitio al hidratar (no viaja
-              desde el primero) y después se desliza de uno a otro. */}
-          {enhanced ? <span aria-hidden="true" className="table-dock__glow" /> : null}
-          {peeked ? (
-            <div
-              aria-hidden="true"
-              className="table-dock__peek"
-              data-open={peek?.open && peeked.id !== current.id ? "true" : undefined}
-              onPointerEnter={holdPeek}
-              onPointerLeave={releasePeek}
-              style={
-                {
-                  "--peek": projects.indexOf(peeked),
-                  ...(peeked.screens[0].sources.luma === null ? {} : { "--luma": peeked.screens[0].sources.luma }),
-                } as CSSProperties
-              }
-            >
-              <span className="table-dock__peek-shot" data-frame={peeked.screens[0].frame}>
-                {/* Una imagen por proyecto (`key`): con la red lenta, mientras
-                    llega, se ve el fondo oscuro, nunca la captura de otro. */}
-                <img
-                  key={peeked.id}
-                  alt=""
-                  decoding="async"
-                  height={peeked.screens[0].sources.height}
-                  src={peeked.screens[0].sources.thumb}
-                  width={peeked.screens[0].sources.width}
-                />
-              </span>
-              <span className="table-dock__peek-text">
-                <span className="table-dock__peek-name">{peeked.name}</span>
-                <span className="table-dock__peek-what">{peeked.descriptor}</span>
-              </span>
-            </div>
-          ) : null}
-        </div>
-        <button
-          aria-label="Proyecto siguiente"
-          className="table-dock__step"
-          data-dir="next"
-          onClick={() => stepProject(1)}
-          type="button"
-        >
-          <Chevron direction="right" />
-        </button>
-      </nav>
 
       <p aria-live="polite" className="visually-hidden">
         {enhanced && spoken ? announcement : ""}

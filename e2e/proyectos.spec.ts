@@ -177,13 +177,19 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, al
   expect(alts).toEqual(PROJECT_IDS.flatMap((id) => screensOf(mdx(id)).map((image) => image.alt)));
 
   // Sin hash se lee el primero, y su ficha de texto se pinta porque no hay
-  // guion (`@media (scripting: none)`): pantallas y sistema con decisiones.
+  // guion (`@media (scripting: none)`): lo que dice la capa Diseño —las
+  // decisiones de diseño o, sin ellas, los pies— y el sistema con decisiones.
   await expect(page.locator("#omsta")).toBeVisible();
   for (const id of PROJECT_IDS.slice(1)) await expect(page.locator(`#${id}`)).toBeHidden();
   const omsta = mdx("omsta");
   const sheet = page.locator("#omsta .table-fallback");
   await expect(sheet, "la ficha sin JS no se pinta: ¿Chromium no casa `scripting: none` con javaScriptEnabled: false?").toBeVisible();
-  await expect(sheet.locator("ol > li")).toHaveText(screensOf(omsta).map((image) => image.caption));
+  const designDecisions = omsta.designDecisions ?? [];
+  await expect(sheet.locator("ol > li")).toHaveText(
+    designDecisions.length > 0
+      ? designDecisions.map((entry) => `Problema: ${entry.problem} Decisión: ${entry.decision}`)
+      : screensOf(omsta).map((image) => image.caption),
+  );
   await expect(sheet.locator("dl dt")).toHaveCount(omsta.architecture.nodes.length);
   await expect(sheet.locator("dl dd")).toHaveCount(omsta.architecture.nodes.filter((node) => node.decision).length);
   // El alcance es HTML servido en la capa de entrada (Producto): se lee sin guion.
@@ -387,7 +393,7 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
 
 test("P7 · el muelle: ← → dentro, botones anterior/siguiente, flechas globales, rueda horizontal y vista previa", async ({ page }) => {
   test.setTimeout(90_000);
-  await openTable(page, { width: 1440, height: 900 });
+  await openTable(page, { width: 1440, height: 900 }, `${MESA}#${PROJECT_IDS[0]}`);
   await expectActive(page, PROJECT_IDS[0]);
   const dock = page.getByRole("navigation", { name: "Proyectos" });
   const at = (offset: number) => PROJECT_IDS[(((offset % PROJECT_IDS.length) + PROJECT_IDS.length) % PROJECT_IDS.length)];
@@ -435,21 +441,20 @@ test("P7 · el muelle: ← → dentro, botones anterior/siguiente, flechas globa
   expect(await page.evaluate(() => history.length)).toBe(depth);
 
   /*
-    La rueda HORIZONTAL sobre el muelle: un proyecto por gesto, aunque el
-    gesto traiga varios eventos (la inercia de un trackpad). La vertical es
-    el scroll de la página y nunca pasa de proyecto. El muelle está en la
-    página, no fijo: tras el scroll vertical se vuelve a medir.
+    La rueda sobre el muelle. La VERTICAL es el scroll de la página: ni pasa
+    de proyecto ni se secuestra (se despacha a mano para leer, en el acto,
+    si alguien la anuló). La HORIZONTAL pasa un proyecto por gesto, aunque el
+    gesto traiga varios eventos, como la inercia de un trackpad.
   */
-  const centre = async () => {
-    const box = await dock.boundingBox();
-    if (!box) throw new Error("El muelle no tiene caja");
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  };
-  await centre();
-  await page.mouse.wheel(0, 160);
-  expect(await page.evaluate(() => location.hash), "la rueda vertical no pasa de proyecto").toBe(`#${at(0)}`);
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await centre();
+  const vertical = await dock.evaluate((nav) => {
+    const event = new WheelEvent("wheel", { deltaY: 160, bubbles: true, cancelable: true });
+    nav.dispatchEvent(event);
+    return { prevented: event.defaultPrevented, hash: location.hash };
+  });
+  expect(vertical, "la rueda vertical es de la página").toEqual({ prevented: false, hash: `#${at(0)}` });
+  const dockBox = await dock.boundingBox();
+  if (!dockBox) throw new Error("El muelle no tiene caja");
+  await page.mouse.move(dockBox.x + dockBox.width / 2, dockBox.y + dockBox.height / 2);
   for (let i = 0; i < 3; i++) await page.mouse.wheel(120, 0);
   await expectActive(page, at(1));
 

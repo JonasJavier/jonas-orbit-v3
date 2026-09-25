@@ -270,8 +270,9 @@ export function GargantuaSystem({
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
   }, [worldId]);
 
-  // Cubrir depende del pathname y no sólo del mundo: entre la mesa y un caso
-  // de Endurance cambia la cobertura sin cambiar la pose.
+  // La cobertura depende sólo del mundo (`COVERED_WORLDS`): la mesa y los
+  // casos de Endurance duermen igual. Va en su propio efecto para aplicarla
+  // cuando cambia sin tocar la pose ni reconstruir la escena.
   useEffect(() => {
     coveredRef.current = covered;
     handleRef.current?.setCovered(covered);

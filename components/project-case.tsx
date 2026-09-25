@@ -191,7 +191,9 @@ export function ProjectCase({
   const titled = /\s+—\s+/.test(prose.title);
 
   const featured = entry.screens[0];
-  const phone = entry.screens.find((screen) => screen.frame === "mobile");
+  // El teléfono acompaña a la destacada: nunca es ella misma (una destacada
+  // de teléfono se pintaría dos veces).
+  const phone = entry.screens.find((screen) => !screen.featured && screen.frame === "mobile");
   const demo = entry.links.find((link) => link.kind === "demo");
   const repository = entry.links.find((link) => link.kind === "repository");
 
