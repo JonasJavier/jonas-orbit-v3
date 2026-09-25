@@ -315,7 +315,14 @@ function Diagram({
           móvil el grupo es una fila con su rótulo y los nodos en columna.
         */}
         {architecture.lanes.map(({ lane }, col) => (
-          <div key={lane} className="holo-lane" data-lane={lane} style={{ "--col": col } as CSSProperties}>
+          <div
+            key={lane}
+            aria-label={LANE_LABEL[lane]}
+            className="holo-lane"
+            data-lane={lane}
+            role="group"
+            style={{ "--col": col } as CSSProperties}
+          >
             <p aria-hidden="true" className="holo-lane__title">
               {LANE_LABEL[lane]}
             </p>
@@ -339,8 +346,8 @@ function Diagram({
                     <button
                       type="button"
                       className="holo-node__box"
+                      aria-current={isChosen ? "true" : undefined}
                       aria-describedby={decisionId}
-                      aria-pressed={isChosen}
                       inert={!operable}
                       onClick={() => onPick(node.id)}
                       onFocus={() => {
@@ -540,7 +547,16 @@ export function EngineeringTable({
   */
   const hash = useSyncExternalStore(subscribeHash, readHash, readServerHash);
   const enhanced = hash !== null;
-  const project = enhanced ? (projectFromHash(hash, projects) ?? projects[0]).id : null;
+  /*
+    Sólo un hash que NOMBRA un proyecto lo cambia. «Saltar al contenido» y
+    «Volver arriba» escriben `#main-content`, y eso no es elegir OMSTA: se
+    conserva el último proyecto elegido (patrón de ajustar estado al pintar,
+    sin tocar una referencia durante el render).
+  */
+  const fromHash = enhanced ? (projectFromHash(hash, projects)?.id ?? null) : null;
+  const [lastProject, setLastProject] = useState<string | null>(null);
+  if (fromHash && fromHash !== lastProject) setLastProject(fromHash);
+  const project = enhanced ? (fromHash ?? lastProject ?? projects[0].id) : null;
   const current = projects.find((entry) => entry.id === project) ?? projects[0];
 
   const [leaving, setLeaving] = useState<string | null>(null);
@@ -553,6 +569,11 @@ export function EngineeringTable({
     picked: null,
   });
   const [hovered, setHovered] = useState<string | null>(null);
+  // La región viva calla hasta el primer cambio real: hidratar no es un
+  // cambio. Y si el paso vino de las flechas, el foco ya lleva la nota
+  // (`aria-describedby`): anunciarla otra vez la leería dos veces.
+  const [spoken, setSpoken] = useState(false);
+  const [viaRing, setViaRing] = useState(false);
   const front = view.project === current.id ? view.front : 0;
   const picked = view.project === current.id ? view.picked : null;
 
@@ -562,6 +583,7 @@ export function EngineeringTable({
       setLeaving(running ? project : null);
       setHovered(null);
       setView({ project: id, front: 0, picked: null });
+      setSpoken(true);
       window.history.replaceState(window.history.state, "", `#${id}`);
       window.dispatchEvent(new Event(HASH_EVENT));
     },
@@ -577,6 +599,7 @@ export function EngineeringTable({
   function chooseLayer(next: TableLayer) {
     setLayer(next);
     setHovered(null);
+    setSpoken(true);
   }
 
   function onTabKey(event: KeyboardEvent<HTMLDivElement>) {
@@ -593,8 +616,10 @@ export function EngineeringTable({
     event.currentTarget.querySelector<HTMLButtonElement>(`[data-layer-tab="${target}"]`)?.focus();
   }
 
-  const setFront = (value: number) => {
+  const setFront = (value: number, fromRing = false) => {
     const total = current.screens.length;
+    setViaRing(fromRing);
+    setSpoken(true);
     setView({ project: current.id, front: ((value % total) + total) % total, picked });
   };
   const pick = (id: string) => setView({ project: current.id, front, picked: id });
@@ -604,7 +629,7 @@ export function EngineeringTable({
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
     event.preventDefault();
     const next = front + (event.key === "ArrowRight" ? 1 : -1);
-    setFront(next);
+    setFront(next, true);
     const total = current.screens.length;
     const index = ((next % total) + total) % total;
     // El foco viaja con la pantalla elegida, que es la única en el orden de tabulación.
@@ -657,14 +682,15 @@ export function EngineeringTable({
     layer === "ingenieria"
       ? `${current.name} · Ingeniería · ${current.counts.modules} módulos`
       : layer === "diseno"
-        ? `${current.name} · Diseño · pantalla ${front + 1} de ${current.counts.screens}: ${frontScreen?.caption ?? ""}`
+        ? `${current.name} · Diseño · pantalla ${front + 1} de ${current.counts.screens}${
+            viaRing || !frontScreen ? "" : `: ${frontScreen.caption}`
+          }`
         : `${current.name} · Resultado`;
 
   return (
     <div
       ref={rootRef}
       className="table"
-      data-boot={enhanced && running ? "on" : "off"}
       data-enhanced={enhanced ? "true" : undefined}
       data-layer={layer}
       data-motion={running ? "on" : "off"}
@@ -727,7 +753,9 @@ export function EngineeringTable({
               <p className="table-read__descriptor">{entry.descriptor}</p>
               <p className="table-read__status">
                 <span aria-hidden="true" className="table-led" data-state={entry.status} />
-                <span title={entry.statusLabel}>{statusReadout(entry.status)}</span>
+                {/* Se ve la lectura corta; se lee la etiqueta entera del MDX. */}
+                <span aria-hidden="true">{statusReadout(entry.status)}</span>
+                <span className="visually-hidden">{entry.statusLabel}</span>
               </p>
               {/* En escritorio el stack va grabado en la mesa; aquí lo lee el
                   lector de pantalla, y en móvil, donde no hay mesa, todos. */}
@@ -774,8 +802,11 @@ export function EngineeringTable({
               id={`${entry.id}-stage`}
               role={enhanced ? "tabpanel" : undefined}
             >
+              {/* Fuera de `.holo` a propósito: dentro del contexto 3D, un
+                  hijo que se mezcla o recorta obliga a aplanar el grupo, y
+                  entonces ninguna pantalla tiene perspectiva de verdad. */}
+              <span aria-hidden="true" className="holo-beam" />
               <div className="holo">
-                <span aria-hidden="true" className="holo-beam" />
                 <div
                   aria-label={`Pantallas de ${entry.name}`}
                   className="holo-screens"
@@ -893,7 +924,7 @@ export function EngineeringTable({
       </nav>
 
       <p aria-live="polite" className="visually-hidden">
-        {enhanced ? announcement : ""}
+        {enhanced && spoken ? announcement : ""}
       </p>
     </div>
   );

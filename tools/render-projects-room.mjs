@@ -1983,11 +1983,13 @@ async function renderRoom(THREE, extras, params) {
           float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
           c = mix(vec3(l), c, uSat);
           c = uLift + c * (1.0 - uLift);
-          // Candado de paleta: ningún píxel frío cae en el cian (el cian es de
-          // la mesa). Donde verde y azul superan al rojo, el verde no pasa del
-          // 62 % del camino hacia el azul: el tono queda en 203° o más.
-          if (c.g > c.r && c.b > c.r) c.g = min(c.g, c.r + 0.62 * (c.b - c.r));
           c = toSRGB(c);
+          // Candado de paleta, ya en sRGB (donde se mide el tono): ningún píxel
+          // frío cae en el cian, que es de la mesa. Donde verde y azul superan
+          // al rojo, el verde no pasa del 60 % del camino hacia el azul: el tono
+          // queda en 204° o más. El grano suma lo mismo a los tres canales y no
+          // lo mueve.
+          if (c.g > c.r && c.b > c.r) c.g = min(c.g, c.r + 0.6 * (c.b - c.r));
           float gn = (grainNoise(gl_FragCoord.xy) + grainNoise(gl_FragCoord.xy + 71.3) - 1.0);
           float ls = dot(c, vec3(0.2126, 0.7152, 0.0722));
           c += gn * uGrain * (0.45 + 0.55 * smoothstep(0.0, 0.5, ls)) * (1.0 - 0.6 * ls);

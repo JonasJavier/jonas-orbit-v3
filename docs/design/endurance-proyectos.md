@@ -714,8 +714,24 @@ Lo que fallaba, medido en las capturas del §15:
    pantalla (se desliza el fondo, no la caja), la sala se desplaza al revés
    que el holograma con el puntero, el encendido levanta las pantallas por
    recorte desde la mesa, las líneas del esquema se trazan al entrar y un
-   barrido de luz lo recorre una vez. Todo obedece al interruptor único y se recupera bajo
-   `prefers-reduced-motion` como el resto de la mesa.
+   barrido de luz lo recorre una vez. Todo obedece al interruptor único y se
+   recupera bajo `prefers-reduced-motion` como el resto de la mesa. El encendido es CSS
+   desde el primer pintado: el HTML servido ya lo lleva y hidratar no lo
+   reinicia (con un atributo puesto al hidratar, lo ya pintado desaparecía y
+   volvía a subir). En móvil las pantallas no suben: entran y salen de
+   `display: none` con cada capa y repetirían la subida en cada toque.
+7. **La sala es un render horneado**, no una fotografía ni WebGL en la
+   página: `tools/render-projects-room.mjs` construye la bahía de ingeniería
+   en Three.js, la renderiza en Chromium sin cabeza y deja
+   `assets/proyectos/sala.png` (2560 × 1440, determinista);
+   `tools/prepare-projects.mjs` publica las copias WebP de 960, 1440, 1920 y
+   2560 (23, 45, 73 y 107 KB). Bóveda nervada, ventanal con el horizonte de
+   un planeta, lámparas de servicio y suelo con reflejos; sin texto, sin
+   interfaz, sin pantallas, sin figura y sin mesa, y sin un píxel cian (el
+   cian es de lo que proyecta la mesa). Origen y lista de lo que no contiene
+   en `assets/proyectos/FUENTES.md`. Resuelve la decisión abierta §13.3 sin
+   cerrarla: si el dueño dirige una fotografía o una imagen generada, la
+   sustituye sin tocar la mesa.
 
 ### 16.3 Cómo está hecho el esquema
 
@@ -753,7 +769,25 @@ carril más poblado (`--rows` × `--row`, 26-40 px).
 4. **La columna de lectura pierde los tres `tabpanel` de texto**: el panel de
    la capa es el escenario (`#{id}-stage`, `role="tabpanel"` con la mesa
    viva). Sin JavaScript, una ficha estática (pantallas con su nota y el
-   sistema con sus decisiones) aparece sólo con `@media (scripting: none)`.
+   sistema con sus decisiones, y el stack como lista visible) aparece sólo
+   con `@media (scripting: none)`, en la SEGUNDA fila de la rejilla de la
+   mesa: la primera fila es el escenario (un hijo absoluto con área de
+   rejilla la toma como contenedor), así que la ficha empuja el pie en vez de
+   pintarse encima.
+5. **Revisión adversarial (27 hallazgos confirmados, 3 refutados)**, todos
+   corregidos. Los de más peso: un hijo con `mix-blend-mode` dentro del
+   contexto 3D lo aplanaba y ninguna pantalla tenía perspectiva de verdad (el
+   haz sale de `.holo`); un ancla que no es un proyecto (`#main-content`,
+   «Volver arriba») devolvía la mesa a OMSTA —sólo un hash que nombra un
+   proyecto lo cambia—; las aristas que saltan carriles pasaban por debajo de
+   otras cajas y el esquema decía conexiones que el MDX no declara —ahora
+   rodean por una media fila libre, y un test lo exige en los cinco
+   proyectos—; el estado completo del MDX era un `title` y ahora es texto
+   (se ve la lectura corta, se lee la etiqueta entera); los nodos elegidos
+   son `aria-current`, no un conmutador que el foco «pulsaba»; la región viva
+   calla al hidratar; contraste de los rótulos pequeños a ≥ 4,5:1; el
+   escenario no sale del marco de lectura por encima de ~1700 px; y en
+   tableta el inspector va plano y cabe.
 
 ### 16.5 Trampas nuevas
 
@@ -788,7 +822,14 @@ carril más poblado (`--rows` × `--row`, 26-40 px).
   desplazamiento de la página dejaba un nodo bajo un ratón quieto. Enfocar
   borra el apuntado.
 
+- **Un hijo que se mezcla (`mix-blend-mode`) o recorta dentro de un grupo
+  `preserve-3d` lo aplana entero.** Las capturas parecían 3D porque las
+  laterales estaban giradas, pero eran rectángulos encogidos, sin fuga.
+- **El preflight de Tailwind topa `img` al 100 %**: una imagen de fondo más
+  ancha que la ventana (para el paralaje) se quedaba corta y dejaba una
+  franja negra en el canto. `max-width: none`.
+
 ### 16.6 Abierto
 
-La valoración visual del dueño de las tres capas; confirmar las cinco
-arquitecturas (§13.2); las URL de producción para `kind: demo`.
+La valoración visual del dueño de las tres capas y de la sala; confirmar las
+cinco arquitecturas (§13.2); las URL de producción para `kind: demo`.

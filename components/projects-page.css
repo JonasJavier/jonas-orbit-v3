@@ -16,12 +16,15 @@
   --pj-void: #030508;
   --pj-ink: #eef3ff;
   --pj-muted: #8e9bb3;
-  --pj-dim: #5f6f89;
+  /* 5,9:1 sobre el vacío: el tono más apagado que aún se lee a 9 px. */
+  --pj-dim: #7d8ba5;
   --pj-cyan: #7fe5ff;
   --pj-cyan-soft: rgb(127 229 255 / 38%);
   --pj-amber: #f2c879;
   --pj-header: 67px;
   --pj-gutter: max(var(--page-gutter), calc((100vw - 1560px) / 2));
+  /* El marco de la lectura: el escenario no sale de él aunque la ventana sí. */
+  --pj-frame: min(100%, calc(1560px + 2 * var(--page-gutter)));
   --pj-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pj-glass: linear-gradient(180deg, rgb(12 20 31 / 94%), rgb(6 10 17 / 96%));
   position: relative;
@@ -51,9 +54,10 @@
 /*
   Fija y detrás de todo, y OPACA: un interior no tiene estrellas dentro. Es la
   razón de que la escena persistente duerma en esta ruta —nunca un contexto
-  dibujando bajo una pared opaca—. Mientras no haya fotografía, la sala es
-  CSS: un ventanal con el limbo de un planeta, costillas de estructura en
-  sombra y las luces ámbar de servicio. No afirma nada.
+  dibujando bajo una pared opaca—. La sala es un render horneado
+  (`tools/render-projects-room.mjs`): la bahía de ingeniería a oscuras, con el
+  horizonte de un planeta en el ventanal. Se desplaza apenas al revés que el
+  holograma, y esa diferencia es la profundidad.
 */
 .projects-room {
   position: fixed;
@@ -67,63 +71,26 @@
   position: absolute;
   inset: -2%;
   width: 104%;
+  /* El preflight de Tailwind topa las imágenes al 100 %: sin esto la sala se
+     quedaba corta y dejaba una franja negra en el canto derecho. */
+  max-width: none;
   height: 104%;
   object-fit: cover;
   object-position: 50% 45%;
   translate: calc(var(--px) * -12px) calc(var(--py) * -7px);
   transition: translate 1.2s ease-out;
 }
-.projects-room__window {
-  position: absolute;
-  inset: 8% 8% auto;
-  height: 52%;
-  overflow: hidden;
-  border-radius: 40% 40% 4% 4% / 18% 18% 4% 4%;
-  background:
-    url("/brand/navigation-stars.svg") center top / 900px 225px repeat,
-    radial-gradient(ellipse 70% 90% at 58% 110%, #0d1a2c 0%, #060b14 55%, #03060b 100%);
-  box-shadow: inset 0 0 90px 30px #020306;
-}
-.projects-room__limb {
-  position: absolute;
-  right: -34%;
-  top: 30%;
-  width: 90vmax;
-  height: 90vmax;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #0e1c2e 0%, #050a12 60%);
-  box-shadow:
-    -6px -4px 0 0 rgb(170 210 245 / 55%),
-    -18px -10px 60px 4px rgb(120 175 230 / 26%);
-}
-/* Las costillas del casco: montantes en sombra que parten el ventanal. */
-.projects-room__ribs {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, transparent 0 24%, #04070b 24% 26.5%, transparent 26.5% 49%, #04070b 49% 51%, transparent 51% 73.5%, #04070b 73.5% 76%, transparent 76%),
-    linear-gradient(180deg, #04070b 0 8%, transparent 8% 60%, #04070b 60%);
-  mask-image: linear-gradient(180deg, #000 0 62%, transparent 70%);
-}
-.projects-room__lights {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(60px 10px at 12% 9%, rgb(242 200 121 / 60%), transparent 70%),
-    radial-gradient(60px 10px at 88% 9%, rgb(242 200 121 / 50%), transparent 70%),
-    radial-gradient(30px 5px at 12% 9%, rgb(255 236 200 / 90%), transparent 70%),
-    radial-gradient(30px 5px at 88% 9%, rgb(255 236 200 / 80%), transparent 70%),
-    radial-gradient(40px 8px at 3% 52%, rgb(242 200 121 / 45%), transparent 70%),
-    radial-gradient(40px 8px at 97% 52%, rgb(242 200 121 / 40%), transparent 70%);
-}
 /* El velo que sostiene la lectura: la sala se apaga a la izquierda y abajo. */
 .projects-room__veil {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgb(3 5 8 / 88%) 0%, rgb(3 5 8 / 55%) 22%, transparent 42%),
-    linear-gradient(180deg, rgb(3 5 8 / 70%) 0%, transparent 16%, transparent 56%, rgb(3 5 8 / 80%) 88%),
-    radial-gradient(120% 90% at 55% 45%, transparent 55%, rgb(0 0 0 / 55%) 100%);
+    /* Detrás de la columna de lectura: una luz de servicio de la pared caía
+       justo bajo el descriptor y se leía como un mando. */
+    radial-gradient(ellipse 26% 34% at 11% 46%, rgb(3 5 8 / 78%), transparent 70%),
+    linear-gradient(90deg, rgb(3 5 8 / 72%) 0%, rgb(3 5 8 / 34%) 24%, transparent 42%),
+    linear-gradient(180deg, rgb(3 5 8 / 55%) 0%, transparent 14%, transparent 60%, rgb(3 5 8 / 70%) 92%),
+    radial-gradient(120% 90% at 55% 45%, transparent 60%, rgb(0 0 0 / 45%) 100%);
 }
 
 /* ── La mesa: la primera pantalla entera ─────────────────────────────────── */
@@ -134,13 +101,25 @@
   lectura y su escenario se colocan contra este lienzo y no contra la sección.
 */
 .table {
-  --holo-x: 3.5%;
-  /* `block` a propósito: Tailwind genera una utilidad `.table` (display:
-     table) con el mismo nombre, y con hijos absolutos una tabla mide cero. */
-  display: block;
+  /* El centro del holograma, un 3,5 % del MARCO a la derecha del centro. */
+  --holo-x: calc(var(--pj-frame) * 0.035);
+  /* `display` explícito a propósito: Tailwind genera una utilidad `.table`
+     (display: table) con el mismo nombre, y con hijos absolutos una tabla
+     mide cero. */
+  --stage-h: max(100svh, 680px);
+  display: grid;
+  grid-template: var(--stage-h) auto / 100%;
   position: relative;
   z-index: 1;
-  height: max(100svh, 680px);
+}
+/*
+  Todo lo de la primera pantalla se coloca en la PRIMERA fila de la rejilla:
+  un hijo absoluto con área de rejilla toma esa área como contenedor, así que
+  los `top`/`bottom` del escenario miden contra el alto de la ventana aunque
+  la mesa crezca por debajo (la ficha sin JavaScript va en la segunda fila).
+*/
+.table-head, .table-motto, .table-tabs, .console-wrap, .table-read, .table-readout, .table-scene, .table-dock {
+  grid-area: 1 / 1;
 }
 
 .table-kicker {
@@ -500,11 +479,13 @@
   letter-spacing: 0.2em;
   text-align: right;
   text-transform: uppercase;
-  color: rgb(170 225 245 / 26%);
+  /* >= 4,5:1 sobre el cristal: grabado, pero legible. */
+  color: rgb(170 225 245 / 62%);
 }
-/* Sin JavaScript la placa no sabe qué proyecto eligió `:target`: calla. */
-@media (scripting: none) {
-  .console__plate, .console__spec, .console__quadrant small { visibility: hidden; }
+/* Antes de hidratar (y sin JavaScript) la placa no sabe qué proyecto eligió
+   `:target`: calla, en vez de grabar OMSTA bajo el título de otro. */
+.table:not([data-enhanced]) :is(.console__plate, .console__spec, .console__quadrant small, .table-dock__count) {
+  visibility: hidden;
 }
 
 /* El canto frontal: el grueso del metal, con dos ranuras y un filo de luz. */
@@ -550,14 +531,11 @@
 @media (scripting: none) {
   .table-tabs, .holo-note { display: none; }
   .table-fallback {
-    position: absolute;
-    top: calc(100% + 24px);
-    left: var(--pj-gutter);
-    right: var(--pj-gutter);
-    z-index: 3;
+    grid-area: 2 / 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px 48px;
+    margin: 24px var(--pj-gutter) 0;
     color: #c3cfe0;
     font: 300 0.92rem/1.5 var(--font-body);
   }
@@ -565,17 +543,20 @@
   .table-fallback ol { display: grid; gap: 8px; }
   .table-fallback dl { display: grid; gap: 8px; }
   .table-fallback dt { color: var(--pj-ink); }
-  .table-fallback dt small { color: var(--pj-dim); }
+  .table-fallback dt small { color: var(--pj-muted); }
   .table-fallback dd { margin: 2px 0 0; }
-  .projects-page__foot { margin-top: 520px; }
+  /* El stack grabado calla antes de hidratar: sin guion, la lista se ve. */
+  .table-read__stack { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 14px; font: 0.6rem/1.6 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pj-muted); }
 }
 
 /* ── El escenario del holograma ─────────────────────────────────────────── */
 
 .table-scene {
   position: absolute;
-  left: 0;
-  right: 0;
+  /* En el marco de la lectura: a 2560 px el teléfono de la izquierda ya no
+     cae bajo el título. Hasta ~1700 px el margen es cero. */
+  left: max(0px, calc((100% - var(--pj-frame)) / 2));
+  right: max(0px, calc((100% - var(--pj-frame)) / 2));
   top: calc(var(--pj-header) + clamp(122px, 15.5vh, 150px));
   bottom: calc(31% + 70px - 3%);
   z-index: 3;
@@ -610,11 +591,7 @@
     radial-gradient(ellipse 36% 60% at 50% 100%, rgb(127 229 255 / 16%), transparent 72%),
     linear-gradient(0deg, rgb(127 229 255 / 7%), transparent 70%);
   clip-path: polygon(38% 100%, 62% 100%, 100% 0, 0 0);
-  mix-blend-mode: screen;
   opacity: 0.85;
-  /* Detrás de todo lo proyectado: en el mismo plano que los paneles, el haz
-     se pintaba encima del esquema y lo aclaraba en una cuña. */
-  transform: translateZ(-160px) scale(1.1);
   transition: opacity 0.6s;
 }
 
@@ -649,7 +626,7 @@
 .table[data-layer="diseno"] .holo-screen { --x: var(--d-x); --y: var(--d-y); --z: var(--d-z); --ry: var(--d-ry); --s: var(--d-s); --o: var(--d-o); }
 .table[data-layer="ingenieria"] .holo-screen { --x: var(--i-x); --y: var(--i-y); --z: var(--i-z); --ry: var(--i-ry); --s: var(--i-s); --o: var(--i-o); }
 /* En Diseño el teléfono crece: ahí se mira como pantalla, no como acompañante. */
-.table[data-layer="diseno"] .holo-screen[data-frame="mobile"] { width: calc(var(--base) * 0.36); }
+.table[data-layer="diseno"] .holo-screen[data-frame="mobile"] { width: min(calc(var(--base) * 0.36), calc(100cqh * 390 / 844)); }
 .table[data-layer="resultado"] .holo-screen[data-slot="none"],
 .table[data-layer="ingenieria"] .holo-screen,
 .table[data-layer="diseno"] .holo-screen[data-far] { visibility: hidden; transition: transform 0.95s var(--pj-ease), opacity 0.5s var(--pj-ease), translate 0.45s ease-in, visibility 0s 0.6s; }
@@ -677,6 +654,9 @@
 }
 /* La lámina que elige la pantalla en Diseño: encima de la imagen, sin nada
    que pintar. Fuera de Diseño va `inert` y el puntero la atraviesa. */
+/* El anillo de foco va en el marco: el de la lámina lo recortaría el propio
+   marco (`overflow: hidden`). Y distinto del frente en reposo. */
+.holo-screen:has(.holo-screen__pick:focus-visible) .holo-screen__frame { outline: 2px solid var(--pj-cyan); outline-offset: 4px; }
 .holo-screen__pick {
   position: absolute;
   inset: 0;
@@ -834,9 +814,10 @@
   --row: clamp(26px, 10.5cqh, 40px);
   width: min(47cqw, 820px);
 }
-/* Con el dedo, cada fila del esquema mide lo que un blanco táctil. */
+/* Con el dedo, el blanco de cada nodo crece a 44 px por encima y por debajo
+   de su fila, sin agrandar el esquema (que se metería bajo el selector). */
 @media (pointer: coarse) {
-  .holo-diagram { --row: 44px; }
+  .holo-node__box::before { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 22px); height: 44px; }
 }
 .holo-inspector { --cx: 0.335; --cry: -12; width: clamp(210px, 16.5cqw, 250px); }
 .table[data-layer="ingenieria"] .holo-diagram { --cx: 0; --cy: 0.06; }
@@ -855,7 +836,6 @@
   color: #e4f5ff;
 }
 .holo-card__meta { font-weight: 400; letter-spacing: 0.14em; color: var(--pj-muted); }
-.holo-card__bar--sub { border-top: 1px solid rgb(160 228 255 / 14%); }
 
 .holo-glyph {
   flex: none;
@@ -883,7 +863,7 @@
   pointer-events: none;
 }
 @keyframes holo-scan { from { translate: 0 -70px; opacity: 1; } 85% { opacity: 1; } to { translate: 0 var(--scan-end, 620px); opacity: 0; } }
-.table[data-boot="on"][data-layer="ingenieria"] .table-project[data-state="active"] .holo-diagram::after {
+.table[data-motion="on"][data-layer="ingenieria"] .table-project[data-state="active"] .holo-diagram::after {
   animation: holo-scan 1.3s cubic-bezier(0.45, 0, 0.2, 1) 0.35s both;
 }
 
@@ -972,6 +952,9 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* Una palabra larga se parte con guion (lang="es"), nunca se corta a cuchillo. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 .holo-node__mark {
   flex: none;
@@ -1111,9 +1094,14 @@
 /* ── El encendido ───────────────────────────────────────────────────────── */
 
 /*
-  Aditivo: el HTML ya está completo y nada se oculta antes. Con `data-boot` la
-  mesa se enciende y lo que proyecta sube desde ella, escalonado: se anima
-  `translate` y un recorte, nunca `transform`, que es de la pose.
+  Aditivo y en CSS puro, desde el PRIMER pintado: el HTML servido ya lo
+  lleva, así que hidratar no lo reinicia (el nombre de la animación no
+  cambia) y nunca esconde algo que ya se había visto. La mesa se enciende y
+  lo que proyecta sube desde ella por recorte; se anima `translate` y un
+  recorte, nunca `transform`, que es de la pose. Al cambiar de proyecto, el
+  entrante sale de `display: none` y el encendido se repite: es el cruce.
+  En móvil las pantallas entran y salen de `display: none` con cada capa, así
+  que ahí no suben (repetirían la subida en cada toque).
 */
 @keyframes table-glass-on { from { opacity: 0; } to { opacity: 1; } }
 @keyframes holo-rise {
@@ -1121,13 +1109,17 @@
   to { translate: 0 0; clip-path: inset(0); }
 }
 @keyframes table-read-on { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
-.table[data-boot="on"] :is(.console__grid, .console__etching, .console__pool) { animation: table-glass-on 1.4s ease-out backwards; }
-.table[data-boot="on"] .table-project[data-state="active"] .holo-screen[data-slot]:not([data-slot="none"]) .holo-screen__frame {
-  animation: holo-rise 1.1s var(--pj-ease) backwards;
-  animation-delay: calc(0.25s + var(--i) * 90ms);
+/* Sólo con guion: sin él la mesa es la ficha de texto y no hay nada que
+   encender (y un enlace que sube no es un enlace quieto que pulsar). */
+@media (scripting: enabled) {
+  :is(.console__grid, .console__etching, .console__pool) { animation: table-glass-on 1.4s ease-out backwards; }
+  .table-project :is(.table-read, .table-readout) { animation: table-read-on 0.8s var(--pj-ease) backwards 0.1s; }
 }
-.table[data-boot="on"] .table-project[data-state="active"] :is(.table-read, .table-readout) {
-  animation: table-read-on 0.8s var(--pj-ease) backwards 0.1s;
+@media (scripting: enabled) and (min-width: 768px) {
+  .table-project .holo-screen:not([data-slot="none"]) .holo-screen__frame {
+    animation: holo-rise 1.1s var(--pj-ease) backwards;
+    animation-delay: calc(0.25s + var(--i) * 90ms);
+  }
 }
 
 /* ── Un solo interruptor de movimiento ──────────────────────────────────── */
@@ -1152,13 +1144,19 @@ html[data-motion="off"] .projects-page *::after {
     & .table[data-layer="ingenieria"] .holo-card { transition-duration: 0.95s, 0.7s, 0s, 0.45s !important; }
     & .holo, & .console__body { transition-duration: 0.7s !important; }
     & .holo-line { transition-duration: 0.25s, 0.25s, 0.9s !important; }
-    & :is(.holo-note, .console__quadrant, .console__etching, .holo-beam, .console__pool) { transition-duration: 0.5s !important; }
-    & .table[data-boot="on"] :is(.console__grid, .console__etching, .console__pool) { animation-duration: 1.4s !important; }
-    & .table[data-boot="on"] .table-project[data-state="active"] .holo-screen .holo-screen__frame { animation-duration: 1.1s !important; }
-    & .table[data-boot="on"] .table-project[data-state="active"] :is(.table-read, .table-readout) { animation-duration: 0.8s !important; }
+    & :is(.holo-note, .console__quadrant, .console__quadrant small, .console__etching, .holo-beam, .console__pool) { transition-duration: 0.5s !important; }
+    & .holo-screen__tether { transition-duration: 0.4s !important; }
+    & .holo-screen__frame { transition-duration: 0.25s !important; }
+    & .holo-screen__frame img { transition-duration: 0.5s !important; }
+    & .holo-plate { transition-duration: 0.3s !important; }
+    & .table-project[data-state="leaving"] :is(.table-read, .table-readout) { transition-duration: 0.3s !important; }
+    & .table-dock__item::after { transition-duration: 0.3s !important; }
+    & :is(.console__grid, .console__etching, .console__pool) { animation-duration: 1.4s !important; }
+    & .table-project .holo-screen .holo-screen__frame { animation-duration: 1.1s !important; }
+    & .table-project :is(.table-read, .table-readout) { animation-duration: 0.8s !important; }
     & .holo-inspector__body { animation-duration: 0.35s !important; }
-    & .table[data-boot="on"][data-layer="ingenieria"] .table-project[data-state="active"] .holo-diagram::after { animation-duration: 1.3s !important; }
     & .table[data-motion="on"] .holo-screen__glass { animation-duration: 9s !important; animation-iteration-count: infinite !important; }
+    & .table[data-motion="on"][data-layer="ingenieria"] .table-project[data-state="active"] .holo-diagram::after { animation-duration: 1.3s !important; }
     & .projects-room__photo { transition-duration: 1.2s !important; }
   }
 }
@@ -1215,7 +1213,7 @@ html[data-motion="off"] .projects-page *::after {
   transition: color 220ms ease;
 }
 .projects-neighbours a:hover, .projects-neighbours a:focus-visible { color: var(--pj-amber); }
-.projects-neighbours small { display: block; font: 0.54rem/1.6 var(--font-mono); letter-spacing: 0.26em; text-transform: uppercase; color: rgb(146 159 186 / 55%); }
+.projects-neighbours small { display: block; font: 0.54rem/1.6 var(--font-mono); letter-spacing: 0.26em; text-transform: uppercase; color: var(--pj-muted); }
 .projects-neighbours a > span:not([aria-hidden]) { font-family: var(--font-mono); font-size: 0.86rem; letter-spacing: 0.14em; text-transform: uppercase; }
 
 /* ── Ventanas bajas: la mesa cede alto y la lectura sube ─────────────────── */
@@ -1232,7 +1230,7 @@ html[data-motion="off"] .projects-page *::after {
 /* ── Ventanas medianas: la lectura sube, el holograma ocupa el ancho ────── */
 
 @media (max-width: 1099px) {
-  .table { --holo-x: 0%; height: max(100svh, 860px); }
+  .table { --holo-x: 0px; --stage-h: max(100svh, 860px); }
   .table-motto { display: none; }
   .table-read {
     width: auto;
@@ -1258,9 +1256,11 @@ html[data-motion="off"] .projects-page *::after {
   .table-scene { --base: min(46cqw, 142cqh); }
   /* Sin columna a la izquierda, el esquema se abre hacia ese lado y el
      inspector se arrima al canto derecho. */
-  .holo-diagram { width: min(68cqw, 820px); }
-  .holo-diagram, .table[data-layer="ingenieria"] .holo-diagram { --cx: -0.12; }
-  .holo-inspector, .table[data-layer="ingenieria"] .holo-inspector { --cx: 0.355; --cry: -8; width: 250px; }
+  .holo-diagram { width: min(60cqw, 820px); }
+  .holo-diagram, .table[data-layer="ingenieria"] .holo-diagram { --cx: -0.165; }
+  /* Plano y sin giro: en esta franja un inspector girado se ensancha lo
+     justo para salirse por el canto. */
+  .holo-inspector, .table[data-layer="ingenieria"] .holo-inspector { --cx: 0.305; --cz: 0; --cry: 0; width: min(250px, 31cqw); }
   .table-dock__count { display: none; }
 }
 
@@ -1273,6 +1273,7 @@ html[data-motion="off"] .projects-page *::after {
   cada decisión bajo su módulo al tocarlo. El scroll de página gana siempre.
 */
 @media (max-width: 767px) {
+  .table-project[data-state="leaving"] { display: none; }
   .table {
     height: auto;
     display: flex;
