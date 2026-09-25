@@ -13,8 +13,7 @@ import "./projects-page.css";
  * Deja de ser la ficha genérica del mundo y pasa a ser el instrumento para
  * elegir cuánto profundizar en un proyecto: el mismo objeto —sus capturas—
  * leído como producto, como decisiones de experiencia y como sistema. El caso
- * completo (`/es/proyectos/[slug]`) sigue siendo la profundidad entera y no
- * cambia.
+ * completo (`/es/proyectos/[slug]`) es la profundidad entera.
  *
  * Cuatro capas, de atrás hacia delante: la sala, la mesa, las pantallas y la
  * lectura. Y nada de esto es WebGL en la página: la sala es un render
@@ -91,8 +90,6 @@ export function ProjectsPage({
         head={{
           kicker: `${world.cosmicName} / Mesa de ingeniería`,
           title: prose.shortLabel,
-          // La divisa del mundo, en el canto: la única frase que no informa.
-          motto: prose.eyebrow,
         }}
         projects={table}
       />

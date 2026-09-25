@@ -191,6 +191,37 @@ const projectProse = defineCollection({
       featuredImage: projectImage,
       gallery: s.array(projectImage).optional(),
       /**
+       * ALCANCE (§17): tres cifras que el propio texto del caso afirma —dos
+       * sucursales, dieciocho aplicaciones, doce pruebas—, nunca una métrica
+       * de negocio que el caso no publica. `value` es corto a propósito (una
+       * cifra o una sigla): se lee de lejos, en la mesa y en el caso.
+       */
+      scope: s
+        .array(
+          s.object({
+            value: s.string().max(8),
+            label: s.string().max(48),
+          }),
+        )
+        .length(3)
+        .optional(),
+      /**
+       * DECISIONES DE DISEÑO (§17): qué problema de experiencia tenía una
+       * pantalla y qué se decidió. Son la capa Diseño de la mesa y la sección
+       * de decisiones del caso. `screen` es una captura del propio proyecto
+       * (lo comprueba `validate-projects.ts`), y cada línea es corta: una
+       * frase, no un párrafo.
+       */
+      designDecisions: s
+        .array(
+          s.object({
+            screen: s.string(),
+            problem: s.string().max(110),
+            decision: s.string().max(120),
+          }),
+        )
+        .optional(),
+      /**
        * LA ARQUITECTURA ES CONTENIDO, NO DIBUJO (§3.2 del documento de la
        * mesa). El esquema de Ingeniería sale de aquí y la página sólo lo
        * dispone. Un nodo con `screen` es una captura de la mesa que en esa

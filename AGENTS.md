@@ -99,17 +99,19 @@ MDX**, nunca en `worlds.data.ts`.
   corren con reduced-motion). Publicación de E03/Bonao City pendiente.
 - **Formación / Miller** `docs/design/miller-formacion.md` §«Océano en WebGL2 y
   formación en curso» (09-12) — `education.inProgress`.
-- **Proyectos** `docs/design/endurance-proyectos.md` (09-21; §15
-  «Construcción» y §16 «Segundo pase — la mesa en limpio», 09-24; §16 manda)
-  — lectura mínima igual en las tres capas; Resultado en arco, Diseño en
-  carrete con una línea de nota, Ingeniería con esquema por carriles e
-  inspector (`components/engineering-table.tsx`, parte pura en
-  `lib/engineering-table.ts`); mesa física en perspectiva; sala = render
-  horneado por `tools/render-projects-room.mjs`. Arquitectura en el
-  frontmatter de los cinco MDX validada por Velite; escena dormida sólo en la
-  portada del mundo. «Visitar el sitio» sale de `links` `kind: demo`, que aún
-  no existe en ningún MDX. Abiertos: confirmar arquitecturas, URLs de
-  producción, valoración visual. Delicaté publicado (09-23).
+- **Proyectos** `docs/design/endurance-proyectos.md` (09-21; §15 y §16,
+  09-24; **§17 «Tercer pase», 09-25, manda** en capas, mesa, muelle y caso
+  completo) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
+  `designDecisions`: problema → decisión) · Ingeniería (ruta entera del
+  módulo con `nodePath`, esquema sólo con carriles ocupados, anillo del
+  sistema en la mesa); quinto carril `integraciones`; `scope` y `luma` por
+  captura. Esquema e inspector compartidos en `components/system-diagram.*`;
+  mesa en `components/engineering-table.tsx` (parte pura en
+  `lib/engineering-table.ts`); sala = render horneado. El caso
+  `/es/proyectos/[slug]` rehecho (`components/project-case*.tsx`) y con la
+  escena dormida en TODA ruta de Endurance. «Visitar el sitio» sale de `links`
+  `kind: demo`, que aún no existe. Abiertos: valoración visual, redacción de
+  `scope`/`designDecisions` (borrador), arquitecturas y URLs de producción.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

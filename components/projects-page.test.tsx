@@ -1,18 +1,20 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { Project } from "@/lib/projects";
 import { getF1AProjects } from "@/lib/projects";
-import { initialNode, statusReadout, tableProject, type TableProject } from "@/lib/engineering-table";
+import { initialNode, nodePath, statusReadout, tableProject, type TableProject } from "@/lib/engineering-table";
 import { getWorld } from "@/lib/worlds";
 import { EngineeringTable } from "./engineering-table";
 import { ProjectsPage } from "./projects-page";
+import { LANE_LABEL } from "./system-diagram";
 
 const settings = vi.hoisted(() => ({ motion: true }));
 vi.mock("@/lib/effects-mode", () => ({ useMotionEnabled: () => settings.motion }));
 
 /**
- * LA MESA DE INGENIERÍA, en jsdom (`docs/design/endurance-proyectos.md` §11).
+ * LA MESA DE INGENIERÍA, en jsdom (`docs/design/endurance-proyectos.md` §11,
+ * §16 y §17).
  *
  * Lo que se prueba aquí es el CONTRATO del DOM, no la coreografía: que el
  * HTML servido no decida el proyecto (P5, en su parte de servidor), que sólo
@@ -20,7 +22,9 @@ vi.mock("@/lib/effects-mode", () => ({ useMotionEnabled: () => settings.motion }
  * porque jsdom no implementa `inert`), que una ficha sin galería, sin enlaces
  * y sin decisiones se pinte con dignidad (P3), que las cifras salgan de los
  * datos (P11), que con el movimiento apagado no haya cruce (P10, lo que jsdom
- * puede ver) y que la salida al caso completo esté siempre a mano (A20).
+ * puede ver), que la salida al caso completo esté siempre a mano (A20) y, del
+ * tercer pase, que la mesa cambie de función con la capa —alcance, decisión,
+ * mapa del sistema— y que el muelle se opere con clic, teclado y rueda.
  */
 
 const world = getWorld("endurance", "es");
@@ -30,24 +34,34 @@ const pad = (value: number) => String(value).padStart(2, "0");
 const section = (id: string) => document.getElementById(id) as HTMLElement;
 const tab = (name: RegExp) => screen.getByRole("tab", { name });
 const live = () => document.querySelector('[aria-live="polite"]') as HTMLElement;
+const dock = () => screen.getByRole("navigation", { name: "Proyectos" });
+const dockLink = (id: string) => dock().querySelector(`a[href="#${id}"]`) as HTMLAnchorElement;
 const inspector = (id: string) =>
   within(section(id)).getByRole("region", { name: "Inspector del módulo" });
 const nodeButton = (id: string, nodeId: string) =>
   section(id).querySelector(`.holo-node[data-node-id="${nodeId}"] .holo-node__box`) as HTMLButtonElement;
 const frames = (id: string) => [...section(id).querySelectorAll<HTMLButtonElement>(".holo-screen__pick")];
 const noteText = (id: string) => section(id).querySelector(".holo-note__text")?.textContent;
-/** La ficha técnica de un proyecto, como pares rótulo → cifra. */
-const readout = (id: string) =>
+/** La nota de Diseño de un paso con decisión, tal como se lee en el DOM. */
+const decisionNote = (project: TableProject, step: number) =>
+  `${pad(step + 1)} / ${pad(project.reel.length)}Problema${project.reel[step].problem}Decisión${project.reel[step].note}`;
+/** El alcance de un proyecto, como pares rótulo → cifra. */
+const scope = (root: ParentNode) =>
   Object.fromEntries(
-    [...section(id).querySelectorAll(".table-readout > div")].map((row) => [
+    [...root.querySelectorAll(".holo-scope dl > div")].map((row) => [
       row.querySelector("dt")?.textContent,
       row.querySelector("dd")?.textContent,
     ]),
   );
+/** Un proyecto del catálogo sin sus decisiones de diseño: el carrete vuelve a los pies. */
+function withoutDecisions(id: string): TableProject {
+  const project = catalog().find((entry) => entry.id === id) as Project;
+  return tableProject({ ...project, prose: { ...project.prose, designDecisions: undefined } }, "/es/proyectos");
+}
 
 /**
- * Una ficha mínima INVENTADA: sin galería, sin enlaces y sin arquitectura
- * declarada —el esquema se deriva de su stack y no tiene decisiones—.
+ * Una ficha mínima INVENTADA: sin galería, sin enlaces, sin alcance, sin
+ * decisiones y sin arquitectura declarada —el esquema se deriva de su stack—.
  */
 function bare(overrides: Partial<Record<keyof Project["prose"], unknown>> = {}): TableProject {
   const prose = {
@@ -77,10 +91,7 @@ function bare(overrides: Partial<Record<keyof Project["prose"], unknown>> = {}):
 
 function renderTable(projects: TableProject[]) {
   return render(
-    <EngineeringTable
-      head={{ kicker: "Endurance / Mesa de ingeniería", title: "Proyectos", motto: "Divisa" }}
-      projects={projects}
-    />,
+    <EngineeringTable head={{ kicker: "Endurance / Mesa de ingeniería", title: "Proyectos" }} projects={projects} />,
   );
 }
 
@@ -93,10 +104,10 @@ afterEach(() => {
 
 describe("ProjectsPage", () => {
   /*
-    Garantiza la lectura de cada proyecto: su nombre como h2, qué es, su
-    estado (con la etiqueta completa como nombre accesible), su stack como
-    lista y la salida al caso completo. Evita perder el texto real de la mesa
-    (regla 7) o la salida al caso (A20).
+    Garantiza la lectura de cada proyecto: su nombre como h2 (con su longitud
+    para dimensionarlo), qué es, su estado (con la etiqueta completa como
+    nombre accesible), su stack como lista y la salida al caso completo. Evita
+    perder el texto real de la mesa (regla 7) o la salida al caso (A20).
   */
   it("el h1 es el destino y cada proyecto es una sección con nombre, qué es, estado, stack y salida al caso", () => {
     render(<ProjectsPage locale="es" projects={catalog()} world={world} />);
@@ -104,8 +115,10 @@ describe("ProjectsPage", () => {
     const projects = table();
     expect(document.querySelectorAll("section.table-project")).toHaveLength(projects.length);
     for (const project of projects) {
-      const scope = within(section(project.id));
-      expect(scope.getByRole("heading", { level: 2, name: project.name })).toBeInTheDocument();
+      const scoped = within(section(project.id));
+      const title = scoped.getByRole("heading", { level: 2, name: project.name });
+      // El tamaño del nombre sale de su longitud (§17), no de un caso por proyecto.
+      expect(title.style.getPropertyValue("--len"), project.id).toBe(String(Math.max(project.name.length, 5)));
       expect(section(project.id).querySelector(".table-read__descriptor")).toHaveTextContent(project.descriptor);
       // Se ve la lectura corta; el lector de pantalla lee la etiqueta entera del
       // MDX, como texto y no como `title` (que ni el tacto ni el teclado ven).
@@ -113,9 +126,9 @@ describe("ProjectsPage", () => {
       expect(status).toHaveTextContent(statusReadout(project.status));
       expect(status.querySelector(".visually-hidden")).toHaveTextContent(project.statusLabel);
       expect(status.querySelector("[title]")).toBeNull();
-      const stack = scope.getByRole("list", { name: "Tecnologías" });
+      const stack = scoped.getByRole("list", { name: "Tecnologías" });
       expect(within(stack).getAllByRole("listitem").map((item) => item.textContent)).toEqual(project.technologies);
-      expect(scope.getByRole("link", { name: /Explorar proyecto/ })).toHaveAttribute("href", project.href);
+      expect(scoped.getByRole("link", { name: /Explorar proyecto/ })).toHaveAttribute("href", project.href);
     }
     // Los cinco nombres cortos, cortados en la raya del título.
     expect(projects.map((project) => project.name)).toEqual([
@@ -129,22 +142,22 @@ describe("ProjectsPage", () => {
 
   /*
     Garantiza que la columna enseña «Visitar el sitio» sólo cuando el MDX trae
-    un enlace `kind: demo`, «Código» sólo con `kind: repository`, y que los
+    un enlace `kind: demo`, «Ver código» sólo con `kind: repository`, y que los
     enlaces de contacto ya no se pintan aquí. Evita un botón ámbar inventado
     (regla 8) o un enlace de contacto duplicado.
   */
-  it("«Visitar el sitio» sólo con demo, «Código» sólo con repositorio, y el contacto no se pinta", () => {
+  it("«Visitar el sitio» sólo con demo, «Ver código» sólo con repositorio, y el contacto no se pinta", () => {
     render(<ProjectsPage locale="es" projects={catalog()} world={world} />);
     for (const project of table()) {
-      const scope = within(section(project.id));
+      const scoped = within(section(project.id));
       const demo = project.links.find((link) => link.kind === "demo");
       const repository = project.links.find((link) => link.kind === "repository");
-      if (demo) expect(scope.getByRole("link", { name: new RegExp(demo.label) })).toHaveAttribute("href", demo.href);
+      if (demo) expect(scoped.getByRole("link", { name: new RegExp(demo.label) })).toHaveAttribute("href", demo.href);
       else expect(section(project.id).querySelector(".table-cta--site"), project.id).toBeNull();
-      if (repository) expect(scope.getByRole("link", { name: /Código/ })).toHaveAttribute("href", repository.href);
-      else expect(scope.queryByRole("link", { name: /Código/ }), project.id).toBeNull();
+      if (repository) expect(scoped.getByRole("link", { name: /Ver código/ })).toHaveAttribute("href", repository.href);
+      else expect(scoped.queryByRole("link", { name: /Ver código/ }), project.id).toBeNull();
       for (const contact of project.links.filter((link) => link.kind === "contact")) {
-        expect(scope.queryByRole("link", { name: contact.label }), project.id).toBeNull();
+        expect(scoped.queryByRole("link", { name: contact.label }), project.id).toBeNull();
       }
       // Lo único que sale de la sección hacia el sitio es el caso, la demo y el código.
       expect(section(project.id).querySelectorAll(".table-read a")).toHaveLength(1 + Number(Boolean(demo)) + Number(Boolean(repository)));
@@ -152,20 +165,42 @@ describe("ProjectsPage", () => {
   });
 
   /*
-    Garantiza que las cifras de la ficha técnica y de las tarjetas del sistema
-    se cuentan del MDX de cada proyecto, con dos cifras. Evita el «8
-    radiadores» otra vez (O4, P11).
+    Garantiza el ALCANCE de Producto (§17): tres cifras de cada MDX con su
+    rótulo, bajo el título «Alcance», en el HTML servido (se lee sin JS y en
+    móvil), con la longitud de la más larga para que las tres compartan un
+    tamaño que quepa en su columna. Y que se retiraron la ficha «pantallas /
+    módulos / decisiones» y la divisa del canto, que no se entendían. Evita
+    cifras escritas a mano, «Markdown» desbordando hacia «OpenAPI» en móvil y
+    elementos que no hacen nada.
   */
-  it("las cifras de cada proyecto salen de su MDX (P11)", () => {
+  it("el alcance de cada proyecto sale de su MDX y se sirve en el HTML; sin ficha técnica ni divisa", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(<ProjectsPage locale="es" projects={catalog()} world={world} />);
+    for (const { id, prose } of catalog()) {
+      const sectionHtml = host.querySelector(`section#${id}`) as HTMLElement;
+      const block = sectionHtml.querySelector(".holo-scope") as HTMLElement;
+      expect(block, id).not.toBeNull();
+      expect(block.querySelector(".holo-scope__title"), id).toHaveTextContent("Alcance");
+      expect(block.querySelector("dl")?.getAttribute("aria-labelledby"), id).toBe(`${id}-scope`);
+      expect(scope(sectionHtml), id).toEqual(Object.fromEntries((prose.scope ?? []).map((entry) => [entry.label, entry.value])));
+      const longest = Math.max(3, ...(prose.scope ?? []).map((entry) => entry.value.length));
+      expect(block.style.getPropertyValue("--vlen"), id).toBe(String(longest));
+    }
+    expect(host.querySelector(".table-readout")).toBeNull();
+    expect(host.querySelector(".table-motto")).toBeNull();
+    expect(host.querySelector(".console__plate")).toBeNull();
+  });
+
+  /*
+    Garantiza que las cifras de las tarjetas del sistema se cuentan del MDX
+    de cada proyecto, con dos cifras. Evita el «8 radiadores» otra vez (O4,
+    P11).
+  */
+  it("las cifras del sistema de cada proyecto salen de su MDX (P11)", () => {
     render(<ProjectsPage locale="es" projects={catalog()} world={world} />);
     for (const { id, prose } of catalog()) {
       const nodes = prose.architecture?.nodes ?? [];
       const decisions = nodes.filter((node) => node.decision).length;
-      expect(readout(id), id).toEqual({
-        Pantallas: pad(1 + (prose.gallery?.length ?? 0)),
-        Módulos: pad(nodes.length),
-        Decisiones: pad(decisions),
-      });
       expect(section(id).querySelector(".holo-diagram .holo-card__meta"), id).toHaveTextContent(
         `${pad(nodes.length)} módulos · ${pad(prose.architecture?.edges.length ?? 0)} conexiones`,
       );
@@ -195,10 +230,12 @@ describe("ProjectsPage", () => {
   /*
     Garantiza que el HTML SERVIDO no elige proyecto ni capa: sin
     `data-enhanced`, sin `data-state`, sin `tabpanel` ni `inert`, de modo que
-    decide `:target` (o el primero). Y que cada sección trae la ficha de texto
-    —pantallas con su nota y sistema con sus decisiones— que se pinta con
-    `scripting: none`. Evita la mesa convertida en el contenido (P5, regla 7) y
-    que el servidor pinte OMSTA antes de que `#wikiverse` lo sustituya.
+    decide `:target` (o el primero); el muelle es una lista de enlaces `#id`
+    sin `aria-current`, sin la luz que se desliza (nace al hidratar) y sin
+    vista previa. Y que cada sección trae la ficha de texto —pantallas con su
+    nota y sistema con sus decisiones— que se pinta con `scripting: none`.
+    Evita la mesa convertida en el contenido (P5, regla 7) y que el servidor
+    pinte OMSTA antes de que `#wikiverse` lo sustituya.
   */
   it("el HTML servido no decide el proyecto y cada sección lleva su ficha de texto (P5)", () => {
     const host = document.createElement("div");
@@ -209,10 +246,13 @@ describe("ProjectsPage", () => {
     // al hidratar, que es lo que escondía algo ya pintado.
     expect(root).not.toHaveAttribute("data-boot");
     // Ninguna sección se oculta ni se inertiza desde el servidor: `:target` decide.
-    // (Los mandos de Diseño e Ingeniería sí van `inert`: la capa servida es Resultado.)
+    // (Los mandos de Diseño e Ingeniería sí van `inert`: la capa servida es Producto.)
     expect(host.querySelectorAll("section.table-project[data-state], section.table-project[inert], [role='tabpanel']")).toHaveLength(0);
     expect(host.querySelectorAll("section.table-project")).toHaveLength(catalog().length);
-    expect(host.querySelectorAll('nav[aria-label="Proyectos"] [aria-current]')).toHaveLength(0);
+    const nav = host.querySelector('nav[aria-label="Proyectos"]') as HTMLElement;
+    expect(nav.querySelectorAll("[aria-current], li[data-dist]")).toHaveLength(0);
+    expect(nav.querySelector(".table-dock__glow")).toBeNull();
+    expect(nav.querySelector(".table-dock__peek")).toBeNull();
     expect(host.querySelector('[aria-live="polite"]')).toBeEmptyDOMElement();
 
     for (const { id, prose } of catalog()) {
@@ -232,7 +272,7 @@ describe("ProjectsPage", () => {
       expect([...fallback.querySelectorAll("dl dd")].map((dd) => dd.textContent), id).toEqual(
         nodes.flatMap((node) => (node.decision ? [node.decision] : [])),
       );
-      expect(host.querySelector(`nav[aria-label="Proyectos"] a[href="#${id}"]`), id).not.toBeNull();
+      expect(nav.querySelector(`a[href="#${id}"]`), id).not.toBeNull();
     }
   });
 });
@@ -250,19 +290,33 @@ describe("EngineeringTable · capas (P4)", () => {
     renderTable(table());
     const list = screen.getByRole("tablist", { name: "Profundidad de lectura" });
     const tabs = within(list).getAllByRole("tab");
-    expect(tabs.map((entry) => entry.textContent)).toEqual(["Resultado", "Diseño", "Ingeniería"]);
+    expect(tabs.map((entry) => entry.textContent)).toEqual(["Producto", "Diseño", "Ingeniería"]);
     expect(tabs.map((entry) => entry.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
     expect(tabs.map((entry) => entry.tabIndex)).toEqual([0, -1, -1]);
     for (const entry of tabs) expect(entry).toHaveAttribute("aria-controls", "omsta-stage");
     const stage = document.getElementById("omsta-stage") as HTMLElement;
     expect(stage).toHaveAttribute("role", "tabpanel");
-    expect(stage).toHaveAttribute("aria-labelledby", "table-tab-resultado");
-    expect(document.querySelector(".table")).toHaveAttribute("data-layer", "resultado");
+    expect(stage).toHaveAttribute("aria-labelledby", "table-tab-producto");
+    expect(document.querySelector(".table")).toHaveAttribute("data-layer", "producto");
 
     fireEvent.click(tab(/Ingeniería/));
     expect(tab(/Ingeniería/)).toHaveAttribute("aria-selected", "true");
     expect(stage).toHaveAttribute("aria-labelledby", "table-tab-ingenieria");
     expect(document.querySelector(".table")).toHaveAttribute("data-layer", "ingenieria");
+  });
+
+  /*
+    Garantiza que el escenario de cada proyecto trae lo que el par esquema +
+    inspector necesita para medirse (§17): sus columnas —carriles ocupados— y
+    sus filas. Evita un esquema de ancho fijo lleno de vacío.
+  */
+  it("el escenario lleva las columnas y filas del sistema de su proyecto", () => {
+    renderTable(table());
+    for (const project of table()) {
+      const stage = document.getElementById(`${project.id}-stage`) as HTMLElement;
+      expect(stage.style.getPropertyValue("--cols"), project.id).toBe(String(project.architecture.cols));
+      expect(stage.style.getPropertyValue("--rows"), project.id).toBe(String(project.architecture.rows));
+    }
   });
 
   /*
@@ -279,7 +333,7 @@ describe("EngineeringTable · capas (P4)", () => {
     const all = (value: boolean, elements: Element[]) => inert(elements).every((flag) => flag === value);
     expect(nodes().length).toBeGreaterThan(0);
 
-    // Resultado: nada de la mesa se opera; se lee.
+    // Producto: nada de la mesa se opera; se lee.
     expect(all(true, frames("omsta"))).toBe(true);
     expect(all(true, nodes())).toBe(true);
     expect(note()).toHaveAttribute("inert");
@@ -298,7 +352,7 @@ describe("EngineeringTable · capas (P4)", () => {
     expect(note()).toHaveAttribute("inert");
     expect(all(true, [...section("wikiverse").querySelectorAll(".holo-node__box")])).toBe(true);
 
-    fireEvent.click(tab(/Resultado/));
+    fireEvent.click(tab(/Producto/));
     expect(all(true, nodes())).toBe(true);
   });
 
@@ -310,23 +364,23 @@ describe("EngineeringTable · capas (P4)", () => {
   it("el selector se recorre con flechas, Inicio y Fin, y el foco no se pierde", () => {
     const omsta = table()[0];
     renderTable(table());
-    const resultado = tab(/Resultado/);
-    act(() => resultado.focus());
-    fireEvent.keyDown(resultado, { key: "ArrowRight" });
+    const producto = tab(/Producto/);
+    act(() => producto.focus());
+    fireEvent.keyDown(producto, { key: "ArrowRight" });
     expect(tab(/Diseño/)).toHaveAttribute("aria-selected", "true");
     expect(tab(/Diseño/)).toHaveFocus();
     fireEvent.keyDown(tab(/Diseño/), { key: "End" });
     expect(tab(/Ingeniería/)).toHaveFocus();
     expect(live()).toHaveTextContent(`OMSTA · Ingeniería · ${omsta.counts.modules} módulos`);
     fireEvent.keyDown(tab(/Ingeniería/), { key: "ArrowRight" });
-    expect(resultado).toHaveAttribute("aria-selected", "true");
-    expect(resultado).toHaveFocus();
-    fireEvent.keyDown(resultado, { key: "ArrowLeft" });
+    expect(producto).toHaveAttribute("aria-selected", "true");
+    expect(producto).toHaveFocus();
+    fireEvent.keyDown(producto, { key: "ArrowLeft" });
     expect(tab(/Ingeniería/)).toHaveFocus();
     fireEvent.keyDown(tab(/Ingeniería/), { key: "Home" });
-    expect(resultado).toHaveFocus();
-    expect(resultado).toHaveAttribute("tabindex", "0");
-    expect(live()).toHaveTextContent("OMSTA · Resultado");
+    expect(producto).toHaveFocus();
+    expect(producto).toHaveAttribute("tabindex", "0");
+    expect(live()).toHaveTextContent("OMSTA · Producto");
   });
 });
 
@@ -345,13 +399,15 @@ describe("EngineeringTable · proyectos y muelle", () => {
       expect(section(id)).toHaveAttribute("data-state", "hidden");
       expect(section(id)).toHaveAttribute("inert");
     }
-    const dock = screen.getByRole("navigation", { name: "Proyectos" });
-    expect(within(dock).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(
+    expect(within(dock()).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(
       table().map((project) => `#${project.id}`),
     );
-    // El nombre accesible es el título entero; lo visible, el nombre corto.
-    const wiki = within(dock).getByRole("link", { name: /Wiki Universe/ });
-    expect(within(dock).getByRole("link", { name: "OMSTA — ERP para una agencia de viajes" })).toHaveAttribute("aria-current", "true");
+    // El nombre accesible es el título entero; lo visible, el índice y el nombre corto.
+    const wiki = within(dock()).getByRole("link", { name: /Wiki Universe/ });
+    const omstaLink = within(dock()).getByRole("link", { name: "OMSTA — ERP para una agencia de viajes" });
+    expect(omstaLink).toHaveAttribute("aria-current", "true");
+    expect(omstaLink.querySelector(".table-dock__index")).toHaveTextContent("01");
+    expect(omstaLink.querySelector(".table-dock__name")).toHaveTextContent("OMSTA");
 
     const depth = window.history.length;
     fireEvent.click(wiki);
@@ -362,10 +418,191 @@ describe("EngineeringTable · proyectos y muelle", () => {
     expect(section("omsta")).toHaveAttribute("data-state", "leaving");
     expect(section("omsta")).toHaveAttribute("inert");
     expect(wiki).toHaveAttribute("aria-current", "true");
-    expect(within(dock).getByRole("link", { name: /OMSTA/ })).not.toHaveAttribute("aria-current");
-    expect(tab(/Resultado/)).toHaveAttribute("aria-controls", "wikiverse-stage");
-    expect(live()).toHaveTextContent("Wiki Universe · Resultado");
+    expect(within(dock()).getByRole("link", { name: /OMSTA/ })).not.toHaveAttribute("aria-current");
+    expect(tab(/Producto/)).toHaveAttribute("aria-controls", "wikiverse-stage");
+    expect(live()).toHaveTextContent("Wiki Universe · Producto");
     await waitFor(() => expect(section("omsta")).toHaveAttribute("data-state", "hidden"));
+  });
+
+  /*
+    Garantiza la luz del activo: nace al hidratar ya en su sitio y se coloca
+    por el índice del proyecto (`--active`, sobre `--n` columnas iguales), y
+    los vecinos se marcan más presentes que los lejanos. Evita una luz que
+    viaja desde el primero en cada carga o que hay que medir en el DOM.
+  */
+  it("la luz del muelle sigue al activo por su índice y los vecinos se marcan", () => {
+    renderTable(table());
+    const nav = dock();
+    expect(nav.querySelectorAll(".table-dock__glow")).toHaveLength(1);
+    expect(nav.style.getPropertyValue("--n")).toBe("5");
+    expect(nav.style.getPropertyValue("--active")).toBe("0");
+    const distances = () => [...nav.querySelectorAll("li")].map((item) => item.getAttribute("data-dist"));
+    expect(distances()).toEqual(["0", "1", "2", "2", "2"]);
+    fireEvent.click(dockLink("wikiverse"));
+    expect(nav.style.getPropertyValue("--active")).toBe("2");
+    expect(distances()).toEqual(["2", "1", "0", "1", "2"]);
+  });
+
+  /*
+    Garantiza los mandos del muelle: «Proyecto anterior» y «Proyecto
+    siguiente» dan la vuelta; con el foco en el muelle, ← → pasan de proyecto
+    y el foco viaja con el activo; Inicio y Fin van a los extremos. Evita un
+    selector que sólo se opera con el ratón (P7).
+  */
+  it("el muelle se recorre con sus flechas y con el teclado, y el foco viaja con el activo", () => {
+    renderTable(table());
+    const nav = within(dock());
+    fireEvent.click(nav.getByRole("button", { name: "Proyecto anterior" }));
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+    fireEvent.click(nav.getByRole("button", { name: "Proyecto siguiente" }));
+    expect(section("omsta")).toHaveAttribute("data-state", "active");
+
+    act(() => dockLink("omsta").focus());
+    fireEvent.keyDown(dockLink("omsta"), { key: "ArrowRight" });
+    expect(section("izaks-photos")).toHaveAttribute("data-state", "active");
+    expect(dockLink("izaks-photos")).toHaveFocus();
+    expect(dockLink("izaks-photos")).toHaveAttribute("aria-current", "true");
+    fireEvent.keyDown(dockLink("izaks-photos"), { key: "End" });
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+    expect(dockLink("delicate")).toHaveFocus();
+    fireEvent.keyDown(dockLink("delicate"), { key: "ArrowRight" });
+    expect(section("omsta")).toHaveAttribute("data-state", "active");
+    expect(dockLink("omsta")).toHaveFocus();
+    fireEvent.keyDown(dockLink("omsta"), { key: "ArrowLeft" });
+    expect(dockLink("delicate")).toHaveFocus();
+    fireEvent.keyDown(dockLink("delicate"), { key: "Home" });
+    expect(section("omsta")).toHaveAttribute("data-state", "active");
+    expect(live()).toHaveTextContent("OMSTA · Producto");
+  });
+
+  /*
+    Garantiza las flechas GLOBALES: con el foco en `body`, ← → pasan de
+    proyecto; con el foco en el selector de capa (que ya usa flechas), no; y
+    con un modificador, tampoco. Evita secuestrar las flechas de un mando o un
+    atajo del navegador.
+  */
+  it("← → globales cambian de proyecto sólo con el foco en body", () => {
+    renderTable(table());
+    act(() => (document.activeElement as HTMLElement | null)?.blur());
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(section("izaks-photos")).toHaveAttribute("data-state", "active");
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    fireEvent.keyDown(document.body, { key: "ArrowLeft" });
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+    fireEvent.keyDown(document.body, { key: "ArrowRight", altKey: true });
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+
+    // En el selector de capa las flechas son de las capas, no de los proyectos.
+    act(() => tab(/Producto/).focus());
+    fireEvent.keyDown(tab(/Producto/), { key: "ArrowRight" });
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+    expect(tab(/Diseño/)).toHaveAttribute("aria-selected", "true");
+  });
+
+  /*
+    Garantiza la rueda HORIZONTAL sobre el muelle: un gesto pasa un proyecto
+    (acumulado con umbral y descanso, para que la inercia de un trackpad no se
+    lleve tres), y la rueda vertical nunca se toca: es el scroll de la página.
+  */
+  it("la rueda horizontal sobre el muelle pasa un proyecto por gesto; la vertical no se toca", () => {
+    renderTable(table());
+    const wheel = (deltaX: number, deltaY = 0) => {
+      const event = new WheelEvent("wheel", { deltaX, deltaY, bubbles: true, cancelable: true });
+      act(() => {
+        dock().dispatchEvent(event);
+      });
+      return event;
+    };
+    const vertical = wheel(0, 240);
+    expect(vertical.defaultPrevented).toBe(false);
+    expect(section("omsta")).toHaveAttribute("data-state", "active");
+
+    // Por debajo del umbral no pasa nada, pero el gesto ya es del muelle.
+    expect(wheel(30).defaultPrevented).toBe(true);
+    expect(section("omsta")).toHaveAttribute("data-state", "active");
+    wheel(40);
+    expect(section("izaks-photos")).toHaveAttribute("data-state", "active");
+    // La inercia que sigue cae en el descanso.
+    wheel(120);
+    wheel(120);
+    expect(section("izaks-photos")).toHaveAttribute("data-state", "active");
+  });
+
+  /*
+    Garantiza que la cola de inercia de un trackpad —eventos seguidos durante
+    más de un segundo— es UN gesto: el descanso se alarga mientras llegan, y
+    el muelle sólo se rearma tras un silencio. Evita el «omsta > izaks >
+    wikiverse» de un solo deslizamiento que midió la crítica.
+  */
+  it("una inercia larga de trackpad sigue siendo un gesto; tras un silencio, el siguiente pasa", () => {
+    renderTable(table());
+    // Cada evento con su marca de tiempo: la inercia es la cadencia, no el reloj del test.
+    const at = (timeStamp: number, deltaX: number) => {
+      const event = new WheelEvent("wheel", { deltaX, deltaY: 0, bubbles: true, cancelable: true });
+      Object.defineProperty(event, "timeStamp", { value: timeStamp });
+      act(() => {
+        dock().dispatchEvent(event);
+      });
+    };
+    const start = 10_000;
+    // 1,4 s de inercia decreciente, un evento cada 16 ms: más de 1.000 px en total.
+    for (let index = 0; index < 88; index++) at(start + index * 16, 40 * 0.97 ** index);
+    expect(section("izaks-photos")).toHaveAttribute("data-state", "active");
+    // Tras un silencio, un gesto nuevo sí pasa el siguiente.
+    at(start + 88 * 16 + 400, 80);
+    expect(section("wikiverse")).toHaveAttribute("data-state", "active");
+  });
+
+  /*
+    Garantiza la vista previa del muelle: apuntar con el ratón un proyecto que
+    no es el activo enseña su pantalla destacada en miniatura, su nombre y qué
+    es; salir la apaga; y el activo no se previsualiza. Es decorado para quien
+    ya lee el enlace: `aria-hidden`. Evita una vista previa que repite lo que
+    ya está en la mesa o que se lee dos veces.
+  */
+  it("apuntar un proyecto del muelle lo previsualiza; el activo no; Escape la cierra", () => {
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const projects = table();
+    renderTable(projects);
+    const peek = () => dock().querySelector(".table-dock__peek");
+    expect(peek()).toBeNull();
+    fireEvent.pointerEnter(dockLink("delicate"), { pointerType: "mouse" });
+    const delicate = projects.find((project) => project.id === "delicate") as TableProject;
+    expect(peek()).toHaveAttribute("data-open", "true");
+    expect(peek()).toHaveAttribute("aria-hidden", "true");
+    expect(peek()?.querySelector("img")).toHaveAttribute("src", delicate.screens[0].sources.thumb);
+    expect(peek()).toHaveTextContent(delicate.name);
+    expect(peek()).toHaveTextContent(delicate.descriptor);
+    // Salir del enlace la apaga con un respiro: da tiempo a llevar el puntero
+    // a la vista previa, que mientras se apunta se queda.
+    fireEvent.pointerLeave(dockLink("delicate"), { pointerType: "mouse" });
+    expect(peek()).toHaveAttribute("data-open", "true");
+    fireEvent.pointerEnter(peek() as Element, { pointerType: "mouse" });
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(peek()).toHaveAttribute("data-open", "true");
+    fireEvent.pointerLeave(peek() as Element, { pointerType: "mouse" });
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(peek()).not.toHaveAttribute("data-open");
+
+    // Escape la cierra siempre, esté donde esté el puntero (WCAG 1.4.13).
+    fireEvent.pointerEnter(dockLink("wikiverse"), { pointerType: "mouse" });
+    expect(peek()).toHaveAttribute("data-open", "true");
+    expect(peek()).toHaveTextContent("Wiki Universe");
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(peek()).not.toHaveAttribute("data-open");
+
+    fireEvent.pointerEnter(dockLink("omsta"), { pointerType: "mouse" });
+    expect(peek()).not.toHaveAttribute("data-open");
+    // Con el dedo no hay vista previa: tocar ya elige.
+    fireEvent.pointerEnter(dockLink("network"), { pointerType: "touch" });
+    expect(peek()).not.toHaveAttribute("data-open");
   });
 
   /*
@@ -389,6 +626,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     sólo habla cuando el visitante cambia algo. Evita un anuncio en cada carga.
   */
   it("con el movimiento encendido la mesa se marca viva, y hidratar no se anuncia", () => {
+    const omsta = table()[0];
     renderTable(table());
     const root = document.querySelector(".table");
     expect(root).toHaveAttribute("data-enhanced", "true");
@@ -396,7 +634,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     expect(root).not.toHaveAttribute("data-boot");
     expect(live()).toBeEmptyDOMElement();
     fireEvent.click(tab(/Diseño/));
-    expect(live()).toHaveTextContent("OMSTA · Diseño · pantalla 1 de 8");
+    expect(live()).toHaveTextContent(`OMSTA · Diseño · decisión 1 de ${omsta.reel.length}: ${omsta.reel[0].note}`);
   });
 
   /*
@@ -425,7 +663,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     window.history.replaceState(null, "", "#delicate");
     const { unmount } = renderTable(projects);
     expect(section("delicate")).toHaveAttribute("data-state", "active");
-    expect(tab(/Resultado/)).toHaveAttribute("aria-controls", "delicate-stage");
+    expect(tab(/Producto/)).toHaveAttribute("aria-controls", "delicate-stage");
     unmount();
     window.history.replaceState(null, "", "#nada");
     renderTable(projects);
@@ -434,17 +672,19 @@ describe("EngineeringTable · proyectos y muelle", () => {
   });
 
   /*
-    Garantiza que la pantalla elegida del tambor y el módulo del inspector
-    pertenecen al proyecto: al cambiarlo, el nuevo entra por su primera
-    pantalla y por su primer módulo con decisión. Evita arrastrar el índice 7
-    de OMSTA a un proyecto de cuatro pantallas (una nota vacía).
+    Garantiza que el paso del carrete y el módulo del inspector pertenecen al
+    proyecto: al cambiarlo, el nuevo entra por su primera decisión y por su
+    primer módulo con decisión. Evita arrastrar la cuarta decisión de OMSTA a
+    un proyecto de tres (una nota vacía).
   */
-  it("al cambiar de proyecto, el tambor y el inspector empiezan de nuevo", () => {
+  it("al cambiar de proyecto, el carrete y el inspector empiezan de nuevo", () => {
     const projects = table();
+    const omsta = projects[0];
     renderTable(projects);
     fireEvent.click(tab(/Diseño/));
-    fireEvent.click(frames("omsta")[6]);
-    expect(noteText("omsta")).toMatch(/^07 \/ 08/);
+    const last = omsta.reel.length - 1;
+    fireEvent.click(frames("omsta")[omsta.reel[last].screen]);
+    expect(noteText("omsta")).toBe(decisionNote(omsta, last));
     fireEvent.click(tab(/Ingeniería/));
     fireEvent.click(nodeButton("omsta", "redis"));
     expect(within(inspector("omsta")).getByRole("heading", { level: 3 })).toHaveTextContent("Redis");
@@ -454,58 +694,114 @@ describe("EngineeringTable · proyectos y muelle", () => {
     const first = izaks.architecture.nodes.find((node) => node.id === initialNode(izaks.architecture));
     expect(within(inspector("izaks-photos")).getByRole("heading", { level: 3 })).toHaveTextContent(first?.label as string);
     fireEvent.click(tab(/Diseño/));
-    expect(noteText("izaks-photos")).toMatch(/^01 \/ 04/);
-    expect(noteText("izaks-photos")).toContain(izaks.screens[0].caption);
+    expect(noteText("izaks-photos")).toBe(decisionNote(izaks, 0));
   });
+});
 
+describe("EngineeringTable · la mesa física", () => {
   /*
-    Garantiza que la mesa física grabada sigue al proyecto y a la capa, con las
-    cifras de sus carriles, y que no se lee dos veces (va `aria-hidden`).
-    Evita una placa que se queda en OMSTA o cifras de carril escritas a mano.
+    Garantiza el MAPA GLOBAL de Ingeniería (§17): el anillo grabado dibuja un
+    segmento por módulo del proyecto a la vista y un filo por carril; sigue al
+    foco del esquema y al cambiar de proyecto, con dos lecturas que no se
+    pisan —el filo y el trazo dicen el CARRIL del módulo en foco; el relleno,
+    su RUTA, sea del carril que sea—; en el centro, sólo el carril encendido
+    con su cifra. No se lee dos veces (`aria-hidden`), ya no hay placa ni
+    plano de la nave, y el stack grabado es el del proyecto, una pieza por
+    tecnología. Evita un anillo decorativo que no corresponde al sistema, un
+    carril que tapa la ruta (Nómina encendida como si Pagos la usara) y los
+    rótulos de carril repetidos bajo el esquema.
   */
-  it("la mesa grabada sigue al proyecto y a la capa, con las cifras de sus carriles", () => {
+  it("el anillo es el sistema del proyecto a la vista y sigue al foco del esquema", () => {
     const projects = table();
     renderTable(projects);
     const etched = document.querySelector(".console") as HTMLElement;
     expect(etched).toHaveAttribute("aria-hidden", "true");
-    expect(etched.querySelector(".console__plate")).toHaveTextContent("OMSTA01 · Resultado");
+    expect(etched.querySelector(".console__plate, .console__quadrant, .console__etching, .console__arc")).toBeNull();
+    /** Los módulos en el orden del anillo: por carril y, dentro, por fila. */
+    const order = (project: TableProject) =>
+      project.architecture.lanes.flatMap(({ lane: entry }) =>
+        project.architecture.nodes
+          .filter((node) => node.lane === entry)
+          .sort((left, right) => left.row - right.row)
+          .map((node) => node.id),
+      );
+    const segments = () => [...etched.querySelectorAll(".console__seg")];
+    const segment = (project: TableProject, id: string) => segments()[order(project).indexOf(id)];
+    const states = () =>
+      Object.fromEntries(
+        segments().map((path, index) => [index, [path.getAttribute("data-state"), path.getAttribute("data-lane-on")]]),
+      );
+    const expected = (project: TableProject, focus: string) => {
+      const path = nodePath(project.architecture.edges, focus);
+      const lane = project.architecture.nodes.find((node) => node.id === focus)?.lane;
+      return Object.fromEntries(
+        order(project).map((id, index) => {
+          const node = project.architecture.nodes.find((entry) => entry.id === id)!;
+          const state = id === focus ? "focus" : path.upstream.has(id) || path.downstream.has(id) ? "path" : null;
+          return [index, [state, node.lane === lane ? "true" : null]];
+        }),
+      );
+    };
+    const readout = () => etched.querySelector(".console__readout")?.textContent;
+    const omsta = projects[0];
+    expect(segments()).toHaveLength(omsta.counts.modules);
+
+    // OMSTA con Pagos y cobros en foco: Nómina es de su carril, pero no de su
+    // ruta; PostgreSQL es de otro carril, y sí de su ruta.
+    expect(initialNode(omsta.architecture)).toBe("pagos");
+    expect(segment(omsta, "pagos")).toHaveAttribute("data-state", "focus");
+    expect(segment(omsta, "nomina")).toHaveAttribute("data-lane-on", "true");
+    expect(segment(omsta, "nomina")).not.toHaveAttribute("data-state");
+    expect(segment(omsta, "postgresql")).toHaveAttribute("data-state", "path");
+    expect(segment(omsta, "postgresql")).not.toHaveAttribute("data-lane-on");
+    const servicio = omsta.architecture.lanes.find(({ lane }) => lane === "servicio")!;
+    expect(readout()).toBe(`${pad(servicio.count)}${LANE_LABEL.servicio}`);
+    expect(etched.querySelectorAll(".console__lane")).toHaveLength(omsta.architecture.lanes.length);
+    expect(etched.querySelectorAll('.console__lane[data-on="true"]')).toHaveLength(1);
+
     fireEvent.click(screen.getByRole("link", { name: /Izak's Photos/ }));
     fireEvent.click(tab(/Ingeniería/));
     const izaks = projects.find((project) => project.id === "izaks-photos") as TableProject;
-    expect(etched.querySelector(".console__plate")).toHaveTextContent(`Izak's Photos${pad(izaks.order)} · Ingeniería`);
-    expect(etched.querySelector(".console__spec")).toHaveTextContent(izaks.technologies[0]);
-    const quadrants = Object.fromEntries(
-      [...etched.querySelectorAll(".console__quadrant")].map((quadrant) => [
-        quadrant.querySelector("span")?.textContent,
-        quadrant.querySelector("small")?.textContent,
-      ]),
+    expect(segments()).toHaveLength(izaks.counts.modules);
+    expect([...etched.querySelectorAll(".console__spec > span")].map((item) => item.textContent)).toEqual(
+      izaks.technologies,
     );
-    const count = (lane: string) => izaks.architecture.lanes.find((entry) => entry.lane === lane)?.count ?? 0;
-    expect(quadrants).toEqual({
-      Cliente: `${pad(count("cliente"))} módulos`,
-      Servicio: `${pad(count("servicio"))} módulos`,
-      Datos: `${pad(count("datos"))} módulos`,
-      Infraestructura: `${pad(count("infraestructura"))} módulos`,
-    });
+    const chosen = initialNode(izaks.architecture) as string;
+    expect(states()).toEqual(expected(izaks, chosen));
+    const focusLane = izaks.architecture.nodes.find((node) => node.id === chosen)!.lane;
+    const lit = izaks.architecture.lanes.find(({ lane }) => lane === focusLane)!;
+    expect(readout()).toBe(`${pad(lit.count)}${LANE_LABEL[focusLane]}`);
+
+    // Apuntar otro módulo del esquema mueve el foco del anillo con él.
+    const other = izaks.architecture.nodes.find((node) => node.lane !== focusLane)!;
+    fireEvent.pointerEnter(nodeButton("izaks-photos", other.id));
+    expect(states()).toEqual(expected(izaks, other.id));
+    expect(segment(izaks, other.id)).toHaveAttribute("data-state", "focus");
+    expect(readout()).toContain(LANE_LABEL[other.lane]);
   });
 });
 
-describe("EngineeringTable · Resultado y Diseño", () => {
+describe("EngineeringTable · Producto y Diseño", () => {
   /*
-    Garantiza que los puestos de Resultado salen de los datos (P2 en el DOM) y
-    que sólo la destacada del primer proyecto se pide sin pereza. Evita
-    poses escritas a mano y cinco capturas compitiendo por el LCP.
+    Garantiza que los puestos de Producto salen de los datos (P2 en el DOM),
+    que cada pantalla lleva su luma medida para exponerse (§17) y que sólo la
+    destacada del primer proyecto se pide sin pereza. Evita poses escritas a
+    mano, una interfaz blanca que ilumina la sala y cinco capturas compitiendo
+    por el LCP.
   */
-  it("cada pantalla lleva su puesto de los datos y sólo la primera destacada se pide sin pereza", () => {
+  it("cada pantalla lleva su puesto y su luma de los datos, y sólo la primera destacada se pide sin pereza", () => {
     const projects = table();
     renderTable(projects);
     for (const project of projects) {
-      const figures = [...section(project.id).querySelectorAll("figure.holo-screen")];
+      const figures = [...section(project.id).querySelectorAll<HTMLElement>("figure.holo-screen")];
       expect(figures.map((figure) => figure.getAttribute("data-slot")), project.id).toEqual(
         project.screens.map((entry) => entry.slot ?? "none"),
       );
       expect(figures.map((figure) => figure.getAttribute("data-frame")), project.id).toEqual(
         project.screens.map((entry) => entry.frame),
+      );
+      expect(figures.map((figure) => figure.style.getPropertyValue("--luma")), project.id).toEqual(
+        project.screens.map((entry) => String(entry.sources.luma)),
       );
     }
     const eager = [...document.querySelectorAll(".holo-screen img")].filter((img) => !img.hasAttribute("loading"));
@@ -514,76 +810,88 @@ describe("EngineeringTable · Resultado y Diseño", () => {
   });
 
   /*
-    Garantiza el tambor de Diseño con teclado: las flechas giran (y dan la
-    vuelta), el foco viaja a la nueva elegida, que es la única tabulable y la
-    que lleva `aria-current`; lo lejano se marca `data-far`; la nota dice
-    índice y nota de la elegida, y la región viva lo anuncia. Evita un carrete
-    que sólo se opera con el ratón o que deja el foco en una pantalla apagada.
+    Garantiza el carrete de DECISIONES con teclado: arranca en la pantalla de
+    la primera decisión; las flechas giran (y dan la vuelta) por las pantallas
+    que tienen decisión, el foco viaja a la nueva elegida, que es la única
+    tabulable y la que lleva `aria-current`; lo que no es una decisión (o cae
+    lejos) se marca `data-far`; la nota dice índice, problema y decisión, y la
+    región viva lo anuncia sin repetir lo que el foco ya lleva. Evita un
+    carrete que sólo se opera con el ratón o que vuelve a ser la galería.
   */
-  it("Diseño: las flechas giran el tambor, el foco viaja con la elegida y la nota la lee", async () => {
+  it("Diseño: el carrete recorre las decisiones con las flechas y la nota dice problema y decisión", async () => {
     const omsta = table()[0];
     renderTable(table());
     fireEvent.click(tab(/Diseño/));
     const figures = () => [...section("omsta").querySelectorAll("figure.holo-screen")];
     const frontIndex = () => figures().findIndex((figure) => figure.hasAttribute("data-front"));
+    const reelScreens = omsta.reel.map((step) => step.screen);
 
-    expect(frontIndex()).toBe(0);
-    expect(frames("omsta").map((frame) => frame.tabIndex)).toEqual(omsta.screens.map((_, i) => (i === 0 ? 0 : -1)));
-    expect(frames("omsta")[0]).toHaveAttribute("aria-current", "true");
-    // Ocho pantallas con la primera delante: las tres del fondo del tambor se apagan.
-    expect(figures().map((figure) => figure.hasAttribute("data-far"))).toEqual([false, false, false, true, true, true, false, false]);
-    expect(noteText("omsta")).toBe(`01 / 08${omsta.screens[0].caption}`);
+    expect(frontIndex()).toBe(reelScreens[0]);
+    expect(frames("omsta").map((frame) => frame.tabIndex)).toEqual(omsta.screens.map((_, i) => (i === reelScreens[0] ? 0 : -1)));
+    expect(frames("omsta")[reelScreens[0]]).toHaveAttribute("aria-current", "true");
+    // Sólo las pantallas con decisión están en el carrete; el resto espera lejos.
+    expect(figures().map((figure) => figure.hasAttribute("data-far"))).toEqual(
+      omsta.screens.map((_, i) => !reelScreens.includes(i)),
+    );
+    expect(noteText("omsta")).toBe(decisionNote(omsta, 0));
 
-    act(() => frames("omsta")[0].focus());
-    fireEvent.keyDown(frames("omsta")[0], { key: "ArrowRight" });
-    expect(frontIndex()).toBe(1);
-    await waitFor(() => expect(frames("omsta")[1]).toHaveFocus());
-    expect(frames("omsta")[1]).toHaveAttribute("aria-current", "true");
-    expect(frames("omsta")[0]).not.toHaveAttribute("aria-current");
-    expect(frames("omsta")[1].tabIndex).toBe(0);
-    expect(frames("omsta")[0].tabIndex).toBe(-1);
-    expect(noteText("omsta")).toBe(`02 / 08${omsta.screens[1].caption}`);
-    // El foco ya lleva la nota (aria-describedby): el anuncio no la repite.
-    expect(live()).toHaveTextContent("OMSTA · Diseño · pantalla 2 de 8");
-    expect(live()).not.toHaveTextContent(omsta.screens[1].caption);
+    act(() => frames("omsta")[reelScreens[0]].focus());
+    fireEvent.keyDown(frames("omsta")[reelScreens[0]], { key: "ArrowRight" });
+    expect(frontIndex()).toBe(reelScreens[1]);
+    await waitFor(() => expect(frames("omsta")[reelScreens[1]]).toHaveFocus());
+    expect(frames("omsta")[reelScreens[1]]).toHaveAttribute("aria-current", "true");
+    expect(frames("omsta")[reelScreens[0]]).not.toHaveAttribute("aria-current");
+    expect(frames("omsta")[reelScreens[1]].tabIndex).toBe(0);
+    expect(frames("omsta")[reelScreens[0]].tabIndex).toBe(-1);
+    expect(noteText("omsta")).toBe(decisionNote(omsta, 1));
+    // El foco ya lleva la decisión (aria-describedby): el anuncio no la repite.
+    expect(live()).toHaveTextContent(`OMSTA · Diseño · decisión 2 de ${omsta.reel.length}`);
+    expect(live()).not.toHaveTextContent(omsta.reel[1].note);
 
-    fireEvent.keyDown(frames("omsta")[1], { key: "ArrowLeft" });
-    fireEvent.keyDown(frames("omsta")[0], { key: "ArrowLeft" });
-    expect(frontIndex()).toBe(7);
-    await waitFor(() => expect(frames("omsta")[7]).toHaveFocus());
-    expect(noteText("omsta")).toMatch(/^08 \/ 08/);
+    fireEvent.keyDown(frames("omsta")[reelScreens[1]], { key: "ArrowLeft" });
+    fireEvent.keyDown(frames("omsta")[reelScreens[0]], { key: "ArrowLeft" });
+    const last = omsta.reel.length - 1;
+    expect(frontIndex()).toBe(reelScreens[last]);
+    await waitFor(() => expect(frames("omsta")[reelScreens[last]]).toHaveFocus());
+    expect(noteText("omsta")).toBe(decisionNote(omsta, last));
   });
 
   /*
-    Garantiza los otros dos caminos del tambor: pulsar una pantalla la trae
-    delante, y los botones de la nota avanzan y retroceden dando la vuelta.
-    Cada pantalla se describe por su nota (figcaption). Evita un tambor sin
-    mando visible y pantallas mudas para el lector de pantalla.
+    Garantiza los otros dos caminos del carrete: pulsar una pantalla la trae
+    delante y los botones de la nota avanzan y retroceden dando la vuelta. Cada
+    pantalla con decisión se describe por su problema y su decisión; la que no
+    la tiene, por su pie (figcaption). Evita un carrete sin mando visible y
+    pantallas mudas para el lector de pantalla.
   */
-  it("Diseño: pulsar una pantalla la trae delante y la nota avanza y retrocede", () => {
+  it("Diseño: pulsar una pantalla la trae delante, la nota avanza y retrocede, y cada pantalla se describe", () => {
     const omsta = table()[0];
     renderTable(table());
     fireEvent.click(tab(/Diseño/));
-    fireEvent.click(frames("omsta")[3]);
-    expect(frames("omsta")[3]).toHaveAttribute("aria-current", "true");
-    expect(noteText("omsta")).toMatch(/^04 \/ 08/);
+    fireEvent.click(frames("omsta")[omsta.reel[2].screen]);
+    expect(frames("omsta")[omsta.reel[2].screen]).toHaveAttribute("aria-current", "true");
+    expect(noteText("omsta")).toBe(decisionNote(omsta, 2));
 
     const note = within(section("omsta").querySelector(".holo-note") as HTMLElement);
-    fireEvent.click(note.getByRole("button", { name: "Pantalla siguiente" }));
-    expect(noteText("omsta")).toMatch(/^05 \/ 08/);
-    // De la quinta a la primera, y una más da la vuelta hasta la octava.
-    for (let step = 0; step < 4; step++) fireEvent.click(note.getByRole("button", { name: "Pantalla anterior" }));
-    expect(noteText("omsta")).toMatch(/^01 \/ 08/);
-    fireEvent.click(note.getByRole("button", { name: "Pantalla anterior" }));
-    expect(noteText("omsta")).toMatch(/^08 \/ 08/);
-    expect(frames("omsta")[7]).toHaveAttribute("aria-current", "true");
+    fireEvent.click(note.getByRole("button", { name: "Decisión siguiente" }));
+    expect(noteText("omsta")).toBe(decisionNote(omsta, 3));
+    // De la cuarta a la primera, y una más da la vuelta hasta la cuarta.
+    for (let step = 0; step < 3; step++) fireEvent.click(note.getByRole("button", { name: "Decisión anterior" }));
+    expect(noteText("omsta")).toBe(decisionNote(omsta, 0));
+    fireEvent.click(note.getByRole("button", { name: "Decisión anterior" }));
+    expect(noteText("omsta")).toBe(decisionNote(omsta, 3));
+    expect(frames("omsta")[omsta.reel[3].screen]).toHaveAttribute("aria-current", "true");
 
     for (const [index, frame] of frames("omsta").entries()) {
-      const caption = document.getElementById(frame.getAttribute("aria-describedby") as string);
-      expect(caption?.tagName).toBe("FIGCAPTION");
-      expect(caption).toHaveClass("visually-hidden");
-      expect(caption).toHaveTextContent(omsta.screens[index].caption);
-      // En Diseño la lámina lleva el nombre y la imagen calla: no se lee dos veces.
+      const description = document.getElementById(frame.getAttribute("aria-describedby") as string);
+      const step = omsta.reel.find((entry) => entry.screen === index);
+      expect(description).toHaveClass("visually-hidden");
+      if (step) {
+        expect(description).toHaveTextContent(`Problema: ${step.problem} Decisión: ${step.note}`);
+      } else {
+        expect(description?.tagName).toBe("FIGCAPTION");
+        expect(description).toHaveTextContent(omsta.screens[index].caption);
+      }
+      // La lámina lleva el nombre y la imagen calla: no se lee dos veces.
       expect(frame).toHaveAttribute("aria-label", omsta.screens[index].alt);
       const image = frame.parentElement?.querySelector("img");
       expect(image).toHaveAttribute("alt", omsta.screens[index].alt);
@@ -591,9 +899,29 @@ describe("EngineeringTable · Resultado y Diseño", () => {
     }
   });
 
+  /*
+    Garantiza que sin decisiones declaradas el carrete vuelve a los pies de
+    foto: recorre todas las pantallas, la nota sólo dice el pie (sin rótulos
+    de problema ni decisión) y los mandos hablan de pantallas. Evita una nota
+    con «Problema» vacío.
+  */
+  it("Diseño sin decisiones: todas las pantallas con su pie, sin rótulos de problema ni decisión", () => {
+    const wiki = withoutDecisions("wikiverse");
+    renderTable([wiki]);
+    fireEvent.click(tab(/Diseño/));
+    const note = section("wikiverse").querySelector(".holo-note") as HTMLElement;
+    expect(note).toHaveAttribute("data-kind", "captions");
+    expect(noteText("wikiverse")).toBe(`01 / ${pad(wiki.screens.length)}${wiki.screens[0].caption}`);
+    expect(note.querySelector(".holo-note__label")).toBeNull();
+    fireEvent.click(within(note).getByRole("button", { name: "Pantalla siguiente" }));
+    expect(noteText("wikiverse")).toBe(`02 / ${pad(wiki.screens.length)}${wiki.screens[1].caption}`);
+    expect(live()).toHaveTextContent(`Wiki Universe · Diseño · pantalla 2 de ${wiki.screens.length}: ${wiki.screens[1].caption}`);
+    expect(section("wikiverse").querySelectorAll("figure.holo-screen[data-far]")).toHaveLength(Math.max(0, wiki.screens.length - 5));
+  });
+
   it("fuera de Diseño el alt de cada pantalla sigue en el árbol: la imagen no vive dentro de lo inerte", () => {
     renderTable(table());
-    // Resultado, la capa de entrada (y la única sin JavaScript): láminas inertes…
+    // Producto, la capa de entrada (y la única sin JavaScript): láminas inertes…
     for (const frame of frames("omsta")) {
       expect(frame).toHaveAttribute("inert");
       const image = frame.parentElement?.querySelector("img") as HTMLImageElement;
@@ -634,11 +962,11 @@ describe("EngineeringTable · Ingeniería", () => {
   /*
     Garantiza la entrada al sistema: el inspector abre en el primer módulo con
     decisión (Pagos, en OMSTA) y enseña su carril, su nombre, su decisión y de
-    quién recibe y a quién entrega; las líneas que tocan ese módulo se
-    encienden y sus vecinos se marcan. Evita un inspector que entra en blanco o
-    un foco que no dice con qué se conecta.
+    quién recibe y a quién entrega; se enciende su RUTA entera —las líneas por
+    las que pasa y los módulos aguas arriba y abajo— (§17). Evita un inspector
+    que entra en blanco o un foco que no dice por dónde pasa el dato.
   */
-  it("el inspector abre en el primer módulo con decisión y enciende sus conexiones", () => {
+  it("el inspector abre en el primer módulo con decisión y enciende su ruta", () => {
     const omsta = table()[0];
     renderTable(table());
     fireEvent.click(tab(/Ingeniería/));
@@ -653,11 +981,15 @@ describe("EngineeringTable · Ingeniería", () => {
     expect(link("Recibe de")).toHaveTextContent(focus.inputs.join(" · "));
     expect(link("Entrega a")).toHaveTextContent(focus.outputs.join(" · "));
 
+    const path = nodePath(omsta.architecture.edges, focus.id);
     const on = [...section("omsta").querySelectorAll("path.holo-line[data-on]")];
-    const touching = omsta.architecture.edges.filter((edge) => edge.from === focus.id || edge.to === focus.id);
-    expect(on.map((line) => line.getAttribute("d"))).toEqual(touching.map((edge) => edge.d));
-    const linked = [...section("omsta").querySelectorAll(".holo-node[data-linked]")].map((node) => node.getAttribute("data-node-id"));
-    expect(linked.sort()).toEqual(touching.map((edge) => (edge.from === focus.id ? edge.to : edge.from)).sort());
+    expect(on.map((line) => line.getAttribute("d"))).toEqual(
+      omsta.architecture.edges.filter((edge) => path.edges.has(`${edge.from}>${edge.to}`)).map((edge) => edge.d),
+    );
+    const marked = (value: string) =>
+      [...section("omsta").querySelectorAll(`.holo-node[data-path="${value}"]`)].map((node) => node.getAttribute("data-node-id")).sort();
+    expect(marked("up")).toEqual([...path.upstream].sort());
+    expect(marked("down")).toEqual([...path.downstream].sort());
     expect([...section("omsta").querySelectorAll(".holo-node[data-selected]")].map((node) => node.getAttribute("data-node-id"))).toEqual(["pagos"]);
   });
 
@@ -776,25 +1108,26 @@ describe("EngineeringTable · Ingeniería", () => {
 
 describe("EngineeringTable · fichas incompletas (P3)", () => {
   /*
-    Garantiza que una ficha sin galería, sin enlaces y sin arquitectura se
-    pinta entera: nombre, qué es, salida al caso, una pantalla, cifras en cero
-    donde toca, y un sistema derivado del stack sin líneas ni decisiones
-    pegadas, cuyo inspector lee la decisión de la ficha. Evita un componente
-    roto por un dato ausente (A18).
+    Garantiza que una ficha sin galería, sin enlaces, sin alcance, sin
+    decisiones y sin arquitectura se pinta entera: nombre, qué es, salida al
+    caso, una pantalla, un Diseño con su pie, y un sistema derivado del stack
+    sin líneas ni decisiones pegadas, cuyo inspector lee la decisión de la
+    ficha. Evita un componente roto por un dato ausente (A18).
   */
-  it("sin galería, sin enlaces y sin arquitectura se pinta con dignidad", () => {
+  it("sin galería, sin enlaces, sin alcance y sin arquitectura se pinta con dignidad", () => {
     renderTable([bare()]);
     expect(screen.getByRole("heading", { level: 2, name: "Mínima" })).toBeInTheDocument();
     expect(section("network").querySelector(".table-read__descriptor")).toHaveTextContent("Ficha");
     expect(screen.getByRole("link", { name: /Explorar proyecto/ })).toHaveAttribute("href", "/es/proyectos/minima");
     expect(screen.queryByRole("link", { name: /Visitar/ })).toBeNull();
-    expect(screen.queryByRole("link", { name: /Código/ })).toBeNull();
-    expect(readout("network")).toEqual({ Pantallas: "01", Módulos: "02", Decisiones: "00" });
+    expect(screen.queryByRole("link", { name: /Ver código/ })).toBeNull();
+    // Sin alcance declarado, no se pinta un alcance vacío.
+    expect(section("network").querySelector(".holo-scope")).toBeNull();
     // Una sola pantalla, la destacada, con su alt entero.
     expect(screen.getAllByRole("img")).toHaveLength(1);
     expect(screen.getByAltText("Portada mínima").closest("figure")).toHaveAttribute("data-slot", "main");
 
-    // Diseño con una sola pantalla: el tambor no tiene a dónde ir y no se rompe.
+    // Diseño con una sola pantalla: el carrete no tiene a dónde ir y no se rompe.
     fireEvent.click(tab(/Diseño/));
     fireEvent.click(screen.getByRole("button", { name: "Pantalla siguiente" }));
     expect(noteText("network")).toBe("01 / 01La portada.");
@@ -807,6 +1140,9 @@ describe("EngineeringTable · fichas incompletas (P3)", () => {
     for (const button of document.querySelectorAll(".holo-node__box")) {
       expect(button).not.toHaveAttribute("aria-describedby");
     }
+    // El anillo también: dos segmentos, sin ruta que encender.
+    expect(document.querySelectorAll(".console__seg")).toHaveLength(2);
+    expect(document.querySelectorAll('.console__seg[data-state="path"]')).toHaveLength(0);
     const card = within(inspector("network"));
     expect(card.getByRole("heading", { level: 3 })).toHaveTextContent("React");
     expect(inspector("network").querySelector("blockquote")).toHaveTextContent("La única decisión.");
@@ -841,16 +1177,17 @@ describe("EngineeringTable · fichas incompletas (P3)", () => {
     expect(within(inspector("network")).getByRole("heading", { level: 3 })).toHaveTextContent("Web");
     expect(inspector("network").querySelector("blockquote")).toBeNull();
     expect(within(inspector("network")).getByText("Entrega a").nextElementSibling).toHaveTextContent("API");
-    expect(readout("network").Decisiones).toBe("00");
+    expect(silent.counts.decisions).toBe(0);
   });
 
   /*
     Garantiza que «Visitar el sitio» aparece en cuanto el MDX trae `kind:
-    demo`, se abre aparte y sin `opener`; que «Código» hace lo mismo con el
-    repositorio; y que un enlace de contacto no se pinta. Evita un botón ámbar
-    que no abre nada o que expone la ventana de origen.
+    demo`, se abre aparte y sin `opener`; que «Ver código» hace lo mismo con
+    el repositorio (con su marca, sin que el icono se lea); y que un enlace de
+    contacto no se pinta. Evita un botón ámbar que no abre nada o que expone
+    la ventana de origen.
   */
-  it("«Visitar el sitio» y «Código» salen de los enlaces del MDX y se abren aparte", () => {
+  it("«Visitar el sitio» y «Ver código» salen de los enlaces del MDX y se abren aparte", () => {
     const linked = {
       ...bare(),
       links: [
@@ -863,8 +1200,9 @@ describe("EngineeringTable · fichas incompletas (P3)", () => {
     const site = screen.getByRole("link", { name: /Visitar el sitio/ });
     expect(site).toHaveAttribute("href", "https://ejemplo.test");
     expect(site).toHaveClass("table-cta--site");
-    const code = screen.getByRole("link", { name: /Código/ });
+    const code = screen.getByRole("link", { name: "Ver código" });
     expect(code).toHaveAttribute("href", "https://github.test/minima");
+    expect(code.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     for (const external of [site, code]) {
       expect(external).toHaveAttribute("target", "_blank");
       expect(external).toHaveAttribute("rel", expect.stringContaining("noopener"));

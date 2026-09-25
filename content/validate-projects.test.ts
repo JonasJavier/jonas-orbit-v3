@@ -9,6 +9,7 @@ import {
 import {
   validateProjectProse,
   type ArchitectureLike,
+  type DesignDecisionLike,
   type ImageSize,
   type ProjectProseLike,
 } from "./validate-projects";
@@ -272,5 +273,57 @@ describe("validateProjectProse · la mesa de ingeniería (P1)", () => {
       }),
     }));
     expect(() => validate(entries)).not.toThrow();
+  });
+});
+
+/*
+  §17. Cada decisión de diseño se enseña con la pantalla que la resuelve: la
+  capa Diseño de la mesa y el caso completo la pintan junto a esa captura.
+  Una pantalla ajena, dos decisiones sobre la misma pantalla o una decisión
+  a medias pintarían una decisión sobre otra cosa (o un hueco).
+*/
+describe("validateProjectProse · decisiones de diseño (§17)", () => {
+  /** Una ficha con destacada y una de galería, y las decisiones que se le pidan. */
+  function withDecisions(decisions: readonly DesignDecisionLike[]) {
+    return withProject("network", (entry) => ({
+      ...entry,
+      gallery: [{ src: "/media/projects/network/perfil.png", alt: "Perfil" }],
+      designDecisions: decisions,
+    }));
+  }
+
+  it("acepta decisiones sobre la destacada y sobre una pantalla de la galería", () => {
+    const entries = withDecisions([
+      { screen: "/media/projects/network/cover.png", problem: "Problema A.", decision: "Decisión A." },
+      { screen: "/media/projects/network/perfil.png", problem: "Problema B.", decision: "Decisión B." },
+    ]);
+    expect(() => validate(entries)).not.toThrow();
+  });
+
+  it("falla si una decisión señala una pantalla que no es del proyecto", () => {
+    const entries = withDecisions([
+      { screen: "/media/projects/omsta/cover.png", problem: "Problema.", decision: "Decisión." },
+    ]);
+    expect(() => validate(entries)).toThrow(/no es del proyecto.*omsta\/cover\.png/);
+  });
+
+  it("falla si dos decisiones comparten pantalla", () => {
+    const entries = withDecisions([
+      { screen: "/media/projects/network/perfil.png", problem: "Uno.", decision: "Uno." },
+      { screen: "/media/projects/network/perfil.png", problem: "Dos.", decision: "Dos." },
+    ]);
+    expect(() => validate(entries)).toThrow(/comparten pantalla/);
+  });
+
+  it("falla si a una decisión le falta el problema o la decisión", () => {
+    for (const [problem, decision] of [["", "Decisión."], ["Problema.", "   "]]) {
+      const entries = withDecisions([{ screen: "/media/projects/network/perfil.png", problem, decision }]);
+      expect(() => validate(entries), `«${problem}» / «${decision}»`).toThrow(/incompleta/);
+    }
+  });
+
+  it("una ficha sin decisiones declaradas es válida: Diseño usa los pies de foto", () => {
+    expect(requiredLocale("es").every((entry) => entry.designDecisions === undefined)).toBe(true);
+    expect(() => validate(requiredLocale("es"))).not.toThrow();
   });
 });

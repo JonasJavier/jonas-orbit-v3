@@ -3,19 +3,27 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Project } from "./projects";
 import { getF1AProjects } from "./projects";
+import projectsMedia from "@/content/projects-media.json";
 import {
+  columnWidth,
   DIAGRAM_BOX,
+  edgeKey,
   initialNode,
   laneForTechnology,
-  NODE_HALF_WIDTH,
   NODE_ROW_FILL,
+  nodeHalfWidth,
+  nodePath,
   projectFromHash,
+  RING_RADIUS,
   ringOffset,
   ringPose,
   screenSources,
   statusReadout,
+  systemRing,
+  TABLE_LAYERS,
   tableArchitecture,
   tableProject,
+  tableReel,
   tableScreens,
   type TableArchitecture,
   type TableEdge,
@@ -24,7 +32,7 @@ import {
 
 /**
  * LA MESA DE INGENIERÍA — la parte pura (`docs/design/endurance-proyectos.md`
- * §11, P2 y P11).
+ * §11, §16, §17, P2 y P11).
  *
  * Todo lo que la mesa dispone —qué pantalla va en qué puesto, cómo gira el
  * tambor, dónde cae cada nodo y qué forma tiene cada línea, qué cifras se
@@ -111,15 +119,28 @@ const edge = (edges: readonly TableEdge[], from: string, to: string) =>
 /** La x por la que baja un corchete: el primer punto de control de su curva. */
 const arcOut = (d: string) => Number(/Q(-?[\d.]+)/.exec(d)?.[1]);
 
-/* ── Pantallas: los puestos de Resultado salen de los datos (P2) ──────────── */
+/* ── Las capas ────────────────────────────────────────────────────────────── */
 
-describe("tableScreens · puestos de Resultado (P2)", () => {
+describe("TABLE_LAYERS", () => {
+  /*
+    Garantiza el orden y el nombre de las tres capas: la primera es PRODUCTO
+    (enseña el producto terminado; los resultados son del caso completo).
+    Evita que vuelva «resultado» a una capa que no enseña resultados (§17).
+  */
+  it("son producto, diseño e ingeniería, en ese orden", () => {
+    expect(TABLE_LAYERS).toEqual(["producto", "diseno", "ingenieria"]);
+  });
+});
+
+/* ── Pantallas: los puestos de Producto salen de los datos (P2) ──────────── */
+
+describe("tableScreens · puestos de Producto (P2)", () => {
   const prose = fixture().prose;
   const screens = tableScreens(prose, tableArchitecture(prose));
   const slot = (name: string) => screens.find((screen) => screen.slot === name);
 
   /*
-    Garantiza que la composición de Resultado —destacada al centro, teléfono a
+    Garantiza que la composición de Producto —destacada al centro, teléfono a
     la izquierda, siguiente de escritorio a la derecha— se DERIVA de la ficha.
     Evita volver a poses escritas a mano por proyecto.
   */
@@ -168,9 +189,9 @@ describe("tableScreens · puestos de Resultado (P2)", () => {
     que esperan dentro de la mesa.
   */
   it("la pose de cada puesto: centro de frente, laterales giradas hacia dentro, el resto apagado", () => {
-    const main = slot("main")!.poses.resultado;
-    const left = slot("left")!.poses.resultado;
-    const right = slot("right")!.poses.resultado;
+    const main = slot("main")!.poses.producto;
+    const left = slot("left")!.poses.producto;
+    const right = slot("right")!.poses.producto;
     expect(main).toMatchObject({ ry: 0, s: 1, o: 1 });
     expect(left.x).toBeLessThan(main.x);
     expect(right.x).toBeGreaterThan(main.x);
@@ -180,7 +201,7 @@ describe("tableScreens · puestos de Resultado (P2)", () => {
       expect(pose.s).toBeLessThanOrEqual(main.s);
       expect(pose.o).toBeGreaterThan(0);
     }
-    expect(screens.find((screen) => screen.slot === null)!.poses.resultado.o).toBe(0);
+    expect(screens.find((screen) => screen.slot === null)!.poses.producto.o).toBe(0);
   });
 
   /*
@@ -190,11 +211,11 @@ describe("tableScreens · puestos de Resultado (P2)", () => {
   */
   it("en Ingeniería cada pantalla se hunde bajo su propio puesto y se apaga", () => {
     for (const screen of screens) {
-      const { resultado, ingenieria } = screen.poses;
+      const { producto, ingenieria } = screen.poses;
       expect(ingenieria.o, screen.src).toBe(0);
-      expect(ingenieria.x, screen.src).toBe(resultado.x);
-      expect(ingenieria.y, screen.src).toBeGreaterThan(resultado.y);
-      expect(ingenieria.s, screen.src).toBeLessThan(resultado.s);
+      expect(ingenieria.x, screen.src).toBe(producto.x);
+      expect(ingenieria.y, screen.src).toBeGreaterThan(producto.y);
+      expect(ingenieria.s, screen.src).toBeLessThan(producto.s);
     }
   });
 
@@ -207,8 +228,9 @@ describe("tableScreens · puestos de Resultado (P2)", () => {
     expect(screens[2]).toMatchObject({ alt: "Dos", caption: "Nota dos.", frame: "mobile", nodeId: "movil" });
     expect(screens[0]).toMatchObject({ alt: "Portada", frame: "desktop", nodeId: "portada" });
     expect(screens[1].nodeId).toBeNull();
-    // Sin peldaños en el manifiesto, el marco reserva la proporción de su aparato.
-    expect(screens[2].sources).toMatchObject({ width: 390, height: 844 });
+    // Sin peldaños en el manifiesto, el marco reserva la proporción de su aparato
+    // y la exposición queda neutra: no hay luma que leer.
+    expect(screens[2].sources).toMatchObject({ width: 390, height: 844, luma: null });
   });
 });
 
@@ -314,19 +336,20 @@ describe("tableArchitecture · esquema declarado (P2, P11)", () => {
   const nodes = byId(architecture.nodes);
 
   /*
-    Garantiza la rejilla del esquema: una columna por carril en el orden fijo,
-    tantas filas como el carril más poblado y los carriles cortos centrados.
-    Evita cajas montadas o un esquema que crece con la ventana en vez de con el
-    sistema.
+    Garantiza la rejilla del esquema: una columna por carril OCUPADO en el
+    orden fijo, tantas filas como el carril más poblado y los carriles cortos
+    centrados. Evita cajas montadas, un esquema que crece con la ventana en vez
+    de con el sistema o una columna vacía pintada «por si acaso» (§17).
   */
-  it("una columna por carril, filas del carril más poblado y carriles cortos centrados", () => {
+  it("una columna por carril ocupado, filas del carril más poblado y carriles cortos centrados", () => {
     expect(architecture.derived).toBe(false);
     expect(architecture.rows).toBe(2);
+    // El fixture no tiene infraestructura: no hay cuarta columna.
+    expect(architecture.cols).toBe(3);
     expect(architecture.lanes).toEqual([
       { lane: "cliente", count: 2 },
       { lane: "servicio", count: 1 },
       { lane: "datos", count: 1 },
-      { lane: "infraestructura", count: 0 },
     ]);
     expect([nodes.portada.col, nodes.api.col, nodes.db.col]).toEqual([0, 1, 2]);
     expect([nodes.portada.row, nodes.movil.row]).toEqual([0, 1]);
@@ -445,7 +468,8 @@ describe("laneForTechnology", () => {
     expect(laneForTechnology("PostgreSQL")).toBe("datos");
     expect(laneForTechnology("Redis")).toBe("datos");
     expect(laneForTechnology("Railway")).toBe("infraestructura");
-    expect(laneForTechnology("WhatsApp")).toBe("infraestructura");
+    // Lo que el sistema usa de fuera no es lo que lo sostiene (§17).
+    expect(laneForTechnology("WhatsApp")).toBe("integraciones");
     expect(laneForTechnology("Un motor raro")).toBe("servicio");
   });
 });
@@ -459,7 +483,7 @@ describe("initialNode", () => {
   it("el primero con decisión; sin decisiones, el primero; sin nodos, ninguno", () => {
     expect(initialNode(tableArchitecture(fixture().prose))).toBe("api");
     expect(initialNode(tableArchitecture(fixture({ architecture: undefined }).prose))).toBe("react");
-    const empty: TableArchitecture = { rows: 1, nodes: [], edges: [], lanes: [], derived: true };
+    const empty: TableArchitecture = { rows: 1, cols: 1, nodes: [], edges: [], lanes: [], derived: true };
     expect(initialNode(empty)).toBeNull();
   });
 });
@@ -479,6 +503,7 @@ describe("screenSources", () => {
       thumb: "/media/projects/x/00.png",
       width: 1440,
       height: 900,
+      luma: null,
     });
     expect(screenSources("/media/projects/x/02.png", "mobile")).toMatchObject({ width: 390, height: 844 });
   });
@@ -496,6 +521,8 @@ describe("screenSources", () => {
       thumb: "/media/projects/omsta/50-mobile-dashboard-390.webp",
       width: 390,
       height: 844,
+      // La luma que midió el preparador: la mesa expone la pantalla con ella.
+      luma: projectsMedia["/media/projects/omsta/50-mobile-dashboard.png"].luma,
     });
     const desktop = screenSources("/media/projects/omsta/01-dashboard-panel-ejecutivo.png", "desktop");
     expect(desktop.srcSet.split(", ")).toEqual([480, 720, 960, 1440].map(
@@ -570,6 +597,163 @@ describe("statusReadout y hash", () => {
     expect(projectFromHash("omsta", projects)?.id).toBe("omsta");
     expect(projectFromHash("#nada", projects)).toBeNull();
     expect(projectFromHash("", projects)).toBeNull();
+  });
+});
+
+/* ── Diseño: el carrete de decisiones ─────────────────────────────────────── */
+
+describe("tableReel · decisiones de diseño (§17)", () => {
+  const prose = fixture({
+    designDecisions: [
+      { screen: "/media/projects/x/02.png", problem: "El pulgar no llega.", decision: "La acción baja al alcance." },
+      { screen: "/media/projects/x/00.png", problem: "Todo pesa igual.", decision: "Una sola acción principal." },
+    ],
+  }).prose;
+  const screens = tableScreens(prose, tableArchitecture(prose));
+
+  /*
+    Garantiza que, con decisiones declaradas, el carrete recorre ESAS
+    pantallas en el orden del MDX, con su problema y su decisión. Evita un
+    carrete que vuelve a ser la galería entera con pies de foto.
+  */
+  it("con decisiones, un paso por decisión, en su orden, con problema y decisión", () => {
+    expect(tableReel(prose, screens)).toEqual({
+      kind: "decisions",
+      reel: [
+        { screen: 2, problem: "El pulgar no llega.", note: "La acción baja al alcance." },
+        { screen: 0, problem: "Todo pesa igual.", note: "Una sola acción principal." },
+      ],
+    });
+  });
+
+  /*
+    Garantiza que sin decisiones el carrete recorre todas las capturas con su
+    pie, y que una decisión sobre una pantalla ajena se descarta sin romper la
+    mesa (el validador ya la rechaza al construir). Evita un Diseño vacío.
+  */
+  it("sin decisiones, cada captura con su pie; una decisión ajena se descarta", () => {
+    const bare = fixture().prose;
+    const plain = tableReel(bare, tableScreens(bare, tableArchitecture(bare)));
+    expect(plain.kind).toBe("captions");
+    expect(plain.reel).toEqual([
+      { screen: 0, problem: null, note: "Portada." },
+      { screen: 1, problem: null, note: "Nota uno." },
+      { screen: 2, problem: null, note: "Nota dos." },
+      { screen: 3, problem: null, note: "Nota tres." },
+    ]);
+    const foreign = fixture({
+      designDecisions: [{ screen: "/media/projects/otro/99.png", problem: "P.", decision: "D." }],
+    }).prose;
+    expect(tableReel(foreign, tableScreens(foreign, tableArchitecture(foreign))).kind).toBe("captions");
+  });
+});
+
+/* ── Ingeniería: la ruta de un nodo ───────────────────────────────────────── */
+
+describe("nodePath · la ruta completa de un módulo (§17)", () => {
+  // a → b → c, un atajo a → c que salta b, y d → b que también llega a b.
+  const edges = [
+    { from: "a", to: "b" },
+    { from: "b", to: "c" },
+    { from: "a", to: "c" },
+    { from: "d", to: "b" },
+    { from: "c", to: "e" },
+  ];
+
+  /*
+    Garantiza que la ruta es todo lo que llega al nodo y todo lo que sale de
+    él siguiendo las aristas en su sentido —no sólo los vecinos—, y que un
+    atajo que salta el nodo no se enciende. Evita un esquema que enciende
+    conexiones que no pasan por el módulo elegido.
+  */
+  it("aguas arriba y abajo por las aristas; el atajo que salta el nodo no entra", () => {
+    const path = nodePath(edges, "b");
+    expect([...path.upstream].sort()).toEqual(["a", "d"]);
+    expect([...path.downstream].sort()).toEqual(["c", "e"]);
+    expect([...path.edges].sort()).toEqual(["a>b", "b>c", "c>e", "d>b"]);
+    expect(path.edges.has(edgeKey({ from: "a", to: "c" }))).toBe(false);
+  });
+
+  /* Garantiza que sin foco no hay ruta, y que un nodo suelto sólo se tiene a sí. */
+  it("sin foco, ruta vacía; un nodo sin aristas no enciende nada", () => {
+    const none = nodePath(edges, null);
+    expect([none.upstream.size, none.downstream.size, none.edges.size]).toEqual([0, 0, 0]);
+    const alone = nodePath(edges, "z");
+    expect([alone.upstream.size, alone.downstream.size, alone.edges.size]).toEqual([0, 0, 0]);
+  });
+
+  /* Garantiza que un ciclo no cuelga el recorrido ni mete al propio nodo en su ruta. */
+  it("un ciclo termina y el nodo no es su propio antecesor", () => {
+    const loop = nodePath([{ from: "a", to: "b" }, { from: "b", to: "a" }], "a");
+    expect([...loop.upstream]).toEqual(["b"]);
+    expect([...loop.downstream]).toEqual(["b"]);
+  });
+});
+
+/* ── La mesa de Ingeniería: el anillo del sistema ─────────────────────────── */
+
+describe("systemRing · el mapa global grabado en la mesa (§17)", () => {
+  const architecture = tableArchitecture(fixture().prose);
+  const ring = systemRing(architecture);
+
+  /*
+    Garantiza UN segmento por módulo, agrupados por carril en el orden de los
+    carriles (y, dentro, en el del esquema), y un filo por carril ocupado con
+    su cifra, por fuera de los segmentos. Evita volver al plano de doce
+    módulos de la nave, que no decía nada del proyecto.
+  */
+  it("un segmento por módulo, agrupados por carril, y un filo por carril con su cifra", () => {
+    expect(ring.segments.map((segment) => [segment.id, segment.lane])).toEqual([
+      ["portada", "cliente"],
+      ["movil", "cliente"],
+      ["api", "servicio"],
+      ["db", "datos"],
+    ]);
+    expect(ring.arcs.map((arc) => [arc.lane, arc.count])).toEqual([
+      ["cliente", 2],
+      ["servicio", 1],
+      ["datos", 1],
+    ]);
+    for (const segment of ring.segments) expect(segment.d, segment.id).toMatch(/^M-?[\d.]+ -?[\d.]+A.*Z$/);
+    // El filo de cada carril es un arco abierto, FUERA de los segmentos.
+    for (const arc of ring.arcs) {
+      expect(arc.d, arc.lane).toMatch(/^M-?[\d.]+ -?[\d.]+A[^Z]*$/);
+      const [x, y] = (arc.d.match(/^M(-?[\d.]+) (-?[\d.]+)/) ?? []).slice(1).map(Number);
+      expect(Math.hypot(x, y), arc.lane).toBeGreaterThan(RING_RADIUS);
+    }
+  });
+
+  /*
+    Garantiza que el anillo es determinista, que empieza al fondo (−90°, como
+    una esfera de reloj) y que en todo el catálogo cada módulo tiene su
+    segmento y cada carril ocupado su filo, en el orden del esquema. Evita un
+    anillo que cambia de forma entre visitas o que se deja un módulo fuera.
+  */
+  it("es determinista, empieza al fondo y en el catálogo cada módulo y cada carril están", () => {
+    expect(systemRing(architecture)).toEqual(ring);
+    // El primer segmento arranca justo después del hueco centrado al fondo.
+    const [x, y] = (ring.segments[0].d.match(/^M(-?[\d.]+) (-?[\d.]+)/) ?? []).slice(1).map(Number);
+    expect(y).toBeLessThan(-RING_RADIUS * 0.95);
+    expect(x).toBeGreaterThan(0);
+    for (const project of getF1AProjects("es").map((entry) => tableProject(entry, "/es/proyectos"))) {
+      const { segments, arcs } = systemRing(project.architecture);
+      expect(segments, project.id).toHaveLength(project.counts.modules);
+      expect(new Set(segments.map((segment) => segment.id)).size, project.id).toBe(project.counts.modules);
+      expect(arcs.map((arc) => [arc.lane, arc.count]), project.id).toEqual(
+        project.architecture.lanes.map(({ lane, count }) => [lane, count]),
+      );
+    }
+  });
+
+  /* Garantiza que un sistema vacío no dibuja nada y uno de un módulo, un anillo entero. */
+  it("sin módulos, nada; con uno, un anillo entero y su rótulo", () => {
+    const empty: TableArchitecture = { rows: 1, cols: 1, nodes: [], edges: [], lanes: [], derived: true };
+    expect(systemRing(empty)).toEqual({ segments: [], arcs: [] });
+    const single = systemRing(
+      tableArchitecture(fixture({ architecture: undefined, technologies: ["Django"] }).prose),
+    );
+    expect(single.segments).toHaveLength(1);
+    expect(single.arcs).toMatchObject([{ lane: "servicio", count: 1 }]);
   });
 });
 
@@ -682,12 +866,13 @@ describe("el catálogo real sobre la mesa", () => {
       for (const edge of edges) {
         const points = samplePath(edge.d);
         for (const node of nodes.filter((entry) => entry.id !== edge.from && entry.id !== edge.to)) {
-          const cx = (DIAGRAM_BOX / 4) * (node.col + 0.5);
+          const cx = columnWidth(project.architecture.cols) * (node.col + 0.5);
           const cy = rowHeight * (node.row + 0.5);
+          const nodeHalf = nodeHalfWidth(project.architecture.cols);
           const inside = points.some(
             (point) =>
-              point.x > cx - NODE_HALF_WIDTH + 1 &&
-              point.x < cx + NODE_HALF_WIDTH - 1 &&
+              point.x > cx - nodeHalf + 1 &&
+              point.x < cx + nodeHalf - 1 &&
               point.y > cy - half + 1 &&
               point.y < cy + half - 1,
           );
@@ -711,6 +896,59 @@ describe("el catálogo real sobre la mesa", () => {
           const file = candidate.split(" ")[0];
           expect(existsSync(join(process.cwd(), "public", file)), file).toBe(true);
         }
+      }
+    }
+  });
+
+  /*
+    Garantiza que cada esquema real tiene el ancho de lo que ocupa: OMSTA y
+    Delicaté, cuatro carriles; Izak's Photos, Wiki Universe y Network, tres.
+    Evita el rectángulo lleno de vacío de un carril sin módulos (§17).
+  */
+  it("cada esquema real tiene tantas columnas como carriles ocupa", () => {
+    expect(Object.fromEntries(projects.map((project) => [project.id, project.architecture.cols]))).toEqual({
+      omsta: 4,
+      "izaks-photos": 3,
+      wikiverse: 3,
+      network: 3,
+      delicate: 4,
+    });
+    for (const project of projects) {
+      expect(project.architecture.lanes.every(({ count }) => count > 0), project.id).toBe(true);
+      expect(project.architecture.lanes, project.id).toHaveLength(project.architecture.cols);
+    }
+  });
+
+  /*
+    Garantiza que los cinco proyectos publicados traen su alcance (tres cifras
+    cortas con rótulo) y su carrete de decisiones, cada una sobre una pantalla
+    suya. Evita un Producto sin alcance o un Diseño que vuelve a los pies de
+    foto por un MDX incompleto.
+  */
+  it("cada proyecto real trae tres cifras de alcance y su carrete de decisiones", () => {
+    for (const project of projects) {
+      expect(project.scope, project.id).toHaveLength(3);
+      for (const entry of project.scope) {
+        expect(entry.value.length, `${project.id} ${entry.label}`).toBeLessThanOrEqual(8);
+        expect(entry.label.trim(), project.id).not.toBe("");
+      }
+      expect(project.reelKind, project.id).toBe("decisions");
+      expect(project.reel.length, project.id).toBeGreaterThanOrEqual(3);
+      for (const step of project.reel) expect(project.screens[step.screen], project.id).toBeDefined();
+    }
+  });
+
+  /*
+    Garantiza que toda captura real lleva su luma medida (0-1): sin ella, la
+    mesa no puede apagar una interfaz blanca. Evita que Wiki Universe vuelva a
+    comerse la sala por una captura añadida sin pasar el preparador.
+  */
+  it("toda captura real lleva su luma medida", () => {
+    for (const project of projects) {
+      for (const screen of project.screens) {
+        expect(screen.sources.luma, screen.src).not.toBeNull();
+        expect(screen.sources.luma, screen.src).toBeGreaterThanOrEqual(0);
+        expect(screen.sources.luma, screen.src).toBeLessThanOrEqual(1);
       }
     }
   });

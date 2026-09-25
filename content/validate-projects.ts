@@ -24,6 +24,12 @@ export interface ArchitectureLike {
   edges?: readonly (readonly string[])[];
 }
 
+export interface DesignDecisionLike {
+  screen: string;
+  problem: string;
+  decision: string;
+}
+
 export interface ProjectProseLike {
   id: string;
   slug: string;
@@ -31,6 +37,7 @@ export interface ProjectProseLike {
   featuredImage: ProjectImageLike;
   gallery?: readonly ProjectImageLike[];
   architecture?: ArchitectureLike;
+  designDecisions?: readonly DesignDecisionLike[];
 }
 
 export interface ImageSize {
@@ -121,6 +128,12 @@ export function validateProjectProse(
       }
     }
 
+    validateDesignDecisions(
+      idKey,
+      project.designDecisions,
+      new Set(images.map((image) => image.src)),
+    );
+
     const structural = projectData[project.id as ProjectId];
     validateArchitecture(
       idKey,
@@ -137,6 +150,38 @@ export function validateProjectProse(
     if (missing.length > 0) {
       throw new Error(
         `[content] El idioma publicado "${locale}" no tiene los proyectos F1A requeridos: ${missing.join(", ")}.`,
+      );
+    }
+  }
+}
+
+/**
+ * §17. Una decisión de diseño enseña la pantalla que la resuelve: si esa
+ * pantalla no es del proyecto, la capa Diseño de la mesa pintaría una
+ * decisión sobre otra cosa. Y una pantalla lleva a lo sumo una decisión: el
+ * carrete de Diseño las recorre de una en una.
+ */
+function validateDesignDecisions(
+  idKey: string,
+  decisions: readonly DesignDecisionLike[] | undefined,
+  screensOnTable: ReadonlySet<string>,
+): void {
+  const seen = new Set<string>();
+  for (const entry of decisions ?? []) {
+    if (!screensOnTable.has(entry.screen)) {
+      throw new Error(
+        `[content] Una decisión de diseño de "${idKey}" señala una pantalla que no es del proyecto: ${entry.screen}.`,
+      );
+    }
+    if (seen.has(entry.screen)) {
+      throw new Error(
+        `[content] Dos decisiones de diseño de "${idKey}" comparten pantalla: ${entry.screen}.`,
+      );
+    }
+    seen.add(entry.screen);
+    if (entry.problem.trim().length === 0 || entry.decision.trim().length === 0) {
+      throw new Error(
+        `[content] Decisión de diseño incompleta en "${idKey}" (${entry.screen}): hacen falta problema y decisión.`,
       );
     }
   }

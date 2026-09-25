@@ -12,6 +12,36 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — tercer pase: la mesa cambia de función y el caso se rehace
+(2026-09-25):** el §17 de `docs/design/endurance-proyectos.md` manda sobre el
+§16 en capas, lectura, mesa física, muelle y contenido de Diseño, y sustituye
+la ficha antigua de `/es/proyectos/[slug]`. El dueño hizo suya una crítica
+larga de la mesa y pidió rehacer «Explorar proyecto» «totalmente diferente,
+profesional, hasta el fondo» y dar protagonismo al selector de proyectos; la
+advertencia de la crítica —no convertirla en un dashboard, mejorar restando—
+es la regla del pase. Contenido nuevo en Velite: quinto carril
+`integraciones` (WhatsApp sale de infraestructura), `scope` (tres cifras que
+el caso ya afirma) y `designDecisions` (problema → decisión → pantalla, sólo
+con texto que ya estaba; borrador para que lo revise el dueño), más la `luma`
+medida de cada captura. «Resultado» pasa a **Producto** (enseñaba el producto,
+no un resultado): la mesa muestra el Alcance en Producto, explica decisiones
+en Diseño y es el mapa del sistema en Ingeniería (anillo de módulos por
+carril que sigue al foco). Elegir un módulo enciende su RUTA entera
+(`nodePath`) y apaga el resto; el esquema sólo dibuja los carriles ocupados;
+la sala cede −18 % / −8 % y las pantallas se exponen por luma con una rodilla
+sobre 0,8 (Wiki dejó de comerse la sala). Fuera «Misiones construidas» y la
+ficha de tres cifras de la columna. Muelle: barra de cristal con ← →,
+cápsula y pista de luz deslizantes, vista previa, teclado y rueda horizontal
+sólo sobre él. El caso: escena dormida, hero con el producto entero, ficha,
+alcance, reto, decisiones con su pantalla, `SystemExplorer` (esquema e
+inspector compartidos en `components/system-diagram.*`), resultados, visor
+`<dialog>`, lectura larga con índice pegajoso y cierre con anterior/siguiente.
+Hecho en paralelo con una crítica visual adversarial por tarea y un
+refinado. Verificado en un worktree aislado (el `next start` ajeno de :3000
+no se tocó): `npm run check` en verde y suite e2e. Abierto: veredicto del
+dueño, redacción de `scope`/`designDecisions`, dos llamadas a contacto al
+final del caso, arquitecturas y URL `kind: demo`.
+
 **Proyectos — la mesa en limpio, segundo pase (2026-09-24):** el §16 de
 `docs/design/endurance-proyectos.md` manda sobre §4, §5, §7 y §15 en
 composición, lectura, capas, mesa física, sala e interacción. El dueño

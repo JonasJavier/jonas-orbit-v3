@@ -7,7 +7,9 @@ toca el System Map, la Endurance del mapa, su cámara ni sus materiales; tampoco
 toca `/es/proyectos/[slug]`, que sigue siendo el caso completo.
 
 Estado: **construida (§15) y rehecha en limpio (§16), ambas el 2026-09-24;
-valoración visual del dueño pendiente.**
+tercer pase (§17, 2026-09-25): Producto, decisiones de diseño, rutas del
+sistema, muelle y caso completo rehecho. Valoración visual del dueño
+pendiente.**
 Fecha: 2026-09-21. Boceto del dueño en `assets/proyectos/boceto-mesa-2026-09-21.webp`
 (referencia de composición, no de contenido: ver §3).
 
@@ -833,3 +835,129 @@ carril más poblado (`--rows` × `--row`, 26-40 px).
 
 La valoración visual del dueño de las tres capas y de la sala; confirmar las
 cinco arquitecturas (§13.2); las URL de producción para `kind: demo`.
+
+## 17. Tercer pase — la mesa cambia de función, y el caso se rehace (2026-09-25)
+
+Manda sobre §16 en **capas, lectura, mesa física, muelle y contenido de
+Diseño**, y sustituye por completo a la ficha antigua de
+`/es/proyectos/[slug]`: desde este pase, el caso completo también es de este
+documento.
+
+### 17.1 La petición
+
+El dueño pegó una crítica larga de la mesa y la hizo suya («todo lo que
+mencione es mi opinión: realiza lo que consideres mejor»), y pidió además:
+rehacer las páginas «Explorar proyecto» —«no me gustan para nada… totalmente
+diferentes, profesionales, excelente diseño y UX, hasta el fondo»— y dar más
+protagonismo y mejor diseño al selector de proyectos del pie. La vara de la
+crítica: *en 30 segundos entender cuál era el problema, qué decisiones tomó,
+qué construyó él y qué resultado tiene*. Y su advertencia: **no convertir la
+página en un dashboard; desde aquí se mejora restando**.
+
+### 17.2 Contenido nuevo (Velite)
+
+- **`integraciones`**, quinto carril: lo que el sistema USA de fuera (WhatsApp,
+  una pasarela, una API ajena) deja de mezclarse con lo que lo SOSTIENE
+  (Railway). WhatsApp de Delicaté se mueve ahí. `laneForTechnology` lo
+  reconoce para los esquemas derivados.
+- **`scope`** (Alcance): exactamente tres `{ value ≤ 8, label ≤ 48 }` que el
+  propio caso afirma (OMSTA: 2 sucursales · 18 aplicaciones Django · 4
+  reportes DGII; Delicaté: 4.ª versión · 0 cuentas para comprar · 12 pruebas
+  de API). Nunca una métrica de negocio que el caso no publica.
+- **`designDecisions`** (`screen`, `problem ≤ 110`, `decision ≤ 120`): de tres a
+  cinco por proyecto, redactadas SÓLO con lo que ya decían el cuerpo y los pies
+  de foto. `validateDesignDecisions` exige que la pantalla sea del proyecto, que
+  no se repita y que las dos frases existan. **Son voz del dueño en borrador:
+  las revisa él.**
+- **`luma`** en `content/projects-media.json`: luma media medida (Rec. 709
+  sobre sRGB) por `tools/prepare-projects.mjs`. Wiki, Network y OMSTA rondan
+  0,9-0,96; Izak's Photos, 0,1.
+
+### 17.3 La mesa: la misma máquina, tres funciones
+
+- **Producto** (antes «Resultado»: enseñaba el producto terminado, no un
+  resultado; los resultados se reservan al caso). Tres pantallas en arco, y en
+  el cristal el **Alcance**: rótulo y tres cifras sin cajas, de tamaño común
+  calculado para que la más larga quepa (`--vlen`). Está en el HTML servido.
+- **Diseño**: el carrete recorre `reel` —las pantallas de cada decisión de
+  diseño, en su orden— y la mesa dice `01 / 04 · Problema → Decisión` (la
+  decisión, brillante, con rótulo ámbar). Sin decisiones declaradas, el carrete
+  vuelve a ser el de las capturas con su pie (`reelKind: "captions"`).
+- **Ingeniería**: el plano de doce módulos de la Endurance se convierte en el
+  **mapa global del sistema**: un anillo con un segmento por módulo agrupado
+  en arcos por carril ocupado, en el frente izquierdo del cristal (en el centro
+  lo tapaba el esquema en portátiles). Sigue al foco del esquema: el filo marca
+  el carril, el relleno la ruta; en el centro, como una esfera, el carril y su
+  cifra («09 SERVICIO»). El stack grabado sólo en Ingeniería.
+- **La ruta** (`nodePath`): apuntar o elegir un módulo enciende todo lo que
+  llega a él y todo lo que sale de él, siguiendo las aristas del MDX (aguas
+  abajo en cian pleno, aguas arriba más blanca); lo demás baja a ~0,26. Un
+  atajo que salta el nodo no se enciende.
+- **El esquema tiene el tamaño del sistema**: sólo los carriles ocupados
+  (`cols`); OMSTA dibuja cuatro columnas; Izak's Photos, Wiki y Network, tres.
+  El inspector se arrima a su canto derecho y el par queda centrado.
+- **La sala cede**: −18 % de luminancia en Ingeniería, −8 % en Diseño, y una
+  penumbra radial (sin desenfoque) detrás de los paneles.
+- **Pantallas encendidas, no PNG pegados**: exposición por luma
+  `1 − 0,42·max(0, L−0,5) − 0,8·max(0, L−0,8)` (la rodilla sobre 0,8 es la que
+  hace que Wiki deje de comerse la sala), resplandor que decrece con la luma,
+  bisel oscuro con filo de luz.
+- **Lectura**: «Proyectos» a ~53 px; el nombre se ajusta a su longitud
+  (`--len`) para caber en una línea («Izak's Photos» ≈ 50 px); micro +1 px y
+  −20 % de tracking; «Código» → icono de GitHub + «Ver código ↗». Fuera: la
+  divisa «Misiones construidas» y la ficha «08 pantallas / 15 módulos / 05
+  decisiones» (no se entendía; sus cifras ya viven donde significan algo).
+- **El muelle**: barra de cristal al pie con ← →, índice + nombre por
+  proyecto, una cápsula de luz y una pista encendida que se deslizan con el
+  activo, vecinos más presentes que los lejanos y una vista previa
+  (miniatura + qué es) al apuntar o enfocar. ← → dentro del muelle y globales
+  con el foco en `body`; rueda horizontal —un proyecto por gesto, con descanso
+  que absorbe la inercia— sólo sobre el muelle. Sin JS, enlaces `#id` con
+  `:target`. En móvil, chips con imán, arriba.
+
+### 17.4 El caso completo, rehecho (`components/project-case*.tsx`)
+
+La escena duerme también en los casos (`isCoveredRoute`: toda ruta de
+Endurance): fondo propio con la sala muy velada y desenfocada arriba. Orden:
+
+1. **Hero**: «← Proyectos» (vuelve a ese proyecto en la mesa, arriba), índice
+   y tipo, el nombre (una línea, `--len`), qué es, el resumen y las acciones
+   (demo si la hay; «Ver las decisiones ↓», «Ver código», «Ver el sistema ↓»);
+   a la derecha, navegador + teléfono con la interfaz entera y expuesta por
+   luma. Cada aparato abre el visor.
+2. **Ficha**: Mi papel · Stack · Estado.
+3. **Alcance** (`scope`) y **El reto**: `problem` como enunciado, «Lo que
+   construí» (`contribution`) y la decisión técnica clave (`decision`, ámbar).
+4. **Decisiones de diseño**: cada una con su pantalla grande, alternando lado.
+5. **Sistema**: `SystemExplorer` (el mismo esquema e inspector de la mesa,
+   planos y operables; en teléfono, en filas).
+6. **Resultados verificables** (`highlights`).
+7. **Más pantallas**: sólo las que no salieron arriba; el visor (`<dialog>`,
+   ← →, Esc, foco devuelto) las recorre todas.
+8. **El caso completo**: el cuerpo MDX como lectura larga con índice lateral
+   pegajoso, apartado actual resaltado y tiempo de lectura
+   (`lib/case-outline.ts`).
+9. **Cierre**: anterior y siguiente en el orden de la mesa, y el contacto.
+
+Una barra local pegajosa aparece al pasar el hero, con las secciones y la
+actual resaltada. Revelados con `animation-timeline: view()` como mejora
+progresiva; todo se apaga con `html[data-motion="off"]` y todo se lee sin JS.
+
+### 17.5 Cómo se hizo
+
+`components/system-diagram.tsx` + `.css` son ahora el esquema e inspector
+compartidos (el interior; la colocación la pone la mesa en 3D o el caso en
+plano), con la paleta `--pj-*` en `:where(.projects-route, .case-route)`. La
+mesa y el caso se construyeron en paralelo, cada uno con una crítica visual
+adversarial independiente (capturas propias en cinco tamaños, sin JS,
+movimiento apagado, teclado) y un pase de refinado que corrigió todos sus
+hallazgos altos y medios.
+
+### 17.6 Abierto
+
+- Veredicto visual del dueño de las tres capas, el muelle y el caso.
+- Revisar la redacción de `designDecisions` y `scope` (voz del dueño).
+- Para él: el caso termina con dos llamadas a contacto (la del caso y la del
+  pie); «Resultados» repite parte del Alcance; el cuerpo MDX trae su propio
+  «Resultados verificables».
+- Heredado: confirmar arquitecturas (§13.2) y URL `kind: demo`.

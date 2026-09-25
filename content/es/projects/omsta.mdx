@@ -50,6 +50,26 @@ gallery:
     alt: Panel ejecutivo de OMSTA adaptado a una pantalla móvil
     caption: Los indicadores y alertas clave conservan prioridad en móvil.
     frame: mobile
+scope:
+  - value: "2"
+    label: sucursales operando en una plataforma
+  - value: "18"
+    label: aplicaciones Django en un monolito modular
+  - value: "4"
+    label: reportes fiscales DGII
+designDecisions:
+  - screen: /media/projects/omsta/04-reserva-detalle.png
+    problem: Una reserva reúne cliente, cobros, facturación, expediente e historial.
+    decision: La reserva es un cockpit operativo y financiero, no un registro aislado.
+  - screen: /media/projects/omsta/01-dashboard-panel-ejecutivo.png
+    problem: La operación del día vive repartida entre reservas, cobros, comisión y saldos.
+    decision: El panel los prioriza en una sola vista y convierte las alertas en acciones.
+  - screen: /media/projects/omsta/15-ledger-libro-diario.png
+    problem: Un asiento contable sin origen no se puede auditar.
+    decision: Cada asiento enseña su balance y el documento que lo originó.
+  - screen: /media/projects/omsta/33-sucursal-detalle.png
+    problem: Saltar de pantalla en pantalla para cada dato multiplica los cambios de contexto.
+    decision: El mismo patrón de cockpit se repite en sucursales, nómina y CRM.
 architecture:
   nodes:
     - id: panel
