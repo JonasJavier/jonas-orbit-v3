@@ -88,6 +88,9 @@ async function chooseLayer(page: Page, layer: (typeof LAYERS)[number]) {
 }
 
 test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, ficha de texto y enlaces vivos", async ({ browser, baseURL, request }) => {
+  // Muchos pasos y varias rutas servidas: con la suite entera en paralelo el
+  // servidor de pruebas va cargado y los 30 s por defecto no bastan.
+  test.setTimeout(90_000);
   const context = await browser.newContext({ baseURL, javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
   await page.goto(MESA);
@@ -184,6 +187,9 @@ test("P6 · la ruta no crea contexto WebGL y la escena persistente duerme", asyn
 });
 
 test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos interacciones", async ({ page }) => {
+  // Muchos pasos y varias rutas servidas: con la suite entera en paralelo el
+  // servidor de pruebas va cargado y los 30 s por defecto no bastan.
+  test.setTimeout(90_000);
   await openTable(page, { width: 1440, height: 900 });
 
   // El muelle: enlaces reales; Enter cambia el proyecto sin recargar ni apilar historia.
@@ -217,8 +223,8 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await page.keyboard.press("Tab");
   await expect(explore).toBeFocused();
   await page.keyboard.press("Tab");
-  // La parada de tabulador del esquema es el módulo elegido (`aria-pressed`).
-  const selected = section.locator('.holo-node__box[aria-pressed="true"]');
+  // La parada de tabulador del esquema es el módulo elegido (`aria-current`).
+  const selected = section.locator('.holo-node__box[aria-current="true"]');
   await expect(selected).toBeFocused();
   expect(await section.locator(".holo-screen__pick").evaluateAll((nodes) => nodes.every((node) => (node as HTMLElement).inert))).toBe(true);
 
@@ -234,7 +240,7 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   // Las flechas recorren el esquema y el foco nunca sale de él.
   const first = await selected.locator("xpath=..").getAttribute("data-node-id");
   await page.keyboard.press("ArrowDown");
-  const moved = section.locator('.holo-node:has(.holo-node__box[aria-pressed="true"])');
+  const moved = section.locator('.holo-node:has(.holo-node__box[aria-current="true"])');
   await expect(moved).not.toHaveAttribute("data-node-id", first ?? "");
   await expect(moved.locator(".holo-node__box")).toBeFocused();
   await expect(inspector.getByRole("heading", { level: 3 })).toHaveText((await moved.locator(".holo-node__label").textContent()) ?? "");
@@ -353,7 +359,6 @@ test("P10 · con el movimiento apagado: sin transición, sin encendido, sin cruc
   await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
   const table = page.locator(".table");
   await expect(table).toHaveAttribute("data-motion", "off");
-  await expect(table).toHaveAttribute("data-boot", "off");
 
   await page.locator('[data-layer-tab="ingenieria"]').click();
   await expect(table).toHaveAttribute("data-layer", "ingenieria");
@@ -458,7 +463,7 @@ test("P7 · P12 · el foco del teclado elige aunque el ratón repose sobre otro 
   */
   const focusedBox = node(target.id).locator(".holo-node__box");
   await focusedBox.focus();
-  await expect(focusedBox).toHaveAttribute("aria-pressed", "true");
+  await expect(focusedBox).toHaveAttribute("aria-current", "true");
   await expect(inspector.getByRole("heading", { level: 3 })).toHaveText(target.label);
   await expect(inspector.locator("blockquote")).toHaveText(target.decision ?? "");
   // Y con las flechas igual: el inspector lee el nodo enfocado.

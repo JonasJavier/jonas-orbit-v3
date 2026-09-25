@@ -107,8 +107,12 @@ describe("ProjectsPage", () => {
       const scope = within(section(project.id));
       expect(scope.getByRole("heading", { level: 2, name: project.name })).toBeInTheDocument();
       expect(section(project.id).querySelector(".table-read__descriptor")).toHaveTextContent(project.descriptor);
-      const status = scope.getByTitle(project.statusLabel);
+      // Se ve la lectura corta; el lector de pantalla lee la etiqueta entera del
+      // MDX, como texto y no como `title` (que ni el tacto ni el teclado ven).
+      const status = section(project.id).querySelector(".table-read__status") as HTMLElement;
       expect(status).toHaveTextContent(statusReadout(project.status));
+      expect(status.querySelector(".visually-hidden")).toHaveTextContent(project.statusLabel);
+      expect(status.querySelector("[title]")).toBeNull();
       const stack = scope.getByRole("list", { name: "Tecnologías" });
       expect(within(stack).getAllByRole("listitem").map((item) => item.textContent)).toEqual(project.technologies);
       expect(scope.getByRole("link", { name: /Explorar proyecto/ })).toHaveAttribute("href", project.href);
@@ -201,7 +205,9 @@ describe("ProjectsPage", () => {
     host.innerHTML = renderToStaticMarkup(<ProjectsPage locale="es" projects={catalog()} world={world} />);
     const root = host.querySelector(".table") as HTMLElement;
     expect(root).not.toHaveAttribute("data-enhanced");
-    expect(root).toHaveAttribute("data-boot", "off");
+    // El encendido es CSS desde el primer pintado: ningún atributo lo arranca
+    // al hidratar, que es lo que escondía algo ya pintado.
+    expect(root).not.toHaveAttribute("data-boot");
     // Ninguna sección se oculta ni se inertiza desde el servidor: `:target` decide.
     // (Los mandos de Diseño e Ingeniería sí van `inert`: la capa servida es Resultado.)
     expect(host.querySelectorAll("section.table-project[data-state], section.table-project[inert], [role='tabpanel']")).toHaveLength(0);
@@ -371,7 +377,6 @@ describe("EngineeringTable · proyectos y muelle", () => {
     settings.motion = false;
     renderTable(table());
     const root = document.querySelector(".table");
-    expect(root).toHaveAttribute("data-boot", "off");
     expect(root).toHaveAttribute("data-motion", "off");
     fireEvent.click(screen.getByRole("link", { name: /Network 3.0/ }));
     expect(section("network")).toHaveAttribute("data-state", "active");
@@ -379,13 +384,36 @@ describe("EngineeringTable · proyectos y muelle", () => {
     expect(document.querySelectorAll('[data-state="leaving"]')).toHaveLength(0);
   });
 
-  /* Garantiza que con movimiento la mesa se enciende al hidratar. */
-  it("con el movimiento encendido la mesa se enciende", () => {
+  /*
+    Garantiza que hidratar no es un cambio: la región viva calla al entrar y
+    sólo habla cuando el visitante cambia algo. Evita un anuncio en cada carga.
+  */
+  it("con el movimiento encendido la mesa se marca viva, y hidratar no se anuncia", () => {
     renderTable(table());
     const root = document.querySelector(".table");
     expect(root).toHaveAttribute("data-enhanced", "true");
-    expect(root).toHaveAttribute("data-boot", "on");
     expect(root).toHaveAttribute("data-motion", "on");
+    expect(root).not.toHaveAttribute("data-boot");
+    expect(live()).toBeEmptyDOMElement();
+    fireEvent.click(tab(/Diseño/));
+    expect(live()).toHaveTextContent("OMSTA · Diseño · pantalla 1 de 8");
+  });
+
+  /*
+    Garantiza que un ancla que no nombra un proyecto («Saltar al contenido»,
+    «Volver arriba»: `#main-content`) no cambia el proyecto a la vista. Evita
+    volver a OMSTA por subir al principio de la página.
+  */
+  it("un ancla que no es un proyecto conserva el proyecto elegido", () => {
+    renderTable(table());
+    fireEvent.click(screen.getByRole("link", { name: /Delicaté/ }));
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+    act(() => {
+      window.location.hash = "#main-content";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    expect(section("delicate")).toHaveAttribute("data-state", "active");
+    expect(section("omsta")).not.toHaveAttribute("data-state", "active");
   });
 
   /*
@@ -515,7 +543,9 @@ describe("EngineeringTable · Resultado y Diseño", () => {
     expect(frames("omsta")[1].tabIndex).toBe(0);
     expect(frames("omsta")[0].tabIndex).toBe(-1);
     expect(noteText("omsta")).toBe(`02 / 08${omsta.screens[1].caption}`);
-    expect(live()).toHaveTextContent(`OMSTA · Diseño · pantalla 2 de 8: ${omsta.screens[1].caption}`);
+    // El foco ya lleva la nota (aria-describedby): el anuncio no la repite.
+    expect(live()).toHaveTextContent("OMSTA · Diseño · pantalla 2 de 8");
+    expect(live()).not.toHaveTextContent(omsta.screens[1].caption);
 
     fireEvent.keyDown(frames("omsta")[1], { key: "ArrowLeft" });
     fireEvent.keyDown(frames("omsta")[0], { key: "ArrowLeft" });
@@ -646,7 +676,7 @@ describe("EngineeringTable · Ingeniería", () => {
     const order = buttons().map((button) => button.closest(".holo-node")?.getAttribute("data-node-id"));
     expect(order).toEqual(omsta.architecture.nodes.map((node) => node.id));
     expect(buttons().filter((button) => button.tabIndex === 0)).toEqual([nodeButton("omsta", "pagos")]);
-    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-pressed", "true");
+    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-current", "true");
 
     const pagos = order.indexOf("pagos");
     act(() => nodeButton("omsta", "pagos").focus());
@@ -654,8 +684,8 @@ describe("EngineeringTable · Ingeniería", () => {
     const next = omsta.architecture.nodes[pagos + 1];
     expect(buttons()[pagos + 1]).toHaveFocus();
     expect(heading()).toHaveTextContent(next.label);
-    expect(buttons()[pagos + 1]).toHaveAttribute("aria-pressed", "true");
-    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-pressed", "false");
+    expect(buttons()[pagos + 1]).toHaveAttribute("aria-current", "true");
+    expect(nodeButton("omsta", "pagos")).not.toHaveAttribute("aria-current");
     expect(buttons().filter((button) => button.tabIndex === 0)).toEqual([buttons()[pagos + 1]]);
 
     fireEvent.keyDown(buttons()[pagos + 1], { key: "ArrowUp" });
@@ -686,7 +716,7 @@ describe("EngineeringTable · Ingeniería", () => {
     fireEvent.pointerEnter(nodeButton("omsta", "redis"));
     expect(heading()).toHaveTextContent("Redis");
     expect(section("omsta").querySelector('.holo-node[data-node-id="redis"]')).toHaveAttribute("data-selected", "true");
-    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-pressed", "true");
+    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-current", "true");
     expect(nodeButton("omsta", "pagos").tabIndex).toBe(0);
     expect(nodeButton("omsta", "redis").tabIndex).toBe(-1);
     fireEvent.pointerLeave(section("omsta").querySelector(".holo-diagram__field") as HTMLElement);
@@ -707,7 +737,7 @@ describe("EngineeringTable · Ingeniería", () => {
     fireEvent.pointerEnter(nodeButton("omsta", "redis"));
     const target = omsta.architecture.nodes.filter((node) => node.decision).at(-1)!;
     act(() => nodeButton("omsta", target.id).focus());
-    expect(nodeButton("omsta", target.id)).toHaveAttribute("aria-pressed", "true");
+    expect(nodeButton("omsta", target.id)).toHaveAttribute("aria-current", "true");
     expect(within(inspector("omsta")).getByRole("heading", { level: 3 })).toHaveTextContent(target.label);
     expect(inspector("omsta").querySelector("blockquote")).toHaveTextContent(target.decision as string);
   });
@@ -740,7 +770,7 @@ describe("EngineeringTable · Ingeniería", () => {
     fireEvent.click(nodeButton("omsta", "redis"));
     expect(within(inspector("omsta")).getByRole("heading", { level: 3 })).toHaveTextContent("Redis");
     expect(inspector("omsta").querySelector("blockquote")).toBeNull();
-    expect(nodeButton("omsta", "redis")).toHaveAttribute("aria-pressed", "true");
+    expect(nodeButton("omsta", "redis")).toHaveAttribute("aria-current", "true");
   });
 });
 

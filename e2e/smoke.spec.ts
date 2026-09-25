@@ -13,7 +13,9 @@ import { expect, test, type Page } from "@playwright/test";
 const WORLDS = [
   { slug: "sobre-mi", label: "Sobre mí", title: "Sobre mí" },
   { slug: "formacion", label: "Formación", title: "Formación" },
-  { slug: "proyectos", label: "Proyectos", title: "Proyectos y sistemas" },
+  // La mesa de ingeniería titula con el destino, no con el mundo entero
+  // (docs/design/endurance-proyectos.md §4.3 y §16): «Proyectos».
+  { slug: "proyectos", label: "Proyectos", title: "Proyectos" },
   { slug: "creatividad", label: "Creatividad", title: "Creatividad" },
   { slug: "experimentos", label: "Experimentos", title: "Experimentos" },
   { slug: "contacto", label: "Contacto", title: "Contacto" },
@@ -214,7 +216,8 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
       .click();
     await expect(page).toHaveURL(/\/es\/proyectos$/);
 
-    await page.getByRole("link", { name: "Abrir caso completo" }).click();
+    // La mesa: «Explorar proyecto» del proyecto a la vista (OMSTA, sin hash).
+    await page.getByRole("link", { name: /Explorar proyecto/ }).first().click();
     await expect(page).toHaveURL(/\/es\/proyectos\/omsta$/);
     await expect(
       page.getByRole("heading", {

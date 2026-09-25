@@ -12,6 +12,33 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — la mesa en limpio, segundo pase (2026-09-24):** el §16 de
+`docs/design/endurance-proyectos.md` manda sobre §4, §5, §7 y §15 en
+composición, lectura, capas, mesa física, sala e interacción. El dueño
+rechazó la construcción del mismo día («hay mucho texto»; minimalista,
+moderna, interactiva, profesional, realista, creativa) y dejó el cómo a
+criterio con el boceto del 09-21. La lectura queda en nombre + una línea
+(la cola del título o la antetitular) + estado + «Explorar proyecto», igual
+en las tres capas; tres cifras de los datos abajo; el stack grabado en la
+mesa. Resultado: tres pantallas en arco atadas a la mesa. Diseño: un carrete
+con UNA línea de nota. Ingeniería: esquema por carriles (cadenas seguidas,
+corchetes, rodeos por media fila libre, SVG estirado que coincide con las
+cajas sin medir el DOM) + inspector (capa, decisión, recibe/entrega). Mesa
+física en perspectiva real. Sala: render 3D procedural horneado
+(`tools/render-projects-room.mjs` → `assets/proyectos/sala.png` → WebP de
+23-107 KB), sin texto, interfaz, pantallas, figura, mesa ni cian.
+`designNote` y `architecture.summary` retirados del esquema y de los MDX
+(sus originales siguen en el caso). Revisión adversarial: 27 hallazgos
+confirmados y corregidos (el más grave, `mix-blend-mode` dentro del grupo
+3D aplanaba toda la perspectiva). Trampas: la utilidad `.table` de Tailwind
+(`display: table`); reseteos que ganan a las clases (van en `:where()`);
+la perspectiva en el padre directo; `img` topado al 100 % por el preflight;
+lo inerte se lleva el `alt` de lo que contiene; una animación infinita que
+mueve cajas deja a Playwright sin «estable»; el encendido puesto por
+atributo al hidratar escondía lo ya pintado. Unit, componente y
+`e2e/proyectos.spec.ts` en verde. Abierto: veredicto visual del dueño,
+arquitecturas, URL `kind: demo`.
+
 **Proyectos — la mesa de ingeniería construida (2026-09-24):** el §15
 «Construcción» de `docs/design/endurance-proyectos.md` manda sobre §5-§9 y
 §12 en **cómo está hecha la mesa y en qué se aparta del plan**. El dueño

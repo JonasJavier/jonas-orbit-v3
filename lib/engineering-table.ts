@@ -270,16 +270,72 @@ function nodeCenter(node: Pick<TableNode, "col" | "row">, rows: number) {
 }
 
 /**
- * El trazado de una arista. Entre carriles, una curva que sale por el canto
- * de una caja y entra por el de la otra; dentro de un carril, un conector
- * vertical entre vecinas o un corchete por la izquierda que salta filas, más
- * afuera cuanto más largo, para que dos corchetes nunca se monten.
+ * Una polilínea ortogonal con las esquinas redondeadas: la forma de los
+ * conectores que rodean cajas. Los puntos repetidos o alineados se quitan, y
+ * cada esquina toma el radio que le dejan sus dos tramos.
+ */
+function roundedPath(points: { x: number; y: number }[], radius: number): string {
+  const clean = points.filter((point, index) => {
+    const previous = points[index - 1];
+    return !previous || previous.x !== point.x || previous.y !== point.y;
+  });
+  const corners = clean.filter((point, index) => {
+    const previous = clean[index - 1];
+    const next = clean[index + 1];
+    if (!previous || !next) return true;
+    return !((previous.x === point.x && point.x === next.x) || (previous.y === point.y && point.y === next.y));
+  });
+  let d = `M${round(corners[0].x)} ${round(corners[0].y)}`;
+  for (let index = 1; index < corners.length - 1; index++) {
+    const previous = corners[index - 1];
+    const point = corners[index];
+    const next = corners[index + 1];
+    const into = Math.hypot(point.x - previous.x, point.y - previous.y);
+    const out = Math.hypot(next.x - point.x, next.y - point.y);
+    const r = Math.min(radius, into / 2, out / 2);
+    const before = { x: point.x - ((point.x - previous.x) / into) * r, y: point.y - ((point.y - previous.y) / into) * r };
+    const after = { x: point.x + ((next.x - point.x) / out) * r, y: point.y + ((next.y - point.y) / out) * r };
+    d += `L${round(before.x)} ${round(before.y)}Q${round(point.x)} ${round(point.y)} ${round(after.x)} ${round(after.y)}`;
+  }
+  const last = corners[corners.length - 1];
+  return `${d}L${round(last.x)} ${round(last.y)}`;
+}
+
+/**
+ * La altura libre más cercana a `near` para cruzar los carriles `cols`: una
+ * y que ninguna caja de esos carriles tapa. Los candidatos son las medias
+ * filas —las cajas ocupan el centro de la suya, y un carril corto va centrado
+ * media fila—, y los dos cantos del esquema siempre están libres.
+ */
+function freeHeight(nodes: readonly TableNode[], cols: readonly number[], rows: number, near: number): number {
+  const rowHeight = DIAGRAM_BOX / rows;
+  const half = (rowHeight * NODE_ROW_FILL) / 2;
+  const blockers = nodes.filter((node) => cols.includes(node.col)).map((node) => (node.row + 0.5) * rowHeight);
+  const candidates = Array.from({ length: rows * 2 + 1 }, (_, k) => (k * rowHeight) / 2);
+  const free = candidates.filter((y) => blockers.every((center) => Math.abs(y - center) > half + 2));
+  return free.sort((left, right) => Math.abs(left - near) - Math.abs(right - near))[0] ?? 0;
+}
+
+/**
+ * El trazado de una arista.
+ *
+ * - Entre carriles vecinos, una curva que sale por el canto de una caja y
+ *   entra por el de la otra; se dobla en el primer tercio del hueco, cerca
+ *   de la caja de la IZQUIERDA, porque el tercio derecho es de los corchetes.
+ * - Entre carriles que no se tocan, si en medio hay cajas, un conector que
+ *   las RODEA: sale al hueco, corre por una media fila libre y entra por el
+ *   hueco de antes del destino. Una curva recta las atravesaría y el esquema
+ *   diría conexiones que el MDX no declara (carrito → WhatsApp pasaba por
+ *   Administración y PostgreSQL).
+ * - Dentro de un carril, un conector vertical entre vecinas o un corchete por
+ *   la izquierda que salta filas, más afuera cuanto más largo.
  */
 function edgePath(
   from: TableNode,
   to: TableNode,
   rows: number,
   arcDepth: number,
+  nodes: readonly TableNode[],
 ): { shape: EdgeShape; d: string } {
   const a = nodeCenter(from, rows);
   const b = nodeCenter(to, rows);
@@ -289,7 +345,33 @@ function edgePath(
     const forward = to.col > from.col;
     const x1 = a.x + (forward ? NODE_HALF_WIDTH : -NODE_HALF_WIDTH);
     const x2 = b.x + (forward ? -NODE_HALF_WIDTH : NODE_HALF_WIDTH);
-    const mid = (x1 + x2) / 2;
+    const low = Math.min(from.col, to.col);
+    const high = Math.max(from.col, to.col);
+    const between = Array.from({ length: high - low - 1 }, (_, k) => low + 1 + k).filter((col) =>
+      nodes.some((node) => node.col === col),
+    );
+    if (between.length > 0) {
+      const y = freeHeight(nodes, between, rows, (a.y + b.y) / 2);
+      // Los dos huecos: el que sigue a la caja de origen y el que precede a
+      // la de destino, cada uno en su mitad.
+      const gap1 = forward ? COL * (from.col + 1) : COL * from.col;
+      const gap2 = forward ? COL * to.col : COL * (to.col + 1);
+      return {
+        shape: "cross",
+        d: roundedPath(
+          [
+            { x: x1, y: a.y },
+            { x: gap1, y: a.y },
+            { x: gap1, y },
+            { x: gap2, y },
+            { x: gap2, y: b.y },
+            { x: x2, y: b.y },
+          ],
+          10,
+        ),
+      };
+    }
+    const mid = x1 + (x2 - x1) * (forward ? 0.35 : 0.65);
     return {
       shape: "cross",
       d: `M${round(x1)} ${round(a.y)}C${round(mid)} ${round(a.y)} ${round(mid)} ${round(b.y)} ${round(x2)} ${round(b.y)}`,
@@ -303,18 +385,20 @@ function edgePath(
     return { shape: "adjacent", d: `M${round(a.x)} ${round(y1)}V${round(y2)}` };
   }
 
+  // Pegado al canto de su carril y nunca más allá de 20 unidades: el resto
+  // del hueco es de las curvas y los rodeos.
   const edge = a.x - NODE_HALF_WIDTH;
-  const out = edge - 14 - arcDepth * 10;
-  const r = Math.min(12, Math.abs(b.y - a.y) / 3);
+  const out = Math.max(edge - 20, edge - 6 - arcDepth * 6);
+  const r = Math.min(8, Math.abs(b.y - a.y) / 3);
   const turn = down ? r : -r;
   return {
     shape: "arc",
     d: [
       `M${round(edge)} ${round(a.y)}`,
-      `H${round(out + r)}`,
+      `H${round(out + Math.min(r, edge - out))}`,
       `Q${round(out)} ${round(a.y)} ${round(out)} ${round(a.y + turn)}`,
       `V${round(b.y - turn)}`,
-      `Q${round(out)} ${round(b.y)} ${round(out + r)} ${round(b.y)}`,
+      `Q${round(out)} ${round(b.y)} ${round(out + Math.min(r, edge - out))} ${round(b.y)}`,
       `H${round(edge)}`,
     ].join(""),
   };
@@ -380,6 +464,7 @@ function layout(drafts: readonly DraftNode[], declaredEdges: readonly { from: st
         placed.get(edge.to) as TableNode,
         rows,
         depth.get(`${edge.from}>${edge.to}`) ?? 0,
+        nodes,
       ),
     })),
     lanes: ARCHITECTURE_LANES.map((lane, index) => ({ lane, count: perLane[index].length })),

@@ -4,8 +4,11 @@ import { describe, expect, it } from "vitest";
 import type { Project } from "./projects";
 import { getF1AProjects } from "./projects";
 import {
+  DIAGRAM_BOX,
   initialNode,
   laneForTechnology,
+  NODE_HALF_WIDTH,
+  NODE_ROW_FILL,
   projectFromHash,
   ringOffset,
   ringPose,
@@ -666,6 +669,35 @@ describe("el catálogo real sobre la mesa", () => {
   });
 
   /*
+    Garantiza que ninguna línea pasa por DEBAJO de una caja que no es la suya:
+    una arista que salta carriles rodea los intermedios por una media fila
+    libre. Evita que el esquema diga conexiones que el MDX no declara
+    (carrito → WhatsApp, en Delicaté, atravesaba Administración y PostgreSQL).
+  */
+  it("ninguna línea atraviesa una caja ajena", () => {
+    for (const project of projects) {
+      const { nodes, edges, rows } = project.architecture;
+      const rowHeight = DIAGRAM_BOX / rows;
+      const half = (rowHeight * NODE_ROW_FILL) / 2;
+      for (const edge of edges) {
+        const points = samplePath(edge.d);
+        for (const node of nodes.filter((entry) => entry.id !== edge.from && entry.id !== edge.to)) {
+          const cx = (DIAGRAM_BOX / 4) * (node.col + 0.5);
+          const cy = rowHeight * (node.row + 0.5);
+          const inside = points.some(
+            (point) =>
+              point.x > cx - NODE_HALF_WIDTH + 1 &&
+              point.x < cx + NODE_HALF_WIDTH - 1 &&
+              point.y > cy - half + 1 &&
+              point.y < cy + half - 1,
+          );
+          expect(inside, `${project.id}: ${edge.from} → ${edge.to} cruza ${node.id}`).toBe(false);
+        }
+      }
+    }
+  });
+
+  /*
     Garantiza que toda pantalla real tiene peldaños medidos y que cada peldaño
     que lista su `srcset` existe en `public/`. Evita capturas blandas (P9) y un
     `srcset` que apunta a un 404.
@@ -690,3 +722,44 @@ describe("el catálogo real sobre la mesa", () => {
     }
   });
 });
+
+/**
+ * Puntos a lo largo de un trazado del esquema, con los mismos mandatos que
+ * escribe `edgePath` (M, L, H, V, Q, C en absoluto): veinte por tramo.
+ */
+function samplePath(d: string): { x: number; y: number }[] {
+  const points: { x: number; y: number }[] = [];
+  let x = 0;
+  let y = 0;
+  for (const [, command, rest] of d.matchAll(/([MLHVQC])([^MLHVQC]*)/g)) {
+    const n = rest.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    const steps = Array.from({ length: 21 }, (_, k) => k / 20);
+    if (command === "M") {
+      [x, y] = n;
+      points.push({ x, y });
+    } else if (command === "L" || command === "H" || command === "V") {
+      const tx = command === "V" ? x : n[0];
+      const ty = command === "H" ? y : command === "V" ? n[0] : n[1];
+      for (const t of steps) points.push({ x: x + (tx - x) * t, y: y + (ty - y) * t });
+      [x, y] = [tx, ty];
+    } else if (command === "Q") {
+      const [qx, qy, tx, ty] = n;
+      for (const t of steps) {
+        const u = 1 - t;
+        points.push({ x: u * u * x + 2 * u * t * qx + t * t * tx, y: u * u * y + 2 * u * t * qy + t * t * ty });
+      }
+      [x, y] = [tx, ty];
+    } else {
+      const [ax, ay, bx, by, tx, ty] = n;
+      for (const t of steps) {
+        const u = 1 - t;
+        points.push({
+          x: u * u * u * x + 3 * u * u * t * ax + 3 * u * t * t * bx + t * t * t * tx,
+          y: u * u * u * y + 3 * u * u * t * ay + 3 * u * t * t * by + t * t * t * ty,
+        });
+      }
+      [x, y] = [tx, ty];
+    }
+  }
+  return points;
+}

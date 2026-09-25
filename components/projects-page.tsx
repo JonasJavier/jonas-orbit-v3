@@ -17,28 +17,40 @@ import "./projects-page.css";
  * cambia.
  *
  * Cuatro capas, de atrás hacia delante: la sala, la mesa, las pantallas y la
- * lectura. Y nada de esto es WebGL: la sala es CSS mientras no exista la
- * fotografía (§4.1), la mesa es un plano en perspectiva y las líneas son SVG.
+ * lectura. Y nada de esto es WebGL en la página: la sala es un render
+ * horneado a imagen, la mesa es un plano en perspectiva y las líneas son SVG.
  * La escena persistente duerme detrás porque la sala es opaca a todo el ancho.
  */
 
 /**
- * LA SALA, en CSS mientras la fotografía no exista.
+ * LA SALA: la bahía de ingeniería de la Endurance, a oscuras.
  *
- * No es un placeholder disfrazado —no afirma nada— y deja construir y probar
- * toda la mesa sin depender de la imagen: fondo `#04060a`, un ventanal ancho
- * con el limbo de un planeta, las luces ámbar de servicio y las paredes de
- * módulos como ritmo de sombra. La foto la sustituye sin tocar una línea de
- * la mesa. Opaca a propósito: un interior no tiene estrellas dentro.
+ * Es un render 3D procedural horneado a imagen por
+ * `tools/render-projects-room.mjs` (origen y lo que NO contiene en
+ * `assets/proyectos/FUENTES.md`), con copias WebP de
+ * `tools/prepare-projects.mjs`. Decorado: `aria-hidden` y `alt` vacío, sin
+ * texto, sin interfaz, sin pantallas, sin figura y sin mesa —la mesa es la
+ * de la página—. El velo de encima apaga la izquierda y el pie, donde se lee.
  */
+const ROOM = (
+  // Peldaños ya preparados: el optimizador de Next no elige entre archivos que existen.
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    alt=""
+    className="projects-room__photo"
+    decoding="async"
+    height={1440}
+    sizes="100vw"
+    src="/images/proyectos/sala-1920.webp"
+    srcSet={[960, 1440, 1920, 2560].map((width) => `/images/proyectos/sala-${width}.webp ${width}w`).join(", ")}
+    width={2560}
+  />
+);
+
 function ProjectsRoom() {
   return (
     <div aria-hidden="true" className="projects-room">
-      <div className="projects-room__window">
-        <div className="projects-room__limb" />
-      </div>
-      <div className="projects-room__ribs" />
-      <div className="projects-room__lights" />
+      {ROOM}
       <div className="projects-room__veil" />
     </div>
   );

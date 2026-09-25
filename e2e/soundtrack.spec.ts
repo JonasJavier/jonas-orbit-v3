@@ -72,7 +72,8 @@ test("audio failure is recoverable and leaves navigation usable", async ({ page 
   await page.getByRole("button", { name: "Reintentar música" }).click();
   await expect(page.locator(".soundtrack")).toHaveAttribute("data-playing", "true", { timeout: 15000 });
   await page.getByRole("link", { name: "Proyectos Endurance", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Proyectos y sistemas");
+  // La mesa de ingeniería titula con el destino (endurance-proyectos.md §4.3).
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Proyectos");
 });
 
 for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }, { width: 812, height: 375 }, { width: 1440, height: 900 }]) {
