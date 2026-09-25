@@ -34,9 +34,51 @@ gallery:
   - src: /media/projects/izaks-photos/03-home-mobile.png
     alt: Página principal de Izak's Photos adaptada a una pantalla móvil
     caption: El hero conserva jerarquía, marca y acciones principales en móvil.
+    frame: mobile
   - src: /media/projects/izaks-photos/04-gallery-mobile.png
     alt: Galería fotográfica de Izak's Photos en vista móvil con filtros accesibles
     caption: Los filtros y la cuadrícula se reorganizan sin perder la navegación del archivo.
+    frame: mobile
+architecture:
+  nodes:
+    - id: inicio
+      label: Inicio
+      lane: cliente
+      screen: /media/projects/izaks-photos/01-home-desktop.png
+    - id: galeria
+      label: Galería y visor
+      lane: cliente
+      screen: /media/projects/izaks-photos/02-gallery-desktop.png
+      decision: >-
+        Las fotografías dirigen la interfaz: imágenes optimizadas con su
+        espacio reservado para que la galería no salte al cargar.
+    - id: inicio-movil
+      label: Inicio en móvil
+      lane: cliente
+      screen: /media/projects/izaks-photos/03-home-mobile.png
+    - id: galeria-movil
+      label: Galería en móvil
+      lane: cliente
+      screen: /media/projects/izaks-photos/04-gallery-mobile.png
+    - id: servidor
+      label: Django sirve la API y el build de Vite
+      lane: servicio
+      decision: >-
+        Un solo servicio en producción: Django sirve la API y la compilación
+        de Vite, sin un frontend desplegado aparte.
+    - id: reserva
+      label: Endpoint de reserva
+      lane: servicio
+    - id: railway
+      label: Railway
+      lane: infraestructura
+  edges:
+    - [inicio, servidor]
+    - [galeria, servidor]
+    - [inicio-movil, servidor]
+    - [galeria-movil, servidor]
+    - [servidor, reserva]
+    - [railway, servidor]
 links:
   - label: Ver repositorio
     href: https://github.com/JonasJavier/IZAK-S-PHOTOS

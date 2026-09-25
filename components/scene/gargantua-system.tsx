@@ -11,6 +11,7 @@ import { readVoyageDeparture, subscribeVoyage } from "@/lib/voyage-controller";
 import {
   findWorldRoute,
   isObservatoryPath,
+  isWorldIndexPath,
   type WorldRoute,
 } from "@/lib/world-route";
 import {
@@ -47,8 +48,17 @@ export interface SceneBodyDescriptor {
  * visitante está en ellos la escena duerme: nunca hay dos contextos dibujando.
  */
 const COVERED_WORLDS: readonly WorldId[] = ["gargantua", "miller", "edmunds", "ranger", "tesseract"];
-function isCoveredRoute(worldId: WorldId | null): boolean {
-  return worldId !== null && COVERED_WORLDS.includes(worldId);
+/**
+ * Endurance cubre SÓLO en su portada: la mesa de ingeniería de `/es/proyectos`
+ * es una sala opaca a todo el ancho (endurance-proyectos.md §8), pero el caso
+ * completo (`/es/proyectos/omsta`) sigue siendo una página editorial con la
+ * escena detrás y no cambia con la mesa. Por eso no basta con añadirla a la
+ * lista: hay que mirar el pathname.
+ */
+function isCoveredRoute(route: WorldRoute | null, pathname: string): boolean {
+  if (!route) return false;
+  if (route.id === "endurance") return isWorldIndexPath(pathname, route);
+  return COVERED_WORLDS.includes(route.id);
 }
 
 const BODY_ATTRIBUTE = "data-system-body";
@@ -145,8 +155,11 @@ export function GargantuaSystem({
   */
   const observatory = isObservatoryPath(pathname);
 
-  const worldId = findWorldRoute(pathname, routes)?.id ?? null;
+  const worldRoute = findWorldRoute(pathname, routes);
+  const worldId = worldRoute?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
+  const covered = isCoveredRoute(worldRoute, pathname);
+  const coveredRef = useRef(covered);
 
   /**
    * La travesía hacia un destino. El controlador (`voyage-controller`) es el
@@ -207,7 +220,7 @@ export function GargantuaSystem({
           },
         });
         handleRef.current = handle;
-        handle.setCovered(isCoveredRoute(worldIdRef.current));
+        handle.setCovered(coveredRef.current);
         const current = departureRef.current;
         if (current) {
           handle.setVoyage({ id: current.id, startedAt: current.startedAt });
@@ -258,8 +271,14 @@ export function GargantuaSystem({
   useEffect(() => {
     worldIdRef.current = worldId;
     handleRef.current?.setPose(cameraPoseForRoute(worldId));
-    handleRef.current?.setCovered(isCoveredRoute(worldId));
   }, [worldId]);
+
+  // Cubrir depende del pathname y no sólo del mundo: entre la mesa y un caso
+  // de Endurance cambia la cobertura sin cambiar la pose.
+  useEffect(() => {
+    coveredRef.current = covered;
+    handleRef.current?.setCovered(covered);
+  }, [covered]);
 
   // El despegue va a la escena tal cual llega: un objeto con id e instante, o
   // null cuando el router ya tiene la ruta. La pose de la ruta nueva llega por

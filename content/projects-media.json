@@ -1,0 +1,265 @@
+{
+  "/media/projects/delicate/01-home-desktop.png": {
+    "width": 2160,
+    "height": 1350,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/delicate/02-catalog-filter-desktop.png": {
+    "width": 2160,
+    "height": 1350,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/delicate/03-product-detail-desktop.png": {
+    "width": 2160,
+    "height": 1350,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/delicate/04-cart-desktop.png": {
+    "width": 2160,
+    "height": 1350,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/delicate/05-cart-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ]
+  },
+  "/media/projects/delicate/06-catalog-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ]
+  },
+  "/media/projects/delicate/07-admin-catalog-desktop.png": {
+    "width": 2160,
+    "height": 1350,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/delicate/08-story-desktop.png": {
+    "width": 2160,
+    "height": 1350,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/izaks-photos/01-home-desktop.png": {
+    "width": 2160,
+    "height": 1500,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/izaks-photos/02-gallery-desktop.png": {
+    "width": 2160,
+    "height": 1500,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/izaks-photos/03-home-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ]
+  },
+  "/media/projects/izaks-photos/04-gallery-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ]
+  },
+  "/media/projects/network/01-feed-desktop.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/network/02-profile-desktop.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/network/03-notifications-desktop.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/network/04-feed-mobile.png": {
+    "width": 390,
+    "height": 844,
+    "steps": [
+      390
+    ]
+  },
+  "/media/projects/omsta/01-dashboard-panel-ejecutivo.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/04-reserva-detalle.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/08-crm-cliente-detalle.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/10-cuentas-por-cobrar.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/15-ledger-libro-diario.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/31-nomina-periodo-detalle.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/33-sucursal-detalle.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/omsta/50-mobile-dashboard.png": {
+    "width": 390,
+    "height": 844,
+    "steps": [
+      390
+    ]
+  },
+  "/media/projects/wikiverse/01-home-desktop.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/wikiverse/02-article-desktop.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/wikiverse/03-history-desktop.png": {
+    "width": 1440,
+    "height": 900,
+    "steps": [
+      480,
+      720,
+      960,
+      1440
+    ]
+  },
+  "/media/projects/wikiverse/04-home-mobile.png": {
+    "width": 390,
+    "height": 844,
+    "steps": [
+      390
+    ]
+  }
+}

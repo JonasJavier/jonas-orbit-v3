@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findWorldRoute, type WorldRoute } from "./world-route";
+import { findWorldRoute, isWorldIndexPath, type WorldRoute } from "./world-route";
 
 const routes: WorldRoute[] = [
   { href: "/es/sobre-mi", id: "gargantua", accent: "#ffb45c" },
@@ -29,6 +29,14 @@ describe("findWorldRoute (base del contrato de cámara)", () => {
   it("una barra final no cambia el resultado", () => {
     expect(findWorldRoute("/es/contacto/", routes)?.id).toBe("ranger");
     expect(findWorldRoute("/es/", routes)).toBeNull();
+  });
+
+  it("distingue la portada de un mundo de sus hijas", () => {
+    const endurance = routes[1];
+    expect(isWorldIndexPath("/es/proyectos", endurance)).toBe(true);
+    expect(isWorldIndexPath("/es/proyectos/", endurance)).toBe(true);
+    expect(isWorldIndexPath("/es/proyectos/omsta", endurance)).toBe(false);
+    expect(isWorldIndexPath("/es/contacto", endurance)).toBe(false);
   });
 
   it("es pura: la misma ruta devuelve siempre lo mismo", () => {

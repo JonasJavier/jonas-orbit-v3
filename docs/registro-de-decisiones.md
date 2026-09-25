@@ -12,6 +12,35 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — la mesa de ingeniería construida (2026-09-24):** el §15
+«Construcción» de `docs/design/endurance-proyectos.md` manda sobre §5-§9 y
+§12 en **cómo está hecha la mesa y en qué se aparta del plan**. El dueño
+pidió continuar con los cinco proyectos ya documentados y un sitio visible
+para «visitar el sitio web» (URL pendientes). Las tres entregas van juntas:
+`components/projects-page.tsx` + `engineering-table.tsx` + `projects-page.css`,
+la parte pura en `lib/engineering-table.ts` (poses derivadas de los datos,
+nunca escritas por proyecto), `architecture` en los cinco MDX con sus
+palabras (51 nodos, 59 aristas), `frame: mobile` en las siete capturas de
+teléfono, 95 peldaños WebP y `content/projects-media.json` medido por
+`tools/prepare-projects.mjs`. Siete desvíos razonados: carriles fijos en
+`projects.data.ts` y no por MDX; `designNote` y `architecture.summary`
+copiados tal cual del caso porque un párrafo del MDX compilado no se puede
+recortar; el manifiesto de medidas en vez de parsear PNG; **`endurance` NO
+entra en `COVERED_WORLDS`** —habría congelado el caso completo, que es hijo
+del mismo mundo— y cubre sólo su portada por `isWorldIndexPath`; las
+líneas se dibujan con las fracciones de los nodos y no midiendo cajas, que
+alabean con el paralaje; en móvil Ingeniería va en filas sin líneas; y el
+muelle usa el título cortado en la raya. «Visitar el sitio» sale de `links`
+`kind: demo` y hoy ningún MDX lo lleva. `ProjectGrid`/`ProjectCard`
+retirados con su CSS. P1-P12 verdes (unit, componente y `e2e/proyectos.spec.ts`
+en los dos proyectos Chromium). Trampas: `naturalWidth` miente con `srcset`
+de anchos (el ancho real se lee del nombre del peldaño); la escena
+persistente no dibuja en una página quieta; el panel del navegador captura
+a DPR 2 recortando; `overflow: clip` y no `hidden`, o el selector pegajoso
+de móvil se rompe; y `container-type: size` no puede vivir en el mismo
+elemento que `preserve-3d`. Abiertos: confirmar arquitecturas, URL de
+producción, foto de la sala, conector por fila en móvil, valoración visual.
+
 **Proyectos — Delicaté publicado antes de la mesa (2026-09-23):** el dueño
 pidió incluir Delicaté antes de construir la mesa de ingeniería; cierra la
 decisión abierta §13.1 de `docs/design/endurance-proyectos.md` a favor de

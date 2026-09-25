@@ -49,6 +49,102 @@ gallery:
   - src: /media/projects/omsta/50-mobile-dashboard.png
     alt: Panel ejecutivo de OMSTA adaptado a una pantalla móvil
     caption: Los indicadores y alertas clave conservan prioridad en móvil.
+    frame: mobile
+architecture:
+  nodes:
+    - id: panel
+      label: Panel ejecutivo
+      lane: cliente
+      screen: /media/projects/omsta/01-dashboard-panel-ejecutivo.png
+    - id: panel-movil
+      label: Panel móvil
+      lane: cliente
+      screen: /media/projects/omsta/50-mobile-dashboard.png
+    - id: reservas
+      label: Reservas
+      lane: servicio
+      screen: /media/projects/omsta/04-reserva-detalle.png
+    - id: crm
+      label: CRM de clientes
+      lane: servicio
+      screen: /media/projects/omsta/08-crm-cliente-detalle.png
+    - id: facturacion
+      label: Facturación
+      lane: servicio
+    - id: pagos
+      label: Pagos y cobros
+      lane: servicio
+      screen: /media/projects/omsta/10-cuentas-por-cobrar.png
+      decision: >-
+        Servicios explícitos, atómicos e idempotentes para pagos, notas y
+        posteo, con snapshot de la tasa en cada pago multimoneda.
+    - id: contabilidad
+      label: Contabilidad y posteo
+      lane: servicio
+      screen: /media/projects/omsta/15-ledger-libro-diario.png
+      decision: >-
+        El motor de posteo vive dentro de contabilidad: 27 rutinas trasladadas
+        desde ledger rompieron el ciclo entre ambos módulos sin alterar reglas
+        de negocio.
+    - id: ledger
+      label: Ledger
+      lane: servicio
+      decision: >-
+        Libro mayor neutral: guarda el asiento balanceado con trazabilidad al
+        documento que lo originó y no sabe de reservas ni de nómina.
+    - id: dgii
+      label: Reportes DGII
+      lane: servicio
+    - id: nomina
+      label: Nómina
+      lane: servicio
+      screen: /media/projects/omsta/31-nomina-periodo-detalle.png
+    - id: sucursales
+      label: Sucursales y roles
+      lane: servicio
+      screen: /media/projects/omsta/33-sucursal-detalle.png
+      decision: >-
+        Seguridad por defecto en el servidor: los permisos críticos se imponen
+        en el backend, por rol y por sucursal.
+    - id: postgresql
+      label: PostgreSQL
+      lane: datos
+      decision: >-
+        Única fuente de verdad, también para el estado durable de las tareas
+        asíncronas.
+    - id: redis
+      label: Redis
+      lane: datos
+    - id: worker
+      label: Worker Django Q2
+      lane: infraestructura
+    - id: railway
+      label: Railway
+      lane: infraestructura
+  edges:
+    - [panel, reservas]
+    - [panel, pagos]
+    - [panel-movil, reservas]
+    - [crm, reservas]
+    - [crm, pagos]
+    - [reservas, facturacion]
+    - [facturacion, pagos]
+    - [pagos, contabilidad]
+    - [contabilidad, ledger]
+    - [ledger, dgii]
+    - [nomina, ledger]
+    - [reservas, postgresql]
+    - [crm, postgresql]
+    - [facturacion, postgresql]
+    - [pagos, postgresql]
+    - [contabilidad, postgresql]
+    - [ledger, postgresql]
+    - [dgii, postgresql]
+    - [nomina, postgresql]
+    - [sucursales, postgresql]
+    - [worker, redis]
+    - [worker, postgresql]
+    - [railway, worker]
 links:
   - label: Hablemos de tu sistema
     href: /es#contacto
