@@ -3,37 +3,56 @@ import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * LA MESA DE INGENIERÍA — `/es/proyectos` (docs/design/endurance-proyectos.md §11).
+ * LA MESA DE INGENIERÍA — `/es/proyectos` (docs/design/endurance-proyectos.md
+ * §11, y §17 para lo que cambió en el tercer pase).
  *
- * P5  sin JavaScript: cinco proyectos, `:target`, la ficha de texto
- *     (`scripting: none`) y ningún enlace muerto.
- * P6  la ruta no crea contexto WebGL y la escena persistente no dibuja.
+ * P5  sin JavaScript: cinco proyectos, `:target`, el alcance y la ficha de
+ *     texto (`scripting: none`) y ningún enlace muerto.
+ * P5  Producto: el alcance son las tres cifras del MDX, y sólo en Producto.
+ * P6  la ruta no crea contexto WebGL y la escena persistente no dibuja, ni en
+ *     la mesa ni en el caso completo al que lleva.
  * P7  sólo teclado: muelle → capa → nodo → decisión → «Explorar proyecto»,
  *     con el foco siempre en su sitio; hero → Endurance → OMSTA en dos (A20).
+ * P7  el muelle: ← → dentro de él, botones anterior/siguiente, flechas
+ *     globales con el foco en `body`, rueda horizontal y vista previa.
+ * P7  Diseño: el carrete recorre sólo las pantallas con decisión y la nota es
+ *     el problema y la decisión de ese paso.
  * P8  375/768/1440 y las tres capas: sin desbordamiento, blancos de 44 px
  *     (con la excepción documentada de las filas del esquema) y el scroll gana.
  * P9  cada pantalla pintada sirve un archivo ≥ 1,2× su tamaño pintado.
  * P10 con el movimiento apagado: sin transición, sin encendido, sin cruce, y
  *     todo sigue operable.
- * P12 en Ingeniería el SVG tiene tantas líneas como aristas del MDX y cada
- *     decisión se muestra al enfocar su nodo (inspector en escritorio, bajo
- *     el nodo en móvil).
+ * P12 en Ingeniería el SVG tiene tantas líneas como aristas del MDX, sólo los
+ *     carriles ocupados, y enfocar un nodo enseña su decisión y enciende su
+ *     RUTA —en el esquema y en el anillo de la mesa— (inspector en
+ *     escritorio, bajo el nodo en móvil).
  *
  * Las cifras esperadas salen del MDX compilado por Velite (`.velite/`, que
  * `npm run build` regenera antes de construir), no de números escritos aquí:
- * si Jonás corrige una arquitectura, el test sigue midiendo lo mismo.
+ * si Jonás corrige una arquitectura o un alcance, el test sigue midiendo lo
+ * mismo.
  */
 
 const MESA = "/es/proyectos";
 const PROJECT_IDS = ["omsta", "izaks-photos", "wikiverse", "network", "delicate"];
-const LAYERS = ["resultado", "diseno", "ingenieria"] as const;
+const LAYERS = ["producto", "diseno", "ingenieria"] as const;
+
+interface MdxImage {
+  src: string;
+  alt: string;
+  caption: string;
+}
 
 interface MdxProject {
   id: string;
   locale: string;
   slug: string;
-  featuredImage: { alt: string; caption: string };
-  gallery?: { alt: string; caption: string }[];
+  title: string;
+  eyebrow: string;
+  featuredImage: MdxImage;
+  gallery?: MdxImage[];
+  scope?: { value: string; label: string }[];
+  designDecisions?: { screen: string; problem: string; decision: string }[];
   architecture?: {
     nodes: { id: string; label: string; lane: string; decision?: string }[];
     edges: [string, string][];
@@ -45,6 +64,49 @@ function mdx(id: string) {
   const entry = mdxCatalog.find((project) => project.id === id && project.locale === "es");
   if (!entry?.architecture) throw new Error(`El MDX de "${id}" no declara architecture: ¿falta npm run content?`);
   return { ...entry, architecture: entry.architecture };
+}
+/** Las pantallas del proyecto en el orden de la mesa: la destacada y la galería. */
+const screensOf = (project: MdxProject) => [project.featuredImage, ...(project.gallery ?? [])];
+/** El nombre que pinta la mesa: el título cortado en la raya («OMSTA»). */
+const nameOf = (project: MdxProject) => project.title.split(/\s+—\s+/)[0].trim();
+/** Qué es: la cola del título o, si no la hay, la `eyebrow`. */
+const descriptorOf = (project: MdxProject) => (project.title.split(/\s+—\s+/)[1] ?? project.eyebrow).trim();
+const pad = (value: number) => String(value).padStart(2, "0");
+
+/**
+ * LA RUTA de un módulo (§17): lo que llega a él y lo que sale de él siguiendo
+ * las aristas del MDX en su sentido. Una arista entra en la ruta sólo si va
+ * por ella —de un antecesor hacia el nodo, o del nodo hacia un sucesor—: un
+ * atajo que salta el nodo no se enciende. Se calcula aquí, desde la
+ * definición, y no con `nodePath` de la página: si la página se equivoca, el
+ * test no se equivoca con ella.
+ */
+function route(edges: readonly [string, string][], id: string) {
+  const reach = (forward: boolean) => {
+    const seen = new Set<string>();
+    const queue = [id];
+    while (queue.length > 0) {
+      const current = queue.shift() as string;
+      for (const [from, to] of edges) {
+        const [near, far] = forward ? [from, to] : [to, from];
+        if (near === current && far !== id && !seen.has(far)) {
+          seen.add(far);
+          queue.push(far);
+        }
+      }
+    }
+    return seen;
+  };
+  const upstream = reach(false);
+  const downstream = reach(true);
+  // Cada arista del MDX, en su orden: `down` si sale del nodo aguas abajo,
+  // `up` si llega a él desde aguas arriba, `null` si no está en la ruta.
+  const lines = edges.map(([from, to]) => {
+    if ((from === id || downstream.has(from)) && downstream.has(to)) return "down";
+    if (upstream.has(from) && (to === id || upstream.has(to))) return "up";
+    return null;
+  });
+  return { upstream, downstream, lines };
 }
 
 async function systemDrawsOverFrames(page: Page) {
@@ -78,7 +140,8 @@ async function settle(page: Page) {
 async function openTable(page: Page, viewport: { width: number; height: number }, path = MESA) {
   await page.setViewportSize(viewport);
   await page.goto(path);
-  await expect(page.locator(".table")).toHaveAttribute("data-enhanced", "true");
+  // Hidratar con la suite entera en paralelo (y SwiftShader) pasa de 5 s.
+  await expect(page.locator(".table")).toHaveAttribute("data-enhanced", "true", { timeout: 20_000 });
 }
 
 async function chooseLayer(page: Page, layer: (typeof LAYERS)[number]) {
@@ -87,7 +150,14 @@ async function chooseLayer(page: Page, layer: (typeof LAYERS)[number]) {
   await settle(page);
 }
 
-test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, ficha de texto y enlaces vivos", async ({ browser, baseURL, request }) => {
+/** El proyecto a la vista: el hash que la mesa escribe y la sección activa. */
+async function expectActive(page: Page, id: string) {
+  await expect(page).toHaveURL(new RegExp(`#${id}$`));
+  await expect(page.locator(`#${id}`)).toHaveAttribute("data-state", "active");
+  await expect(page.locator(`.table-dock a[href="#${id}"]`)).toHaveAttribute("aria-current", "true");
+}
+
+test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, alcance, ficha de texto y enlaces vivos", async ({ browser, baseURL, request }) => {
   // Muchos pasos y varias rutas servidas: con la suite entera en paralelo el
   // servidor de pruebas va cargado y los 30 s por defecto no bastan.
   test.setTimeout(90_000);
@@ -104,7 +174,7 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, fi
 
   // Todas las pantallas de los cinco proyectos, con su alt, están en el HTML.
   const alts = await page.locator(".holo-screen img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt") ?? ""));
-  expect(alts).toEqual(PROJECT_IDS.flatMap((id) => [mdx(id).featuredImage, ...(mdx(id).gallery ?? [])].map((image) => image.alt)));
+  expect(alts).toEqual(PROJECT_IDS.flatMap((id) => screensOf(mdx(id)).map((image) => image.alt)));
 
   // Sin hash se lee el primero, y su ficha de texto se pinta porque no hay
   // guion (`@media (scripting: none)`): pantallas y sistema con decisiones.
@@ -113,12 +183,18 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, fi
   const omsta = mdx("omsta");
   const sheet = page.locator("#omsta .table-fallback");
   await expect(sheet, "la ficha sin JS no se pinta: ¿Chromium no casa `scripting: none` con javaScriptEnabled: false?").toBeVisible();
-  await expect(sheet.locator("ol > li")).toHaveText([omsta.featuredImage, ...(omsta.gallery ?? [])].map((image) => image.caption));
+  await expect(sheet.locator("ol > li")).toHaveText(screensOf(omsta).map((image) => image.caption));
   await expect(sheet.locator("dl dt")).toHaveCount(omsta.architecture.nodes.length);
   await expect(sheet.locator("dl dd")).toHaveCount(omsta.architecture.nodes.filter((node) => node.decision).length);
+  // El alcance es HTML servido en la capa de entrada (Producto): se lee sin guion.
+  const scope = page.locator("#omsta .holo-scope");
+  await expect(scope).toBeVisible();
+  await expect(scope.locator("dd")).toHaveText((omsta.scope ?? []).map((entry) => entry.value));
+  await expect(scope.locator("dt")).toHaveText((omsta.scope ?? []).map((entry) => entry.label));
   // Los mandos que sólo sirven con guion no se enseñan.
   await expect(page.locator(".table-tabs")).toBeHidden();
   await expect(page.locator("#omsta .holo-note")).toBeHidden();
+  for (const step of await page.locator(".table-dock__step").all()) await expect(step).toBeHidden();
 
   // `#wikiverse` selecciona por :target desde el muelle, que es un enlace real.
   await page.locator('.table-dock a[href="#wikiverse"]').click();
@@ -128,13 +204,16 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, fi
   await expect(page.locator("#wikiverse").getByRole("heading", { level: 2 })).toHaveText("Wiki Universe");
   await expect(page.locator("#wikiverse .table-fallback")).toBeVisible();
   await expect(page.locator("#wikiverse .table-fallback dl dt")).toHaveCount(mdx("wikiverse").architecture.nodes.length);
+  await expect(page.locator("#wikiverse .holo-scope dd")).toHaveText((mdx("wikiverse").scope ?? []).map((entry) => entry.value));
 
   // «Explorar proyecto» en cada sección, y ningún enlace interno muerto.
   const explore = await page.locator(".table-read a").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
   expect(explore.filter((href) => href.startsWith("/es/proyectos/")).sort()).toEqual(PROJECT_IDS.map((id) => `/es/proyectos/${mdx(id).slug}`).sort());
   const internal = await page.locator(".projects-page a[href^='/']").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
   for (const href of new Set(internal)) {
-    const response = await request.get(href);
+    // El servidor de pruebas, cargado, a veces corta la conexión: eso no es un
+    // enlace muerto. Se reintenta el corte (ECONNRESET), no un 404.
+    const response = await request.get(href, { maxRetries: 2 });
     expect(response.status(), href).toBe(200);
   }
   await page.locator("#wikiverse").getByRole("link", { name: /Explorar proyecto/ }).click();
@@ -142,7 +221,47 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, fi
   await context.close();
 });
 
-test("P6 · la ruta no crea contexto WebGL y la escena persistente duerme", async ({ page }) => {
+test("P5 · Producto: el alcance son las tres cifras del MDX, caben en su columna y sólo se ven en Producto", async ({ page }) => {
+  test.setTimeout(90_000);
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
+    await openTable(page, viewport, `${MESA}#omsta`);
+    // OMSTA son cifras; Wiki Universe, palabras («Markdown», «OpenAPI»), que
+    // son las que desbordaban su columna.
+    for (const id of ["omsta", "wikiverse"]) {
+      const where = `${viewport.width}/${id}`;
+      if (id !== "omsta") {
+        await page.getByRole("navigation", { name: "Proyectos" }).getByRole("link", { name: new RegExp(nameOf(mdx(id))) }).click();
+        await expectActive(page, id);
+      }
+      const expected = mdx(id).scope ?? [];
+      expect(expected, where).toHaveLength(3);
+      const scope = page.locator(`#${id} .holo-scope`);
+      await expect(scope, where).toBeVisible();
+      await expect(scope.locator("dd"), where).toHaveText(expected.map((entry) => entry.value));
+      await expect(scope.locator("dt"), where).toHaveText(expected.map((entry) => entry.label));
+      // Cada cifra cabe en su columna: medida por su texto, no por su caja.
+      const spill = await scope.locator("dl > div").evaluateAll((cells) => cells.flatMap((cell) => {
+        const value = cell.querySelector("dd");
+        if (!value) return ["sin cifra"];
+        const range = document.createRange();
+        range.selectNodeContents(value);
+        const text = range.getBoundingClientRect();
+        const box = cell.getBoundingClientRect();
+        return text.left < box.left - 1 || text.right > box.right + 1 ? [`«${value.textContent}» ${Math.round(text.width)} px en ${Math.round(box.width)} px`] : [];
+      }));
+      expect(spill, where).toEqual([]);
+    }
+    // En las otras capas la mesa cambia de función y el alcance se retira.
+    for (const layer of ["diseno", "ingenieria"] as const) {
+      await chooseLayer(page, layer);
+      await expect(page.locator("#wikiverse .holo-scope"), `${viewport.width}/${layer}`).toBeHidden();
+    }
+    await chooseLayer(page, "producto");
+    await expect(page.locator("#wikiverse .holo-scope")).toBeVisible();
+  }
+});
+
+test("P6 · la ruta no crea contexto WebGL y la escena persistente duerme, también en el caso", async ({ page }) => {
   // La escena sube sobre SwiftShader: montarla cuesta más que el presupuesto
   // por defecto, y aquí se monta una vez y se navega dos.
   test.setTimeout(90_000);
@@ -174,16 +293,19 @@ test("P6 · la ruta no crea contexto WebGL y la escena persistente duerme", asyn
   // la cabecera y el pie son 2D.)
   const contextos = await page.evaluate(() => (window as unknown as { __contextos: string[] }).__contextos);
   expect(contextos.filter((kind) => kind.startsWith("webgl"))).toHaveLength(0);
-  // El caso completo NO se cubre: es una página editorial con la escena detrás,
-  // y es el MISMO canvas —Endurance cubre sólo su portada, no el mundo entero—.
-  // (Ahí la escena no tiene por qué dibujar: la pose es la del mundo y un cuadro
-  // quieto no se repinta; que vuelve a dibujar al descubrirse lo prueba
-  // `miller.spec.ts` con el mismo molde.)
+  /*
+    El caso completo TAMBIÉN se cubre (§17.4): tiene su fondo propio y opaco,
+    y ningún planeta pasa por detrás del texto. Es el MISMO canvas, que sigue
+    montado y quieto; que vuelve a dibujar al descubrirse lo prueban
+    `proyecto-caso.spec.ts` y `miller.spec.ts` con el mismo molde.
+  */
   await canvas.evaluate((node) => { node.setAttribute("data-persistence-marker", "same-canvas"); });
   await page.getByRole("link", { name: /Explorar proyecto/ }).first().click();
   await expect(page).toHaveURL(/\/es\/proyectos\/omsta$/);
-  await expect(canvas).toHaveAttribute("data-covered", "false");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(nameOf(mdx("omsta")));
+  await expect(canvas).toHaveAttribute("data-covered", "true");
   await expect(canvas).toHaveAttribute("data-persistence-marker", "same-canvas");
+  expect(await systemDrawsOverFrames(page)).toBe(0);
 });
 
 test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos interacciones", async ({ page }) => {
@@ -207,8 +329,9 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await expect(dockLink).toBeFocused();
   expect(await page.evaluate(() => [(window as unknown as { __mismaPagina?: boolean }).__mismaPagina, history.length])).toEqual([true, depth]);
 
-  // El selector: flechas entre capas, el foco se queda en el selector.
-  await page.getByRole("tab", { name: /Resultado/ }).focus();
+  // El selector: flechas entre capas, el foco se queda en el selector. Las
+  // flechas son suyas: no pasan de proyecto (eso sólo con el foco en `body`).
+  await page.getByRole("tab", { name: /Producto/ }).focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   const ingenieria = page.getByRole("tab", { name: /Ingeniería/ });
@@ -216,6 +339,7 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await expect(ingenieria).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".table")).toHaveAttribute("data-layer", "ingenieria");
   await expect(ingenieria).toHaveAttribute("aria-controls", "delicate-stage");
+  await expectActive(page, "delicate");
 
   // Tab: la salida al caso y, después, el módulo elegido del esquema. Las
   // pantallas no son parada: en Ingeniería van inert.
@@ -261,6 +385,150 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await expect(page).toHaveURL(/\/es\/proyectos\/omsta$/);
 });
 
+test("P7 · el muelle: ← → dentro, botones anterior/siguiente, flechas globales, rueda horizontal y vista previa", async ({ page }) => {
+  test.setTimeout(90_000);
+  await openTable(page, { width: 1440, height: 900 });
+  await expectActive(page, PROJECT_IDS[0]);
+  const dock = page.getByRole("navigation", { name: "Proyectos" });
+  const at = (offset: number) => PROJECT_IDS[(((offset % PROJECT_IDS.length) + PROJECT_IDS.length) % PROJECT_IDS.length)];
+  const depth = await page.evaluate(() => history.length);
+
+  // Los botones, por teclado: el anterior del primero es el último (el
+  // muelle da la vuelta) y el foco se queda en el botón.
+  const previous = dock.getByRole("button", { name: "Proyecto anterior" });
+  const next = dock.getByRole("button", { name: "Proyecto siguiente" });
+  await previous.focus();
+  await page.keyboard.press("Enter");
+  await expectActive(page, at(-1));
+  await expect(previous).toBeFocused();
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expectActive(page, at(0));
+  await page.keyboard.press("Space");
+  await expectActive(page, at(1));
+  await expect(next).toBeFocused();
+
+  // Dentro del muelle: ← → pasan de proyecto y el foco viaja con el enlace;
+  // Inicio y Fin, al primero y al último.
+  const link = (id: string) => page.locator(`.table-dock a[href="#${id}"]`);
+  await link(at(1)).focus();
+  await page.keyboard.press("ArrowRight");
+  await expectActive(page, at(2));
+  await expect(link(at(2))).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expectActive(page, at(1));
+  await expect(link(at(1))).toBeFocused();
+  await page.keyboard.press("End");
+  await expectActive(page, at(-1));
+  await expect(link(at(-1))).toBeFocused();
+  await page.keyboard.press("Home");
+  await expectActive(page, at(0));
+  await expect(link(at(0))).toBeFocused();
+
+  // Flechas globales: con el foco en `body`, ← → pasan de proyecto.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("ArrowRight");
+  await expectActive(page, at(1));
+  await page.keyboard.press("ArrowLeft");
+  await expectActive(page, at(0));
+  // Ninguno de estos pasos apila historia: el muelle reescribe el hash.
+  expect(await page.evaluate(() => history.length)).toBe(depth);
+
+  /*
+    La rueda HORIZONTAL sobre el muelle: un proyecto por gesto, aunque el
+    gesto traiga varios eventos (la inercia de un trackpad). La vertical es
+    el scroll de la página y nunca pasa de proyecto. El muelle está en la
+    página, no fijo: tras el scroll vertical se vuelve a medir.
+  */
+  const centre = async () => {
+    const box = await dock.boundingBox();
+    if (!box) throw new Error("El muelle no tiene caja");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  };
+  await centre();
+  await page.mouse.wheel(0, 160);
+  expect(await page.evaluate(() => location.hash), "la rueda vertical no pasa de proyecto").toBe(`#${at(0)}`);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await centre();
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(120, 0);
+  await expectActive(page, at(1));
+
+  /*
+    La vista previa: apuntar otro proyecto del muelle lo enseña —su nombre y
+    qué es— sin elegirlo; Escape la cierra siempre (WCAG 1.4.13).
+  */
+  const peekId = at(3);
+  const peekBox = await link(peekId).boundingBox();
+  if (!peekBox) throw new Error(`El enlace de ${peekId} no tiene caja`);
+  await page.mouse.move(peekBox.x + peekBox.width / 2, peekBox.y + peekBox.height / 2);
+  const peek = page.locator(".table-dock__peek");
+  await expect(peek).toHaveAttribute("data-open", "true");
+  await expect(peek.locator(".table-dock__peek-name")).toHaveText(nameOf(mdx(peekId)));
+  await expect(peek.locator(".table-dock__peek-what")).toHaveText(descriptorOf(mdx(peekId)));
+  await expectActive(page, at(1));
+  await page.keyboard.press("Escape");
+  await expect(peek).not.toHaveAttribute("data-open", "true");
+});
+
+test("P7 · Diseño: el carrete recorre sólo las pantallas con decisión y la nota es la del paso", async ({ page }) => {
+  test.setTimeout(90_000);
+  await openTable(page, { width: 1440, height: 900 }, `${MESA}#omsta`);
+  await chooseLayer(page, "diseno");
+  const omsta = mdx("omsta");
+  const decisions = omsta.designDecisions ?? [];
+  expect(decisions.length, "OMSTA declara decisiones de diseño").toBeGreaterThanOrEqual(3);
+  const altOf = (src: string) => screensOf(omsta).find((image) => image.src === src)?.alt ?? `¿${src}?`;
+  const section = page.locator("#omsta");
+
+  /*
+    El carrete son las pantallas de las decisiones (de tres a cinco: todas a
+    dos puestos o menos de la elegida); el resto queda fuera (`data-far`).
+  */
+  const reel = section.locator("figure.holo-screen:not([data-far])");
+  await expect(reel).toHaveCount(decisions.length);
+  expect((await reel.locator("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt") ?? ""))).sort()).toEqual(decisions.map((entry) => altOf(entry.screen)).sort());
+
+  // Cada paso: su pantalla delante, y en la mesa su índice, su problema y su
+  // decisión —lo mismo que la pantalla elegida lleva por `aria-describedby`—.
+  const front = section.locator("figure.holo-screen[data-front]");
+  const pick = section.locator('.holo-screen__pick[aria-current="true"]');
+  const expectStep = async (index: number) => {
+    const step = decisions[index];
+    const where = `decisión ${index + 1}`;
+    await expect(front.locator("img"), where).toHaveAttribute("alt", altOf(step.screen));
+    await expect(section.locator(".holo-note__index"), where).toHaveText(`${pad(index + 1)} / ${pad(decisions.length)}`);
+    await expect(section.locator(".holo-note__problem"), where).toHaveText(step.problem);
+    await expect(section.locator(".holo-note__decision"), where).toHaveText(step.decision);
+    await expect(page.locator(`#${await pick.getAttribute("aria-describedby")}`), where).toHaveText(`Problema: ${step.problem} Decisión: ${step.decision}`);
+  };
+  await expectStep(0);
+  const nextDecision = section.getByRole("button", { name: "Decisión siguiente" });
+  for (let index = 1; index < decisions.length; index++) {
+    await nextDecision.click();
+    await expectStep(index);
+  }
+  // Da la vuelta: tras la última, la primera. Y la región viva lo dice.
+  await nextDecision.click();
+  await expectStep(0);
+  await expect(page.locator('.table [aria-live="polite"]')).toContainText(`decisión 1 de ${decisions.length}`);
+  await section.getByRole("button", { name: "Decisión anterior" }).click();
+  await expectStep(decisions.length - 1);
+
+  // Con el teclado: ← → dentro del carrete, y el foco viaja con la elegida.
+  await pick.focus();
+  await page.keyboard.press("ArrowRight");
+  await expectStep(0);
+  await expect(pick).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expectStep(1);
+  await expect(pick).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expectStep(0);
+  await expect(pick).toBeFocused();
+  // Las flechas del carrete son suyas: el proyecto no cambia.
+  await expectActive(page, "omsta");
+});
+
 test("P8 · 375, 768 y 1440: sin desbordamiento, blancos de 44 px y el scroll de página gana", async ({ page }) => {
   test.setTimeout(90_000);
   for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
@@ -276,8 +544,9 @@ test("P8 · 375, 768 y 1440: sin desbordamiento, blancos de 44 px y el scroll de
       }).map((el) => el.className)), where).toEqual([]);
 
       /*
-        Blancos: todo mando operable y visible de la mesa (muelle, selector,
-        lectura, pantallas de Diseño, nota y nodos) mide ≥ 44 × 44 px.
+        Blancos: todo mando operable y visible de la mesa (muelle y sus
+        flechas, selector, lectura, pantallas de Diseño, nota y nodos) mide
+        ≥ 44 × 44 px.
 
         La excepción es DECISIÓN DOCUMENTADA, no una holgura: en el escenario
         de escritorio (≥ 768 px) el botón de un nodo es la FILA ENTERA del
@@ -303,7 +572,7 @@ test("P8 · 375, 768 y 1440: sin desbordamiento, blancos de 44 px y el scroll de
         .filter(({ el, box }) => stage && el.classList.contains("holo-node__box")
           ? box.height < 24 || box.width < 44
           : box.width < 44 || box.height < 44)
-        .map(({ el, box }) => `${el.className} «${el.textContent?.trim().slice(0, 24)}» ${Math.round(box.width)}×${Math.round(box.height)}`), desktopStage);
+        .map(({ el, box }) => `${el.className} «${el.textContent?.trim().slice(0, 24) || el.getAttribute("aria-label")}» ${Math.round(box.width)}×${Math.round(box.height)}`), desktopStage);
       expect(small, where).toEqual([]);
     }
   }
@@ -313,7 +582,7 @@ test("P9 · cada pantalla pintada sirve un archivo ≥ 1,2× su tamaño pintado"
   test.setTimeout(90_000);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
     await openTable(page, viewport);
-    for (const layer of ["resultado", "diseno"] as const) {
+    for (const layer of ["producto", "diseno"] as const) {
       await chooseLayer(page, layer);
       const images = page.locator('.table-project[data-state="active"] figure.holo-screen img');
       // Sólo lo que se pinta: con caja, visible y encendido.
@@ -362,12 +631,18 @@ test("P10 · con el movimiento apagado: sin transición, sin encendido, sin cruc
 
   await page.locator('[data-layer-tab="ingenieria"]').click();
   await expect(table).toHaveAttribute("data-layer", "ingenieria");
-  // Cero segundos en pantallas, líneas y tarjetas del sistema.
-  const durations = await page.locator('.table-project[data-state="active"] :is(.holo-screen, .holo-line, .holo-card)').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).transitionDuration));
+  // Cero segundos en pantallas, líneas, tarjetas y nodos del sistema, en el
+  // alcance y la nota, en el anillo de la mesa y en la luz del muelle.
+  const durations = await page.locator([
+    '.table-project[data-state="active"] :is(.holo-screen, .holo-line, .holo-card, .holo-node, .holo-scope, .holo-note)',
+    ".console :is(.console__ring, .console__seg, .console__lane, .console__spec)",
+    ".table-dock :is(.table-dock__glow, .table-dock__name, .table-dock__peek)",
+  ].join(", ")).evaluateAll((nodes) => nodes.map((node) => `${(node as Element).getAttribute("class")}: ${getComputedStyle(node).transitionDuration}`));
   expect(durations.length).toBeGreaterThan(0);
-  expect(durations.filter((duration) => duration.split(",").some((part) => parseFloat(part) !== 0))).toEqual([]);
-  // Sin encendido: ni la subida de las pantallas ni la de la lectura.
-  const animated = await page.locator('.table-project[data-state="active"] :is(.holo-screen__frame, .table-read, .table-readout), .console__grid').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).animationName));
+  expect(durations.filter((entry) => entry.split(": ")[1].split(",").some((part) => parseFloat(part) !== 0))).toEqual([]);
+  // Sin encendido: ni la subida de las pantallas ni la de la lectura, ni el vidrio.
+  const animated = await page.locator('.table-project[data-state="active"] :is(.holo-screen__frame, .table-read), .console__grid, .console__pool').evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).animationName));
+  expect(animated.length).toBeGreaterThan(0);
   expect(animated.filter((name) => name !== "none")).toEqual([]);
   // Los estados cambian en el acto: nada en marcha dentro de la mesa.
   expect(await table.evaluate((root) => root.getAnimations({ subtree: true }).filter((animation) => animation.playState === "running").length)).toBe(0);
@@ -390,9 +665,13 @@ test("P10 · con el movimiento apagado: sin transición, sin encendido, sin cruc
   await expect(page.locator("#network")).toHaveAttribute("data-state", "active");
   await expect(page.locator("#omsta")).toHaveAttribute("data-state", "hidden");
   expect(await page.evaluate(() => (window as unknown as { __estados: string[] }).__estados)).not.toContain("leaving");
+  // Los botones del muelle también, y nada queda en marcha tras el cambio.
+  await page.getByRole("navigation", { name: "Proyectos" }).getByRole("button", { name: "Proyecto siguiente" }).click();
+  await expect(page.locator("#delicate")).toHaveAttribute("data-state", "active");
+  expect(await table.evaluate((root) => root.getAnimations({ subtree: true }).filter((animation) => animation.playState === "running").length)).toBe(0);
 });
 
-test("P12 · en Ingeniería el SVG tiene una línea por arista del MDX y cada decisión se muestra al enfocar su nodo", async ({ page }) => {
+test("P12 · en Ingeniería el SVG tiene una línea por arista del MDX, y enfocar un nodo enseña su decisión y enciende su ruta", async ({ page }) => {
   test.setTimeout(90_000);
   await openTable(page, { width: 1440, height: 900 }, `${MESA}#omsta`);
   await chooseLayer(page, "ingenieria");
@@ -400,21 +679,36 @@ test("P12 · en Ingeniería el SVG tiene una línea por arista del MDX y cada de
   // foco y un ratón en reposo sobre un nodo tiene su propio test.
   await page.mouse.move(0, 0);
   const omsta = mdx("omsta");
-  const lines = page.locator("#omsta svg.holo-diagram__lines path.holo-line");
-  await expect(lines).toHaveCount(omsta.architecture.edges.length);
-  await expect(page.locator("#omsta .holo-node")).toHaveCount(omsta.architecture.nodes.length);
+  const { nodes, edges } = omsta.architecture;
+  const section = page.locator("#omsta");
+  const lines = section.locator("svg.holo-diagram__lines path.holo-line");
+  await expect(lines).toHaveCount(edges.length);
+  await expect(section.locator(".holo-node")).toHaveCount(nodes.length);
   expect(await lines.evaluateAll((paths) => paths.map((path) => path.getAttribute("data-shape")).filter((shape) => !["cross", "adjacent", "arc"].includes(shape ?? "")))).toEqual([]);
   // Trazadas: el guion de cada línea ha llegado a cero y se ven.
   expect(await lines.evaluateAll((paths) => paths.every((path) => parseFloat(getComputedStyle(path).strokeDashoffset) === 0))).toBe(true);
-  await expect(page.locator("#omsta svg.holo-diagram__lines")).toBeVisible();
+  await expect(section.locator("svg.holo-diagram__lines")).toBeVisible();
 
-  // Cada nodo al enfocarse: el inspector lee su decisión (la misma de su
-  // `aria-describedby`) o no cita ninguna, y se encienden SUS líneas.
-  const inspector = page.locator("#omsta").getByRole("region", { name: "Inspector del módulo" });
-  for (const node of omsta.architecture.nodes) {
-    const box = page.locator(`#omsta .holo-node[data-node-id="${node.id}"] .holo-node__box`);
+  // El esquema tiene el tamaño del sistema: sólo los carriles que ocupa.
+  const lanes = [...new Set(nodes.map((node) => node.lane))];
+  const laneGroups = section.locator(".holo-lane");
+  expect((await laneGroups.evaluateAll((groups) => groups.map((group) => group.getAttribute("data-lane") ?? ""))).sort()).toEqual([...lanes].sort());
+  await expect(section.locator(".holo-diagram")).toHaveCSS("--cols", String(lanes.length));
+  // Y el anillo de la mesa, un segmento por módulo.
+  const ring = page.locator(".console__ring");
+  await expect(ring.locator(".console__seg")).toHaveCount(nodes.length);
+
+  /*
+    Cada nodo al enfocarse: el inspector lee su decisión (la misma de su
+    `aria-describedby`) o no cita ninguna, y se enciende SU RUTA entera —los
+    módulos aguas arriba y aguas abajo, y sólo las aristas que corren por
+    ella— en el esquema y en el anillo, cuyo centro dice su carril.
+  */
+  const inspector = section.getByRole("region", { name: "Inspector del módulo" });
+  for (const node of nodes) {
+    const box = section.locator(`.holo-node[data-node-id="${node.id}"] .holo-node__box`);
     await box.focus();
-    await expect(page.locator(`#omsta .holo-node[data-node-id="${node.id}"]`)).toHaveAttribute("data-selected", "true");
+    await expect(section.locator(`.holo-node[data-node-id="${node.id}"]`)).toHaveAttribute("data-selected", "true");
     await expect(inspector.getByRole("heading", { level: 3 })).toHaveText(node.label);
     if (node.decision) {
       await expect(inspector.locator("blockquote"), node.id).toBeVisible();
@@ -424,15 +718,33 @@ test("P12 · en Ingeniería el SVG tiene una línea por arista del MDX y cada de
       await expect(inspector.locator("blockquote"), node.id).toHaveCount(0);
       await expect(box, node.id).not.toHaveAttribute("aria-describedby");
     }
-    const touching = omsta.architecture.edges.filter(([from, to]) => from === node.id || to === node.id).length;
-    await expect(page.locator("#omsta path.holo-line[data-on]"), node.id).toHaveCount(touching);
+
+    const expected = route(edges, node.id);
+    const onPath = new Set([...expected.upstream, ...expected.downstream]);
+    const pathOf = (id: string) => (expected.upstream.has(id) ? "up" : expected.downstream.has(id) ? "down" : null);
+    await expect.poll(() => section.locator(".holo-node").evaluateAll((all) => all.map((entry) => `${entry.getAttribute("data-node-id")}:${entry.getAttribute("data-path")}`).sort()), `${node.id}: módulos de la ruta`)
+      .toEqual(nodes.map((entry) => `${entry.id}:${pathOf(entry.id)}`).sort());
+    // El SVG dibuja las aristas en el orden del MDX: cada una, encendida en
+    // su sentido o apagada.
+    await expect.poll(() => lines.evaluateAll((paths) => paths.map((path) => (path.getAttribute("data-on") ? path.getAttribute("data-dir") : null))), `${node.id}: aristas de la ruta`)
+      .toEqual(expected.lines);
+
+    const inLane = nodes.filter((entry) => entry.lane === node.lane).length;
+    await expect(ring.locator('.console__seg[data-state="focus"]'), node.id).toHaveCount(1);
+    await expect(ring.locator('.console__seg[data-state="path"]'), node.id).toHaveCount(onPath.size);
+    await expect(ring.locator(".console__lane[data-on]"), node.id).toHaveCount(1);
+    await expect(ring.locator(".console__seg[data-lane-on]"), node.id).toHaveCount(inLane);
+    await expect(ring.locator(".console__readout-count"), node.id).toHaveText(pad(inLane));
+    await expect(ring.locator(".console__readout-lane"), node.id).toHaveText((await inspector.locator(".holo-inspector__lane").textContent()) ?? "");
   }
 
-  // Cambiar de proyecto rehace el esquema con SUS aristas, no las del anterior.
+  // Cambiar de proyecto rehace el esquema —y el anillo— con SU sistema, no el del anterior.
   const izaks = mdx("izaks-photos");
   await page.getByRole("navigation", { name: "Proyectos" }).getByRole("link", { name: /Izak/ }).click();
   await expect(page.locator("#izaks-photos svg.holo-diagram__lines path.holo-line")).toHaveCount(izaks.architecture.edges.length);
   await expect(page.locator("#izaks-photos .holo-node")).toHaveCount(izaks.architecture.nodes.length);
+  await expect(page.locator("#izaks-photos .holo-lane")).toHaveCount(new Set(izaks.architecture.nodes.map((node) => node.lane)).size);
+  await expect(ring.locator(".console__seg")).toHaveCount(izaks.architecture.nodes.length);
 });
 
 test("P7 · P12 · el foco del teclado elige aunque el ratón repose sobre otro nodo", async ({ page }) => {

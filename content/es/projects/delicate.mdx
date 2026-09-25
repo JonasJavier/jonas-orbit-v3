@@ -56,6 +56,29 @@ gallery:
   - src: /media/projects/delicate/08-story-desktop.png
     alt: Sección Nuestra historia de Delicaté con una fotografía de jabones cortándose a mano y el texto sobre el origen de la marca
     caption: La historia de la marca sostiene el precio de un producto artesanal; la fotografía de ambiente se generó para esta versión.
+scope:
+  - value: 4.ª
+    label: versión del producto
+  - value: "0"
+    label: cuentas necesarias para comprar
+  - value: "12"
+    label: pruebas de API en verde
+designDecisions:
+  - screen: /media/projects/delicate/01-home-desktop.png
+    problem: El precio de un producto artesanal lo sostiene la historia de la marca.
+    decision: La portada presenta la marca antes que la tienda, con una sola acción principal.
+  - screen: /media/projects/delicate/03-product-detail-desktop.png
+    problem: Antes de comprar, el cliente pregunta por beneficio, tipo de piel e ingredientes.
+    decision: La ficha lo responde en un diálogo nativo, sin salir del catálogo.
+  - screen: /media/projects/delicate/04-cart-desktop.png
+    problem: Un checkout que no puede cobrar es una promesa rota.
+    decision: El carrito arma el pedido y lo cierra en WhatsApp, donde el negocio ya cobra y entrega.
+  - screen: /media/projects/delicate/06-catalog-mobile.png
+    problem: En un teléfono no hay hover que descubra el botón de compra.
+    decision: Los filtros se desplazan en una fila y «Agregar» queda siempre visible.
+  - screen: /media/projects/delicate/07-admin-catalog-desktop.png
+    problem: El negocio tenía que cambiar su catálogo sin tocar código ni recompilar.
+    decision: Precio, existencias y visibilidad se editan en la propia lista del administrador.
 architecture:
   nodes:
     - id: portada
@@ -101,7 +124,7 @@ architecture:
       lane: datos
     - id: whatsapp
       label: WhatsApp
-      lane: infraestructura
+      lane: integraciones
       decision: >-
         WhatsApp como cierre: el carrito genera el pedido completo como mensaje
         y abre la conversación donde el negocio ya confirma, cobra y entrega.

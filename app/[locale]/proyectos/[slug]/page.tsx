@@ -66,17 +66,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   // Un caso de estudio sigue perteneciendo a Endurance: la cabecera lo marca
-  // como mundo activo aunque la ruta sea hija.
+  // como mundo activo aunque la ruta sea hija. `case-route` le da la paleta
+  // de la mesa (`system-diagram.css`) y su fondo propio, opaco: la escena
+  // persistente duerme detrás (`gargantua-system.tsx`).
   return (
     <SiteShell
       locale={typedLocale}
       activeWorldId="endurance"
-      mainClassName="case-page"
+      mainClassName="case-route"
       footerLabel={`JONÁS ORBIT · ARCHIVO DE MISIÓN ${String(project.order).padStart(2, "0")}`}
     >
       <ProjectCase
         project={project}
-        locale={typedLocale}
+        projects={getF1AProjects(typedLocale)}
         projectsHref={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
         contactHref={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}
       />

@@ -1,0 +1,1101 @@
+/*
+  EL CASO COMPLETO — `/es/proyectos/[slug]` (docs/design/endurance-proyectos.md §17).
+
+  De la misma nave que la mesa —el vacío de Endurance, cian para lo que se
+  opera, ámbar para lo que se decidió, display y mono para los rótulos— pero
+  editorial: se lee de arriba abajo, sin escenografía encima del texto.
+
+  Todo va colgado de `.case-*`: esta hoja sigue cargada cuando el visitante
+  vuelve a la mesa (el enrutador no descarga CSS al navegar), así que no toca
+  ninguna clase compartida sin su prefijo. Por la misma razón el sistema
+  (`.holo-*`, de `system-diagram.css`) se coloca aquí siempre bajo
+  `.case-system`: la mesa deja reglas sin prefijo para sus paneles 3D que
+  también seguirían vivas al llegar desde ella, y aquí se deshacen.
+*/
+
+.case-route {
+  /* La paleta (`--pj-void`, `--pj-cyan`…) vive en `system-diagram.css`. */
+  --case-header: 67px;
+  --case-nav: 48px;
+  /* El marco de lectura: 1400 px como mucho, centrado. */
+  --case-gutter: max(var(--page-gutter), calc((100% - 1400px) / 2));
+  --case-line: rgb(160 200 230 / 14%);
+  --case-soft: #c9d4e4;
+  position: relative;
+  color: var(--pj-ink);
+  /* Opaco: la escena persistente duerme detrás (`gargantua-system.tsx`) y su
+     último fotograma no debe asomar entre secciones. */
+  background: var(--pj-void);
+}
+@media (max-width: 1080px) {
+  .case-route { --case-header: 63px; }
+}
+
+/* Un ancla (#sistema, #contexto…) deja su título a la vista bajo la cabecera
+   del sitio Y la barra local, con aire: la regla general de 7-8 rem se
+   quedaba a 1 px de la barra en el teléfono. */
+html:has(.case-route) { scroll-padding-top: calc(67px + 48px + 20px); }
+@media (max-width: 1080px) {
+  html:has(.case-route) { scroll-padding-top: calc(63px + 48px + 20px); }
+}
+
+/* `clip`, no `hidden`: recorta lo que sobresale sin crear un contenedor de
+   scroll, así que el índice y el inspector siguen pegándose. */
+.case { position: relative; overflow-x: clip; }
+:where(.case) :where(h1, h2, h3, p, dl, dd, dt, figure, ul, ol, blockquote) { margin: 0; }
+:where(.case) :where(ul, ol) { padding: 0; list-style: none; }
+.case > :not(.case-sala, .case-localnav) { position: relative; z-index: 1; }
+
+/* ── El fondo: la sala de la mesa, muy velada, fundiendo a negro ────────── */
+
+.case-sala {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: min(118svh, 1150px);
+  overflow: hidden;
+  pointer-events: none;
+}
+.case-sala__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  /* El preflight de Tailwind topa las imágenes al 100 %. */
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 42%;
+  /* Desenfocada: la sala es luz de ambiente detrás del producto —el brillo
+     del horizonte asomando tras el navegador—, no objetos. Nítida y velada,
+     sus lámparas quedaban como manchas sueltas junto al texto. */
+  opacity: 0.5;
+  filter: blur(10px);
+  scale: 1.06;
+  mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 75%) 38%, transparent 94%);
+}
+/* A la izquierda, donde se lee, la sala se apaga del todo. */
+.case-sala::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(3 5 8 / 94%) 0%, rgb(3 5 8 / 72%) 30%, transparent 62%),
+    linear-gradient(180deg, rgb(3 5 8 / 50%) 0%, transparent 18%);
+}
+
+/* ── Rótulos comunes ────────────────────────────────────────────────────── */
+
+.case-kicker {
+  font: 400 0.74rem/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(160 222 246 / 86%);
+}
+.case-h2 {
+  font: 350 clamp(2.1rem, 3.3vw, 3rem)/1.02 var(--font-display);
+  letter-spacing: -0.025em;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.case-icon {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* La salida principal: un marco fino, como «Explorar proyecto» en la mesa. */
+.case-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid rgb(220 238 255 / 55%);
+  border-radius: 2px;
+  background: rgb(6 12 20 / 55%);
+  color: #f2f7ff;
+  font: 500 0.9rem/1 var(--font-body);
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.case-action > span[aria-hidden] { color: var(--pj-cyan); transition: translate 0.25s var(--pj-ease); }
+.case-action:hover { border-color: var(--pj-cyan); background: rgb(12 34 48 / 80%); box-shadow: 0 0 26px rgb(127 229 255 / 16%); }
+.case-action:hover > span[aria-hidden] { translate: 3px 0; }
+.case-action[href^="#"]:hover > span[aria-hidden] { translate: 0 3px; }
+/* «Visitar el sitio»: el producto vivo, en ámbar. Sólo existe con demo. */
+.case-action--site { border-color: var(--pj-amber); background: var(--pj-amber); color: #14110a; }
+.case-action--site > span[aria-hidden] { color: #6a4a12; }
+.case-action--site:hover { border-color: #ffda91; background: #ffda91; box-shadow: 0 0 30px rgb(242 200 121 / 30%); }
+
+/* «Ver código» y el ancla al sistema: secundarios a propósito, texto legible
+   con un subrayado fino al apuntar; no otro botón grande. */
+.case-code,
+.case-anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  color: #c6d3e4;
+  font: 500 0.9rem/1 var(--font-body);
+  text-decoration: underline 1px transparent;
+  text-underline-offset: 5px;
+  transition: color 0.2s, text-decoration-color 0.2s;
+}
+.case-code:hover,
+.case-anchor:hover { color: #fff; text-decoration-color: rgb(127 229 255 / 70%); }
+.case-code > span[aria-hidden],
+.case-anchor > span[aria-hidden] { color: var(--pj-cyan); }
+.case-anchor { color: var(--pj-muted); }
+
+/* ── Una captura en su aparato ──────────────────────────────────────────── */
+
+/*
+  Expuesta con su luma medida, como en la mesa: una interfaz casi blanca se
+  apaga un poco (Wiki Universe, 0,93 → ×0,82) y su halo desaparece; una
+  oscura (Izak's Photos) conserva brillo y un resplandor tenue.
+*/
+.case-frame {
+  --expo: calc(1 - 0.42 * max(0, var(--luma, 0.5) - 0.5));
+  --halo: max(0, 0.7 - var(--luma, 0.5));
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgb(180 210 235 / 15%);
+  border-radius: 10px;
+  background: linear-gradient(160deg, #111a26, #070b11 70%);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 70%),
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 50px 90px -42px rgb(0 0 0 / 95%),
+    0 0 80px rgb(127 229 255 / calc(var(--halo) * 0.28));
+  /* El aparato abre el visor: el cursor lo anuncia y el filo se aviva. */
+  cursor: zoom-in;
+  transition: border-color 0.25s;
+}
+.case-frame:hover { border-color: rgb(127 229 255 / 45%); }
+.case-frame:focus-visible { outline: 2px solid var(--pj-cyan); outline-offset: 4px; }
+.case-frame__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgb(0 0 0 / 65%);
+  background: linear-gradient(180deg, #111923, #0a1018);
+}
+.case-frame__bar i { width: 7px; height: 7px; border-radius: 50%; background: rgb(160 180 205 / 26%); }
+.case-frame__expand {
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  fill: none;
+  stroke: rgb(160 180 205 / 45%);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.25s;
+}
+.case-frame:is(:hover, :focus-visible) .case-frame__expand { stroke: var(--pj-cyan); }
+.case-frame__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: brightness(var(--expo));
+}
+/* El cristal: un reflejo en diagonal, apenas, y el filo de luz de arriba. */
+.case-frame__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(118deg, rgb(255 255 255 / 5.5%) 0%, rgb(255 255 255 / 0%) 26%),
+    linear-gradient(0deg, rgb(3 5 8 / 14%), transparent 28%);
+  pointer-events: none;
+}
+.case-frame[data-frame="mobile"] {
+  padding: 5px;
+  border-color: rgb(180 210 235 / 24%);
+  border-radius: 22px;
+  background: #04070b;
+}
+.case-frame[data-frame="mobile"] .case-frame__img { border-radius: 17px; }
+
+/* ── Primer pantallazo ──────────────────────────────────────────────────── */
+
+.case-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  grid-template-rows: 1fr auto;
+  grid-template-areas: "copy stage" "facts facts";
+  column-gap: clamp(40px, 4.6vw, 88px);
+  align-items: center;
+  min-height: calc(100svh - var(--case-header));
+  padding: clamp(20px, 4vh, 48px) var(--case-gutter) clamp(24px, 3.4vh, 40px);
+}
+.case-hero__copy { grid-area: copy; container-type: inline-size; }
+/* En una ventana ancha el producto sangra hacia el canto derecho, fuera del
+   marco de 1400 px (hasta 160 px): a 1920 dejaba de mandar. El texto y la
+   ficha siguen alineados con el resto de la página. */
+.case-hero__stage {
+  grid-area: stage;
+  position: relative;
+  margin-right: calc(-1 * clamp(0px, (100vw - 1400px) / 2 - var(--page-gutter), 160px));
+}
+
+.case-hero__trail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 22px;
+  margin-bottom: clamp(18px, 4.2vh, 44px);
+}
+.case-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-left: -12px;
+  padding: 0 16px 0 12px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #dfe8f4;
+  font: 500 0.9rem/1 var(--font-body);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.case-back > span { color: var(--pj-cyan); transition: translate 0.25s var(--pj-ease); }
+.case-back:hover { border-color: rgb(160 200 230 / 22%); background: rgb(12 20 31 / 60%); color: #fff; }
+.case-back:hover > span { translate: -3px 0; }
+.case-hero__index {
+  font: 400 0.74rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pj-muted);
+}
+.case-hero__count { color: var(--pj-cyan); }
+
+/*
+  EL NOMBRE, en una línea si razonablemente cabe: el cuerpo sale del ancho de
+  la columna y de la longitud del nombre (`--len`), no de un caso por
+  proyecto. «OMSTA» topa en 6 rem; «Izak's Photos» baja a ~3,7 rem.
+*/
+.case-title { display: grid; gap: 16px; }
+.case-title__name {
+  display: block;
+  font: 400 clamp(2.5rem, calc(100cqi / (var(--len, 8) * 0.56)), 6rem)/0.92 var(--font-display);
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-shadow: 0 2px 30px var(--pj-void);
+}
+.case-title__descriptor {
+  display: block;
+  font: 300 clamp(1.15rem, 1.45vw, 1.4rem)/1.3 var(--font-body);
+  letter-spacing: 0;
+  color: var(--case-soft);
+  text-wrap: balance;
+}
+p.case-title__descriptor { margin-top: 16px; }
+.case-hero__summary {
+  max-width: 34em;
+  margin-top: 22px;
+  font: 300 1.02rem/1.6 var(--font-body);
+  color: #9fb0c6;
+  text-wrap: pretty;
+}
+.case-facts .case-status { display: flex; align-items: baseline; gap: 10px; }
+.case-status .case-led { translate: 0 -1px; }
+.case-led { flex: none; width: 7px; height: 7px; border-radius: 50%; background: #6b5230; }
+.case-led[data-state="production"] { background: #8cf2c2; box-shadow: 0 0 10px rgb(140 242 194 / 70%); }
+.case-led[data-state="ready-for-production"] { background: var(--pj-amber); box-shadow: 0 0 10px rgb(242 200 121 / 60%); }
+.case-led[data-state="in-development"] { background: #93a1ba; }
+.case-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+  margin-top: clamp(20px, 3.4vh, 32px);
+}
+
+/* La composición de producto: la destacada en su navegador y, si hay
+   captura de teléfono, el teléfono delante, abajo a la izquierda. Solapa
+   sólo una cuarta parte de su ancho: montado más adentro tapaba el titular
+   de la propia captura (Izak's Photos, Delicaté). */
+.case-hero__stage[data-phone] { padding: 0 0 7% 15%; }
+.case-hero__phone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 19%;
+  filter: drop-shadow(0 30px 40px rgb(0 0 0 / 70%));
+}
+
+/* La ficha rápida, al pie del primer pantallazo: quién, con qué, cómo está. */
+.case-facts {
+  grid-area: facts;
+  align-self: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  margin-top: clamp(28px, 4.6vh, 52px);
+  /* Los mandos fijos de movimiento y audio (y su globo) viven abajo a la
+     derecha, a ~200 px del canto de la ventana: el «Estado» termina antes de
+     llegar a ellos. En una ventana ancha el margen ya lo deja libre. */
+  padding-right: max(0px, calc(200px - max(var(--page-gutter), (100vw - 1400px) / 2)));
+  border-top: 1px solid var(--case-line);
+}
+.case-facts > div { padding: 18px 28px 0 0; }
+.case-facts > div + div { padding-left: 28px; border-left: 1px solid rgb(160 200 230 / 9%); }
+.case-facts dt {
+  font: 400 0.7rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pj-dim);
+}
+.case-facts dd { margin-top: 9px; font: 400 0.94rem/1.5 var(--font-body); color: #dbe4f0; }
+
+/* ── Resumen: el alcance y el reto ──────────────────────────────────────── */
+
+/* Las secciones se separan con margen y no con relleno: un ancla (#sistema)
+   deja el título justo bajo la barra local, no un hueco encima. */
+.case-summary {
+  display: grid;
+  gap: clamp(80px, 11vh, 130px);
+  margin-top: clamp(96px, 13vh, 150px);
+  padding-inline: var(--case-gutter);
+}
+
+/* El mismo lenguaje que la mesa: cifra grande, rótulo pequeño, finas
+   separaciones verticales. Información del instrumento, no tarjetas. */
+.case-scope ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 26px;
+}
+.case-scope li { display: grid; align-content: start; gap: 12px; padding: 2px 32px 4px 0; }
+.case-scope li + li { padding-left: 32px; border-left: 1px solid var(--case-line); }
+/* El cuerpo sale de la cifra más larga de la fila (`--vlen`): una cifra de
+   una o dos letras llega a 4,4 rem; una palabra («Markdown», «OpenAPI») baja
+   hasta ~2,1 rem y no grita más que el número de al lado. */
+.case-scope__value {
+  font: 350 clamp(2.1rem, calc(clamp(2.8rem, 4.8vw, 4.4rem) * min(1, 3.4 / var(--vlen, 2))), 4.4rem)/0.95 var(--font-display);
+  letter-spacing: -0.03em;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.case-scope__label { max-width: 24ch; font: 400 0.98rem/1.45 var(--font-body); color: var(--pj-muted); }
+
+.case-brief {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: clamp(40px, 6vw, 110px);
+  align-items: start;
+}
+.case-brief__statement {
+  max-width: 24em;
+  margin-top: 24px;
+  font: 350 clamp(1.7rem, 2.5vw, 2.45rem)/1.2 var(--font-display);
+  letter-spacing: -0.015em;
+  color: #f1f5fb;
+  text-wrap: balance;
+}
+.case-brief__answer { display: grid; gap: 30px; padding-top: 44px; }
+.case-brief__answer dt {
+  font: 400 0.7rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pj-dim);
+}
+.case-brief__answer dd { margin-top: 12px; font: 300 1.04rem/1.65 var(--font-body); color: var(--case-soft); }
+/* Lo que se decidió lleva el filo ámbar en todo el caso (y en el inspector). */
+.case-brief__answer [data-tone="decision"] { padding-left: 18px; border-left: 2px solid var(--pj-amber); }
+.case-brief__answer [data-tone="decision"] dt { color: var(--pj-amber); }
+.case-brief__answer [data-tone="decision"] dd { color: #eef2f8; }
+
+/* ── Secciones ──────────────────────────────────────────────────────────── */
+
+.case-section { margin-top: clamp(100px, 14vh, 160px); padding-inline: var(--case-gutter); }
+.case-section__head { display: grid; gap: 14px; margin-bottom: clamp(40px, 6vh, 64px); }
+/* Título y guía en una fila: el esquema tiene que caber entero bajo ellos. */
+.case-section__head--row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 28px; }
+.case-section__lead { font: 300 1.02rem/1.5 var(--font-body); color: var(--pj-muted); }
+
+/* ── Decisiones de diseño: la pantalla grande y dos líneas ──────────────── */
+
+.case-decisions__list { display: grid; gap: clamp(96px, 14vh, 160px); }
+.case-decision {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: clamp(40px, 5.5vw, 100px);
+  align-items: center;
+}
+/* Una sí y otra no, la pantalla cambia de lado: el ojo baja en zigzag. */
+.case-decision:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+.case-decision:nth-child(even) .case-decision__screen { order: 2; }
+/* Un teléfono no se estira a la columna: se queda a su tamaño, arrimado a
+   su texto (al canto derecho de su columna o al izquierdo, según el lado),
+   para que aparato y decisión se lean como un par. */
+.case-decision[data-frame="mobile"] .case-decision__screen { justify-self: end; width: min(300px, 62%); }
+.case-decision[data-frame="mobile"]:nth-child(even) .case-decision__screen { justify-self: start; }
+
+.case-decision__index {
+  font: 400 0.8rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  color: var(--pj-cyan);
+}
+.case-decision__index > span { color: var(--pj-dim); }
+.case-decision dl { display: grid; gap: 26px; margin-top: 26px; }
+.case-decision dt {
+  font: 400 0.7rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pj-dim);
+}
+.case-decision__problem dd {
+  max-width: 34em;
+  margin-top: 10px;
+  font: 300 1.02rem/1.55 var(--font-body);
+  color: #95a4ba;
+}
+.case-decision__choice { padding-left: 18px; border-left: 2px solid var(--pj-amber); }
+.case-decision__choice dt { color: var(--pj-amber); }
+.case-decision__choice dd {
+  margin-top: 12px;
+  font: 400 clamp(1.3rem, 1.75vw, 1.6rem)/1.28 var(--font-display);
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-wrap: balance;
+}
+.case-decision__caption {
+  margin-top: 22px;
+  font: 400 clamp(1.2rem, 1.6vw, 1.45rem)/1.35 var(--font-display);
+  color: #eef2f8;
+  text-wrap: balance;
+}
+
+/* ── Sistema: el esquema y el inspector, planos y operables ─────────────── */
+
+.case-system__explorer {
+  display: grid;
+  /* El esquema se ajusta a los carriles que ocupa el sistema: tres
+     columnas no se estiran a un rectángulo lleno de vacío. */
+  grid-template-columns: minmax(0, calc(var(--cols, 4) * 225px + 60px)) minmax(270px, 320px);
+  gap: 22px;
+  align-items: start;
+}
+/* Deshace la pose 3D que la mesa da a los paneles (si su hoja sigue cargada
+   tras navegar desde ella): aquí son planos y están siempre a la vista. */
+.case-system .holo-card {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: auto;
+  transform: none;
+  translate: none;
+  opacity: 1;
+  visibility: visible;
+  transition: none;
+}
+/* Filas de 48 px: la caja visible (70 %) mide ~34 px y caben las dos líneas
+   de un rótulo largo a 0,8 rem («Contabilidad y posteo») sin pisar su borde. */
+.case-system .holo-diagram { --row: 48px; }
+.case-system .holo-diagram::after { content: none; }
+.case-system .holo-line { stroke-dashoffset: 0; }
+.case-system .holo-node__box { font-size: 0.8rem; }
+.case-system .holo-inspector { position: sticky; top: calc(var(--case-header) + var(--case-nav) + 24px); }
+/* La cuenta de decisiones técnicas del inspector no es la de «Decisiones de
+   diseño» (01 / 04) de más arriba: dos cifras con el mismo nombre en la misma
+   página se leen como una incoherencia. Aquí se calla. */
+.case-system .holo-inspector .holo-card__meta { display: none; }
+.case-lead--narrow { display: none; }
+
+/* ── Resultados verificables ────────────────────────────────────────────── */
+
+.case-results {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.5fr);
+  gap: clamp(32px, 5vw, 96px);
+  align-items: start;
+}
+.case-results .case-section__head { margin-bottom: 0; }
+.case-results__list { border-bottom: 1px solid var(--case-line); }
+.case-results__list li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px 0;
+  border-top: 1px solid var(--case-line);
+  font: 400 1.06rem/1.5 var(--font-body);
+  color: #dbe4f0;
+}
+.case-check {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  fill: none;
+  stroke: var(--pj-cyan);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Pantallas: filas justificadas y el visor ───────────────────────────── */
+
+/*
+  Filas justificadas sin medir nada en el cliente: cada miniatura crece en
+  proporción a su ancho relativo (`--ar`), así que las de una misma fila salen
+  del mismo alto y la fila llena el ancho. El tope de ancho impide la fila
+  gigante —un teléfono que se queda solo en su fila no se estira a la página—.
+*/
+.case-shots { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 28px 18px; }
+.case-shot { flex: var(--ar) 1 calc(var(--ar) * 190px); min-width: 0; max-width: calc(var(--ar) * 420px); }
+.case-shot__link {
+  position: relative;
+  display: block;
+  aspect-ratio: var(--ar);
+  overflow: hidden;
+  border: 1px solid rgb(180 210 235 / 14%);
+  border-radius: 8px;
+  /* Mientras llega la imagen, el marco ya tiene su proporción y una luz
+     tenue de pantalla apagada: nunca un hueco. */
+  background: linear-gradient(160deg, #111a26, #070b11 70%);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.case-shot__link img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+  filter: brightness(calc(1 - 0.42 * max(0, var(--luma, 0.5) - 0.5)));
+  transition: filter 0.3s, scale 0.6s var(--pj-ease);
+}
+.case-shot__link:hover { border-color: rgb(127 229 255 / 60%); box-shadow: 0 0 30px rgb(127 229 255 / 12%); }
+.case-shot__link:hover img { filter: brightness(calc(1.06 - 0.42 * max(0, var(--luma, 0.5) - 0.5))); scale: 1.015; }
+.case-shot__link:focus-visible { outline-offset: 3px; }
+.case-shot__caption {
+  max-width: 46ch;
+  margin-top: 12px;
+  font: 300 0.92rem/1.5 var(--font-body);
+  color: var(--pj-muted);
+  text-wrap: pretty;
+}
+.case-viewer {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #020407;
+  color: var(--pj-ink);
+}
+.case-viewer::backdrop { background: rgb(0 0 0 / 55%); }
+html:has(.case-viewer[open]) { overflow: hidden; }
+.case-viewer__body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  padding: 10px clamp(16px, 3vw, 44px) 22px;
+  animation: case-viewer-in 0.28s var(--pj-ease);
+}
+@keyframes case-viewer-in { from { opacity: 0; } to { opacity: 1; } }
+.case-viewer__bar { display: flex; align-items: center; justify-content: space-between; min-height: 56px; }
+.case-viewer__count { font: 400 0.8rem/1 var(--font-mono); letter-spacing: 0.14em; color: var(--pj-cyan); }
+.case-viewer__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgb(220 238 255 / 30%);
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: 500 0.88rem/1 var(--font-body);
+  cursor: pointer;
+}
+.case-viewer__close:hover { border-color: var(--pj-cyan); }
+.case-viewer__close > span { font-size: 1.2rem; color: var(--pj-cyan); }
+.case-viewer__figure {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  align-items: center;
+  gap: 16px;
+  min-height: 0;
+  padding: 0 clamp(0px, 5vw, 76px);
+}
+/*
+  La caja de la captura se calcula ANTES de que llegue: el escenario es un
+  contenedor de tamaño y la imagen mide lo que quepa de su proporción (`--ar`)
+  dentro de él. Con `width/height: auto` una imagen sin cargar mide 0 × 0, y
+  la miniatura de debajo no tendría dónde pintarse.
+*/
+.case-viewer__stage {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  justify-self: stretch;
+  height: 100%;
+  min-height: 0;
+}
+.case-viewer__stage img {
+  width: min(100cqw, 100cqh * var(--ar));
+  max-width: none;
+  height: auto;
+  aspect-ratio: var(--ar);
+  border: 1px solid rgb(180 210 235 / 14%);
+  border-radius: 6px;
+  /* La miniatura ya descargada (estilo en línea) ocupa la caja hasta que la
+     grande la cubre: nunca un marco vacío. */
+  background: #070b11 center / 100% 100% no-repeat;
+  filter: brightness(calc(1 - 0.3 * max(0, var(--luma, 0.5) - 0.5)));
+}
+.case-viewer__figure[data-frame="mobile"] img { border-radius: 16px; }
+.case-viewer__figure figcaption {
+  max-width: 62ch;
+  font: 300 0.98rem/1.5 var(--font-body);
+  color: var(--case-soft);
+  text-align: center;
+}
+.case-viewer__nav button {
+  position: fixed;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  translate: 0 -50%;
+  border: 1px solid rgb(220 238 255 / 26%);
+  border-radius: 50%;
+  background: rgb(6 12 20 / 80%);
+  color: var(--pj-cyan);
+  font: 400 1.2rem/1 var(--font-body);
+  cursor: pointer;
+}
+.case-viewer__nav button:first-child { left: clamp(10px, 1.6vw, 28px); }
+.case-viewer__nav button:last-child { right: clamp(10px, 1.6vw, 28px); }
+.case-viewer__nav button:hover { border-color: var(--pj-cyan); background: rgb(12 34 48 / 90%); }
+
+/* ── El caso completo: lectura larga con índice ─────────────────────────── */
+
+.case-longread__grid {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 66ch);
+  gap: clamp(40px, 7vw, 120px);
+  align-items: start;
+}
+.case-index {
+  position: sticky;
+  top: calc(var(--case-header) + var(--case-nav) + 24px);
+  max-height: calc(100svh - var(--case-header) - var(--case-nav) - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(160 200 230 / 20%) transparent;
+}
+.case-index ol { border-left: 1px solid var(--case-line); }
+.case-index a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-left: -1px;
+  padding: 4px 0 4px 16px;
+  border-left: 2px solid transparent;
+  color: var(--pj-muted);
+  font: 400 0.88rem/1.3 var(--font-body);
+  transition: color 0.2s, border-color 0.2s;
+}
+.case-index a > span { flex: none; font: 400 0.7rem/1 var(--font-mono); letter-spacing: 0.1em; color: var(--pj-dim); }
+.case-index a:hover { color: #fff; }
+.case-index a[aria-current] { border-left-color: var(--pj-cyan); color: #fff; }
+.case-index a[aria-current] > span { color: var(--pj-cyan); }
+.case-index a:focus-visible { outline-offset: -2px; }
+
+.case-longread__body {
+  max-width: 66ch;
+  font: 300 1.08rem/1.75 var(--font-body);
+  color: #c7d1df;
+}
+.case-longread__body > p + p,
+.case-longread__body > ul + p,
+.case-longread__body > p + ul { margin-top: 1.1em; }
+.case-chapter {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 3.4em 0 0.8em;
+  font: 400 1.5rem/1.2 var(--font-display);
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.case-longread__body > .case-chapter:first-child { margin-top: 0; }
+.case-chapter__num { flex: none; font: 400 0.74rem/1 var(--font-mono); letter-spacing: 0.12em; color: var(--pj-cyan); }
+.case-longread__body ul { display: grid; gap: 0.55em; }
+.case-longread__body li { position: relative; padding-left: 1.5em; }
+.case-longread__body li::before {
+  content: "";
+  position: absolute;
+  left: 0.15em;
+  top: 0.86em;
+  width: 0.7em;
+  height: 1px;
+  background: var(--pj-cyan);
+}
+.case-longread__body code {
+  padding: 0.1em 0.34em;
+  border: 1px solid rgb(127 229 255 / 12%);
+  border-radius: 3px;
+  background: rgb(127 229 255 / 6%);
+  color: #b9dcea;
+  font: 300 0.8em/1 var(--font-mono);
+}
+.case-longread__body a {
+  color: var(--pj-cyan);
+  text-decoration: underline 1px;
+  text-underline-offset: 3px;
+}
+.case-longread__body strong { font-weight: 600; color: #eef3fb; }
+/* Un bloque de texto literal (el mensaje de WhatsApp de Delicaté): se parte
+   en líneas en vez de salirse por el canto en un teléfono. */
+.case-longread__body pre {
+  margin: 1.3em 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  border: 1px solid rgb(127 229 255 / 14%);
+  border-left: 2px solid rgb(127 229 255 / 45%);
+  border-radius: 6px;
+  background: rgb(10 16 25 / 80%);
+  /* El cuerpo del bloque manda en el interlineado: el `code` de dentro es
+     en línea y heredaba el de la lectura (1,75). */
+  font: 300 0.86rem/1.6 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.case-longread__body pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #cfe3ee;
+  font: inherit;
+}
+
+/* ── Cierre: los vecinos y el contacto ──────────────────────────────────── */
+
+.case-close {
+  display: grid;
+  gap: clamp(56px, 8vh, 96px);
+  margin-top: clamp(110px, 16vh, 180px);
+  padding: 0 var(--case-gutter) clamp(64px, 9vh, 110px);
+}
+.case-neighbours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.case-neighbour {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 14px;
+  border: 1px solid var(--case-line);
+  border-radius: 10px;
+  background: rgb(10 16 25 / 55%);
+  transition: border-color 0.25s, background 0.25s;
+}
+.case-neighbour[data-direction="next"] { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); text-align: right; }
+.case-neighbour[data-direction="next"] .case-neighbour__thumb { order: 2; }
+.case-neighbour:hover { border-color: rgb(127 229 255 / 45%); background: rgb(12 24 36 / 70%); }
+.case-neighbour__thumb {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid rgb(180 210 235 / 12%);
+  border-radius: 6px;
+  background: #080c12;
+}
+.case-neighbour__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+  filter: brightness(calc(0.9 - 0.42 * max(0, var(--luma, 0.5) - 0.5)));
+  transition: filter 0.3s;
+}
+.case-neighbour:hover .case-neighbour__thumb img { filter: brightness(calc(1 - 0.42 * max(0, var(--luma, 0.5) - 0.5))); }
+.case-neighbour__dir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font: 400 0.72rem/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pj-cyan);
+}
+.case-neighbour[data-direction="next"] .case-neighbour__dir { justify-content: flex-end; }
+.case-neighbour__count { color: var(--pj-dim); white-space: nowrap; }
+.case-neighbour__name { display: block; margin-top: 12px; font: 400 clamp(1.4rem, 2vw, 1.8rem)/1.05 var(--font-display); color: #fff; }
+.case-neighbour__descriptor { display: block; margin-top: 8px; font: 300 0.92rem/1.4 var(--font-body); color: var(--pj-muted); }
+
+/* Una banda compacta: la pregunta y su línea a la izquierda, la salida
+   pegada al canto derecho. El pie del sitio trae debajo su propia
+   invitación; ésta no compite con ella en tamaño. */
+.case-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px 48px;
+  padding-top: 40px;
+  border-top: 1px solid var(--case-line);
+}
+.case-contact__text { max-width: 640px; }
+.case-contact__title {
+  font: 350 clamp(1.5rem, 2.2vw, 2rem)/1.12 var(--font-display);
+  letter-spacing: -0.015em;
+  color: #fff;
+  text-wrap: balance;
+}
+.case-contact__text > p { margin-top: 10px; max-width: 52ch; font: 300 1rem/1.6 var(--font-body); color: var(--pj-muted); }
+
+/* ── La barra local: aparece al dejar atrás el primer pantallazo ────────── */
+
+.case-localnav {
+  position: fixed;
+  top: var(--case-header);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: var(--case-nav);
+  border-bottom: 1px solid rgb(160 200 230 / 12%);
+  background: rgb(4 7 12 / 88%);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  translate: 0 -100%;
+  visibility: hidden;
+  transition: translate 0.35s var(--pj-ease), opacity 0.25s, visibility 0s 0.35s;
+}
+.case-localnav[data-shown] {
+  opacity: 1;
+  translate: 0 0;
+  visibility: visible;
+  transition: translate 0.35s var(--pj-ease), opacity 0.25s, visibility 0s;
+}
+.case-localnav__inner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 100%;
+  padding-inline: var(--case-gutter);
+}
+.case-localnav__name {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 44px;
+  font: 400 1.02rem/1 var(--font-display);
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.case-localnav ol {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  height: 100%;
+  margin-left: auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.case-localnav ol::-webkit-scrollbar { display: none; }
+.case-localnav li { flex: none; }
+.case-localnav ol a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--pj-muted);
+  font: 400 0.86rem/1 var(--font-body);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.case-localnav ol a:hover { color: #fff; }
+.case-localnav ol a::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--pj-cyan);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.case-localnav ol a[aria-current] { color: #fff; }
+.case-localnav ol a[aria-current]::after { opacity: 1; }
+.case-localnav a:focus-visible { outline-offset: -3px; }
+
+/* ── Revelados: mejora progresiva, al entrar en vista ───────────────────── */
+
+@supports (animation-timeline: view()) {
+  html:not([data-motion="off"]) .case-reveal {
+    animation: case-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+}
+@keyframes case-reveal {
+  from { opacity: 0; translate: 0 26px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* ── Ventanas medianas ──────────────────────────────────────────────────── */
+
+@media (max-width: 1099px) {
+  .case-hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "copy" "stage" "facts";
+    row-gap: 44px;
+    min-height: 0;
+  }
+  .case-hero__copy { max-width: 640px; }
+  .case-hero__stage { max-width: 820px; margin-right: 0; }
+  .case-facts { padding-right: 0; }
+  .case-decision,
+  .case-decision:nth-child(even) { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+  .case-decision:nth-child(even) .case-decision__screen { order: 0; }
+  .case-decision__text { max-width: 640px; }
+  .case-decision[data-frame="mobile"] .case-decision__screen,
+  .case-decision[data-frame="mobile"]:nth-child(even) .case-decision__screen { justify-self: start; }
+  .case-system__explorer { grid-template-columns: minmax(0, 1fr); }
+  .case-system .holo-inspector { position: relative; top: auto; }
+  .case-results { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 999px) {
+  .case-longread__grid { grid-template-columns: minmax(0, 1fr); }
+  .case-index { display: none; }
+}
+/* Dos vecinos lado a lado dejaban el contador y el descriptor en columnas
+   de tres palabras: por debajo de 900 px, uno encima del otro. */
+@media (max-width: 899px) {
+  .case-neighbours { grid-template-columns: minmax(0, 1fr); }
+  .case-neighbour { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1fr); }
+  .case-neighbour[data-direction="next"] { grid-template-columns: minmax(0, 1fr) minmax(0, 0.62fr); }
+}
+
+/* ── Móvil ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .case-hero { row-gap: 36px; padding-top: 18px; }
+  .case-hero__trail { margin-bottom: 22px; }
+  .case-title__name { font-size: clamp(2.4rem, calc(100cqi / (var(--len, 8) * 0.56)), 4.2rem); }
+  .case-hero__stage[data-phone] { padding: 0 0 12% 18%; }
+  .case-hero__phone { width: 24%; }
+  .case-facts { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
+  .case-facts > div,
+  .case-facts > div + div { padding: 16px 0; border-left: 0; }
+  .case-facts > div + div { border-top: 1px solid rgb(160 200 230 / 9%); }
+
+  .case-scope ul { grid-template-columns: minmax(0, 1fr); margin-top: 14px; }
+  .case-scope li,
+  .case-scope li + li {
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    padding: 18px 0;
+    border-left: 0;
+    border-top: 1px solid var(--case-line);
+  }
+  .case-scope__value { font-size: 2.3rem; }
+  .case-scope__label { font-size: 0.92rem; }
+  /* Si la fila lleva palabras, la cifra no cabe en su columna de 4,4 rem y
+     pisaba el rótulo: cifra encima, rótulo debajo. */
+  .case-scope ul[data-words] li { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 16px 0; }
+  .case-scope ul[data-words] .case-scope__value { font-size: 2rem; }
+  .case-brief { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .case-brief__answer { padding-top: 24px; }
+
+  .case-decision[data-frame="mobile"] .case-decision__screen { width: 66%; }
+  /* En el teléfono, una tira que se desliza con el dedo: todas del mismo
+     alto, cada una a su proporción, y la página no se alarga. */
+  .case-shots {
+    flex-wrap: nowrap;
+    gap: 12px;
+    margin-inline: calc(-1 * var(--case-gutter));
+    padding: 2px var(--case-gutter) 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--case-gutter);
+    scrollbar-width: none;
+  }
+  .case-shots::-webkit-scrollbar { display: none; }
+  /* Dentro de la tira el revelado mediría contra la propia tira, que no se
+     desplaza en vertical: aquí no hay revelado. */
+  /* Ninguna ocupa la tira entera: asoma la siguiente y se entiende que desliza. */
+  .case-shot { flex: none; width: min(calc(var(--ar) * 210px), 78vw); max-width: none; scroll-snap-align: start; animation: none !important; }
+
+  /* El sistema en filas: un carril por grupo, los nodos en columna y la
+     decisión del módulo elegido bajo él (el inspector no cabe al lado). */
+  .case-system .holo-diagram { display: flex; }
+  .case-system .holo-diagram__field { height: auto; margin: 6px 14px 16px; }
+  .case-system .holo-diagram__lines { display: none; }
+  .case-system .holo-lane { display: grid; gap: 6px; margin-top: 14px; }
+  .case-system .holo-lane__title { position: static; width: auto; margin-bottom: 2px; text-align: left; }
+  .case-system .holo-node { position: static; width: auto !important; height: auto !important; }
+  /* `auto`: en una rejilla el 100 % se resuelve contra la fila entera. */
+  .case-system .holo-node__box { height: auto; min-height: 44px; font-size: 0.9rem; line-height: 1.3; }
+  .case-system .holo-node__chip { height: auto; min-height: 44px; padding: 8px 12px; }
+  .case-system .holo-node__label { -webkit-line-clamp: 3; }
+  .case-system .holo-node[data-selected] .holo-node__decision {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    margin-top: 6px;
+    padding: 8px 0 8px 12px;
+    border-left: 2px solid var(--pj-amber);
+    font: 300 0.9rem/1.5 var(--font-body);
+    color: #e6edf6;
+  }
+  /* `!important` porque la mesa oculta su inspector en móvil igual. */
+  .case-system .holo-inspector { display: none !important; }
+  .case-lead--wide { display: none; }
+  .case-lead--narrow { display: inline; }
+
+  .case-neighbour,
+  .case-neighbour[data-direction="next"] { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr); gap: 16px; text-align: left; }
+  .case-neighbour[data-direction="next"] .case-neighbour__thumb { order: 0; }
+  .case-neighbour[data-direction="next"] .case-neighbour__dir { justify-content: flex-start; }
+
+  .case-localnav__name { display: none; }
+  .case-localnav ol { margin-left: -12px; }
+  /* En el teléfono las flechas bajan a una fila propia, bajo el pie. */
+  .case-viewer__figure { padding: 0; }
+  .case-viewer__nav { display: flex; justify-content: space-between; padding-top: 14px; }
+  .case-viewer__nav button { position: static; translate: none; }
+}
+
+/* ── Un solo interruptor de movimiento ──────────────────────────────────── */
+
+html[data-motion="off"] .case *,
+html[data-motion="off"] .case *::before,
+html[data-motion="off"] .case *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* La regla general de `globals.css` deja toda animación en 0,01 ms con
+   movimiento reducido. Un revelado ligado al scroll no tiene reloj: su
+   duración es el propio desplazamiento, así que el encendido por defecto lo
+   conserva (como la mesa conserva sus piezas). */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="off"]) .case-reveal { animation-duration: auto !important; }
+}

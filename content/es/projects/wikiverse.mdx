@@ -38,6 +38,23 @@ gallery:
     alt: Inicio de Wiki Universe adaptado a una pantalla móvil
     caption: La exploración temática y la búsqueda mantienen su prioridad en móvil.
     frame: mobile
+scope:
+  - value: "23"
+    label: pruebas de backend en verde
+  - value: Markdown
+    label: artículos con historial de revisiones
+  - value: OpenAPI
+    label: API documentada, con autenticación JWT
+designDecisions:
+  - screen: /media/projects/wikiverse/01-home-desktop.png
+    problem: Mucho contenido relacionado se vuelve fácil de perder sin orientación.
+    decision: El inicio prioriza la búsqueda y abre varias rutas de exploración sin abrumar.
+  - screen: /media/projects/wikiverse/02-article-desktop.png
+    problem: Se llega a un artículo por búsqueda, por categoría o desde otro contenido.
+    decision: La lectura conserva jerarquía editorial y el acceso a su contexto.
+  - screen: /media/projects/wikiverse/03-history-desktop.png
+    problem: Un contenido editable pierde confianza si sus cambios no se ven.
+    decision: Cada edición queda visible en un historial de revisiones.
 architecture:
   nodes:
     - id: inicio

@@ -13,7 +13,7 @@
  * `ProjectCase` y `ProjectCard` los siguen sirviendo por `next/image`.
  *
  * Además escribe `content/projects-media.json` con el ancho y el alto MEDIDOS
- * de cada original y sus peldaños disponibles. Es lo que permite que Velite
+ * de cada original, sus peldaños disponibles y su luma media (§17). Es lo que permite que Velite
  * compruebe `frame: mobile` contra la imagen real y que la página componga el
  * `srcset` sin un campo de dimensiones a mano. Se ejecuta a mano al añadir o
  * sustituir capturas:
@@ -43,6 +43,26 @@ async function isFresh(target, sourceMtime) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Cuánta luz emite una captura: la media de luma (Rec. 709 sobre los valores
+ * sRGB, es decir, como se VE y no en radiancia), de 0 a 1. Una interfaz casi
+ * blanca como Wiki Universe ronda 0,9 y una oscura como Izak's Photos 0,1. La
+ * mesa la usa para exponer cada pantalla (§17): una pantalla blanca se apaga
+ * un poco para que se lea encendida dentro de la sala y no pegada encima.
+ */
+async function meanLuma(buffer) {
+  const { data, info } = await sharp(buffer)
+    .resize({ width: 96, fit: "inside" })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let sum = 0;
+  for (let i = 0; i < data.length; i += info.channels) {
+    sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+  }
+  return Math.round((sum / (data.length / info.channels) / 255) * 100) / 100;
 }
 
 const manifest = {};
@@ -77,7 +97,7 @@ for (const project of projects) {
       console.log(`${project}/${path.basename(target)}  ${(webp.length / 1024) | 0} KB`);
     }
 
-    manifest[`/media/projects/${project}/${file}`] = { width, height, steps };
+    manifest[`/media/projects/${project}/${file}`] = { width, height, steps, luma: await meanLuma(buffer) };
   }
 }
 

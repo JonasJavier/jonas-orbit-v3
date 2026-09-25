@@ -8,45 +8,52 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type FocusEvent,
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
-import type { ArchitectureLane } from "@/content/projects.data";
 import { useMotionEnabled } from "@/lib/effects-mode";
 import {
-  DIAGRAM_BOX,
   initialNode,
-  NODE_HALF_WIDTH,
-  NODE_ROW_FILL,
+  nodePath,
   projectFromHash,
+  REEL_CENTER,
+  RING_RADIUS,
   ringOffset,
   ringPose,
   statusReadout,
+  systemRing,
   TABLE_LAYERS,
+  type NodePath,
   type ScreenPose,
   type TableLayer,
-  type TableNode,
   type TableProject,
+  type TableReelStep,
+  type TableScope,
   type TableScreen,
 } from "@/lib/engineering-table";
+import { LANE_LABEL, SystemDiagram, SystemInspector } from "./system-diagram";
 
 /**
- * LA MESA DE INGENIERÍA — `/es/proyectos`, segundo pase
- * (`docs/design/endurance-proyectos.md` §16).
+ * LA MESA DE INGENIERÍA — `/es/proyectos`, tercer pase
+ * (`docs/design/endurance-proyectos.md` §16 y §17).
  *
- * Un proyecto se lee a tres profundidades sobre la misma mesa, y cada capa
- * cambia lo que se proyecta, no la página:
+ * Un proyecto se lee a tres profundidades sobre la misma mesa, y la mesa
+ * cambia de FUNCIÓN con la capa —la misma máquina, tres usos—:
  *
- * - RESULTADO: tres pantallas en arco —teléfono, destacada, siguiente—.
- * - DISEÑO: todas las pantallas en un carrete; la elegida delante y su nota,
- *   una sola línea, debajo.
- * - INGENIERÍA: las pantallas vuelven a la mesa y se levanta el sistema: el
- *   esquema por carriles y el inspector del módulo elegido (su capa, su
- *   decisión y sus conexiones).
+ * - PRODUCTO: tres pantallas en arco y, en el cristal, el ALCANCE: tres
+ *   cifras que el caso sostiene.
+ * - DISEÑO: las pantallas de cada decisión de diseño en un carrete; la
+ *   elegida delante y, en la mesa, su problema y su decisión.
+ * - INGENIERÍA: las pantallas vuelven a la mesa y se levanta el sistema —el
+ *   esquema por carriles y el inspector del módulo elegido—; la mesa se
+ *   vuelve el mapa global: un anillo con un segmento por módulo que enciende
+ *   la ruta del que está en foco.
  *
  * La lectura de la izquierda no cambia con la capa: nombre, qué es, estado y
  * la salida al caso completo. Todo el texto largo vive en el caso.
@@ -57,20 +64,23 @@ import {
  */
 
 const LAYER_LABEL: Record<TableLayer, string> = {
-  resultado: "Resultado",
+  producto: "Producto",
   diseno: "Diseño",
   ingenieria: "Ingeniería",
 };
 
-const LANE_LABEL: Record<ArchitectureLane, string> = {
-  cliente: "Cliente",
-  servicio: "Servicio",
-  datos: "Datos",
-  infraestructura: "Infraestructura",
-};
-
 /** Cuánto dura el cruce entre proyectos: el saliente se apaga en la mesa. */
 const SWITCH_MS = 450;
+/**
+ * La rueda horizontal sobre el muelle: cuánto desplazamiento acumulado es un
+ * paso, cuánto descansa después como mínimo y cuánto silencio separa un gesto
+ * del siguiente, para que la inercia de un trackpad no se lleve dos proyectos.
+ */
+const WHEEL_STEP = 60;
+const WHEEL_REST_MS = 650;
+const WHEEL_QUIET_MS = 240;
+/** Lo que tarda en apagarse la vista previa: da tiempo a llevar el puntero a ella. */
+const PEEK_LINGER_MS = 160;
 
 /* `replaceState` no dispara `hashchange`: el muelle avisa por su cuenta. */
 const HASH_EVENT = "jonas:table-hash";
@@ -87,39 +97,12 @@ const readServerHash = () => null;
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-/* ── Glifos técnicos ────────────────────────────────────────────────────── */
-
-function LaneGlyph({ lane, className = "holo-glyph" }: { lane: ArchitectureLane; className?: string }) {
-  const common = { "aria-hidden": true, focusable: "false", viewBox: "0 0 20 20", className } as const;
-  switch (lane) {
-    case "cliente":
-      return (
-        <svg {...common}>
-          <rect x="2.5" y="4" width="15" height="12" rx="1.5" />
-          <path d="M2.5 7.5h15" />
-        </svg>
-      );
-    case "servicio":
-      return (
-        <svg {...common}>
-          <path d="M10 2.8 16.3 6.4v7.2L10 17.2 3.7 13.6V6.4Z" />
-          <circle cx="10" cy="10" r="2.4" />
-        </svg>
-      );
-    case "datos":
-      return (
-        <svg {...common}>
-          <ellipse cx="10" cy="5" rx="6.5" ry="2.4" />
-          <path d="M3.5 5v10c0 1.3 2.9 2.4 6.5 2.4s6.5-1.1 6.5-2.4V5M3.5 10c0 1.3 2.9 2.4 6.5 2.4s6.5-1.1 6.5-2.4" />
-        </svg>
-      );
-    case "infraestructura":
-      return (
-        <svg {...common}>
-          <path d="M6 15.5a3.6 3.6 0 0 1-.5-7.2 4.8 4.8 0 0 1 9.2-.9A3.2 3.2 0 0 1 14.5 15.5Z" />
-          <path d="M7.5 15.5v2M12.5 15.5v2" />
-        </svg>
-      );
+/** ¿El foco llegó por teclado? jsdom no conoce `:focus-visible`. */
+function focusVisible(element: Element): boolean {
+  try {
+    return element.matches(":focus-visible");
+  } catch {
+    return false;
   }
 }
 
@@ -141,6 +124,7 @@ function Screen({
   projectId,
   eager,
   ring,
+  step,
   front,
   operable,
   onPick,
@@ -148,17 +132,24 @@ function Screen({
   screen: TableScreen;
   projectId: string;
   eager: boolean;
-  ring: number;
+  /** Distancia a la elegida en el carrete, o `null` si no está en él. */
+  ring: number | null;
+  /** El paso del carrete que enseña esta pantalla, si lo hay. */
+  step: TableReelStep | null;
   front: boolean;
   operable: boolean;
   onPick: () => void;
 }) {
   const noteId = `${projectId}-screen-${screen.index}-note`;
+  const decisionId = `${projectId}-screen-${screen.index}-decision`;
   const style = {
     "--i": screen.index,
     "--ar": screen.sources.width / screen.sources.height,
-    ...poseVars("r", screen.poses.resultado),
-    ...poseVars("d", ringPose(ring, screen.frame)),
+    // La exposición de la pantalla sale de su luma medida: una interfaz
+    // blanca se apaga y deja de irradiar (sin medida, exposición neutra).
+    ...(screen.sources.luma === null ? {} : { "--luma": screen.sources.luma }),
+    ...poseVars("r", screen.poses.producto),
+    ...poseVars("d", ringPose(ring ?? 3, screen.frame)),
     ...poseVars("i", screen.poses.ingenieria),
   } as CSSProperties;
   return (
@@ -167,7 +158,7 @@ function Screen({
       data-frame={screen.frame}
       data-slot={screen.slot ?? "none"}
       data-front={front ? "true" : undefined}
-      data-far={Math.abs(ring) > 2 ? "true" : undefined}
+      data-far={ring === null || Math.abs(ring) > 2 ? "true" : undefined}
       style={style}
     >
       {/*
@@ -199,7 +190,7 @@ function Screen({
           type="button"
           className="holo-screen__pick"
           aria-current={front ? "true" : undefined}
-          aria-describedby={noteId}
+          aria-describedby={step?.problem ? decisionId : noteId}
           aria-label={screen.alt}
           inert={!operable}
           onClick={onPick}
@@ -209,289 +200,118 @@ function Screen({
       <figcaption className="visually-hidden" id={noteId}>
         {screen.caption}
       </figcaption>
+      {/* La decisión que esta pantalla resuelve: lo que la nota de la mesa
+          pinta, dicho para quien elige la pantalla con el teclado. */}
+      {step?.problem ? (
+        <span className="visually-hidden" id={decisionId}>
+          Problema: {step.problem} Decisión: {step.note}
+        </span>
+      ) : null}
       <span aria-hidden="true" className="holo-screen__tether" />
     </figure>
   );
 }
 
-/* ── El esquema ────────────────────────────────────────────────────────── */
+/* ── Producto: el alcance ──────────────────────────────────────────────── */
 
 /**
- * La caja de un nodo en porcentajes del esquema: tan ancha como la caja que se
- * ve y tan alta como su fila entera, que es el blanco del puntero. La caja
- * visible (`NODE_ROW_FILL` de la fila) la centra el CSS dentro.
+ * El ALCANCE, sobre el cristal y de frente, donde Diseño pone su nota: tres
+ * cifras que el caso sostiene. Se leen como un instrumento, no como tarjetas.
+ * Es texto: sin JavaScript y en móvil se lee igual, bajo las pantallas.
  */
-function nodeBox(node: TableNode, rows: number): CSSProperties {
-  const col = DIAGRAM_BOX / 4;
-  const rowHeight = DIAGRAM_BOX / rows;
-  const cx = col * (node.col + 0.5);
-  const top = rowHeight * node.row;
-  return {
-    left: `${((cx - NODE_HALF_WIDTH) / DIAGRAM_BOX) * 100}%`,
-    top: `${(top / DIAGRAM_BOX) * 100}%`,
-    width: `${((NODE_HALF_WIDTH * 2) / DIAGRAM_BOX) * 100}%`,
-    height: `${(rowHeight / DIAGRAM_BOX) * 100}%`,
-    "--fill": `${NODE_ROW_FILL * 100}%`,
-  } as CSSProperties;
-}
-
-function Diagram({
-  project,
-  focus,
-  chosen,
-  operable,
-  onHover,
-  onPick,
-}: {
-  project: TableProject;
-  /** El nodo que se mira: el apuntado o, si no hay, el elegido. */
-  focus: string | null;
-  /** El nodo elegido (clic, foco o el de entrada): el único tabulable. */
-  chosen: string | null;
-  operable: boolean;
-  onHover: (id: string | null) => void;
-  onPick: (id: string) => void;
-}) {
-  const { architecture } = project;
-  const linked = new Set<string>();
-  for (const edge of architecture.edges) {
-    if (edge.from === focus) linked.add(edge.to);
-    if (edge.to === focus) linked.add(edge.from);
-  }
-
-  function onKey(event: KeyboardEvent<HTMLDivElement>) {
-    const keys = ["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft", "Home", "End"];
-    if (!keys.includes(event.key)) return;
-    const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(".holo-node__box"));
-    const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    if (index < 0) return;
-    event.preventDefault();
-    const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
-    const target =
-      event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (index + step + buttons.length) % buttons.length;
-    buttons[target]?.focus();
-  }
-
+function Scope({ projectId, items }: { projectId: string; items: readonly TableScope[] }) {
+  if (items.length === 0) return null;
+  // Las tres cifras comparten tamaño, el que deja caber la más larga en su
+  // columna: «Markdown» no puede desbordar hacia «OpenAPI».
+  const longest = Math.max(3, ...items.map((item) => item.value.length));
   return (
-    <div
-      className="holo-card holo-diagram"
-      data-focus={focus ?? undefined}
-      style={{ "--rows": architecture.rows } as CSSProperties}
-    >
-      <p className="holo-card__bar">
-        <span>Arquitectura</span>
-        <span className="holo-card__meta">
-          {pad(project.counts.modules)} módulos · {pad(project.counts.connections)} conexiones
-        </span>
+    <div className="holo-scope" style={{ "--vlen": longest } as CSSProperties}>
+      <p className="holo-scope__title" id={`${projectId}-scope`}>
+        Alcance
       </p>
-      <div
-        aria-label={`Sistema de ${project.name}`}
-        className="holo-diagram__field"
-        onKeyDown={onKey}
-        onPointerLeave={() => onHover(null)}
-        role="group"
-      >
-        <svg
-          aria-hidden="true"
-          className="holo-diagram__lines"
-          focusable="false"
-          preserveAspectRatio="none"
-          viewBox={`0 0 ${DIAGRAM_BOX} ${DIAGRAM_BOX}`}
-        >
-          {architecture.edges.map((edge) => (
-            <path
-              key={`${edge.from}-${edge.to}`}
-              className="holo-line"
-              d={edge.d}
-              data-on={focus && (edge.from === focus || edge.to === focus) ? "true" : undefined}
-              data-shape={edge.shape}
-              pathLength={1}
-            />
-          ))}
-        </svg>
-        {/*
-          Un carril por grupo: en escritorio el grupo no existe para la caja
-          (`display: contents`) y cada nodo cae en su sitio del esquema; en
-          móvil el grupo es una fila con su rótulo y los nodos en columna.
-        */}
-        {architecture.lanes.map(({ lane }, col) => (
-          <div
-            key={lane}
-            aria-label={LANE_LABEL[lane]}
-            className="holo-lane"
-            data-lane={lane}
-            role="group"
-            style={{ "--col": col } as CSSProperties}
-          >
-            <p aria-hidden="true" className="holo-lane__title">
-              {LANE_LABEL[lane]}
-            </p>
-            {architecture.nodes
-              .filter((node) => node.lane === lane)
-              .map((node) => {
-                const decisionId = node.decision ? `${project.id}-node-${node.id}-decision` : undefined;
-                const selected = node.id === focus;
-                const isChosen = node.id === chosen;
-                return (
-                  <div
-                    key={node.id}
-                    className="holo-node"
-                    data-has-decision={node.decision ? "true" : undefined}
-                    data-lane={node.lane}
-                    data-linked={linked.has(node.id) ? "true" : undefined}
-                    data-node-id={node.id}
-                    data-selected={selected ? "true" : undefined}
-                    style={nodeBox(node, architecture.rows)}
-                  >
-                    <button
-                      type="button"
-                      className="holo-node__box"
-                      aria-current={isChosen ? "true" : undefined}
-                      aria-describedby={decisionId}
-                      inert={!operable}
-                      onClick={() => onPick(node.id)}
-                      onFocus={() => {
-                        // El teclado manda sobre un puntero en reposo: si el
-                        // ratón se quedó encima de otro nodo, el foco gana.
-                        onHover(null);
-                        onPick(node.id);
-                      }}
-                      onPointerEnter={() => onHover(node.id)}
-                      tabIndex={isChosen ? 0 : -1}
-                    >
-                      {/* El botón es la fila entera —el blanco— y la caja que
-                          se ve ocupa sólo su centro. */}
-                      <span className="holo-node__chip">
-                        {node.thumb ? (
-                          <img
-                            alt=""
-                            className="holo-node__thumb"
-                            data-frame={node.frame ?? undefined}
-                            decoding="async"
-                            loading="lazy"
-                            src={node.thumb}
-                          />
-                        ) : (
-                          <LaneGlyph lane={node.lane} />
-                        )}
-                        <span className="holo-node__label">{node.label}</span>
-                        {node.decision ? <span aria-hidden="true" className="holo-node__mark" /> : null}
-                      </span>
-                    </button>
-                    {node.decision ? (
-                      <p className="holo-node__decision" id={decisionId}>
-                        {node.decision}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })}
+      <dl aria-labelledby={`${projectId}-scope`}>
+        {items.map((item) => (
+          <div key={item.label}>
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
           </div>
         ))}
-      </div>
+      </dl>
     </div>
-  );
-}
-
-/* ── El inspector del módulo elegido ───────────────────────────────────── */
-
-/**
- * El inspector del módulo elegido: en qué capa del sistema vive —las cuatro
- * placas, de la infraestructura abajo al cliente arriba, con la suya
- * encendida—, qué se decidió en él y con qué se conecta.
- */
-function Inspector({ project, node }: { project: TableProject; node: TableNode | undefined }) {
-  const decision = node?.decision ?? (project.architecture.derived ? project.decision : null);
-  const plates = [...project.architecture.lanes].reverse();
-  return (
-    <section aria-label="Inspector del módulo" className="holo-card holo-inspector">
-      <p className="holo-card__bar">
-        <span>Inspector</span>
-        <span className="holo-card__meta">{pad(project.counts.decisions)} decisiones</span>
-      </p>
-      {node ? (
-        <div className="holo-inspector__body" key={node.id}>
-          <div className="holo-inspector__head">
-            <span aria-hidden="true" className="holo-stack">
-              {plates.map(({ lane, count }, index) => (
-                <span
-                  key={lane}
-                  className="holo-plate"
-                  data-empty={count === 0 ? "true" : undefined}
-                  data-on={lane === node.lane ? "true" : undefined}
-                  style={{ "--k": index } as CSSProperties}
-                />
-              ))}
-            </span>
-            <div>
-              <p className="holo-inspector__lane" data-lane={node.lane}>
-                {LANE_LABEL[node.lane]}
-              </p>
-              <h3 className="holo-inspector__title">{node.label}</h3>
-            </div>
-          </div>
-          {decision ? (
-            <blockquote className="holo-inspector__decision">
-              <p>{decision}</p>
-            </blockquote>
-          ) : null}
-          <dl className="holo-inspector__links">
-            {node.inputs.length > 0 ? (
-              <div>
-                <dt>Recibe de</dt>
-                <dd>{node.inputs.join(" · ")}</dd>
-              </div>
-            ) : null}
-            {node.outputs.length > 0 ? (
-              <div>
-                <dt>Entrega a</dt>
-                <dd>{node.outputs.join(" · ")}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
-      ) : null}
-    </section>
   );
 }
 
 /* ── La mesa física ────────────────────────────────────────────────────── */
 
 /**
- * El plano de la Endurance grabado en el cristal: el anillo de doce módulos,
- * los cuatro brazos y el núcleo, en trazo fino. Es la mesa de la nave, no un
- * dato: no dice nada del proyecto.
+ * Cuánto se estiran en vertical los rótulos grabados: la mesa se ve muy
+ * inclinada y un texto plano sobre ella se leería aplastado. Como la pintura
+ * de una calzada, se escribe alargado para que, en escorzo, se lea recto.
  */
-function EnduranceEtching() {
-  const modules = Array.from({ length: 12 }, (_, index) => index * 30);
+const ETCH_STRETCH = 1.7;
+
+/**
+ * EL MAPA GLOBAL DEL SISTEMA, grabado en el cristal (§17): un segmento por
+ * módulo y, por fuera, el filo de cada carril. En Ingeniería sigue al foco
+ * del esquema, y las dos lecturas no se pisan: el FILO dice el carril del
+ * módulo en foco; el RELLENO, su ruta —el módulo pleno, lo que recibe y
+ * entrega a medio tono, sea del carril que sea—. En el centro, como la
+ * esfera de un instrumento, el carril encendido y cuántos módulos tiene: los
+ * demás rótulos ya están en las cabeceras del esquema. En Producto y Diseño
+ * el CSS lo apaga.
+ */
+function SystemRing({ project, focus, path }: { project: TableProject; focus: string | null; path: NodePath }) {
+  // La geometría es del sistema, no del foco: pasar el puntero por el
+  // esquema no la recalcula.
+  const ring = useMemo(() => systemRing(project.architecture), [project.architecture]);
+  const focusLane = project.architecture.nodes.find((node) => node.id === focus)?.lane;
+  const lit = project.architecture.lanes.find((entry) => entry.lane === focusLane);
+  const box = RING_RADIUS + 10;
   return (
-    <svg aria-hidden="true" className="console__etching" focusable="false" viewBox="-120 -120 240 240">
-      <circle r="92" className="console__etching-orbit" />
-      <circle r="70" className="console__etching-orbit" />
-      {modules.map((angle) => (
-        <g key={angle} transform={`rotate(${angle})`}>
-          <rect x="-15" y="-96" width="30" height="22" rx="3" />
-          <path d="M-5 -74v-4M5 -74v-4" />
-        </g>
+    <svg
+      aria-hidden="true"
+      className="console__ring"
+      focusable="false"
+      viewBox={`${-box} ${-box} ${box * 2} ${box * 2}`}
+    >
+      {ring.arcs.map((arc) => (
+        <path
+          key={arc.lane}
+          className="console__lane"
+          d={arc.d}
+          data-on={arc.lane === focusLane ? "true" : undefined}
+        />
       ))}
-      {[45, 135, 225, 315].map((angle) => (
-        <path key={angle} d="M0 -16V-70" transform={`rotate(${angle})`} />
+      {ring.segments.map((segment) => (
+        <path
+          key={segment.id}
+          className="console__seg"
+          d={segment.d}
+          data-lane-on={segment.lane === focusLane ? "true" : undefined}
+          data-state={
+            segment.id === focus
+              ? "focus"
+              : path.upstream.has(segment.id) || path.downstream.has(segment.id)
+                ? "path"
+                : undefined
+          }
+        />
       ))}
-      <circle r="16" />
-      <circle r="7" />
+      {lit ? (
+        <text className="console__readout" textAnchor="middle" transform={`scale(1 ${ETCH_STRETCH})`}>
+          <tspan className="console__readout-count" x="0" y="-1">
+            {pad(lit.count)}
+          </tspan>
+          <tspan className="console__readout-lane" x="0" y="14">
+            {LANE_LABEL[lit.lane]}
+          </tspan>
+        </text>
+      ) : null}
     </svg>
   );
 }
 
-const QUADRANTS: { lane: ArchitectureLane; place: string }[] = [
-  { lane: "cliente", place: "nw" },
-  { lane: "servicio", place: "sw" },
-  { lane: "datos", place: "ne" },
-  { lane: "infraestructura", place: "se" },
-];
-
-function Console({ project, layer }: { project: TableProject; layer: TableLayer }) {
-  const counts = new Map(project.architecture.lanes.map(({ lane, count }) => [lane, count]));
+function Console({ project, focus, path }: { project: TableProject; focus: string | null; path: NodePath }) {
   return (
     <div aria-hidden="true" className="console">
       <div className="console__body">
@@ -499,20 +319,15 @@ function Console({ project, layer }: { project: TableProject; layer: TableLayer 
           <div className="console__glass">
             <div className="console__grid" />
             <div className="console__pool" />
-            <EnduranceEtching />
-            {QUADRANTS.map(({ lane, place }) => (
-              <p key={lane} className="console__quadrant" data-place={place}>
-                <span>{LANE_LABEL[lane]}</span>
-                <small>{pad(counts.get(lane) ?? 0)} módulos</small>
-              </p>
-            ))}
-            <p className="console__plate">
-              <b>{project.name}</b>
-              <span>
-                {pad(project.order)} · {LAYER_LABEL[layer]}
-              </span>
+            <SystemRing focus={focus} path={path} project={project} />
+            {/* El stack grabado: sólo se lee en Ingeniería (el CSS lo apaga
+                en las otras capas, donde es ruido). Una pieza por tecnología,
+                que no se parte, con su separador delante. */}
+            <p className="console__spec">
+              {project.technologies.map((technology) => (
+                <span key={technology}>{technology}</span>
+              ))}
             </p>
-            <p className="console__spec">{project.technologies.join("  ·  ")}</p>
           </div>
         </div>
         <div className="console__front">
@@ -524,6 +339,24 @@ function Console({ project, layer }: { project: TableProject; layer: TableLayer 
   );
 }
 
+/* ── Iconos de trazo ───────────────────────────────────────────────────── */
+
+function GithubMark() {
+  return (
+    <svg aria-hidden="true" className="table-read__code-mark" focusable="false" viewBox="0 0 24 24">
+      <path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21" />
+    </svg>
+  );
+}
+
+function Chevron({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg aria-hidden="true" className="table-dock__chevron" focusable="false" viewBox="0 0 16 16">
+      <path d={direction === "left" ? "M10 3.5 5.5 8l4.5 4.5" : "M6 3.5 10.5 8 6 12.5"} />
+    </svg>
+  );
+}
+
 /* ── La mesa ───────────────────────────────────────────────────────────── */
 
 export function EngineeringTable({
@@ -532,9 +365,11 @@ export function EngineeringTable({
 }: {
   projects: TableProject[];
   /** Kicker y título de la página: el destino, no el proyecto. */
-  head: { kicker: string; title: string; motto: string };
+  head: { kicker: string; title: string };
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const running = useMotionEnabled();
 
   /*
@@ -558,9 +393,10 @@ export function EngineeringTable({
   if (fromHash && fromHash !== lastProject) setLastProject(fromHash);
   const project = enhanced ? (fromHash ?? lastProject ?? projects[0].id) : null;
   const current = projects.find((entry) => entry.id === project) ?? projects[0];
+  const currentIndex = projects.indexOf(current);
 
   const [leaving, setLeaving] = useState<string | null>(null);
-  const [layer, setLayer] = useState<TableLayer>("resultado");
+  const [layer, setLayer] = useState<TableLayer>("producto");
   // Lo que se mira dentro del proyecto: la pantalla del tambor y el módulo del
   // inspector. Pertenecen al proyecto y se olvidan al cambiarlo.
   const [view, setView] = useState<{ project: string | null; front: number; picked: string | null }>({
@@ -569,6 +405,9 @@ export function EngineeringTable({
     picked: null,
   });
   const [hovered, setHovered] = useState<string | null>(null);
+  // El proyecto que se apunta en el muelle: su vista previa. Se recuerda el
+  // último para que la vista previa se apague con su contenido, no vacía.
+  const [peek, setPeek] = useState<{ id: string; open: boolean } | null>(null);
   // La región viva calla hasta el primer cambio real: hidratar no es un
   // cambio. Y si el paso vino de las flechas, el foco ya lleva la nota
   // (`aria-describedby`): anunciarla otra vez la leería dos veces.
@@ -590,11 +429,99 @@ export function EngineeringTable({
     [project, running],
   );
 
+  /** El proyecto a `delta` puestos del actual, dando la vuelta. */
+  const neighbour = useCallback(
+    (delta: number) => projects[(((currentIndex + delta) % projects.length) + projects.length) % projects.length],
+    [currentIndex, projects],
+  );
+  const stepProject = useCallback(
+    (delta: number) => {
+      const target = neighbour(delta);
+      switchProject(target.id);
+      return target;
+    },
+    [neighbour, switchProject],
+  );
+
   useEffect(() => {
     if (!leaving) return;
     const timer = window.setTimeout(() => setLeaving(null), SWITCH_MS);
     return () => window.clearTimeout(timer);
   }, [leaving]);
+
+  /*
+    Las flechas globales: ← → cambian de proyecto cuando el foco no está en
+    ningún sitio (en `body`). Con el foco en el selector de capa, el carrete o
+    el esquema, las flechas ya son suyas; en un campo, del texto. Y sólo con
+    la mesa a la vista: más abajo, cambiar un proyecto que no se ve sería un
+    fantasma.
+  */
+  useEffect(() => {
+    if (!enhanced) return;
+    function onKey(event: globalThis.KeyboardEvent) {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const active = document.activeElement;
+      if (active && active !== document.body && active !== document.documentElement) return;
+      const box = rootRef.current?.getBoundingClientRect();
+      if (box && box.height > 0 && box.bottom < window.innerHeight * 0.5) return;
+      event.preventDefault();
+      stepProject(event.key === "ArrowRight" ? 1 : -1);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enhanced, stepProject]);
+
+  /*
+    La rueda HORIZONTAL con el puntero sobre el muelle pasa de proyecto; la
+    vertical nunca se toca (es el scroll de la página). El acumulado y el
+    descanso viven en una referencia: sobreviven a que el efecto se vuelva a
+    suscribir al cambiar de proyecto, que es justo cuando llega la inercia.
+    Un gesto es un flujo continuo: mientras sigan llegando eventos, el
+    descanso se alarga, y el muelle sólo se rearma tras un silencio. Con un
+    descanso fijo, la cola de inercia de un trackpad (más de un segundo)
+    pasaba un segundo proyecto.
+  */
+  const wheel = useRef({ total: 0, last: 0, rest: 0 });
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!dock || !enhanced) return;
+    function onWheel(event: WheelEvent) {
+      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+      // En móvil el muelle es una fila que se desplaza sola: su rueda es suya.
+      if (window.matchMedia?.("(max-width: 767px)").matches) return;
+      event.preventDefault();
+      const state = wheel.current;
+      const gap = event.timeStamp - state.last;
+      state.last = event.timeStamp;
+      if (event.timeStamp < state.rest) {
+        state.rest = Math.max(state.rest, event.timeStamp + WHEEL_QUIET_MS);
+        return;
+      }
+      if (gap > WHEEL_QUIET_MS) state.total = 0;
+      state.total += event.deltaX;
+      if (Math.abs(state.total) < WHEEL_STEP) return;
+      stepProject(Math.sign(state.total));
+      state.total = 0;
+      state.rest = event.timeStamp + WHEEL_REST_MS;
+    }
+    dock.addEventListener("wheel", onWheel, { passive: false });
+    return () => dock.removeEventListener("wheel", onWheel);
+  }, [enhanced, stepProject]);
+
+  /* En móvil el muelle es una fila que se desplaza: el proyecto elegido se
+     trae al centro de la fila (su imán también es el centro), sin mover la
+     página. */
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || !enhanced || list.scrollWidth <= list.clientWidth + 1) return;
+    const item = list.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!item) return;
+    list.scrollTo({
+      left: item.offsetLeft - (list.clientWidth - item.offsetWidth) / 2,
+      behavior: running ? "smooth" : "auto",
+    });
+  }, [current.id, enhanced, running]);
 
   function chooseLayer(next: TableLayer) {
     setLayer(next);
@@ -617,7 +544,7 @@ export function EngineeringTable({
   }
 
   const setFront = (value: number, fromRing = false) => {
-    const total = current.screens.length;
+    const total = current.reel.length;
     setViaRing(fromRing);
     setSpoken(true);
     setView({ project: current.id, front: ((value % total) + total) % total, picked });
@@ -630,14 +557,31 @@ export function EngineeringTable({
     event.preventDefault();
     const next = front + (event.key === "ArrowRight" ? 1 : -1);
     setFront(next, true);
-    const total = current.screens.length;
-    const index = ((next % total) + total) % total;
+    const total = current.reel.length;
+    const index = current.reel[((next % total) + total) % total].screen;
     // El foco viaja con la pantalla elegida, que es la única en el orden de tabulación.
     requestAnimationFrame(() =>
       rootRef.current
         ?.querySelector<HTMLButtonElement>(`#${current.id} .holo-screen:nth-of-type(${index + 1}) .holo-screen__pick`)
         ?.focus(),
     );
+  }
+
+  /*
+    El muelle con el teclado: ← → pasan de proyecto y el foco viaja con él
+    (el enlace ya existe, no hay que esperar a pintar); Inicio y Fin, al
+    primero y al último.
+  */
+  function onDockKey(event: KeyboardEvent<HTMLUListElement>) {
+    let target: TableProject | null = null;
+    if (event.key === "ArrowRight") target = neighbour(1);
+    if (event.key === "ArrowLeft") target = neighbour(-1);
+    if (event.key === "Home") target = projects[0];
+    if (event.key === "End") target = projects[projects.length - 1];
+    if (!target) return;
+    event.preventDefault();
+    switchProject(target.id);
+    event.currentTarget.querySelector<HTMLAnchorElement>(`a[href="#${target.id}"]`)?.focus();
   }
 
   // Paralaje de la mesa entera, ≤ 2°, sólo con puntero fino y movimiento.
@@ -674,18 +618,64 @@ export function EngineeringTable({
     }
   }
 
-  const frontScreen = current.screens[front];
+  /*
+    Las miniaturas de la vista previa (el peldaño pequeño, cinco imágenes
+    ligeras) se piden en cuanto la mesa se ha asentado: así la vista previa
+    nunca espera a la red ni compite con las pantallas grandes de la mesa.
+  */
+  useEffect(() => {
+    if (!enhanced) return;
+    const timer = window.setTimeout(() => {
+      for (const entry of projects) new Image().src = entry.screens[0].sources.thumb;
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [enhanced, projects]);
+
+  /*
+    La vista previa se apaga con un respiro: da tiempo a llevar el puntero
+    del enlace a ella sin que desaparezca, y mientras se apunta, se queda.
+    Escape la cierra siempre (WCAG 1.4.13).
+  */
+  const peekTimer = useRef<number | undefined>(undefined);
+  const holdPeek = () => window.clearTimeout(peekTimer.current);
+  const closePeek = useCallback(() => {
+    window.clearTimeout(peekTimer.current);
+    setPeek((value) => (value?.open ? { ...value, open: false } : value));
+  }, []);
+  function releasePeek() {
+    window.clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(closePeek, PEEK_LINGER_MS);
+  }
+  function peekAt(entry: TableProject) {
+    holdPeek();
+    prefetch(entry);
+    setPeek({ id: entry.id, open: true });
+  }
+  const peekOpen = Boolean(peek?.open);
+  useEffect(() => {
+    if (!peekOpen) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") closePeek();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [closePeek, peekOpen]);
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
+
+  const frontStep = current.reel[front];
   const chosenId = picked ?? initialNode(current.architecture);
   const focusId = hovered ?? chosenId;
   const focusNode = current.architecture.nodes.find((node) => node.id === focusId);
+  const focusPath = nodePath(current.architecture.edges, focusId);
+  const peeked = peek ? projects.find((entry) => entry.id === peek.id) : undefined;
   const announcement =
     layer === "ingenieria"
       ? `${current.name} · Ingeniería · ${current.counts.modules} módulos`
       : layer === "diseno"
-        ? `${current.name} · Diseño · pantalla ${front + 1} de ${current.counts.screens}${
-            viaRing || !frontScreen ? "" : `: ${frontScreen.caption}`
-          }`
-        : `${current.name} · Resultado`;
+        ? `${current.name} · Diseño · ${current.reelKind === "decisions" ? "decisión" : "pantalla"} ${front + 1} de ${
+            current.reel.length
+          }${viaRing || !frontStep ? "" : `: ${frontStep.note}`}`
+        : `${current.name} · Producto`;
 
   return (
     <div
@@ -701,10 +691,6 @@ export function EngineeringTable({
         <p className="table-kicker">{head.kicker}</p>
         <h1 className="table-head__title">{head.title}</h1>
       </header>
-
-      <p aria-hidden="true" className="table-motto">
-        {head.motto}
-      </p>
 
       <div aria-label="Profundidad de lectura" className="table-tabs" onKeyDown={onTabKey} role="tablist">
         {TABLE_LAYERS.map((entry) => (
@@ -726,7 +712,7 @@ export function EngineeringTable({
       </div>
 
       <div className="console-wrap">
-        <Console layer={layer} project={current} />
+        <Console focus={focusId} path={focusPath} project={current} />
       </div>
 
       {projects.map((entry, projectIndex) => {
@@ -735,7 +721,9 @@ export function EngineeringTable({
         const demo = entry.links.find((link) => link.kind === "demo");
         const repository = entry.links.find((link) => link.kind === "repository");
         const entryFront = entry.id === current.id ? front : 0;
+        const step = entry.reel[entryFront];
         const operable = (target: TableLayer) => Boolean(isActive) && layer === target;
+        const stepLabel = entry.reelKind === "decisions" ? "Decisión" : "Pantalla";
         return (
           <section
             key={entry.id}
@@ -747,7 +735,13 @@ export function EngineeringTable({
           >
             <div className="table-read">
               <span aria-hidden="true" className="table-read__rule" />
-              <h2 className="table-read__title" id={`${entry.id}-title`}>
+              {/* El tamaño del nombre sale de su longitud: cabe en una línea
+                  si razonablemente puede (§17). */}
+              <h2
+                className="table-read__title"
+                id={`${entry.id}-title`}
+                style={{ "--len": Math.max(entry.name.length, 5) } as CSSProperties}
+              >
                 {entry.name}
               </h2>
               <p className="table-read__descriptor">{entry.descriptor}</p>
@@ -775,37 +769,37 @@ export function EngineeringTable({
                 ) : null}
                 {repository ? (
                   <a className="table-read__code" href={repository.href} rel="noopener noreferrer" target="_blank">
-                    Código <span aria-hidden="true">↗</span>
+                    <GithubMark />
+                    <span className="table-read__code-label">Ver código</span>
+                    <span aria-hidden="true" className="table-read__code-out">
+                      ↗
+                    </span>
                   </a>
                 ) : null}
               </div>
             </div>
-
-            <dl className="table-readout">
-              <div>
-                <dt>Pantallas</dt>
-                <dd>{pad(entry.counts.screens)}</dd>
-              </div>
-              <div>
-                <dt>Módulos</dt>
-                <dd>{pad(entry.counts.modules)}</dd>
-              </div>
-              <div>
-                <dt>Decisiones</dt>
-                <dd>{pad(entry.counts.decisions)}</dd>
-              </div>
-            </dl>
 
             <div
               aria-labelledby={`table-tab-${layer}`}
               className="table-scene"
               id={`${entry.id}-stage`}
               role={enhanced ? "tabpanel" : undefined}
+              style={
+                {
+                  // El esquema mide lo que el sistema ocupa: columnas y filas
+                  // viajan al escenario para colocar el par esquema+inspector.
+                  "--cols": entry.architecture.cols,
+                  "--rows": entry.architecture.rows,
+                  "--reel-x": REEL_CENTER,
+                } as CSSProperties
+              }
             >
               {/* Fuera de `.holo` a propósito: dentro del contexto 3D, un
                   hijo que se mezcla o recorta obliga a aplanar el grupo, y
-                  entonces ninguna pantalla tiene perspectiva de verdad. */}
+                  entonces ninguna pantalla tiene perspectiva de verdad. El
+                  velo de Ingeniería también: sombra detrás de los paneles. */}
               <span aria-hidden="true" className="holo-beam" />
+              <span aria-hidden="true" className="holo-shade" />
               <div className="holo">
                 <div
                   aria-label={`Pantallas de ${entry.name}`}
@@ -814,27 +808,29 @@ export function EngineeringTable({
                   role="group"
                 >
                   {entry.screens.map((screen) => {
-                    const ring = ringOffset(screen.index, entryFront, entry.screens.length);
+                    const index = entry.reel.findIndex((item) => item.screen === screen.index);
+                    const ring = index < 0 ? null : ringOffset(index, entryFront, entry.reel.length);
                     return (
                       <Screen
                         key={screen.src}
                         eager={projectIndex === 0 && screen.featured}
                         front={ring === 0}
-                        onPick={() => setFront(screen.index)}
+                        onPick={() => setFront(index)}
                         operable={operable("diseno")}
                         projectId={entry.id}
                         ring={ring}
                         screen={screen}
+                        step={index < 0 ? null : entry.reel[index]}
                       />
                     );
                   })}
                 </div>
 
-                <Inspector
+                <SystemInspector
                   node={entry.id === current.id ? focusNode : undefined}
                   project={entry}
                 />
-                <Diagram
+                <SystemDiagram
                   chosen={entry.id === current.id ? chosenId : initialNode(entry.architecture)}
                   focus={entry.id === current.id ? focusId : null}
                   onHover={setHovered}
@@ -844,23 +840,46 @@ export function EngineeringTable({
                 />
               </div>
 
-              <div className="holo-note" inert={!operable("diseno")}>
+              <Scope items={entry.scope} projectId={entry.id} />
+
+              {/*
+                DISEÑO: la nota del carrete. Con decisiones, una decisión
+                legible —problema apagado, decisión brillante—; sin ellas, el
+                pie de la pantalla. Callada para el lector de pantalla: la
+                pantalla elegida ya la lleva por `aria-describedby`.
+              */}
+              <div className="holo-note" data-kind={entry.reelKind} inert={!operable("diseno")}>
                 <button
-                  aria-label="Pantalla anterior"
+                  aria-label={`${stepLabel} anterior`}
                   className="holo-note__step"
                   onClick={() => setFront(entryFront - 1)}
                   type="button"
                 >
                   <span aria-hidden="true">←</span>
                 </button>
-                <p aria-hidden="true" className="holo-note__text">
-                  <span className="holo-note__index">
-                    {pad(entryFront + 1)} / {pad(entry.screens.length)}
-                  </span>
-                  {entry.screens[entryFront]?.caption}
-                </p>
+                <div aria-hidden="true" className="holo-note__text">
+                  <p className="holo-note__index">
+                    {pad(entryFront + 1)} / {pad(entry.reel.length)}
+                  </p>
+                  {step?.problem ? (
+                    <>
+                      <p className="holo-note__line" data-part="problem">
+                        <span className="holo-note__label">Problema</span>
+                        <span className="holo-note__problem">{step.problem}</span>
+                      </p>
+                      <p className="holo-note__line" data-part="decision">
+                        <span className="holo-note__label">Decisión</span>
+                        <span className="holo-note__decision">{step.note}</span>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="holo-note__line" data-part="caption">
+                      <span className="holo-note__caption">{step?.note}</span>
+                    </p>
+                  )}
+                </div>
                 <button
-                  aria-label="Pantalla siguiente"
+                  aria-label={`${stepLabel} siguiente`}
                   className="holo-note__step"
                   onClick={() => setFront(entryFront + 1)}
                   type="button"
@@ -897,30 +916,108 @@ export function EngineeringTable({
         );
       })}
 
-      <nav aria-label="Proyectos" className="table-dock">
-        <p aria-hidden="true" className="table-dock__count">
-          <span>{pad(current.order)}</span> / {pad(projects.length)}
-        </p>
-        <ul>
-          {projects.map((entry) => (
-            <li key={entry.id}>
-              <a
-                aria-current={enhanced && entry.id === project ? "true" : undefined}
-                className="table-dock__item"
-                href={`#${entry.id}`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  switchProject(entry.id);
-                }}
-                onFocus={() => prefetch(entry)}
-                onPointerEnter={() => prefetch(entry)}
+      {/*
+        EL MUELLE: la barra de misión. Sin JavaScript es una lista de enlaces
+        `#id` que `:target` resuelve; con él, el activo lleva `aria-current`,
+        una luz se desliza bajo él y apuntar otro proyecto lo previsualiza.
+      */}
+      <nav
+        ref={dockRef}
+        aria-label="Proyectos"
+        className="table-dock"
+        style={{ "--n": projects.length, "--active": currentIndex } as CSSProperties}
+      >
+        <button
+          aria-label="Proyecto anterior"
+          className="table-dock__step"
+          data-dir="prev"
+          onClick={() => stepProject(-1)}
+          type="button"
+        >
+          <Chevron direction="left" />
+        </button>
+        <div className="table-dock__rail">
+          <ul ref={listRef} className="table-dock__list" onKeyDown={onDockKey}>
+            {projects.map((entry, index) => (
+              <li
+                key={entry.id}
+                data-dist={enhanced ? Math.min(Math.abs(index - currentIndex), 2) : undefined}
               >
-                <span className="visually-hidden">{entry.title}</span>
-                <span aria-hidden="true">{entry.name}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
+                <a
+                  aria-current={enhanced && entry.id === project ? "true" : undefined}
+                  className="table-dock__item"
+                  href={`#${entry.id}`}
+                  onBlur={closePeek}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    switchProject(entry.id);
+                  }}
+                  onFocus={(event: FocusEvent<HTMLAnchorElement>) => {
+                    prefetch(entry);
+                    if (focusVisible(event.currentTarget)) peekAt(entry);
+                  }}
+                  onPointerEnter={(event) => {
+                    prefetch(entry);
+                    if (event.pointerType === "mouse") peekAt(entry);
+                  }}
+                  onPointerLeave={releasePeek}
+                >
+                  <span className="visually-hidden">{entry.title}</span>
+                  <span aria-hidden="true" className="table-dock__index">
+                    {pad(index + 1)}
+                  </span>
+                  <span aria-hidden="true" className="table-dock__name">
+                    {entry.name}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {/* La luz del activo: nace ya en su sitio al hidratar (no viaja
+              desde el primero) y después se desliza de uno a otro. */}
+          {enhanced ? <span aria-hidden="true" className="table-dock__glow" /> : null}
+          {peeked ? (
+            <div
+              aria-hidden="true"
+              className="table-dock__peek"
+              data-open={peek?.open && peeked.id !== current.id ? "true" : undefined}
+              onPointerEnter={holdPeek}
+              onPointerLeave={releasePeek}
+              style={
+                {
+                  "--peek": projects.indexOf(peeked),
+                  ...(peeked.screens[0].sources.luma === null ? {} : { "--luma": peeked.screens[0].sources.luma }),
+                } as CSSProperties
+              }
+            >
+              <span className="table-dock__peek-shot" data-frame={peeked.screens[0].frame}>
+                {/* Una imagen por proyecto (`key`): con la red lenta, mientras
+                    llega, se ve el fondo oscuro, nunca la captura de otro. */}
+                <img
+                  key={peeked.id}
+                  alt=""
+                  decoding="async"
+                  height={peeked.screens[0].sources.height}
+                  src={peeked.screens[0].sources.thumb}
+                  width={peeked.screens[0].sources.width}
+                />
+              </span>
+              <span className="table-dock__peek-text">
+                <span className="table-dock__peek-name">{peeked.name}</span>
+                <span className="table-dock__peek-what">{peeked.descriptor}</span>
+              </span>
+            </div>
+          ) : null}
+        </div>
+        <button
+          aria-label="Proyecto siguiente"
+          className="table-dock__step"
+          data-dir="next"
+          onClick={() => stepProject(1)}
+          type="button"
+        >
+          <Chevron direction="right" />
+        </button>
       </nav>
 
       <p aria-live="polite" className="visually-hidden">

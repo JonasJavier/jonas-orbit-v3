@@ -13,17 +13,22 @@ import type { Project } from "@/lib/projects";
  * Todo lo que la página necesita para disponer un proyecto sobre la mesa se
  * deriva aquí de los DATOS del proyecto, sin DOM y sin React: qué pantallas
  * hay y dónde va cada una en cada capa, cómo se dibuja el esquema de su
- * sistema y qué cifras enseña. `docs/design/endurance-proyectos.md` §5, §6 y
- * §16 (segundo pase).
+ * sistema y qué cifras enseña. `docs/design/endurance-proyectos.md` §5, §6,
+ * §16 (segundo pase) y §17 (tercer pase: Producto, decisiones y rutas).
  *
  * El motivo de que sea una función y no una tabla es P2: si las poses fueran
  * números escritos por proyecto, el sexto proyecto llegaría sin mesa. Aquí
  * llega con la misma que los otros cinco.
  */
 
-export type TableLayer = "resultado" | "diseno" | "ingenieria";
+/**
+ * Las tres profundidades. La primera se llamaba «Resultado» y enseñaba el
+ * producto terminado, no un resultado: §17 la llama por lo que es y reserva
+ * los resultados para el caso completo, donde hay texto para sostenerlos.
+ */
+export type TableLayer = "producto" | "diseno" | "ingenieria";
 export const TABLE_LAYERS: readonly TableLayer[] = [
-  "resultado",
+  "producto",
   "diseno",
   "ingenieria",
 ];
@@ -56,10 +61,15 @@ export interface ScreenSources {
   thumb: string;
   width: number;
   height: number;
+  /**
+   * Luma media medida de la captura (0-1), o `null` sin manifiesto. La mesa
+   * expone cada pantalla con ella: una interfaz blanca se apaga un poco.
+   */
+  luma: number | null;
 }
 
 /**
- * Dónde cae una pantalla en Resultado: el centro es la destacada, a su
+ * Dónde cae una pantalla en Producto: el centro es la destacada, a su
  * izquierda el teléfono y a su derecha la siguiente de escritorio. Las demás
  * esperan dentro de la mesa hasta que Diseño las levanta.
  */
@@ -77,7 +87,22 @@ export interface TableScreen {
   /** El nodo del sistema que la pantalla representa, si lo hay. */
   nodeId: string | null;
   sources: ScreenSources;
-  poses: Record<"resultado" | "ingenieria", ScreenPose>;
+  poses: Record<"producto" | "ingenieria", ScreenPose>;
+}
+
+/**
+ * Un paso del carrete de Diseño: la pantalla que se pone delante y lo que la
+ * mesa dice de ella. Con decisiones de diseño declaradas, el carrete recorre
+ * ESAS pantallas y dice problema y decisión; sin ellas, recorre todas con su
+ * pie de foto, como antes (§17).
+ */
+export interface TableReelStep {
+  /** Índice de la pantalla en `screens`. */
+  screen: number;
+  /** El problema de experiencia, o `null` cuando el paso es sólo un pie. */
+  problem: string | null;
+  /** La decisión, o el pie de la captura si no hay decisión declarada. */
+  note: string;
 }
 
 export interface TableNode {
@@ -110,9 +135,15 @@ export interface TableEdge {
 export interface TableArchitecture {
   /** Filas del esquema: las del carril más poblado. */
   rows: number;
+  /**
+   * Columnas del esquema: sólo los carriles que el sistema ocupa (§17). Un
+   * sistema pequeño dibuja un esquema pequeño —Izak's Photos no tiene datos
+   * propios y no se le pinta una columna vacía.
+   */
+  cols: number;
   nodes: TableNode[];
   edges: TableEdge[];
-  /** Cuántos nodos lleva cada carril, en el orden fijo de los carriles. */
+  /** Los carriles ocupados, en el orden fijo de los carriles, con su cuenta. */
   lanes: { lane: ArchitectureLane; count: number }[];
   /**
    * `true` cuando la ficha no declara `architecture` y el esquema se
@@ -133,6 +164,11 @@ interface TableLink {
  * serializable a propósito —sin el cuerpo MDX compilado— porque cruza al
  * componente cliente.
  */
+export interface TableScope {
+  value: string;
+  label: string;
+}
+
 export interface TableProject {
   id: ProjectId;
   slug: string;
@@ -160,13 +196,19 @@ export interface TableProject {
   technologies: string[];
   links: TableLink[];
   screens: TableScreen[];
+  /** El recorrido de Diseño: decisiones declaradas o, sin ellas, las capturas. */
+  reel: TableReelStep[];
+  /** ¿El carrete dice decisiones (problema → decisión) o sólo pies de foto? */
+  reelKind: "decisions" | "captions";
+  /** Alcance: tres cifras que afirma el caso (vacío si la ficha no lo declara). */
+  scope: TableScope[];
   architecture: TableArchitecture;
   counts: { screens: number; modules: number; connections: number; decisions: number };
 }
 
 /* ── Capturas ──────────────────────────────────────────────────────────── */
 
-type MediaManifest = Record<string, { width: number; height: number; steps: number[] }>;
+type MediaManifest = Record<string, { width: number; height: number; steps: number[]; luma?: number }>;
 const media = projectsMedia as MediaManifest;
 
 /**
@@ -183,7 +225,7 @@ const FALLBACK_SIZE: Record<ScreenFrame, { width: number; height: number }> = {
 export function screenSources(src: string, frame: ScreenFrame): ScreenSources {
   const entry = media[src];
   if (!entry || entry.steps.length === 0) {
-    return { src, srcSet: "", thumb: src, ...FALLBACK_SIZE[frame] };
+    return { src, srcSet: "", thumb: src, ...FALLBACK_SIZE[frame], luma: entry?.luma ?? null };
   }
   const base = src.replace(/\.png$/, "");
   const largest = entry.steps[entry.steps.length - 1];
@@ -193,6 +235,7 @@ export function screenSources(src: string, frame: ScreenFrame): ScreenSources {
     thumb: `${base}-${entry.steps[0]}.webp`,
     width: entry.width,
     height: entry.height,
+    luma: entry.luma ?? null,
   };
 }
 
@@ -208,7 +251,10 @@ export function laneForTechnology(technology: string): ArchitectureLane {
   const matches = (...needles: string[]) => needles.some((needle) => name.includes(needle));
   if (matches("react", "vite", "typescript", "javascript", "next", "css", "html", "tailwind")) return "cliente";
   if (matches("postgres", "redis", "sqlite", "mysql", "mongo")) return "datos";
-  if (matches("railway", "whatsapp", "cloudflare", "vercel", "docker", "nginx", "aws")) return "infraestructura";
+  // Lo que el sistema usa de fuera —un canal, una pasarela, una API ajena—
+  // no es lo que lo sostiene (§17).
+  if (matches("whatsapp", "stripe", "paypal", "twilio", "sendgrid", "openai", "google maps")) return "integraciones";
+  if (matches("railway", "cloudflare", "vercel", "docker", "nginx", "aws")) return "infraestructura";
   return "servicio";
 }
 
@@ -228,10 +274,14 @@ function slugify(text: string): string {
  * coinciden a cualquier tamaño sin medir el DOM.
  */
 export const DIAGRAM_BOX = 1000;
-/** Ancho de columna: cuatro carriles. */
-const COL = DIAGRAM_BOX / ARCHITECTURE_LANES.length;
-/** Media caja de nodo, en unidades del esquema: el 80 % de la columna. */
-export const NODE_HALF_WIDTH = COL * 0.4;
+/** Ancho de columna del esquema: tantas columnas como carriles ocupados. */
+export function columnWidth(cols: number): number {
+  return DIAGRAM_BOX / Math.max(1, cols);
+}
+/** Media caja de nodo, en unidades del esquema: el 80 % de su columna. */
+export function nodeHalfWidth(cols: number): number {
+  return columnWidth(cols) * 0.4;
+}
 /** Alto de caja como fracción de su fila. */
 export const NODE_ROW_FILL = 0.7;
 
@@ -265,8 +315,8 @@ function laneOrder(
 
 const round = (value: number) => Math.round(value * 10) / 10;
 
-function nodeCenter(node: Pick<TableNode, "col" | "row">, rows: number) {
-  return { x: COL * (node.col + 0.5), y: (DIAGRAM_BOX / rows) * (node.row + 0.5) };
+function nodeCenter(node: Pick<TableNode, "col" | "row">, rows: number, cols: number) {
+  return { x: columnWidth(cols) * (node.col + 0.5), y: (DIAGRAM_BOX / rows) * (node.row + 0.5) };
 }
 
 /**
@@ -334,11 +384,14 @@ function edgePath(
   from: TableNode,
   to: TableNode,
   rows: number,
+  cols: number,
   arcDepth: number,
   nodes: readonly TableNode[],
 ): { shape: EdgeShape; d: string } {
-  const a = nodeCenter(from, rows);
-  const b = nodeCenter(to, rows);
+  const COL = columnWidth(cols);
+  const NODE_HALF_WIDTH = nodeHalfWidth(cols);
+  const a = nodeCenter(from, rows, cols);
+  const b = nodeCenter(to, rows, cols);
   const halfHeight = ((DIAGRAM_BOX / rows) * NODE_ROW_FILL) / 2;
 
   if (from.col !== to.col) {
@@ -411,12 +464,16 @@ function layout(drafts: readonly DraftNode[], declaredEdges: readonly { from: st
   const laneOf = new Map(drafts.map((node) => [node.id, node.lane]));
   const edges = declaredEdges.filter((edge) => laneOf.has(edge.from) && laneOf.has(edge.to));
 
-  const perLane = ARCHITECTURE_LANES.map((lane) => {
+  // Sólo los carriles que el sistema ocupa: el esquema tiene el ancho de lo
+  // que hay, no el de la taxonomía entera (§17).
+  const activeLanes = ARCHITECTURE_LANES.filter((lane) => drafts.some((node) => node.lane === lane));
+  const perLane = activeLanes.map((lane) => {
     const ids = drafts.filter((node) => node.lane === lane).map((node) => node.id);
     const internal = edges.filter((edge) => laneOf.get(edge.from) === lane && laneOf.get(edge.to) === lane);
     return laneOrder(ids, internal);
   });
   const rows = Math.max(1, ...perLane.map((ids) => ids.length));
+  const cols = Math.max(1, activeLanes.length);
 
   const byId = new Map(drafts.map((node) => [node.id, node]));
   const labelOf = (id: string) => byId.get(id)?.label ?? id;
@@ -455,6 +512,7 @@ function layout(drafts: readonly DraftNode[], declaredEdges: readonly { from: st
 
   return {
     rows,
+    cols,
     nodes,
     edges: edges.map((edge) => ({
       from: edge.from,
@@ -463,12 +521,64 @@ function layout(drafts: readonly DraftNode[], declaredEdges: readonly { from: st
         placed.get(edge.from) as TableNode,
         placed.get(edge.to) as TableNode,
         rows,
+        cols,
         depth.get(`${edge.from}>${edge.to}`) ?? 0,
         nodes,
       ),
     })),
-    lanes: ARCHITECTURE_LANES.map((lane, index) => ({ lane, count: perLane[index].length })),
+    lanes: activeLanes.map((lane, index) => ({ lane, count: perLane[index].length })),
   };
+}
+
+/**
+ * LA RUTA de un nodo (§17): todo lo que llega a él y todo lo que sale de él,
+ * siguiendo las aristas del MDX en su sentido. Elegir «Pagos y cobros»
+ * enciende el camino entero —reservas y facturación antes; contabilidad,
+ * ledger, reportes y PostgreSQL después— y el resto del sistema se apaga: se
+ * lee la arquitectura, no sólo se ve.
+ *
+ * Una arista entra en la ruta sólo si va por ella: de un antecesor hacia el
+ * nodo o de él hacia un sucesor. Un atajo que salta el nodo (un antecesor que
+ * escribe directo en un sucesor) no pasa por él y no se enciende.
+ */
+export interface NodePath {
+  upstream: ReadonlySet<string>;
+  downstream: ReadonlySet<string>;
+  /** Aristas de la ruta, con la clave `desde>hasta`. */
+  edges: ReadonlySet<string>;
+}
+
+export const edgeKey = (edge: { from: string; to: string }) => `${edge.from}>${edge.to}`;
+
+export function nodePath(
+  edges: readonly { from: string; to: string }[],
+  id: string | null,
+): NodePath {
+  if (!id) return { upstream: new Set(), downstream: new Set(), edges: new Set() };
+  const closure = (forward: boolean) => {
+    const seen = new Set<string>();
+    const queue = [id];
+    while (queue.length > 0) {
+      const current = queue.shift() as string;
+      for (const edge of edges) {
+        const [from, to] = forward ? [edge.from, edge.to] : [edge.to, edge.from];
+        if (from === current && to !== id && !seen.has(to)) {
+          seen.add(to);
+          queue.push(to);
+        }
+      }
+    }
+    return seen;
+  };
+  const downstream = closure(true);
+  const upstream = closure(false);
+  const onPath = new Set<string>();
+  for (const edge of edges) {
+    const intoFocus = (edge.to === id || upstream.has(edge.to)) && upstream.has(edge.from);
+    const outOfFocus = (edge.from === id || downstream.has(edge.from)) && downstream.has(edge.to);
+    if (intoFocus || outOfFocus) onPath.add(edgeKey(edge));
+  }
+  return { upstream, downstream, edges: onPath };
 }
 
 export function tableArchitecture(prose: Prose): TableArchitecture {
@@ -513,7 +623,7 @@ export function tableArchitecture(prose: Prose): TableArchitecture {
 /* ── Poses ─────────────────────────────────────────────────────────────── */
 
 /**
- * RESULTADO. Tres pantallas en arco sobre la mesa, como en el boceto: la
+ * PRODUCTO. Tres pantallas en arco sobre la mesa, como en el boceto: la
  * destacada al centro y de frente, el teléfono a su izquierda y la siguiente
  * de escritorio a su derecha, las dos giradas hacia quien mira. Sin teléfono,
  * la izquierda la ocupa otra de escritorio, más pequeña y más atrás.
@@ -546,7 +656,7 @@ const RESTING_POSE: ScreenPose = { x: 0.035, y: 0.42, z: -0.12, ry: 0, s: 0.42, 
  * giro adelanta— quede siempre DETRÁS de la elegida: con un tambor de radio
  * corto las vecinas la atravesaban.
  */
-const REEL_CENTER = 0.07;
+export const REEL_CENTER = 0.07;
 const REEL_ANGLE = 52;
 const REEL_STEPS = [0, 0.215, 0.28, 0.34];
 const REEL_DEPTH = [0, -0.13, -0.16, -0.2];
@@ -595,7 +705,7 @@ export function tableScreens(prose: Prose, architecture: TableArchitecture): Tab
     architecture.nodes.filter((node) => node.screen).map((node) => [node.screen as string, node]),
   );
 
-  // Puestos de Resultado: primero el teléfono a la izquierda y la siguiente de
+  // Puestos de Producto: primero el teléfono a la izquierda y la siguiente de
   // escritorio a la derecha; sin teléfono, dos de escritorio.
   const frameOf = (image: (typeof images)[number]): ScreenFrame => image.frame ?? "desktop";
   const rest = images.slice(1);
@@ -609,7 +719,7 @@ export function tableScreens(prose: Prose, architecture: TableArchitecture): Tab
   return images.map((image, index) => {
     const frame = frameOf(image);
     const slot = slotOf(image);
-    const resultado = slot ? RESULT_POSES[slot][frame] : RESTING_POSE;
+    const producto = slot ? RESULT_POSES[slot][frame] : RESTING_POSE;
     return {
       src: image.src,
       alt: image.alt,
@@ -620,9 +730,31 @@ export function tableScreens(prose: Prose, architecture: TableArchitecture): Tab
       slot,
       nodeId: nodeByScreen.get(image.src)?.id ?? null,
       sources: screenSources(image.src, frame),
-      poses: { resultado, ingenieria: engineeringPose(resultado) },
+      poses: { producto, ingenieria: engineeringPose(producto) },
     };
   });
+}
+
+/**
+ * El carrete de Diseño. Con `designDecisions`, un paso por decisión y en su
+ * orden (la pantalla es la que la resuelve); sin ellas, un paso por captura
+ * con su pie. Una decisión que señalase una pantalla ajena la rechaza antes
+ * el validador del contenido; aquí se descarta sin romper la mesa.
+ */
+export function tableReel(
+  prose: Prose,
+  screens: readonly TableScreen[],
+): { reel: TableReelStep[]; kind: "decisions" | "captions" } {
+  const bySrc = new Map(screens.map((screen) => [screen.src, screen.index]));
+  const decisions = (prose.designDecisions ?? []).flatMap((entry) => {
+    const screen = bySrc.get(entry.screen);
+    return screen === undefined ? [] : [{ screen, problem: entry.problem, note: entry.decision }];
+  });
+  if (decisions.length > 0) return { reel: decisions, kind: "decisions" };
+  return {
+    reel: screens.map((screen) => ({ screen: screen.index, problem: null, note: screen.caption })),
+    kind: "captions",
+  };
 }
 
 /* ── El proyecto entero ────────────────────────────────────────────────── */
@@ -631,6 +763,7 @@ export function tableProject(project: Project, projectsHref: string): TableProje
   const { prose } = project;
   const architecture = tableArchitecture(prose);
   const screens = tableScreens(prose, architecture);
+  const { reel, kind } = tableReel(prose, screens);
   const [name, tail] = prose.title.split(/\s+—\s+/);
   return {
     id: project.id,
@@ -647,6 +780,9 @@ export function tableProject(project: Project, projectsHref: string): TableProje
     technologies: [...prose.technologies],
     links: (prose.links ?? []).map((link) => ({ ...link })),
     screens,
+    reel,
+    reelKind: kind,
+    scope: (prose.scope ?? []).map((entry) => ({ ...entry })),
     architecture,
     counts: {
       screens: screens.length,
@@ -685,4 +821,106 @@ export function projectFromHash(
 /** El nodo que el inspector enseña al entrar: el primero con decisión. */
 export function initialNode(architecture: TableArchitecture): string | null {
   return (architecture.nodes.find((node) => node.decision) ?? architecture.nodes[0])?.id ?? null;
+}
+
+/* ── El anillo de la mesa ──────────────────────────────────────────────── */
+
+/**
+ * EL MAPA GLOBAL DEL SISTEMA grabado en la mesa (§17): un anillo con UN
+ * segmento por módulo, agrupados en arcos por carril ocupado —con un hueco
+ * entre arcos— y, por fuera de cada arco, su filo: la línea que se enciende
+ * con el carril. Sustituye al plano de doce módulos de la Endurance, que era
+ * la nave y no decía nada del proyecto: ahora el anillo es el sistema entero
+ * de un vistazo, y el esquema de encima, su detalle.
+ *
+ * Los rótulos no van alrededor: repetían las cabeceras del esquema que está
+ * justo encima y, en escorzo, se leían diminutos. La mesa pinta en el centro
+ * sólo el carril encendido y su cifra; aquí basta la geometría.
+ *
+ * Coordenadas en unidades del SVG, centro en 0 y ángulos en grados con el
+ * convenio del SVG (0° a la derecha, crecen en el sentido de las agujas). El
+ * anillo empieza al fondo (−90°), como una esfera de reloj, y los carriles
+ * siguen el orden del esquema.
+ */
+interface RingSegment {
+  id: string;
+  lane: ArchitectureLane;
+  /** Sector anular, listo para `<path d>`. */
+  d: string;
+}
+
+interface RingArc {
+  lane: ArchitectureLane;
+  count: number;
+  /** El filo del carril, por fuera de sus segmentos: un arco sin relleno. */
+  d: string;
+}
+
+interface SystemRing {
+  segments: RingSegment[];
+  arcs: RingArc[];
+}
+
+export const RING_RADIUS = 100;
+const RING_WIDTH = 16;
+/** Hueco entre carriles y entre módulos de un mismo carril, en grados. */
+const RING_LANE_GAP = 11;
+const RING_SEGMENT_GAP = 2.4;
+/** El filo de cada carril, separado del anillo. */
+const RING_EDGE = RING_RADIUS + 8;
+
+const rad = (angle: number) => (angle * Math.PI) / 180;
+
+function polar(radius: number, angle: number) {
+  return { x: round(radius * Math.cos(rad(angle))), y: round(radius * Math.sin(rad(angle))) };
+}
+
+/** Un sector anular de `from` a `to` grados, en el sentido de las agujas. */
+function annularSector(inner: number, outer: number, from: number, to: number): string {
+  const large = to - from > 180 ? 1 : 0;
+  const a = polar(outer, from);
+  const b = polar(outer, to);
+  const c = polar(inner, to);
+  const e = polar(inner, from);
+  return `M${a.x} ${a.y}A${outer} ${outer} 0 ${large} 1 ${b.x} ${b.y}L${c.x} ${c.y}A${inner} ${inner} 0 ${large} 0 ${e.x} ${e.y}Z`;
+}
+
+/** Un arco de circunferencia de `from` a `to` grados, sin cerrar. */
+function arcLine(radius: number, from: number, to: number): string {
+  const a = polar(radius, from);
+  const b = polar(radius, to);
+  return `M${a.x} ${a.y}A${radius} ${radius} 0 ${to - from > 180 ? 1 : 0} 1 ${b.x} ${b.y}`;
+}
+
+export function systemRing(architecture: TableArchitecture): SystemRing {
+  const { lanes, nodes } = architecture;
+  const total = nodes.length;
+  if (total === 0) return { segments: [], arcs: [] };
+  const several = lanes.length > 1;
+  const step = (360 - (several ? lanes.length * RING_LANE_GAP : 0)) / total;
+  const segments: RingSegment[] = [];
+  const arcs: RingArc[] = [];
+  // El hueco del primer carril, centrado al fondo: el anillo queda simétrico.
+  let angle = several ? -90 + RING_LANE_GAP / 2 : -90;
+  // Un anillo de un solo módulo es un círculo: sin hueco que lo parta.
+  const half = total > 1 ? RING_SEGMENT_GAP / 2 : 0;
+  for (const { lane, count } of lanes) {
+    const start = angle;
+    // Dentro del carril, en el orden en que el esquema lo lee (de arriba abajo).
+    const members = nodes.filter((node) => node.lane === lane).sort((left, right) => left.row - right.row);
+    for (const node of members) {
+      segments.push({
+        id: node.id,
+        lane,
+        d:
+          total > 1
+            ? annularSector(RING_RADIUS - RING_WIDTH, RING_RADIUS, angle + half, angle + step - half)
+            : annularSector(RING_RADIUS - RING_WIDTH, RING_RADIUS, angle, angle + 359.9),
+      });
+      angle += step;
+    }
+    arcs.push({ lane, count, d: arcLine(RING_EDGE, start + half, Math.min(angle - half, start + 359.9)) });
+    if (several) angle += RING_LANE_GAP;
+  }
+  return { segments, arcs };
 }

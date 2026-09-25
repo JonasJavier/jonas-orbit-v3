@@ -39,6 +39,23 @@ gallery:
     alt: Galería fotográfica de Izak's Photos en vista móvil con filtros accesibles
     caption: Los filtros y la cuadrícula se reorganizan sin perder la navegación del archivo.
     frame: mobile
+scope:
+  - value: "4"
+    label: series en la galería
+  - value: "2"
+    label: idiomas, español e inglés
+  - value: "1"
+    label: servicio para la API y el frontend
+designDecisions:
+  - screen: /media/projects/izaks-photos/01-home-desktop.png
+    problem: El sitio tenía que presentar el trabajo y, a la vez, llevar a reservar una sesión.
+    decision: La fotografía ocupa el centro y las dos acciones se ven desde el primer pantallazo.
+  - screen: /media/projects/izaks-photos/02-gallery-desktop.png
+    problem: Un archivo amplio de fotografías se vuelve fácilmente una cuadrícula genérica.
+    decision: Series con filtros y un visor a pantalla completa que no pierde el contexto.
+  - screen: /media/projects/izaks-photos/04-gallery-mobile.png
+    problem: En un teléfono, los filtros y la cuadrícula compiten por el mismo ancho.
+    decision: Se reorganizan sin perder la navegación del archivo.
 architecture:
   nodes:
     - id: inicio

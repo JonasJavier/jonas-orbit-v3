@@ -11,7 +11,6 @@ import { readVoyageDeparture, subscribeVoyage } from "@/lib/voyage-controller";
 import {
   findWorldRoute,
   isObservatoryPath,
-  isWorldIndexPath,
   type WorldRoute,
 } from "@/lib/world-route";
 import {
@@ -46,19 +45,17 @@ export interface SceneBodyDescriptor {
  * Mundos cuya página cubre la escena persistente con un lienzo propio (Sobre
  * mí, Miller y Edmunds) o con un contexto WebGL2 propio (Miller, Ranger). Mientras el
  * visitante está en ellos la escena duerme: nunca hay dos contextos dibujando.
+ *
+ * Endurance cubre en TODAS sus rutas (endurance-proyectos.md §17): la mesa de
+ * `/es/proyectos` es una sala opaca a todo el ancho, y el caso completo
+ * (`/es/proyectos/omsta`) tiene ahora fondo propio y opaco —el vacío de la
+ * mesa con la sala velada arriba—, sin planetas pasando detrás del texto. El
+ * último fotograma que la escena deja congelado queda tapado en las dos.
  */
-const COVERED_WORLDS: readonly WorldId[] = ["gargantua", "miller", "edmunds", "ranger", "tesseract"];
-/**
- * Endurance cubre SÓLO en su portada: la mesa de ingeniería de `/es/proyectos`
- * es una sala opaca a todo el ancho (endurance-proyectos.md §8), pero el caso
- * completo (`/es/proyectos/omsta`) sigue siendo una página editorial con la
- * escena detrás y no cambia con la mesa. Por eso no basta con añadirla a la
- * lista: hay que mirar el pathname.
- */
-function isCoveredRoute(route: WorldRoute | null, pathname: string): boolean {
-  if (!route) return false;
-  if (route.id === "endurance") return isWorldIndexPath(pathname, route);
-  return COVERED_WORLDS.includes(route.id);
+const COVERED_WORLDS: readonly WorldId[] = ["gargantua", "miller", "endurance", "edmunds", "ranger", "tesseract"];
+
+function isCoveredRoute(route: WorldRoute | null): boolean {
+  return route !== null && COVERED_WORLDS.includes(route.id);
 }
 
 const BODY_ATTRIBUTE = "data-system-body";
@@ -158,7 +155,7 @@ export function GargantuaSystem({
   const worldRoute = findWorldRoute(pathname, routes);
   const worldId = worldRoute?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
-  const covered = isCoveredRoute(worldRoute, pathname);
+  const covered = isCoveredRoute(worldRoute);
   const coveredRef = useRef(covered);
 
   /**
