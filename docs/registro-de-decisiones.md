@@ -37,8 +37,12 @@ alcance, reto, decisiones con su pantalla, `SystemExplorer` (esquema e
 inspector compartidos en `components/system-diagram.*`), resultados, visor
 `<dialog>`, lectura larga con índice pegajoso y cierre con anterior/siguiente.
 Hecho en paralelo con una crítica visual adversarial por tarea y un
-refinado. Verificado en un worktree aislado (el `next start` ajeno de :3000
-no se tocó): `npm run check` en verde y suite e2e. Abierto: veredicto del
+refinado, y una revisión adversarial final del diff (9 hallazgos confirmados y
+corregidos: el más grave, el `<dialog>` del visor anclado arriba del
+documento, que subía la página a 0 al abrirlo). Verificado en un worktree
+aislado (el `next start` ajeno de :3000 no se tocó): `npm run check` en
+verde; `e2e/proyectos.spec.ts` al día y `e2e/proyecto-caso.spec.ts` nuevo,
+40/40, más smoke, navbar y travesía. Abierto: veredicto del
 dueño, redacción de `scope`/`designDecisions`, dos llamadas a contacto al
 final del caso, arquitecturas y URL `kind: demo`.
 

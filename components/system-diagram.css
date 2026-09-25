@@ -172,9 +172,16 @@
   box-shadow: 0 0 8px rgb(242 200 121 / 80%);
 }
 
-/* Con un nodo en foco, lo que no está en su ruta baja a un tercio: el resto
-   del sistema sigue ahí, pero ya no compite. */
-.holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) { opacity: 0.32; }
+/* Con un nodo en foco, lo que no está en su ruta se apaga: caja, glifo,
+   miniatura y líneas bajan a un tercio, y el sistema sigue ahí sin competir.
+   El NOMBRE sólo baja a un gris que se sigue leyendo (≥ 4,5:1): son botones
+   operables, y a opacidad 0,3 medían 2:1. */
+.holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) .holo-node__chip {
+  border-color: rgb(160 228 255 / 11%);
+  background: rgb(7 12 19 / 82%);
+  color: #8e9bb3;
+}
+.holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) :is(.holo-glyph, .holo-node__thumb, .holo-node__mark) { opacity: 0.3; }
 .holo-diagram[data-focus] .holo-line:not([data-on]) { opacity: 0.22; }
 .holo-node[data-path] .holo-node__chip { border-color: rgb(170 235 255 / 58%); color: #fff; }
 .holo-node[data-path="down"] .holo-node__chip { background: rgb(9 22 31 / 97%); }

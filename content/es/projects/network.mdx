@@ -47,14 +47,14 @@ scope:
     label: autenticación de la API
 designDecisions:
   - screen: /media/projects/network/01-feed-desktop.png
-    problem: Publicar, conversar y descubrir personas suelen vivir en pantallas separadas.
-    decision: El feed reúne las tres cosas en una sola vista.
+    problem: En una red social, el contenido depende de a quién sigues.
+    decision: El feed reúne publicación, conversación y descubrimiento de personas en una sola vista.
   - screen: /media/projects/network/02-profile-desktop.png
-    problem: Un perfil suelto no dice a quién sigue esa persona ni qué publica.
+    problem: Una red social pequeña sigue siendo un sistema de relaciones.
     decision: Cada perfil conecta identidad, relaciones y contenido publicado.
   - screen: /media/projects/network/03-notifications-desktop.png
-    problem: Una interacción cambia varias vistas a la vez y la actividad se pierde.
-    decision: Las señales se agrupan en un centro propio y accionable.
+    problem: Cada interacción cambia varias vistas y las notificaciones deben mantener contexto.
+    decision: Las señales de actividad se agrupan en un espacio propio y accionable.
 architecture:
   nodes:
     - id: feed

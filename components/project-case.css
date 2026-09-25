@@ -44,7 +44,10 @@ html:has(.case-route) { scroll-padding-top: calc(67px + 48px + 20px); }
 .case { position: relative; overflow-x: clip; }
 :where(.case) :where(h1, h2, h3, p, dl, dd, dt, figure, ul, ol, blockquote) { margin: 0; }
 :where(.case) :where(ul, ol) { padding: 0; list-style: none; }
-.case > :not(.case-sala, .case-localnav) { position: relative; z-index: 1; }
+/* El visor queda fuera: un `<dialog>` modal con `position: relative` se ancla
+   arriba del DOCUMENTO en la capa superior, y abrirlo subía la página a 0 y
+   devolvía el foco a un enlace fuera de la vista. */
+.case > :not(.case-sala, .case-localnav, .case-viewer) { position: relative; z-index: 1; }
 
 /* ── El fondo: la sala de la mesa, muy velada, fundiendo a negro ────────── */
 
@@ -583,6 +586,8 @@ p.case-title__descriptor { margin-top: 16px; }
   text-wrap: pretty;
 }
 .case-viewer {
+  position: fixed;
+  inset: 0;
   width: 100vw;
   max-width: none;
   height: 100dvh;
