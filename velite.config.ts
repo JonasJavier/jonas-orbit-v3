@@ -2,10 +2,12 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { defineCollection, defineConfig, s } from "velite";
 import {
+  ARCHITECTURE_LANES,
   F1A_PROJECT_IDS,
   PROJECT_IDS,
   projectsData,
 } from "./content/projects.data";
+import projectsMedia from "./content/projects-media.json";
 import { WORLD_IDS, worldsData } from "./content/worlds.data";
 import { PUBLISHED_LOCALES } from "./content/site.data";
 import { validateProjectProse } from "./content/validate-projects";
@@ -154,6 +156,20 @@ const worldProse = defineCollection({
     .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
 });
 
+/**
+ * Una captura de proyecto. `frame` dice qué aparato la produjo, no cómo se
+ * pinta: `mobile` sólo puede llevarlo una imagen más alta que ancha, y eso lo
+ * comprueba el validador contra las dimensiones que registra
+ * `tools/prepare-projects.mjs` — es lo que evita un campo de dimensiones a mano
+ * (`docs/design/endurance-proyectos.md` §6).
+ */
+const projectImage = s.object({
+  src: s.string(),
+  alt: s.string(),
+  caption: s.string(),
+  frame: s.enum(["desktop", "mobile"]).optional(),
+});
+
 /** Proyectos reales localizados; la estructura neutral vive en projects.data.ts. */
 const projectProse = defineCollection({
   name: "ProjectProse",
@@ -172,19 +188,35 @@ const projectProse = defineCollection({
       decision: s.string(),
       technologies: s.array(s.string()).min(1),
       highlights: s.array(s.string()).min(1),
-      featuredImage: s.object({
-        src: s.string(),
-        alt: s.string(),
-        caption: s.string(),
-      }),
-      gallery: s
-        .array(
-          s.object({
-            src: s.string(),
-            alt: s.string(),
-            caption: s.string(),
-          }),
-        )
+      featuredImage: projectImage,
+      gallery: s.array(projectImage).optional(),
+      /**
+       * LA ARQUITECTURA ES CONTENIDO, NO DIBUJO (§3.2 del documento de la
+       * mesa). El esquema de Ingeniería sale de aquí y la página sólo lo
+       * dispone. Un nodo con `screen` es una captura de la mesa que en esa
+       * capa se convierte en nodo; un nodo sin `screen` es una pieza sin
+       * pantalla (base de datos, worker, API). `decision` es lo que hace del
+       * esquema un mapa de criterio y no un diagrama de stack.
+       *
+       * Las reglas que lo hacen honesto (aristas a nodos existentes, pantallas
+       * presentes en la mesa, mínimo por caso completo) viven en
+       * `validate-projects.ts`, cubiertas por fixtures.
+       */
+      architecture: s
+        .object({
+          nodes: s
+            .array(
+              s.object({
+                id: s.string().regex(/^[a-z0-9-]+$/),
+                label: s.string(),
+                lane: s.enum(ARCHITECTURE_LANES),
+                screen: s.string().optional(),
+                decision: s.string().optional(),
+              }),
+            )
+            .min(1),
+          edges: s.array(s.array(s.string()).length(2)).default([]),
+        })
         .optional(),
       links: s
         .array(
@@ -231,6 +263,8 @@ export default defineConfig({
       F1A_PROJECT_IDS,
       projectsData,
       (src) => existsSync(join(process.cwd(), "public", src)),
+      // Dimensiones medidas por `tools/prepare-projects.mjs`, no declaradas.
+      (src) => projectsMedia[src as keyof typeof projectsMedia] ?? null,
     );
   },
 });

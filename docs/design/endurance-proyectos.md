@@ -6,7 +6,8 @@ interacción, contenido de arquitectura y límites de la página Proyectos**. No
 toca el System Map, la Endurance del mapa, su cámara ni sus materiales; tampoco
 toca `/es/proyectos/[slug]`, que sigue siendo el caso completo.
 
-Estado: **plan aprobado por el dueño en dirección; construcción pendiente.**
+Estado: **construida (§15) y rehecha en limpio (§16), ambas el 2026-09-24;
+valoración visual del dueño pendiente.**
 Fecha: 2026-09-21. Boceto del dueño en `assets/proyectos/boceto-mesa-2026-09-21.webp`
 (referencia de composición, no de contenido: ver §3).
 
@@ -497,3 +498,297 @@ del caso completo y `ProjectCase`. `ProjectCard` y `ProjectGrid` se retiran
 sólo si Knip los declara huérfanos tras la primera entrega; si otra ruta los
 usa, se quedan. La navbar, el interruptor de movimiento, la banda sonora, el
 pie y los vecinos. Ninguna dependencia nueva.
+
+## 15. Construcción — la mesa en pie (2026-09-24)
+
+Manda sobre §5-§9 y §12 en **cómo está construida la mesa y en qué se aparta
+del plan**. El dueño pidió continuar con el plan con los cinco proyectos ya
+documentados, y pidió una cosa nueva: **un sitio visible para «visitar el
+sitio web»**, porque la mayoría están en producción; las URL las entregará
+después. Las tres entregas del §12 se hicieron juntas; sólo queda fuera la
+fotografía de la sala (§4.1), que sigue siendo CSS.
+
+### 15.1 Qué hay
+
+- **Ruta.** `app/[locale]/proyectos/page.tsx` monta `components/projects-page.tsx`
+  (servidor: sala, divisa, pie, vecinos) y dentro `components/engineering-table.tsx`
+  (cliente: la mesa). CSS en `components/projects-page.css`. `mainClassName`
+  `projects-route`. `ProjectGrid` y `ProjectCard` quedaron huérfanos y se
+  retiraron con su CSS; `.project-card__scanline` se conserva porque lo usa
+  el caso completo.
+- **La parte pura.** `lib/engineering-table.ts`: `tableProject()` convierte un
+  `Project` en lo que la mesa pinta —pantallas con sus tres poses, nodos con
+  su carril y su sitio, aristas, enlaces, estado— y es serializable a
+  propósito (sin el cuerpo MDX). Las poses son fracciones del escenario
+  (`x`, `y` en −0,5..0,5) y píxeles de profundidad; el CSS las convierte con
+  unidades de contenedor. P2 vive aquí: ningún proyecto tiene una posición
+  escrita a mano.
+- **Contenido.** `architecture` en los cinco MDX, escrita con las palabras de
+  cada caso: OMSTA 15 nodos / 23 aristas, Delicaté 10 / 10, Wiki Universe
+  9 / 9, Network 10 / 11, Izak's 7 / 6. Cinco decisiones en OMSTA, tres en
+  Delicaté, dos en cada ficha. `frame: mobile` en las siete capturas de
+  teléfono. Las tres fichas breves llevan arquitectura declarada aunque el
+  esquema no se lo exige; la rama «stack + decisión» del §6 existe y está
+  probada, pero hoy no la usa ningún proyecto publicado.
+- **Capturas.** `tools/prepare-projects.mjs` dejó 95 WebP (la mayor, 100 KB)
+  y `content/projects-media.json` con las dimensiones medidas y los
+  peldaños disponibles de las 28 capturas. Los PNG no se tocan.
+- **«Visitar el sitio».** Sale del `links` del MDX con `kind: demo` y va en
+  ámbar al lado de «Explorar proyecto», lo más visible de la columna. Hoy
+  ningún MDX lo lleva: cuando lleguen las URL, se añade una línea por
+  proyecto y aparece. No se inventa.
+- **La escena duerme.** Sólo en la portada del mundo, no en el mundo entero.
+
+### 15.2 Dónde se aparta del plan, y por qué
+
+1. **Los carriles no se declaran en cada MDX.** El §6 los ponía en el
+   frontmatter «fijo; se valida». Un conjunto fijo declarado cinco veces es
+   cinco sitios donde equivocarse: viven en `ARCHITECTURE_LANES`
+   (`content/projects.data.ts`), son identidad y no texto, y el rótulo
+   visible lo pone la página.
+2. **Dos campos que el §6 no tenía: `designNote` y `architecture.summary`.**
+   El §5 pedía que en Diseño la lectura fuera el párrafo de «12. Diseño y
+   UX» y en Ingeniería el de «9. Arquitectura y stack». Esos párrafos están
+   en el cuerpo MDX compilado, del que no se puede recortar un párrafo sin
+   un segundo pipeline. Se copian tal cual al frontmatter de los dos casos
+   completos —mismas palabras, ni un resumen nuevo— y las fichas breves caen
+   en su `decision`, como decía el plan.
+3. **El manifiesto de medidas.** El §6 encargaba a la herramienta comprobar
+   que `frame: mobile` sólo lo lleve una imagen vertical. La herramienta no
+   lee el MDX, así que escribe lo que mide y Velite compara: mismo objetivo,
+   sin un campo de dimensiones a mano y sin parsear PNG en el build. El
+   mismo manifiesto compone el `srcset`, que es lo que evita listar
+   peldaños que no existen (Izak's tiene el 780 de teléfono; el resto, no).
+4. **`endurance` no entra en `COVERED_WORLDS`.** Entrar en la lista habría
+   dormido la escena también en `/es/proyectos/omsta`, porque
+   `findWorldRoute` da Endurance a las rutas hijas y `setCovered` sólo
+   detiene el bucle: el caso completo se habría quedado con el último
+   fotograma congelado detrás. `isCoveredRoute` mira ahora el pathname
+   (`isWorldIndexPath`, en `lib/world-route.ts`) y Endurance cubre sólo su
+   portada. `/es/proyectos/[slug]` no cambia, que es lo que prometía el §14.
+5. **Las líneas no se miden de las cajas.** El §5 las medía con
+   `getBoundingClientRect` y un `ResizeObserver` sobre el escenario. Las
+   cajas viven en un grupo 3D que alabea con el paralaje, y una caja medida
+   en pantalla ya no está donde el SVG —que vive dentro del mismo grupo— la
+   dibujaría. Se dibujan con las mismas fracciones que colocan los nodos,
+   multiplicadas por el tamaño del escenario, que sí lo mide un único
+   `ResizeObserver` sobre la mesa. Trazado por `stroke-dashoffset` cuando
+   cada línea conoce su largo (`getTotalLength`).
+6. **En móvil, Ingeniería no lleva líneas.** El §8 pedía carriles en filas
+   «con las líneas verticales entre ellas». Con los nodos en flujo y las
+   filas envolviendo, una línea por arista cruza cajas y se lee como error.
+   Van los carriles como cabeceras, cada nodo como fila con su decisión
+   desplegable debajo, y ninguna línea. Queda abierto si merece un
+   conector por fila.
+7. **El nombre corto.** El muelle y el grabado de la mesa usan el título
+   cortado en la raya («OMSTA — ERP para…» → «OMSTA»): con los títulos
+   enteros el muelle no cabía en una fila a 1440. No es un campo nuevo
+   porque no es contenido nuevo.
+
+### 15.3 Cómo está hecha, para quien la toque
+
+- **Cinco secciones en el DOM, una a la vista.** Cada `<section id>` lleva
+  su lectura, sus tres `tabpanel` de texto y su escenario, y va en
+  `display: contents` para caer en las áreas de la rejilla; sin JavaScript
+  decide `:target`, con JavaScript `data-state`. Las ocultas van en
+  `display: none` a propósito: sus capturas perezosas no se piden hasta que
+  se elige el proyecto. El proyecto a la vista ES el hash, leído como fuente
+  externa (`useSyncExternalStore`): la instantánea de servidor es `null` y
+  mientras lo es manda el CSS sin `data-enhanced`, así que `#wikiverse` no
+  pinta OMSTA ni un fotograma.
+- **Tres poses por pantalla, una elegida.** Custom properties `--r-*`,
+  `--d-*`, `--i-*` en cada `figure`; `data-layer` en la raíz elige cuál
+  copia a `--x/--y/--z/--ry/--s/--o`, y hay UNA transición sobre
+  `transform`, `opacity` y `filter`. La escala es `scale()` y no `width`
+  para que la imagen decodificada sea una sola. El contenedor de consultas
+  es `.table-scene` y el grupo 3D su hijo: `container-type: size` implica
+  `contain: layout`, y eso no puede vivir en el mismo elemento que
+  `transform-style: preserve-3d`.
+- **El encendido mueve `translate`, no `transform`.** La animación de subida
+  usa la propiedad individual con relleno hacia atrás; si animara
+  `transform` con relleno hacia delante, el último fotograma pisaría la
+  pose para siempre. Al cambiar de proyecto el saliente cae (`translate` +
+  `--lit: 0`) y el entrante sube por la misma animación, que se reinicia al
+  salir de `display: none`.
+- **Quién es operable en cada capa.** Las pantallas van `inert` en
+  Ingeniería y los nodos en las otras dos; los `tabpanel` inactivos van
+  `inert` + `visibility: hidden` sin desmontarse, y el nodo apuntado se
+  adelanta 70 px en Z porque en un grupo 3D `z-index` no decide nada y su
+  decisión quedaba detrás del vecino.
+- **Movimiento.** `html[data-motion="off"]` deja todo en cero; con
+  `prefers-reduced-motion` la regla general del sitio aplasta las
+  transiciones y aquí se recuperan como en Edmunds, sólo para lo que ES la
+  mesa. Paralaje ≤ 2° con puntero fino, escrito en `--px/--py`.
+
+### 15.4 Verificación
+
+| # | Dónde | Estado |
+| --- | --- | --- |
+| P1 | `content/validate-projects.test.ts` (diez casos con fixtures inventados) | verde |
+| P2, P11 | `lib/engineering-table.test.ts` | verde |
+| P3, P4, P10 (jsdom), P11 | `components/projects-page.test.tsx` | verde |
+| P5-P10, P12 | `e2e/proyectos.spec.ts` | verde en `chromium` y `mobile-chromium` |
+
+Medido: a 375 y 1440, en las tres capas, cero desbordamiento y ningún mando
+por debajo de 44 px; a 1440 la destacada de Resultado sirve el peldaño 960
+sobre 524 px pintados (1,8×) y a 375 el 480 sobre 341 (1,4×); OMSTA dibuja
+23 líneas y 15 nodos y cambia a las 6 de Izak's al cambiar de proyecto; con
+la escena viva `data-covered` es `true` en la mesa y `false` en el caso.
+
+Cuatro trampas de medición nuevas: **`naturalWidth` miente con `srcset` de
+anchos** —el navegador lo divide por la densidad que él mismo calculó
+(candidato / `sizes`) y la razón sale 1,0 con el archivo correcto; el ancho
+real se lee del nombre del peldaño—; **la escena persistente no dibuja en una
+página quieta** —la pose del caso es la del mundo y un cuadro que no cambia
+no se repinta, así que «vuelve a dibujar» se comprueba en el mapa—; **el
+panel del navegador captura a DPR 2 recortando**, así que en móvil se midió
+por JavaScript y se capturó con Playwright; y **`overflow: clip` y no
+`hidden`** para recortar el plano de la mesa, porque `hidden` crea un
+contenedor de scroll y rompe el selector pegajoso de móvil.
+
+### 15.5 Abierto
+
+Confirmar las cinco arquitecturas (son el sistema de Jonás); las URL de
+producción para `links` `kind: demo`; la fotografía de la sala; un conector
+por fila en la Ingeniería de móvil; y la valoración visual de las tres capas.
+
+## 16. Segundo pase — la mesa en limpio (2026-09-24)
+
+Manda sobre §4, §5, §7 y §15 en **composición, lectura, capas, mesa física,
+sala e interacción**. No toca el contenido de arquitectura (§6, salvo lo que
+se retira abajo), la ruta del caso completo ni la escena persistente.
+
+### 16.1 La petición, y el diagnóstico
+
+Texto del dueño, el mismo día de la construcción: no le gusta cómo queda la
+mesa; **hay mucho texto**; tiene que ser minimalista, moderna, interactiva,
+profesional, realista y creativa; adjunta otra vez el boceto del 09-21 como
+referencia y deja el cómo a criterio («hazlo como consideres mejor»), con la
+misma vara: una de las mejores páginas del sitio.
+
+Lo que fallaba, medido en las capturas del §15:
+
+- **Texto.** Antes de mirar la mesa se leían unas 150 palabras: antetítulo,
+  título largo, resumen, un párrafo por capa (nota de diseño, resumen de
+  arquitectura), una pista, la lista de nodos, el enlace de contacto y el
+  stack. El boceto lleva cinco palabras en la columna.
+- **Sin objeto.** No había mesa: había un suelo de rejilla genérico bajo una
+  sala plana. El boceto es una consola física con canto y cristal.
+- **Ingeniería ilegible.** Quince miniaturas flotando en el aire, veintitrés
+  curvas cruzándose y rótulos montados unos sobre otros.
+- **Diseño plano.** Una tira de miniaturas pequeñas; no se leía ninguna.
+
+### 16.2 Qué es ahora
+
+1. **La lectura no cambia con la capa y es mínima**: el nombre (título cortado
+   en la raya), una línea que dice qué es (lo que el título lleva tras la
+   raya o, si no la lleva, la antetitular de la ficha: otra vez el texto del
+   autor, no uno nuevo), el estado y «Explorar proyecto»; «Visitar el sitio»
+   si hay `kind: demo` y «Código» si hay `kind: repository`. El enlace de
+   contacto del MDX ya no se pinta aquí. Abajo a la izquierda, una ficha
+   técnica de tres cifras que salen de los datos (pantallas, módulos,
+   decisiones: P11). El stack va **grabado en la mesa**; para quien no la ve
+   (lector de pantalla, móvil) es una lista real.
+2. **Resultado** son tres pantallas en arco sobre la mesa, como el boceto:
+   teléfono a la izquierda, destacada al centro y la siguiente de escritorio
+   a la derecha, las laterales giradas hacia quien mira y atadas a la mesa
+   por un cable con su ancla. Sin notas: es el producto terminado.
+3. **Diseño** es un carrete: la pantalla elegida delante y de frente, las
+   demás a los lados, retiradas y giradas hacia dentro como las hojas de un
+   libro abierto. **Una sola línea** de nota —la `caption` de la elegida—,
+   su índice y dos flechas. Se elige con clic, con las flechas del teclado
+   (el foco viaja con la elegida) o con los botones.
+4. **Ingeniería**: las pantallas vuelven a la mesa y se levanta el sistema en
+   dos paneles. El **esquema** —cuatro carriles, una caja por nodo, las
+   miniaturas de las pantallas que son módulo— y el **inspector** del módulo
+   elegido: su capa (una pila isométrica de cuatro placas con la suya
+   encendida), su decisión y con qué se conecta («Recibe de», «Entrega a»,
+   derivado de las aristas). Apuntar o enfocar un nodo enciende sus
+   conexiones. En la mesa se graban los cuatro carriles con sus cifras.
+5. **La mesa es un objeto**: cuerpo de metal con canto frontal y ranuras, un
+   cristal en perspectiva real con su rejilla, el charco de luz del
+   proyector y, grabados, el plano de la Endurance (redibujado en trazo: el
+   `FlatWorldBody` del mapa, en gris, se leía como una mancha), la placa
+   (nombre · capa) y el stack.
+6. **Movimiento**: una trama de líneas baja despacio por el cristal de cada
+   pantalla (se desliza el fondo, no la caja), la sala se desplaza al revés
+   que el holograma con el puntero, el encendido levanta las pantallas por
+   recorte desde la mesa, las líneas del esquema se trazan al entrar y un
+   barrido de luz lo recorre una vez. Todo obedece al interruptor único y se recupera bajo
+   `prefers-reduced-motion` como el resto de la mesa.
+
+### 16.3 Cómo está hecho el esquema
+
+`tableArchitecture()` ordena cada carril por el orden del MDX **salvo** que
+las cadenas internas queden seguidas (en OMSTA, CRM → reservas →
+facturación → pagos → contabilidad → ledger → DGII), para que cada eslabón
+sea un conector corto y no un arco. Un carril corto se centra en el alto del
+más poblado. Tres formas de arista, calculadas en la parte pura: `cross`
+(curva entre carriles, de canto a canto), `adjacent` (conector vertical entre
+vecinas) y `arc` (corchete por la izquierda para saltar filas, más afuera
+cuanto más largo). Todo se dibuja en una caja de 1000 × 1000 que el SVG
+estira al panel (`preserveAspectRatio="none"` y `vector-effect:
+non-scaling-stroke`) mientras las cajas HTML se colocan con los mismos
+números en porcentaje: **líneas y cajas coinciden a cualquier tamaño sin
+medir el DOM**, que era lo que el §15.2.5 resolvía a mano.
+
+El panel crece con el sistema, no con la ventana: una fila por nodo del
+carril más poblado (`--rows` × `--row`, 26-40 px).
+
+### 16.4 Dónde se aparta, y lo que se retira
+
+1. **`designNote` y `architecture.summary` salen del esquema de Velite y de
+   los dos MDX** que los llevaban. Eran copias literales de párrafos del caso
+   para que la mesa los pintara (§15.2.2); la mesa ya no pinta párrafos y los
+   originales siguen en el caso completo. Cero huérfanos.
+2. **Un tercer panel de «capas y stack» se probó y se retiró**: duplicaba lo
+   que la mesa ya graba (carriles con cifras, stack) y en 1440 se solapaba
+   con el esquema. La pila isométrica sobrevive dentro del inspector, donde
+   dice algo: en qué capa vive el módulo elegido.
+3. **Blancos del esquema.** El botón de cada nodo es su **fila entera** y la
+   caja visible ocupa el 70 % central. Con puntero fino la fila mide 26-40 px
+   (WCAG 2.5.8 pide 24); con puntero grueso sube a 44 px, y en móvil cada
+   nodo es una fila de 44. P8 exige 44 a todo lo demás y codifica esta
+   excepción.
+4. **La columna de lectura pierde los tres `tabpanel` de texto**: el panel de
+   la capa es el escenario (`#{id}-stage`, `role="tabpanel"` con la mesa
+   viva). Sin JavaScript, una ficha estática (pantallas con su nota y el
+   sistema con sus decisiones) aparece sólo con `@media (scripting: none)`.
+
+### 16.5 Trampas nuevas
+
+- **Tailwind genera una utilidad `.table`** (`display: table`) con el mismo
+  nombre que la raíz de la mesa: con todos los hijos absolutos, la mesa medía
+  cero de ancho y todo caía al canto izquierdo. La raíz declara `display:
+  block`.
+- **Un reseteo `.projects-page button { font: inherit }` gana a cualquier
+  clase** (0,1,1 contra 0,1,0): los botones heredaban 16 px. Los reseteos van
+  en `:where()`.
+- **La perspectiva tiene que vivir en el padre directo del cuerpo 3D.** Puesta
+  dos niveles arriba, un `translate` intermedio aplanaba el contexto y el
+  cristal de la mesa salía de frente, sin fuga.
+- **Un carrete de radio corto se atraviesa**: con pantallas más anchas que la
+  cuerda, el canto interior de una vecina —que el giro adelanta— quedaba
+  delante de la elegida. Las laterales se retiran lo bastante para que ese
+  canto quede detrás.
+- **En una rejilla, `height: 100%` se resuelve contra la fila entera**: en
+  móvil la caja del nodo elegido crecía hasta tapar su propia decisión.
+- **`data-far` sólo vale en Diseño**: escrito para todas las capas, ocultaba
+  el teléfono de Resultado cuando caía lejos de la elegida en el carrete.
+- **Lo inerte se lleva del árbol de accesibilidad todo lo que contiene**: con
+  la imagen dentro del botón `inert`, el `alt` de cada pantalla desaparecía
+  en Resultado —la capa de entrada, y la única sin JavaScript—. La imagen es
+  hermana de una lámina-botón que sólo opera en Diseño (y entonces la imagen
+  calla para no leerse dos veces).
+- **Una animación infinita que mueve la caja deja a Playwright sin «estable»**:
+  un holograma que flotaba 5 px hacía esperar para siempre a cualquier
+  `click()` sobre una pantalla o un nodo. Lo vivo va en el fondo del cristal.
+- **El foco del teclado tiene que ganar al puntero en reposo**: el inspector
+  mostraba el nodo apuntado aunque el foco ya estuviera en otro, porque el
+  desplazamiento de la página dejaba un nodo bajo un ratón quieto. Enfocar
+  borra el apuntado.
+
+### 16.6 Abierto
+
+La valoración visual del dueño de las tres capas; confirmar las cinco
+arquitecturas (§13.2); las URL de producción para `kind: demo`.

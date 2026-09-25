@@ -37,6 +37,60 @@ gallery:
   - src: /media/projects/network/04-feed-mobile.png
     alt: Feed de Network 3.0 adaptado a una pantalla móvil
     caption: La navegación y las acciones sociales siguen accesibles en móvil.
+    frame: mobile
+architecture:
+  nodes:
+    - id: feed
+      label: Feed
+      lane: cliente
+      screen: /media/projects/network/01-feed-desktop.png
+    - id: perfil
+      label: Perfil
+      lane: cliente
+      screen: /media/projects/network/02-profile-desktop.png
+    - id: centro
+      label: Centro de notificaciones
+      lane: cliente
+      screen: /media/projects/network/03-notifications-desktop.png
+    - id: feed-movil
+      label: Feed en móvil
+      lane: cliente
+      screen: /media/projects/network/04-feed-mobile.png
+    - id: feed-cursor
+      label: Feed por cursor
+      lane: servicio
+      decision: >-
+        Paginación por cursor para que el crecimiento de la actividad no
+        degrade la navegación del feed.
+    - id: perfiles
+      label: Perfiles y seguimiento
+      lane: servicio
+    - id: publicaciones
+      label: Publicaciones y comentarios
+      lane: servicio
+    - id: notificaciones
+      label: Notificaciones
+      lane: servicio
+      decision: >-
+        Dominio propio, con sus reglas y sus endpoints, separado del feed.
+    - id: postgresql
+      label: PostgreSQL
+      lane: datos
+    - id: redis
+      label: Redis
+      lane: datos
+  edges:
+    - [feed, feed-cursor]
+    - [feed-movil, feed-cursor]
+    - [perfil, perfiles]
+    - [centro, notificaciones]
+    - [feed-cursor, publicaciones]
+    - [publicaciones, notificaciones]
+    - [perfiles, notificaciones]
+    - [feed-cursor, redis]
+    - [publicaciones, postgresql]
+    - [perfiles, postgresql]
+    - [notificaciones, postgresql]
 links:
   - label: Ver repositorio
     href: https://github.com/JonasJavier/Network-3.0

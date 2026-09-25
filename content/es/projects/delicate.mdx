@@ -48,12 +48,74 @@ gallery:
   - src: /media/projects/delicate/05-cart-mobile.png
     alt: Carrito de Delicaté en un teléfono con tres productos, total estimado y botón verde para finalizar por WhatsApp
     caption: En móvil el carrito ocupa la pantalla y la acción de WhatsApp queda al alcance del pulgar.
+    frame: mobile
   - src: /media/projects/delicate/06-catalog-mobile.png
     alt: Catálogo de Delicaté en un teléfono con el filtro Nutritivos activo y la tarjeta del jabón Miel Dorada con su botón Agregar
     caption: En una pantalla de 390 px los filtros se desplazan en una fila y «Agregar» queda siempre visible, sin depender del hover.
+    frame: mobile
   - src: /media/projects/delicate/08-story-desktop.png
     alt: Sección Nuestra historia de Delicaté con una fotografía de jabones cortándose a mano y el texto sobre el origen de la marca
     caption: La historia de la marca sostiene el precio de un producto artesanal; la fotografía de ambiente se generó para esta versión.
+architecture:
+  nodes:
+    - id: portada
+      label: Portada
+      lane: cliente
+      screen: /media/projects/delicate/01-home-desktop.png
+    - id: catalogo
+      label: Catálogo y filtros
+      lane: cliente
+      screen: /media/projects/delicate/02-catalog-filter-desktop.png
+    - id: catalogo-movil
+      label: Catálogo en móvil
+      lane: cliente
+      screen: /media/projects/delicate/06-catalog-mobile.png
+    - id: detalle
+      label: Ficha de producto
+      lane: cliente
+      screen: /media/projects/delicate/03-product-detail-desktop.png
+    - id: carrito
+      label: Carrito
+      lane: cliente
+      screen: /media/projects/delicate/04-cart-desktop.png
+      decision: >-
+        Carrito en el navegador: se guarda en localStorage, sobrevive a la
+        recarga y limita cada cantidad a las existencias. Sin cuentas de
+        cliente: el comprador nunca se registra.
+    - id: carrito-movil
+      label: Carrito en móvil
+      lane: cliente
+      screen: /media/projects/delicate/05-cart-mobile.png
+    - id: api
+      label: API de catálogo (DRF)
+      lane: servicio
+      decision: >-
+        API pública de sólo lectura: el catálogo se consulta por la API y se
+        escribe únicamente desde el administrador de Django.
+    - id: admin
+      label: Administración del catálogo
+      lane: servicio
+      screen: /media/projects/delicate/07-admin-catalog-desktop.png
+    - id: postgresql
+      label: PostgreSQL
+      lane: datos
+    - id: whatsapp
+      label: WhatsApp
+      lane: infraestructura
+      decision: >-
+        WhatsApp como cierre: el carrito genera el pedido completo como mensaje
+        y abre la conversación donde el negocio ya confirma, cobra y entrega.
+  edges:
+    - [portada, catalogo]
+    - [catalogo, detalle]
+    - [detalle, carrito]
+    - [catalogo, api]
+    - [catalogo-movil, api]
+    - [detalle, api]
+    - [carrito, whatsapp]
+    - [carrito-movil, whatsapp]
+    - [api, postgresql]
+    - [admin, postgresql]
 links:
   - label: Hablemos de tu proyecto
     href: /es/contacto

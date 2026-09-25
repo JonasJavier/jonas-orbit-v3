@@ -18,6 +18,10 @@ const eslintConfig = defineConfig([
     ".wrangler/**",
     "playwright-report/**",
     "test-results/**",
+    // Worktrees de sesiones de agente (excluidos de git en .git/info/exclude):
+    // arrastran su propio .next y hacían fallar `npm run check` por archivos
+    // generados que no son de este árbol.
+    ".claude/**",
     // Referencia v2 conservada, no se lintea:
     "docs/**",
   ]),

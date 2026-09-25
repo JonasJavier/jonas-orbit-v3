@@ -570,7 +570,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   box-shadow: 0 0 2rem color-mix(in srgb, var(--world-accent) 23%, transparent), inset 0 0 1.4rem rgba(0,0,0,.8);
 }
 
-
 .world-glyph[data-visual="water"] .world-glyph__body {
   background:
     repeating-linear-gradient(165deg, transparent 0 9%, rgba(255,255,255,.18) 10%, transparent 12% 18%),
@@ -749,87 +748,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   font-style: normal;
 }
 
-.mission-archive {
-  margin-top: clamp(4rem, 8vw, 7rem);
-}
-
-.mission-archive__heading {
-  display: grid;
-  grid-template-columns: 1.1fr 0.7fr;
-  gap: 2rem;
-  align-items: end;
-  margin-bottom: 2rem;
-}
-
-.mission-archive__heading h3 {
-  max-width: 14ch;
-  margin: 0.5rem 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 4.2rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.mission-archive__heading > p {
-  max-width: 32rem;
-  margin: 0;
-  color: var(--ink-muted);
-}
-
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.project-card {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  border: 1px solid var(--space-line);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: rgba(8, 12, 23, 0.84);
-  transition: border-color 220ms ease, transform 220ms var(--ease-orbit), box-shadow 220ms ease;
-}
-
-.project-card:hover {
-  border-color: color-mix(in srgb, var(--world-accent) 55%, var(--space-line));
-  box-shadow: 0 1.5rem 5rem rgba(0,0,0,.24);
-  transform: translateY(-4px);
-}
-
-.project-card--featured {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 0.75fr);
-}
-
-.project-card__media {
-  position: relative;
-  display: block;
-  min-height: 20rem;
-  overflow: hidden;
-  background: #0b1020;
-}
-
-.project-card--featured .project-card__media {
-  min-height: 31rem;
-}
-
-.project-card__media img {
-  object-fit: cover;
-  object-position: top center;
-  filter: saturate(0.86) contrast(1.04);
-  transition: transform 700ms var(--ease-orbit), filter 300ms ease;
-}
-
-.project-card:hover .project-card__media img {
-  filter: saturate(1) contrast(1.02);
-  transform: scale(1.018);
-}
-
 .project-card__scanline {
   position: absolute;
   inset: 0;
@@ -837,82 +755,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
     linear-gradient(to bottom, transparent 65%, rgba(3,5,10,.8)),
     repeating-linear-gradient(to bottom, transparent 0 3px, rgba(255,255,255,.018) 4px);
   pointer-events: none;
-}
-
-.project-card__status {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.45rem 0.65rem;
-  border: 1px solid rgba(255,255,255,.22);
-  border-radius: 999px;
-  background: rgba(3,5,10,.76);
-  color: #dfffee;
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  backdrop-filter: blur(10px);
-}
-
-.project-card__status::before {
-  display: inline-block;
-  width: 0.35rem;
-  height: 0.35rem;
-  margin-right: 0.45rem;
-  border-radius: 50%;
-  background: #83f2b1;
-  box-shadow: 0 0 0.55rem #83f2b1;
-  content: "";
-}
-
-.project-card__body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  padding: clamp(1.35rem, 3vw, 2.4rem);
-}
-
-.project-card__eyebrow {
-  margin: 0;
-  color: var(--world-accent);
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.project-card h3 {
-  margin: 0.65rem 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.55rem, 3vw, 2.6rem);
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1;
-}
-
-.project-card__body > p:not(.project-card__eyebrow) {
-  margin: 1rem 0 0;
-  color: var(--ink-muted);
-  font-size: 0.92rem;
-}
-
-.project-card__link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 1.5rem;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.project-card__link span {
-  color: var(--world-accent);
-  font-size: 1rem;
 }
 
 .case-page {
@@ -1798,18 +1640,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
     margin: 1rem auto 0;
   }
 
-  .mission-archive__heading {
-    grid-template-columns: 1fr;
-  }
-
-  .project-card--featured {
-    display: flex;
-  }
-
-  .project-card--featured .project-card__media {
-    min-height: 24rem;
-  }
-
   .case-hero {
     grid-template-columns: 1fr;
   }
@@ -1910,8 +1740,7 @@ html[data-starfield="ready"] .space-backdrop__stars {
     border-left: 0;
   }
 
-  .panel-grid,
-  .project-grid {
+  .panel-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1922,12 +1751,6 @@ html[data-starfield="ready"] .space-backdrop__stars {
   .panel-grid > li {
     min-height: 16rem;
   }
-
-  .project-card__media,
-  .project-card--featured .project-card__media {
-    min-height: 15.5rem;
-  }
-
 
   .case-page {
     padding-top: 1.3rem;
@@ -2368,7 +2191,6 @@ html[data-scene-live="true"] .system-map__marker{
   opacity: 0.92;
 }
 
-
 /*
   El trazo bajo el nombre: 1 px que se dibuja desde el lado del cuerpo hacia
   fuera. Es el único elemento que APARECE al apuntar, y aparece dibujándose —
@@ -2462,7 +2284,6 @@ html[data-scene-live="true"] .system-map__marker{
   opacity: 1;
 }
 
-
 /*
   Gargantúa se identifica, no se rotula.
 
@@ -2522,7 +2343,6 @@ html[data-scene-live="true"] .system-map__slot[data-centre="true"] .system-map__
   border-color: transparent;
   background: none;
 }
-
 
 .system-map__body:hover .system-map__label,
 .system-map__body:focus-visible .system-map__label {
@@ -2853,11 +2673,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     margin-top: 2rem;
   }
 
-
-
-
-
-
   /*
     Y el desanclaje tiene que alcanzar TAMBIÉN a las reglas por lado, que son más
     específicas que la de arriba y por tanto sobrevivían a ella. Descolgaban cada
@@ -2870,14 +2685,11 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
     inset: auto;
   }
 
-
-
   /*
      Y Gargantúa vuelve a pesar lo mismo que el resto. Su rótulo se atenúa en
      escritorio porque cae sobre un disco incandescente; aquí cae sobre una
      tarjeta como los otros seis, y atenuarlo solo lo haría parecer desactivado.
   */
-
 
   .system-home {
     justify-content: flex-start;
@@ -2939,8 +2751,6 @@ html[data-scene-live="true"] .space-backdrop__gargantua {
 }
 
 @media (max-width: 60rem) {
-
-
 
   .world-page__neighbours {
     grid-template-columns: 1fr;
@@ -3563,7 +3373,6 @@ html[data-scene-live="true"]
   box-shadow: inset 0 -1px 0 0 var(--nav-accent);
 }
 
-
 /* HUD: jerarquía, no brillo global. */
 .hud__glass {
   position: absolute;
@@ -4089,7 +3898,6 @@ html[data-scene-live="true"] .hud__glass::after {
   border-radius: 30%;
 }
 
-
 .system-map__body {
   pointer-events: none;
 }
@@ -4532,7 +4340,6 @@ html:not([data-scene-live="true"]) .system-map__slot {
   --map-hit-radius-x: var(--map-fallback-radius);
   --map-hit-radius-y: var(--map-fallback-radius);
 }
-
 
 html:not([data-scene-live="true"])
   .system-map__slot[data-flat-visual="ship"] {

@@ -25,6 +25,24 @@ export interface ProjectStructuralData {
   status: "production" | "ready-for-production" | "in-development";
 }
 
+/**
+ * Los cuatro carriles del esquema de Ingeniería de la mesa
+ * (`docs/design/endurance-proyectos.md` §5 y §6), de izquierda a derecha.
+ *
+ * Son IDENTIDAD, no texto: el rótulo visible de cada carril lo pone la página.
+ * Es el flujo real de todos los proyectos del inventario —React o plantillas
+ * de Django, DRF o servicios, PostgreSQL/Redis, Railway/WhatsApp— y por eso es
+ * un conjunto fijo que Velite valida, no una lista por proyecto.
+ */
+export const ARCHITECTURE_LANES = [
+  "cliente",
+  "servicio",
+  "datos",
+  "infraestructura",
+] as const;
+
+export type ArchitectureLane = (typeof ARCHITECTURE_LANES)[number];
+
 export const projectsData = {
   omsta: {
     order: 1,

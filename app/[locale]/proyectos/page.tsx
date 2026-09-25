@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ProjectGrid } from "@/components/project-grid";
+import { ProjectsPage } from "@/components/projects-page";
 import { SiteShell } from "@/components/site-shell";
-import { WorldPage } from "@/components/world-page";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { getF1AProjects } from "@/lib/projects";
 import { buildWorldMetadata } from "@/lib/world-metadata";
 import { getWorld } from "@/lib/worlds";
 
 /**
- * Endurance — el índice de proyectos.
+ * Endurance — la mesa de ingeniería (docs/design/endurance-proyectos.md).
  *
  * Es el padre natural de `app/[locale]/proyectos/[slug]/`, que ya existía: el
- * pivote encaja en el árbol de rutas sin forzarlo (§2). Los paneles de la prosa
- * se ocultan porque aquí la evidencia son los proyectos reales, no las fichas
- * genéricas del mundo.
+ * pivote encaja en el árbol de rutas sin forzarlo (§2). La ruta conserva su
+ * metadata, su OG y su `generateStaticParams`; lo que cambia es qué componente
+ * la dibuja: de ficha editorial a mesa donde cada proyecto se despliega a
+ * tres profundidades.
  */
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.map((locale) => ({ locale }));
@@ -47,15 +47,14 @@ export default async function ProjectsIndexPage({
     <SiteShell
       locale={typedLocale}
       activeWorldId={world.id}
-      mainClassName="world-route"
+      mainClassName="projects-route"
       footerLabel={`JONÁS ORBIT · DESTINO ${String(world.order).padStart(2, "0")} / ${world.cosmicName.toUpperCase()}`}
     >
-      <WorldPage world={world} locale={typedLocale} showPanels={false}>
-        <ProjectGrid
-          projects={getF1AProjects(typedLocale)}
-          locale={typedLocale}
-        />
-      </WorldPage>
+      <ProjectsPage
+        locale={typedLocale}
+        projects={getF1AProjects(typedLocale)}
+        world={world}
+      />
     </SiteShell>
   );
 }

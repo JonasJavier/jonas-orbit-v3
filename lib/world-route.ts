@@ -69,3 +69,17 @@ export function findWorldRoute(
 export function isObservatoryPath(pathname: string): boolean {
   return pathname.split("/").includes("observatorio");
 }
+
+/**
+ * ¿Es este pathname la PORTADA de su mundo, y no una hija?
+ *
+ * La mesa de ingeniería (`/es/proyectos`) cubre la escena persistente con una
+ * sala opaca a todo el ancho, así que ahí la escena duerme. Pero el caso
+ * completo (`/es/proyectos/omsta`) es hijo del mismo mundo por
+ * `findWorldRoute` y NO cambia con la mesa (`endurance-proyectos.md` §14):
+ * conserva la escena detrás como cualquier página editorial. Cubrir por
+ * mundo entero habría congelado el fondo de los cinco casos.
+ */
+export function isWorldIndexPath(pathname: string, route: WorldRoute): boolean {
+  return normalise(pathname) === normalise(route.href);
+}

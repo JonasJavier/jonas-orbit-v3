@@ -99,10 +99,14 @@ MDX**, nunca en `worlds.data.ts`.
   corren con reduced-motion). Publicación de E03/Bonao City pendiente.
 - **Formación / Miller** `docs/design/miller-formacion.md` §«Océano en WebGL2 y
   formación en curso» (09-12) — `education.inProgress`.
-- **Proyectos** `docs/design/endurance-proyectos.md` (09-21) — mesa de
-  ingeniería, plan aprobado **sin construir**; abiertos arquitecturas del §6
-  y foto de la sala. Delicaté publicado (09-23): cinco proyectos, §13.1
-  cerrado; caso reescrito sobre el código y ocho capturas nuevas.
+- **Proyectos** `docs/design/endurance-proyectos.md` (09-21; §15
+  «Construcción», 09-24) — la mesa de ingeniería CONSTRUIDA: tres capas con
+  los mismos objetos (`components/engineering-table.tsx`), arquitectura en el
+  frontmatter de los cinco MDX validada por Velite, peldaños WebP y manifiesto
+  de medidas por `tools/prepare-projects.mjs`, escena dormida sólo en la
+  portada del mundo. «Visitar el sitio» sale del `links` `kind: demo`, que aún
+  no existe en ningún MDX. Abiertos: confirmar arquitecturas, URLs de
+  producción, foto de la sala, valoración visual. Delicaté publicado (09-23).
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

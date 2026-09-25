@@ -37,6 +37,56 @@ gallery:
   - src: /media/projects/wikiverse/04-home-mobile.png
     alt: Inicio de Wiki Universe adaptado a una pantalla móvil
     caption: La exploración temática y la búsqueda mantienen su prioridad en móvil.
+    frame: mobile
+architecture:
+  nodes:
+    - id: inicio
+      label: Inicio y búsqueda
+      lane: cliente
+      screen: /media/projects/wikiverse/01-home-desktop.png
+    - id: articulo
+      label: Artículo
+      lane: cliente
+      screen: /media/projects/wikiverse/02-article-desktop.png
+    - id: historial
+      label: Historial de revisiones
+      lane: cliente
+      screen: /media/projects/wikiverse/03-history-desktop.png
+    - id: inicio-movil
+      label: Inicio en móvil
+      lane: cliente
+      screen: /media/projects/wikiverse/04-home-mobile.png
+    - id: api
+      label: API DRF con JWT y OpenAPI
+      lane: servicio
+    - id: articulos
+      label: Artículos en Markdown
+      lane: servicio
+    - id: revisiones
+      label: Revisiones
+      lane: servicio
+      decision: >-
+        El contenido editable en Markdown vive separado de sus metadatos y de
+        sus revisiones, y cada edición queda visible.
+    - id: postgresql
+      label: PostgreSQL
+      lane: datos
+      decision: >-
+        Búsqueda de texto completo con ranking nativo de PostgreSQL, para no
+        añadir un motor de búsqueda aparte.
+    - id: redis
+      label: Redis
+      lane: datos
+  edges:
+    - [inicio, api]
+    - [articulo, api]
+    - [historial, api]
+    - [inicio-movil, api]
+    - [api, articulos]
+    - [api, revisiones]
+    - [api, redis]
+    - [articulos, postgresql]
+    - [revisiones, postgresql]
 links:
   - label: Ver repositorio
     href: https://github.com/JonasJavier/Wikipedia-
