@@ -1,0 +1,77 @@
+nodes:
+  - id: portada
+    label: Portada y marca
+    lane: cliente
+    screen: 01-home-desktop.png
+  - id: catalogo
+    label: Catálogo y filtros
+    lane: cliente
+    screen: 06-catalog-filter-desktop.png
+    decision: >-
+      El catálogo se lee completo de la API en cada visita y se filtra en el navegador.
+  - id: ficha
+    label: Ficha de producto
+    lane: cliente
+    screen: 09-product-detail-desktop.png
+  - id: carrito
+    label: Carrito
+    lane: cliente
+    screen: 18-cart-desktop.png
+    decision: >-
+      Carrito sin cuenta que se actualiza con precios y existencias reales al volver.
+  - id: contacto
+    label: Contacto
+    lane: cliente
+    screen: 35-contact-desktop.png
+  - id: carrito-local
+    label: localStorage
+    lane: datos
+    decision: >-
+      El carrito vive en el navegador; el servidor nunca guarda pedidos ni compradores.
+  - id: api
+    label: API de catálogo (DRF)
+    lane: servicio
+    decision: >-
+      API pública de sólo lectura; el catálogo se escribe únicamente desde Django Admin.
+  - id: admin
+    label: Django Admin
+    lane: servicio
+    screen: 40-admin-products-desktop.png
+    decision: >-
+      Precio, existencias, destacado y visibilidad se editan en la propia lista.
+  - id: django
+    label: Django + WhiteNoise
+    lane: servicio
+    decision: >-
+      Un solo proceso sirve tienda, API, admin y fotos desde el mismo origen, sin CORS.
+  - id: postgresql
+    label: PostgreSQL
+    lane: datos
+  - id: volumen
+    label: Volumen de fotos
+    lane: datos
+    decision: >-
+      Las fotos subidas van a un volumen persistente; la ruta se rechaza si es relativa.
+  - id: railway
+    label: Railway (Docker)
+    lane: infraestructura
+    decision: >-
+      Cada push a main migra antes de publicar y sólo publica si el healthcheck responde.
+  - id: whatsapp
+    label: WhatsApp (wa.me)
+    lane: integraciones
+    decision: >-
+      El pedido sale como mensaje prearmado en el canal donde el negocio ya cobra y entrega.
+edges:
+  - [portada, catalogo]
+  - [catalogo, ficha]
+  - [ficha, carrito]
+  - [catalogo, api]
+  - [carrito, carrito-local]
+  - [carrito, whatsapp]
+  - [contacto, whatsapp]
+  - [api, django]
+  - [admin, django]
+  - [django, postgresql]
+  - [django, volumen]
+  - [railway, django]

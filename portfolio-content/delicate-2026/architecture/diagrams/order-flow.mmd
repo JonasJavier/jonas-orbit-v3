@@ -1,0 +1,19 @@
+%% Delicaté 4.0 — del catálogo al pedido por WhatsApp (commit 9f134109)
+sequenceDiagram
+  actor C as Comprador
+  participant T as Tienda React
+  participant L as localStorage
+  participant A as API Django
+  participant W as WhatsApp (wa.me)
+
+  C->>T: Abre el sitio
+  T->>L: Lee el carrito guardado
+  T->>A: GET /api/products/?page_size=100&page=1…n
+  A-->>T: Productos activos (precio, existencias, foto)
+  T->>T: Sincroniza carrito: precios, límite de existencias, retira productos
+  T->>L: Guarda el carrito actualizado
+  C->>T: Filtra, abre la ficha, agrega productos
+  T->>L: Guarda cada cambio
+  C->>T: «Finalizar por WhatsApp»
+  T->>W: Abre wa.me con productos, cantidades y total estimado
+  Note over W: El negocio confirma disponibilidad,<br/>entrega y pago en la conversación

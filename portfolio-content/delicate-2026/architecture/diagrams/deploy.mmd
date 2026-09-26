@@ -1,0 +1,9 @@
+%% Delicaté 4.0 — despliegue en Railway (commit 9f134109)
+flowchart TD
+  P["git push a main<br/>(GitHub)"] --> B["Build Docker multietapa<br/>1. node:24 → vite build<br/>2. python:3.13 → collectstatic + gzip"]
+  B --> M["Pre-deploy<br/>manage.py migrate"]
+  M -->|falla| K["Se mantiene la versión anterior"]
+  M --> S["Arranca gunicorn"]
+  S --> H{"GET /api/health/<br/>¿base de datos OK?"}
+  H -->|200| L["Tráfico a la versión nueva<br/>delicate.jonasjavier.dev"]
+  H -->|503 / sin respuesta| K

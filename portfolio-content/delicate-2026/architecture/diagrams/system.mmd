@@ -1,0 +1,31 @@
+%% Delicaté 4.0 — vista de sistema (commit 9f134109)
+flowchart LR
+  subgraph Cliente["Navegador"]
+    SPA["Tienda React 19<br/>(build de Vite)"]
+    LS[("localStorage<br/>carrito")]
+  end
+
+  subgraph Railway["Railway · servicio web (Docker)"]
+    WN["WhiteNoise<br/>/ , /assets, /static"]
+    DJ["Django 5.2 + DRF<br/>gunicorn"]
+    ADM["Django Admin<br/>/admin/"]
+    API["API<br/>/api/products, /api/health"]
+    MED["/media/ (fotos)"]
+  end
+
+  PG[("PostgreSQL<br/>Railway")]
+  VOL[("Volumen /data<br/>fotos subidas")]
+  WA["WhatsApp<br/>wa.me + texto prearmado"]
+  EQ(["Equipo del negocio"])
+
+  SPA -- "GET catálogo (todas las páginas)" --> API
+  SPA -- "imágenes" --> MED
+  SPA <--> LS
+  SPA -- "abre enlace con el pedido" --> WA
+  EQ --> ADM
+  WN --- DJ
+  API --- DJ
+  ADM --- DJ
+  MED --- DJ
+  DJ --> PG
+  DJ --> VOL

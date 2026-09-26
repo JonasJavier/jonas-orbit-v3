@@ -1,0 +1,661 @@
+{
+  "capturedAt": "2026-09-26T02:28:36.705Z",
+  "site": "http://127.0.0.1:4173",
+  "admin": "http://127.0.0.1:8000",
+  "shots": [
+    {
+      "file": "01-home-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "02-home-scrolled-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Desplazada 40 px: la cabecera toma su fondo sólido.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "03-home-full-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": true,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "04-values-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "05-story-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "06-process-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "07-quote-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "08-faq-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "09-contact-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "10-footer-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "11-catalog-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "12-catalog-filter-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "13-product-hover-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Hover sobre la tarjeta: aparece «Agregar».",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "14-product-detail-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "15-catalog-soldout-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Datos demo: Flor de Ámbar con existencias 0.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "16-product-soldout-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Datos demo: Flor de Ámbar con existencias 0.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "17-cart-empty-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "18-cart-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "19-whatsapp-handoff-desktop.png",
+      "url": "https://api.whatsapp.com/send/?phone=18498625049&text=Hola+Delicat%C3%A9+%EF%BF%BD%0AQuiero+realizar+este+pedido%3A%0A%0A%E2%80%A2+2+%C3%97+Avena+Calma+%E2%80%94+RD%24700%0A%E2%80%A2+1+%C3%97+Coraz%C3%B3n+de+Lavanda+%E2%80%94+RD%24425%0A%E2%80%A2+1+%C3%97+Caf%C3%A9+Despierto+%E2%80%94+RD%24450%0A%0ATotal+estimado%3A+RD%241%2C575%0A%0AMi+nombre+es%3A+%0APrefiero%3A+entrega+%2F+recoger%0A%0A%C2%BFMe+confirman+disponibilidad+y+forma+de+entrega%3F+Gracias.&type=phone_number&app_absent=0",
+      "fullPage": false,
+      "note": "Página pública de WhatsApp tras el enlace; no se envió ningún mensaje.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "20-cart-updated-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Carrito guardado con precio y cantidad desactualizados (simulado en localStorage).",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "21-loading-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "API retenida con page.route para mostrar el esqueleto de carga.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "22-error-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "API cortada con page.route (connection refused).",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        "net::ERR_CONNECTION_REFUSED http://127.0.0.1:4173/api/products/?page_size=100&page=1"
+      ]
+    },
+    {
+      "file": "23-empty-category-desktop.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Respuesta de la API filtrada con page.route: sin productos clásicos.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "24-admin-login-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/login/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "25-admin-index-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "26-admin-products-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/shop/product/",
+      "fullPage": true,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "27-admin-products-filter-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/shop/product/?category__exact=botanicos",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "28-admin-product-edit-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/shop/product/9/change/",
+      "fullPage": true,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "29-admin-messages-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/contact/contactmessage/",
+      "fullPage": false,
+      "note": "Mensajes demo con correos @example.com.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "30-admin-newsletter-desktop.png",
+      "url": "http://127.0.0.1:8000/admin/contact/newslettersubscription/",
+      "fullPage": false,
+      "note": "Suscripciones demo con correos @example.com.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "31-home-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "32-home-full-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": true,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "33-menu-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "34-story-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "35-process-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "36-quote-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "37-faq-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "38-contact-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "39-footer-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "40-catalog-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "41-catalog-filter-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "42-product-detail-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "43-product-detail-bottom-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "44-catalog-soldout-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Datos demo: Flor de Ámbar con existencias 0.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "45-product-soldout-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Datos demo: Flor de Ámbar con existencias 0.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "46-cart-empty-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "47-cart-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "48-whatsapp-handoff-mobile.png",
+      "url": "https://api.whatsapp.com/send/?phone=18498625049&text=Hola+Delicat%C3%A9+%EF%BF%BD%0AQuiero+realizar+este+pedido%3A%0A%0A%E2%80%A2+2+%C3%97+Avena+Calma+%E2%80%94+RD%24700%0A%E2%80%A2+1+%C3%97+Coraz%C3%B3n+de+Lavanda+%E2%80%94+RD%24425%0A%E2%80%A2+1+%C3%97+Caf%C3%A9+Despierto+%E2%80%94+RD%24450%0A%0ATotal+estimado%3A+RD%241%2C575%0A%0AMi+nombre+es%3A+%0APrefiero%3A+entrega+%2F+recoger%0A%0A%C2%BFMe+confirman+disponibilidad+y+forma+de+entrega%3F+Gracias.&type=phone_number&app_absent=0",
+      "fullPage": false,
+      "note": "Página pública de WhatsApp tras el enlace; no se envió ningún mensaje.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "49-cart-updated-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Carrito guardado con precio y cantidad desactualizados (simulado en localStorage).",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "50-loading-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "API retenida con page.route para mostrar el esqueleto de carga.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "51-error-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "API cortada con page.route (connection refused).",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        "net::ERR_CONNECTION_REFUSED http://127.0.0.1:4173/api/products/?page_size=100&page=1"
+      ]
+    },
+    {
+      "file": "52-empty-category-mobile.png",
+      "url": "http://127.0.0.1:4173/",
+      "fullPage": false,
+      "note": "Respuesta de la API filtrada con page.route: sin productos clásicos.",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "53-admin-login-mobile.png",
+      "url": "http://127.0.0.1:8000/admin/login/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "54-admin-index-mobile.png",
+      "url": "http://127.0.0.1:8000/admin/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "55-admin-products-mobile.png",
+      "url": "http://127.0.0.1:8000/admin/shop/product/",
+      "fullPage": false,
+      "note": null,
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    {
+      "file": "56-not-found-desktop.png",
+      "url": "https://delicate.jonasjavier.dev/pagina-que-no-existe/",
+      "fullPage": false,
+      "note": "Ruta inexistente en producción (GET de sólo lectura).",
+      "overflowX": 0,
+      "brokenImages": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 ()"
+      ],
+      "pageErrors": [],
+      "failedRequests": [
+        "404 https://delicate.jonasjavier.dev/pagina-que-no-existe/"
+      ]
+    }
+  ],
+  "whatsappMessages": {
+    "contact-desktop": {
+      "whatsappUrlHost": "wa.me",
+      "message": "Hola Delicaté 👋\nMi nombre es Laura.\n\nBusco un jabón suave para piel sensible. ¿Cuál me recomiendan?"
+    },
+    "cart-desktop": {
+      "whatsappUrlHost": "wa.me",
+      "message": "Hola Delicaté 👋\nQuiero realizar este pedido:\n\n• 2 × Avena Calma — RD$700\n• 1 × Corazón de Lavanda — RD$425\n• 1 × Café Despierto — RD$450\n\nTotal estimado: RD$1,575\n\nMi nombre es: \nPrefiero: entrega / recoger\n\n¿Me confirman disponibilidad y forma de entrega? Gracias."
+    },
+    "whatsapp-handoff-desktop": {
+      "finalUrlHost": "api.whatsapp.com",
+      "emojiReplaced": true
+    },
+    "contact-mobile": {
+      "whatsappUrlHost": "wa.me",
+      "message": "Hola Delicaté 👋\nMi nombre es Laura.\n\nBusco un jabón suave para piel sensible. ¿Cuál me recomiendan?"
+    },
+    "cart-mobile": {
+      "whatsappUrlHost": "wa.me",
+      "message": "Hola Delicaté 👋\nQuiero realizar este pedido:\n\n• 2 × Avena Calma — RD$700\n• 1 × Corazón de Lavanda — RD$425\n• 1 × Café Despierto — RD$450\n\nTotal estimado: RD$1,575\n\nMi nombre es: \nPrefiero: entrega / recoger\n\n¿Me confirman disponibilidad y forma de entrega? Gracias."
+    },
+    "whatsapp-handoff-mobile": {
+      "finalUrlHost": "api.whatsapp.com",
+      "emojiReplaced": true
+    }
+  }
+}
