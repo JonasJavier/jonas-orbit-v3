@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (el ejemplo seguro sí se versiona)
 .env*
+!.env.example
 
 # cloudflare local secrets (wrangler / opennext dev) — nunca versionar
 .dev.vars
@@ -69,6 +70,13 @@ crash.log
 /.playwright-cli/
 /output/playwright/
 .gstack/
+
+# logs y comparativas temporales de revisión
+/output/*.log
+/.tmp-*.png
+/*-tmp.mjs
+/tmp-*.mjs
+/_rev_measure.mjs
 
 # capturas de tools/ (ver tools/README.md)
 /.shots/

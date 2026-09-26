@@ -203,7 +203,10 @@ el vuelo de la Ranger aplican la misma regla; en vez de adelgazar el shader
 del túnel (un 20 % más caro que el anterior en SwiftShader), un equipo sin
 aceleración ya no lo dibuja. Los e2e que prueban el render lo piden
 explícitamente (`conEscenaViva`, `?no3d=0`). Los más pesados (O5, la cubierta
-de Edmunds) todavía fallan a veces SÓLO con la suite entera en paralelo.
+de Edmunds) todavía fallan a veces SÓLO con la suite entera en paralelo. La
+suite limita por eso el paralelismo a cuatro workers locales y dos en CI: los
+fallos de C2/C4 y salida del Observatorio del 2026-09-26 pasaron 6/6 al
+repetirlos aislados y no justificaban relajar sus aserciones.
 
 **Ranger — hero mínimo y panel de enlace (2026-09-23):** la sección
 homónima de `docs/design/ranger-contacto.md` manda en la primera pantalla y

@@ -1,72 +1,131 @@
-# Jonás Orbit v3 — Misión Endurance
+# Jonás Orbit v3
 
-Portafolio espacial de **Jonás Javier Encarnación** — desarrollador full-stack,
-diseñador UX/UI y fotógrafo. Una experiencia narrativa inspirada en el cine
-espacial científico: scroll cinematográfico como navegación principal y un
-universo 3D como capa progresiva.
+[![CI](https://github.com/JonasJavier/jonas-orbit-v3/actions/workflows/ci.yml/badge.svg)](https://github.com/JonasJavier/jonas-orbit-v3/actions/workflows/ci.yml)
 
-**Plan aprobado (fuente de verdad):**
-[`docs/plans/jonas-orbit-v3-mission-endurance.md`](docs/plans/jonas-orbit-v3-mission-endurance.md)
-— arquitectura, fases (F1A → F3), contenido como entregable, matriz de tests
-(Appendix A) y condición de parada. Ninguna decisión arquitectónica se abre sin
-pasar por ese documento.
+Portafolio experimental de **Jonás Javier Encarnación**: una interfaz de
+navegación espacial que combina contenido editorial, WebGL progresivo y una
+arquitectura accesible basada en rutas reales.
 
-## Estado
+> **Estado:** desarrollo activo. La arquitectura y los seis destinos ya están
+> implementados, pero la valoración visual, algunas piezas editoriales, las
+> licencias de audio y el dominio de producción siguen abiertos. Las capturas y
+> métricas publicadas aquí representan el estado actual; no una versión final.
 
-**Fase actual: F1A — setup técnico.** Estructura, pipeline de contenido,
-calidad y deploy verificados; la coreografía de scroll, el starfield y el
-diseño visual definitivo son el siguiente trabajo de F1A.
+![System Map de Jonás Orbit v3](docs/media/readme/system-map.webp)
 
-## Comandos
+_System Map · build de producción · 1440 × 860 · movimiento encendido ·
+captura del 26 de septiembre de 2026 · valoración visual pendiente._
+
+## La experiencia
+
+La portada es un mapa narrativo: cada cuerpo tiene una identidad visual y abre
+una parte distinta del portafolio. La escena 3D es una mejora progresiva; el
+contenido, la navegación y las rutas siguen funcionando sin JavaScript.
+
+| Destino | Contenido | Ruta |
+| --- | --- | --- |
+| Gargantúa | Sobre mí | `/es/sobre-mi` |
+| Miller | Formación | `/es/formacion` |
+| Endurance | Proyectos | `/es/proyectos` |
+| Edmunds | Creatividad | `/es/creatividad` |
+| Tesseracto | Experimentos | `/es/experimentos` |
+| Ranger | Contacto | `/es/contacto` |
+
+## Principios técnicos
+
+- **Contenido antes que canvas.** El HTML servido contiene la información y
+  los enlaces esenciales; WebGL nunca es el contenido ni el candidato a LCP.
+- **Movimiento y sonido bajo control.** Dos controles globales, estados
+  legibles y una experiencia reducida completa para equipos limitados.
+- **Identidad por dominio.** `WorldId` une estructura y prosa; los slugs no son
+  claves de negocio y el texto visible vive en MDX.
+- **Calidad verificable.** TypeScript estricto, ESLint sin warnings, Knip,
+  Vitest, Playwright, Lighthouse CI y comprobación de enlaces.
+- **Decisiones trazables.** El plan, los contratos visuales y el registro de
+  decisiones explican tanto el resultado como las restricciones que lo forman.
+
+## Stack
+
+- Next.js 16 y React 19
+- TypeScript 5
+- Three.js y WebGL2
+- Velite como único pipeline MDX
+- Vitest, Testing Library y Playwright
+- OpenNext sobre Cloudflare Workers
+
+Todas las versiones están fijadas en `package.json`; las actualizaciones de
+dependencias se hacen como tareas dedicadas y pasan la suite completa.
+
+## Desarrollo local
+
+### Requisitos
+
+- Node.js 24 (ver `.nvmrc`)
+- npm
 
 ```bash
-npm run dev        # desarrollo (corre velite antes)
-npm run build      # build de producción (corre velite antes)
-npm run start      # servir el build
-npm run content    # compilar solo el contenido (velite)
-npm run typecheck  # tsc --noEmit
-npm run lint       # eslint
-npm run knip       # código muerto: archivos/exports/deps huérfanos
-npm run test       # vitest (unit + componentes)
-npm run test:e2e   # playwright (requiere `npm run build` previo)
-npm run check      # lint + typecheck + knip + test + build
-npm run preview    # build OpenNext + preview local en workerd
-npm run deploy     # build OpenNext + deploy a Cloudflare
+npm ci
+cp .env.example .env.local
+npm run dev
 ```
 
-## Arquitectura (resumen)
+En Windows con VBS/HVCI, `workerd` puede fallar al iniciar. El ejemplo de
+entorno usa `CF_DEV_CONTEXT=off`; Next.js se ejecuta normalmente y el contacto
+lee las variables desde `process.env`.
 
-- **Next.js (App Router) + OpenNext → Cloudflare Workers.** Versiones fijadas;
-  se actualizan solo en tarea dedicada tras pasar la suite completa.
-- **Contenido: Velite (pipeline único).** Estructura neutral al idioma en
-  `content/worlds.data.ts` (identidad canónica `WorldId`); prosa localizada en
-  `content/{locale}/worlds/*.mdx`. `getWorld(id, locale)` compone ambos lados.
-  La paridad de contenido rompe el build solo para idiomas publicados
-  (`content/site.data.ts`).
-- **Rutas:** System Map en `/es` y seis destinos con rutas propias;
-  casos de estudio en rutas propias. `/` → `/es` por
-  redirect estático (sin proxy hasta F2A).
-- **Los 6 destinos:** Tesseracto (historia) ·
-  Miller (desarrollo) · Endurance (proyectos) · Edmunds (creatividad) ·
-  Gargantúa (laboratorio) · Ranger (contacto).
+### Comandos
 
-## Estructura
+| Comando | Propósito |
+| --- | --- |
+| `npm run dev` | Desarrollo local; compila Velite antes de iniciar |
+| `npm run content` | Compila y valida el contenido |
+| `npm run test` | Suite unitaria y de componentes |
+| `npm run test:e2e` | E2E en Chromium desktop y móvil; requiere build previo |
+| `npm run check` | Lint, tipos, código muerto, tests y build de producción |
+| `npm run preview` | Build y preview local de OpenNext/Cloudflare |
 
-```
-app/[locale]/        System Map y rutas de destino (ES publicado; EN llega en F2A)
-components/          componentes de presentación
-content/             worlds.data.ts (estructura) + {es,en}/worlds/*.mdx (prosa)
-lib/                 getWorld / getWorlds
-e2e/                 smoke tests de Playwright
-docs/plans/          el plan aprobado
-docs/reviews/        test plan de la revisión de ingeniería
-docs/experiments/    experimentos aparcados (con condiciones de entrada)
-docs/deferred/       trabajo diferido (con condiciones de entrada)
-docs/reference/v2/   código de v2 conservado como referencia (no se importa)
+## Arquitectura del repositorio
+
+```text
+app/          rutas, metadatos y endpoints
+components/   interfaz, escenas y módulos por destino
+content/      datos estructurales y contenido MDX
+lib/          contratos y lógica compartida
+e2e/          pruebas de navegación y flujos críticos
+public/       recursos servidos por la aplicación
+docs/         planes, decisiones, diseño y revisiones
+tools/        captura y medición reproducible de la escena
+infra/        infraestructura como código
 ```
 
-## Reglas del repo
+El mapa completo de documentación está en [`docs/README.md`](docs/README.md).
+La fuente de verdad del alcance y los criterios de cierre es el
+[`plan Misión Endurance`](docs/plans/jonas-orbit-v3-mission-endurance.md); las
+decisiones vigentes y sus trampas de medición están en
+[`docs/registro-de-decisiones.md`](docs/registro-de-decisiones.md).
 
-Ver [`AGENTS.md`](AGENTS.md). Las tres más importantes: un solo pipeline MDX
-(Velite), cero código/deps huérfanos (Knip en CI), y nada de código cuya única
-función sea alterar una auditoría.
+## Calidad y rendimiento
+
+Cada cambio debe conservar tres perfiles distintos:
+
+1. HTML semántico y navegación sin JavaScript.
+2. Perfil ligero (`?no3d=1`) para auditorías y equipos limitados.
+3. Experiencia WebGL completa cuando el usuario mantiene los efectos activos.
+
+CI ejecuta lint, typecheck, detección de código huérfano, tests, build,
+Playwright, Lighthouse y revisión de enlaces. Los presupuestos y la metodología
+están documentados en [`lighthouserc.json`](lighthouserc.json) y en el
+[`Appendix A del plan`](docs/plans/jonas-orbit-v3-mission-endurance.md).
+
+## Colaboración y seguridad
+
+Antes de proponer cambios, lee [`CONTRIBUTING.md`](CONTRIBUTING.md) y
+[`AGENTS.md`](AGENTS.md). Los problemas de seguridad se reportan siguiendo
+[`SECURITY.md`](SECURITY.md), sin publicar secretos ni detalles explotables.
+
+## Licencia y recursos
+
+Este repositorio **no tiene todavía una licencia de código abierto**. El código,
+las fotografías, el audio y las piezas visuales conservan todos sus derechos
+hasta que el propietario publique una licencia explícita. La procedencia de los
+recursos externos se documenta junto a cada colección.
