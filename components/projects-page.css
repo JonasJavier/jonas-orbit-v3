@@ -599,7 +599,12 @@
     holograma; si no cabe sin pisar la columna de lectura, se aparta a la
     derecha, y nunca sale del marco.
   */
-  --row: clamp(26px, 10.5cqh, 40px);
+  /* Un sistema con muchas filas las aprieta: sus filas juntas no pasan del
+     92 % del alto del escenario, que es lo que cabe entre las pestañas de
+     capa y el anillo del cristal (medido a 1280, 1440 y 1920). Con diez filas
+     (OMSTA) el esquema subía hasta pisar las pestañas; hasta ocho, el tope
+     no llega a actuar y manda el 10,5 % de siempre. */
+  --row: clamp(26px, min(10.5cqh, calc(92cqh / var(--rows, 1))), 40px);
   --col-w: 11.5cqw;
   --insp-w: clamp(228px, 16.5cqw, 250px);
   --pair-gap: clamp(18px, 2.2cqw, 34px);
@@ -1044,7 +1049,6 @@
 .table .holo-lane__title { font-size: 0.66rem; letter-spacing: 0.14em; }
 .table .holo-inspector__lane { font-size: 0.68rem; letter-spacing: 0.14em; }
 .table .holo-inspector__links dt { font-size: 0.64rem; letter-spacing: 0.13em; }
-
 /* Al levantarse, un barrido de luz recorre el esquema una vez: se proyecta,
    no aparece. La animación se reinicia cada vez que se entra en la capa. */
 .holo-diagram::after {
@@ -1549,6 +1553,13 @@ html[data-motion="off"] .projects-page *::after {
 @media (min-width: 768px) and (max-width: 1299px) {
   .table .holo-node__chip :is(.holo-node__thumb, .holo-glyph) { display: none; }
   .table .holo-node__chip { padding-inline: 8px 6px; }
+}
+/* Un sistema de cinco carriles (OMSTA) estrecha cada columna igual que una
+   ventana pequeña: hasta ~1800 px, lo mismo. A 1920 las cajas vuelven a
+   tener sitio para su miniatura. */
+@media (min-width: 1300px) and (max-width: 1799px) {
+  .table .holo-diagram[data-cols="5"] .holo-node__chip :is(.holo-node__thumb, .holo-glyph) { display: none; }
+  .table .holo-diagram[data-cols="5"] .holo-node__chip { padding-inline: 8px 6px; }
 }
 
 /* ── Móvil: la mesa se aplana ───────────────────────────────────────────── */

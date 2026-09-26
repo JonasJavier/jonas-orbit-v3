@@ -40,7 +40,7 @@ describe("ProjectCase — primer pantallazo", () => {
     const title = screen.getByRole("heading", { level: 1 });
     expect(title).toHaveAccessibleName(omsta.prose.title);
     expect(title.querySelector(".case-title__name")).toHaveTextContent(/^OMSTA$/);
-    expect(title.querySelector(".case-title__descriptor")).toHaveTextContent("ERP para una agencia de viajes");
+    expect(title.querySelector(".case-title__descriptor")).toHaveTextContent("ERP y app móvil para una agencia de viajes");
     expect(screen.getByText(omsta.prose.summary)).toBeInTheDocument();
     // El nombre dice su longitud a la hoja de estilo: el cuerpo se adapta.
     expect((document.querySelector(".case") as HTMLElement).style.getPropertyValue("--len")).toBe("5");
@@ -118,7 +118,8 @@ describe("ProjectCase — el caso", () => {
     // Cifras cortas: la fila no lleva palabras y su cuerpo puede ser grande.
     const list = within(scope).getByRole("list");
     expect(list).not.toHaveAttribute("data-words");
-    expect(list.style.getPropertyValue("--vlen")).toBe("2");
+    const longest = Math.max(...(omsta.prose.scope ?? []).map((entry) => entry.value.length));
+    expect(list.style.getPropertyValue("--vlen")).toBe(String(longest));
   });
 
   it("una fila de alcance con palabras lo dice a la hoja de estilo", () => {
@@ -192,11 +193,11 @@ describe("ProjectCase — el caso", () => {
     }
   });
 
-  it("cada pantalla se enseña una vez y todas abren su captura", () => {
-    const omsta = getProject("omsta", "es");
-    renderCase(omsta);
+  it("sin módulos, cada pantalla se enseña una vez y todas abren su captura", () => {
+    const delicate = getProject("delicate", "es");
+    renderCase(delicate);
 
-    const total = 1 + (omsta.prose.gallery?.length ?? 0);
+    const total = 1 + (delicate.prose.gallery?.length ?? 0);
     const shots = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-case-shot]"));
     // Sin JavaScript, cada aparato abre su captura (el peldaño WebP), y entre
     // el primer pantallazo, las decisiones y la rejilla están todas.
@@ -205,14 +206,56 @@ describe("ProjectCase — el caso", () => {
 
     // La rejilla sólo lleva las que no salieron antes, con su pie a la vista.
     const shown = new Set([
-      omsta.prose.featuredImage.src,
-      ...(omsta.prose.gallery ?? []).filter((image) => image.frame === "mobile").slice(0, 1).map((image) => image.src),
-      ...(omsta.prose.designDecisions ?? []).map((decision) => decision.screen),
+      delicate.prose.featuredImage.src,
+      ...(delicate.prose.gallery ?? []).filter((image) => image.frame === "mobile").slice(0, 1).map((image) => image.src),
+      ...(delicate.prose.designDecisions ?? []).map((decision) => decision.screen),
     ]);
-    const rest = (omsta.prose.gallery ?? []).filter((image) => !shown.has(image.src));
+    const rest = (delicate.prose.gallery ?? []).filter((image) => !shown.has(image.src));
+    expect(rest.length).toBeGreaterThan(0);
     const more = screen.getByRole("region", { name: "Más pantallas" });
     expect(within(more).getAllByRole("link")).toHaveLength(rest.length);
     rest.forEach((image) => expect(within(more).getByText(image.caption)).toBeInTheDocument());
+  });
+
+  it("con módulos, las pantallas se recorren por módulo, cada módulo entero y con su índice", () => {
+    const omsta = getProject("omsta", "es");
+    renderCase(omsta);
+    const images = [omsta.prose.featuredImage, ...(omsta.prose.gallery ?? [])];
+    const modules = [...new Set(images.map((image) => image.module))];
+
+    const tour = screen.getByRole("region", { name: "Recorrido por módulos" });
+    expect(screen.queryByRole("region", { name: "Más pantallas" })).not.toBeInTheDocument();
+    expect(within(tour).getByText(`${images.length} pantallas en ${modules.length} módulos.`)).toBeInTheDocument();
+    // El índice lleva a cada módulo, en el orden de la ficha.
+    const index = within(tour).getByRole("navigation", { name: "Módulos" });
+    const entries = within(index).getAllByRole("link");
+    expect(entries).toHaveLength(modules.length);
+    modules.forEach((module, position) => {
+      const images_ = images.filter((image) => image.module === module);
+      // El número del módulo es decorado: el nombre accesible empieza por el módulo.
+      const region = within(tour).getByRole("region", { name: new RegExp(`^${module}`) });
+      expect(entries[position]).toHaveAttribute("href", `#${region.id}`);
+      // Cada módulo entero: también las que ya salieron arriba.
+      expect(within(region).getAllByRole("link")).toHaveLength(images_.length);
+      images_.forEach((image) => expect(within(region).getByRole("img", { name: image.alt })).toBeInTheDocument());
+    });
+  });
+
+  it("las tecnologías del proyecto, por áreas y con su versión aparte", () => {
+    const omsta = getProject("omsta", "es");
+    renderCase(omsta);
+    const stack = omsta.prose.stack ?? [];
+    const section = screen.getByRole("region", { name: "Tecnologías" });
+    const total = stack.reduce((sum, group) => sum + group.items.length, 0);
+    expect(within(section).getByText(new RegExp(`^${total} herramientas en ${stack.length} áreas`))).toBeInTheDocument();
+    for (const group of stack) {
+      const area = within(section).getByRole("region", { name: new RegExp(`^${group.group}`) });
+      expect(within(area).getAllByRole("listitem")).toHaveLength(group.items.length);
+    }
+    // «Django 5.2»: el nombre y, aparte, la versión.
+    const django = within(section).getByText("Django");
+    expect(django.nextElementSibling).toHaveTextContent("5.2");
+    expect(document.querySelector('.case-localnav a[href="#tecnologias"]')).not.toBeNull();
   });
 
   it("el visor recorre todas las pantallas y devuelve el foco", () => {
@@ -221,9 +264,10 @@ describe("ProjectCase — el caso", () => {
     const captions = [omsta.prose.featuredImage.caption, ...(omsta.prose.gallery ?? []).map((image) => image.caption)];
     const viewer = document.querySelector("dialog.case-viewer") as HTMLDialogElement;
 
-    // Desde la rejilla: la flecha avanza y, al cerrar, el foco cae en la
+    // Desde el recorrido: la flecha avanza y, al cerrar, el foco cae en la
     // miniatura de la pantalla que se estaba mirando.
-    const grid = within(screen.getByRole("region", { name: "Más pantallas" })).getAllByRole("link");
+    const tour = screen.getByRole("region", { name: "Recorrido por módulos" });
+    const grid = within(tour.querySelector(".case-tour__stop") as HTMLElement).getAllByRole("link");
     const first = Number(grid[0].dataset.caseShot);
     fireEvent.click(grid[0]);
     expect(viewer).toHaveAttribute("open");
@@ -255,7 +299,7 @@ describe("ProjectCase — el caso", () => {
     expect(chapter).toHaveAttribute("id", "contexto");
     const index = within(longread).getByRole("navigation", { name: "Índice del caso" });
     expect(within(index).getByRole("link", { name: /Contexto/ })).toHaveAttribute("href", "#contexto");
-    expect(within(index).getAllByRole("link")).toHaveLength(17);
+    expect(within(index).getAllByRole("link")).toHaveLength(15);
     expect(within(longread).getByText(/min de lectura/)).toBeInTheDocument();
   });
 

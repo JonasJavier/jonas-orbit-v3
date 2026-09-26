@@ -6,7 +6,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.76
   },
@@ -17,7 +18,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.9
   },
@@ -28,7 +30,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.62
   },
@@ -39,7 +42,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.67
   },
@@ -68,7 +72,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.9
   },
@@ -79,7 +84,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.8
   },
@@ -90,7 +96,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.09
   },
@@ -101,7 +108,8 @@
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
     "luma": 0.13
   },
@@ -164,90 +172,683 @@
     ],
     "luma": 0.95
   },
-  "/media/projects/omsta/01-dashboard-panel-ejecutivo.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/m02-inicio.png": {
+    "width": 1080,
+    "height": 2400,
     "steps": [
-      480,
-      720,
-      960,
-      1440
+      390,
+      780
     ],
-    "luma": 0.72
+    "luma": 0.74
   },
-  "/media/projects/omsta/04-reserva-detalle.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/m03-reservas.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.84
+  },
+  "/media/projects/omsta/m04-reserva-ficha.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.7
+  },
+  "/media/projects/omsta/m05-reserva-pagos.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.68
+  },
+  "/media/projects/omsta/m06-registrar-cobro.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.86
+  },
+  "/media/projects/omsta/m07-nueva-reserva.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/omsta/m10-asistente-calendario.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.8
+  },
+  "/media/projects/omsta/m11-asistente-habitaciones.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.85
+  },
+  "/media/projects/omsta/m12-asistente-dinero.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.86
+  },
+  "/media/projects/omsta/m13-clientes.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.85
+  },
+  "/media/projects/omsta/m14-cliente-ficha.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.73
+  },
+  "/media/projects/omsta/m15-avisos.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.83
+  },
+  "/media/projects/omsta/m16-catalogos.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.88
+  },
+  "/media/projects/omsta/m18-configuracion.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/omsta/m19-retenciones.png": {
+    "width": 1080,
+    "height": 2400,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/omsta/w02-dashboard.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.73
+  },
+  "/media/projects/omsta/w03-reservas-listado.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/omsta/w04-reserva-hotel-resumen.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.95
   },
-  "/media/projects/omsta/08-crm-cliente-detalle.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/w05-reserva-agenda-pago-suplidor.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w06-reserva-facturada-paquete-contable.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w07-reserva-historial-auditado.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w08-reserva-paquete-componentes.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w09-reserva-seguro-asegurados.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w10-nueva-reserva-vuelo.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/omsta/w11-nueva-reserva-crucero.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.9
+  },
+  "/media/projects/omsta/w12-catalogo-aerolineas.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/omsta/w13-crm-clientes.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.96
   },
-  "/media/projects/omsta/10-cuentas-por-cobrar.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/w14-crm-empresa-ficha.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/omsta/w15-caja-pagos.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/omsta/w16-pago-protegido.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.95
   },
-  "/media/projects/omsta/15-ledger-libro-diario.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/w17-reembolso-guiado.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.88
+  },
+  "/media/projects/omsta/w18-cuentas-por-cobrar.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w19-cuentas-por-pagar.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w20-cxp-saldada.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w21-documento-fiscal-suplidor.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/omsta/w22-factura-paquete-contable.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w23-libro-diario.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w24-asiento-explicado.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.94
   },
-  "/media/projects/omsta/31-nomina-periodo-detalle.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/w25-asientos-de-una-reserva.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/omsta/w26-salud-contable.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w27-cierre-de-periodo.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/omsta/w28-configuracion-fiscal-itbis.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w29-secuencias-ncf.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w30-mapa-de-cuentas.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/omsta/w31-banco-transacciones.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w32-banco-conciliacion.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.94
   },
-  "/media/projects/omsta/33-sucursal-detalle.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/omsta/w33-nomina-resumen.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
-    "luma": 0.81
+    "luma": 0.94
   },
-  "/media/projects/omsta/50-mobile-dashboard.png": {
-    "width": 390,
-    "height": 844,
+  "/media/projects/omsta/w34-nomina-empleado.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
-      390
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
-    "luma": 0.41
+    "luma": 0.88
+  },
+  "/media/projects/omsta/w35-nomina-retenciones-legales.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/omsta/w36-nomina-configuracion-contable.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w37-sucursales.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w38-centro-de-documentos.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/omsta/w39-correos-automaticos.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/omsta/w40-centro-de-reportes.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.85
+  },
+  "/media/projects/omsta/w41-notificaciones.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/omsta/w42-usuarios.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.97
+  },
+  "/media/projects/omsta/w43-evento-auditado.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.97
+  },
+  "/media/projects/omsta/w44-tutoriales.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/omsta/w45-responsive-dashboard.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.47
+  },
+  "/media/projects/omsta/w46-responsive-reserva.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/omsta/w47-responsive-crm.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.94
   },
   "/media/projects/wikiverse/01-home-desktop.png": {
     "width": 1440,

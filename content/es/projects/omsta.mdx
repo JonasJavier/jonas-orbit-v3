@@ -1,300 +1,718 @@
 ---
 id: omsta
 slug: omsta
-title: OMSTA — ERP para una agencia de viajes
+title: OMSTA — ERP y app móvil para una agencia de viajes
 eyebrow: Caso de estudio destacado
 summary: >-
-  ERP real en producción que conecta reservas, cobros, contabilidad de doble
-  partida, nómina y cumplimiento fiscal dominicano.
-statusLabel: En producción y mantenimiento activo
-role: Único desarrollador; arquitectura, full-stack, despliegue y mantenimiento
+  ERP en producción para una agencia de viajes dominicana —reservas, cobros,
+  contabilidad de doble partida, DGII, nómina y sucursales— con una app móvil
+  nativa para el equipo.
+statusLabel: En producción diaria · app móvil en desarrollo
+role: Único desarrollador; arquitectura, backend, web, app móvil, despliegue y mantenimiento
 problem: >-
-  La operación comercial, el dinero y la contabilidad formal necesitaban una
-  única fuente de verdad con trazabilidad, permisos y soporte multimoneda.
+  Una agencia vende ocho tipos de producto, cobra en pesos y dólares y declara
+  a la DGII. Venta, dinero y contabilidad necesitaban un solo sistema, sin
+  teclear dos veces el mismo dato.
 contribution: >-
-  Modelé el dominio y construí un monolito Django modular donde reservas, pagos,
-  asientos, reportes fiscales, sucursales y auditoría forman un flujo conectado.
+  Diseñé y construí en solitario un monolito Django de 19 apps —de la reserva
+  al reporte fiscal— y una app en React Native y Expo que usa los mismos
+  servicios que la web.
 decision: >-
-  Aislé los movimientos de dinero en servicios atómicos e idempotentes y mantuve
-  PostgreSQL como fuente de verdad, incluso para el estado durable de las tareas.
-technologies: [Python, Django, Django REST Framework, PostgreSQL, Redis, Django Q2, Railway]
+  Un hecho económico se captura una sola vez y se propaga: servicios atómicos
+  e idempotentes, invariantes en el modelo y PostgreSQL como única fuente de
+  verdad.
+technologies: [Python, Django, Django REST Framework, PostgreSQL, Redis, Django Q2, React Native, Expo, TypeScript, Railway]
+stack:
+  - group: Lenguajes
+    items: [Python 3.12, TypeScript 6.0, JavaScript, HTML y Django Templates, CSS]
+  - group: Backend
+    items: [Django 5.2, WhiteNoise 6.12, django-filter 25.1, django-select2 8.3, bleach 6.3]
+  - group: Interfaz web
+    items: [Bootstrap 5.3, Bootstrap Icons 1.11, jQuery 3.7, Select2 4.1, HTMX 2.0, Chart.js 4.4, flatpickr 4.6, SweetAlert2 11]
+  - group: App móvil
+    items: [React Native 0.86, React 19.2, Expo SDK 57, Expo Router, TanStack Query 5, react-native-mmkv 4.3, Expo SecureStore, Expo Local Authentication, Expo Location, Expo Image Picker, Expo Document Picker]
+  - group: API y contratos
+    items: [Django REST Framework 3.16, Simple JWT 5.5, drf-spectacular 0.30, OpenAPI 3.0, openapi-typescript 7.13]
+  - group: Datos y colas
+    items: [PostgreSQL, psycopg 3.3, Redis, Django Q2 1.9, django-storages 1.14, boto3 1.42]
+  - group: PDF y exportación
+    items: [WeasyPrint 65, ReportLab 4.4, qrcode 8.0, openpyxl 3.1, XlsxWriter 3.2]
+  - group: Integraciones
+    items: [Google Places API, Google Maps JavaScript API, IPinfo, Correo SMTP]
+  - group: Infraestructura
+    items: [Railway, Railpack, Gunicorn 23, Almacenamiento S3 privado]
+  - group: Build móvil
+    items: [EAS Build, Expo Dev Client, Metro]
+  - group: Calidad y CI
+    items: [pytest 8.4, pytest-django 4.11, coverage 7.16, Ruff 0.15, Black 23.12, pre-commit, Jest 29, ESLint 9, GitHub Actions, expo-doctor, Playwright 1.61]
 highlights:
-  - Operación real de dos sucursales sobre una misma plataforma
-  - Contabilidad de doble partida con trazabilidad al documento de origen
-  - Reportes fiscales DGII 606, 607, 608 y 623
-  - Multimoneda, permisos por rol, auditoría y mantenimiento de incidentes reales
+  - En producción y uso diario, con despliegue automático en Railway desde la rama principal
+  - Ciclo completo venta → cobro → factura con NCF → asientos → reportes DGII 606, 607, 608 y 623
+  - Contabilidad de doble partida con invariantes en el modelo y en la base de datos
+  - App móvil nativa y su API REST, construidas en 16 días sobre el mismo backend
+  - Contrato OpenAPI tipado de punta a punta, con CI que falla si app y API se desalinean
+  - 3.164 pruebas automatizadas con pytest sobre PostgreSQL e integración continua en GitHub Actions
 featuredImage:
-  src: /media/projects/omsta/01-dashboard-panel-ejecutivo.png
-  alt: Panel ejecutivo de OMSTA con indicadores de reservas, cobros, cuentas por cobrar y alertas operativas sobre datos sintéticos
-  caption: El panel reúne la operación diaria en una vista; todos los datos visibles son sintéticos y anonimizados.
+  src: /media/projects/omsta/w02-dashboard.png
+  alt: Panel de OMSTA con reservas del mes, cobrado, comisión, saldo por cobrar y alertas operativas, sobre datos sintéticos
+  caption: El mes de la agencia de un vistazo, con alertas que llevan a la acción.
+  module: Panel y reservas
 gallery:
-  - src: /media/projects/omsta/04-reserva-detalle.png
-    alt: Detalle de una reserva ficticia en OMSTA con estado, cobros, comisión, facturación e historial
-    caption: La reserva funciona como cockpit operativo y financiero, no como un registro aislado.
-  - src: /media/projects/omsta/08-crm-cliente-detalle.png
-    alt: Ficha de cliente ficticio en el CRM de OMSTA con documentos, notas y actividad
-    caption: El CRM conecta el expediente del cliente con reservas y pagos.
-  - src: /media/projects/omsta/10-cuentas-por-cobrar.png
-    alt: Panel de cuentas por cobrar de OMSTA con cartera, comisión y saldos de demostración
-    caption: La cartera puede analizarse por período, estado y contexto comercial.
-  - src: /media/projects/omsta/15-ledger-libro-diario.png
-    alt: Libro diario de OMSTA con asientos de doble partida balanceados y estados de publicación
-    caption: Cada asiento conserva balance y trazabilidad hacia el documento que lo originó.
-  - src: /media/projects/omsta/31-nomina-periodo-detalle.png
-    alt: Período de nómina ficticio en OMSTA con devengado, deducciones y neto
-    caption: El flujo guía generación, revisión, pago y cierre con conexión al ledger.
-  - src: /media/projects/omsta/33-sucursal-detalle.png
-    alt: Panel de una sucursal ficticia en OMSTA con equipo, horarios, documentos y métricas
-    caption: Cada sucursal se modela como una unidad operativa completa.
-  - src: /media/projects/omsta/50-mobile-dashboard.png
-    alt: Panel ejecutivo de OMSTA adaptado a una pantalla móvil
-    caption: Los indicadores y alertas clave conservan prioridad en móvil.
+  - src: /media/projects/omsta/w04-reserva-hotel-resumen.png
+    alt: Ficha de una reserva de hotel con 70 % cobrado, escalera de estados y saldo pendiente
+    caption: Una reserva dice cuánto se vendió, cuánto se cobró y cuánto falta.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w03-reservas-listado.png
+    alt: Listado de reservas con cartera, cobrado, por cobrar, comisión y estado de cada venta
+    caption: Cada reserva con su estado de venta y de cobro.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w05-reserva-agenda-pago-suplidor.png
+    alt: Pestaña de pagos de una reserva con la agenda de pago al suplidor programada antes de la entrada
+    caption: La fecha de pago al hotel se calcula sola desde la entrada.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w06-reserva-facturada-paquete-contable.png
+    alt: Reserva facturada con su comprobante NCF y los asientos publicados
+    caption: La factura con NCF y sus asientos, desde la propia reserva.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w07-reserva-historial-auditado.png
+    alt: Historial de una reserva con veinticinco eventos auditados y financieros
+    caption: Todo lo que le pasó a la reserva, auditado.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w08-reserva-paquete-componentes.png
+    alt: Paquete turístico con hotel, traslado y tour, cada componente con su costo
+    caption: Paquetes armados por componentes, cada uno con su costo.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w09-reserva-seguro-asegurados.png
+    alt: Seguro de viaje saldado con dos asegurados y su documento de viaje
+    caption: También seguros, cruceros, vuelos y otros servicios.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w10-nueva-reserva-vuelo.png
+    alt: Formulario de reserva de vuelo con navegación rápida por secciones y resumen de precio en vivo
+    caption: Alta guiada por secciones, con el precio resumido en vivo.
+    module: Panel y reservas
+  - src: /media/projects/omsta/w11-nueva-reserva-crucero.png
+    alt: Formulario de reserva de crucero con itinerario, pasajeros y resumen en vivo
+    caption: El mismo patrón de alta para cada tipo de producto.
+    module: Panel y reservas
+  - src: /media/projects/omsta/m02-inicio.png
+    alt: Inicio de la app móvil con pagos vencidos, próximos check-in, saldo por cobrar, cobrado y comisión del mes
+    caption: El mes de la agencia, en el bolsillo.
     frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m03-reservas.png
+    alt: Listado de reservas en la app con búsqueda, filtros, montos y estados
+    caption: Todas las reservas con su estado de venta y de cobro.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m04-reserva-ficha.png
+    alt: Ficha de reserva en la app con saldo pendiente, 70 % cobrado, vencimiento y acciones rápidas
+    caption: Saldo, vencimiento y acciones rápidas de una reserva.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m05-reserva-pagos.png
+    alt: Pestaña de pagos de una reserva en la app, con recibo, WhatsApp y correo en cada pago
+    caption: Cada pago con su recibo, listo para enviar por WhatsApp.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m06-registrar-cobro.png
+    alt: Formulario de la app para registrar un cobro que queda por verificar hasta que contabilidad lo aplica
+    caption: Cobrar fuera de la oficina; contabilidad lo verifica después.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m07-nueva-reserva.png
+    alt: Selector de seis tipos de producto y un borrador guardado para continuar
+    caption: Seis productos y borradores que no se pierden.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m10-asistente-calendario.png
+    alt: Calendario de rango del asistente con entrada, salida y cuatro noches
+    caption: "Calendario propio: entrada, salida y noches de un toque."
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m11-asistente-habitaciones.png
+    alt: Paso de habitaciones del asistente con titular, acompañante y tarifa por noche
+    caption: Habitaciones, huéspedes y tarifa, paso a paso.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m12-asistente-dinero.png
+    alt: Paso de dinero del asistente con descuento, comisión, pago inicial y plazos
+    caption: Descuento, comisión, pago inicial y plazos en un solo paso.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m13-clientes.png
+    alt: Listado de clientes de la app con personas y empresas y filtros por estado
+    caption: Clientes y empresas, con filtros por estado.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m14-cliente-ficha.png
+    alt: Ficha de cliente en la app con saldo pendiente y botones de llamada, WhatsApp y correo
+    caption: "Ficha del cliente: saldo y contacto en un toque."
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m15-avisos.png
+    alt: Avisos de la app con pagos registrados y verificados por contabilidad
+    caption: Avisos cuando contabilidad verifica un pago.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m16-catalogos.png
+    alt: Índice de catálogos de la app con suplidores, hoteles, aerolíneas, aeropuertos, navieras y barcos
+    caption: Catálogos de proveedores, vuelos y cruceros.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m18-configuracion.png
+    alt: Centro de configuración de la app con usuarios, empresa, sucursales, monedas y retenciones
+    caption: La administración, también desde el teléfono.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/m19-retenciones.png
+    alt: Retenciones de nómina AFP, SFS e ISR que se activan desde la app
+    caption: Retenciones de ley configurables desde la app.
+    frame: mobile
+    module: App móvil
+  - src: /media/projects/omsta/w13-crm-clientes.png
+    alt: CRM con veintiséis clientes y tres empresas, con filtros y exportación
+    caption: Clientes y empresas en un mismo CRM.
+    module: Clientes y catálogos
+  - src: /media/projects/omsta/w14-crm-empresa-ficha.png
+    alt: Ficha de empresa con datos fiscales, representante y contacto
+    caption: Ficha de empresa con RNC y régimen de facturación.
+    module: Clientes y catálogos
+  - src: /media/projects/omsta/w12-catalogo-aerolineas.png
+    alt: Catálogo de aerolíneas con código IATA, país y uso frecuente
+    caption: Catálogos que alimentan el autocompletado de las reservas.
+    module: Clientes y catálogos
+  - src: /media/projects/omsta/w15-caja-pagos.png
+    alt: Caja y pagos con método, estado y comprobante de cada cobro
+    caption: Cada cobro con su método, su estado y su comprobante.
+    module: Cobros y pagos
+  - src: /media/projects/omsta/w16-pago-protegido.png
+    alt: Pago contabilizado que no se edita directamente y ofrece comprobantes, corrección guiada o reembolso
+    caption: "Un pago contabilizado no se edita: se corrige o se reembolsa."
+    module: Cobros y pagos
+  - src: /media/projects/omsta/w17-reembolso-guiado.png
+    alt: Reembolso de un pago con su trazabilidad contable y motivo obligatorio
+    caption: Reembolso con reverso contable y motivo obligatorio.
+    module: Cobros y pagos
+  - src: /media/projects/omsta/w18-cuentas-por-cobrar.png
+    alt: Cuentas por cobrar con cartera, comisión y pendiente de cobro
+    caption: Cuentas por cobrar derivadas de reservas y pagos.
+    module: Cobros y pagos
+  - src: /media/projects/omsta/w19-cuentas-por-pagar.png
+    alt: Cuentas por pagar con la agenda de vencidas, de hoy y próximas
+    caption: Lo que se debe a proveedores, ordenado por vencimiento.
+    module: Cobros y pagos
+  - src: /media/projects/omsta/w20-cxp-saldada.png
+    alt: Cuenta por pagar a un proveedor saldada al cien por cien
+    caption: "Del costo al pago: la cuenta por pagar se salda."
+    module: Cobros y pagos
+  - src: /media/projects/omsta/w23-libro-diario.png
+    alt: Libro diario con asientos cuadrados y el documento que originó cada uno
+    caption: Cada asiento cuadra y sabe qué documento lo generó.
+    module: Contabilidad
+  - src: /media/projects/omsta/w24-asiento-explicado.png
+    alt: Detalle de un asiento que explica en lenguaje llano su débito, su crédito y su origen
+    caption: El asiento explica en español qué registra y por qué.
+    module: Contabilidad
+  - src: /media/projects/omsta/w25-asientos-de-una-reserva.png
+    alt: Seis asientos de una misma reserva, del cobro a la factura, el costo y el pago al proveedor
+    caption: Toda la contabilidad de una venta en una tabla.
+    module: Contabilidad
+  - src: /media/projects/omsta/w26-salud-contable.png
+    alt: Salud contable de solo lectura, sin bloqueos de cierre y con nueve de nueve identidades cuadradas
+    caption: "Un auditor interno: identidades contables que deben cuadrar."
+    module: Contabilidad
+  - src: /media/projects/omsta/w27-cierre-de-periodo.png
+    alt: Checklist de cierre del período contable con sus verificaciones y advertencias
+    caption: Antes de cerrar el mes, el sistema lo revisa todo.
+    module: Contabilidad
+  - src: /media/projects/omsta/w30-mapa-de-cuentas.png
+    alt: Mapa de cuentas del sistema con la cuenta de débito y de crédito de cada operación
+    caption: Qué cuenta usa cada operación, y quién la decide.
+    module: Contabilidad
+  - src: /media/projects/omsta/w21-documento-fiscal-suplidor.png
+    alt: Documento fiscal de un proveedor con NCF, tipo de gasto 606 y pago aplicado
+    caption: La factura del proveedor alimenta el 606 de la DGII.
+    module: Fiscal DGII
+  - src: /media/projects/omsta/w22-factura-paquete-contable.png
+    alt: Factura con sus tres asientos publicados como un solo paquete contable
+    caption: Emitir la factura publica sus asientos como una unidad.
+    module: Fiscal DGII
+  - src: /media/projects/omsta/w28-configuracion-fiscal-itbis.png
+    alt: Régimen de ITBIS por tipo de servicio con sus cuentas de ingreso y de costo
+    caption: ITBIS y cuentas por tipo de servicio, configurables.
+    module: Fiscal DGII
+  - src: /media/projects/omsta/w29-secuencias-ncf.png
+    alt: Rangos de comprobantes NCF autorizados con disponibilidad y vigencia
+    caption: Numeración fiscal automática y sin duplicados.
+    module: Fiscal DGII
+  - src: /media/projects/omsta/w31-banco-transacciones.png
+    alt: Transacciones bancarias con entradas, salidas y flujo neto en pesos
+    caption: Movimientos bancarios generados por cobros y pagos.
+    module: Banco
+  - src: /media/projects/omsta/w32-banco-conciliacion.png
+    alt: Conciliación bancaria que exige el asiento antes de conciliar un movimiento
+    caption: Conciliación masiva con validaciones seguras.
+    module: Banco
+  - src: /media/projects/omsta/w33-nomina-resumen.png
+    alt: Resumen de nómina con gráfico mensual y plantilla por departamento
+    caption: "Nómina dentro del ERP: empleados, períodos y pagos."
+    module: Nómina
+  - src: /media/projects/omsta/w34-nomina-empleado.png
+    alt: Ficha de una empleada con salario, neto estimado, vacaciones y préstamos
+    caption: La ficha del empleado con salario, neto y vacaciones.
+    module: Nómina
+  - src: /media/projects/omsta/w35-nomina-retenciones-legales.png
+    alt: Retenciones legales AFP, SFS e ISR con su base de cálculo
+    caption: AFP, SFS e ISR dominicanos, configurables sin código.
+    module: Nómina
+  - src: /media/projects/omsta/w36-nomina-configuracion-contable.png
+    alt: Mapeo de las cuentas de sueldos, banco y retenciones de la nómina
+    caption: Pagar la nómina publica su asiento automáticamente.
+    module: Nómina
+  - src: /media/projects/omsta/w37-sucursales.png
+    alt: Dos sucursales activas con sus empleados y departamentos
+    caption: Operación en varias sucursales, con permisos por sucursal.
+    module: Administración
+  - src: /media/projects/omsta/w42-usuarios.png
+    alt: Listado de usuarios con su estado, su rol y sus acciones de acceso
+    caption: Usuarios con rol, estado y control de acceso.
+    module: Administración
+  - src: /media/projects/omsta/w43-evento-auditado.png
+    alt: Evento auditado inmutable que dice quién cambió qué y sobre qué registro
+    caption: Cada cambio queda en una bitácora que no se edita.
+    module: Administración
+  - src: /media/projects/omsta/w41-notificaciones.png
+    alt: Notificaciones de pagos registrados por reservas y aplicados por contabilidad
+    caption: Reservas registra el pago; contabilidad lo verifica.
+    module: Administración
+  - src: /media/projects/omsta/w38-centro-de-documentos.png
+    alt: Centro de documentos con siete documentos para el cliente configurables
+    caption: Siete documentos para el cliente, configurables.
+    module: Administración
+  - src: /media/projects/omsta/w39-correos-automaticos.png
+    alt: Correos automáticos de confirmación y recordatorios que se activan uno a uno
+    caption: Correos al cliente que se encienden uno a uno.
+    module: Administración
+  - src: /media/projects/omsta/w40-centro-de-reportes.png
+    alt: Centro de reportes operativos, contables y fiscales
+    caption: Reportes operativos, contables y fiscales en un lugar.
+    module: Administración
+  - src: /media/projects/omsta/w44-tutoriales.png
+    alt: Centro de tutoriales con setenta y un tutoriales organizados por módulo
+    caption: 71 tutoriales dentro del sistema, por módulo.
+    module: Administración
+  - src: /media/projects/omsta/w45-responsive-dashboard.png
+    alt: Panel de OMSTA en el ancho de un teléfono
+    caption: La web también se adapta al teléfono.
+    frame: mobile
+    module: La web en el teléfono
+  - src: /media/projects/omsta/w46-responsive-reserva.png
+    alt: Ficha de reserva en el ancho de un teléfono con 70 % cobrado
+    caption: La ficha de reserva, legible en una pantalla pequeña.
+    frame: mobile
+    module: La web en el teléfono
+  - src: /media/projects/omsta/w47-responsive-crm.png
+    alt: CRM en tarjetas en el ancho de un teléfono
+    caption: Bajo 768 px las tablas pasan a tarjetas.
+    frame: mobile
+    module: La web en el teléfono
 scope:
-  - value: "2"
-    label: sucursales operando en una plataforma
-  - value: "18"
-    label: aplicaciones Django en un monolito modular
-  - value: "4"
-    label: reportes fiscales DGII
+  - value: "19"
+    label: apps Django en un monolito modular
+  - value: "150"
+    label: modelos de dominio
+  - value: "54"
+    label: pantallas en la app móvil
 designDecisions:
-  - screen: /media/projects/omsta/04-reserva-detalle.png
-    problem: Una reserva reúne cliente, cobros, facturación, expediente e historial.
-    decision: La reserva es un cockpit operativo y financiero, no un registro aislado.
-  - screen: /media/projects/omsta/01-dashboard-panel-ejecutivo.png
-    problem: La operación del día vive repartida entre reservas, cobros, comisión y saldos.
-    decision: El panel los prioriza en una sola vista y convierte las alertas en acciones.
-  - screen: /media/projects/omsta/15-ledger-libro-diario.png
-    problem: Un asiento contable sin origen no se puede auditar.
-    decision: Cada asiento enseña su balance y el documento que lo originó.
-  - screen: /media/projects/omsta/33-sucursal-detalle.png
-    problem: Saltar de pantalla en pantalla para cada dato multiplica los cambios de contexto.
-    decision: El mismo patrón de cockpit se repite en sucursales, nómina y CRM.
+  - screen: /media/projects/omsta/w04-reserva-hotel-resumen.png
+    problem: Una reserva mezcla estado de venta, cobros y saldo, y hay que leerla de un vistazo.
+    decision: Escalera de estados, porcentaje cobrado y saldo en la cabecera, con venta y cobro separados.
+  - screen: /media/projects/omsta/m06-registrar-cobro.png
+    problem: Fuera de la oficina, un vendedor necesita consultar y cobrar sin abrir la web.
+    decision: App nativa con desbloqueo biométrico que consulta sin conexión y cobra con el mismo servicio que la web.
+  - screen: /media/projects/omsta/w16-pago-protegido.png
+    problem: Editar un pago ya contabilizado descuadraría banco, asientos y saldos.
+    decision: El pago contabilizado no se edita; se gestionan comprobantes, se corrige de forma guiada o se reembolsa.
+  - screen: /media/projects/omsta/w24-asiento-explicado.png
+    problem: Para quien vende, la contabilidad es una caja negra.
+    decision: Cada asiento explica en lenguaje llano qué registra, y la reserva enseña todos sus asientos.
+  - screen: /media/projects/omsta/w05-reserva-agenda-pago-suplidor.png
+    problem: Pagar tarde al hotel pone en riesgo la reserva del cliente.
+    decision: La fecha de pago al proveedor se calcula sola desde la entrada y se agenda por vencimiento.
+  - screen: /media/projects/omsta/w26-salud-contable.png
+    problem: Un error contable descubierto al cerrar el mes llega tarde y sale caro.
+    decision: Salud contable de solo lectura y un cierre que se bloquea si alguna identidad no cuadra.
+  - screen: /media/projects/omsta/w10-nueva-reserva-vuelo.png
+    problem: Seis tipos de producto con datos distintos acaban en seis formularios que no se parecen.
+    decision: Un mismo patrón de alta para todos, con navegación por secciones y el precio resumido en vivo.
+  - screen: /media/projects/omsta/w47-responsive-crm.png
+    problem: Las tablas anchas de un ERP no caben en el teléfono.
+    decision: Bajo 768 px las tablas se convierten en tarjetas y los filtros se pliegan.
 architecture:
   nodes:
-    - id: panel
-      label: Panel ejecutivo
+    - id: cliente-web
+      label: Web Django
       lane: cliente
-      screen: /media/projects/omsta/01-dashboard-panel-ejecutivo.png
-    - id: panel-movil
-      label: Panel móvil
+      screen: /media/projects/omsta/w02-dashboard.png
+      decision: >-
+        HTML renderizado en el servidor, sin SPA ni build step, para que la
+        lógica crítica y los permisos vivan sólo en el backend.
+      tech: [Django Templates, Bootstrap 5.3, jQuery 3.7, Select2, HTMX 2.0, Chart.js 4.4]
+    - id: app-movil
+      label: App móvil
       lane: cliente
-      screen: /media/projects/omsta/50-mobile-dashboard.png
+      screen: /media/projects/omsta/m02-inicio.png
+      decision: >-
+        Un segundo cliente que no calcula saldos ni estados: pinta lo que
+        describe el servidor.
+      tech: [React Native 0.86, Expo SDK 57, Expo Router, TypeScript 6.0, TanStack Query 5, react-native-mmkv, Expo SecureStore]
+    - id: api-movil
+      label: API móvil
+      lane: servicio
+      decision: >-
+        App Django propia con JWT ligado al dispositivo y un contrato OpenAPI
+        que genera los tipos TypeScript de la app.
+      tech: [Django REST Framework 3.16, Simple JWT 5.5, drf-spectacular 0.30, openapi-typescript 7.13]
+    - id: acceso-seguridad
+      label: Seguridad
+      lane: servicio
+      screen: /media/projects/omsta/w43-evento-auditado.png
+      decision: >-
+        Acceso cerrado por defecto: login obligatorio, roles efectivos (rol más
+        módulos) y reglas por prefijo de URL en un middleware.
+      tech: [Django 5.2, django-user-agents, django-crum]
     - id: reservas
-      label: Reservas
+      label: Reservas y CRM
       lane: servicio
-      screen: /media/projects/omsta/04-reserva-detalle.png
-    - id: crm
-      label: CRM de clientes
-      lane: servicio
-      screen: /media/projects/omsta/08-crm-cliente-detalle.png
-    - id: facturacion
-      label: Facturación
-      lane: servicio
-    - id: pagos
-      label: Pagos y cobros
-      lane: servicio
-      screen: /media/projects/omsta/10-cuentas-por-cobrar.png
+      screen: /media/projects/omsta/w04-reserva-hotel-resumen.png
       decision: >-
-        Servicios explícitos, atómicos e idempotentes para pagos, notas y
-        posteo, con snapshot de la tasa en cada pago multimoneda.
+        Ocho tipos de producto en un dominio que habla con contabilidad sólo
+        por un contrato neutral, protegido por tests de frontera.
+      tech: [Django 5.2, django-filter, django-select2, django-countries]
+    - id: cobros
+      label: Cobros
+      lane: servicio
+      screen: /media/projects/omsta/w16-pago-protegido.png
+      decision: >-
+        Un único servicio de registro para web y móvil; todo pago nace «por
+        verificar», con clave de idempotencia, y contabilidad lo aplica.
+      tech: [Django 5.2, Django REST Framework, django-storages]
     - id: contabilidad
-      label: Contabilidad y posteo
+      label: Contabilidad
       lane: servicio
-      screen: /media/projects/omsta/15-ledger-libro-diario.png
+      screen: /media/projects/omsta/w22-factura-paquete-contable.png
       decision: >-
-        El motor de posteo vive dentro de contabilidad: 27 rutinas trasladadas
-        desde ledger rompieron el ciclo entre ambos módulos sin alterar reglas
-        de negocio.
+        La factura publica un paquete de asientos atómico para que la CxC nunca
+        quede acreedora ni los anticipos sin reclasificar.
+      tech: [Django 5.2, openpyxl 3.1]
     - id: ledger
-      label: Ledger
+      label: Libro mayor
       lane: servicio
+      screen: /media/projects/omsta/w25-asientos-de-una-reserva.png
       decision: >-
-        Libro mayor neutral: guarda el asiento balanceado con trazabilidad al
-        documento que lo originó y no sabe de reservas ni de nómina.
-    - id: dgii
-      label: Reportes DGII
+        Capa contable genérica que no importa contabilidad y bloquea la
+        publicación en períodos cerrados.
+      tech: [Django 5.2, PostgreSQL]
+    - id: fiscal-dgii
+      label: Fiscal DGII
       lane: servicio
+      screen: /media/projects/omsta/w21-documento-fiscal-suplidor.png
+      decision: >-
+        Snapshot fiscal inmutable al contabilizar; genera el TXT oficial y el
+        XLSX, y la presentación a la DGII queda en manos humanas.
+      tech: [Django 5.2, openpyxl 3.1]
+    - id: banco-divisas
+      label: Banco y divisas
+      lane: servicio
+      screen: /media/projects/omsta/w31-banco-transacciones.png
+      decision: >-
+        Una cuenta bancaria por moneda y la tasa de cambio congelada en cada
+        pago en pesos o dólares.
+      tech: [Chart.js 4.4, chartjs-plugin-zoom, openpyxl 3.1]
     - id: nomina
       label: Nómina
       lane: servicio
-      screen: /media/projects/omsta/31-nomina-periodo-detalle.png
-    - id: sucursales
-      label: Sucursales y roles
+      screen: /media/projects/omsta/w33-nomina-resumen.png
+      tech: [ReportLab 4.4, XlsxWriter 3.2, Chart.js 4.4]
+    - id: documentos-pdf
+      label: Documentos
       lane: servicio
-      screen: /media/projects/omsta/33-sucursal-detalle.png
+      screen: /media/projects/omsta/w38-centro-de-documentos.png
       decision: >-
-        Seguridad por defecto en el servidor: los permisos críticos se imponen
-        en el backend, por rol y por sucursal.
+        Recibos renderizados en vivo; sólo la factura con NCF es inmutable.
+      tech: [WeasyPrint 65, ReportLab 4.4, qrcode 8.0, bleach 6.3]
     - id: postgresql
       label: PostgreSQL
       lane: datos
       decision: >-
-        Única fuente de verdad, también para el estado durable de las tareas
-        asíncronas.
+        Única fuente de verdad: todo lo contable, auditable o durable vive aquí.
+      tech: [PostgreSQL, psycopg 3.3]
     - id: redis
       label: Redis
       lane: datos
-    - id: worker
-      label: Worker Django Q2
+      decision: >-
+        Sólo cola de Django Q2, caché y sesiones; puede perderse sin perder
+        estado de negocio.
+      tech: [Redis, redis-py 6.1, hiredis]
+    - id: bucket-s3
+      label: Bucket S3
+      lane: datos
+      decision: >-
+        Comprobantes y documentos en almacenamiento privado con URL firmada,
+        porque contienen datos personales y financieros.
+      tech: [django-storages 1.14, boto3 1.42]
+    - id: railway-web
+      label: Railway web
       lane: infraestructura
-    - id: railway
-      label: Railway
+      decision: >-
+        Gunicorn con hilos, reciclado escalonado de procesos y una sonda
+        /health/ exenta de login y de la redirección HTTPS.
+      tech: [Railway, Railpack, Gunicorn 23, WhiteNoise 6.12]
+    - id: worker-q2
+      label: Worker Q2
       lane: infraestructura
+      decision: >-
+        Django Q2 en lugar de Celery; los trabajos se encolan al confirmar la
+        transacción y son idempotentes.
+      tech: [Django Q2 1.9, Redis]
+    - id: github-ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        Cada push a la rama principal despliega producción y demo tras lint,
+        checks y pytest en GitHub Actions.
+      tech: [GitHub Actions, pytest 8.4, Ruff, Black, Jest]
+    - id: eas-build
+      label: EAS Build
+      lane: infraestructura
+      decision: >-
+        Builds de desarrollo internas probadas en un teléfono Android real;
+        las tiendas esperan a las cuentas del negocio.
+      tech: [EAS Build, Expo Dev Client, expo-doctor]
+    - id: smtp
+      label: Correo SMTP
+      lane: integraciones
+      tech: [Django email, SMTP]
+    - id: ipinfo
+      label: IPinfo
+      lane: integraciones
+      decision: >-
+        Consulta por IP cacheada 24 horas (la negativa, una) para no pagar ni
+        esperar la geolocalización en cada petición.
+      tech: [IPinfo API, requests]
+    - id: google-places
+      label: Google Places
+      lane: integraciones
+      decision: >-
+        Se consulta desde el servidor, para ubicar hoteles sin exponer la llave
+        en la app.
+      tech: [Google Places API, Google Maps JavaScript API]
   edges:
-    - [panel, reservas]
-    - [panel, pagos]
-    - [panel-movil, reservas]
-    - [crm, reservas]
-    - [crm, pagos]
-    - [reservas, facturacion]
-    - [facturacion, pagos]
-    - [pagos, contabilidad]
+    - [cliente-web, railway-web]
+    - [app-movil, railway-web]
+    - [railway-web, acceso-seguridad]
+    - [railway-web, api-movil]
+    - [api-movil, acceso-seguridad]
+    - [acceso-seguridad, reservas]
+    - [api-movil, reservas]
+    - [api-movil, cobros]
+    - [reservas, cobros]
+    - [reservas, contabilidad]
+    - [cobros, contabilidad]
+    - [cobros, banco-divisas]
     - [contabilidad, ledger]
-    - [ledger, dgii]
+    - [contabilidad, fiscal-dgii]
     - [nomina, ledger]
-    - [reservas, postgresql]
-    - [crm, postgresql]
-    - [facturacion, postgresql]
-    - [pagos, postgresql]
-    - [contabilidad, postgresql]
+    - [contabilidad, documentos-pdf]
     - [ledger, postgresql]
-    - [dgii, postgresql]
-    - [nomina, postgresql]
-    - [sucursales, postgresql]
-    - [worker, redis]
-    - [worker, postgresql]
-    - [railway, worker]
+    - [reservas, postgresql]
+    - [contabilidad, postgresql]
+    - [cobros, bucket-s3]
+    - [documentos-pdf, bucket-s3]
+    - [acceso-seguridad, redis]
+    - [redis, worker-q2]
+    - [worker-q2, postgresql]
+    - [worker-q2, bucket-s3]
+    - [worker-q2, smtp]
+    - [acceso-seguridad, ipinfo]
+    - [api-movil, google-places]
+    - [github-ci, railway-web]
+    - [github-ci, worker-q2]
+    - [eas-build, app-movil]
 links:
   - label: Hablemos de tu sistema
-    href: /es#contacto
+    href: /es/contacto
     kind: contact
-seoTitle: OMSTA — ERP en Django | Caso de estudio
-seoDescription: Caso de OMSTA, un ERP en producción con Django que integra reservas, cobros, doble partida, DGII, nómina y multisucursal.
+seoTitle: OMSTA — ERP en Django y app móvil en React Native | Caso de estudio
+seoDescription: Caso de OMSTA, un ERP en producción con Django —reservas, cobros, doble partida, DGII, nómina y sucursales— y su app móvil en React Native y Expo.
 ---
 
 ## 1. Contexto
 
-OMSTA es el sistema de gestión que construí para una agencia de viajes que opera en
-República Dominicana con dos sucursales, Santo Domingo y Santiago. Está desplegado
-en Railway y se usa para vender viajes, cobrar, pagar a proveedores, procesar
-nómina y llevar la contabilidad formal del negocio.
+OMSTA es el sistema con el que opera una agencia de viajes de República
+Dominicana: vende hoteles, vuelos, paquetes, cruceros, seguros y otros
+servicios, cobra en pesos y en dólares, paga a sus proveedores, lleva su
+nómina y declara ante la DGII. Trabaja con dos sucursales, Santo Domingo y
+Santiago, sobre una misma plataforma.
+
+El primer commit es de abril de 2025. Hoy la web está en producción y se usa a
+diario, y desde septiembre de 2026 el equipo tiene además una app móvil propia.
 
 ## 2. Problema
 
-Una agencia conecta tres dominios que suelen vivir separados: venta de reservas,
-movimientos de dinero y contabilidad. Cuando cada uno se gestiona en una herramienta
-distinta aparecen redigitación, saldos difíciles de conciliar y poca capacidad de
-reconstruir lo ocurrido. El reto era hacer que cada hecho comercial produjera su
-consecuencia financiera y contable correcta.
+Una agencia une tres mundos que suelen vivir separados: la venta, el dinero y la
+contabilidad. Cuando cada uno vive en una herramienta distinta, el mismo dato se
+teclea varias veces, los saldos no cuadran y nadie puede reconstruir qué pasó
+con una reserva.
 
-## 3. Objetivo
+El reto era que una venta se capturase **una sola vez** y que de ahí salieran,
+sin volver a escribir nada, el cobro, la factura con NCF, los asientos, la
+cuenta por pagar al proveedor, el movimiento bancario y los reportes fiscales.
+Y que el equipo pudiera hacer su parte también fuera de la oficina.
 
-Construir una fuente de verdad donde una reserva pueda convertirse en cobro, el
-cobro en asiento y el asiento en reporte fiscal; donde cada pago sea reproducible
-en su moneda y cada usuario actúe según su rol y sucursal.
+## 3. Mi función
 
-## 4. Mi función
+Soy el único desarrollador del sistema: modelé el dominio, diseñé la
+arquitectura, construí el backend, la interfaz web, la API y la app móvil, y me
+ocupo del despliegue, del mantenimiento y de los incidentes de producción. El
+repositorio suma más de mil cien commits.
 
-Fui el único desarrollador y responsable de la arquitectura, implementación,
-despliegue y mantenimiento. Modelé el dominio, construí backend e interfaz,
-implementé la capa financiera-contable y atendí incidentes reales de producción.
+## 4. Usuarios y permisos
 
-## 5. Usuarios
+Cinco roles base —superadministración, administración, contabilidad, reservas y
+clientes— y, encima, módulos sueltos que amplían lo que ve cada usuario. Un
+asesor crea reservas y registra cobros; contabilidad los verifica, factura y
+cierra; administración gestiona usuarios, sucursales y configuración. Los
+permisos se imponen en el servidor, por prefijo de URL, y nunca dependen de lo
+que la interfaz esconda.
 
-Asesores crean reservas y registran cobros; administración y contabilidad gestionan
-facturación, pagos y obligaciones; gerentes consultan su sucursal; y el rol de
-superadministración controla usuarios, permisos y configuración fiscal.
+## 5. Restricciones
 
-## 6. Restricciones
+- **Fiscalidad dominicana**: comprobantes NCF por rango autorizado y formatos
+  606, 607, 608 y 623. El sistema prepara, valida y descarga; la presentación a
+  la DGII la hace una persona.
+- **Multimoneda**: cada pago conserva la tasa con que se cobró y cada capa cuadra
+  contra su propio total.
+- **Invariantes contables**: la cuenta por cobrar nunca queda acreedora, un
+  asiento publicado no se reescribe y un período cerrado no admite asientos.
+- **Datos sensibles**: los comprobantes de pago viven en almacenamiento privado
+  con URL firmada.
+- **Un solo desarrollador**: la infraestructura tenía que ser pequeña y
+  predecible.
 
-PostgreSQL debía permanecer como única fuente de verdad; los permisos críticos
-tenían que imponerse en el servidor; cada pago multimoneda necesitaba conservar la
-tasa usada; y web y worker no podían depender de un disco compartido en la nube.
-Además, los formatos DGII 606, 607, 608 y 623 introducen reglas propias.
+## 6. Cómo lo construí
 
-## 7. Proceso
+Por dominios y por capas: primero reservas y clientes; después los servicios
+que mueven dinero; luego el libro mayor y, al final, la reportería fiscal. Las
+vistas orquestan, los servicios abren la transacción y emiten el asiento, los
+selectores leen y los invariantes viven en el modelo y en restricciones de la
+base de datos, porque los comandos de reparación no pasan por formularios.
 
-Construí el sistema por dominios y capas: núcleo de reservas y clientes, servicios
-atómicos para transiciones de dinero, libro mayor y finalmente reportería fiscal.
-Con el crecimiento incorporé documentación de arquitectura versionada y análisis
-del grafo del código para decidir dónde pagar deuda con evidencia.
+Las fronteras entre dominios están protegidas por tests: el libro mayor no
+importa contabilidad, reservas habla con contabilidad a través de un contrato
+neutral y la superficie pública de los modelos más grandes sólo puede bajar.
+Cada cambio pasa por lint, formato, comprobaciones de Django, migraciones y
+pytest en GitHub Actions antes de desplegarse.
 
-## 8. Decisiones importantes
+## 7. Decisiones de arquitectura
 
-- Servicios explícitos, atómicos e idempotentes para pagos, notas y posteo.
-- Django Q2 para trabajo asíncrono con estado durable en PostgreSQL.
-- `ledger` como libro mayor neutral y el motor de posteo dentro de contabilidad.
-- Snapshot de tasa en cada pago y seguridad por defecto en el servidor.
+- **Monolito modular, no microservicios.** Un equipo de una persona y
+  transacciones que cruzan dominios piden un solo proceso con fronteras claras.
+- **HTML renderizado en el servidor.** Sin SPA ni paso de build: Bootstrap,
+  jQuery y HTMX sobre plantillas de Django, y la lógica sólo en el backend.
+- **Django Q2 y no Celery.** PostgreSQL es la única fuente de verdad, también
+  para el estado de los trabajos; Redis es cola, caché y sesiones, y puede
+  perderse sin perder negocio.
+- **Paquete contable atómico.** Emitir una factura publica venta, costo,
+  anticipos y cobros en un solo servicio.
+- **Snapshot fiscal inmutable.** Lo que se declaró a la DGII no cambia aunque
+  cambien después los datos de origen.
+- **La app no calcula.** El servidor le envía importes formateados, estados con
+  su etiqueta y hasta la forma de los formularios.
 
-## 9. Arquitectura y stack
+## 8. La app móvil
 
-Es un monolito Django modular de 18 aplicaciones. El flujo interno principal es
-`views → services/selectors → models`; PostgreSQL persiste el negocio, Redis apoya
-colas y caché, Django Q2 ejecuta trabajos, y Railway opera procesos web y worker.
+La web usaba sesión y CSRF, y no había una API pensada para un cliente fuera del
+navegador. Construí una API REST propia con JWT ligado a cada dispositivo
+(rotación y lista negra), un contrato OpenAPI generado con drf-spectacular y los
+tipos TypeScript de la app generados desde ese contrato: si la API y la app se
+desalinean, la integración continua falla.
 
-La columna contable conecta el hecho económico de reservas con facturación y
-pagos, postea mediante perfiles de documento, guarda el asiento neutral en
-`ledger` y alimenta los reportes fiscales.
+La app está hecha con React Native, Expo y TypeScript. Tiene 54 pantallas:
+inicio con los indicadores del mes, reservas con su ficha y un asistente de alta
+por pasos con borradores y calendario propio, clientes, cobros, avisos,
+catálogos y la configuración administrativa. Se desbloquea con la biometría
+del teléfono, guarda los tokens en el llavero del sistema, consulta sin conexión desde una
+caché persistida y registra cobros con foto del comprobante usando el mismo
+servicio que la web.
 
-## 10. Desafíos
+La API y la app se construyeron en dieciséis días, entre el 10 y el 25 de
+septiembre de 2026. Hoy se distribuyen como builds internas de Android por EAS y
+se prueban en un teléfono real. El proyecto ya está configurado para iOS; la
+versión para iPhone espera a la cuenta de Apple Developer del negocio.
 
-Los mayores desafíos fueron preservar integridad e idempotencia cuando un pago se
-aplica, corrige, revierte o genera excedente; implementar las reglas fiscales
-dominicanas; y reducir el acoplamiento natural de un monolito grande sin frenar su
-operación diaria.
+## 9. Desafíos
 
-## 11. Soluciones implementadas
+El dinero cruza tres dominios —reservas, contabilidad y libro mayor— y un pago
+puede aplicarse, corregirse, revertirse o dejar un excedente. Mantener la
+idempotencia y la integridad en todos esos caminos fue lo más difícil. Le siguen
+las reglas fiscales dominicanas y reducir el acoplamiento natural de un monolito
+grande sin frenar la operación diaria.
 
-Cada operación genera asientos balanceados y trazables. Los cobros de reservas aún
-no facturadas se registran como anticipos y se reclasifican al facturar. Un refactor
-reciente trasladó 27 rutinas de posteo desde `ledger` hacia contabilidad y rompió
-el ciclo entre ambos módulos sin alterar reglas de negocio.
+## 10. Incidentes reales resueltos
 
-Un incidente mostró otra dimensión del problema: tras aplicar un descuento a una
-reserva ya pagada, el sistema calculó correctamente el crédito a favor pero no lo
-comunicó. Corregí el aviso al guardar, el recibo y añadí un diagnóstico de solo
-lectura para auditar excedentes.
+- **Pagos enviados dos veces**: cada pago lleva una clave de idempotencia con
+  una restricción única en la base de datos; un reintento devuelve el pago que ya
+  existía.
+- **Un reintento de la app devolvía «posible pago duplicado»** porque el
+  formulario validaba antes que el servicio. Ahora la clave se resuelve primero.
+- **PDF rotos en producción** por librerías del sistema que WeasyPrint
+  necesitaba: la imagen de despliegue las instala en build y en ejecución.
+- **Una sonda de salud tras el login** hacía que Railway diera por caído un
+  despliegue sano: `/health/` quedó exenta de login y de la redirección HTTPS.
+- **Un descuento aplicado a una reserva ya pagada** generó un crédito a favor
+  correcto, pero nadie se enteraba. Corregí el aviso al guardar y el recibo, y
+  añadí un diagnóstico de sólo lectura para auditar excedentes.
 
-## 12. Diseño y UX
+## 11. Diseño y UX
 
-El panel prioriza reservas, cobros, comisión, saldos y alertas accionables. El
-detalle de reserva concentra estado, pagos, facturación, expediente e historial.
-Los formularios distribuyen tareas complejas por pasos y las vistas tipo cockpit se
-repiten en sucursales, nómina y CRM para reducir cambios de contexto.
+El panel prioriza lo que mueve el día: reservas, cobros, comisión, saldos y
+alertas que llevan a la acción. La ficha de reserva separa el estado de venta
+del de cobro y enseña la escalera de estados, el porcentaje cobrado y el saldo.
+Los seis tipos de producto comparten el mismo patrón de alta, con navegación por
+secciones y el precio resumido en vivo.
 
-## 13. Capturas y demo
+La contabilidad deja de ser una caja negra: cada asiento explica en lenguaje
+llano qué registra y la reserva enseña todos los suyos. Un pago contabilizado no
+se edita, se corrige de forma guiada o se reembolsa. Y bajo 768 px las tablas se
+convierten en tarjetas.
 
-La galería publicada usa datos ficticios y anonimizados. Muestra panel ejecutivo,
-reserva, CRM, cuentas por cobrar, libro diario, nómina, sucursal y vista móvil. La
-demo pública se añadirá solo cuando exista un entorno aislado de producción con
-credenciales de visitante; hoy el recorrido está disponible de forma privada.
+## 12. Sobre las capturas
 
-## 14. Resultados verificables
+Todas las capturas salen de una base de datos aislada, sembrada con datos
+sintéticos por los mismos servicios que usa el sistema: nombres inventados,
+correos de ejemplo y documentos fiscales ficticios. Ninguna muestra datos de la
+agencia ni de sus clientes. Las pantallas que presentaban un fallo o no estaban
+terminadas se dejaron fuera.
 
-- Sistema real en producción con web, worker, PostgreSQL y Redis.
-- Doble partida, trazabilidad, multimoneda, multisucursal y auditoría.
-- Cumplimiento de los reportes DGII implementados.
-- Historial de mantenimiento sostenido, incidentes documentados y pruebas dirigidas.
+## 13. Aprendizajes
 
-Las métricas operativas del cliente son privadas. No publico usuarios, ventas,
-reservas, ahorros de tiempo ni impacto económico sin autorización específica.
+En software de dinero, comunicar el resultado importa tanto como calcularlo.
+Los invariantes tienen que vivir en el modelo y en la base de datos, no en los
+formularios. La idempotencia va antes que la validación: si no, un reintento
+parece un duplicado. Y reutilizar el servicio de la web desde la API móvil evitó
+tener dos versiones de la misma regla de negocio.
 
-## 15. Aprendizajes
+## 14. Estado actual
 
-En software de dinero, comunicar el resultado importa tanto como calcularlo. Una
-capa de servicios bien delimitada permite refactorizar reglas sensibles sin miedo,
-y la documentación de arquitectura viva convierte la deuda técnica en decisiones
-priorizables.
+La web está en producción y se usa a diario. La app móvil está en desarrollo
+activo: reservas, clientes, cobros y avisos ya funcionan en un teléfono real, y
+quedan por delante las notificaciones push y la publicación en las tiendas. El
+trabajo en curso se concentra en una auditoría contable por fases y en seguir
+pagando deuda técnica sin interrumpir la operación.
 
-## 16. Estado actual
+## 15. Siguiente paso
 
-OMSTA está en producción y mantenimiento activo. La evolución actual se concentra
-en descomponer vistas y modelos grandes, ampliar pruebas dirigidas y seguir pagando
-deuda sin interrumpir la operación.
-
-## 17. Enlaces y siguiente paso
-
-El repositorio es privado porque contiene un sistema de cliente. Si necesitas una
-plataforma que conecte operación y contabilidad con trazabilidad real, puedes
-[contactarme](/es#contacto).
+El repositorio es privado porque es el sistema de un cliente. Si necesitas una
+plataforma que conecte operación, dinero y contabilidad con trazabilidad real,
+en la web y en el teléfono, puedes [contactarme](/es/contacto).

@@ -4,8 +4,11 @@
  * De cada PNG de `public/media/projects/<id>/` deja copias WebP en los anchos
  * que la mesa pinta de verdad (`docs/design/endurance-proyectos.md` §9):
  *
- *   escritorio (más ancha que alta)  480 · 720 · 960 · 1440
+ *   escritorio (más ancha que alta)  480 · 720 · 960 · 1440 · 1920
  *   teléfono   (más alta que ancha)  390 · 780
+ *
+ * El de 1920 es del visor del caso completo, que abre la captura al 92 % del
+ * ancho: en una pantalla de densidad 2 el de 1440 se veía blando.
  *
  * **No se amplía nunca**: un peldaño mayor que el original sería un archivo
  * más pesado y más blando, no una imagen mejor; los peldaños que no caben se
@@ -28,7 +31,7 @@ const root = process.cwd();
 const mediaRoot = path.join(root, "public/media/projects");
 const manifestPath = path.join(root, "content/projects-media.json");
 
-const DESKTOP_STEPS = [480, 720, 960, 1440];
+const DESKTOP_STEPS = [480, 720, 960, 1440, 1920];
 const MOBILE_STEPS = [390, 780];
 const QUALITY = 84;
 

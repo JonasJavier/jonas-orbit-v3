@@ -961,3 +961,79 @@ hallazgos altos y medios.
   pie); «Resultados» repite parte del Alcance; el cuerpo MDX trae su propio
   «Resultados verificables».
 - Heredado: confirmar arquitecturas (§13.2) y URL `kind: demo`.
+
+## 18. OMSTA rehecho: web y app móvil, recorrido por módulos y tecnologías (2026-09-26)
+
+Manda sobre §17 en **cuántas pantallas monta la mesa, el final del caso y
+cómo se dicen las tecnologías**. No toca capas, muelle ni la mesa física.
+
+### 18.1 La petición
+
+El dueño: OMSTA «es una app muy muy grande» y el caso no la abarcaba; pidió
+más información, más capturas y más módulos, y sumar su **app móvil** (React
+Native + Expo). Que en cada proyecto, y en su mesa, «se detallen bien todas
+las tecnologías». El material lo generó otra sesión desde el repositorio de
+OMSTA, de cero y con la regla del dueño —**si algo falla o no se ve bien, no
+se incluye**—, en `portfolio-content/omsta-2026/` (130 capturas web y 44
+móviles; 47 y 19 principales; lo excluido y su motivo en `excluded.md`). La
+carpeta vieja `portfolio-content/omsta/` se borró con su permiso.
+
+### 18.2 Contenido nuevo (Velite)
+
+- **`module`** en cada captura («Panel y reservas», «App móvil»…): todas o
+  ninguna (`validate-projects.ts`). Con módulos, el final del caso es un
+  **Recorrido por módulos**: índice de cápsulas y, por módulo, su título con
+  número y cuenta y TODAS sus pantallas —también las que ya salieron arriba:
+  un módulo sin sus mejores pantallas se leía incompleto—. Sin módulos, sigue
+  «Más pantallas» con las que faltaban (§17).
+- **`stack`**: el inventario entero por áreas (`group` + `items`, sin repetir
+  grupo ni tecnología). Es la sección **Tecnologías** del caso, entre Sistema
+  y Resultados: una columna por área con su cuenta y cada herramienta con la
+  versión aparte, en mono. `technologies` sigue siendo la cabecera (ficha y
+  grabado de la mesa).
+- **`tech`** en cada nodo de `architecture`: con qué está hecho ESE módulo. El
+  inspector lo dice bajo «Tecnologías» (mesa y caso); en el teléfono, donde no
+  hay inspector, sale bajo el módulo elegido. Es la respuesta a «en la mesa de
+  trabajo»: la mesa no gana texto a la vista, lo gana el módulo que se elige.
+
+OMSTA: 61 capturas (46 web a 1920 de ancho y 15 de la app a 1080×2400) en 10
+módulos, 8 decisiones de diseño, 22 nodos en 5 carriles con 31 aristas, 67
+tecnologías en 11 áreas. Alcance: 19 apps Django · 150 modelos · 54 pantallas
+en la app. Lo de iOS se dice como es: probada en Android, configurada para
+iOS, la versión de iPhone espera la cuenta de Apple Developer.
+
+### 18.3 La mesa con un sistema grande
+
+- **Sólo monta lo que levanta** (`TableScreen.onTable`): las tres de Producto
+  y las del carrete. Con sesenta capturas, montar todas pedía sesenta
+  imágenes invisibles. Medido a 1440: 10 figuras y 11 peticiones de
+  `/media/projects/omsta/`.
+- **Filas que se aprietan**: `--row: clamp(26px, min(10.5cqh, 92cqh /
+  rows), 40px)`. El 92 % sale de medir el hueco entre las pestañas de capa y
+  el anillo a 1280, 1440 y 1920; hasta ocho filas no actúa (Delicaté sigue en
+  39,7 px). Con diez filas el esquema subía hasta pisar las pestañas.
+- **Cinco carriles estrechan las columnas**: entre 1300 y 1800 px los nodos
+  de un esquema de cinco columnas pierden miniatura y glifo, como ya pasaba
+  bajo 1300 (`data-cols` en el esquema). Rótulos de módulo cortos («Web
+  Django», «Cobros»): la decisión y las tecnologías dicen el resto.
+- `tools/prepare-projects.mjs` añade el peldaño **1920** de escritorio para
+  el visor del caso (al 92 % del ancho, el de 1440 se veía blando a
+  densidad 2); Delicaté e Izak's lo ganan también.
+
+### 18.4 Trampas
+
+- El carrete llevaba el foco con `:nth-of-type(índice + 1)`: con la mesa
+  montando sólo parte de las pantallas, el foco caía en otra. Ahora
+  `data-screen` en cada figura.
+- Un pie de foto con «: » en YAML sin comillas rompe Velite («Nested mappings
+  are not allowed in compact mappings»).
+- El visor recorre las pantallas en el orden de la ficha; el recorrido las
+  agrupa por la primera aparición del módulo. Si una ficha intercala módulos,
+  los dos órdenes dejan de coincidir: mejor escribir la galería ya agrupada.
+
+### 18.5 Abierto
+
+Veredicto del dueño; las ocho decisiones de diseño son lectura razonada (el
+kit las marca como inferencia); la grafía legal de la agencia y si «15» son
+usuarios antes de publicarlos; los otros cuatro proyectos, cuando lleguen sus
+carpetas `-2026`.

@@ -327,3 +327,52 @@ describe("validateProjectProse · decisiones de diseño (§17)", () => {
     expect(() => validate(requiredLocale("es"))).not.toThrow();
   });
 });
+
+/*
+  §18. El recorrido por módulos del caso agrupa TODAS las capturas, el stack
+  completo es un inventario sin repeticiones y cada módulo del sistema puede
+  decir con qué está hecho. Una captura sin módulo desaparecería del
+  recorrido; una tecnología en dos grupos se leería como dos piezas.
+*/
+describe("validateProjectProse · módulos, stack y tecnologías por nodo (§18)", () => {
+  it("las capturas llevan módulo todas o ninguna", () => {
+    const all = withProject("network", (entry) => ({
+      ...entry,
+      featuredImage: { ...entry.featuredImage, module: "Feed" },
+      gallery: [{ src: "/media/projects/network/perfil.png", alt: "Perfil", module: "Perfiles" }],
+    }));
+    expect(() => validate(all)).not.toThrow();
+
+    const some = withProject("network", (entry) => ({
+      ...entry,
+      featuredImage: { ...entry.featuredImage, module: "Feed" },
+      gallery: [{ src: "/media/projects/network/perfil.png", alt: "Perfil" }],
+    }));
+    expect(() => validate(some)).toThrow(/perfil\.png no declara el suyo/);
+
+    const blank = withProject("network", (entry) => ({ ...entry, featuredImage: { ...entry.featuredImage, module: "  " } }));
+    expect(() => validate(blank)).toThrow(/Módulo vacío/);
+  });
+
+  it("el stack no repite grupo ni tecnología y no admite nombres vacíos", () => {
+    const stack = (groups: { group: string; items: string[] }[]) =>
+      withProject("network", (entry) => ({ ...entry, stack: groups }));
+    expect(() => validate(stack([{ group: "Backend", items: ["Django 5.2"] }, { group: "Datos", items: ["PostgreSQL"] }]))).not.toThrow();
+    expect(() => validate(stack([{ group: "Backend", items: ["Django"] }, { group: "Backend", items: ["Redis"] }]))).toThrow(/Grupo de stack repetido/);
+    expect(() => validate(stack([{ group: "Backend", items: ["Redis"] }, { group: "Datos", items: ["Redis"] }]))).toThrow(/Tecnología repetida.*Redis/);
+    expect(() => validate(stack([{ group: " ", items: ["Redis"] }]))).toThrow(/sin nombre/);
+    expect(() => validate(stack([{ group: "Datos", items: [""] }]))).toThrow(/Tecnología vacía/);
+  });
+
+  it("un nodo no puede declarar una tecnología vacía", () => {
+    const entries = withProject("omsta", (entry) => ({
+      ...entry,
+      architecture: architecture({
+        nodes: architecture().nodes.map((node) =>
+          node.id === "api" ? { ...node, tech: ["Django REST Framework", " "] } : node.screen ? { ...node, screen: "/media/projects/omsta/cover.png" } : node,
+        ),
+      }),
+    }));
+    expect(() => validate(entries)).toThrow(/Tecnología vacía en el nodo "api"/);
+  });
+});
