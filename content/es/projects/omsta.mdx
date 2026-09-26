@@ -46,7 +46,7 @@ stack:
   - group: Calidad y CI
     items: [pytest 8.4, pytest-django 4.11, coverage 7.16, Ruff 0.15, Black 23.12, pre-commit, Jest 29, ESLint 9, GitHub Actions, expo-doctor, Playwright 1.61]
 highlights:
-  - En producción y uso diario, con despliegue automático en Railway desde la rama principal
+  - En producción y usado a diario por 15 personas, con despliegue automático en Railway desde la rama principal
   - Ciclo completo venta → cobro → factura con NCF → asientos → reportes DGII 606, 607, 608 y 623
   - Contabilidad de doble partida con invariantes en el modelo y en la base de datos
   - App móvil nativa y su API REST, construidas en 16 días sobre el mismo backend
@@ -328,8 +328,8 @@ designDecisions:
     problem: Una reserva mezcla estado de venta, cobros y saldo, y hay que leerla de un vistazo.
     decision: Escalera de estados, porcentaje cobrado y saldo en la cabecera, con venta y cobro separados.
   - screen: /media/projects/omsta/m06-registrar-cobro.png
-    problem: Fuera de la oficina, un vendedor necesita consultar y cobrar sin abrir la web.
-    decision: App nativa con desbloqueo biométrico que consulta sin conexión y cobra con el mismo servicio que la web.
+    problem: Fuera de la oficina, un vendedor necesita cobrar sin abrir la web y sin saltarse a contabilidad.
+    decision: El cobro desde el teléfono usa el mismo servicio que la web y queda «por verificar» hasta que contabilidad lo aplica.
   - screen: /media/projects/omsta/w16-pago-protegido.png
     problem: Editar un pago ya contabilizado descuadraría banco, asientos y saldos.
     decision: El pago contabilizado no se edita; se gestionan comprobantes, se corrige de forma guiada o se reembolsa.
@@ -345,9 +345,9 @@ designDecisions:
   - screen: /media/projects/omsta/w10-nueva-reserva-vuelo.png
     problem: Seis tipos de producto con datos distintos acaban en seis formularios que no se parecen.
     decision: Un mismo patrón de alta para todos, con navegación por secciones y el precio resumido en vivo.
-  - screen: /media/projects/omsta/w47-responsive-crm.png
-    problem: Las tablas anchas de un ERP no caben en el teléfono.
-    decision: Bajo 768 px las tablas se convierten en tarjetas y los filtros se pliegan.
+  - screen: /media/projects/omsta/m07-nueva-reserva.png
+    problem: Dar de alta una reserva en el teléfono es largo, y una llamada puede interrumpirla a medias.
+    decision: Un asistente por pasos que guarda cada borrador cifrado en el teléfono; la reserva se retoma donde se dejó.
 architecture:
   nodes:
     - id: cliente-web
@@ -549,14 +549,15 @@ seoDescription: Caso de OMSTA, un ERP en producción con Django —reservas, cob
 
 ## 1. Contexto
 
-OMSTA es el sistema con el que opera una agencia de viajes de República
-Dominicana: vende hoteles, vuelos, paquetes, cruceros, seguros y otros
+OMSTA es el sistema con el que opera CristegnoViajes SRL, una agencia de viajes
+de República Dominicana: vende hoteles, vuelos, paquetes, cruceros, seguros y otros
 servicios, cobra en pesos y en dólares, paga a sus proveedores, lleva su
 nómina y declara ante la DGII. Trabaja con dos sucursales, Santo Domingo y
 Santiago, sobre una misma plataforma.
 
-El primer commit es de abril de 2025. Hoy la web está en producción y se usa a
-diario, y desde septiembre de 2026 el equipo tiene además una app móvil propia.
+El primer commit es de abril de 2025. Hoy la web está en producción y la usan a
+diario 15 personas, y desde septiembre de 2026 el equipo tiene además una app
+móvil propia.
 
 ## 2. Problema
 

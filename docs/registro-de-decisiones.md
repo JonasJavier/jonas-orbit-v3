@@ -31,8 +31,9 @@ por debajo de 1800 px. El inspector dice las tecnologías del módulo elegido.
 Peldaño WebP de 1920 para el visor. Trampa: el carrete llevaba el foco por
 `:nth-of-type` y, con la mesa montando parte de las pantallas, lo dejaba en
 otra (`data-screen`). iOS se dice como es: probada en Android, configurada
-para iOS, sin build ni tiendas. Abierto: veredicto, decisiones de diseño
-(inferencia del kit), grafía legal de la agencia y el «15» de usuarios.
+para iOS, sin build ni tiendas. Confirmado el mismo día: la agencia es
+**CristegnoViajes SRL** y son **15 usuarios** (caso y CV); las decisiones de
+diseño, revisadas por delegación del dueño (§18.5). Abierto: veredicto.
 
 **Proyectos — tercer pase: la mesa cambia de función y el caso se rehace
 (2026-09-25):** el §17 de `docs/design/endurance-proyectos.md` manda sobre el
