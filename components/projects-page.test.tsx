@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { Project } from "@/lib/projects";
 import { getF1AProjects } from "@/lib/projects";
-import { initialNode, nodePath, statusReadout, tableProject, type TableProject } from "@/lib/engineering-table";
+import { initialNode, nodePath, ringOffset, statusReadout, tableProject, type TableProject } from "@/lib/engineering-table";
 import { getWorld } from "@/lib/worlds";
 import { EngineeringTable } from "./engineering-table";
 import { ProjectsPage } from "./projects-page";
@@ -41,6 +41,11 @@ const inspector = (id: string) =>
 const nodeButton = (id: string, nodeId: string) =>
   section(id).querySelector(`.holo-node[data-node-id="${nodeId}"] .holo-node__box`) as HTMLButtonElement;
 const frames = (id: string) => [...section(id).querySelectorAll<HTMLButtonElement>(".holo-screen__pick")];
+/** Las pantallas que la mesa monta (`onTable`), en el orden del DOM. */
+const onTable = (project: TableProject) => project.screens.filter((screen) => screen.onTable);
+/** El botón de la pantalla `index` (su índice en `screens`) sobre la mesa. */
+const frameOf = (project: TableProject, index: number) =>
+  frames(project.id)[onTable(project).findIndex((screen) => screen.index === index)];
 const noteText = (id: string) => section(id).querySelector(".holo-note__text")?.textContent;
 /** La nota de Diseño de un paso con decisión, tal como se lee en el DOM. */
 const decisionNote = (project: TableProject, step: number) =>
@@ -259,9 +264,11 @@ describe("ProjectsPage", () => {
       const sectionHtml = host.querySelector(`section#${id}`) as HTMLElement;
       expect(sectionHtml, id).not.toBeNull();
       const images = [prose.featuredImage, ...(prose.gallery ?? [])];
-      // Todas las pantallas, con su alt entero, están en el HTML.
+      // Las pantallas que la mesa levanta, con su alt entero, están en el
+      // HTML; las demás son del caso completo y aquí no se piden.
+      const project = table().find((entry) => entry.id === id) as TableProject;
       expect([...sectionHtml.querySelectorAll(".holo-screen img")].map((img) => img.getAttribute("alt"))).toEqual(
-        images.map((image) => image.alt),
+        onTable(project).map((screen) => screen.alt),
       );
       // Sin guion, la ficha dice lo que dice la capa Diseño: las decisiones de
       // diseño si las hay; si no, los pies de las pantallas.
@@ -274,8 +281,9 @@ describe("ProjectsPage", () => {
       );
       const nodes = prose.architecture?.nodes ?? [];
       expect(fallback.querySelectorAll("dl dt"), id).toHaveLength(nodes.length);
+      // En el orden del esquema (por carril), que es el que pinta la ficha.
       expect([...fallback.querySelectorAll("dl dd")].map((dd) => dd.textContent), id).toEqual(
-        nodes.flatMap((node) => (node.decision ? [node.decision] : [])),
+        project.architecture.nodes.flatMap((node) => (node.decision ? [node.decision] : [])),
       );
       expect(nav.querySelector(`a[href="#${id}"]`), id).not.toBeNull();
     }
@@ -347,7 +355,7 @@ describe("EngineeringTable · capas (P4)", () => {
     // Sólo las pantallas del carrete: una que no está en él no se elige
     // (mientras se retiraba, un clic saltaba a la última decisión).
     const inReel = new Set(table()[0].reel.map((step) => step.screen));
-    expect(inert(frames("omsta"))).toEqual(frames("omsta").map((_, index) => !inReel.has(index)));
+    expect(inert(frames("omsta"))).toEqual(onTable(table()[0]).map((screen) => !inReel.has(screen.index)));
     expect(all(true, nodes())).toBe(true);
     expect(note()).not.toHaveAttribute("inert");
     // Un proyecto oculto no se opera en ninguna capa.
@@ -412,7 +420,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     );
     // El nombre accesible es el título entero; lo visible, el índice y el nombre corto.
     const wiki = within(dock()).getByRole("link", { name: /Wiki Universe/ });
-    const omstaLink = within(dock()).getByRole("link", { name: "OMSTA — ERP para una agencia de viajes" });
+    const omstaLink = within(dock()).getByRole("link", { name: "OMSTA — ERP y app móvil para una agencia de viajes" });
     expect(omstaLink).toHaveAttribute("aria-current", "true");
     expect(omstaLink.querySelector(".table-dock__index")).toHaveTextContent("01");
     expect(omstaLink.querySelector(".table-dock__name")).toHaveTextContent("OMSTA");
@@ -691,7 +699,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     renderTable(projects);
     fireEvent.click(tab(/Diseño/));
     const last = omsta.reel.length - 1;
-    fireEvent.click(frames("omsta")[omsta.reel[last].screen]);
+    fireEvent.click(frameOf(omsta, omsta.reel[last].screen));
     expect(noteText("omsta")).toBe(decisionNote(omsta, last));
     fireEvent.click(tab(/Ingeniería/));
     fireEvent.click(nodeButton("omsta", "redis"));
@@ -716,7 +724,7 @@ describe("EngineeringTable · la mesa física", () => {
     con su cifra. No se lee dos veces (`aria-hidden`), ya no hay placa ni
     plano de la nave, y el stack grabado es el del proyecto, una pieza por
     tecnología. Evita un anillo decorativo que no corresponde al sistema, un
-    carril que tapa la ruta (Nómina encendida como si Pagos la usara) y los
+    carril que tapa la ruta (la app encendida como si la web la usara) y los
     rótulos de carril repetidos bajo el esquema.
   */
   it("el anillo es el sistema del proyecto a la vista y sigue al foco del esquema", () => {
@@ -754,16 +762,16 @@ describe("EngineeringTable · la mesa física", () => {
     const omsta = projects[0];
     expect(segments()).toHaveLength(omsta.counts.modules);
 
-    // OMSTA con Pagos y cobros en foco: Nómina es de su carril, pero no de su
-    // ruta; PostgreSQL es de otro carril, y sí de su ruta.
-    expect(initialNode(omsta.architecture)).toBe("pagos");
-    expect(segment(omsta, "pagos")).toHaveAttribute("data-state", "focus");
-    expect(segment(omsta, "nomina")).toHaveAttribute("data-lane-on", "true");
-    expect(segment(omsta, "nomina")).not.toHaveAttribute("data-state");
-    expect(segment(omsta, "postgresql")).toHaveAttribute("data-state", "path");
-    expect(segment(omsta, "postgresql")).not.toHaveAttribute("data-lane-on");
-    const servicio = omsta.architecture.lanes.find(({ lane }) => lane === "servicio")!;
-    expect(readout()).toBe(`${pad(servicio.count)}${LANE_LABEL.servicio}`);
+    // OMSTA con la web en foco: la app es de su carril, pero no de su ruta;
+    // Railway es de otro carril, y sí de su ruta.
+    expect(initialNode(omsta.architecture)).toBe("cliente-web");
+    expect(segment(omsta, "cliente-web")).toHaveAttribute("data-state", "focus");
+    expect(segment(omsta, "app-movil")).toHaveAttribute("data-lane-on", "true");
+    expect(segment(omsta, "app-movil")).not.toHaveAttribute("data-state");
+    expect(segment(omsta, "railway-web")).toHaveAttribute("data-state", "path");
+    expect(segment(omsta, "railway-web")).not.toHaveAttribute("data-lane-on");
+    const cliente = omsta.architecture.lanes.find(({ lane }) => lane === "cliente")!;
+    expect(readout()).toBe(`${pad(cliente.count)}${LANE_LABEL.cliente}`);
     expect(etched.querySelectorAll(".console__lane")).toHaveLength(omsta.architecture.lanes.length);
     expect(etched.querySelectorAll('.console__lane[data-on="true"]')).toHaveLength(1);
 
@@ -802,14 +810,17 @@ describe("EngineeringTable · Producto y Diseño", () => {
     renderTable(projects);
     for (const project of projects) {
       const figures = [...section(project.id).querySelectorAll<HTMLElement>("figure.holo-screen")];
+      // Sólo las que la mesa levanta: las tres de Producto y las del carrete.
+      const shown = onTable(project);
+      expect(shown.filter((entry) => entry.slot).length, project.id).toBe(Math.min(3, project.screens.length));
       expect(figures.map((figure) => figure.getAttribute("data-slot")), project.id).toEqual(
-        project.screens.map((entry) => entry.slot ?? "none"),
+        shown.map((entry) => entry.slot ?? "none"),
       );
       expect(figures.map((figure) => figure.getAttribute("data-frame")), project.id).toEqual(
-        project.screens.map((entry) => entry.frame),
+        shown.map((entry) => entry.frame),
       );
       expect(figures.map((figure) => figure.style.getPropertyValue("--luma")), project.id).toEqual(
-        project.screens.map((entry) => String(entry.sources.luma)),
+        shown.map((entry) => String(entry.sources.luma)),
       );
     }
     const eager = [...document.querySelectorAll(".holo-screen img")].filter((img) => !img.hasAttribute("loading"));
@@ -831,36 +842,42 @@ describe("EngineeringTable · Producto y Diseño", () => {
     renderTable(table());
     fireEvent.click(tab(/Diseño/));
     const figures = () => [...section("omsta").querySelectorAll("figure.holo-screen")];
-    const frontIndex = () => figures().findIndex((figure) => figure.hasAttribute("data-front"));
+    const shown = onTable(omsta);
+    /** El índice en `screens` de la pantalla que está delante. */
+    const frontIndex = () => shown[figures().findIndex((figure) => figure.hasAttribute("data-front"))]?.index;
     const reelScreens = omsta.reel.map((step) => step.screen);
 
     expect(frontIndex()).toBe(reelScreens[0]);
-    expect(frames("omsta").map((frame) => frame.tabIndex)).toEqual(omsta.screens.map((_, i) => (i === reelScreens[0] ? 0 : -1)));
-    expect(frames("omsta")[reelScreens[0]]).toHaveAttribute("aria-current", "true");
-    // Sólo las pantallas con decisión están en el carrete; el resto espera lejos.
+    expect(frames("omsta").map((frame) => frame.tabIndex)).toEqual(shown.map((entry) => (entry.index === reelScreens[0] ? 0 : -1)));
+    expect(frameOf(omsta, reelScreens[0])).toHaveAttribute("aria-current", "true");
+    // Sólo las pantallas con decisión están en el carrete; el resto espera
+    // lejos, y en un carrete largo también las que caen a más de dos puestos.
     expect(figures().map((figure) => figure.hasAttribute("data-far"))).toEqual(
-      omsta.screens.map((_, i) => !reelScreens.includes(i)),
+      shown.map((entry) => {
+        const step = reelScreens.indexOf(entry.index);
+        return step < 0 || Math.abs(ringOffset(step, 0, reelScreens.length)) > 2;
+      }),
     );
     expect(noteText("omsta")).toBe(decisionNote(omsta, 0));
 
-    act(() => frames("omsta")[reelScreens[0]].focus());
-    fireEvent.keyDown(frames("omsta")[reelScreens[0]], { key: "ArrowRight" });
+    act(() => frameOf(omsta, reelScreens[0]).focus());
+    fireEvent.keyDown(frameOf(omsta, reelScreens[0]), { key: "ArrowRight" });
     expect(frontIndex()).toBe(reelScreens[1]);
-    await waitFor(() => expect(frames("omsta")[reelScreens[1]]).toHaveFocus());
-    expect(frames("omsta")[reelScreens[1]]).toHaveAttribute("aria-current", "true");
-    expect(frames("omsta")[reelScreens[0]]).not.toHaveAttribute("aria-current");
-    expect(frames("omsta")[reelScreens[1]].tabIndex).toBe(0);
-    expect(frames("omsta")[reelScreens[0]].tabIndex).toBe(-1);
+    await waitFor(() => expect(frameOf(omsta, reelScreens[1])).toHaveFocus());
+    expect(frameOf(omsta, reelScreens[1])).toHaveAttribute("aria-current", "true");
+    expect(frameOf(omsta, reelScreens[0])).not.toHaveAttribute("aria-current");
+    expect(frameOf(omsta, reelScreens[1]).tabIndex).toBe(0);
+    expect(frameOf(omsta, reelScreens[0]).tabIndex).toBe(-1);
     expect(noteText("omsta")).toBe(decisionNote(omsta, 1));
     // El foco ya lleva la decisión (aria-describedby): el anuncio no la repite.
     expect(live()).toHaveTextContent(`OMSTA · Diseño · decisión 2 de ${omsta.reel.length}`);
     expect(live()).not.toHaveTextContent(omsta.reel[1].note);
 
-    fireEvent.keyDown(frames("omsta")[reelScreens[1]], { key: "ArrowLeft" });
-    fireEvent.keyDown(frames("omsta")[reelScreens[0]], { key: "ArrowLeft" });
+    fireEvent.keyDown(frameOf(omsta, reelScreens[1]), { key: "ArrowLeft" });
+    fireEvent.keyDown(frameOf(omsta, reelScreens[0]), { key: "ArrowLeft" });
     const last = omsta.reel.length - 1;
     expect(frontIndex()).toBe(reelScreens[last]);
-    await waitFor(() => expect(frames("omsta")[reelScreens[last]]).toHaveFocus());
+    await waitFor(() => expect(frameOf(omsta, reelScreens[last])).toHaveFocus());
     expect(noteText("omsta")).toBe(decisionNote(omsta, last));
   });
 
@@ -875,21 +892,23 @@ describe("EngineeringTable · Producto y Diseño", () => {
     const omsta = table()[0];
     renderTable(table());
     fireEvent.click(tab(/Diseño/));
-    fireEvent.click(frames("omsta")[omsta.reel[2].screen]);
-    expect(frames("omsta")[omsta.reel[2].screen]).toHaveAttribute("aria-current", "true");
+    fireEvent.click(frameOf(omsta, omsta.reel[2].screen));
+    expect(frameOf(omsta, omsta.reel[2].screen)).toHaveAttribute("aria-current", "true");
     expect(noteText("omsta")).toBe(decisionNote(omsta, 2));
 
     const note = within(section("omsta").querySelector(".holo-note") as HTMLElement);
     fireEvent.click(note.getByRole("button", { name: "Decisión siguiente" }));
     expect(noteText("omsta")).toBe(decisionNote(omsta, 3));
-    // De la cuarta a la primera, y una más da la vuelta hasta la cuarta.
+    // De la cuarta a la primera, y una más da la vuelta hasta la última.
     for (let step = 0; step < 3; step++) fireEvent.click(note.getByRole("button", { name: "Decisión anterior" }));
     expect(noteText("omsta")).toBe(decisionNote(omsta, 0));
     fireEvent.click(note.getByRole("button", { name: "Decisión anterior" }));
-    expect(noteText("omsta")).toBe(decisionNote(omsta, 3));
-    expect(frames("omsta")[omsta.reel[3].screen]).toHaveAttribute("aria-current", "true");
+    const last = omsta.reel.length - 1;
+    expect(noteText("omsta")).toBe(decisionNote(omsta, last));
+    expect(frameOf(omsta, omsta.reel[last].screen)).toHaveAttribute("aria-current", "true");
 
-    for (const [index, frame] of frames("omsta").entries()) {
+    for (const [position, frame] of frames("omsta").entries()) {
+      const index = onTable(omsta)[position].index;
       const description = document.getElementById(frame.getAttribute("aria-describedby") as string);
       const step = omsta.reel.find((entry) => entry.screen === index);
       expect(description).toHaveClass("visually-hidden");
@@ -976,7 +995,7 @@ describe("EngineeringTable · Ingeniería", () => {
 
   /*
     Garantiza la entrada al sistema: el inspector abre en el primer módulo con
-    decisión (Pagos, en OMSTA) y enseña su carril, su nombre, su decisión y de
+    decisión (la web, en OMSTA) y enseña su carril, su nombre, su decisión y de
     quién recibe y a quién entrega; se enciende su RUTA entera —las líneas por
     las que pasa y los módulos aguas arriba y abajo— (§17). Evita un inspector
     que entra en blanco o un foco que no dice por dónde pasa el dato.
@@ -986,14 +1005,18 @@ describe("EngineeringTable · Ingeniería", () => {
     renderTable(table());
     fireEvent.click(tab(/Ingeniería/));
     const focus = omsta.architecture.nodes.find((node) => node.id === initialNode(omsta.architecture))!;
-    expect(focus.id).toBe("pagos");
+    expect(focus.id).toBe("cliente-web");
 
     const card = within(inspector("omsta"));
-    expect(section("omsta").querySelector(".holo-inspector__lane")).toHaveTextContent("Servicio");
+    expect(section("omsta").querySelector(".holo-inspector__lane")).toHaveTextContent("Cliente");
     expect(card.getByRole("heading", { level: 3 })).toHaveTextContent(focus.label);
     expect(inspector("omsta").querySelector("blockquote")).toHaveTextContent(focus.decision as string);
     const link = (term: string) => card.getByText(term).nextElementSibling;
-    expect(link("Recibe de")).toHaveTextContent(focus.inputs.join(" · "));
+    // Con qué está hecho el módulo: sus tecnologías, del MDX.
+    expect(focus.tech.length).toBeGreaterThan(0);
+    expect(link("Tecnologías")).toHaveTextContent(focus.tech.join(" · "));
+    if (focus.inputs.length > 0) expect(link("Recibe de")).toHaveTextContent(focus.inputs.join(" · "));
+    else expect(card.queryByText("Recibe de")).toBeNull();
     expect(link("Entrega a")).toHaveTextContent(focus.outputs.join(" · "));
 
     const path = nodePath(omsta.architecture.edges, focus.id);
@@ -1005,7 +1028,7 @@ describe("EngineeringTable · Ingeniería", () => {
       [...section("omsta").querySelectorAll(`.holo-node[data-path="${value}"]`)].map((node) => node.getAttribute("data-node-id")).sort();
     expect(marked("up")).toEqual([...path.upstream].sort());
     expect(marked("down")).toEqual([...path.downstream].sort());
-    expect([...section("omsta").querySelectorAll(".holo-node[data-selected]")].map((node) => node.getAttribute("data-node-id"))).toEqual(["pagos"]);
+    expect([...section("omsta").querySelectorAll(".holo-node[data-selected]")].map((node) => node.getAttribute("data-node-id"))).toEqual(["cliente-web"]);
   });
 
   /*
@@ -1022,22 +1045,22 @@ describe("EngineeringTable · Ingeniería", () => {
     const heading = () => within(inspector("omsta")).getByRole("heading", { level: 3 });
     const order = buttons().map((button) => button.closest(".holo-node")?.getAttribute("data-node-id"));
     expect(order).toEqual(omsta.architecture.nodes.map((node) => node.id));
-    expect(buttons().filter((button) => button.tabIndex === 0)).toEqual([nodeButton("omsta", "pagos")]);
-    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-current", "true");
+    expect(buttons().filter((button) => button.tabIndex === 0)).toEqual([nodeButton("omsta", "cliente-web")]);
+    expect(nodeButton("omsta", "cliente-web")).toHaveAttribute("aria-current", "true");
 
-    const pagos = order.indexOf("pagos");
-    act(() => nodeButton("omsta", "pagos").focus());
-    fireEvent.keyDown(nodeButton("omsta", "pagos"), { key: "ArrowDown" });
-    const next = omsta.architecture.nodes[pagos + 1];
-    expect(buttons()[pagos + 1]).toHaveFocus();
+    const web = order.indexOf("cliente-web");
+    act(() => nodeButton("omsta", "cliente-web").focus());
+    fireEvent.keyDown(nodeButton("omsta", "cliente-web"), { key: "ArrowDown" });
+    const next = omsta.architecture.nodes[web + 1];
+    expect(buttons()[web + 1]).toHaveFocus();
     expect(heading()).toHaveTextContent(next.label);
-    expect(buttons()[pagos + 1]).toHaveAttribute("aria-current", "true");
-    expect(nodeButton("omsta", "pagos")).not.toHaveAttribute("aria-current");
-    expect(buttons().filter((button) => button.tabIndex === 0)).toEqual([buttons()[pagos + 1]]);
+    expect(buttons()[web + 1]).toHaveAttribute("aria-current", "true");
+    expect(nodeButton("omsta", "cliente-web")).not.toHaveAttribute("aria-current");
+    expect(buttons().filter((button) => button.tabIndex === 0)).toEqual([buttons()[web + 1]]);
 
-    fireEvent.keyDown(buttons()[pagos + 1], { key: "ArrowUp" });
-    expect(nodeButton("omsta", "pagos")).toHaveFocus();
-    fireEvent.keyDown(nodeButton("omsta", "pagos"), { key: "End" });
+    fireEvent.keyDown(buttons()[web + 1], { key: "ArrowUp" });
+    expect(nodeButton("omsta", "cliente-web")).toHaveFocus();
+    fireEvent.keyDown(nodeButton("omsta", "cliente-web"), { key: "End" });
     expect(buttons().at(-1)).toHaveFocus();
     expect(heading()).toHaveTextContent(omsta.architecture.nodes.at(-1)!.label);
     fireEvent.keyDown(buttons().at(-1)!, { key: "ArrowRight" });
@@ -1063,11 +1086,11 @@ describe("EngineeringTable · Ingeniería", () => {
     fireEvent.pointerEnter(nodeButton("omsta", "redis"));
     expect(heading()).toHaveTextContent("Redis");
     expect(section("omsta").querySelector('.holo-node[data-node-id="redis"]')).toHaveAttribute("data-selected", "true");
-    expect(nodeButton("omsta", "pagos")).toHaveAttribute("aria-current", "true");
-    expect(nodeButton("omsta", "pagos").tabIndex).toBe(0);
+    expect(nodeButton("omsta", "cliente-web")).toHaveAttribute("aria-current", "true");
+    expect(nodeButton("omsta", "cliente-web").tabIndex).toBe(0);
     expect(nodeButton("omsta", "redis").tabIndex).toBe(-1);
     fireEvent.pointerLeave(section("omsta").querySelector(".holo-diagram__field") as HTMLElement);
-    expect(heading()).toHaveTextContent("Pagos y cobros");
+    expect(heading()).toHaveTextContent("Web Django");
   });
 
   /*
@@ -1114,10 +1137,11 @@ describe("EngineeringTable · Ingeniería", () => {
     }
     expect(section("omsta").querySelectorAll(".holo-node__decision")).toHaveLength(omsta.counts.decisions);
 
-    fireEvent.click(nodeButton("omsta", "redis"));
-    expect(within(inspector("omsta")).getByRole("heading", { level: 3 })).toHaveTextContent("Redis");
+    // Un módulo sin decisión (Nómina) no pinta una cita vacía.
+    fireEvent.click(nodeButton("omsta", "nomina"));
+    expect(within(inspector("omsta")).getByRole("heading", { level: 3 })).toHaveTextContent("Nómina");
     expect(inspector("omsta").querySelector("blockquote")).toBeNull();
-    expect(nodeButton("omsta", "redis")).toHaveAttribute("aria-current", "true");
+    expect(nodeButton("omsta", "nomina")).toHaveAttribute("aria-current", "true");
   });
 });
 

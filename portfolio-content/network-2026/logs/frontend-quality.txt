@@ -1,0 +1,148 @@
+### npm run lint
+
+> network-frontend@3.1.0 lint
+> eslint .
+
+lint exit=0
+
+### npm run typecheck
+
+> network-frontend@3.1.0 typecheck
+> tsc -b --noEmit
+
+typecheck exit=0
+
+### npm run format:check
+
+> network-frontend@3.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+[[33mwarn[39m] .prettierrc
+[[33mwarn[39m] eslint.config.js
+[[33mwarn[39m] index.html
+[[33mwarn[39m] package.json
+[[33mwarn[39m] railway.json
+[[33mwarn[39m] src/App.tsx
+[[33mwarn[39m] src/components/layout/AppLayout.tsx
+[[33mwarn[39m] src/components/layout/Logo.tsx
+[[33mwarn[39m] src/components/layout/MobileNav.tsx
+[[33mwarn[39m] src/components/layout/Navbar.tsx
+[[33mwarn[39m] src/components/layout/SidebarLeft.tsx
+[[33mwarn[39m] src/components/layout/SidebarRight.tsx
+[[33mwarn[39m] src/components/posts/CommentItem.tsx
+[[33mwarn[39m] src/components/posts/CommentSection.tsx
+[[33mwarn[39m] src/components/posts/PostCard.test.tsx
+[[33mwarn[39m] src/components/posts/PostCard.tsx
+[[33mwarn[39m] src/components/posts/PostComposer.tsx
+[[33mwarn[39m] src/components/posts/PostFeed.tsx
+[[33mwarn[39m] src/components/posts/QuotedPost.tsx
+[[33mwarn[39m] src/components/posts/QuoteModal.tsx
+[[33mwarn[39m] src/components/ui/Avatar.tsx
+[[33mwarn[39m] src/components/ui/Button.tsx
+[[33mwarn[39m] src/components/ui/ConfirmDialog.tsx
+[[33mwarn[39m] src/components/ui/EmptyState.tsx
+[[33mwarn[39m] src/components/ui/ErrorBoundary.tsx
+[[33mwarn[39m] src/components/ui/Field.tsx
+[[33mwarn[39m] src/components/ui/Lightbox.tsx
+[[33mwarn[39m] src/components/ui/Menu.tsx
+[[33mwarn[39m] src/components/ui/Modal.tsx
+[[33mwarn[39m] src/components/ui/PostSkeleton.tsx
+[[33mwarn[39m] src/components/ui/RichText.test.tsx
+[[33mwarn[39m] src/components/ui/RichText.tsx
+[[33mwarn[39m] src/components/ui/Spinner.tsx
+[[33mwarn[39m] src/components/ui/Tabs.tsx
+[[33mwarn[39m] src/components/ui/Toaster.tsx
+[[33mwarn[39m] src/components/users/EditProfileModal.tsx
+[[33mwarn[39m] src/components/users/FollowButton.tsx
+[[33mwarn[39m] src/components/users/UserCard.tsx
+[[33mwarn[39m] src/components/users/UserListModal.tsx
+[[33mwarn[39m] src/hooks/cache.ts
+[[33mwarn[39m] src/hooks/useAuth.ts
+[[33mwarn[39m] src/hooks/useClickOutside.ts
+[[33mwarn[39m] src/hooks/useComments.ts
+[[33mwarn[39m] src/hooks/useDebounce.ts
+[[33mwarn[39m] src/hooks/useHashtags.ts
+[[33mwarn[39m] src/hooks/useInfiniteScroll.ts
+[[33mwarn[39m] src/hooks/useNotifications.ts
+[[33mwarn[39m] src/hooks/usePageTitle.ts
+[[33mwarn[39m] src/hooks/usePosts.ts
+[[33mwarn[39m] src/hooks/useUsers.ts
+[[33mwarn[39m] src/index.css
+[[33mwarn[39m] src/lib/api.test.ts
+[[33mwarn[39m] src/lib/api.ts
+[[33mwarn[39m] src/lib/richtext.test.ts
+[[33mwarn[39m] src/lib/richtext.ts
+[[33mwarn[39m] src/lib/types.ts
+[[33mwarn[39m] src/lib/utils.test.ts
+[[33mwarn[39m] src/lib/utils.ts
+[[33mwarn[39m] src/main.tsx
+[[33mwarn[39m] src/pages/AuthLayout.tsx
+[[33mwarn[39m] src/pages/BookmarksPage.tsx
+[[33mwarn[39m] src/pages/HomePage.tsx
+[[33mwarn[39m] src/pages/LoginPage.test.tsx
+[[33mwarn[39m] src/pages/LoginPage.tsx
+[[33mwarn[39m] src/pages/NotFoundPage.tsx
+[[33mwarn[39m] src/pages/NotificationsPage.tsx
+[[33mwarn[39m] src/pages/PostDetailPage.tsx
+[[33mwarn[39m] src/pages/ProfilePage.tsx
+[[33mwarn[39m] src/pages/RegisterPage.tsx
+[[33mwarn[39m] src/pages/SearchPage.tsx
+[[33mwarn[39m] src/pages/SettingsPage.tsx
+[[33mwarn[39m] src/stores/auth.ts
+[[33mwarn[39m] src/stores/theme.ts
+[[33mwarn[39m] src/stores/toast.test.ts
+[[33mwarn[39m] src/stores/toast.ts
+[[33mwarn[39m] src/test/render.tsx
+[[33mwarn[39m] src/test/setup.ts
+[[33mwarn[39m] tsconfig.app.json
+[[33mwarn[39m] tsconfig.json
+[[33mwarn[39m] vite.config.ts
+[[33mwarn[39m] Code style issues found in 80 files. Run Prettier with --write to fix.
+format exit=1
+
+### npm run build
+
+> network-frontend@3.1.0 build
+> tsc -b && vite build
+
+[36mvite v8.0.16 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 1914 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                              2.39 kB │ gzip:  0.96 kB
+dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2     10.25 kB
+dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2      11.23 kB
+dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2       18.74 kB
+dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2          18.99 kB
+dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2   25.96 kB
+dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2          48.25 kB
+dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2      85.06 kB
+dist/assets/index-DSMDKXqM.css                              63.43 kB │ gzip: 11.04 kB
+dist/assets/usePageTitle-Bxw3szJw.js                         0.21 kB │ gzip:  0.18 kB
+dist/assets/message-circle-Dxc1orLV.js                       0.23 kB │ gzip:  0.20 kB
+dist/assets/pencil-GRYZbeDZ.js                               0.26 kB │ gzip:  0.21 kB
+dist/assets/Tabs-BsYTtU6v.js                                 0.87 kB │ gzip:  0.50 kB
+dist/assets/BookmarksPage-CLh43bef.js                        0.89 kB │ gzip:  0.49 kB
+dist/assets/HomePage-1XX8kKw8.js                             1.06 kB │ gzip:  0.59 kB
+dist/assets/NotFoundPage-CWB807Pl.js                         1.08 kB │ gzip:  0.64 kB
+dist/assets/PostDetailPage-BYoqhIId.js                       1.37 kB │ gzip:  0.82 kB
+dist/assets/PostFeed-BAWQsJFC.js                             1.58 kB │ gzip:  0.84 kB
+dist/assets/Field-HYVCGcwD.js                                2.23 kB │ gzip:  1.00 kB
+dist/assets/LoginPage-Dg9xTPrw.js                            2.52 kB │ gzip:  1.15 kB
+dist/assets/ConfirmDialog-BeVwe4qk.js                        2.56 kB │ gzip:  1.17 kB
+dist/assets/Modal-C-Wvr1HT.js                                2.60 kB │ gzip:  1.29 kB
+dist/assets/AuthLayout-B5mHh0dX.js                           2.73 kB │ gzip:  1.10 kB
+dist/assets/RegisterPage-Cfe_Vva5.js                         3.88 kB │ gzip:  1.66 kB
+dist/assets/SearchPage-DfQ58pnj.js                           4.31 kB │ gzip:  1.87 kB
+dist/assets/EditProfileModal-DMv0w2jY.js                     5.11 kB │ gzip:  2.00 kB
+dist/assets/NotificationsPage-Cpjcs8dt.js                    5.39 kB │ gzip:  2.25 kB
+dist/assets/SettingsPage-DpUa8dZJ.js                         6.67 kB │ gzip:  2.62 kB
+dist/assets/ProfilePage-COPP0L5q.js                          7.91 kB │ gzip:  2.94 kB
+dist/assets/PostCard-CHPrj6mq.js                            29.78 kB │ gzip:  8.17 kB
+dist/assets/utils-DAl_nDzC.js                               58.44 kB │ gzip: 21.05 kB
+dist/assets/Button-BhxIcFaU.js                              83.79 kB │ gzip: 29.04 kB
+dist/assets/index-OHJiVcFI.js                              225.17 kB │ gzip: 70.19 kB
+
+[32m✓ built in 447ms[39m
+build exit=0

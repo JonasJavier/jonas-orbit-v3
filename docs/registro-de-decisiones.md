@@ -12,6 +12,28 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — OMSTA rehecho: web y app móvil, recorrido por módulos y
+tecnologías (2026-09-26):** el §18 de `docs/design/endurance-proyectos.md`
+manda sobre el §17 en cuántas pantallas monta la mesa, el final del caso y
+cómo se dicen las tecnologías. El dueño pidió que OMSTA abarcase de verdad
+un sistema «muy muy grande» —más información, capturas y módulos— y su app
+móvil (React Native + Expo), y que cada proyecto y su mesa detallen todas sus
+tecnologías. Material nuevo de otra sesión en `portfolio-content/omsta-2026/`,
+hecho de cero con la regla del dueño «si algo falla o no se ve bien, no se
+incluye»; la carpeta vieja `portfolio-content/omsta/` se borró con su
+permiso. Velite gana `module` por captura (todas o ninguna), `stack` (el
+inventario por áreas) y `tech` por nodo. El caso: sección **Tecnologías** y,
+con módulos, **Recorrido por módulos** con cada módulo entero. La mesa monta
+sólo las pantallas que levanta (`onTable`: 10 de 61 en OMSTA), aprieta las
+filas de un sistema grande (`92cqh / rows`, medido a 1280/1440/1920; hasta
+ocho filas no cambia nada) y quita miniaturas a un esquema de cinco carriles
+por debajo de 1800 px. El inspector dice las tecnologías del módulo elegido.
+Peldaño WebP de 1920 para el visor. Trampa: el carrete llevaba el foco por
+`:nth-of-type` y, con la mesa montando parte de las pantallas, lo dejaba en
+otra (`data-screen`). iOS se dice como es: probada en Android, configurada
+para iOS, sin build ni tiendas. Abierto: veredicto, decisiones de diseño
+(inferencia del kit), grafía legal de la agencia y el «15» de usuarios.
+
 **Proyectos — tercer pase: la mesa cambia de función y el caso se rehace
 (2026-09-25):** el §17 de `docs/design/endurance-proyectos.md` manda sobre el
 §16 en capas, lectura, mesa física, muelle y contenido de Diseño, y sustituye

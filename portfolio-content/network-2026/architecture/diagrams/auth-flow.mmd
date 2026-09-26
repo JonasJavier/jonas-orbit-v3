@@ -1,0 +1,41 @@
+%% Network — ciclo de vida del token JWT
+%% Comprobado contra frontend/src/lib/api.ts y backend/apps/users/views.py (e90c581).
+sequenceDiagram
+    autonumber
+    participant U as Usuario
+    participant SPA as React SPA
+    participant AX as Interceptor Axios
+    participant API as Django + SimpleJWT
+    participant BL as Lista negra
+
+    U->>SPA: usuario o email + contraseña
+    SPA->>API: POST /auth/token/
+    Note over API: throttle "auth" 10/min por IP
+    API-->>SPA: access 30 min · refresh 7 días · user
+    SPA->>SPA: persist en localStorage "network-auth"
+
+    U->>SPA: navega
+    SPA->>AX: GET /posts/
+    AX->>API: Authorization Bearer access
+    API-->>AX: 200
+
+    Note over AX,API: el access caduca
+    AX->>API: GET /posts/ con access caducado
+    API-->>AX: 401
+    AX->>AX: refreshPromise compartida, una sola para N peticiones
+    AX->>API: POST /auth/token/refresh/
+    API->>BL: el refresh anterior a la lista negra
+    API-->>AX: access nuevo + refresh nuevo
+    AX->>API: reintento de GET /posts/
+    API-->>SPA: 200
+
+    U->>SPA: cambiar contraseña
+    SPA->>API: POST /auth/password/change/
+    API->>BL: TODOS los refresh vivos del usuario
+    API-->>SPA: par nuevo sólo para esta sesión
+    Note over U,SPA: el resto de dispositivos quedan fuera
+
+    U->>SPA: cerrar sesión
+    SPA->>API: POST /auth/logout/ con el refresh
+    API->>BL: ese refresh
+    SPA->>SPA: queryClient.clear() y vuelta a /login

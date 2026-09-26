@@ -1,0 +1,59 @@
+%% Network — vista de sistema
+%% Comprobado contra el commit e90c581 (2026-09-26).
+graph TB
+    subgraph cliente["Cliente"]
+        SPA["React 19 SPA<br/>Vite · TypeScript · Tailwind 4"]
+        RQ["TanStack Query<br/>estado de servidor"]
+        ZU["Zustand + persist<br/>sesión · tema · avisos"]
+        SPA --- RQ
+        SPA --- ZU
+    end
+
+    subgraph infra["Infraestructura"]
+        NGINX["nginx<br/>bundle estático · CSP · fallback SPA"]
+        GUNI["Gunicorn<br/>WSGI"]
+    end
+
+    subgraph servicio["Servicio · Django 6 + DRF"]
+        USERS["apps.users<br/>identidad · perfiles · follows"]
+        POSTS["apps.posts<br/>posts · reposts · likes<br/>marcadores · hashtags · comentarios"]
+        NOTIF["apps.notifications<br/>8 verbos de actividad"]
+        CORE["apps.core<br/>paginación · permisos · throttling<br/>imágenes · texto · health"]
+        SPEC["drf-spectacular<br/>OpenAPI 3 · Swagger · ReDoc"]
+    end
+
+    subgraph datos["Datos"]
+        PG[("PostgreSQL 17")]
+        RD[("Redis 8<br/>opcional, con fallback")]
+        MEDIA[["Volumen o S3<br/>media procesada a WebP"]]
+    end
+
+    SPA -->|"HTTPS"| NGINX
+    RQ -->|"XHR /api/v1/ · JWT Bearer"| GUNI
+    GUNI --> USERS
+    GUNI --> POSTS
+    GUNI --> NOTIF
+    USERS --- CORE
+    POSTS --- CORE
+    NOTIF --- CORE
+    SPEC -.->|"describe"| GUNI
+
+    POSTS --> NOTIF
+    USERS --> NOTIF
+
+    USERS --> PG
+    POSTS --> PG
+    NOTIF --> PG
+    POSTS -->|"trending 5 min"| RD
+    USERS -->|"sugerencias 5 min"| RD
+    POSTS --> MEDIA
+    USERS --> MEDIA
+
+    classDef client fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b
+    classDef svc fill:#f5f3ff,stroke:#7c3aed,color:#2e1065
+    classDef data fill:#ecfdf5,stroke:#059669,color:#064e3b
+    classDef inf fill:#fff7ed,stroke:#ea580c,color:#431407
+    class SPA,RQ,ZU client
+    class USERS,POSTS,NOTIF,CORE,SPEC svc
+    class PG,RD,MEDIA data
+    class NGINX,GUNI inf

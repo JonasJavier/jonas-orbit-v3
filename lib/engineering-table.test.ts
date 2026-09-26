@@ -514,21 +514,21 @@ describe("screenSources", () => {
     Evita capturas blandas (P9) y peldaños inventados.
   */
   it("una captura real lleva sus peldaños medidos: el mayor por defecto y el menor de miniatura", () => {
-    const phone = screenSources("/media/projects/omsta/50-mobile-dashboard.png", "mobile");
+    const phone = screenSources("/media/projects/omsta/m02-inicio.png", "mobile");
     expect(phone).toEqual({
-      src: "/media/projects/omsta/50-mobile-dashboard-390.webp",
-      srcSet: "/media/projects/omsta/50-mobile-dashboard-390.webp 390w",
-      thumb: "/media/projects/omsta/50-mobile-dashboard-390.webp",
-      width: 390,
-      height: 844,
+      src: "/media/projects/omsta/m02-inicio-780.webp",
+      srcSet: "/media/projects/omsta/m02-inicio-390.webp 390w, /media/projects/omsta/m02-inicio-780.webp 780w",
+      thumb: "/media/projects/omsta/m02-inicio-390.webp",
+      width: 1080,
+      height: 2400,
       // La luma que midió el preparador: la mesa expone la pantalla con ella.
-      luma: projectsMedia["/media/projects/omsta/50-mobile-dashboard.png"].luma,
+      luma: projectsMedia["/media/projects/omsta/m02-inicio.png"].luma,
     });
-    const desktop = screenSources("/media/projects/omsta/01-dashboard-panel-ejecutivo.png", "desktop");
-    expect(desktop.srcSet.split(", ")).toEqual([480, 720, 960, 1440].map(
-      (step) => `/media/projects/omsta/01-dashboard-panel-ejecutivo-${step}.webp ${step}w`,
+    const desktop = screenSources("/media/projects/omsta/w02-dashboard.png", "desktop");
+    expect(desktop.srcSet.split(", ")).toEqual([480, 720, 960, 1440, 1920].map(
+      (step) => `/media/projects/omsta/w02-dashboard-${step}.webp ${step}w`,
     ));
-    expect(desktop.src).toMatch(/-1440\.webp$/);
+    expect(desktop.src).toMatch(/-1920\.webp$/);
     expect(desktop.thumb).toMatch(/-480\.webp$/);
   });
 });
@@ -649,6 +649,78 @@ describe("tableReel · decisiones de diseño (§17)", () => {
 });
 
 /* ── Ingeniería: la ruta de un nodo ───────────────────────────────────────── */
+
+describe("tableTour y onTable · el recorrido del caso y lo que monta la mesa (§18)", () => {
+  /*
+    Garantiza que el recorrido agrupa las pantallas por módulo en el orden en
+    que la ficha presenta cada módulo, con su ancla estable, y que sin módulos
+    no hay recorrido. Evita un módulo partido en dos grupos y un caso que
+    pierde sus pantallas por no declarar módulos.
+  */
+  it("sin módulos, no hay recorrido; con módulos, un grupo por módulo en el orden de la ficha", () => {
+    expect(tableProject(fixture(), "/es/proyectos").tour).toEqual([]);
+    const project = tableProject(
+      fixture({
+        featuredImage: { src: "/media/projects/x/00.png", alt: "Portada", caption: "Portada.", module: "Panel y reservas" },
+        gallery: [
+          { src: "/media/projects/x/01.png", alt: "Uno", caption: "Nota uno.", module: "App móvil" },
+          { src: "/media/projects/x/02.png", alt: "Dos", caption: "Nota dos.", frame: "mobile", module: "Panel y reservas" },
+          { src: "/media/projects/x/03.png", alt: "Tres", caption: "Nota tres.", module: "App móvil" },
+        ],
+      }),
+      "/es/proyectos",
+    );
+    expect(project.tour).toEqual([
+      { id: "modulo-panel-y-reservas", module: "Panel y reservas", screens: [0, 2] },
+      { id: "modulo-app-movil", module: "App móvil", screens: [1, 3] },
+    ]);
+    expect(project.screens.map((screen) => screen.module)).toEqual(["Panel y reservas", "App móvil", "Panel y reservas", "App móvil"]);
+  });
+
+  /*
+    Garantiza que la mesa sólo monta las pantallas que levanta alguna vez: las
+    tres de Producto y las del carrete de Diseño. Evita que un proyecto con
+    sesenta capturas pida sesenta imágenes invisibles al abrir la mesa.
+  */
+  it("la mesa monta las tres de Producto y las del carrete; las demás son del caso", () => {
+    const project = tableProject(
+      fixture({
+        gallery: desktops(5),
+        architecture: undefined,
+        designDecisions: [{ screen: "/media/projects/x/g3.png", problem: "P.", decision: "D." }],
+      }),
+      "/es/proyectos",
+    );
+    expect(project.screens.map((screen) => screen.onTable)).toEqual([true, true, true, false, true, false]);
+  });
+
+  /*
+    Garantiza que cada módulo lleva sus tecnologías declaradas y que el stack
+    completo pasa tal cual, por grupos. Evita un inspector que calla con qué
+    está hecho un módulo que sí lo declara.
+  */
+  it("cada nodo lleva sus tecnologías y el stack completo pasa por grupos", () => {
+    const project = tableProject(
+      fixture({
+        architecture: {
+          nodes: [
+            { id: "api", label: "API", lane: "servicio", decision: "Sólo lectura.", tech: ["Django REST Framework 3.16"] },
+            { id: "db", label: "PostgreSQL", lane: "datos" },
+          ],
+          edges: [["api", "db"]],
+        },
+        stack: [{ group: "Backend", items: ["Django 5.2", "Gunicorn 23"] }],
+      }),
+      "/es/proyectos",
+    );
+    expect(project.architecture.nodes.map((node) => [node.id, node.tech])).toEqual([
+      ["api", ["Django REST Framework 3.16"]],
+      ["db", []],
+    ]);
+    expect(project.stack).toEqual([{ group: "Backend", items: ["Django 5.2", "Gunicorn 23"] }]);
+    expect(tableProject(fixture(), "/es/proyectos").stack).toEqual([]);
+  });
+});
 
 describe("nodePath · la ruta completa de un módulo (§17)", () => {
   // a → b → c, un atajo a → c que salta b, y d → b que también llega a b.
@@ -776,7 +848,7 @@ describe("el catálogo real sobre la mesa", () => {
       "Network 3.0",
       "Delicaté 4.0",
     ]);
-    expect(find("omsta").descriptor).toBe("ERP para una agencia de viajes");
+    expect(find("omsta").descriptor).toBe("ERP y app móvil para una agencia de viajes");
     for (const project of catalog.filter((entry) => !entry.prose.title.includes("—"))) {
       expect(find(project.id).descriptor, project.id).toBe(project.prose.eyebrow);
     }
@@ -807,32 +879,34 @@ describe("el catálogo real sobre la mesa", () => {
 
   /*
     Garantiza el orden por cadenas con el sistema más largo del catálogo: el
-    carril de servicio de OMSTA lee de corrido CRM → reservas → facturación →
-    pagos → contabilidad → ledger → DGII, con nómina y sucursales detrás.
-    Evita que el orden de escritura del MDX parta la cadena en arcos.
+    carril de servicio de OMSTA lee de corrido API móvil → seguridad →
+    reservas → cobros → contabilidad → libro mayor, con nómina pegada al libro
+    mayor que alimenta y los módulos de rama detrás. Evita que el orden de
+    escritura del MDX parta la cadena en arcos.
   */
-  it("OMSTA: el carril de servicio lee la cadena de corrido y el inspector abre en Pagos", () => {
+  it("OMSTA: el carril de servicio lee la cadena de corrido y el inspector abre en la web", () => {
     const { architecture } = find("omsta");
     const service = architecture.nodes
       .filter((node) => node.lane === "servicio")
       .sort((l, r) => l.row - r.row)
       .map((node) => node.id);
     expect(service).toEqual([
-      "crm",
+      "api-movil",
+      "acceso-seguridad",
       "reservas",
-      "facturacion",
-      "pagos",
+      "cobros",
       "contabilidad",
       "ledger",
-      "dgii",
       "nomina",
-      "sucursales",
+      "fiscal-dgii",
+      "banco-divisas",
+      "documentos-pdf",
     ]);
     expect(architecture.rows).toBe(service.length);
-    expect(edge(architecture.edges, "crm", "reservas").shape).toBe("adjacent");
-    expect(edge(architecture.edges, "crm", "pagos").shape).toBe("arc");
-    expect(edge(architecture.edges, "panel", "reservas").shape).toBe("cross");
-    expect(initialNode(architecture)).toBe("pagos");
+    expect(edge(architecture.edges, "api-movil", "acceso-seguridad").shape).toBe("adjacent");
+    expect(edge(architecture.edges, "api-movil", "reservas").shape).toBe("arc");
+    expect(edge(architecture.edges, "cliente-web", "railway-web").shape).toBe("cross");
+    expect(initialNode(architecture)).toBe("cliente-web");
   });
 
   /*
@@ -901,13 +975,13 @@ describe("el catálogo real sobre la mesa", () => {
   });
 
   /*
-    Garantiza que cada esquema real tiene el ancho de lo que ocupa: OMSTA y
-    Delicaté, cuatro carriles; Izak's Photos, Wiki Universe y Network, tres.
+    Garantiza que cada esquema real tiene el ancho de lo que ocupa: OMSTA, los
+    cinco; Delicaté, cuatro; Izak's Photos, Wiki Universe y Network, tres.
     Evita el rectángulo lleno de vacío de un carril sin módulos (§17).
   */
   it("cada esquema real tiene tantas columnas como carriles ocupa", () => {
     expect(Object.fromEntries(projects.map((project) => [project.id, project.architecture.cols]))).toEqual({
-      omsta: 4,
+      omsta: 5,
       "izaks-photos": 3,
       wikiverse: 3,
       network: 3,

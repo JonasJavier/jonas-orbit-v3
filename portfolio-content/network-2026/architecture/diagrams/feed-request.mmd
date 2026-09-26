@@ -1,0 +1,48 @@
+%% Network — una página del feed, del clic al SQL
+%% Comprobado contra backend/apps/posts/views.py y frontend/src/hooks/ (e90c581).
+sequenceDiagram
+    autonumber
+    participant U as Usuario
+    participant F as PostFeed
+    participant Q as TanStack Query
+    participant V as PostViewSet
+    participant DB as PostgreSQL
+    participant C as Redis
+
+    U->>F: abre el feed
+    F->>Q: usePostsFeed()
+    Q->>V: GET /posts/?cursor=
+    V->>V: annotated_posts(user)
+    Note over V: 3 subconsultas correlacionadas (likes, comentarios, reposts)<br/>3 EXISTS (is_liked, is_reposted, is_bookmarked)<br/>select_related(author) + prefetch(hashtags)<br/>Prefetch(repost_of) con las mismas anotaciones
+    V->>DB: 1 consulta paginada por cursor, orden (-created_at, -id)
+    DB-->>V: 10 filas con contadores y estado por usuario
+    V-->>Q: results + next (cursor opaco)
+    Q-->>F: página 1
+    F->>U: 10 tarjetas
+
+    par columna derecha, en paralelo
+        F->>V: GET /users/suggestions/
+        V->>C: user-suggestions:{id}
+        alt hay valor en caché
+            C-->>V: 5 personas
+        else no hay
+            V->>DB: más seguidas que aún no sigues, límite 5
+            V->>C: guardar 5 min
+        end
+    and
+        F->>V: GET /hashtags/trending/
+        V->>C: hashtags:trending
+        alt hay valor en caché
+            C-->>V: top 8
+        else no hay
+            V->>DB: hashtags de los últimos 7 días, top 8
+            V->>C: guardar 5 min
+        end
+    end
+
+    U->>F: llega al final de la lista
+    F->>Q: IntersectionObserver dispara fetchNextPage()
+    Q->>V: GET /posts/?cursor=<next>
+    Note over Q,V: el cursor mantiene el orden aunque<br/>se hayan publicado cosas nuevas arriba
+    V-->>Q: página 2
+    F->>U: 10 tarjetas más, sin repeticiones

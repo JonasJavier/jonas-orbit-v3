@@ -12,8 +12,10 @@ docs/reference/v2/
 /.tmp-*.png
 
 # Material de trabajo y scripts de OTROS proyectos.
-portfolio-content/omsta/scripts/
-portfolio-content/omsta/screenshots/
+portfolio-content/*/scripts/
+portfolio-content/*/screenshots/
+portfolio-content/*/web/screenshots/
+portfolio-content/*/mobile/screenshots/
 assets/**/_curaduria/
 output/
 Disenos/

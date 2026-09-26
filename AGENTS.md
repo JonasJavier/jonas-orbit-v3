@@ -101,7 +101,10 @@ MDX**, nunca en `worlds.data.ts`.
   formación en curso» (09-12) — `education.inProgress`.
 - **Proyectos** `docs/design/endurance-proyectos.md` (09-21; §15 y §16,
   09-24; **§17 «Tercer pase», 09-25, manda** en capas, mesa, muelle y caso
-  completo) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
+  completo; **§18, 09-26**: OMSTA rehecho con su app móvil desde
+  `portfolio-content/omsta-2026/`, `module` por captura → «Recorrido por
+  módulos», `stack` → sección Tecnologías, `tech` por nodo → inspector, la
+  mesa sólo monta lo que levanta) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
   `designDecisions`: problema → decisión) · Ingeniería (ruta entera del
   módulo con `nodePath`, esquema sólo con carriles ocupados, anillo del
   sistema en la mesa); quinto carril `integraciones`; `scope` y `luma` por

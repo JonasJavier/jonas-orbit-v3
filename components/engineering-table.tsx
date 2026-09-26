@@ -156,6 +156,7 @@ function Screen({
     <figure
       className="holo-screen"
       data-frame={screen.frame}
+      data-screen={screen.index}
       data-slot={screen.slot ?? "none"}
       data-front={front ? "true" : undefined}
       data-far={ring === null || Math.abs(ring) > 2 ? "true" : undefined}
@@ -559,10 +560,12 @@ export function EngineeringTable({
     setFront(next, true);
     const total = current.reel.length;
     const index = current.reel[((next % total) + total) % total].screen;
-    // El foco viaja con la pantalla elegida, que es la única en el orden de tabulación.
+    // El foco viaja con la pantalla elegida, que es la única en el orden de
+    // tabulación. Por su índice y no por su puesto en el DOM: la mesa sólo
+    // monta las pantallas que levanta (`onTable`).
     requestAnimationFrame(() =>
       rootRef.current
-        ?.querySelector<HTMLButtonElement>(`#${current.id} .holo-screen:nth-of-type(${index + 1}) .holo-screen__pick`)
+        ?.querySelector<HTMLButtonElement>(`#${current.id} .holo-screen[data-screen="${index}"] .holo-screen__pick`)
         ?.focus(),
     );
   }
@@ -914,7 +917,10 @@ export function EngineeringTable({
                   onKeyDown={onRingKey}
                   role="group"
                 >
-                  {entry.screens.map((screen) => {
+                  {/* Sólo las que la mesa levanta alguna vez (`onTable`): el
+                      resto es del caso completo y aquí sería una imagen
+                      invisible que igualmente se descarga. */}
+                  {entry.screens.filter((screen) => screen.onTable).map((screen) => {
                     const index = entry.reel.findIndex((item) => item.screen === screen.index);
                     const ring = index < 0 ? null : ringOffset(index, entryFront, entry.reel.length);
                     return (
