@@ -28,6 +28,11 @@ const E2E_ORIGIN = `http://localhost:${E2E_PORT}`;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // Varias pruebas mantienen contextos WebGL y transiciones persistentes. Con
+  // el paralelismo implícito de una máquina con muchos núcleos, el hilo se
+  // satura y aparecen timeouts que no se reproducen aislados. Cuatro workers
+  // conservan concurrencia local; CI usa dos para priorizar estabilidad.
+  workers: process.env.CI ? 2 : 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   // En CI generamos también el reporte HTML: el job de e2e sube
