@@ -1,0 +1,31 @@
+%% Flujo de una solicitud de reserva (BookingForm.jsx -> views.contact_inquiry)
+sequenceDiagram
+    actor V as Visitante
+    participant F as BookingForm (React)
+    participant A as POST /api/contact/ (DRF)
+    participant T as ContactRateThrottle
+    participant S as BookingInquirySerializer
+    participant DB as Base de datos
+    actor I as Fotógrafo (Admin)
+
+    V->>F: Elige paquete y llena el formulario
+    F->>F: Validación del navegador (required, type=email)
+    F->>A: JSON {name, email, projectType, date, …, website}
+    A->>T: ¿Menos de 10 solicitudes esta hora?
+    alt Límite superado
+        T-->>F: 429
+        F-->>V: «Demasiadas solicitudes…»
+    else Campo trampa lleno (bot)
+        A-->>F: 201 (no se guarda nada)
+    else Normal
+        A->>S: Valida y traduce projectType→project_type, date→preferred_date
+        alt Inválido
+            S-->>F: 400 {errors}
+            F-->>V: Campo marcado (aria-invalid) + mensaje
+        else Válido
+            S->>DB: INSERT BookingInquiry
+            A-->>F: 201 {status: received}
+            F-->>V: Confirmación con resumen (en móvil, scroll hasta ella)
+        end
+    end
+    I->>DB: Revisa, filtra y marca como atendida (Django Admin)

@@ -1,0 +1,61 @@
+%% portfolio-content/omsta-2026/architecture/diagrams/system.mmd · 2026-09-25 · commit 3f5cea73
+%% Vista del sistema: dos clientes sobre un backend Django compartido.
+flowchart LR
+  subgraph cliente["Clientes"]
+    WEB["Navegador<br/>plantillas Django + JS"]
+    APP["Omsta Móvil<br/>Expo / React Native"]
+  end
+
+  subgraph backend["Backend Django (monolito modular, 19 apps)"]
+    SEC["security + usuarios<br/>sesión, roles, bitácora"]
+    MOV["movil<br/>API /api/movil/v1/ · JWT por dispositivo"]
+    RES["reservas + crm + catalogs"]
+    CON["contabilidad<br/>factura NCF · CxC · CxP"]
+    LED["ledger + coa<br/>asientos y períodos"]
+    DGII["reporting DGII<br/>606 · 607 · 608 · 623"]
+    BAN["banco + divisas"]
+    NOM["nomina"]
+    DOC["documentos + core<br/>PDF WeasyPrint"]
+    OPS["operations<br/>feed de procesos"]
+  end
+
+  subgraph datos["Datos"]
+    PG[("PostgreSQL<br/>fuente de verdad")]
+    RD[("Redis<br/>cola Q2 · caché · sesiones")]
+    S3[("Bucket S3-compatible<br/>privado")]
+  end
+
+  WK["Worker Django Q2"]
+
+  subgraph ext["Integraciones"]
+    SMTP["SMTP"]
+    IPI["IPinfo (GeoIP)"]
+    GPL["Google Places"]
+  end
+
+  WEB -->|"HTTPS + sesión/CSRF"| SEC
+  APP -->|"HTTPS + Bearer JWT"| MOV
+  MOV --> SEC
+  SEC --> RES
+  MOV --> RES
+  MOV --> CON
+  RES -->|"core.contracts.accounting"| CON
+  CON --> LED
+  CON --> BAN
+  CON --> DGII
+  NOM --> LED
+  RES --> DOC
+  CON --> DOC
+  RES --> PG
+  CON --> PG
+  LED --> PG
+  SEC --> RD
+  DOC --> S3
+  RES -->|"on_commit → cola"| RD
+  RD --> WK
+  WK --> PG
+  WK --> S3
+  WK --> SMTP
+  WK --> OPS
+  SEC --> IPI
+  MOV --> GPL

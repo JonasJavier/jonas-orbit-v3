@@ -1,0 +1,31 @@
+%% portfolio-content/omsta-2026/architecture/diagrams/flujo-reserva-cobro-fiscal.mmd · 2026-09-25 · commit 3f5cea73
+%% Reserva → cobro → verificación → asiento → DGII 606/607 (archivos reales del repo).
+flowchart TD
+  A["Alta de reserva<br/>reservas/services/*"] --> B["CxP al suplidor<br/>core.contracts.accounting.upsert_reservation_payable"]
+  A --> C["PaymentCreateView<br/>contabilidad/views/payments.py"]
+  C --> D["PaymentForm"]
+  D --> E["register_customer_payment<br/>receivables/payment_registration.py"]
+  E --> E1{"idempotency_key<br/>ya existe?"}
+  E1 -->|"sí"| E2["Devuelve el pago existente<br/>(duplicado)"]
+  E1 -->|"no"| F["Pago IN_REVIEW «Por verificar»<br/>+ comprobantes (S3) + banco + cuotas"]
+  F -->|"transaction.on_commit"| G["Aviso a contabilidad<br/>notify_accounting_payment_received"]
+  G --> H["PaymentApplyView"]
+  H --> I["apply_customer_payment<br/>services/payment_review.py"]
+  H -.->|"rechazo"| I2["reject_customer_payment → FAILED"]
+  I --> J["post_customer_payment_if_needed<br/>→ posting/customer_payments.py"]
+  J --> K["JournalEntry (ledger)<br/>Dr banco / Cr anticipos 2201"]
+  K --> K1{"¿Período cerrado?<br/>JournalEntry.post()"}
+  K1 -->|"sí"| K2["Bloquea la publicación"]
+  I --> R["Recibo en vivo + aviso a reservas"]
+  L["Factura con NCF<br/>save_new_invoice_with_ncf · ncf_sequences"] --> M["Paquete contable atómico<br/>posting/invoice_package.py"]
+  M --> M1["Venta: Dr CxC / Cr ingresos + ITBIS"]
+  M --> M2["Costo y CxP"]
+  M --> M3["Reclasifica anticipo: Dr 2201 / Cr CxC"]
+  M --> N["freeze_invoice_607_snapshot"]
+  N --> O["607 · reporting/dgii/"]
+  B --> P["Comprobante del suplidor"]
+  P --> Q["freeze_*_606_snapshot"]
+  Q --> S["606 · reporting/dgii_606/"]
+  O --> T["XLSX interno o TXT oficial<br/>(auditado)"]
+  S --> T
+  T --> U["Presentación manual en la DGII"]

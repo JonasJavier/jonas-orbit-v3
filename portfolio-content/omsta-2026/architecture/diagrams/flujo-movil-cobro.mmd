@@ -1,0 +1,41 @@
+%% portfolio-content/omsta-2026/architecture/diagrams/flujo-movil-cobro.mmd · 2026-09-25 · commit 3f5cea73
+%% Login móvil → JWT → cobro con comprobante → verificación en contabilidad (web).
+sequenceDiagram
+  autonumber
+  participant App as Omsta Móvil
+  participant MW as MovilTokenAuthMiddleware
+  participant API as movil/views
+  participant SVC as movil/services
+  participant REG as register_customer_payment
+  participant PG as PostgreSQL
+  participant S3 as Bucket privado
+  participant WebC as Contabilidad (web)
+
+  App->>API: POST auth/login/ (usuario, dispositivo)
+  API->>SVC: iniciar_sesion (throttling y bitácora del login web)
+  SVC->>PG: DispositivoMovil + UserActivityLog
+  API-->>App: access 15 min + refresh 30 días (rotación y blacklist)
+  Note over App: tokens en SecureStore, reapertura con biometría
+
+  App->>MW: GET reservas/{id}/pagos/formulario/ (Bearer)
+  MW->>API: dispositivo válido y auth_version vigente
+  API-->>App: campos y reglas del PaymentForm
+
+  App->>API: POST reservas/adjuntos/ (foto del comprobante)
+  API->>S3: adjunto temporal
+  API-->>App: id temporal
+
+  App->>API: POST reservas/{id}/pagos/ (valores, adjuntos, idempotency_key)
+  API->>SVC: pagos.registrar
+  alt clave ya registrada
+    SVC-->>App: duplicado=true (mismo pago)
+  else primer intento
+    SVC->>REG: PaymentForm con el JSON traducido
+    REG->>PG: Pago IN_REVIEW + comprobantes + banco + cuotas (1 transacción)
+    REG-->>WebC: aviso on_commit
+    SVC-->>App: pago_id + historial
+  end
+
+  WebC->>PG: apply_customer_payment → COMPLETED + asiento en ledger
+  App->>API: GET reservas/{id}/pagos/ (historial)
+  API-->>App: pago aplicado + recibo en vivo por enlace firmado

@@ -1,0 +1,15 @@
+%% Estado de la galería en la URL (ProjectGallery.jsx, useSearchParams con replace)
+stateDiagram-v2
+    [*] --> Todo: /projects
+    Todo --> Serie: filtro (?category=weddings)
+    Serie --> Todo: filtro All (se borra category)
+    Todo --> Visor: clic en foto (?photo=first-dance)
+    Serie --> Visor: clic en foto (?category=...&photo=...)
+    Visor --> Visor: flechas o deslizar (cambia photo)
+    Visor --> Todo: Esc, fondo o cerrar (se borra photo)
+    [*] --> Visor: enlace directo /projects?photo=red-motion
+    note right of Visor
+        Las fotos destacadas de la portada
+        enlazan a /projects?photo=id.
+        Al cerrar, el foco vuelve a la miniatura.
+    end note

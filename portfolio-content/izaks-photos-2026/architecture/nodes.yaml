@@ -1,0 +1,99 @@
+nodes:
+  - id: inicio
+    label: Portada
+    lane: cliente
+    screen: 01-home-desktop.png
+    decision: >-
+      Hero a sangre con dos acciones y «Reserve» fijo en la cabecera de todas las páginas.
+  - id: galeria
+    label: Galería y filtros
+    lane: cliente
+    screen: 19-gallery-grid-desktop.png
+    decision: >-
+      La categoría y la foto abierta viven en la URL, así cada foto tiene un enlace compartible.
+  - id: visor
+    label: Visor de fotos
+    lane: cliente
+    screen: 26-lightbox-desktop.png
+    decision: >-
+      El marco se dimensiona antes de cargar y muestra la miniatura hasta que llega el JPEG completo.
+  - id: sobre-mi
+    label: Sobre mí
+    lane: cliente
+    screen: 31-about-desktop.png
+  - id: reservas
+    label: Reservas
+    lane: cliente
+    screen: 43-booking-success-desktop.png
+    decision: >-
+      Tras enviar, la confirmación resume lo enviado y en móvil la página baja hasta ella.
+  - id: idioma
+    label: Idioma EN/ES
+    lane: cliente
+    screen: 48-home-es-desktop.png
+    decision: >-
+      Un Context propio con t({ en, es }), sin librería de i18n; el idioma se recuerda en el navegador.
+  - id: django
+    label: Django + WhiteNoise
+    lane: servicio
+    decision: >-
+      Un solo proceso sirve el build de Vite, la API y el admin desde el mismo origen, sin CORS en producción.
+  - id: api-contacto
+    label: API de reservas (DRF)
+    lane: servicio
+    decision: >-
+      Valida y guarda cada solicitud; límite de 10 por hora y campo trampa contra bots.
+  - id: api-salud
+    label: Healthcheck
+    lane: servicio
+  - id: admin
+    label: Django Admin
+    lane: servicio
+    screen: 55-admin-inquiries-desktop.png
+    decision: >-
+      Las solicitudes se filtran, se buscan y se marcan como atendidas desde la propia lista.
+  - id: base-datos
+    label: SQLite / PostgreSQL
+    lane: datos
+    decision: >-
+      SQLite por defecto y PostgreSQL si existe DATABASE_URL, sin cambiar código.
+  - id: fotos
+    label: Fotos del bundle
+    lane: datos
+    decision: >-
+      JPEG completos para visor y hero; miniaturas WebP de 720 px generadas por script para las cuadrículas.
+  - id: almacen-local
+    label: localStorage
+    lane: datos
+  - id: railway
+    label: Railway
+    lane: infraestructura
+    decision: >-
+      Railpack compila todo, migra antes de publicar y reinicia si el healthcheck falla.
+  - id: github-actions
+    label: GitHub Actions
+    lane: infraestructura
+  - id: google-fonts
+    label: Google Fonts
+    lane: integraciones
+edges:
+  - [inicio, galeria]
+  - [inicio, visor]
+  - [galeria, visor]
+  - [inicio, reservas]
+  - [sobre-mi, reservas]
+  - [idioma, almacen-local]
+  - [inicio, django]
+  - [galeria, django]
+  - [visor, fotos]
+  - [galeria, fotos]
+  - [reservas, api-contacto]
+  - [django, api-contacto]
+  - [django, admin]
+  - [django, fotos]
+  - [api-contacto, base-datos]
+  - [admin, base-datos]
+  - [inicio, google-fonts]
+  - [railway, django]
+  - [railway, api-salud]
+  - [github-actions, django]

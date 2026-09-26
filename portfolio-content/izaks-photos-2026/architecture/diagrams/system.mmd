@@ -1,0 +1,33 @@
+%% Izak's Photos — vista del sistema (código capturado: 38b4f3de + sesión 25-09-2026)
+flowchart LR
+    subgraph cliente[Navegador]
+        UI["React 18 + React Router 7<br/>Portada · Galería · Visor · Sobre mí · Reservas · 404"]
+        I18N["Idioma EN/ES<br/>Context + localStorage"]
+        URL["Estado en la URL<br/>?category= · ?photo="]
+    end
+
+    subgraph servicio["Railway — un solo servicio (Gunicorn)"]
+        DJ["Django 5.2 + WhiteNoise<br/>sirve index.html y /static/"]
+        API["DRF · POST /api/contact/<br/>límite 10/h + honeypot"]
+        HC["GET /api/health/"]
+        ADM["Django Admin<br/>solicitudes"]
+    end
+
+    subgraph datos[Datos]
+        DB[("SQLite local<br/>PostgreSQL si DATABASE_URL")]
+        IMG["Fotos del bundle<br/>43 JPEG + 43 WebP 720px"]
+    end
+
+    FONTS["Google Fonts"]
+    CI["GitHub Actions<br/>tests + build"]
+
+    UI --> I18N
+    UI --> URL
+    UI -- "GET /, /projects…" --> DJ
+    UI -- "fetch JSON" --> API
+    DJ --> IMG
+    API --> DB
+    ADM --> DB
+    UI --> FONTS
+    HC -. healthcheck .- servicio
+    CI -. verifica .-> DJ

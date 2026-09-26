@@ -1,0 +1,47 @@
+%% portfolio-content/omsta-2026/architecture/diagrams/deployment.mmd · 2026-09-25 · commit 3f5cea73
+%% Despliegue: GitHub main → Railway (producción y demo) + EAS para la app. Sin IDs ni URLs.
+flowchart LR
+  DEV["Desarrollo local<br/>Windows · .codex_venv · servidor QA"] -->|"git push main"| GH["GitHub main"]
+  GH --> CI["GitHub Actions<br/>ci.yml · mobile.yml"]
+
+  subgraph prod["Railway · producción"]
+    PW["Web · Gunicorn gthread<br/>/health/ · /api/movil/v1/"]
+    PQ["Worker · qcluster"]
+    PPG[("PostgreSQL")]
+    PRD[("Redis")]
+    PB[("Bucket media")]
+    PBK[("Bucket respaldo PITR")]
+    PW --> PPG
+    PW --> PRD
+    PW --> PB
+    PQ --> PPG
+    PQ --> PRD
+    PQ --> PB
+    PPG -.-> PBK
+  end
+
+  subgraph demo["Railway · demo (datos ficticios)"]
+    DW["Web · migrate en pre-deploy"]
+    DQ["Worker · reinicio nocturno"]
+    DPG[("PostgreSQL")]
+    DRD[("Redis")]
+    DB[("Bucket")]
+    DW --> DPG
+    DW --> DRD
+    DW --> DB
+    DQ --> DPG
+    DQ --> DRD
+    DQ --> DB
+  end
+
+  GH -->|"auto-deploy (railpack.json)"| PW
+  GH -->|"auto-deploy"| PQ
+  GH -->|"auto-deploy"| DW
+  GH -->|"auto-deploy"| DQ
+
+  subgraph eas["Expo EAS"]
+    EB["Builds: development · preview · production"]
+  end
+  DEV -->|"eas build"| EB
+  EB --> PHONE["Teléfono Android<br/>distribución interna"]
+  PHONE -->|"HTTPS + JWT"| PW

@@ -1,0 +1,25 @@
+%% Build y despliegue (railway.toml, .github/workflows/ci.yml, scripts/optimize_images.py)
+flowchart TB
+    DEV["Desarrollo local<br/>scripts/dev.py → Django :8000 + Vite :5173"]
+    PIX["scripts/optimize_images.py<br/>JPEG → WebP 720px + og-image.jpg"]
+    GH["GitHub · JonasJavier/IZAK-S-PHOTOS"]
+    CI["GitHub Actions<br/>backend: manage.py test api (Py 3.13)<br/>frontend: npm ci + vite build (Node 20)"]
+
+    subgraph RW["Railway (builder Railpack)"]
+        B1["pip install -r requirements.txt"]
+        B2["npm --prefix frontend ci && run build<br/>(base /static/)"]
+        B3["collectstatic (WhiteNoise, hash + compresión)"]
+        P["preDeploy: manage.py migrate"]
+        S["gunicorn backend.wsgi"]
+        H{"healthcheck<br/>/api/health/"}
+    end
+
+    DOM["izaksphotos.jonasjavier.dev"]
+
+    PIX --> DEV
+    DEV -- push --> GH
+    GH --> CI
+    GH -. "despliegue (disparador no verificado)" .-> B1
+    B1 --> B2 --> B3 --> P --> S --> H
+    H -- 200 --> DOM
+    H -- falla --> S

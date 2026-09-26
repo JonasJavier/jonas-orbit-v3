@@ -12,6 +12,33 @@
 
 Nada de este trabajo cambió código ni hizo commits en `Delicate-4.0` ni en `jonas-orbit-v3` (`git status` limpio en Delicate-4.0 al terminar).
 
+## Actualización posterior (25-09-2026, noche)
+
+Después de esta investigación el repositorio se hizo **público** con un historial limpio. Cambia lo siguiente:
+
+- **Cliente real:** Jonás confirmó que Delicaté es el negocio de una clienta (responde a la Pregunta 1). El README público dice «Diseño y desarrollo: Jonas Javier Encarnacion, para Delicaté».
+- **Repo público:** <https://github.com/JonasJavier/Delicate-4.0> (CI en verde). El historial original, que contenía credenciales y datos personales de 2024, quedó en el repo privado `Delicate-4.0-private-archive`. El nuevo se reescribió sin esos archivos: 25 commits de la historia original + 3 nuevos, código idéntico al commit `9f134109`.
+- **Emoji de WhatsApp corregido:** el saludo es ahora «¡Hola, Delicaté!» sin emoji (commit `1c17018`). La página de WhatsApp lo muestra bien. Deja de ser un motivo de exclusión para un paso a WhatsApp nuevo, pero las capturas `raw/19` y `raw/48` siguen mostrando el defecto anterior.
+- **Railway** despliega ahora desde el repo nuevo (commit `0d31ad0`, 200 en producción).
+
+Los hashes citados en esta carpeta son del historial original. Equivalencias en el repo público:
+
+| Original (privado) | Público | Commit |
+| --- | --- | --- |
+| `9f134109` | `20b9246` | docs: dominio propio |
+| `6425386d` | `ca28efb` | fotos en el volumen de Railway |
+| `71c62255` | `987c07f` | tipo MIME del manifest |
+| `25b8b833` | `688c156` | despliegue Docker/Railway |
+| `1cbc0c3d` | `78a25b9` | carrito sincronizado y mejoras móviles |
+| `0139dba7` | `6c86b5b` | Django listo para producción |
+| `9585f7ab` | — (eliminado: sólo borraba archivos que ya no existen) | dejar de versionar `.env` |
+| `41d3654b` | `8f7fccc` | licencia propietaria |
+| `65a15e7b` | `bdff36a` | catálogo de 10 productos |
+| `226fe32e` | `6a2f40b` | validación y UI |
+| `fbf22e62` | `92bdfcf` | reconstrucción 2026 |
+| `44f824fb` | `eda7589` | última versión 2024 |
+| — | `1c17018`, `1a84abf`, `0d31ad0` | emoji, CI, README público |
+
 ## Estado del material
 
 | Entregable | Estado |

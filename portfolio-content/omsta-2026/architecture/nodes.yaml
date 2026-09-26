@@ -1,0 +1,181 @@
+# portfolio-content/omsta-2026/architecture/nodes.yaml · 2026-09-25 · commit 3f5cea73
+# Un solo sistema: cliente web + app móvil + backend Django compartido.
+# Todos los componentes verificados en el repo OMSTA (ver architecture/*.md).
+# screen: archivo de web/screenshots/principales/ (w…) o mobile/screenshots/principales/ (m…).
+nodes:
+  - id: cliente-web
+    label: Web (plantillas Django)
+    lane: cliente
+    screen: w02-dashboard.png
+    decision: >-
+      HTML renderizado en servidor sin SPA ni build step, para que la lógica
+      crítica y los permisos vivan solo en el backend.
+  - id: app-movil
+    label: Omsta Móvil (Expo)
+    lane: cliente
+    screen: m02-inicio.png
+    decision: >-
+      Expo + React Native como segundo cliente que no calcula saldos ni
+      estados: pinta lo que describe el servidor.
+  - id: api-movil
+    label: API móvil /api/movil/v1/
+    lane: servicio
+    decision: >-
+      App Django propia con JWT ligado al dispositivo y contrato OpenAPI que
+      genera los tipos TypeScript de la app.
+  - id: acceso-seguridad
+    label: Usuarios y seguridad
+    lane: servicio
+    screen: w43-evento-auditado.png
+    decision: >-
+      Acceso cerrado por defecto: login obligatorio, roles efectivos (rol +
+      módulos) y reglas por prefijo de URL en middleware.
+  - id: reservas
+    label: Reservas y CRM
+    lane: servicio
+    screen: w04-reserva-hotel-resumen.png
+    decision: >-
+      Ocho tipos de producto en un dominio que habla con contabilidad solo por
+      un contrato neutral, protegido por tests de frontera.
+  - id: cobros
+    label: Registro y verificación de cobros
+    lane: servicio
+    screen: w16-pago-protegido.png
+    decision: >-
+      Un único servicio de registro para web y móvil; todo pago nace «Por
+      verificar» con clave de idempotencia y contabilidad lo aplica.
+  - id: contabilidad
+    label: Contabilidad (NCF, CxC, CxP)
+    lane: servicio
+    screen: w22-factura-paquete-contable.png
+    decision: >-
+      La factura publica un paquete de asientos atómico para que la CxC nunca
+      quede acreedora ni los anticipos sin reclasificar.
+  - id: ledger
+    label: Libro mayor
+    lane: servicio
+    screen: w25-asientos-de-una-reserva.png
+    decision: >-
+      Capa contable genérica que no importa contabilidad y bloquea la
+      publicación en períodos cerrados.
+  - id: fiscal-dgii
+    label: Reportes DGII 606/607
+    lane: servicio
+    screen: w21-documento-fiscal-suplidor.png
+    decision: >-
+      Snapshot fiscal inmutable al contabilizar; genera TXT oficial y XLSX,
+      y la presentación a la DGII queda en manos humanas.
+  - id: banco-divisas
+    label: Banco y divisas
+    lane: servicio
+    screen: w31-banco-transacciones.png
+    decision: >-
+      Cuenta bancaria por moneda y tasa de cambio congelada en cada pago
+      DOP/USD.
+  - id: nomina
+    label: Nómina
+    lane: servicio
+    screen: w33-nomina-resumen.png
+  - id: documentos-pdf
+    label: Documentos PDF
+    lane: servicio
+    screen: w38-centro-de-documentos.png
+    decision: >-
+      Recibos renderizados en vivo con WeasyPrint; solo la factura con NCF es
+      inmutable.
+  - id: operaciones-jobs
+    label: Feed de procesos
+    lane: servicio
+    decision: >-
+      Una experiencia compartida para ver, reintentar o descartar trabajos en
+      segundo plano de todas las apps.
+  - id: postgresql
+    label: PostgreSQL
+    lane: datos
+    decision: >-
+      Única fuente de verdad: todo lo contable, auditable o durable vive aquí.
+  - id: redis
+    label: Redis
+    lane: datos
+    decision: >-
+      Solo cola de Django Q2, caché y sesiones; puede perderse sin perder
+      estado de negocio.
+  - id: bucket-s3
+    label: Bucket S3 privado
+    lane: datos
+    decision: >-
+      Comprobantes y documentos en almacenamiento privado con URL firmada,
+      porque contienen datos personales y financieros.
+  - id: railway-web
+    label: Railway web (Gunicorn)
+    lane: infraestructura
+    decision: >-
+      Gunicorn gthread con reciclado escalonado de procesos y sonda /health/
+      exenta de login y de redirección HTTPS.
+  - id: worker-q2
+    label: Worker Django Q2
+    lane: infraestructura
+    decision: >-
+      Django Q2 en lugar de Celery; los trabajos se encolan en on_commit y son
+      idempotentes.
+  - id: github-ci
+    label: GitHub main + CI
+    lane: infraestructura
+    decision: >-
+      Solo rama main; cada push despliega producción y demo tras lint,
+      checks y pytest en GitHub Actions.
+  - id: eas-build
+    label: Expo EAS Build
+    lane: infraestructura
+    decision: >-
+      Development builds internas en teléfono real; tiendas pendientes de las
+      cuentas del negocio.
+  - id: smtp
+    label: Correo SMTP
+    lane: integraciones
+  - id: ipinfo
+    label: IPinfo (GeoIP)
+    lane: integraciones
+    decision: >-
+      Consulta por IP cacheada 24 h (negativa 1 h) para no pagar ni esperar
+      la geolocalización en cada petición.
+  - id: google-places
+    label: Google Places
+    lane: integraciones
+    decision: >-
+      Llamada desde el servidor para ubicar hoteles sin exponer la llave en la
+      app.
+edges:
+  - [cliente-web, railway-web]
+  - [app-movil, railway-web]
+  - [railway-web, acceso-seguridad]
+  - [railway-web, api-movil]
+  - [api-movil, acceso-seguridad]
+  - [acceso-seguridad, reservas]
+  - [api-movil, reservas]
+  - [api-movil, cobros]
+  - [reservas, cobros]
+  - [reservas, contabilidad]
+  - [cobros, contabilidad]
+  - [cobros, banco-divisas]
+  - [contabilidad, ledger]
+  - [contabilidad, fiscal-dgii]
+  - [nomina, ledger]
+  - [contabilidad, documentos-pdf]
+  - [reservas, documentos-pdf]
+  - [ledger, postgresql]
+  - [reservas, postgresql]
+  - [contabilidad, postgresql]
+  - [cobros, bucket-s3]
+  - [documentos-pdf, bucket-s3]
+  - [acceso-seguridad, redis]
+  - [redis, worker-q2]
+  - [worker-q2, postgresql]
+  - [worker-q2, bucket-s3]
+  - [worker-q2, operaciones-jobs]
+  - [worker-q2, smtp]
+  - [acceso-seguridad, ipinfo]
+  - [api-movil, google-places]
+  - [github-ci, railway-web]
+  - [github-ci, worker-q2]
+  - [eas-build, app-movil]
