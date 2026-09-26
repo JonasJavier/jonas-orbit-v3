@@ -86,14 +86,29 @@ Versión corta, si el formato del CV sólo admite 6–8:
 
 ---
 
+## Duración, si tu formato de CV la pide
+
+**Alrededor de dos semanas.** Es un dato tuyo, no deducible del repositorio (los 19
+commits caben en 4 días porque el trabajo se subió en bloques).
+
+En español: *«~2 semanas, en solitario»*. En inglés: *«~2 weeks, solo»*.
+
+No está incluido en ninguna de las opciones de arriba a propósito: en un CV, una
+duración corta junto a un alcance grande puede leerse como que el alcance es menor de
+lo que es. Úsalo sólo si el formato lo exige o si el proyecto va en una sección de
+proyectos con fechas.
+
+---
+
 ## Qué **no** poner
 
-- Nada sobre usuarios, tráfico, adopción o impacto: no hay datos.
+- Nada sobre usuarios, tráfico, adopción o impacto: no hay datos, y Jonás ha
+  confirmado que nadie externo lo ha usado.
 - Nada sobre tiempo real, WebSockets o notificaciones push: **no existen** en el
   proyecto.
 - «PWA offline»: hay manifest instalable, pero **no hay service worker**.
 - Porcentajes de mejora de rendimiento: no hay mediciones antes/después.
 - Cobertura de tests en porcentaje: hay pruebas, pero no se midió la cobertura.
-- Duración del proyecto: el historial de git no la refleja.
 - «Proyecto de CS50W» a secas: minimiza el trabajo. Si mencionas el origen, encádenalo
   con lo que añadiste (ver `case-notes.md` §2).
+- Nada sobre asistencia de IA en el desarrollo: decisión tomada, no se menciona.

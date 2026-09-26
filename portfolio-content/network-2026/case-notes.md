@@ -18,8 +18,11 @@ Etiquetas: **comprobado** · **inferencia** · **pendiente**.
 | 2026-09-25/26 | `a097f54` CI → `30aec11` dependencias → `9d93f32` endurecimiento + nuevas funciones sociales → `f3654b3` rediseño del frontend → `1f8773d` documentación → PR #8 y #9 (despliegue) |
 
 - 19 commits en total, 2 pull requests fusionados (#8, #9). *(comprobado)*
-- **pendiente**: la concentración de commits en 3 días no refleja el tiempo real de
-  trabajo. Sin ese dato no se puede afirmar ninguna duración.
+- **Tiempo real de desarrollo: alrededor de dos semanas.** *(dato de Jonás,
+  2026-09-26)* El historial de git no lo refleja: los commits se concentran en cuatro
+  días porque el trabajo se subió en bloques, no porque se hiciera en cuatro días.
+  Si usas la duración en la ficha, conviene decirlo así — «un par de semanas de
+  trabajo» — y no intentar deducirla de las fechas del repositorio.
 
 ---
 
@@ -98,7 +101,9 @@ dirección, fecha de nacimiento, género, intereses, idiomas). Las rutas ya incl
   *(comprobado — `settings.py`, `config/urls.py`)*
 - **Una sola persona.** 19 commits, un único autor humano en el historial.
   *(comprobado — `git log`)*
-- **pendiente**: plazos, si los hubo.
+- **Unas dos semanas de trabajo**, sin equipo y sin usuarios a los que consultar:
+  todas las decisiones de producto se tomaron sin datos de uso.
+  *(dato de Jonás + comprobado: no hay analítica, issues ni estrellas)*
 
 ---
 
@@ -277,5 +282,14 @@ despliegue usa Gunicorn WSGI. **No afirmes tiempo real en el portafolio.**
 
 ## 8. Estado
 
-Ver `overview.md` §«Estado real hoy». Resumen: desplegado y vivo, repositorio público,
-CI verde, 132 pruebas en verde, sin deuda visible marcada en el código.
+Ver `overview.md` §«Estado real hoy». Resumen: **desplegado de forma permanente** y
+respondiendo, repositorio público, CI verde, 132 pruebas en verde, sin deuda visible
+marcada en el código.
+
+Sin usuarios ni feedback: nadie externo lo ha usado, así que no hay ninguna cifra de
+adopción que contar ni ninguna lección venida de usuarios reales.
+*(confirmado por Jonás, 2026-09-26)*
+
+**pendiente**: si hay trabajo planeado después de 3.1.0. Mientras no se confirme, todo
+el material presenta el proyecto como terminado en esa versión, sin prometer
+continuidad ni declararlo abandonado.

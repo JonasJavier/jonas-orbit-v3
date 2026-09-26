@@ -1,7 +1,7 @@
 # Network — manifiesto de capturas
 
-75 capturas del run del **2026-09-26**, commit `e90c581`, contra la base de datos
-demo local descrita en `scripts/README.md`.
+78 capturas del **2026-09-26**, commit `e90c581`, contra la base de datos demo
+local descrita en `scripts/README.md`.
 
 - **Escritorio**: 1440 × 900, `deviceScaleFactor: 2` → archivo de 2880 × 1800.
 - **Móvil**: 390 × 844, `deviceScaleFactor: 2` → archivo de 780 × 1688.
@@ -11,6 +11,9 @@ demo local descrita en `scripts/README.md`.
   para la API). **No aparecen en ninguna imagen**: las capturas no incluyen el
   cromo del navegador.
 
+- Las 75 primeras son el run principal (`capture.mjs`). Las **76, 77 y 78** se
+  añadieron después con `capture-login-variants.mjs`: la pantalla de acceso **con**
+  el ayudante de cuentas demo visible, que Jonás ha decidido publicar.
 - `principales/` conserva los mismos nombres de archivo que `raw/`. Falta la 17,
   y el motivo está en `excluded.md`.
 
@@ -571,6 +574,28 @@ demo local descrita en `scripts/README.md`.
 - **Alt**: ReDoc de la API de Network con la navegación por dominios y un ejemplo de petición
 - **Caption**: El mismo esquema, en formato de referencia para leer.
 
+### `76-login-demo-accounts-desktop.png`
+
+- **Pantalla**: Acceso · con cuentas demo
+- **URL**: `/login`
+- **Viewport**: 1440 × 900 @2x
+- **En `principales/`**: sí
+- **Qué muestra**: Acceso con el ayudante de cuentas demo visible: cuatro atajos y la contraseña compartida.
+- **Por qué importa**: Es el estado por defecto del producto y el que ve cualquiera que abra la demo pública.
+- **Alt**: Pantalla de acceso de Network con el recuadro de cuentas demo y su contraseña
+- **Caption**: La demo pública ofrece cuentas de prueba con un solo clic.
+
+### `77-login-demo-accounts-dark-desktop.png`
+
+- **Pantalla**: Acceso · con cuentas demo, oscuro
+- **URL**: `/login`
+- **Viewport**: 1440 × 900 @2x
+- **En `principales/`**: sí
+- **Qué muestra**: La misma variante con el ayudante de cuentas demo, en tema oscuro.
+- **Por qué importa**: Confirma que el recuadro de cuentas demo también está resuelto en oscuro.
+- **Alt**: Pantalla de acceso de Network en modo oscuro con el recuadro de cuentas demo
+- **Caption**: El recuadro de cuentas demo también está resuelto en oscuro.
+
 ## Móvil
 
 
@@ -848,3 +873,14 @@ demo local descrita en `scripts/README.md`.
 - **Por qué importa**: Cada color de verbo tiene su variante oscura, no una opacidad rebajada.
 - **Alt**: Centro de notificaciones de Network en modo oscuro con los ocho tipos de actividad
 - **Caption**: Los colores de cada aviso resisten oscuro y pantalla estrecha.
+
+### `78-login-demo-accounts-mobile.png`
+
+- **Pantalla**: Acceso · con cuentas demo
+- **URL**: `/login`
+- **Viewport**: 390 × 844 @2x
+- **En `principales/`**: sí
+- **Qué muestra**: Acceso con el ayudante de cuentas demo visible: cuatro atajos y la contraseña compartida.
+- **Por qué importa**: Es el estado por defecto del producto y el que ve cualquiera que abra la demo pública.
+- **Alt**: Pantalla de acceso de Network con el recuadro de cuentas demo y su contraseña
+- **Caption**: Las cuentas demo y su contraseña caben también en móvil.

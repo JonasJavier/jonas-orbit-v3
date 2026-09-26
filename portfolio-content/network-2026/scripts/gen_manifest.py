@@ -414,6 +414,22 @@ M = {
         "ReDoc de la API de Network con la navegación por dominios y un ejemplo de petición",
         "El mismo esquema, en formato de referencia para leer.",
     ),
+    "login-demo-accounts": (
+        "Acceso · con cuentas demo",
+        "/login",
+        "Acceso con el ayudante de cuentas demo visible: cuatro atajos y la contraseña compartida.",
+        "Es el estado por defecto del producto y el que ve cualquiera que abra la demo pública.",
+        "Pantalla de acceso de Network con el recuadro de cuentas demo y su contraseña",
+        "La demo pública ofrece cuentas de prueba con un solo clic.",
+    ),
+    "login-demo-accounts-dark": (
+        "Acceso · con cuentas demo, oscuro",
+        "/login",
+        "La misma variante con el ayudante de cuentas demo, en tema oscuro.",
+        "Confirma que el recuadro de cuentas demo también está resuelto en oscuro.",
+        "Pantalla de acceso de Network en modo oscuro con el recuadro de cuentas demo",
+        "El recuadro de cuentas demo también está resuelto en oscuro.",
+    ),
 }
 
 # Mobile shots reuse the desktop metadata, with their own caption slant.
@@ -443,6 +459,7 @@ MOBILE_CAPTION = {
     "feed-dark": "Modo oscuro y móvil combinados, sin ajustes extra.",
     "profile-own-dark": "El perfil en oscuro y en móvil mantiene la jerarquía.",
     "notifications-dark": "Los colores de cada aviso resisten oscuro y pantalla estrecha.",
+    "login-demo-accounts": "Las cuentas demo y su contraseña caben también en móvil.",
 }
 
 rows = []
@@ -458,6 +475,10 @@ for path in sorted(RAW.glob("*.png")):
     caption = MOBILE_CAPTION.get(slug, meta[5]) if kind == "mobile" else meta[5]
     rows.append((number, name, slug, kind, meta, caption))
 
+# Los archivos 76-78 se añadieron después del run principal, así que el orden
+# alfabético mezclaría escritorio y móvil. Se agrupa por tipo y luego por número.
+rows.sort(key=lambda r: (r[3] == "mobile", int(r[0])))
+
 
 def viewport(kind):
     return "390 × 844 @2x" if kind == "mobile" else "1440 × 900 @2x"
@@ -466,8 +487,8 @@ def viewport(kind):
 out = []
 out.append("# Network — manifiesto de capturas\n")
 out.append(
-    "75 capturas del run del **2026-09-26**, commit `e90c581`, contra la base de datos\n"
-    "demo local descrita en `scripts/README.md`.\n"
+    "78 capturas del **2026-09-26**, commit `e90c581`, contra la base de datos demo\n"
+    "local descrita en `scripts/README.md`.\n"
 )
 out.append(
     "- **Escritorio**: 1440 × 900, `deviceScaleFactor: 2` → archivo de 2880 × 1800.\n"
@@ -479,6 +500,9 @@ out.append(
     "  cromo del navegador.\n"
 )
 out.append(
+    "- Las 75 primeras son el run principal (`capture.mjs`). Las **76, 77 y 78** se\n"
+    "  añadieron después con `capture-login-variants.mjs`: la pantalla de acceso **con**\n"
+    "  el ayudante de cuentas demo visible, que Jonás ha decidido publicar.\n"
     "- `principales/` conserva los mismos nombres de archivo que `raw/`. Falta la 17,\n"
     "  y el motivo está en `excluded.md`.\n"
 )

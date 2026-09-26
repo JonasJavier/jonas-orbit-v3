@@ -6,7 +6,8 @@ Tres piezas, en el orden en que se usan:
 | --- | --- |
 | `demo-env.sh` | variables compartidas: rutas, puertos, base de datos y media aislados |
 | `seed_portfolio_demo.py` | crea la base demo con personas **ficticias** |
-| `capture.mjs` | recorre la aplicación con Playwright y guarda las 75 capturas |
+| `capture.mjs` | recorre la aplicación con Playwright y guarda las 75 capturas del run principal |
+| `capture-login-variants.mjs` | añade las capturas 76–78: el acceso **con** el ayudante de cuentas demo |
 | `gen_manifest.py` | regenera `screenshots/manifest.md` desde una tabla de metadatos |
 
 ---
@@ -130,8 +131,9 @@ VITE_API_URL="http://127.0.0.1:8001" VITE_SHOW_DEMO_ACCOUNTS=0 \
 ```
 
 `VITE_SHOW_DEMO_ACCOUNTS=0` es un flag **del propio proyecto**, documentado en
-`frontend/.env.example`. Oculta el ayudante de cuentas demo de la pantalla de login,
-que mostraría una contraseña en claro y nombres de personas reales.
+`frontend/.env.example`. Oculta el ayudante de cuentas demo de la pantalla de login.
+Con este valor salen las capturas `01`, `48` y `51`; con `=1` (el valor por defecto
+del producto) salen las `76`, `77` y `78` del paso 4b.
 
 ## Paso 4 — capturar
 
@@ -168,6 +170,29 @@ con los fallos si los hubiera.
   retrasándola seis segundos.
 - Un contexto de navegador nuevo por captura, así ninguna deja estado a la siguiente.
 
+## Paso 4b — las variantes de la pantalla de acceso
+
+Las capturas 76–78 muestran el acceso **con** el ayudante de cuentas demo, que es el
+estado por defecto del producto y el que ve cualquiera que abra la demo pública.
+Requiere relanzar el servidor web con el flag en `1`:
+
+```bash
+cd "$REPO/frontend"
+VITE_API_URL="http://127.0.0.1:8001" VITE_SHOW_DEMO_ACCOUNTS=1 \
+  npx vite --port 5199 --strictPort
+```
+
+```bash
+cp scripts/capture-login-variants.mjs /tmp/network-capture/
+cd /tmp/network-capture
+WEB_URL="http://127.0.0.1:5199" \
+OUT_DIR="/ruta/a/portfolio-content/network-2026/screenshots/raw" \
+node capture-login-variants.mjs
+```
+
+Va aparte de `capture.mjs` a propósito: así se añaden al final (76, 77, 78) sin
+renumerar las 75 del run principal.
+
 ## Paso 5 — regenerar el manifiesto
 
 ```bash
@@ -183,7 +208,7 @@ caption pase de 15 palabras.
 ## Verificar que el resultado es correcto
 
 ```bash
-# 75 en raw, 74 en principales
+# 78 en raw, 77 en principales
 ls screenshots/raw/*.png | wc -l
 ls screenshots/principales/*.png | wc -l
 

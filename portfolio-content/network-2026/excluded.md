@@ -39,23 +39,26 @@ No son descartes por calidad: sencillamente no hay una pantalla que fotografiar.
 
 ---
 
-## 3. Elementos desactivados a propósito durante la captura
+## 3. La pantalla de acceso, en dos versiones
 
-### Ayudante «Try a demo account» de la pantalla de login
+El ayudante «Try a demo account» —cuatro chips que rellenan las credenciales de un
+clic, más la contraseña en claro— se controla con `VITE_SHOW_DEMO_ACCOUNTS`, un flag
+documentado en `frontend/.env.example` y **activo por defecto**.
 
-Se capturó con `VITE_SHOW_DEMO_ACCOUNTS=0`, un flag **documentado por el propio
-proyecto** en `frontend/.env.example`.
+En la primera pasada se capturó apagado, por la regla de privacidad del encargo (no
+mostrar credenciales, no usar nombres de personas reales). **Jonás decidió después
+publicar las credenciales de la demo**, así que existen las dos versiones y ninguna
+está excluida:
 
-Dos motivos, ambos de las reglas del encargo:
+| Versión | Capturas | Cuándo usarla |
+| --- | --- | --- |
+| Con el ayudante visible | `76`, `77` (oscuro), `78` (móvil) | Es el estado real de la demo pública y enseña que probar el producto cuesta un clic |
+| Con el ayudante oculto | `01`, `48` (oscuro), `51` (móvil) | Si prefieres que el portafolio no muestre una contraseña en una imagen, o que ningún nombre real aparezca en el set |
 
-1. **Muestra una contraseña en pantalla** (`Password for every demo account:
-   network123`). La regla de privacidad pide que no haya credenciales visibles.
-2. **Precarga nombres de personas reales**: los chips son `@ada`, `@grace`, `@linus`
-   y `@tim`, que en el `seed` del repositorio corresponden a Ada Lovelace, Grace
-   Hopper, Linus Torvalds y Tim Berners-Lee. La regla pide usuarios demo ficticios.
-
-La función existe, funciona y está bien resuelta; si prefieres enseñarla, basta con
-volver a capturar `01`, `48` y `51` sin ese flag.
+La única pega de la versión con ayudante: los chips precargan `@ada`, `@grace`,
+`@linus` y `@tim` —Ada Lovelace, Grace Hopper, Linus Torvalds y Tim Berners-Lee—,
+mientras que el resto de las capturas usa el elenco ficticio. Es una incoherencia
+visible si alguien compara. Está señalada también en `README.md` §6.
 
 ### Elenco demo del repositorio
 
@@ -67,8 +70,10 @@ Para las capturas **no se usó ese seed**. Se escribió uno aparte
 (`scripts/seed_portfolio_demo.py`) con diez personas inventadas y avatares generados
 por código (iniciales sobre degradado), nunca fotografías de personas.
 
-> La demo pública desplegada en Railway **sigue usando el elenco real**. Es una de las
-> preguntas del `README.md`.
+> La demo pública desplegada en Railway **sigue usando el elenco real, y así se queda**
+> (decisión de Jonás). Quien pase de las capturas a la demo verá nombres distintos; si
+> eso molesta, la salida es ejecutar `scripts/seed_portfolio_demo.py` también contra la
+> base de datos de Railway.
 
 ---
 
@@ -78,7 +83,7 @@ por código (iniciales sobre degradado), nunca fotografías de personas.
 | --- | --- |
 | `ruff check` / `ruff format --check` | `ruff` no está instalado en el `.venv` local del repositorio. Se optó por no instalarlo para no alterar el entorno más de lo imprescindible. **En CI pasa** (job `backend`, último run verde). |
 | Stack completo con Docker Compose | Se ejecutó el modo de desarrollo (SQLite + caché en memoria) en vez de PostgreSQL + Redis en contenedores. Motivo: evitar levantar servicios en una máquina que ya tiene los puertos 8000 y 5173 ocupados por otros proyectos. Lo que sí se comprobó es que **en producción sí hay PostgreSQL y Redis reales**, porque el `/health/` desplegado devuelve `"database":"ok","cache":"ok"`. |
-| Capturas contra la demo de producción | Se capturó contra local para poder controlar los datos demo. La demo pública muestra el elenco de nombres reales, que no puede ir al portafolio. |
+| Capturas contra la demo de producción | Se capturó contra local para poder controlar los datos demo. La demo pública muestra el elenco de nombres reales; las capturas del set usan el elenco ficticio a propósito. |
 
 ---
 

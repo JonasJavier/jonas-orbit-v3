@@ -74,7 +74,7 @@ Medido el 2026-09-26 sobre el commit `e90c581`.
 
 | Métrica | Valor | Comando |
 | --- | --- | --- |
-| Web responde | **HTTP 200** | `curl -o /dev/null -w '%{http_code}' https://web-production-9475c.up.railway.app` |
+| Web responde | **HTTP 200**, despliegue permanente | `curl -o /dev/null -w '%{http_code}' https://web-production-9475c.up.railway.app` |
 | API health | **`{"status":"ok","version":"3.1.0","checks":{"database":"ok","cache":"ok"}}`** | `curl .../health/` |
 | Swagger responde | **HTTP 200** | `curl .../api/docs/` |
 | Servicios desplegados | **2** (web + API) más PostgreSQL y Redis gestionados | health-check y `docs/deployment-railway.md` |
@@ -83,13 +83,13 @@ Medido el 2026-09-26 sobre el commit `e90c581`.
 
 | Métrica | Valor |
 | --- | --- |
-| Funciones documentadas | **48** (34 con captura propia) |
-| Capturas totales | **75** en `raw/` |
-| Capturas que pasan el filtro | **74** en `principales/` |
-| Pantallas distintas cubiertas | **34** |
-| Capturas de escritorio (1440×900 @2x) | **50** |
-| Capturas de móvil (390×844 @2x) | **25** |
-| Capturas en modo oscuro | **11** |
+| Funciones documentadas | **48** (35 con captura propia) |
+| Capturas totales | **78** en `raw/` |
+| Capturas que pasan el filtro | **77** en `principales/` |
+| Pantallas distintas cubiertas | **35** |
+| Capturas de escritorio (1440×900 @2x) | **52** |
+| Capturas de móvil (390×844 @2x) | **26** |
+| Capturas en modo oscuro | **12** |
 
 ---
 
@@ -115,9 +115,12 @@ distingue al proyecto.
 
 ### Cifras que **no** debes usar
 
-- Cualquier número de usuarios, visitas, descargas o retención: **no existen**.
+- Cualquier número de usuarios, visitas, descargas o retención: **no existen**
+  (confirmado por Jonás: nadie externo lo ha usado).
 - Mejoras de rendimiento en porcentaje: no hay mediciones antes/después.
 - «98 % de cobertura» o similar: hay pruebas, pero **no se midió la cobertura**.
-- Duración del proyecto: el historial de git no la refleja (ver `README.md` §6).
+- Duración deducida del historial de git: los 19 commits caben en 4 días y eso **no**
+  es el tiempo de trabajo. El dato real es «alrededor de dos semanas», y viene de
+  Jonás, no del repositorio; si lo usas, dilo como aproximación.
 - Las cifras que aparecen *dentro* de las capturas (likes, seguidores, publicaciones)
   son datos demo sintéticos y no deben presentarse como métricas de nada.

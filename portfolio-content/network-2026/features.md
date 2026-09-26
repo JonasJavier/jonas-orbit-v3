@@ -1,6 +1,6 @@
 # Network — todas las funciones y pantallas
 
-34 entradas. Cada una: qué hace, dónde vive en el código, si es publicable y, si no,
+48 entradas. Cada una: qué hace, dónde vive en el código, si es publicable y, si no,
 por qué. Los números de captura remiten a `screenshots/raw/` (y a
 `screenshots/principales/`, que conserva los mismos nombres).
 
@@ -31,11 +31,16 @@ Mensaje en `role="alert"` dentro de la tarjeta, sin recargar.
 **Publicable: sí** — `02`
 
 ### 4. Ayudante «Try a demo account»
-Chips con cuatro cuentas demo y la contraseña en claro, controlado por
-`VITE_SHOW_DEMO_ACCOUNTS`.
-**Publicable: no** — se desactivó a propósito para las capturas. Dos motivos: muestra
-una contraseña en pantalla, y las cuentas que precarga (`ada`, `grace`, `linus`, `tim`)
-son personas reales. Ver `excluded.md`.
+Chips con cuatro cuentas demo que rellenan usuario y contraseña de un clic, más la
+contraseña compartida en claro. Controlado por `VITE_SHOW_DEMO_ACCOUNTS`, activo por
+defecto.
+`pages/LoginPage.tsx` · `frontend/.env.example`
+**Publicable: sí** — `76`, `77` (oscuro), `78` (móvil).
+*Jonás ha decidido publicar las credenciales de la demo, así que esta variante entra.
+Las capturas `01`, `48` y `51` muestran la misma pantalla con el ayudante oculto, por
+si prefieres esa versión. Nota: los chips precargan `ada`, `grace`, `linus` y `tim`,
+que son las cuentas del `seed` del repositorio —figuras históricas reales—, no el
+elenco ficticio del resto de las capturas.*
 
 ### 5. Cierre de sesión
 Envía el refresh a `auth/logout/`, que lo pone en lista negra, limpia la caché de
@@ -339,10 +344,10 @@ standalone` y metas de Apple.
 | | |
 | --- | --- |
 | Entradas documentadas | **48** |
-| Publicables con captura propia | **34** |
-| No publicables o sin pantalla propia | **14** (nº 4, 14, 17\*, 22, 43, 44, 46, 47, 48 y las que se ven integradas en otras) |
-| Capturas en `raw/` | 75 |
-| Capturas en `principales/` | 74 |
+| Publicables con captura propia | **35** |
+| No publicables o sin pantalla propia | **13** (nº 14, 17\*, 22, 43, 44, 46, 47, 48 y las que se ven integradas en otras) |
+| Capturas en `raw/` | 78 |
+| Capturas en `principales/` | 77 |
 
 \* El nº 17 (likes) sí es publicable, pero no tiene captura dedicada: aparece en casi
 todas las del feed.

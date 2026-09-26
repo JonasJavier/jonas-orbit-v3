@@ -1031,9 +1031,22 @@ iOS, la versión de iPhone espera la cuenta de Apple Developer.
   agrupa por la primera aparición del módulo. Si una ficha intercala módulos,
   los dos órdenes dejan de coincidir: mejor escribir la galería ya agrupada.
 
-### 18.5 Abierto
+### 18.5 Confirmado después (2026-09-26)
 
-Veredicto del dueño; las ocho decisiones de diseño son lectura razonada (el
-kit las marca como inferencia); la grafía legal de la agencia y si «15» son
-usuarios antes de publicarlos; los otros cuatro proyectos, cuando lleguen sus
-carpetas `-2026`.
+- La agencia es **CristegnoViajes SRL** (el repositorio escribe «Cristecno»):
+  el caso la nombra y el CV la conserva.
+- **15 usuarios** en uso diario: vuelve al CV (sustituye a los 9 de agosto) y
+  entra en el caso y en sus resultados.
+- Las decisiones de diseño las revisé por delegación del dueño contra cada
+  captura y el código de la app. Los problemas se dicen como problemas de
+  diseño, no como quejas del cliente. Cambian dos: el cobro móvil habla de lo
+  que su pantalla enseña (el mismo servicio que la web, «por verificar» hasta
+  que contabilidad lo aplica) y no de biometría ni de uso sin conexión, que
+  no se ven; y la de las tablas en tarjetas deja su sitio a los borradores
+  cifrados del asistente móvil (`mobile/src/reservas/borradores.ts`), que
+  explica mejor la app. La web en el teléfono sigue en el recorrido.
+
+### 18.6 Abierto
+
+Veredicto del dueño; los otros cuatro proyectos, cuando lleguen sus carpetas
+`-2026`.

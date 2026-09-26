@@ -54,7 +54,7 @@ poder ejecutar el proyecto.
 | `prettier --check` | **falla en local, pasa en CI** — artefacto de Windows, ver §4 | `logs/frontend-quality.txt` |
 | `ruff` | **no ejecutado**: no está instalado en el `.venv` local | — |
 | CI en GitHub Actions | **verde** en el último run de `main` (2026-09-26 20:23 UTC) | `gh run list --repo JonasJavier/cs50w-network` |
-| Demo de producción (web) | **viva**, HTTP 200 | `curl https://web-production-9475c.up.railway.app` |
+| Demo de producción (web) | **viva y permanente**, HTTP 200 | `curl https://web-production-9475c.up.railway.app` · permanencia confirmada por Jonás |
 | Demo de producción (API) | **viva**, `{"status":"ok","version":"3.1.0","checks":{"database":"ok","cache":"ok"}}` | `curl .../health/` |
 | Swagger en producción | HTTP 200 | `curl .../api/docs/` |
 | Repositorio público | sí, GPL-3.0, 0 estrellas | `gh repo view` |
@@ -66,7 +66,7 @@ poder ejecutar el proyecto.
 
 | Archivo | Qué contiene |
 | --- | --- |
-| `README.md` | este documento: fecha, estado, correcciones y preguntas |
+| `README.md` | este documento: fecha, estado, correcciones, decisiones tomadas |
 | `overview.md` | qué es el proyecto, qué problema técnico resuelve, estado real |
 | `case-notes.md` | notas factuales para que redactes el caso (contexto, decisiones, desafíos) |
 | `features.md` | las 34 funciones y pantallas, una por una, con veredicto de publicable |
@@ -76,8 +76,8 @@ poder ejecutar el proyecto.
 | `metrics.md` | sólo cifras comprobables, con el comando que las produce |
 | `design-decisions.md` | 6 pares problema → decisión, cada uno con su captura |
 | `architecture/` | `system-overview.md`, `data-flow.md`, `diagrams/*.mmd`, `nodes.yaml` |
-| `screenshots/raw/` | las 75 capturas del run completo |
-| `screenshots/principales/` | las 74 que pasan el filtro de calidad, en orden narrativo |
+| `screenshots/raw/` | las 78 capturas (75 del run principal + 3 variantes de acceso) |
+| `screenshots/principales/` | las 77 que pasan el filtro de calidad, en orden narrativo |
 | `screenshots/manifest.md` | una ficha por captura: archivo, pantalla, URL, qué muestra, alt, caption |
 | `scripts/` | sembrado y captura, reproducibles (`scripts/README.md` explica cómo) |
 | `logs/` | salida cruda de los tests y de las comprobaciones de calidad |
@@ -98,12 +98,12 @@ línea a línea con el código de hoy:
 | --- | --- | --- | --- |
 | 1 | `scope: "32" — pruebas de backend en verde` y «Las 32 pruebas de backend pasan» | Son **98** pruebas de backend, más **34** de frontend que el texto ni menciona | `logs/backend-tests.txt`, `logs/frontend-tests.txt` |
 | 2 | «La demo pública se enlazará después del despliegue» | **Ya está desplegada y responde hoy**: web y API en Railway, con Swagger y `/health/` | §2 de este documento |
-| 3 | `links: https://github.com/JonasJavier/Network-3.0` | El repositorio canónico es **`cs50w-network`**; la URL publicada sólo funciona por la redirección 301 que GitHub deja tras renombrar | `curl -L` → `.../cs50w-network`, `gh repo view` |
+| 3 | `links: https://github.com/JonasJavier/Network-3.0` | El repositorio canónico es **`cs50w-network`**; la URL publicada sólo funciona por la redirección 301 que GitHub deja tras renombrar. **Decisión: cambiar el enlace a `cs50w-network`** (ver §6) | `curl -L` → `.../cs50w-network`, `gh repo view` |
 | 4 | `technologies: [React, TypeScript, Django, DRF, PostgreSQL, Redis]` | Faltan piezas centrales: **Vite, Tailwind CSS 4, TanStack Query, Zustand, React Router 7, SimpleJWT, drf-spectacular, Pillow, Docker, nginx, Gunicorn, WhiteNoise** | `stack.md` |
 | 5 | `highlights` y `summary` describen feed, imagen, likes, comentarios, perfiles, seguimiento, búsqueda y notificaciones | **No se menciona nada de**: reposts y citas, marcadores, hashtags con trending, @menciones, modo oscuro, PWA, pestaña de medios, pestaña de likes, lista de «a quién seguir», cambio de contraseña, borrado de cuenta, documentación OpenAPI | `features.md`, `CHANGELOG.md` |
 | 6 | `statusLabel: Listo para producción` | Correcto **pero incompleto**: hoy además está *efectivamente desplegado*, con CI verde y health-check | §2 |
 | 7 | «El feed usa paginación por cursor» | Correcto. Matiz: la paginación por cursor es sólo para timelines (`TimelineCursorPagination`); listas acotadas (personas, comentarios) usan paginación por número de página | `backend/apps/core/pagination.py` |
-| 8 | Las 4 capturas publicadas | Se rehacen **todas**. Las actuales son de 2026-08-03 y muestran un conjunto de datos anterior; además el set nuevo cubre 34 pantallas en vez de 4 | `screenshots/` |
+| 8 | Las 4 capturas publicadas | Se rehacen **todas**. Las actuales son de 2026-08-03 y muestran un conjunto de datos anterior; además el set nuevo cubre 35 pantallas en vez de 4 | `screenshots/` |
 | 9 | `seoDescription` menciona «likes y notificaciones» | Correcto, pero se queda corto frente a lo que hoy existe | `features.md` |
 
 ### Imprecisiones menores en el propio repositorio (no en el portafolio)
@@ -142,29 +142,75 @@ Ninguna de estas se ha tocado — sólo se documentan.
 
 ---
 
-## 6. Preguntas para Jonás
+## 6. Decisiones tomadas (2026-09-26)
 
-1. **¿Qué URL quieres publicar como repositorio?** La del portafolio apunta a
-   `Network-3.0`, que hoy sólo resuelve por redirección. ¿Cambiamos a
-   `cs50w-network`, o prefieres renombrar el repo en GitHub para que la URL bonita sea
-   la real?
-2. **¿La demo de Railway es permanente?** Hoy responde, pero si es un plan de prueba
-   conviene saber cuánto durará antes de enlazarla desde el portafolio como demo viva.
-3. **¿Quieres que la demo pública siga mostrando cuentas con nombres de personas
-   reales?** El `seed` del repositorio crea `ada`, `grace`, `linus`, `margaret`, `alan`,
-   `katherine`, `tim` y `hedy` — figuras históricas reales. Para las capturas se sembró
-   un elenco ficticio aparte; la demo desplegada sigue usando el elenco real.
-4. **¿Publicamos la contraseña de las cuentas demo en el portafolio?** El README del
-   repo la muestra (`network123`) y la pantalla de login trae un ayudante con las
-   cuentas. En las capturas se desactivó con el flag documentado
-   `VITE_SHOW_DEMO_ACCOUNTS=0`. Dime si la prefieres visible.
-5. **¿Cuánto tiempo real dedicaste?** No hay forma de deducirlo del repositorio: los
-   19 commits se concentran en 3 días (2024-05-05, 2026-06-12, 2026-09-25/26), lo que
-   casi seguro no refleja el trabajo real. Sin ese dato no puedo poner nada de duración.
-6. **¿Hubo usuarios o feedback real?** No hay analítica, ni issues, ni estrellas. Si
-   alguien lo probó y te dijo algo, es material de caso que no está en el código.
-7. **¿Quieres contar que parte del desarrollo fue asistido por IA?** Varios commits
-   llevan `Co-Authored-By: Claude`. Es tu decisión contarlo o no; sólo lo señalo para
-   que no te pille por sorpresa si un reclutador mira el historial.
-8. **¿El proyecto sigue vivo?** ¿Hay algo planeado después de 3.1.0, o la ficha debe
-   presentarlo como terminado?
+Respuestas de Jonás a las preguntas abiertas. Todo el material de esta carpeta ya
+está actualizado en consecuencia.
+
+| # | Pregunta | Decisión | Qué implicó |
+| --- | --- | --- | --- |
+| 1 | URL del repositorio | **Publicar `cs50w-network`**, sin renombrar | Ver el razonamiento debajo |
+| 2 | ¿La demo de Railway es permanente? | **Sí** | Se puede enlazar como demo viva sin advertencias |
+| 3 | ¿La demo pública mantiene cuentas con nombres reales? | **Sí** | La demo desplegada sigue con `ada`, `grace`, `linus`… Las capturas del portafolio siguen usando el elenco ficticio |
+| 4 | ¿Publicamos la contraseña demo? | **Sí** | Se añadieron las capturas **76, 77 y 78** con el ayudante de cuentas demo visible, y las credenciales se documentan debajo |
+| 5 | Tiempo dedicado | **Un par de semanas** | Recogido en `case-notes.md` §1 y disponible para `cv-notes.md` |
+| 6 | ¿Usuarios o feedback real? | **No hay** | Confirma lo que ya decía `metrics.md`: cero cifras de uso |
+| 7 | ¿Mencionar asistencia de IA? | **No** | No se menciona en ningún material destinado a publicación |
+| 8 | ¿El proyecto sigue vivo tras 3.1.0? | **sin respuesta** | Ver §7 |
+
+### Razonamiento de la decisión 1
+
+Delegaste la elección, así que: **publicar `https://github.com/JonasJavier/cs50w-network`
+tal cual, sin renombrar el repositorio.** Motivos:
+
+- Es la URL canónica. La que publica hoy el portafolio (`Network-3.0`) sólo llega por
+  una redirección 301, y un enlace de portafolio que rebota es peor que uno directo.
+- El nombre está incrustado en sitios que yo no debo tocar: la insignia de CI del
+  README, el enlace «Source» de la barra lateral de la propia aplicación
+  (`frontend/src/components/layout/SidebarRight.tsx`) y los enlaces de `docs/`.
+  Renombrar dejaría todos esos apuntando a una redirección.
+- Renombrar es además una acción sobre tu cuenta de GitHub con efectos fuera de aquí
+  (integración con Railway incluida); no es algo que deba hacer yo por iniciativa
+  propia.
+
+**Si más adelante prefieres renombrarlo** (a `network` o `network-3.0`, para que el
+nombre no grite «trabajo de curso»), hay que actualizar tres sitios en el repositorio
+después del renombrado:
+
+1. `README.md` — insignia de CI y todos los enlaces `github.com/JonasJavier/cs50w-network`.
+2. `frontend/src/components/layout/SidebarRight.tsx` — el enlace «Source» del pie.
+3. `docs/*.md` — enlaces al repositorio.
+
+El contrapeso al nombre lo pone el propio contenido: el README ya reencuadra el
+proyecto («*designed to read like a real product, not a homework assignment*») y
+`case-notes.md` §2 separa con evidencia qué pedía el enunciado y qué no.
+
+### Credenciales de la demo pública (decisión 4)
+
+Para poner junto al enlace de la demo en la ficha:
+
+> **Demo**: https://web-production-9475c.up.railway.app
+> Entra con `ada`, `grace`, `linus`, `margaret`, `alan`, `katherine`, `tim` o `hedy`.
+> Contraseña para todas: `network123`. También puedes crear tu propia cuenta.
+
+La pantalla de acceso ofrece además cuatro de esas cuentas con un solo clic; es lo que
+muestran las capturas 76–78.
+
+> **Ojo con una incoherencia deliberada**: las capturas del portafolio usan un elenco
+> ficticio (Mira Kessel, Tobi Okonkwo…) y la demo pública usa el elenco real
+> (Ada Lovelace, Grace Hopper…). Quien pase de las capturas a la demo verá nombres
+> distintos. Es el precio de mantener la regla de privacidad en las imágenes y, a la
+> vez, dejar la demo como está. Si te molesta, la salida limpia es ejecutar
+> `scripts/seed_portfolio_demo.py` también contra la base de datos de Railway.
+
+---
+
+## 7. Lo único que sigue abierto
+
+**¿El proyecto sigue vivo después de 3.1.0?** Es la pregunta 8, que quedó sin
+responder.
+
+Mientras no digas otra cosa, el material está redactado de forma neutra: presenta
+Network como **terminado y en funcionamiento en la versión 3.1.0**, sin prometer
+continuidad ni declararlo abandonado. Si hay algo planeado, dímelo y añado una línea
+de «próximos pasos» en `overview.md` y en `case-notes.md` §8.

@@ -68,25 +68,35 @@ Dos servicios en Railway, ambos respondiendo en el momento de escribir esto:
 El health-check confirma que en producción hay **base de datos y caché vivas**, es
 decir PostgreSQL y Redis reales, no los fallbacks de desarrollo.
 
-**pendiente**: si el plan de Railway es gratuito o de prueba, la URL puede caerse.
-Conviene confirmarlo antes de enlazarla como demo permanente desde el portafolio.
+**El despliegue es permanente** (confirmado por Jonás), así que la URL se puede
+enlazar desde el portafolio como demo viva sin advertencias ni fecha de caducidad.
+
+Para entrar: `ada`, `grace`, `linus`, `margaret`, `alan`, `katherine`, `tim` o `hedy`,
+contraseña `network123` para todas. La propia pantalla de acceso ofrece cuatro de ellas
+con un clic. *(Estas son las cuentas del `seed` del repositorio, con nombres de figuras
+históricas reales; las capturas del portafolio usan un elenco ficticio aparte — ver
+`README.md` §6.)*
 
 ### ¿El repositorio es público? **Sí.** *(comprobado — `gh repo view`)*
 
 `https://github.com/JonasJavier/cs50w-network` · licencia **GPL-3.0** · 0 estrellas ·
 último push 2026-09-26.
 
-Cuidado: el enlace que el portafolio publica hoy (`.../Network-3.0`) sólo funciona por
-la redirección 301 que GitHub mantiene tras un renombrado.
+**Esta es la URL que hay que publicar.** La que enlaza hoy el portafolio
+(`.../Network-3.0`) sólo llega por la redirección 301 que GitHub mantiene tras un
+renombrado; el razonamiento está en `README.md` §6.
 
 ### ¿Está terminado? **Funcionalmente sí; operativamente, con matices.** *(comprobado)*
 
 - 98 pruebas de backend y 34 de frontend en verde; CI verde en el último run de `main`.
 - Cero `TODO`, `FIXME` o placeholders en `backend/apps`, `backend/config` y `frontend/src`.
-- Las 34 pantallas y estados fotografiados funcionan; sólo una captura se descartó, y
+- Las 35 pantallas y estados fotografiados funcionan; sólo una captura se descartó, y
   por pobreza del dato demo, no por un fallo (ver `excluded.md`).
-- Sin telemetría, sin analítica y sin usuarios conocidos. Sentry está **integrado pero
+- **Sin usuarios ni feedback**, confirmado por Jonás: no hay analítica, ni issues, ni
+  estrellas, ni nadie que lo haya probado y comentado. Sentry está **integrado pero
   desactivado** salvo que se defina `SENTRY_DSN`.
+- Tiempo de desarrollo: **alrededor de dos semanas** (dato de Jonás; el historial de
+  git no lo refleja porque los 19 commits se concentran en 4 días).
 
 ### ¿Qué tamaño tiene? *(comprobado — ver `metrics.md`)*
 
