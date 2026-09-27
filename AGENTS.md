@@ -56,6 +56,9 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
+- **Calidad del repositorio y publicación** (09-27)
+  `docs/repository-quality.md` y `docs/production-readiness.md` — higiene,
+  evidencia reproducible, contrato de entorno y gates de producción.
 - **Sonido del sitio** (09-22) `docs/design/sonido-del-sitio.md` — qué suena,
   peso y quién lo apaga. Un solo bus (`lib/audio-bus.ts`); lo apaga el control
   de AUDIO y nadie más. Portada y Miller usan las grabaciones de Jonás

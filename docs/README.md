@@ -14,6 +14,9 @@ arquitectura, fases, criterios y matriz de tests es el plan aprobado.
 | [`deferred/`](deferred/) | Trabajo válido pospuesto hasta cumplir sus condiciones de entrada. |
 | [`registro-de-decisiones.md`](registro-de-decisiones.md) | Texto completo de cada decisión vigente del dueño (qué documento manda en qué, cifras y trampas). `AGENTS.md` sólo lleva su índice. |
 | [`ai/codebase-memory.md`](ai/codebase-memory.md) | Cómo usan los agentes el grafo de código (codebase-memory-mcp) y mapa del código por dominio. |
+| [`production-readiness.md`](production-readiness.md) | Gates, entorno, bloqueos y procedimiento de publicación/recuperación. |
+| [`repository-quality.md`](repository-quality.md) | Higiene, capturas, métricas y política de artefactos del repositorio. |
+| [`media/readme/`](media/readme/) | Evidencia y trazabilidad de las capturas publicadas en el README. |
 | [`reference/v2/`](reference/v2/) | Código de v2 SOLO como referencia (excluido de tsconfig y Knip). |
 
 ## Reglas

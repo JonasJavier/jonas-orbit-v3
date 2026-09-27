@@ -4,8 +4,19 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
   "vars": {
     "CONTACT_RUNTIME_ENV": "production"
+  },
+  "secrets": {
+    "required": [
+      "TURNSTILE_SITE_KEY",
+      "TURNSTILE_SECRET_KEY",
+      "TURNSTILE_EXPECTED_HOSTNAME",
+      "RESEND_API_KEY",
+      "CONTACT_FROM_EMAIL",
+      "CONTACT_TO_EMAIL"
+    ]
   },
   "assets": {
     "directory": ".open-next/assets",
