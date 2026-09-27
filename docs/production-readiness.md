@@ -10,6 +10,7 @@ Una versión candidata debe pasar, sin omitir pasos:
 
 ```bash
 npm ci
+npm audit --audit-level=high
 npm run check
 npm run test:e2e
 npx playwright test --project=firefox --project=webkit
@@ -22,21 +23,27 @@ de tiempo por job.
 
 ## Bloqueos vigentes al 27 de septiembre de 2026
 
-- **Dependencias:** `npm audit --omit=dev` reporta avisos activos, incluido uno
-  crítico. Se resuelven en una actualización dedicada, con versiones fijadas y
-  la suite completa; no con `npm audit fix --force` dentro de otra feature.
+- **Compatibilidad y calidad:** la revisión multinavegador inicial encontró
+  fallos que deben cerrarse; Lighthouse y enlaces requieren evidencia actual.
+  Consulta la [revisión con resultados](reviews/repository-readiness-2026-09-27.md).
 - **GitHub Actions:** los runs no llegan a iniciar por un problema de facturación
   o límite de gasto de la cuenta. Es un bloqueo externo al código.
 - **Dominio:** `jonasjavier.dev` todavía no resuelve. No se publica como enlace
   activo ni se configura como canonical hasta que DNS y TLS estén verificados.
 - **Runtime:** faltan confirmar en Cloudflare los bindings requeridos del
   formulario y aplicar la regla de rate limiting de `infra/cloudflare/`.
-- **Recursos:** la procedencia y licencia de las dos grabaciones de Jonás siguen
-  pendientes.
+- **Recursos:** siguen pendientes los derechos de publicación de las dos
+  grabaciones de efectos y de la banda sonora aportada por el propietario.
 - **Producto:** la valoración visual del propietario continúa pendiente en las
   áreas marcadas por `AGENTS.md`.
 
 ## Contrato de entorno
+
+La actualización dedicada de seguridad fija Next.js 16.3.6, OpenNext 1.20.6,
+Vitest 4.1.11 y Wrangler 4.141.0, con PostCSS 8.5.28 y Sharp 0.35.4. Las
+auditorías de producción y del árbol completo reportan cero avisos en esta
+rama al 2026-09-27. CI bloquea avisos altos/críticos nuevos; la auditoría sigue
+siendo obligatoria para cada candidato.
 
 ### GitHub Actions
 

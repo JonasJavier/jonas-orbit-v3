@@ -12,6 +12,16 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Dependencias — actualización dedicada de seguridad (2026-09-27):** dentro
+de la preparación de producción solicitada por el dueño, la rama
+`codex/security-hardening` fija Next/ESLint 16.3.6, OpenNext 1.20.6,
+Vitest 4.1.11 y Wrangler 4.141.0. PostCSS 8.5.28 y Sharp 0.35.4 conservan
+overrides exactos para unificar las versiones parcheadas. La auditoría completa
+pasa de 16 avisos a cero y `npm run check` conserva 995 tests en verde. La
+evidencia y los gates pendientes viven en
+`docs/reviews/repository-readiness-2026-09-27.md`; CI añade auditoría de avisos
+altos/críticos. La actualización permanece separada de cambios de interfaz.
+
 **Calidad del repositorio y publicación (2026-09-27):** por solicitud del dueño,
 el README se actualiza a los seis destinos y al estado real de los casos. Se
 añaden guías de contribución, seguridad, plantillas y responsables; los
