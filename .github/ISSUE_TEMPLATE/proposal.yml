@@ -1,0 +1,42 @@
+name: Propuesta de mejora
+description: Propón una mejora de producto, documentación, rendimiento o mantenimiento.
+title: "[Propuesta]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+      description: ¿Qué necesidad observable existe hoy?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Resultado esperado
+      description: Describe el efecto deseado sin imponer una implementación.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia o contexto
+      description: Métricas, capturas, rutas, decisión vigente o referencia relacionada.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área principal
+      options:
+        - Producto y contenido
+        - Diseño visual
+        - Accesibilidad
+        - Rendimiento
+        - Ingeniería
+        - Documentación
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Riesgos y restricciones
+      description: Presupuesto, dispositivos, licencias, contenido pendiente o decisiones que podrían verse afectadas.
