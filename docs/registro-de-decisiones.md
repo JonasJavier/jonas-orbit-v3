@@ -12,6 +12,18 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Calidad del repositorio y publicación (2026-09-27):** por solicitud del dueño,
+el README se actualiza a los seis destinos y al estado real de los casos. Se
+añaden guías de contribución, seguridad, plantillas y responsables; los
+artefactos generados y temporales salen del checkout versionado y siguen
+recuperables en Git. `docs/repository-quality.md` define la higiene y la
+evidencia; `docs/production-readiness.md`, los gates y el contrato GitHub / Worker.
+El deploy espera también Firefox/WebKit y enlaces, declara los bindings
+obligatorios y conserva las variables de Cloudflare. La organización del
+repositorio no constituye aprobación visual ni certificación de producción:
+facturación de Actions, dominio, runtime, licencias y vulnerabilidades requieren
+su propia verificación. No cambia la arquitectura narrativa ni la interfaz.
+
 **Proyectos — Izak's Photos rehecho: caso completo, en línea, estudio de
 demostración (2026-09-27):** el §21 de `docs/design/endurance-proyectos.md`
 aplica el mismo método desde `portfolio-content/izaks-photos-2026/`. Izak's
@@ -275,7 +287,10 @@ el vuelo de la Ranger aplican la misma regla; en vez de adelgazar el shader
 del túnel (un 20 % más caro que el anterior en SwiftShader), un equipo sin
 aceleración ya no lo dibuja. Los e2e que prueban el render lo piden
 explícitamente (`conEscenaViva`, `?no3d=0`). Los más pesados (O5, la cubierta
-de Edmunds) todavía fallan a veces SÓLO con la suite entera en paralelo.
+de Edmunds) todavía fallan a veces SÓLO con la suite entera en paralelo. La
+suite limita por eso el paralelismo a cuatro workers locales y dos en CI: los
+fallos de C2/C4 y salida del Observatorio del 2026-09-26 pasaron 6/6 al
+repetirlos aislados y no justificaban relajar sus aserciones.
 
 **Ranger — hero mínimo y panel de enlace (2026-09-23):** la sección
 homónima de `docs/design/ranger-contacto.md` manda en la primera pantalla y
