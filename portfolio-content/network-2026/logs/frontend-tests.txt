@@ -1,0 +1,13 @@
+
+> network-frontend@3.1.0 test
+> vitest run
+
+
+ RUN  v5.0.2 C:/Users/savage/Documents/GitHub/Network-3.0/frontend
+
+
+ Test Files  7 passed (7)
+      Tests  34 passed (34)
+   Start at  17:05:52
+   Duration  12.95s (environment 77%, setup 15%, import 5%, tests 2%, transform 1%)
+

@@ -1,7 +1,24 @@
 {
   "name": "jonas-orbit-v3",
   "version": "0.1.0",
+  "description": "Portafolio espacial de Jonás Javier: narrativa interactiva, WebGL progresivo y contenido accesible.",
   "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JonasJavier/jonas-orbit-v3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JonasJavier/jonas-orbit-v3/issues"
+  },
+  "keywords": [
+    "portfolio",
+    "nextjs",
+    "threejs",
+    "webgl",
+    "accessibility"
+  ],
+  "packageManager": "npm@11.13.0",
   "scripts": {
     "content": "velite",
     "predev": "velite",

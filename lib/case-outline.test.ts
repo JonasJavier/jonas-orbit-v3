@@ -32,9 +32,9 @@ describe("nodeText", () => {
 describe("caseOutline", () => {
   it("lee los títulos del cuerpo real con anclas estables y su rótulo sin numeral", () => {
     const outline = caseOutline(getProject("omsta", "es").prose.body);
-    expect(outline.headings).toHaveLength(17);
+    expect(outline.headings).toHaveLength(15);
     expect(outline.headings[0]).toEqual({ id: "contexto", text: "1. Contexto", label: "Contexto" });
-    expect(outline.headings.at(-1)?.id).toBe("enlaces-y-siguiente-paso");
+    expect(outline.headings.at(-1)?.id).toBe("siguiente-paso");
     expect(outline.minutes).toBeGreaterThanOrEqual(3);
   });
 

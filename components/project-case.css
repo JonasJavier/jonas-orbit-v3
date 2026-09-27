@@ -514,6 +514,38 @@ p.case-title__descriptor { margin-top: 16px; }
 .case-system .holo-inspector .holo-card__meta { display: none; }
 .case-lead--narrow { display: none; }
 
+/* ── Tecnologías: el stack entero, por áreas ────────────────────────────── */
+
+/*
+  Un inventario, no una nube de etiquetas: cada área es una columna con su
+  filo, su nombre y su cuenta, y cada herramienta una línea con la versión
+  aparte, en mono y apagada. Se lee como la hoja técnica de un equipo.
+*/
+.case-stack__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: clamp(36px, 5vh, 52px) clamp(28px, 3vw, 48px);
+}
+.case-stack__group { padding-top: 16px; border-top: 1px solid var(--case-line); }
+.case-stack__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font: 400 0.74rem/1.3 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(160 222 246 / 86%);
+}
+.case-stack__count { color: var(--pj-dim); letter-spacing: 0.1em; }
+.case-stack__group ul { display: grid; gap: 9px; margin-top: 16px; }
+.case-stack__group li { font: 400 0.98rem/1.35 var(--font-body); color: #e3eaf3; }
+.case-stack__version {
+  font: 400 0.76rem/1 var(--font-mono);
+  letter-spacing: 0.02em;
+  color: var(--pj-dim);
+}
+
 /* ── Resultados verificables ────────────────────────────────────────────── */
 
 .case-results {
@@ -584,6 +616,51 @@ p.case-title__descriptor { margin-top: 16px; }
   font: 300 0.92rem/1.5 var(--font-body);
   color: var(--pj-muted);
   text-wrap: pretty;
+}
+
+/*
+  El recorrido por módulos: un índice de módulos arriba y, por módulo, su
+  título con número y cuenta y sus pantallas. Aquí la rejilla es regular y no
+  justificada: con diez o quince pantallas por módulo, una fila justificada
+  dejaba la última gigante; un catálogo se lee mejor en columnas iguales.
+*/
+.case-tour__index { margin-bottom: clamp(56px, 8vh, 88px); }
+.case-tour__index ol { display: flex; flex-wrap: wrap; gap: 10px; }
+.case-tour__index a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgb(180 210 235 / 16%);
+  border-radius: 999px;
+  background: rgb(8 14 22 / 60%);
+  font: 400 0.9rem/1 var(--font-body);
+  color: #dbe4f0;
+  transition: border-color 0.25s, color 0.25s, box-shadow 0.25s;
+}
+.case-tour__index a:hover { border-color: rgb(127 229 255 / 70%); color: #fff; box-shadow: 0 0 22px rgb(127 229 255 / 10%); }
+.case-tour__num { font: 400 0.7rem/1 var(--font-mono); letter-spacing: 0.1em; color: var(--pj-cyan); }
+.case-tour__count { font: 400 0.72rem/1 var(--font-mono); letter-spacing: 0.08em; color: var(--pj-dim); }
+.case-tour__stop + .case-tour__stop { margin-top: clamp(64px, 9vh, 104px); }
+.case-tour__title {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--case-line);
+  font: 350 clamp(1.45rem, 2.1vw, 1.9rem)/1.1 var(--font-display);
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.case-tour__title .case-tour__num { font-size: 0.78rem; }
+.case-tour__title .case-tour__count { margin-left: auto; }
+@media (min-width: 768px) {
+  .case-tour .case-shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 30px 18px; }
+  /* Un módulo de teléfonos: columnas estrechas, que un teléfono no se estire. */
+  .case-tour .case-shots:has(> .case-shot[data-frame="mobile"]) { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .case-tour .case-shot { max-width: none; }
 }
 .case-viewer {
   position: fixed;
@@ -1026,6 +1103,24 @@ html:has(.case-viewer[open]) { overflow: hidden; }
   .case-brief__answer { padding-top: 24px; }
 
   .case-decision[data-frame="mobile"] .case-decision__screen { width: 66%; }
+  /* El inventario a dos columnas: a una, once áreas medían tres pantallas. */
+  .case-stack__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 18px; }
+  .case-stack__group li { font-size: 0.9rem; }
+  /* El índice de módulos, una tira que se desliza como la de las pantallas:
+     diez cápsulas en columna eran media pantalla antes de ver ninguna. */
+  .case-tour__index { margin-bottom: 40px; }
+  .case-tour__index ol {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-inline: calc(-1 * var(--case-gutter));
+    padding: 2px var(--case-gutter) 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .case-tour__index ol::-webkit-scrollbar { display: none; }
+  .case-tour__index li { flex: none; }
+  .case-tour__title { font-size: 1.35rem; }
   /* En el teléfono, una tira que se desliza con el dedo: todas del mismo
      alto, cada una a su proporción, y la página no se alarga. */
   .case-shots {

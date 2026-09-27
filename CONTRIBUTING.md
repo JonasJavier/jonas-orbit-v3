@@ -6,10 +6,9 @@ y los presupuestos de accesibilidad y rendimiento.
 
 ## Antes de empezar
 
-1. Lee `AGENTS.md` y el índice de `docs/README.md`.
+1. Lee [`AGENTS.md`](AGENTS.md) y el índice de [`docs/README.md`](docs/README.md).
 2. Consulta el plan y la decisión vigente del dominio que vas a tocar.
-3. Para cambios amplios, abre primero una propuesta que describa el problema,
-   no solo la solución deseada.
+3. Para cambios amplios, abre primero una propuesta que describa el problema.
 4. No inventes contenido, métricas, enlaces de producción ni licencias.
 
 ## Preparar el entorno
@@ -20,18 +19,18 @@ cp .env.example .env.local
 npm run dev
 ```
 
-El proyecto usa Node 24 y versiones exactas. No actualices dependencias dentro
-de una feature; hazlo en una tarea separada y verifica la suite completa.
+El proyecto usa Node 24 y versiones exactas. Las dependencias sólo se actualizan
+en cambios dedicados y después de revisar los avisos de seguridad y migración.
 
 ## Flujo de cambios
 
 - Crea una rama corta y descriptiva desde `main`.
-- Mantén los commits enfocados y evita incluir capturas, logs o builds locales.
+- Mantén los commits enfocados; no incluyas capturas, logs o builds locales.
 - Añade o actualiza los tests del Appendix A que correspondan al cambio.
 - Si cambia una decisión del producto, registra primero la decisión en
   `docs/registro-de-decisiones.md` y actualiza el índice de `AGENTS.md`.
 - Para cambios visuales, adjunta evidencia desktop y móvil e indica el estado
-  del interruptor de movimiento. Las capturas de trabajo viven fuera de Git.
+  de movimiento y audio. Las capturas de trabajo viven fuera de Git.
 
 ## Verificación
 

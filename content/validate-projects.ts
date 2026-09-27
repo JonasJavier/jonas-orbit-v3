@@ -9,6 +9,7 @@ interface ProjectImageLike {
   src: string;
   alt: string;
   frame?: "desktop" | "mobile";
+  module?: string;
 }
 
 interface ArchitectureNodeLike {
@@ -17,6 +18,12 @@ interface ArchitectureNodeLike {
   lane: ArchitectureLane;
   screen?: string;
   decision?: string;
+  tech?: readonly string[];
+}
+
+interface StackGroupLike {
+  group: string;
+  items: readonly string[];
 }
 
 export interface ArchitectureLike {
@@ -38,6 +45,7 @@ export interface ProjectProseLike {
   gallery?: readonly ProjectImageLike[];
   architecture?: ArchitectureLike;
   designDecisions?: readonly DesignDecisionLike[];
+  stack?: readonly StackGroupLike[];
 }
 
 export interface ImageSize {
@@ -128,6 +136,25 @@ export function validateProjectProse(
       }
     }
 
+    /*
+      El recorrido por módulos del caso agrupa TODAS las capturas: una sin
+      módulo no tendría grupo y desaparecería del recorrido sin avisar.
+    */
+    const withModule = images.filter((image) => image.module !== undefined);
+    if (withModule.length > 0 && withModule.length < images.length) {
+      const orphan = images.find((image) => image.module === undefined);
+      throw new Error(
+        `[content] "${idKey}" agrupa sus capturas por módulo pero ${orphan?.src} no declara el suyo: o lo llevan todas, o ninguna.`,
+      );
+    }
+    for (const image of withModule) {
+      if ((image.module ?? "").trim().length === 0) {
+        throw new Error(`[content] Módulo vacío en "${idKey}": ${image.src}.`);
+      }
+    }
+
+    validateStack(idKey, project.stack);
+
     validateDesignDecisions(
       idKey,
       project.designDecisions,
@@ -151,6 +178,35 @@ export function validateProjectProse(
       throw new Error(
         `[content] El idioma publicado "${locale}" no tiene los proyectos F1A requeridos: ${missing.join(", ")}.`,
       );
+    }
+  }
+}
+
+/**
+ * El stack completo: grupos con nombre, sin repetirse, y ninguna tecnología
+ * dos veces (en dos grupos se leería como dos piezas distintas).
+ */
+function validateStack(idKey: string, stack: readonly StackGroupLike[] | undefined): void {
+  const groups = new Set<string>();
+  const items = new Set<string>();
+  for (const entry of stack ?? []) {
+    const group = entry.group.trim();
+    if (group.length === 0) {
+      throw new Error(`[content] Grupo de stack sin nombre en "${idKey}".`);
+    }
+    if (groups.has(group)) {
+      throw new Error(`[content] Grupo de stack repetido en "${idKey}": "${group}".`);
+    }
+    groups.add(group);
+    for (const raw of entry.items) {
+      const item = raw.trim();
+      if (item.length === 0) {
+        throw new Error(`[content] Tecnología vacía en el grupo "${group}" de "${idKey}".`);
+      }
+      if (items.has(item)) {
+        throw new Error(`[content] Tecnología repetida en el stack de "${idKey}": "${item}".`);
+      }
+      items.add(item);
     }
   }
 }
@@ -232,6 +288,11 @@ function validateArchitecture(
       );
     }
     if (node.decision && node.decision.trim().length > 0) decisions++;
+    if (node.tech?.some((item) => item.trim().length === 0)) {
+      throw new Error(
+        `[content] Tecnología vacía en el nodo "${node.id}" de "${idKey}".`,
+      );
+    }
   }
 
   const screenOwners = new Map<string, string>();

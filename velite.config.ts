@@ -168,6 +168,13 @@ const projectImage = s.object({
   alt: s.string(),
   caption: s.string(),
   frame: s.enum(["desktop", "mobile"]).optional(),
+  /**
+   * El módulo del producto que enseña la captura («Reservas», «App móvil»).
+   * Con él, las pantallas del caso completo se recorren por módulos y no en
+   * un solo montón: o lo llevan todas las capturas del proyecto, o ninguna
+   * (lo comprueba `validate-projects.ts`).
+   */
+  module: s.string().max(32).optional(),
 });
 
 /** Proyectos reales localizados; la estructura neutral vive en projects.data.ts. */
@@ -186,7 +193,21 @@ const projectProse = defineCollection({
       problem: s.string(),
       contribution: s.string(),
       decision: s.string(),
+      /** El stack de un vistazo: lo que se graba en la mesa y va en la ficha. */
       technologies: s.array(s.string()).min(1),
+      /**
+       * EL STACK COMPLETO, agrupado («Backend», «App móvil», «Calidad y
+       * CI»…): la sección «Tecnologías» del caso. `technologies` es la
+       * cabecera; esto, el inventario entero con su versión.
+       */
+      stack: s
+        .array(
+          s.object({
+            group: s.string().max(32),
+            items: s.array(s.string()).min(1),
+          }),
+        )
+        .optional(),
       highlights: s.array(s.string()).min(1),
       featuredImage: projectImage,
       gallery: s.array(projectImage).optional(),
@@ -243,6 +264,11 @@ const projectProse = defineCollection({
                 lane: s.enum(ARCHITECTURE_LANES),
                 screen: s.string().optional(),
                 decision: s.string().optional(),
+                /**
+                 * Con qué está hecho ESTE módulo («Django REST Framework
+                 * 3.16», «simplejwt»): el inspector lo dice al elegirlo.
+                 */
+                tech: s.array(s.string()).optional(),
               }),
             )
             .min(1),

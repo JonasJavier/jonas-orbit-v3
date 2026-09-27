@@ -32,6 +32,7 @@ interface MdxImage {
   alt: string;
   caption: string;
   frame?: "desktop" | "mobile";
+  module?: string;
 }
 
 interface MdxProject {
@@ -129,11 +130,17 @@ function route(edges: readonly [string, string][], id: string) {
 }
 
 /**
- * Las pantallas que ya salieron arriba —la destacada, el teléfono del primer
- * pantallazo y las de las decisiones—; «Más pantallas» lleva el resto.
+ * Las pantallas del final del caso. Con módulos declarados es el RECORRIDO:
+ * todas, por módulo, cada módulo donde aparece por primera vez (§18). Sin
+ * ellos, las que no salieron ya arriba —la destacada, el teléfono del primer
+ * pantallazo y las de las decisiones—: «Más pantallas» lleva el resto.
  */
 function moreScreens(project: MdxProject) {
   const screens = screensOf(project);
+  if (screens.some((image) => image.module)) {
+    const modules = [...new Set(screens.map((image) => image.module))];
+    return modules.flatMap((module) => screens.flatMap((image, index) => (image.module === module ? [index] : [])));
+  }
   const phone = screens.findIndex((image) => image.frame === "mobile");
   const decided = (project.designDecisions ?? []).map((entry) => screens.findIndex((image) => image.src === entry.screen));
   const shown = new Set([0, phone, ...decided]);
@@ -219,8 +226,8 @@ for (const id of ["omsta", "wikiverse"]) {
     // Resultados verificables.
     await expect(page.locator("#resultados .case-results__list li")).toHaveText(project.highlights);
 
-    // «Más pantallas»: sólo las que no salieron arriba, con su pie; si no
-    // queda ninguna, la sección no existe.
+    // Al final, el recorrido por módulos (todas) o «Más pantallas» (sólo las
+    // que no salieron arriba), con su pie; si no queda ninguna, no existe.
     const more = moreScreens(project);
     if (more.length > 0) {
       expect(await page.locator("#pantallas a[data-case-shot]").evaluateAll((links) => links.map((link) => Number(link.getAttribute("data-case-shot"))))).toEqual(more);
@@ -352,12 +359,12 @@ test("C3 · el visor abre desde una pantalla, recorre todas con → ←, cierra 
   await expect(heroShot).toBeFocused();
 
   /*
-    Desde «Más pantallas»: al cerrar, el foco vuelve a la miniatura de la
-    pantalla que se estaba mirando si está en la rejilla (no a la que abrió
-    el visor, que ya quedó atrás), y si no, a la que lo abrió.
+    Desde el recorrido del final: al cerrar, el foco vuelve a la miniatura de
+    la pantalla que se estaba mirando si está en el mismo módulo (no a la que
+    abrió el visor, que ya quedó atrás), y si no, a la que lo abrió.
   */
   const more = moreScreens(omsta);
-  expect(more.length, "OMSTA tiene pantallas que no salen arriba").toBeGreaterThan(0);
+  expect(more.length, "OMSTA tiene pantallas al final del caso").toBeGreaterThan(0);
   const opened = more[0];
   const gridShot = (index: number) => page.locator(`#pantallas a[data-case-shot="${index}"]`);
   await gridShot(opened).focus();

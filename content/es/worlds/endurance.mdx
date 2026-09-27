@@ -11,10 +11,10 @@ introduction: >-
   desarrollo y diseño, con estados y evidencia verificables.
 closing: Cada misión cuenta qué problema resolvió, cómo se construyó y cuál es su estado real.
 facts:
-  - value: "1"
-    label: Sistema real en producción
   - value: "4"
-    label: Productos listos para producción
+    label: Proyectos en producción
+  - value: "1"
+    label: Producto listo para producción
   - value: "5"
     label: Proyectos reales documentados
 panels:
@@ -24,30 +24,31 @@ panels:
       Reservas, cobros, contabilidad de doble partida, nómina y cumplimiento
       fiscal dominicano conectados en una plataforma mantenida activamente.
     tags: [Django, PostgreSQL, Redis, Railway]
-  - eyebrow: Cliente real · Listo para producción
+  - eyebrow: Estudio de demostración · En línea
     title: Izak's Photos
     description: >-
-      Portafolio profesional de fotografía con identidad editorial, galería
-      filtrable, recorrido bilingüe y canal de reserva.
-    tags: [React, Django, UX/UI, Fotografía]
+      Sitio bilingüe de fotografía con galería enlazable, visor accesible y
+      reservas guardadas en Django, servido por un solo servicio en Railway.
+    tags: [React, Django REST, Railway, UX/UI, Fotografía]
   - eyebrow: Proyecto personal · Listo para producción
     title: Wiki Universe
     description: >-
       Plataforma de contenido con artículos Markdown, revisiones, categorías y
       búsqueda de texto completo en PostgreSQL.
     tags: [React, TypeScript, DRF, PostgreSQL]
-  - eyebrow: Proyecto personal · Listo para producción
+  - eyebrow: Proyecto personal · Desplegado con demo pública
     title: Network 3.0
     description: >-
-      Red social con feed por cursor, perfiles, follows, publicaciones,
-      comentarios anidados y notificaciones.
-    tags: [React, TypeScript, Django, Redis]
-  - eyebrow: Cliente real · Listo para producción
+      Red social con API REST en Django y aplicación en React: feed por cursor,
+      reposts y citas, hashtags, menciones y notificaciones de ocho tipos.
+    tags: [React, TypeScript, Django REST, PostgreSQL, Redis]
+  - eyebrow: Cliente real · En línea con dominio propio
     title: Delicaté 4.0
     description: >-
       Tienda de jabones artesanales con catálogo administrable en Django,
-      carrito persistente y pedidos estructurados mediante WhatsApp.
-    tags: [React, Django REST, E-commerce, UX/UI]
+      carrito sin cuenta que se mantiene al día y pedidos que se cierran por
+      WhatsApp.
+    tags: [React, Django REST, PostgreSQL, Railway, UX/UI]
 observatory:
   descriptor: Máquina orbital
   pair: "ESTRUCTURA / ALUMINIO"
@@ -73,5 +74,5 @@ observatory:
 ---
 
 Cada proyecto enlaza problema, contribución, decisiones y estado actual con
-evidencia visual. OMSTA y Delicaté son los casos completos; las fichas de
-fotografía, Wiki Universe y Network completan el mapa.
+evidencia visual. OMSTA, Izak's Photos, Network y Delicaté son los casos
+completos; la ficha de Wiki Universe completa el mapa.

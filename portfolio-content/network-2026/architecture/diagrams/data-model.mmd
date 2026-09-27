@@ -1,0 +1,82 @@
+%% Network — modelo de datos (8 modelos)
+%% Comprobado contra backend/apps/*/models.py en el commit e90c581.
+erDiagram
+    USER ||--o{ POST : "escribe"
+    USER ||--o{ COMMENT : "escribe"
+    USER ||--o{ POSTLIKE : "da like"
+    USER ||--o{ BOOKMARK : "guarda"
+    USER ||--o{ FOLLOW : "sigue"
+    USER ||--o{ NOTIFICATION : "recibe"
+
+    POST ||--o{ POSTLIKE : "recibe"
+    POST ||--o{ BOOKMARK : "es guardado en"
+    POST ||--o{ COMMENT : "tiene"
+    POST ||--o{ POST : "repost o cita"
+    POST }o--o{ HASHTAG : "etiquetado con"
+    POST ||--o{ NOTIFICATION : "origina"
+
+    COMMENT ||--o{ COMMENT : "respuesta de un nivel"
+    COMMENT ||--o{ NOTIFICATION : "origina"
+
+    USER {
+        string username UK "3-30, regex, 22 nombres reservados"
+        string email UK "unico, insensible a mayusculas"
+        string headline "120 caracteres"
+        text bio "500 caracteres"
+        string location
+        url website
+        image avatar "512x512 WebP"
+        image cover "1600x600 WebP"
+        datetime date_joined "indice descendente"
+    }
+
+    POST {
+        bigint author_id FK
+        text content "2000, vacio en un repost"
+        image image "1600x1600 WebP"
+        bigint repost_of_id FK "null en una publicacion original"
+        datetime created_at "indexado"
+        datetime updated_at "is_edited si difiere mas de 2s"
+    }
+
+    COMMENT {
+        bigint post_id FK
+        bigint author_id FK
+        bigint parent_id FK "null en un comentario de primer nivel"
+        text content "1000 caracteres"
+        datetime created_at
+        datetime updated_at
+    }
+
+    POSTLIKE {
+        bigint user_id FK
+        bigint post_id FK
+        datetime created_at "unique user + post"
+    }
+
+    BOOKMARK {
+        bigint user_id FK
+        bigint post_id FK
+        datetime created_at "privado, unique user + post"
+    }
+
+    FOLLOW {
+        bigint follower_id FK
+        bigint following_id FK
+        datetime created_at "unique y check no_self_follow"
+    }
+
+    HASHTAG {
+        string name UK "minusculas, sin almohadilla"
+        datetime created_at
+    }
+
+    NOTIFICATION {
+        bigint recipient_id FK
+        bigint actor_id FK
+        string verb "8 valores"
+        bigint post_id FK "opcional"
+        bigint comment_id FK "opcional"
+        boolean is_read
+        datetime created_at "indice recipient + is_read + fecha"
+    }

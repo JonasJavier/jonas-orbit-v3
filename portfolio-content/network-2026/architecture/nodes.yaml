@@ -1,0 +1,287 @@
+# Network — grafo de arquitectura para la ficha del portafolio.
+# Comprobado contra el commit e90c581 (2026-09-26).
+# Los valores de `screen` son nombres de archivo existentes en
+# portfolio-content/network-2026/screenshots/principales/.
+nodes:
+  # ----- cliente -----------------------------------------------------------
+  - id: acceso
+    label: Registro y acceso
+    lane: cliente
+    screen: 01-login-desktop.png
+    decision: >-
+      Login con usuario o email, y el registro devuelve ya el par de tokens para
+      que crear la cuenta sea un solo paso.
+
+  - id: feed
+    label: Feed
+    lane: cliente
+    screen: 04-feed-desktop.png
+    decision: >-
+      Publicar, conversar y descubrir personas conviven en una sola vista de tres
+      columnas.
+
+  - id: composer
+    label: Crear publicación
+    lane: cliente
+    screen: 08-composer-with-image-desktop.png
+    decision: >-
+      Imagen por selector, arrastrar y soltar o pegado, con previsualización antes
+      de enviar.
+
+  - id: detalle-post
+    label: Publicación y comentarios
+    lane: cliente
+    screen: 14-post-detail-comments-desktop.png
+    decision: >-
+      Respuestas anidadas a un solo nivel: suficiente para conversar, sin hilos que
+      se pierdan en profundidad.
+
+  - id: perfil
+    label: Perfil
+    lane: cliente
+    screen: 18-profile-own-desktop.png
+    decision: >-
+      Cada perfil conecta identidad, relaciones y contenido en pestañas Posts,
+      Media y Likes.
+
+  - id: relaciones
+    label: Seguidores y seguidos
+    lane: cliente
+    screen: 22-profile-followers-modal-desktop.png
+    decision: >-
+      Las listas de personas son modales enlazables por URL, así que se pueden
+      compartir sin salir del perfil.
+
+  - id: notificaciones
+    label: Notificaciones
+    lane: cliente
+    screen: 25-notifications-desktop.png
+    decision: >-
+      Cada uno de los ocho verbos lleva su icono, su color y su frase, y cada fila
+      lleva a su origen exacto.
+
+  - id: busqueda
+    label: Búsqueda y hashtags
+    lane: cliente
+    screen: 31-search-hashtag-desktop.png
+    decision: >-
+      Una sola caja resuelve personas, texto y hashtags; escribir con # salta
+      directamente a publicaciones.
+
+  - id: marcadores
+    label: Marcadores
+    lane: cliente
+    screen: 27-bookmarks-desktop.png
+    decision: >-
+      Lista privada, sin contador público ni señal para el autor de la publicación.
+
+  - id: ajustes
+    label: Ajustes
+    lane: cliente
+    screen: 34-settings-desktop.png
+    decision: >-
+      Tema, contraseña y borrado de cuenta en una sola página, con la zona
+      peligrosa separada al final.
+
+  - id: movil
+    label: Versión móvil
+    lane: cliente
+    screen: 53-feed-mobile.png
+    decision: >-
+      Navegación inferior fija de cuatro destinos; marcadores y ajustes pasan al
+      menú de la cuenta.
+
+  - id: estados-vacios
+    label: Estados vacíos y de carga
+    lane: cliente
+    screen: 37-empty-following-feed-desktop.png
+    decision: >-
+      Cada vacío explica qué irá ahí y ofrece la acción que lo llena; los
+      esqueletos copian la geometría real.
+
+  # ----- servicio ----------------------------------------------------------
+  - id: api
+    label: API REST v1
+    lane: servicio
+    decision: >-
+      API versionada bajo /api/v1/ con esquema OpenAPI 3 generado, Swagger y
+      ReDoc: 28 rutas y 37 operaciones.
+
+  - id: auth
+    label: Autenticación JWT
+    lane: servicio
+    decision: >-
+      Rotación de refresh con lista negra; cambiar la contraseña cierra el resto
+      de sesiones.
+
+  - id: feed-cursor
+    label: Feed por cursor
+    lane: servicio
+    decision: >-
+      Paginación por cursor ordenada por fecha e id, para que publicar algo nuevo
+      no repita ni desplace la página siguiente.
+
+  - id: posts
+    label: Publicaciones y comentarios
+    lane: servicio
+    decision: >-
+      Repost y cita comparten modelo; una restricción única condicional impide
+      repostear dos veces lo mismo.
+
+  - id: perfiles
+    label: Perfiles y grafo de seguimiento
+    lane: servicio
+    decision: >-
+      Seguirse a uno mismo se prohíbe con una CheckConstraint, no sólo con
+      validación en la vista.
+
+  - id: notif-dominio
+    label: Dominio de notificaciones
+    lane: servicio
+    decision: >-
+      App de Django propia con sus ocho verbos y sus endpoints, en vez de colgar
+      de las vistas de publicaciones.
+
+  - id: hashtags
+    label: Hashtags y tendencias
+    lane: servicio
+    decision: >-
+      Se extraen en el servidor al guardar, así la búsqueda por tema no depende de
+      recorrer el texto en cada consulta.
+
+  - id: imagenes
+    label: Procesado de imágenes
+    lane: servicio
+    decision: >-
+      Toda subida se valida, se rota por EXIF, se limpia de metadatos, se reescala
+      y se reescribe como WebP.
+
+  - id: throttling
+    label: Límite de peticiones
+    lane: servicio
+    decision: >-
+      Los endpoints de credenciales tienen su propio cubo, mucho más estrecho que
+      el general, y se limitan por IP.
+
+  - id: health
+    label: Health-check
+    lane: servicio
+    decision: >-
+      Informa del estado de la caché pero sólo devuelve 503 si la base de datos no
+      responde.
+
+  # ----- datos -------------------------------------------------------------
+  - id: postgresql
+    label: PostgreSQL 17
+    lane: datos
+    decision: >-
+      Ocho modelos con índices compuestos escritos para las consultas que existen,
+      no por costumbre.
+
+  - id: redis
+    label: Redis 8
+    lane: datos
+    decision: >-
+      Sólo cachea tendencias y sugerencias; si no está disponible la aplicación se
+      ralentiza, no se rompe.
+
+  - id: media
+    label: Almacenamiento de media
+    lane: datos
+    decision: >-
+      Volumen local por defecto, bucket S3-compatible con sólo definir las
+      variables de entorno.
+
+  # ----- infraestructura ---------------------------------------------------
+  - id: nginx
+    label: nginx
+    lane: infraestructura
+    decision: >-
+      Sirve el bundle estático, aplica la CSP y las cabeceras de seguridad, y hace
+      el fallback del enrutado del SPA.
+
+  - id: gunicorn
+    label: Gunicorn
+    lane: infraestructura
+    decision: >-
+      WSGI con número de procesos configurable; no hay ASGI porque no hay nada en
+      tiempo real que lo justifique.
+
+  - id: docker
+    label: Imágenes Docker
+    lane: infraestructura
+    decision: >-
+      Dos imágenes multi-stage conscientes de $PORT, para que la misma imagen
+      corra en local y en la plataforma.
+
+  - id: ci
+    label: CI en GitHub Actions
+    lane: infraestructura
+    decision: >-
+      Además de lint y tests, valida migraciones, check --deploy y la construcción
+      de ambas imágenes.
+
+  - id: railway
+    label: Despliegue en Railway
+    lane: infraestructura
+    decision: >-
+      Configuración como código en railway.json para los dos servicios, con
+      dominios inyectados y detectados automáticamente.
+
+  # ----- integraciones -----------------------------------------------------
+  - id: openapi
+    label: OpenAPI · Swagger · ReDoc
+    lane: integraciones
+    decision: >-
+      El esquema se genera del código, así que la documentación no puede quedarse
+      desfasada respecto a la API.
+
+  - id: sentry
+    label: Sentry (opcional)
+    lane: integraciones
+    decision: >-
+      Integrado pero apagado salvo que se defina SENTRY_DSN, para no obligar a
+      depender de un servicio externo.
+
+edges:
+  - [acceso, auth]
+  - [feed, feed-cursor]
+  - [composer, posts]
+  - [detalle-post, posts]
+  - [perfil, perfiles]
+  - [relaciones, perfiles]
+  - [notificaciones, notif-dominio]
+  - [busqueda, hashtags]
+  - [busqueda, posts]
+  - [marcadores, posts]
+  - [ajustes, auth]
+  - [movil, feed-cursor]
+  - [estados-vacios, api]
+  - [auth, api]
+  - [feed-cursor, api]
+  - [posts, api]
+  - [perfiles, api]
+  - [notif-dominio, api]
+  - [hashtags, api]
+  - [health, api]
+  - [throttling, auth]
+  - [composer, imagenes]
+  - [posts, imagenes]
+  - [posts, notif-dominio]
+  - [perfiles, notif-dominio]
+  - [posts, hashtags]
+  - [posts, postgresql]
+  - [perfiles, postgresql]
+  - [notif-dominio, postgresql]
+  - [hashtags, postgresql]
+  - [hashtags, redis]
+  - [perfiles, redis]
+  - [imagenes, media]
+  - [api, gunicorn]
+  - [gunicorn, docker]
+  - [nginx, docker]
+  - [docker, ci]
+  - [docker, railway]
+  - [health, railway]
+  - [api, openapi]
+  - [api, sentry]

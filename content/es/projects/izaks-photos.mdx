@@ -2,131 +2,586 @@
 id: izaks-photos
 slug: izaks-photos
 title: Izak's Photos
-eyebrow: Portafolio fotográfico para cliente
+eyebrow: Sitio y portafolio fotográfico
 summary: >-
-  Sitio profesional para un fotógrafo: portafolio visual optimizado,
-  presentación de servicios, identidad de marca y canal de reserva.
-statusLabel: Listo para producción
-role: Diseño de producto, dirección visual y desarrollo full-stack
+  Un estudio de fotografía de demostración, bilingüe y en línea: galería de 42
+  fotos con enlaces compartibles, visor accesible y reservas que se guardan en
+  Django, servidos por un solo servicio en Railway.
+statusLabel: En línea en Railway · estudio de demostración
+role: Evolución full-stack; interfaz, experiencia bilingüe, API, rendimiento y despliegue
 problem: >-
-  El fotógrafo necesitaba presentar su trabajo con una identidad profesional y
-  convertir la visita a la galería en una solicitud de reserva clara.
+  Un archivo de fotografías en cuatro series tiende a volverse una cuadrícula
+  genérica, y el mismo sitio tiene que llevar al visitante de «me gusta este
+  trabajo» a «envío una solicitud».
 contribution: >-
-  Diseñé y desarrollé la experiencia responsive, la galería filtrable, el
-  lightbox, el recorrido bilingüe y el formulario conectado a una API Django.
+  Reconstruí el sitio en React y Django —galería con filtros y foto abierta en
+  la URL, visor con teclado, inglés y español, reservas con validación— y lo
+  llevé a producción con miniaturas WebP, límite de envíos y CI.
 decision: >-
-  Hice que las fotografías dirigieran la interfaz y mantuve el despliegue en un
-  solo servicio: Django sirve la API y la compilación de Vite en producción.
-technologies: [React, Vite, Django, Django REST Framework, Railway]
+  Un solo servicio en producción: Django sirve el build de Vite, la API y el
+  administrador desde el mismo origen, sin CORS.
+technologies: [React 18, Vite 8, React Router 7, Django 5.2, Django REST Framework, Railway]
+stack:
+  - group: Lenguajes
+    items: [JavaScript (JSX), Python 3, CSS, HTML]
+  - group: Frontend
+    items: [React 18.3, React Router 7.18, Vite 8.3, "@vitejs/plugin-react 6.1"]
+  - group: Interfaz
+    items: [CSS propio con variables, Fraunces y DM Sans, lucide-react 0.468, IntersectionObserver]
+  - group: Estado e idioma
+    items: [React Context, useSearchParams, localStorage, fetch]
+  - group: Backend
+    items: [Django 5.2, Django REST Framework 3, Django Admin, django-cors-headers 4, python-dotenv 1]
+  - group: Datos
+    items: [SQLite, PostgreSQL, dj-database-url 2, psycopg2 2.9]
+  - group: Imágenes
+    items: [Miniaturas WebP de 720 px, Pillow (script de miniaturas), import.meta.glob de Vite]
+  - group: Servidor y despliegue
+    items: [Gunicorn 23, WhiteNoise 6.12, Railway, Railpack]
+  - group: Calidad y CI
+    items: [TestCase de Django, GitHub Actions, EditorConfig]
+  - group: Herramientas
+    items: [Node.js 24, npm, Git]
 highlights:
-  - Galería por retratos, editorial, bodas y viajes con visor a pantalla completa
-  - Interfaz responsive y bilingüe en español e inglés
-  - Formulario de reserva conectado a un endpoint persistente de Django
-  - Imágenes optimizadas y espacio reservado para evitar saltos de diseño
+  - En línea en izaksphotos.jonasjavier.dev como un solo servicio en Railway, con migraciones antes de publicar y healthcheck
+  - Galería de 42 fotos en 4 series con filtros y la foto abierta en la URL, así cada imagen tiene su enlace
+  - Visor a pantalla completa con teclado, deslizamiento táctil y el foco dentro del diálogo
+  - Interfaz completa en inglés y español, con el idioma recordado
+  - Miniaturas WebP que bajan la galería completa en móvil de 9,3 MB a 2,4 MB
+  - Reservas guardadas en Django con errores por campo, límite de envíos y campo trampa; 8 pruebas en CI
 featuredImage:
   src: /media/projects/izaks-photos/01-home-desktop.png
-  alt: Página principal de Izak's Photos con un retrato en primer plano y llamadas a ver la galería y reservar una sesión
-  caption: La fotografía ocupa el centro de la experiencia y las dos acciones principales permanecen visibles desde el primer pantallazo.
+  alt: "Portada de Izak's Photos con un retrato en luz cálida y botones para ver la galería y reservar"
+  caption: "La foto manda y las dos acciones principales se ven desde el primer vistazo."
+  module: Portada y navegación
 gallery:
-  - src: /media/projects/izaks-photos/02-gallery-desktop.png
-    alt: Galería de Izak's Photos con filtros por categoría y una cuadrícula de fotografías
-    caption: La galería organiza el archivo por retratos, editorial, bodas y viajes.
-  - src: /media/projects/izaks-photos/03-home-mobile.png
-    alt: Página principal de Izak's Photos adaptada a una pantalla móvil
-    caption: El hero conserva jerarquía, marca y acciones principales en móvil.
+  - src: /media/projects/izaks-photos/07-home-featured-hover-desktop.png
+    alt: "Foto de boda del mosaico destacado con la etiqueta First Dance al pasar el ratón"
+    caption: "Cada foto destacada muestra su serie y abre esa imagen en el visor."
+    module: Portada y navegación
+  - src: /media/projects/izaks-photos/09-home-services-desktop.png
+    alt: "Tres tarjetas de servicios, Portrait Session, Brand Editorial y Wedding & Events, con precios de muestra"
+    caption: "Tres paquetes con duración, qué incluyen y precio; los precios son de muestra."
+    module: Portada y navegación
+  - src: /media/projects/izaks-photos/11-home-process-desktop.png
+    alt: "Sección The Process con cuatro pasos: Connect, Plan, Create y Deliver"
+    caption: "Cuatro pasos explican el trabajo de la primera idea a la entrega."
+    module: Portada y navegación
+  - src: /media/projects/izaks-photos/13-home-testimonials-desktop.png
+    alt: "Tres tarjetas de testimonios de muestra con cinco estrellas, cita, nombre y tipo de sesión"
+    caption: "Un bloque de testimonios listo para los reales; los de ahora son de muestra."
+    module: Portada y navegación
+  - src: /media/projects/izaks-photos/15-home-cta-footer-desktop.png
+    alt: "Llamada final con el botón Start Booking y pie con navegación y enlace para enviar una solicitud"
+    caption: "El pie lleva al formulario en lugar de a un correo que no existe."
+    module: Portada y navegación
+  - src: /media/projects/izaks-photos/53-not-found-desktop.png
+    alt: "Página 404 con el titular This frame didn't make the final edit y botones a la galería y al inicio"
+    caption: "Una URL rota tiene su propia página, con salida a la galería."
+    module: Portada y navegación
+  - src: /media/projects/izaks-photos/17-gallery-desktop.png
+    alt: "Galería con los filtros All, Portraits, Editorial, Weddings y Travel y el número de fotos de cada uno"
+    caption: "Los filtros dicen cuántas fotos hay en cada serie."
+    module: Galería y visor
+  - src: /media/projects/izaks-photos/19-gallery-grid-desktop.png
+    alt: "Mosaico de fotos que mezcla retrato, boda, editorial y viaje en cuatro columnas"
+    caption: "«Todo» intercala las series para que el mosaico no se agrupe por tipo."
+    module: Galería y visor
+  - src: /media/projects/izaks-photos/22-gallery-weddings-desktop.png
+    alt: "Serie de bodas con nueve fotos y el filtro Weddings activo"
+    caption: "Cada serie tiene su propia URL, lista para compartir."
+    module: Galería y visor
+  - src: /media/projects/izaks-photos/24-gallery-travel-desktop.png
+    alt: "Serie de viajes con fotos verticales y horizontales de estrellas, calles, flores y paisajes"
+    caption: "Verticales y horizontales conviven porque cada foto reserva su proporción."
+    module: Galería y visor
+  - src: /media/projects/izaks-photos/26-lightbox-desktop.png
+    alt: "Visor a pantalla completa con la foto Red Motion, su título y el contador 02 de 42"
+    caption: "Cada foto tiene un enlace propio que abre directamente el visor."
+    module: Galería y visor
+  - src: /media/projects/izaks-photos/28-lightbox-landscape-desktop.png
+    alt: "Visor con la foto horizontal The Arch de una pareja bajo un arco de flores"
+    caption: "El visor adapta el marco a fotos verticales y horizontales."
+    module: Galería y visor
+  - src: /media/projects/izaks-photos/31-about-desktop.png
+    alt: "Página Sobre mí con un retrato rotulado From the portfolio y el titular sobre fotografía"
+    caption: "Sobre mí abre con una foto del portafolio, rotulada como tal."
+    module: Sobre mí
+  - src: /media/projects/izaks-photos/33-about-story-desktop.png
+    alt: "Texto de The Studio junto a una tarjeta con la cita Less posing More presence y un retrato"
+    caption: "La historia y una cita resumen la filosofía: menos pose, más presencia."
+    module: Sobre mí
+  - src: /media/projects/izaks-photos/38-booking-desktop.png
+    alt: "Página de reservas con la elección de paquete, el formulario y el panel de confirmación"
+    caption: "Paquete, formulario y resumen conviven en una sola vista."
+    module: Reservas
+  - src: /media/projects/izaks-photos/41-booking-filled-desktop.png
+    alt: "Formulario lleno con Brand Editorial y un resumen con precio, fecha, lugar y correo"
+    caption: "El resumen se actualiza mientras el visitante escribe."
+    module: Reservas
+  - src: /media/projects/izaks-photos/43-booking-success-desktop.png
+    alt: "Panel de confirmación You're all set con el resumen de la solicitud guardada"
+    caption: "Tras enviar, la confirmación resume exactamente lo que se envió."
+    module: Reservas
+  - src: /media/projects/izaks-photos/45-booking-validation-desktop.png
+    alt: "Formulario con el campo de correo marcado en rojo y el mensaje Enter a valid email address"
+    caption: "Si la API rechaza un dato, se marca el campo exacto y se explica."
+    module: Reservas
+  - src: /media/projects/izaks-photos/47-booking-offline-desktop.png
+    alt: "Mensaje de error Couldn't reach the server bajo el botón, con el formulario aún lleno"
+    caption: "Si falla la red, el aviso lo dice y los datos siguen escritos."
+    module: Reservas
+  - src: /media/projects/izaks-photos/48-home-es-desktop.png
+    alt: "Portada en español con el titular Retratos en luz tranquila y el selector de idioma en ES"
+    caption: "Todo el sitio existe en inglés y en español, y recuerda la elección."
+    module: En español
+  - src: /media/projects/izaks-photos/51-gallery-es-desktop.png
+    alt: "Galería en español con los filtros Todo, Retratos, Editorial, Bodas y Viajes"
+    caption: "Filtros y contadores, también en español."
+    module: En español
+  - src: /media/projects/izaks-photos/52-booking-es-desktop.png
+    alt: "Página de reservas en español con los paquetes y el formulario traducidos"
+    caption: "El formulario de reserva, traducido de principio a fin."
+    module: En español
+  - src: /media/projects/izaks-photos/55-admin-inquiries-desktop.png
+    alt: "Lista de solicitudes en Django Admin con nombre, correo, tipo, fecha preferida, atendida y creación"
+    caption: "Cada solicitud llega al administrador, donde se filtra y se busca."
+    module: Administración
+  - src: /media/projects/izaks-photos/57-admin-inquiries-handled-desktop.png
+    alt: "Aviso de dos solicitudes marcadas como atendidas y la lista filtrada con las cuatro pendientes"
+    caption: "Una acción marca varias solicitudes como atendidas de una vez."
+    module: Administración
+  - src: /media/projects/izaks-photos/20-gallery-grid-mobile.png
+    alt: "Mosaico de dos columnas en móvil con Stillness, Newsprint, Red Motion y Vows rotuladas"
+    caption: "En táctil cada foto lleva su lugar y su título a la vista."
+    module: En el teléfono
     frame: mobile
-  - src: /media/projects/izaks-photos/04-gallery-mobile.png
-    alt: Galería fotográfica de Izak's Photos en vista móvil con filtros accesibles
-    caption: Los filtros y la cuadrícula se reorganizan sin perder la navegación del archivo.
+  - src: /media/projects/izaks-photos/23-gallery-weddings-mobile.png
+    alt: "Serie de bodas en móvil con fotos rotuladas First Dance, Just Married y The Arch"
+    caption: "La serie de bodas en el teléfono, con cada foto rotulada."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/27-lightbox-mobile.png
+    alt: "Visor en móvil con la foto Red Motion y botones de anterior y siguiente abajo"
+    caption: "Se pasa de foto con las flechas o deslizando."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/29-lightbox-landscape-mobile.png
+    alt: "Visor en móvil con la foto horizontal Sunlit Walk de una pareja caminando"
+    caption: "Las fotos horizontales se centran a todo el ancho."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/18-gallery-mobile.png
+    alt: "Galería en móvil con los filtros por serie en dos filas y el contador de fotos"
+    caption: "Los filtros caben en dos filas sin esconder ninguna serie."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/02-home-mobile.png
+    alt: "Portada de Izak's Photos en un teléfono con el titular y dos botones a todo el ancho"
+    caption: "Las acciones van a todo el ancho y «Reserve» nunca desaparece."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/03-menu-mobile.png
+    alt: "Menú móvil con tres enlaces, el botón Reserve y el selector de idioma"
+    caption: "El menú reúne navegación, reserva e idioma; se cierra con Escape."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/08-home-featured-mobile.png
+    alt: "Foto destacada Red Motion en móvil con su título visible sobre la imagen"
+    caption: "Los títulos se ven siempre, sin depender del ratón."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/10-home-services-mobile.png
+    alt: "Tarjeta del paquete Portrait Session en móvil con duración, detalles y precio"
+    caption: "Cada paquete se lee completo en una tarjeta."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/12-home-process-mobile.png
+    alt: "Pasos Connect, Plan y Create apilados en una pantalla de teléfono"
+    caption: "Los pasos se apilan con números grandes."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/32-about-mobile.png
+    alt: "Sobre mí en móvil con el retrato Winter Gaze arriba y el titular debajo"
+    caption: "La foto va primero, recortada a 4:5 para no ocupar toda la pantalla."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/34-about-story-mobile.png
+    alt: "Texto de The Studio en móvil con la ubicación en Santo Domingo"
+    caption: "El relato se lee de corrido en una columna."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/35-about-quote-mobile.png
+    alt: "Tarjeta con la cita Less posing More presence y la firma Izak en móvil"
+    caption: "La cita y la firma cierran la historia."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/39-booking-mobile.png
+    alt: "Página de reservas en móvil con el titular y los tres paquetes con precio"
+    caption: "Primero se elige el paquete y después se llena el formulario."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/40-booking-packages-mobile.png
+    alt: "Tres paquetes y la nota de martes a sábado con anticipo del 30 por ciento en móvil"
+    caption: "Una nota aclara los días de sesión y el anticipo antes del formulario."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/42-booking-form-mobile.png
+    alt: "Formulario de reserva lleno en móvil con nombre, correo, teléfono, tipo, fecha y lugar"
+    caption: "El formulario va a una columna con campos amplios."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/44-booking-success-mobile.png
+    alt: "Confirmación de la reserva en móvil con el resumen de la sesión y el mensaje de guardado"
+    caption: "Tras enviar, la página baja sola hasta la confirmación."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/46-booking-validation-mobile.png
+    alt: "Campo de correo marcado con error en el formulario de reserva en móvil"
+    caption: "El mismo aviso por campo, en el teléfono."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/izaks-photos/49-home-es-mobile.png
+    alt: "Portada en español en un teléfono con los botones Ver la Galería y Reservar Sesión"
+    caption: "La versión en español mantiene la jerarquía en el teléfono."
+    module: En el teléfono
     frame: mobile
 scope:
-  - value: "4"
-    label: series en la galería
+  - value: −74 %
+    label: de peso en las miniaturas de la galería
+  - value: "42"
+    label: fotos en 4 series, cada una con su enlace
   - value: "2"
-    label: idiomas, español e inglés
-  - value: "1"
-    label: servicio para la API y el frontend
+    label: idiomas, inglés y español
 designDecisions:
   - screen: /media/projects/izaks-photos/01-home-desktop.png
-    problem: El sitio tenía que presentar el trabajo y, a la vez, llevar a reservar una sesión.
-    decision: La fotografía ocupa el centro y las dos acciones se ven desde el primer pantallazo.
-  - screen: /media/projects/izaks-photos/02-gallery-desktop.png
-    problem: Un archivo amplio de fotografías se vuelve fácilmente una cuadrícula genérica.
-    decision: Series con filtros y un visor a pantalla completa que no pierde el contexto.
-  - screen: /media/projects/izaks-photos/04-gallery-mobile.png
-    problem: En un teléfono, los filtros y la cuadrícula compiten por el mismo ancho.
-    decision: Se reorganizan sin perder la navegación del archivo.
+    problem: El sitio tiene que lucir el trabajo y, a la vez, llevar a reservar.
+    decision: Hero a sangre con dos acciones y «Reserve» fijo en la cabecera de todas las páginas.
+  - screen: /media/projects/izaks-photos/19-gallery-grid-desktop.png
+    problem: Cuarenta y dos fotos en cuatro series se vuelven una cuadrícula genérica.
+    decision: Un mosaico que intercala las series, filtros con conteo y un visor a pantalla completa con teclado.
+  - screen: /media/projects/izaks-photos/26-lightbox-desktop.png
+    problem: No había forma de compartir ni de enlazar una foto concreta.
+    decision: La categoría y la foto abierta viven en la URL; cada foto tiene su enlace.
+  - screen: /media/projects/izaks-photos/20-gallery-grid-mobile.png
+    problem: En el teléfono los títulos no se veían nunca, porque sólo aparecían al pasar el ratón.
+    decision: En pantallas táctiles, el lugar y el título quedan siempre visibles sobre cada foto.
+  - screen: /media/projects/izaks-photos/24-gallery-travel-desktop.png
+    problem: La galería descargaba 9,3 MB de JPEG completos para mostrar miniaturas pequeñas.
+    decision: Miniaturas WebP de 720 px en las cuadrículas; el JPEG completo sólo se carga en el visor.
+  - screen: /media/projects/izaks-photos/44-booking-success-mobile.png
+    problem: En el teléfono, la confirmación de la reserva quedaba fuera de la pantalla.
+    decision: Tras enviar, la página baja hasta la confirmación, que resume lo enviado.
+  - screen: /media/projects/izaks-photos/45-booking-validation-desktop.png
+    problem: Un error genérico obliga a adivinar qué dato falló y a volver a escribirlo todo.
+    decision: La API devuelve el error de cada campo y el formulario lo marca en su sitio, sin borrar lo escrito.
+  - screen: /media/projects/izaks-photos/48-home-es-desktop.png
+    problem: Un estudio que trabaja dentro y fuera del país no puede hablar un solo idioma.
+    decision: Inglés y español en todo el sitio con un clic; el idioma se recuerda y cambia el lang de la página.
 architecture:
   nodes:
-    - id: inicio
-      label: Inicio
+    - id: portada
+      label: Portada
       lane: cliente
       screen: /media/projects/izaks-photos/01-home-desktop.png
+      decision: >-
+        Hero a sangre con botón de pausa y «Reserve» fijo en la cabecera; las
+        fotos destacadas abren esa imagen en el visor.
+      tech: [React 18, React Router 7]
+    - id: movil
+      label: En el teléfono
+      lane: cliente
+      screen: /media/projects/izaks-photos/20-gallery-grid-mobile.png
+      decision: >-
+        En táctil, el lugar y el título de cada foto siempre visibles: no hay
+        hover que los descubra.
+      tech: ["@media (hover: none)", CSS propio]
     - id: galeria
-      label: Galería y visor
+      label: Galería
       lane: cliente
-      screen: /media/projects/izaks-photos/02-gallery-desktop.png
+      screen: /media/projects/izaks-photos/19-gallery-grid-desktop.png
       decision: >-
-        Las fotografías dirigen la interfaz: imágenes optimizadas con su
-        espacio reservado para que la galería no salte al cargar.
-    - id: inicio-movil
-      label: Inicio en móvil
+        El mosaico intercala las series y cada foto reserva su proporción; la
+        categoría vive en la URL.
+      tech: [useSearchParams, CSS propio]
+    - id: visor
+      label: Visor
       lane: cliente
-      screen: /media/projects/izaks-photos/03-home-mobile.png
-    - id: galeria-movil
-      label: Galería en móvil
+      screen: /media/projects/izaks-photos/26-lightbox-desktop.png
+      decision: >-
+        Teclado, deslizamiento y foco dentro del diálogo; la foto abierta es un
+        enlace y su miniatura la cubre mientras llega el JPEG.
+      tech: [React 18, useSearchParams]
+    - id: sobre-mi
+      label: Sobre mí
       lane: cliente
-      screen: /media/projects/izaks-photos/04-gallery-mobile.png
+      screen: /media/projects/izaks-photos/31-about-desktop.png
+      decision: >-
+        Las fotos se rotulan como obra del portafolio y no como retrato de
+        nadie.
+      tech: [React 18]
+    - id: reservas
+      label: Reservas
+      lane: cliente
+      screen: /media/projects/izaks-photos/43-booking-success-desktop.png
+      decision: >-
+        Errores por campo que devuelve la API y, tras enviar, un resumen al que
+        la página baja en el teléfono.
+      tech: [fetch, aria-invalid]
+    - id: idioma
+      label: Idioma
+      lane: cliente
+      screen: /media/projects/izaks-photos/48-home-es-desktop.png
+      decision: >-
+        Un Context propio con t({ en, es }), sin librería de traducción; el
+        idioma se recuerda y cambia el lang de la página.
+      tech: [React Context, localStorage]
+    - id: api
+      label: API de reservas
+      lane: servicio
+      decision: >-
+        Valida y guarda cada solicitud; diez por hora y cliente, y un campo
+        trampa que acepta a los bots sin guardarlos.
+      tech: [Django REST Framework 3, Throttling de DRF]
+    - id: admin
+      label: Admin
+      lane: servicio
+      screen: /media/projects/izaks-photos/55-admin-inquiries-desktop.png
+      decision: >-
+        Filtros, búsqueda y dos acciones: marcar solicitudes como atendidas o
+        reabrirlas.
+      tech: [Django Admin]
+    - id: salud
+      label: Healthcheck
+      lane: servicio
+      decision: >-
+        Railway sólo publica la versión nueva si /api/health/ responde.
+      tech: [Django 5.2]
+    - id: base
+      label: Base de datos
+      lane: datos
+      decision: >-
+        SQLite en local y PostgreSQL con DATABASE_URL, sin tocar código; un
+        solo modelo de diez campos para las solicitudes.
+      tech: [SQLite, PostgreSQL, dj-database-url]
+    - id: fotos
+      label: Fotos
+      lane: datos
+      decision: >-
+        Van en el build: el JPEG completo para el visor y el hero, y miniaturas
+        WebP de 720 px para las cuadrículas.
+      tech: [import.meta.glob, WebP]
+    - id: preferencia
+      label: localStorage
+      lane: datos
+      decision: >-
+        Sólo guarda el idioma elegido: el sitio no tiene cuentas ni cookies de
+        seguimiento.
+      tech: [localStorage]
     - id: servidor
-      label: Django sirve la API y el build de Vite
-      lane: servicio
+      label: Servidor
+      lane: infraestructura
       decision: >-
-        Un solo servicio en producción: Django sirve la API y la compilación
-        de Vite, sin un frontend desplegado aparte.
-    - id: reserva
-      label: Endpoint de reserva
-      lane: servicio
+        Un solo proceso sirve el build de Vite, la API y el admin desde el mismo
+        origen: sin CORS en producción.
+      tech: [Gunicorn 23, WhiteNoise 6.12]
     - id: railway
       label: Railway
       lane: infraestructura
+      decision: >-
+        Railpack compila todo, migra antes de publicar y reinicia el servicio
+        si el healthcheck falla.
+      tech: [Railway, Railpack]
+    - id: ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        En cada push y pull request: migraciones pendientes, las 8 pruebas y el
+        build del frontend.
+      tech: [GitHub Actions]
+    - id: fuentes
+      label: Google Fonts
+      lane: integraciones
+      decision: >-
+        Fraunces y DM Sans: la única dependencia externa en tiempo de
+        ejecución.
+      tech: [Google Fonts]
   edges:
-    - [inicio, servidor]
-    - [galeria, servidor]
-    - [inicio-movil, servidor]
-    - [galeria-movil, servidor]
-    - [servidor, reserva]
+    - [portada, galeria]
+    - [portada, visor]
+    - [galeria, visor]
+    - [portada, reservas]
+    - [sobre-mi, reservas]
+    - [movil, galeria]
+    - [idioma, preferencia]
+    - [galeria, fotos]
+    - [visor, fotos]
+    - [reservas, api]
+    - [api, base]
+    - [admin, base]
+    - [portada, fuentes]
+    - [ci, servidor]
     - [railway, servidor]
+    - [railway, salud]
+    - [servidor, api]
+    - [servidor, admin]
+    - [servidor, fotos]
 links:
+  - label: Visitar el sitio
+    href: https://izaksphotos.jonasjavier.dev
+    kind: demo
   - label: Ver repositorio
     href: https://github.com/JonasJavier/IZAK-S-PHOTOS
     kind: repository
-seoTitle: Izak's Photos — Portafolio fotográfico full-stack
-seoDescription: Portafolio para un fotógrafo con React, Django, galería filtrable, lightbox, experiencia bilingüe y reserva de sesiones.
+seoTitle: Izak's Photos — Portafolio fotográfico con React y Django | Caso de estudio
+seoDescription: Caso de Izak's Photos, sitio bilingüe de fotografía con galería enlazable, visor accesible, reservas en Django REST y despliegue en un solo servicio de Railway.
 ---
 
-## Necesidad
+## 1. Contexto
 
-El proyecto debía hacer dos trabajos a la vez: presentar una selección amplia de
-fotografías sin convertirla en una cuadrícula genérica y ofrecer un camino directo
-para solicitar una sesión. La identidad visual tenía que sentirse editorial,
-sobria y suficientemente flexible para retratos, bodas, viajes y trabajo de marca.
+Izak's Photos es el sitio de un estudio de fotografía de retrato, bodas,
+editorial y viajes con base en Santo Domingo. **El estudio es ficticio**: Izak
+no existe, y los precios, las cifras del estudio y los testimonios son
+contenido de muestra para enseñar el producto. Lo que sí es real es el
+software: está en línea, guarda solicitudes y se despliega como cualquier sitio
+de un cliente.
 
-## Mi función
+El proyecto nació en mayo de 2024 en un repositorio que creó Job Nacor y en el
+que colaboramos: un sitio en React y Bootstrap con siete páginas y un
+formulario de contacto de cuatro campos. En junio de 2026 lo reconstruí desde
+cero y en septiembre lo llevé a producción. Hoy mantengo esta edición y el
+repositorio conserva la autoría de los dos.
 
-Me encargué de traducir esas necesidades en arquitectura de información, UX/UI y
-desarrollo full-stack. Construí las rutas de inicio, galería, perfil y reserva; el
-frontend responsive; y la integración del formulario con Django REST Framework.
+## 2. Problema
 
-## Decisión relevante
+Un archivo amplio de fotografías tiende a convertirse en una cuadrícula
+genérica, y un sitio de fotógrafo tiene dos trabajos a la vez: lucir la obra y
+convertir la visita en una solicitud. Además, una foto que no se puede enlazar
+no se puede compartir, y en el teléfono todo lo que depende del ratón
+desaparece.
 
-La fotografía no funciona como decoración, sino como la estructura visual del
-producto. Reservé dimensiones para las imágenes, preparé recursos optimizados y
-usé una galería con filtros y lightbox para que cada serie pueda explorarse sin
-perder contexto. Para simplificar la operación, el despliegue previsto usa un solo
-servicio de Railway: Django sirve tanto la API como el build de Vite.
+## 3. Mi función
 
-## Estado actual
+La reconstrucción de 2026 es mía: la interfaz responsive, la experiencia
+bilingüe, la galería y el visor, la API de reservas, el administrador, el
+rendimiento de las imágenes, el despliegue en Railway, las pruebas, la
+integración continua y la documentación.
 
-La versión limpia del repositorio pasa las cuatro pruebas del backend y compila el
-frontend de producción. La URL pública se añadirá cuando termine el despliegue;
-hasta entonces no se presenta una demo inexistente.
+## 4. Restricciones
+
+- **Un solo servicio.** Django sirve la API, el administrador y el build de
+  Vite desde el mismo dominio.
+- **Sin subida de fotos.** Las imágenes son archivos del build: añadir una
+  requiere un despliegue.
+- **Sin correo saliente.** Las solicitudes quedan en la base de datos y se
+  atienden desde el administrador.
+- **Bilingüe escrito a mano.** 256 cadenas en español junto a su versión en
+  inglés, sin librería de traducción.
+
+## 5. Cómo lo construí
+
+La versión de 2026 pasó de 25 dependencias de ejecución a 6 y de siete
+secciones a cuatro páginas —portada, galería, sobre mí y reservas— más una 404
+propia. El modelo de contacto de cuatro campos se convirtió en una solicitud de
+reserva con diez, y el formulario habla con la API en camelCase mientras el
+serializador lo traduce a los campos del modelo.
+
+En septiembre lo revisé en cinco anchos (1440, 1024, 768, 390 y 360 px) y en
+los dos idiomas, y corregí lo que esa revisión sacó a la luz antes de
+desplegarlo: enlaces compartibles, visor accesible, miniaturas WebP, límite de
+envíos, página 404 y una configuración de producción más estricta.
+
+## 6. Decisiones de arquitectura
+
+- **Mismo origen en producción.** Django y WhiteNoise sirven el build con
+  nombres con hash y compresión, y una ruta final devuelve `index.html` para
+  las rutas de React. El formulario llama a `/api/contact/`, así que no hace
+  falta CORS. En desarrollo, Vite y Django corren por separado.
+- **El estado de la galería en la URL.** `?category=` y `?photo=`: una serie o
+  una foto abierta se pueden enlazar, y las destacadas de la portada abren
+  directamente la suya.
+- **Traducción propia y mínima.** Un Context con `t({ en, es })` que detecta el
+  idioma del navegador, lo recuerda y actualiza `<html lang>`.
+- **Base de datos por configuración.** SQLite en local y PostgreSQL si existe
+  `DATABASE_URL`, sin cambiar código.
+- **Publicar sólo lo que funciona.** Railway migra antes de publicar y
+  comprueba `/api/health/` antes de dar tráfico a la versión nueva.
+
+## 7. Rendimiento de las imágenes
+
+La galería descargaba los JPEG completos para pintar miniaturas pequeñas:
+9.303 KB en un teléfono. Un script genera ahora miniaturas WebP de 720 px, que
+pesan un 74 % menos que los JPEG (8.986 KB frente a 2.372 KB); el JPEG completo
+sólo se pide al abrir el visor. Recorrer la galería entera en un teléfono pasó
+de 9,3 MB a 2,4 MB. Cada foto reserva su proporción con su ancho y alto reales,
+y la página no salta al cargar.
+
+## 8. Accesibilidad y seguridad
+
+- El carrusel de la portada tiene botón de pausa, se detiene al recibir el foco
+  y no arranca solo con `prefers-reduced-motion`.
+- El visor mantiene el foco dentro y lo devuelve a la miniatura al cerrarse;
+  se recorre con las flechas o deslizando.
+- Hay enlace para saltar al contenido, anillo de foco visible y un título de
+  pestaña por página.
+- La API de reservas admite diez solicitudes por hora y cliente, y un campo
+  trampa acepta los envíos de bots sin guardarlos.
+- Fuera de desarrollo, las cookies son seguras y la API navegable de DRF queda
+  apagada.
+
+## 9. Desafíos
+
+La revisión en varios anchos encontró defectos que a simple vista pasaban:
+
+- **Un marco irregular en cada miniatura.** El botón que envuelve cada foto
+  conservaba el relleno del navegador.
+- **Una cabecera que nunca desenfocaba el fondo.** Con las dos formas de
+  `backdrop-filter` escritas, el minificador de Vite 8 sólo dejaba la versión
+  con prefijo.
+- **Un visor de 0×0 mientras cargaba.** `width` y `height` no reservan espacio
+  si el CSS los pisa con `auto`.
+- **Un selector de idioma flotante** que tapaba fotos, paquetes y la
+  confirmación de la reserva; ahora vive en la cabecera y en el menú.
+- **Una fecha en UTC** en el título de cada solicitud del administrador, que
+  no coincidía con la hora local de su creación.
+
+## 10. Diseño y UX
+
+Fondo casi negro y dorado apagado para que las fotos lleven el color, una serif
+editorial (Fraunces) para los titulares y una sans (DM Sans) para el texto. La
+reserva cabe en una vista: se elige un paquete, se llena el formulario y un
+resumen se actualiza mientras se escribe. Si la red falla, el aviso lo dice y
+los datos siguen escritos; si la API rechaza un dato, se marca el campo exacto.
+
+## 11. Lo que no tiene
+
+Para que nadie lo dé por supuesto: no hay pagos, ni cuentas de cliente, ni
+galerías privadas, ni subida de fotos desde el administrador, ni correo
+saliente: las solicitudes sólo aparecen en `/admin/`. Tampoco hay pruebas del
+frontend ni analítica.
+
+## 12. Sobre el contenido y las capturas
+
+El estudio, sus precios, sus cifras y sus testimonios son de muestra, y el
+formulario de producción guarda solicitudes de demostración: no lo uses con
+datos reales. Las fotografías y las personas que aparecen en ellas tienen
+derechos aparte de los del código, y el sitio no las atribuye a un autor real.
+Las capturas se hicieron el 25 de septiembre de 2026 sobre el build de
+producción servido en local, con solicitudes inventadas en el administrador.
+Las pantallas con algún defecto visible se dejaron fuera.
+
+## 13. Aprendizajes
+
+Las capturas automáticas encontraron tres defectos que la revisión a ojo no
+vio. Y los fallos más difíciles no estaban en la lógica: un reset de botones
+incompleto, un minificador que descartaba una propiedad y un tamaño que el CSS
+anulaba. Revisar el sitio en varios anchos, en los dos idiomas y con la red
+retenida fue lo que los sacó a la luz.
+
+## 14. Estado actual
+
+En línea en [izaksphotos.jonasjavier.dev](https://izaksphotos.jonasjavier.dev)
+como un solo servicio en Railway, con el repositorio público bajo licencia
+GPL-3.0, la integración continua en verde y 8 pruebas del backend que pasan.
+Es un estudio de demostración: no tiene clientes ni reservas reales, así que no
+publico cifras de uso.

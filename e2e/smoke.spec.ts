@@ -222,7 +222,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: /OMSTA — ERP para una agencia de viajes/,
+        name: /OMSTA — ERP y app móvil para una agencia de viajes/,
       }),
     ).toBeVisible();
   });
@@ -480,11 +480,11 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     await expect(page).toHaveTitle(/OMSTA — ERP en Django/);
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       "content",
-      "OMSTA — ERP en Django | Caso de estudio",
+      "OMSTA — ERP en Django y app móvil en React Native | Caso de estudio",
     );
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      /\/media\/projects\/omsta\/01-dashboard-panel-ejecutivo\.png$/,
+      /\/media\/projects\/omsta\/w02-dashboard\.png$/,
     );
 
     const response = await visit(page, "/es/proyectos/no-existe");

@@ -961,3 +961,250 @@ hallazgos altos y medios.
   pie); «Resultados» repite parte del Alcance; el cuerpo MDX trae su propio
   «Resultados verificables».
 - Heredado: confirmar arquitecturas (§13.2) y URL `kind: demo`.
+
+## 18. OMSTA rehecho: web y app móvil, recorrido por módulos y tecnologías (2026-09-26)
+
+Manda sobre §17 en **cuántas pantallas monta la mesa, el final del caso y
+cómo se dicen las tecnologías**. No toca capas, muelle ni la mesa física.
+
+### 18.1 La petición
+
+El dueño: OMSTA «es una app muy muy grande» y el caso no la abarcaba; pidió
+más información, más capturas y más módulos, y sumar su **app móvil** (React
+Native + Expo). Que en cada proyecto, y en su mesa, «se detallen bien todas
+las tecnologías». El material lo generó otra sesión desde el repositorio de
+OMSTA, de cero y con la regla del dueño —**si algo falla o no se ve bien, no
+se incluye**—, en `portfolio-content/omsta-2026/` (130 capturas web y 44
+móviles; 47 y 19 principales; lo excluido y su motivo en `excluded.md`). La
+carpeta vieja `portfolio-content/omsta/` se borró con su permiso.
+
+### 18.2 Contenido nuevo (Velite)
+
+- **`module`** en cada captura («Panel y reservas», «App móvil»…): todas o
+  ninguna (`validate-projects.ts`). Con módulos, el final del caso es un
+  **Recorrido por módulos**: índice de cápsulas y, por módulo, su título con
+  número y cuenta y TODAS sus pantallas —también las que ya salieron arriba:
+  un módulo sin sus mejores pantallas se leía incompleto—. Sin módulos, sigue
+  «Más pantallas» con las que faltaban (§17).
+- **`stack`**: el inventario entero por áreas (`group` + `items`, sin repetir
+  grupo ni tecnología). Es la sección **Tecnologías** del caso, entre Sistema
+  y Resultados: una columna por área con su cuenta y cada herramienta con la
+  versión aparte, en mono. `technologies` sigue siendo la cabecera (ficha y
+  grabado de la mesa).
+- **`tech`** en cada nodo de `architecture`: con qué está hecho ESE módulo. El
+  inspector lo dice bajo «Tecnologías» (mesa y caso); en el teléfono, donde no
+  hay inspector, sale bajo el módulo elegido. Es la respuesta a «en la mesa de
+  trabajo»: la mesa no gana texto a la vista, lo gana el módulo que se elige.
+
+OMSTA: 61 capturas (46 web a 1920 de ancho y 15 de la app a 1080×2400) en 10
+módulos, 8 decisiones de diseño, 22 nodos en 5 carriles con 31 aristas, 67
+tecnologías en 11 áreas. Alcance: 19 apps Django · 150 modelos · 54 pantallas
+en la app. Lo de iOS se dice como es: probada en Android, configurada para
+iOS, la versión de iPhone espera la cuenta de Apple Developer.
+
+### 18.3 La mesa con un sistema grande
+
+- **Sólo monta lo que levanta** (`TableScreen.onTable`): las tres de Producto
+  y las del carrete. Con sesenta capturas, montar todas pedía sesenta
+  imágenes invisibles. Medido a 1440: 10 figuras y 11 peticiones de
+  `/media/projects/omsta/`.
+- **Filas que se aprietan**: `--row: clamp(26px, min(10.5cqh, 92cqh /
+  rows), 40px)`. El 92 % sale de medir el hueco entre las pestañas de capa y
+  el anillo a 1280, 1440 y 1920; hasta ocho filas no actúa (Delicaté sigue en
+  39,7 px). Con diez filas el esquema subía hasta pisar las pestañas.
+- **Cinco carriles estrechan las columnas**: entre 1300 y 1800 px los nodos
+  de un esquema de cinco columnas pierden miniatura y glifo, como ya pasaba
+  bajo 1300 (`data-cols` en el esquema). Rótulos de módulo cortos («Web
+  Django», «Cobros»): la decisión y las tecnologías dicen el resto.
+- `tools/prepare-projects.mjs` añade el peldaño **1920** de escritorio para
+  el visor del caso (al 92 % del ancho, el de 1440 se veía blando a
+  densidad 2); Delicaté e Izak's lo ganan también.
+
+### 18.4 Trampas
+
+- El carrete llevaba el foco con `:nth-of-type(índice + 1)`: con la mesa
+  montando sólo parte de las pantallas, el foco caía en otra. Ahora
+  `data-screen` en cada figura.
+- Un pie de foto con «: » en YAML sin comillas rompe Velite («Nested mappings
+  are not allowed in compact mappings»).
+- El visor recorre las pantallas en el orden de la ficha; el recorrido las
+  agrupa por la primera aparición del módulo. Si una ficha intercala módulos,
+  los dos órdenes dejan de coincidir: mejor escribir la galería ya agrupada.
+
+### 18.5 Confirmado después (2026-09-26)
+
+- La agencia es **CristegnoViajes SRL** (el repositorio escribe «Cristecno»):
+  el caso la nombra y el CV la conserva.
+- **15 usuarios** en uso diario: vuelve al CV (sustituye a los 9 de agosto) y
+  entra en el caso y en sus resultados.
+- Las decisiones de diseño las revisé por delegación del dueño contra cada
+  captura y el código de la app. Los problemas se dicen como problemas de
+  diseño, no como quejas del cliente. Cambian dos: el cobro móvil habla de lo
+  que su pantalla enseña (el mismo servicio que la web, «por verificar» hasta
+  que contabilidad lo aplica) y no de biometría ni de uso sin conexión, que
+  no se ven; y la de las tablas en tarjetas deja su sitio a los borradores
+  cifrados del asistente móvil (`mobile/src/reservas/borradores.ts`), que
+  explica mejor la app. La web en el teléfono sigue en el recorrido.
+
+### 18.6 Abierto
+
+Veredicto del dueño; los otros cuatro proyectos, cuando lleguen sus carpetas
+`-2026`.
+
+## 19. Network rehecho: caso completo, desplegado y con demo (2026-09-26)
+
+Aplica el método de §18 a Network desde `portfolio-content/network-2026/`
+(kit de otra sesión sobre el commit `e90c581` del repositorio
+`cs50w-network`, con la misma regla: **lo que falla o no se ve bien, fuera**).
+No cambia la mesa ni el caso: sólo su contenido y dos detalles de código.
+
+### 19.1 Qué cambia
+
+- **Ficha breve → caso completo** (`projects.data.ts`: `kind: case-study`,
+  `status: production`). Está desplegado de forma permanente en Railway (web y
+  API, PostgreSQL y Redis; `/health/` responde) con demo pública.
+  `statusLabel` dice «Desplegado en Railway · demo pública»: sin usuarios
+  reales, y el caso lo dice.
+- **62 capturas** (43 de escritorio reducidas de 2880 a 1920 y 19 de teléfono
+  a 780×1688) de las 77 del kit, en 9 módulos. Fuera, además de la 17 que ya
+  excluía el kit: 01, 48 y 51 (el acceso sin el recuadro de cuentas demo:
+  duplican a 76, 77 y 78), 06 (el scroll infinito no se ve en una foto y la
+  cabecera translúcida emborrona la búsqueda), 10 (el contador de caracteres
+  sale como número desnudo), 28 (la tendencia sale dos veces en `/search`), 45
+  y 47 (duplican el modo oscuro), 50 (ReDoc: casi vacío a esa altura), 56
+  (nombres cortados en la cita), 66 (nombres cortados en la búsqueda) y 52,
+  54, 70 y 72 (duplican escritorio sin añadir nada).
+- **8 decisiones de diseño**, cada una sobre su captura y comprobadas en el
+  código: tres columnas, navegación inferior en el teléfono, esqueletos,
+  vacíos con acción, avisos por tipo, enlace al comentario exacto, borrado que
+  nombra lo que se pierde, tema sin destello.
+- **27 nodos en los 5 carriles, 36 aristas.** Las pantallas van directas a su
+  dominio (Feed → Feed por cursor → Contenido…) y la cadena de transporte
+  (Estado y caché → Cliente HTTP → API) va aparte: con todas las pantallas
+  entrando por la API, elegir cualquiera encendía el sistema entero y la ruta
+  no decía nada. Rótulos sin palabras de más de 11 letras: a 1280 px
+  «Publicaciones» y «Notificaciones» se partían con guion.
+- **55 tecnologías en 10 áreas**; `tech` en cada nodo.
+- **Enlaces**: demo (`Probar la demo`) y el repositorio canónico
+  `cs50w-network` (el de `Network-3.0` sólo llegaba por redirección 301). El
+  caso publica las cuentas de la demo y su contraseña, por decisión del dueño.
+- **CV**: tarjeta (ES) y línea (EN) nuevas —API REST + React/TS, 132 pruebas,
+  CI, Docker, demo en vivo—; los dos siguen en una página.
+
+### 19.2 Código
+
+- El botón del caso con demo dice el `label` del enlace, como la mesa, y no un
+  «Visitar el sitio» fijo: para una aplicación de demostración, «Probar la
+  demo».
+- Un proyecto con una sola captura con módulo ya no pinta un «recorrido» de
+  una pantalla que ya salió arriba (`touring` exige más de una).
+
+### 19.3 Abierto
+
+Veredicto del dueño. «Aprendizajes» es un borrador escrito a partir del
+historial (el kit lo marca como inferencia): conviene que lo diga él. Si
+Network sigue después de 3.1.0, falta el «siguiente paso»; hoy el caso lo
+presenta como terminado en esa versión, sin prometer continuidad.
+
+## 20. Delicaté rehecho: en producción con su dominio (2026-09-26)
+
+Aplica el método de §18 y §19 a Delicaté desde
+`portfolio-content/delicate-2026/` (kit de otra sesión sobre el commit
+`9f134109`, hoy `20b9246` en el repositorio público `Delicate-4.0`; misma
+regla: **lo que falla o no se ve bien, fuera**). No cambia la mesa ni el caso:
+sólo su contenido y una prueba.
+
+### 20.1 Qué cambia
+
+- **`status: production`.** La tienda está en línea en
+  `delicate.jonasjavier.dev` (Railway: un contenedor Docker, PostgreSQL y un
+  volumen para fotos; `/api/health/` verde). `statusLabel` dice «En línea con
+  dominio propio · salida comercial en validación»: la lista `GO_LIVE.md` del
+  negocio (políticas, pedido probado en Android e iPhone, copias) no consta
+  como hecha, y el caso lo dice. El dueño confirmó que es una clienta real, que
+  los diez productos y sus precios son el catálogo real y que la foto de
+  «Jardín Botánico» es la correcta.
+- **30 capturas** (19 de escritorio reducidas de 2880 a 1920 y 11 de teléfono
+  a 780×1688) de las 42 principales del kit, en 7 módulos: Portada y marca ·
+  Catálogo y ficha · Carrito y pedido · Cómo se pide · Estados del catálogo ·
+  Administración · En el teléfono. Fuera, además de las 14 que ya excluía el
+  kit: 04 (franja de la foto bajo la cabecera, y duplica a 01 y 05), 14, 15 y
+  17 (duplican escritorio), 22 y 23 (el esqueleto quieto se lee como cajas
+  vacías), 34 y 36 (el título sale cortado arriba), 37 y 38 (el pie, cortado
+  arriba y sin nada que decir), 39 (página completa de 26.000 px) y 42
+  (página completa del formulario, con el selector de archivo en inglés).
+- **Orden para la mesa.** El primer módulo lleva la portada, la historia y la
+  cita; el teléfono empieza por el carrito. La mesa en Producto queda: portada
+  en el centro, carrito con WhatsApp en el teléfono y la historia a la
+  derecha. Un módulo de una sola pantalla («Portada») quedaba pobre en el
+  recorrido.
+- **8 decisiones de diseño**: las 6 del kit más la lista editable del
+  administrador y el producto agotado que sigue a la vista.
+- **18 nodos en los 5 carriles, 19 aristas.** Las pantallas siguen el
+  recorrido de compra (Portada → Catálogo → Ficha → Carrito → WhatsApp) y la
+  infraestructura va aparte (CI → Docker → Railway → Servidor). «Admin» y no
+  «Administración»: a 1280 px se partía con guion.
+- **43 tecnologías en 10 áreas**; `tech` en cada nodo.
+- **Correcciones del kit**: 18 pruebas y no 12; fuera «4.ª versión» (Git sólo
+  muestra 2024 y 2026) y «WhatsApp» como tecnología (es un enlace `wa.me`, no
+  una integración); el saludo del pedido ya no lleva emoji; en producción es un
+  solo servicio, no dos.
+- **Enlaces**: «Visitar la tienda» (demo) y el repositorio, ya público.
+- **Endurance**: las cifras del pie (3 en producción, 2 listos) y el párrafo
+  de los casos completos seguían como antes de Network.
+- **CV**: tarjeta (ES) y línea (EN) nuevas; los dos siguen en una página.
+
+### 20.2 Código
+
+La prueba «sin módulos» del caso usaba Delicaté. Ninguna ficha real sin
+módulos deja hoy pantallas para «Más pantallas» (sus decisiones las cubren
+todas), así que la prueba usa Wiki Universe con una sola decisión. La e2e de
+teclado (P7) recorre Delicaté: ahora pasa por «Visitar la tienda» y «Ver
+código» entre «Explorar proyecto» y el esquema.
+
+### 20.3 Abierto
+
+Veredicto del dueño. «Aprendizajes» sigue siendo el texto anterior. El rol
+conserva «levantamiento de necesidades», que el repositorio no documenta.
+
+## 21. Izak's Photos rehecho: caso completo, en línea, estudio de demostración (2026-09-27)
+
+Aplica el método de §18–§20 a Izak's Photos desde
+`portfolio-content/izaks-photos-2026/` (kit sobre `38b4f3de` más la rama
+`portfolio-polish`, hoy fusionada en `main` y desplegada; misma regla: **lo
+que falla o no se ve bien, fuera**).
+
+### 21.1 Qué cambia
+
+- **Ficha breve → caso completo, `status: production`.** Está en línea en
+  `izaksphotos.jonasjavier.dev` (Railway, un servicio; `/api/health/` verde) y
+  producción ya sirve las mejoras del kit (miniaturas WebP, 404 propia, sin
+  `/api/photos/`). El README público del repositorio dice que **Izak y el
+  estudio son ficticios** y que precios, cifras y testimonios son de muestra:
+  `eyebrow`, `statusLabel`, el panel de Endurance y el caso lo dicen; ya no es
+  «para cliente».
+- **Autoría.** El repositorio es un fork de `JobNacor/IZAK-S-PHOTOS`: el caso
+  dice que el proyecto nació en 2024 en un repositorio suyo en el que
+  colaboraron y que la reconstrucción de 2026 es del dueño.
+- **44 capturas** (25 de escritorio y 19 de teléfono) de las 57 principales
+  del kit, en 7 módulos. Fuera, además de las 6 que ya excluía el kit: 04, 05,
+  36 y 37 (las cifras ficticias del estudio casi solas), 06 (duplica a 07), 21
+  (duplica a 19, con la cabecera emborronada), 30 (el visor «cargando» es igual
+  al visor), 56 (botones cortados abajo), 14, 16, 50 y 54 (duplican otras) y 25
+  (la carga, quieta, se lee como cajas vacías).
+- **8 decisiones**: las 6 del kit (la de las miniaturas pasa a la serie de
+  viajes, sin la captura de carga) más los errores por campo y el bilingüe.
+- **17 nodos en los 5 carriles, 19 aristas; 38 tecnologías en 10 áreas.**
+- **Correcciones**: 8 pruebas y no 9 (la de `/api/photos/` se fue con el
+  endpoint), enlace al sitio en vivo, cifras del pie de Endurance (4 en
+  producción, 1 lista) y el párrafo de casos completos.
+- **CV**: la línea de freelance decía «dos productos para clientes reales»
+  (el e-commerce y el portafolio de fotografía); ahora dice que la clienta real
+  es la del e-commerce. Tarjeta (ES) y línea (EN) de Izak's nuevas; los dos
+  siguen en una página.
+
+### 21.2 Abierto
+
+Veredicto del dueño. «Aprendizajes» sale de las notas del kit. El origen de
+las fotografías no consta: el caso sólo dice que sus derechos son aparte del
+código.

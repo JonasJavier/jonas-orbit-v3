@@ -1,61 +1,56 @@
 # Calidad del repositorio
 
 Este documento define cómo se presenta y mantiene Jonás Orbit v3 como proyecto
-de ingeniería mientras el producto continúa en desarrollo. No sustituye al plan
-ni abre decisiones de producto.
+de ingeniería mientras el producto continúa en desarrollo.
 
 ## Regla de publicación
 
 El repositorio debe ser profesional sin aparentar un grado de finalización que
-todavía no existe. Por eso:
+todavía no existe:
 
 - el README separa lo implementado de lo pendiente;
-- las capturas llevan un estado y una fecha verificables;
-- las métricas se publican solo con comando, perfil y resultado reproducibles;
+- las capturas llevan estado, fecha y perfil reproducible;
+- las métricas se publican sólo con comando y resultado verificables;
 - las decisiones visuales pendientes se nombran como pendientes;
-- no se inventan dominio, enlaces de producción, cifras ni licencias.
+- no se inventan dominio, cifras, clientes ni licencias.
+
+## Archivos fuente y generados
+
+- `public/` contiene sólo recursos que sirve la aplicación.
+- `assets/`, `Fotos/`, `Disenos/` y `portfolio-content/` conservan fuentes y
+  evidencia con un consumidor o una procedencia documentada.
+- `.next/`, `.open-next/`, `.velite/`, `output/`, `mesa-shots/`, `.shots/`,
+  reportes, logs y comparativas temporales permanecen fuera de Git.
+- Un artefacto estable de documentación debe vivir bajo `docs/media/` y explicar
+  cómo se obtuvo.
 
 ## Capturas
 
-Las imágenes estables del README viven en `docs/media/readme/`. Las capturas de
-trabajo, comparativas, trazas y reportes de navegador viven en `.shots/`,
-`output/playwright/`, `test-results/` o `playwright-report/`, todos fuera de Git.
-
-Una captura publicable debe indicar en el commit o PR:
+Una captura publicable debe indicar:
 
 - ruta y viewport;
-- build de producción usado;
+- build utilizado;
 - movimiento encendido o apagado;
 - fecha de captura;
-- si la valoración visual del propietario está pendiente.
+- estado de la valoración visual del propietario.
+
+Las capturas de trabajo permanecen en directorios ignorados. Las herramientas
+de `tools/` usan `.shots/` por defecto.
 
 ## Métricas
 
-La fuente canónica de los umbrales es `lighthouserc.json` y el Appendix A del
-plan. Un número solo entra al README cuando una modificación deliberada mueve
-la medida en la dirección esperada y se conserva el artefacto de CI.
+La fuente canónica de umbrales es `lighthouserc.json` y el Appendix A del plan.
+Un número sólo entra al README cuando una modificación deliberada mueve la
+medida en la dirección esperada y se conserva evidencia reproducible.
 
-El perfil ligero se mide con `?no3d=1`. No se añade detección especial del
-auditor. La escena completa se revisa por separado con las herramientas de
-`tools/`, porque SwiftShader no representa una GPU real.
+El perfil ligero se mide con `?no3d=1`. La escena completa se revisa por
+separado porque SwiftShader no representa una GPU real.
 
 ## Higiene
 
-- No se versionan builds, logs, trazas, capturas de trabajo ni archivos `.env`.
-- Los recursos de producto sí pueden versionarse cuando tienen consumidor,
-  procedencia y licencia documentadas.
+- No se versionan secretos, builds, logs, trazas ni capturas de trabajo.
 - Las dependencias permanecen fijadas y se actualizan en PRs dedicados.
 - Knip debe permanecer en verde: no se conservan componentes o exports huérfanos.
-- Los binarios grandes y duplicados requieren una auditoría específica antes de
-  hacer una migración de historial o adoptar Git LFS.
-
-## Revisión periódica
-
-Antes de una publicación pública:
-
-1. ejecutar `npm run check` y la matriz E2E;
-2. confirmar CI, Lighthouse y enlaces en verde;
-3. renovar las capturas del README;
-4. comprobar procedencia y licencia de cada recurso;
-5. fijar descripción, temas, dominio y visibilidad en GitHub;
-6. decidir y publicar una licencia o mantener explícitamente todos los derechos.
+- Los binarios grandes requieren una auditoría específica antes de migrar el
+  historial o adoptar Git LFS.
+- Todo cambio de interfaz conserva accesibilidad, HTML sin JavaScript y 375 px.

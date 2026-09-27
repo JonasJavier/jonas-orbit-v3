@@ -58,37 +58,39 @@
   <div class="rule"></div>
 
   <h2>Summary</h2>
-  <div class="summary">Full-stack developer who has designed, built and shipped real products to production. I combine engineering (Python/Django and React/TypeScript) with UX/UI, product design and digital marketing. My flagship work is <b>OMSTA</b>, an ERP in production used every day by a travel agency, which I built end to end.</div>
+  <div class="summary">Full-stack developer who has designed, built and shipped real products to production. I combine engineering (Python/Django and React/TypeScript) with UX/UI, product design and digital marketing. My flagship work is <b>OMSTA</b>, an ERP in daily production use at a travel agency, and its React Native mobile app, both built single-handedly.</div>
 
   <h2>Experience</h2>
   <div class="entry">
     <div class="entry-h"><div class="role">Full-Stack Developer — <span class="co">CristegnoViajes SRL (OMSTA)</span></div><div class="when">Feb 2025 – Present</div></div>
     <div class="place">Dominican Republic</div>
     <ul>
-      <li>Designed and built <b>OMSTA</b> end to end, an ERP <b>in production used daily by 9 users</b> to run the agency's operations.</li>
-      <li>Integrated <b>bookings, CRM, payments, double-entry accounting, payroll, branches, users and permissions</b>, and DGII tax reports.</li>
-      <li>Built the frontend and backend with <b>Django, Django REST Framework, PostgreSQL and Redis</b>, and managed deployment and evolution in production.</li>
+      <li>Single-handedly built <b>OMSTA</b>, a web ERP <b>used daily by 15 users</b>: bookings, CRM, payments, double-entry accounting, payroll and branches.</li>
+      <li>Automated the <b>sale → payment → NCF invoice → journal entries → DGII tax reports</b> cycle (606, 607, 608 and 623).</li>
+      <li>Built the team's <b>mobile app with React Native, Expo and TypeScript</b>, plus its REST API with per-device JWT: 54 screens and 94 endpoints, tested on Android.</li>
+      <li>Backend in <b>Django, Django REST Framework, PostgreSQL, Redis and Django Q2</b>, with an end-to-end typed OpenAPI contract, a 3,164-test pytest suite and continuous deployment to Railway via GitHub Actions.</li>
     </ul>
   </div>
   <div class="entry">
     <div class="entry-h"><div class="role">Web Developer &amp; Designer — <span class="co">Freelance</span></div><div class="when">Ongoing</div></div>
     <div class="place">Dominican Republic</div>
     <ul>
-      <li>Designed and built <b>web products for real clients</b>, including an artisan-soap e-commerce and a professional photography portfolio.</li>
+      <li>Designed and built <b>an artisan-soap e-commerce for a real client</b> and a bilingual photography portfolio, from requirements and UX/UI to deployment.</li>
       <li>Owned <b>requirements gathering, UX/UI, development and responsive optimization</b> through final delivery.</li>
     </ul>
   </div>
 
   <h2>Selected Projects</h2>
-  <div class="proj"><b>Delicaté 4.0 — Artisan-soap e-commerce &amp; brand site.</b> Catalog managed in Django REST, public experience in React + Vite, category/benefit filters, persistent cart and WhatsApp checkout.</div>
-  <div class="proj"><b>Network 3.0 — Full-stack social network.</b> React + TypeScript and Django REST; JWT auth, infinite-scroll feed, image posts, likes, nested comments, profiles, follows and notifications.</div>
+  <div class="proj"><b>Delicaté 4.0 — Artisan-soap e-commerce &amp; brand site (live, client project).</b> Rebuilt the store in React 19 and Django 5.2: admin-managed catalog, account-free cart that syncs with live prices and stock, and a pre-filled WhatsApp order. Shipped as a single Docker container on Railway (PostgreSQL, custom domain, pre-deploy migrations, health-checked releases) with CSP, rate limiting and 18 automated tests in CI.</div>
+  <div class="proj"><b>Network 3.0 — Full-stack social network (live demo).</b> Rewrote a Django coursework monolith as a versioned REST API and a React + TypeScript SPA: cursor-paginated feed, JWT with refresh rotation, reposts and quotes, hashtags, mentions and eight notification types. 132 automated tests, CI and Docker; deployed on Railway.</div>
   <div class="proj"><b>Wiki Universe — Content-exploration experience.</b> Content architecture and clear themed navigation; full-stack.</div>
-  <div class="proj"><b>Photography site &amp; portfolio.</b> Full website for a photographer built in React: visual portfolio plus services, about and contact.</div>
+  <div class="proj"><b>Izak&#39;s Photos — Bilingual photography site (live demo studio).</b> Rebuilt in React 18 and Django 5.2: a 42-photo filterable gallery with shareable links, a keyboard-accessible lightbox and API-backed booking requests with rate limiting. Cut gallery image weight by 74% with WebP previews; shipped to Railway as a single service with CI.</div>
 
   <h2>Skills</h2>
   <div class="skill"><span class="lab">Core:</span> Python, Django, Django REST Framework, React, TypeScript, PostgreSQL, Redis</div>
-  <div class="skill"><span class="lab">Frontend &amp; product:</span> Next.js, Tailwind CSS, UX/UI, Accessibility, SEO</div>
-  <div class="skill"><span class="lab">Infrastructure &amp; quality:</span> Docker, Railway, Vercel, Git/GitHub, Playwright, REST APIs</div>
+  <div class="skill"><span class="lab">Mobile:</span> React Native (cross-platform), Expo, Expo Router, EAS Build, TanStack Query, Android</div>
+  <div class="skill"><span class="lab">Frontend &amp; product:</span> Next.js, Tailwind CSS, HTMX, UX/UI, Accessibility, SEO</div>
+  <div class="skill"><span class="lab">Infrastructure &amp; quality:</span> Railway, Docker, Vercel, GitHub Actions, pytest, Playwright, OpenAPI, REST APIs</div>
   <div class="skill"><span class="lab">Design &amp; creative:</span> Figma, Photoshop, Lightroom, Photography, Art direction, Digital marketing</div>
 
   <h2>Education</h2>
