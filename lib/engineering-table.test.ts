@@ -976,13 +976,13 @@ describe("el catálogo real sobre la mesa", () => {
 
   /*
     Garantiza que cada esquema real tiene el ancho de lo que ocupa: OMSTA,
-    Network y Delicaté, los cinco; Izak's Photos y Wiki Universe, tres.
+    Izak's Photos, Network y Delicaté, los cinco; Wiki Universe, tres.
     Evita el rectángulo lleno de vacío de un carril sin módulos (§17).
   */
   it("cada esquema real tiene tantas columnas como carriles ocupa", () => {
     expect(Object.fromEntries(projects.map((project) => [project.id, project.architecture.cols]))).toEqual({
       omsta: 5,
-      "izaks-photos": 3,
+      "izaks-photos": 5,
       wikiverse: 3,
       network: 5,
       delicate: 5,

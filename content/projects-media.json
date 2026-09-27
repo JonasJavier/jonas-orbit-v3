@@ -327,8 +327,8 @@
     "luma": 0.9
   },
   "/media/projects/izaks-photos/01-home-desktop.png": {
-    "width": 2160,
-    "height": 1500,
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -336,11 +336,116 @@
       1440,
       1920
     ],
-    "luma": 0.09
+    "luma": 0.1
   },
-  "/media/projects/izaks-photos/02-gallery-desktop.png": {
-    "width": 2160,
-    "height": 1500,
+  "/media/projects/izaks-photos/02-home-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.16
+  },
+  "/media/projects/izaks-photos/03-menu-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.06
+  },
+  "/media/projects/izaks-photos/07-home-featured-hover-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.29
+  },
+  "/media/projects/izaks-photos/08-home-featured-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.31
+  },
+  "/media/projects/izaks-photos/09-home-services-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.17
+  },
+  "/media/projects/izaks-photos/10-home-services-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.25
+  },
+  "/media/projects/izaks-photos/11-home-process-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.05
+  },
+  "/media/projects/izaks-photos/12-home-process-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.07
+  },
+  "/media/projects/izaks-photos/13-home-testimonials-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/15-home-cta-footer-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/17-gallery-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -350,7 +455,7 @@
     ],
     "luma": 0.13
   },
-  "/media/projects/izaks-photos/03-home-mobile.png": {
+  "/media/projects/izaks-photos/18-gallery-mobile.png": {
     "width": 780,
     "height": 1688,
     "steps": [
@@ -359,14 +464,338 @@
     ],
     "luma": 0.16
   },
-  "/media/projects/izaks-photos/04-gallery-mobile.png": {
+  "/media/projects/izaks-photos/19-gallery-grid-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.28
+  },
+  "/media/projects/izaks-photos/20-gallery-grid-mobile.png": {
     "width": 780,
     "height": 1688,
     "steps": [
       390,
       780
     ],
-    "luma": 0.15
+    "luma": 0.29
+  },
+  "/media/projects/izaks-photos/22-gallery-weddings-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.3
+  },
+  "/media/projects/izaks-photos/23-gallery-weddings-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.29
+  },
+  "/media/projects/izaks-photos/24-gallery-travel-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.24
+  },
+  "/media/projects/izaks-photos/26-lightbox-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.12
+  },
+  "/media/projects/izaks-photos/27-lightbox-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.24
+  },
+  "/media/projects/izaks-photos/28-lightbox-landscape-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.34
+  },
+  "/media/projects/izaks-photos/29-lightbox-landscape-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.18
+  },
+  "/media/projects/izaks-photos/31-about-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/izaks-photos/32-about-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.18
+  },
+  "/media/projects/izaks-photos/33-about-story-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/34-about-story-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.11
+  },
+  "/media/projects/izaks-photos/35-about-quote-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/izaks-photos/38-booking-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/39-booking-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.1
+  },
+  "/media/projects/izaks-photos/40-booking-packages-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.09
+  },
+  "/media/projects/izaks-photos/41-booking-filled-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/42-booking-form-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.09
+  },
+  "/media/projects/izaks-photos/43-booking-success-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/44-booking-success-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/izaks-photos/45-booking-validation-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/46-booking-validation-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.09
+  },
+  "/media/projects/izaks-photos/47-booking-offline-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.08
+  },
+  "/media/projects/izaks-photos/48-home-es-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.1
+  },
+  "/media/projects/izaks-photos/49-home-es-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.17
+  },
+  "/media/projects/izaks-photos/51-gallery-es-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.28
+  },
+  "/media/projects/izaks-photos/52-booking-es-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.07
+  },
+  "/media/projects/izaks-photos/53-not-found-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.06
+  },
+  "/media/projects/izaks-photos/55-admin-inquiries-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.9
+  },
+  "/media/projects/izaks-photos/57-admin-inquiries-handled-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.9
   },
   "/media/projects/network/02-login-error-desktop.png": {
     "width": 1920,

@@ -59,8 +59,11 @@ export const projectsData = {
   "izaks-photos": {
     order: 2,
     phase: "f1a",
-    kind: "brief",
-    status: "ready-for-production",
+    // Caso completo desde el kit de 2026-09-26
+    // (`portfolio-content/izaks-photos-2026/`): en línea en Railway; el
+    // estudio es de demostración.
+    kind: "case-study",
+    status: "production",
   },
   wikiverse: {
     order: 3,

@@ -12,6 +12,20 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — Izak's Photos rehecho: caso completo, en línea, estudio de
+demostración (2026-09-27):** el §21 de `docs/design/endurance-proyectos.md`
+aplica el mismo método desde `portfolio-content/izaks-photos-2026/`. Izak's
+pasa de ficha breve a **caso completo** y a `status: production`: en línea en
+`izaksphotos.jonasjavier.dev` con las mejoras del kit ya desplegadas. El
+README público del repositorio dice que Izak y el estudio son ficticios y que
+precios, cifras y testimonios son de muestra: el caso, el panel de Endurance y
+el CV dejan de presentarlo como cliente real (la línea de freelance del CV
+decía «dos productos para clientes reales»). El caso reconoce el origen en el
+repositorio de Job Nacor. 44 de las 57 capturas en 7 módulos, 8 decisiones,
+17 nodos con 19 aristas y 38 tecnologías; 8 pruebas y no 9. Cifras del pie de
+Endurance: 4 en producción, 1 lista. Abierto: veredicto y el origen de las
+fotografías.
+
 **Proyectos — Delicaté rehecho: en producción con su dominio
 (2026-09-26):** el §20 de `docs/design/endurance-proyectos.md` aplica el mismo
 método desde `portfolio-content/delicate-2026/`. Delicaté pasa a
