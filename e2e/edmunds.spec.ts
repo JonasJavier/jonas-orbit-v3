@@ -318,7 +318,8 @@ test("Edmunds: texto al 200 % conserva lectura y controles", async ({ page }) =>
   await expect(dialog).not.toBeVisible();
 });
 
-test("Edmunds: touch permite pasar una obra sin abrir el visor", async ({ browser, baseURL }) => {
+test("Edmunds: touch permite pasar una obra sin abrir el visor", async ({ browser, baseURL, browserName }) => {
+  test.skip(browserName !== "chromium", "La inyección de un swipe nativo utiliza CDP, disponible sólo en Chromium.");
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   try {

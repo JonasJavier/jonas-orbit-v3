@@ -12,6 +12,24 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Compatibilidad de audio y pruebas de capacidad (2026-09-27):** la revisión
+multinavegador detecta `cancelAndHoldAtTime` ausente en Firefox y un evento de
+pausa que podía apagar la intención antes de desbloquear el autoplay. La banda
+sonora conserva la rampa y `armed` mediante APIs disponibles y prueba ambos
+casos; el comportamiento aprobado de AUDIO no cambia. Los e2e de fallback fijan
+la ausencia de WebGL, el índice sólo cuenta sus contextos propios y el swipe
+inyectado por CDP se limita a Chromium, donde existe esa API. Se normaliza
+ruido subpíxel en el blanco de 44 px sin reducir el tamaño exigido. Evidencia
+en `docs/reviews/repository-readiness-2026-09-27.md`; los gates siguen vigentes.
+El visor exige foco dentro del diálogo nativo al volver desde la interfaz del
+navegador, no necesariamente en su botón (Firefox enfoca el propio diálogo).
+Lighthouse conserva sus umbrales; su comentario de LCP sale de `assertions`
+porque allí se interpretaba erróneamente como otro audit. Los reportes LHCI
+quedan ignorados, igual que las capturas de trabajo.
+El dispatch manual de CI incluye multinavegador y enlaces para comprobar una
+rama candidata antes de fusionar; los PR ordinarios conservan Chromium y el
+deploy sigue restringido a `main`.
+
 **Dependencias — actualización dedicada de seguridad (2026-09-27):** dentro
 de la preparación de producción solicitada por el dueño, la rama
 `codex/security-hardening` fija Next/ESLint 16.3.6, OpenNext 1.20.6,

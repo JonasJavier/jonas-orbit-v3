@@ -112,7 +112,8 @@ test("O1 · la recepción no crea un contexto WebGL propio", async ({ page }) =>
       ) {
         // Sólo los canvas ANCLADOS cuentan: `probeWebGL` crea uno desechable
         // fuera del DOM para sondear la capacidad y lo suelta acto seguido.
-        if (this.isConnected) {
+        // El canvas persistente del layout no pertenece a la recepción.
+        if (this.isConnected && this.dataset.testid !== "gargantua-canvas") {
           (window as unknown as { __contextos: string[] }).__contextos.push(
             tipo,
           );
@@ -129,6 +130,11 @@ test("O1 · la recepción no crea un contexto WebGL propio", async ({ page }) =>
     () => (window as unknown as { __contextos: string[] }).__contextos,
   );
   expect(contextos.filter((tipo) => tipo.startsWith("webgl"))).toHaveLength(0);
+  // A capable host can retain the layout's context; it must remain covered.
+  const persistent = page.getByTestId("gargantua-canvas");
+  if (await persistent.count()) {
+    await expect(persistent).toHaveAttribute("data-covered", "true");
+  }
 });
 
 test("la adquisición lleva al laboratorio", async ({ page }) => {

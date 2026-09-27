@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { withoutWebGL } from "./capability-fixtures";
 
 async function flightDrawsOverFrames(page: Page) {
   return page.evaluate(async () => {
@@ -123,8 +124,9 @@ test.describe("Ranger · cabina de mando", () => {
   });
 
   test("sin aceleración gráfica el encendido por defecto no despega: vista fija y «Detenido»", async ({ page }) => {
-    // Esta suite dibuja con SwiftShader: es exactamente el equipo que no aguanta
-    // el túnel. El movimiento sigue encendido; el vuelo espera a que se pida.
+    // El perfil se fija explícitamente: Firefox/WebKit pueden usar la GPU
+    // real del host, mientras Chromium suele usar SwiftShader.
+    await withoutWebGL(page);
     await page.goto("/es/contacto");
     await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
     await expect(page.locator(".ranger-view")).toHaveAttribute("data-flight", "off");

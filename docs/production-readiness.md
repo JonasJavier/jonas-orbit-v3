@@ -21,10 +21,16 @@ En GitHub, el deploy depende de Chromium, Firefox, WebKit, Lighthouse y la
 comprobación de enlaces. El workflow tiene permisos de sólo lectura y límites
 de tiempo por job.
 
+Para validar una rama candidata antes de fusionarla, ejecuta manualmente el
+workflow **CI** eligiendo esa rama. También comprueba Firefox/WebKit y enlaces;
+el deploy sigue restringido a `main`. Esto requiere resolver primero el bloqueo
+de facturación de Actions, no credenciales de producción.
+
 ## Bloqueos vigentes al 27 de septiembre de 2026
 
-- **Compatibilidad y calidad:** la revisión multinavegador inicial encontró
-  fallos que deben cerrarse; Lighthouse y enlaces requieren evidencia actual.
+- **Compatibilidad y calidad:** quedan fallos de WebKit que deben verificarse
+  en un entorno compatible. Lighthouse pasa y los 351 enlaces internos responden;
+  dos destinos externos bloquean al cliente automático y requieren revisión.
   Consulta la [revisión con resultados](reviews/repository-readiness-2026-09-27.md).
 - **GitHub Actions:** los runs no llegan a iniciar por un problema de facturación
   o límite de gasto de la cuenta. Es un bloqueo externo al código.
