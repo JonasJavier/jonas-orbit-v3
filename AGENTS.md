@@ -106,7 +106,8 @@ MDX**, nunca en `worlds.data.ts`.
   módulos», `stack` → sección Tecnologías, `tech` por nodo → inspector, la
   mesa sólo monta lo que levanta; **§19, 09-26**: Network, mismo método,
   pasa a caso completo desplegado con demo; **§20, 09-26**: Delicaté, mismo
-  método, en producción con su dominio) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
+  método, en producción con su dominio; **§21, 09-27**: Izak's Photos, caso
+  completo en línea, estudio de demostración) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
   `designDecisions`: problema → decisión) · Ingeniería (ruta entera del
   módulo con `nodePath`, esquema sólo con carriles ocupados, anillo del
   sistema en la mesa); quinto carril `integraciones`; `scope` y `luma` por

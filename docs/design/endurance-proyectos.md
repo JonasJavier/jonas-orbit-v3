@@ -1166,3 +1166,45 @@ código» entre «Explorar proyecto» y el esquema.
 
 Veredicto del dueño. «Aprendizajes» sigue siendo el texto anterior. El rol
 conserva «levantamiento de necesidades», que el repositorio no documenta.
+
+## 21. Izak's Photos rehecho: caso completo, en línea, estudio de demostración (2026-09-27)
+
+Aplica el método de §18–§20 a Izak's Photos desde
+`portfolio-content/izaks-photos-2026/` (kit sobre `38b4f3de` más la rama
+`portfolio-polish`, hoy fusionada en `main` y desplegada; misma regla: **lo
+que falla o no se ve bien, fuera**).
+
+### 21.1 Qué cambia
+
+- **Ficha breve → caso completo, `status: production`.** Está en línea en
+  `izaksphotos.jonasjavier.dev` (Railway, un servicio; `/api/health/` verde) y
+  producción ya sirve las mejoras del kit (miniaturas WebP, 404 propia, sin
+  `/api/photos/`). El README público del repositorio dice que **Izak y el
+  estudio son ficticios** y que precios, cifras y testimonios son de muestra:
+  `eyebrow`, `statusLabel`, el panel de Endurance y el caso lo dicen; ya no es
+  «para cliente».
+- **Autoría.** El repositorio es un fork de `JobNacor/IZAK-S-PHOTOS`: el caso
+  dice que el proyecto nació en 2024 en un repositorio suyo en el que
+  colaboraron y que la reconstrucción de 2026 es del dueño.
+- **44 capturas** (25 de escritorio y 19 de teléfono) de las 57 principales
+  del kit, en 7 módulos. Fuera, además de las 6 que ya excluía el kit: 04, 05,
+  36 y 37 (las cifras ficticias del estudio casi solas), 06 (duplica a 07), 21
+  (duplica a 19, con la cabecera emborronada), 30 (el visor «cargando» es igual
+  al visor), 56 (botones cortados abajo), 14, 16, 50 y 54 (duplican otras) y 25
+  (la carga, quieta, se lee como cajas vacías).
+- **8 decisiones**: las 6 del kit (la de las miniaturas pasa a la serie de
+  viajes, sin la captura de carga) más los errores por campo y el bilingüe.
+- **17 nodos en los 5 carriles, 19 aristas; 38 tecnologías en 10 áreas.**
+- **Correcciones**: 8 pruebas y no 9 (la de `/api/photos/` se fue con el
+  endpoint), enlace al sitio en vivo, cifras del pie de Endurance (4 en
+  producción, 1 lista) y el párrafo de casos completos.
+- **CV**: la línea de freelance decía «dos productos para clientes reales»
+  (el e-commerce y el portafolio de fotografía); ahora dice que la clienta real
+  es la del e-commerce. Tarjeta (ES) y línea (EN) de Izak's nuevas; los dos
+  siguen en una página.
+
+### 21.2 Abierto
+
+Veredicto del dueño. «Aprendizajes» sale de las notas del kit. El origen de
+las fotografías no consta: el caso sólo dice que sus derechos son aparte del
+código.
