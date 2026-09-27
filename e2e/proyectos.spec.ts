@@ -41,6 +41,8 @@ interface MdxImage {
   src: string;
   alt: string;
   caption: string;
+  frame?: "desktop" | "mobile";
+  module?: string;
 }
 
 interface MdxProject {
@@ -67,6 +69,22 @@ function mdx(id: string) {
 }
 /** Las pantallas del proyecto en el orden de la mesa: la destacada y la galería. */
 const screensOf = (project: MdxProject) => [project.featuredImage, ...(project.gallery ?? [])];
+/**
+ * Las que la mesa MONTA, calculadas aquí desde la definición (§18): las tres
+ * de Producto —la destacada; a su izquierda el primer teléfono o, sin él, la
+ * segunda de escritorio; a su derecha la primera de escritorio— y las del
+ * carrete de Diseño (las de las decisiones o, sin ellas, todas).
+ */
+function onTableOf(project: MdxProject) {
+  const [featured, ...rest] = screensOf(project);
+  const desktops = rest.filter((image) => image.frame !== "mobile");
+  const left = rest.find((image) => image.frame === "mobile") ?? desktops[1];
+  const right = desktops[0];
+  const decisions = new Set((project.designDecisions ?? []).map((entry) => entry.screen));
+  return screensOf(project).filter(
+    (image) => image === featured || image === left || image === right || decisions.size === 0 || decisions.has(image.src),
+  );
+}
 /** El nombre que pinta la mesa: el título cortado en la raya («OMSTA»). */
 const nameOf = (project: MdxProject) => project.title.split(/\s+—\s+/)[0].trim();
 /** Qué es: la cola del título o, si no la hay, la `eyebrow`. */
@@ -172,9 +190,10 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, al
   await expect(page.locator("section.table-project[data-state]")).toHaveCount(0);
   expect(await page.locator("section.table-project").evaluateAll((nodes) => nodes.map((node) => node.id))).toEqual(PROJECT_IDS);
 
-  // Todas las pantallas de los cinco proyectos, con su alt, están en el HTML.
+  // Las pantallas que la mesa levanta, de los cinco proyectos y con su alt,
+  // están en el HTML; las demás son del caso completo.
   const alts = await page.locator(".holo-screen img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt") ?? ""));
-  expect(alts).toEqual(PROJECT_IDS.flatMap((id) => screensOf(mdx(id)).map((image) => image.alt)));
+  expect(alts).toEqual(PROJECT_IDS.flatMap((id) => onTableOf(mdx(id)).map((image) => image.alt)));
 
   // Sin hash se lee el primero, y su ficha de texto se pinta porque no hay
   // guion (`@media (scripting: none)`): lo que dice la capa Diseño —las
@@ -347,11 +366,18 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await expect(ingenieria).toHaveAttribute("aria-controls", "delicate-stage");
   await expectActive(page, "delicate");
 
-  // Tab: la salida al caso y, después, el módulo elegido del esquema. Las
-  // pantallas no son parada: en Ingeniería van inert.
+  // Tab: la salida al caso, el producto vivo y el código (Delicaté tiene los
+  // dos) y, después, el módulo elegido del esquema. Las pantallas no son
+  // parada: en Ingeniería van inert.
   const explore = section.getByRole("link", { name: /Explorar proyecto/ });
+  const site = section.getByRole("link", { name: /Visitar la tienda/ });
+  const code = section.getByRole("link", { name: /Ver código/ });
   await page.keyboard.press("Tab");
   await expect(explore).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(site).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(code).toBeFocused();
   await page.keyboard.press("Tab");
   // La parada de tabulador del esquema es el módulo elegido (`aria-current`).
   const selected = section.locator('.holo-node__box[aria-current="true"]');
@@ -377,7 +403,12 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await page.keyboard.press("ArrowUp");
   await expect(section.locator(`.holo-node[data-node-id="${first}"] .holo-node__box`)).toBeFocused();
 
-  // «Explorar proyecto» sigue a mano en cualquier capa: una tabulación atrás.
+  // «Explorar proyecto» sigue a mano en cualquier capa: tres tabulaciones
+  // atrás, pasando por el código y el producto vivo.
+  await page.keyboard.press("Shift+Tab");
+  await expect(code).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(site).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(explore).toBeFocused();
   await page.keyboard.press("Enter");
@@ -486,12 +517,18 @@ test("P7 · Diseño: el carrete recorre sólo las pantallas con decisión y la n
   const section = page.locator("#omsta");
 
   /*
-    El carrete son las pantallas de las decisiones (de tres a cinco: todas a
-    dos puestos o menos de la elegida); el resto queda fuera (`data-far`).
+    El carrete son las pantallas de las decisiones: a la vista, las que caen a
+    dos puestos o menos de la elegida (con ocho, cinco: la elegida, dos a cada
+    lado, dando la vuelta); el resto queda fuera (`data-far`).
   */
+  const near = decisions.filter((_, index) => {
+    let rel = index % decisions.length;
+    if (rel > decisions.length / 2) rel -= decisions.length;
+    return Math.abs(rel) <= 2;
+  });
   const reel = section.locator("figure.holo-screen:not([data-far])");
-  await expect(reel).toHaveCount(decisions.length);
-  expect((await reel.locator("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt") ?? ""))).sort()).toEqual(decisions.map((entry) => altOf(entry.screen)).sort());
+  await expect(reel).toHaveCount(near.length);
+  expect((await reel.locator("img").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("alt") ?? ""))).sort()).toEqual(near.map((entry) => altOf(entry.screen)).sort());
 
   // Cada paso: su pantalla delante, y en la mesa su índice, su problema y su
   // decisión —lo mismo que la pantalla elegida lleva por `aria-describedby`—.

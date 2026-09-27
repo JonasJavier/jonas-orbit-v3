@@ -142,6 +142,7 @@ export function SystemDiagram({
   return (
     <div
       className="holo-card holo-diagram"
+      data-cols={architecture.cols}
       data-focus={focus ?? undefined}
       style={{ "--rows": architecture.rows, "--cols": architecture.cols } as CSSProperties}
     >
@@ -259,6 +260,9 @@ export function SystemDiagram({
                         {node.decision}
                       </p>
                     ) : null}
+                    {/* Sólo en el teléfono, donde no hay inspector: bajo el
+                        módulo elegido, con qué está hecho. */}
+                    {node.tech.length > 0 ? <p className="holo-node__tech">{node.tech.join(" · ")}</p> : null}
                   </div>
                 );
               })}
@@ -311,6 +315,12 @@ export function SystemInspector({ project, node }: { project: TableProject; node
             </blockquote>
           ) : null}
           <dl className="holo-inspector__links">
+            {node.tech.length > 0 ? (
+              <div data-kind="tech">
+                <dt>Tecnologías</dt>
+                <dd>{node.tech.join(" · ")}</dd>
+              </div>
+            ) : null}
             {node.inputs.length > 0 ? (
               <div>
                 <dt>Recibe de</dt>

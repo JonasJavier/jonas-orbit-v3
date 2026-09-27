@@ -204,6 +204,20 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* Las tecnologías del módulo las dice el inspector; en el teléfono, donde el
+   inspector no cabe, salen bajo el módulo elegido. */
+.holo-node__tech { display: none; }
+@media (max-width: 767px) {
+  .holo-node[data-selected] .holo-node__tech {
+    display: block;
+    margin-top: 6px;
+    padding-left: 14px;
+    font: 0.64rem/1.6 var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pj-muted);
+  }
+}
 
 /* ── El inspector ───────────────────────────────────────────────────────── */
 
@@ -226,6 +240,8 @@
 .holo-inspector__links { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid rgb(160 228 255 / 12%); }
 .holo-inspector__links dt { font: 0.6rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pj-dim); }
 .holo-inspector__links dd { margin: 5px 0 0; font: 0.8rem/1.45 var(--font-body); color: #b9c7da; }
+/* Las tecnologías se leen como nombres propios de herramienta: en mono. */
+.holo-inspector__links [data-kind="tech"] dd { font: 0.72rem/1.6 var(--font-mono); letter-spacing: 0.03em; color: #d3e4f2; }
 
 /* La pila de capas: una placa isométrica por carril ocupado, de abajo
    arriba, con la del módulo encendida. */

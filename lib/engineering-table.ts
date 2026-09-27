@@ -86,6 +86,15 @@ export interface TableScreen {
   slot: ResultSlot;
   /** El nodo del sistema que la pantalla representa, si lo hay. */
   nodeId: string | null;
+  /** El módulo del producto que enseña («Reservas»), si la ficha los declara. */
+  module: string | null;
+  /**
+   * ¿La mesa la levanta alguna vez? Sólo las tres de Producto y las del
+   * carrete de Diseño; las demás son del caso completo. Un proyecto con
+   * sesenta capturas no puede montar sesenta pantallas invisibles en la mesa:
+   * cada una pediría su imagen aunque nunca se viera.
+   */
+  onTable: boolean;
   sources: ScreenSources;
   poses: Record<"producto" | "ingenieria", ScreenPose>;
 }
@@ -114,6 +123,8 @@ export interface TableNode {
   thumb: string | null;
   frame: ScreenFrame | null;
   decision: string | null;
+  /** Con qué está hecho el módulo; vacío si la ficha no lo dice. */
+  tech: string[];
   /** Columna (el carril) y fila del esquema; la fila puede ser media. */
   col: number;
   row: number;
@@ -169,6 +180,20 @@ export interface TableScope {
   label: string;
 }
 
+/** Un grupo del stack completo («Backend»: Django 5.2, Gunicorn 23…). */
+interface TableStackGroup {
+  group: string;
+  items: string[];
+}
+
+/** Un módulo del recorrido del caso y sus pantallas (índices de `screens`). */
+interface TableTourStop {
+  /** Ancla estable del módulo en el caso (`modulo-panel-y-reservas`). */
+  id: string;
+  module: string;
+  screens: number[];
+}
+
 export interface TableProject {
   id: ProjectId;
   slug: string;
@@ -194,8 +219,15 @@ export interface TableProject {
   /** La decisión de la ficha: lo que lee un esquema derivado. */
   decision: string;
   technologies: string[];
+  /** El stack completo por grupos; vacío si la ficha sólo trae la cabecera. */
+  stack: TableStackGroup[];
   links: TableLink[];
   screens: TableScreen[];
+  /**
+   * Las pantallas por módulo, en el orden en que la ficha los presenta; vacío
+   * si las capturas no declaran módulo (entonces el caso las enseña juntas).
+   */
+  tour: TableTourStop[];
   /** El recorrido de Diseño: decisiones declaradas o, sin ellas, las capturas. */
   reel: TableReelStep[];
   /** ¿El carrete dice decisiones (problema → decisión) o sólo pies de foto? */
@@ -596,6 +628,7 @@ export function tableArchitecture(prose: Prose): TableArchitecture {
         thumb: node.screen && frame ? screenSources(node.screen, frame).thumb : null,
         frame,
         decision: node.decision ?? null,
+        tech: [...(node.tech ?? [])],
       };
     });
     return {
@@ -615,7 +648,9 @@ export function tableArchitecture(prose: Prose): TableArchitecture {
     const id = slugify(technology);
     if (!id || seen.has(id)) return [];
     seen.add(id);
-    return [{ id, label: technology, lane: laneForTechnology(technology), screen: null, thumb: null, frame: null, decision: null }];
+    return [
+      { id, label: technology, lane: laneForTechnology(technology), screen: null, thumb: null, frame: null, decision: null, tech: [] },
+    ];
   });
   return { ...layout(drafts, []), derived: true };
 }
@@ -729,6 +764,10 @@ export function tableScreens(prose: Prose, architecture: TableArchitecture): Tab
       index,
       slot,
       nodeId: nodeByScreen.get(image.src)?.id ?? null,
+      module: image.module?.trim() || null,
+      // Producto la levanta si tiene puesto; el carrete de Diseño lo decide
+      // `tableProject`, que es quien conoce el carrete.
+      onTable: slot !== null,
       sources: screenSources(image.src, frame),
       poses: { producto, ingenieria: engineeringPose(producto) },
     };
@@ -757,13 +796,31 @@ export function tableReel(
   };
 }
 
+/**
+ * El recorrido del caso: las pantallas por módulo, cada módulo donde aparece
+ * por primera vez en la ficha y sus pantallas en el orden de la ficha. Sin
+ * módulos declarados, vacío: el caso las enseña juntas, como antes.
+ */
+function tableTour(screens: readonly TableScreen[]): TableTourStop[] {
+  const stops: TableTourStop[] = [];
+  for (const screen of screens) {
+    if (!screen.module) continue;
+    const stop = stops.find((entry) => entry.module === screen.module);
+    if (stop) stop.screens.push(screen.index);
+    else stops.push({ id: `modulo-${slugify(screen.module)}`, module: screen.module, screens: [screen.index] });
+  }
+  return stops;
+}
+
 /* ── El proyecto entero ────────────────────────────────────────────────── */
 
 export function tableProject(project: Project, projectsHref: string): TableProject {
   const { prose } = project;
   const architecture = tableArchitecture(prose);
-  const screens = tableScreens(prose, architecture);
-  const { reel, kind } = tableReel(prose, screens);
+  const drafted = tableScreens(prose, architecture);
+  const { reel, kind } = tableReel(prose, drafted);
+  const inReel = new Set(reel.map((step) => step.screen));
+  const screens = drafted.map((screen) => ({ ...screen, onTable: screen.onTable || inReel.has(screen.index) }));
   const [name, tail] = prose.title.split(/\s+—\s+/);
   return {
     id: project.id,
@@ -778,8 +835,10 @@ export function tableProject(project: Project, projectsHref: string): TableProje
     descriptor: (tail ?? prose.eyebrow).trim(),
     decision: prose.decision,
     technologies: [...prose.technologies],
+    stack: (prose.stack ?? []).map((entry) => ({ group: entry.group, items: [...entry.items] })),
     links: (prose.links ?? []).map((link) => ({ ...link })),
     screens,
+    tour: tableTour(screens),
     reel,
     reelKind: kind,
     scope: (prose.scope ?? []).map((entry) => ({ ...entry })),

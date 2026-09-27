@@ -33,6 +33,17 @@ import "./project-case.css";
 const pad = (value: number) => String(value).padStart(2, "0");
 
 /**
+ * «Django 5.2» → nombre y versión, para que la versión se lea como dato
+ * técnico (mono, apagada) y el nombre como lo que es. Sólo se separa una
+ * versión al final que empieza por cifra; «OpenAPI 3.0» se separa,
+ * «Google Places API» no.
+ */
+function splitVersion(item: string): { name: string; version: string | null } {
+  const match = /^(.+?)\s+(\d[\w.]*)$/.exec(item.trim());
+  return match ? { name: match[1], version: match[2] } : { name: item, version: null };
+}
+
+/**
  * La destacada: todo el ancho bajo 1100 px; encima, su columna (~50 % a
  * 1440, ~52 % a 1920 contando lo que sangra hacia el canto), con techo en
  * los ~1000 px que llega a medir.
@@ -40,7 +51,7 @@ const pad = (value: number) => String(value).padStart(2, "0");
 const HERO_SIZES = "(max-width: 1099px) 100vw, min(56vw, 1000px)";
 
 /** Los ids de sección que usa la página: un apartado del MDX nunca los pisa. */
-const SECTION_IDS = ["resumen", "decisiones", "sistema", "resultados", "pantallas", "caso"] as const;
+const SECTION_IDS = ["resumen", "decisiones", "sistema", "tecnologias", "resultados", "pantallas", "caso"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 /** El cuerpo de la lectura larga: el índice sabe por él cuándo acaba. */
@@ -50,6 +61,7 @@ const SECTION_LABEL: Record<SectionId, string> = {
   resumen: "Resumen",
   decisiones: "Decisiones",
   sistema: "Sistema",
+  tecnologias: "Tecnologías",
   resultados: "Resultados",
   pantallas: "Pantallas",
   caso: "Caso completo",
@@ -184,7 +196,7 @@ export function ProjectCase({
 }) {
   const { prose } = project;
   const entry = tableProject(project, projectsHref);
-  const outline = caseOutline(prose.body, [...SECTION_IDS, BODY_ID]);
+  const outline = caseOutline(prose.body, [...SECTION_IDS, BODY_ID, ...entry.tour.map((stop) => stop.id)]);
   const isCaseStudy = project.kind === "case-study";
   // El título lleva raya («OMSTA — ERP para…»): el `h1` conserva el título
   // entero como nombre accesible y lo pinta en dos piezas.
@@ -214,16 +226,23 @@ export function ProjectCase({
         }
       : null;
 
-  // Cada pantalla se enseña una vez. La rejilla del final sólo lleva las que
-  // no salieron ya en el primer pantallazo ni en las decisiones; el visor,
-  // que abre cualquiera de ellas, sigue recorriéndolas todas.
+  // Sin módulos, cada pantalla se enseña una vez: la rejilla del final sólo
+  // lleva las que no salieron ya en el primer pantallazo ni en las
+  // decisiones. Con módulos, el final es un RECORRIDO del producto y cada
+  // módulo va entero —un módulo al que le faltasen sus mejores pantallas
+  // porque ya salieron arriba se leería incompleto—. El visor, que abre
+  // cualquiera, las recorre todas en el orden de la ficha. Una sola captura
+  // no es un recorrido: ya salió arriba.
+  const touring = entry.tour.length > 0 && entry.screens.length > 1;
   const shownAbove = new Set([featured.index, phone?.index, ...entry.reel.map((step) => step.screen)]);
-  const moreScreens = entry.screens.filter((screen) => !shownAbove.has(screen.index));
+  const moreScreens = touring ? entry.screens : entry.screens.filter((screen) => !shownAbove.has(screen.index));
+  const stackCount = entry.stack.reduce((sum, group) => sum + group.items.length, 0);
 
   const sections: SectionId[] = [
     "resumen",
     "decisiones",
     "sistema",
+    ...(entry.stack.length > 0 ? (["tecnologias"] as const) : []),
     ...(prose.highlights.length > 0 ? (["resultados"] as const) : []),
     ...(moreScreens.length > 0 ? (["pantallas"] as const) : []),
     ...(outline.headings.length > 0 ? (["caso"] as const) : []),
@@ -280,7 +299,7 @@ export function ProjectCase({
           <div className="case-hero__actions">
             {demo ? (
               <a className="case-action case-action--site" href={demo.href} rel="noopener noreferrer" target="_blank">
-                Visitar el sitio <span aria-hidden="true">↗</span>
+                {demo.label} <span aria-hidden="true">↗</span>
                 <span className="visually-hidden"> (se abre en otra pestaña)</span>
               </a>
             ) : (
@@ -440,6 +459,47 @@ export function ProjectCase({
         <SystemExplorer className="case-system__explorer" project={entry} />
       </section>
 
+      {/* ── Tecnologías: el stack entero, por áreas ───────────────────── */}
+      {entry.stack.length > 0 ? (
+        <section aria-labelledby="tecnologias-title" className="case-section case-stack" id="tecnologias">
+          <header className="case-section__head case-section__head--row case-reveal">
+            <h2 className="case-h2" id="tecnologias-title">
+              Tecnologías
+            </h2>
+            <p className="case-section__lead">
+              {stackCount} herramientas en {entry.stack.length} áreas. En el sistema, cada módulo dice las suyas.
+            </p>
+          </header>
+          <div className="case-stack__grid">
+            {entry.stack.map((group, index) => (
+              <section
+                key={group.group}
+                aria-labelledby={`case-stack-${index}`}
+                className="case-stack__group case-reveal"
+              >
+                <h3 className="case-stack__title" id={`case-stack-${index}`}>
+                  {group.group}
+                  <span aria-hidden="true" className="case-stack__count">
+                    {pad(group.items.length)}
+                  </span>
+                </h3>
+                <ul>
+                  {group.items.map((item) => {
+                    const { name, version } = splitVersion(item);
+                    return (
+                      <li key={item}>
+                        <span className="case-stack__name">{name}</span>
+                        {version ? <span className="case-stack__version"> {version}</span> : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* ── Resultados verificables ───────────────────────────────────── */}
       {prose.highlights.length > 0 ? (
         <section aria-labelledby="resultados-title" className="case-section case-results" id="resultados">
@@ -459,8 +519,52 @@ export function ProjectCase({
         </section>
       ) : null}
 
-      {/* ── Más pantallas: las que no salieron antes ──────────────────── */}
-      {moreScreens.length > 0 ? (
+      {/* ── Pantallas: el recorrido por módulos o las que faltaban ─────── */}
+      {touring ? (
+        <section aria-labelledby="pantallas-title" className="case-section case-screens case-tour" id="pantallas">
+          <header className="case-section__head case-section__head--row case-reveal">
+            <h2 className="case-h2" id="pantallas-title">
+              Recorrido por módulos
+            </h2>
+            <p className="case-section__lead">
+              {entry.screens.length} pantallas en {entry.tour.length} módulos.
+            </p>
+          </header>
+          <nav aria-label="Módulos" className="case-tour__index case-reveal">
+            <ol>
+              {entry.tour.map((stop, index) => (
+                <li key={stop.id}>
+                  <a href={`#${stop.id}`}>
+                    <span aria-hidden="true" className="case-tour__num">
+                      {pad(index + 1)}
+                    </span>
+                    {stop.module}
+                    <span className="case-tour__count">
+                      <span className="visually-hidden">, </span>
+                      {stop.screens.length}
+                      <span className="visually-hidden"> pantallas</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+          {entry.tour.map((stop, index) => (
+            <section key={stop.id} aria-labelledby={`${stop.id}-title`} className="case-tour__stop" id={stop.id}>
+              <h3 className="case-tour__title case-reveal" id={`${stop.id}-title`}>
+                <span aria-hidden="true" className="case-tour__num">
+                  {pad(index + 1)}
+                </span>
+                {stop.module}
+                <span className="case-tour__count">
+                  {stop.screens.length} {stop.screens.length === 1 ? "pantalla" : "pantallas"}
+                </span>
+              </h3>
+              <CaseShots screens={stop.screens.map((screen) => entry.screens[screen])} />
+            </section>
+          ))}
+        </section>
+      ) : moreScreens.length > 0 ? (
         <section aria-labelledby="pantallas-title" className="case-section case-screens" id="pantallas">
           <header className="case-section__head case-reveal">
             <h2 className="case-h2" id="pantallas-title">

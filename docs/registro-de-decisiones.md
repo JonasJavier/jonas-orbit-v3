@@ -12,6 +12,90 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Calidad del repositorio y publicación (2026-09-27):** por solicitud del dueño,
+el README se actualiza a los seis destinos y al estado real de los casos. Se
+añaden guías de contribución, seguridad, plantillas y responsables; los
+artefactos generados y temporales salen del checkout versionado y siguen
+recuperables en Git. `docs/repository-quality.md` define la higiene y la
+evidencia; `docs/production-readiness.md`, los gates y el contrato GitHub / Worker.
+El deploy espera también Firefox/WebKit y enlaces, declara los bindings
+obligatorios y conserva las variables de Cloudflare. La organización del
+repositorio no constituye aprobación visual ni certificación de producción:
+facturación de Actions, dominio, runtime, licencias y vulnerabilidades requieren
+su propia verificación. No cambia la arquitectura narrativa ni la interfaz.
+
+**Proyectos — Izak's Photos rehecho: caso completo, en línea, estudio de
+demostración (2026-09-27):** el §21 de `docs/design/endurance-proyectos.md`
+aplica el mismo método desde `portfolio-content/izaks-photos-2026/`. Izak's
+pasa de ficha breve a **caso completo** y a `status: production`: en línea en
+`izaksphotos.jonasjavier.dev` con las mejoras del kit ya desplegadas. El
+README público del repositorio dice que Izak y el estudio son ficticios y que
+precios, cifras y testimonios son de muestra: el caso, el panel de Endurance y
+el CV dejan de presentarlo como cliente real (la línea de freelance del CV
+decía «dos productos para clientes reales»). El caso reconoce el origen en el
+repositorio de Job Nacor. 44 de las 57 capturas en 7 módulos, 8 decisiones,
+17 nodos con 19 aristas y 38 tecnologías; 8 pruebas y no 9. Cifras del pie de
+Endurance: 4 en producción, 1 lista. Abierto: veredicto y el origen de las
+fotografías.
+
+**Proyectos — Delicaté rehecho: en producción con su dominio
+(2026-09-26):** el §20 de `docs/design/endurance-proyectos.md` aplica el mismo
+método desde `portfolio-content/delicate-2026/`. Delicaté pasa a
+`status: production`: en línea en `delicate.jonasjavier.dev` (Railway, un
+contenedor Docker, PostgreSQL, volumen de fotos); `statusLabel` y el caso dicen
+que la salida comercial del negocio sigue en validación. El dueño confirmó
+clienta real, catálogo real y la foto de «Jardín Botánico». 30 de las 42
+capturas del kit en 7 módulos, 8 decisiones de diseño, 18 nodos en los cinco
+carriles con 19 aristas y 43 tecnologías en 10 áreas. Corregido: 18 pruebas y
+no 12, sin «4.ª versión» ni WhatsApp como tecnología, saludo sin emoji.
+Trampa de orden: un módulo de una sola pantalla queda pobre en el recorrido, y
+el primer escritorio de la galería es el que la mesa pone a la derecha. Las
+cifras del pie de Endurance (3 en producción, 2 listos) estaban viejas desde
+Network. La prueba «sin módulos» pasa a Wiki Universe. CV ES/EN al día y en
+una página. Abierto: veredicto.
+
+**Proyectos — Network rehecho: caso completo, desplegado y con demo
+(2026-09-26):** el §19 de `docs/design/endurance-proyectos.md` aplica a Network
+el método del §18 desde `portfolio-content/network-2026/` (kit de otra
+sesión, misma regla: lo que falla o no se ve bien, fuera). Network pasa de
+ficha breve a **caso completo** y a `status: production`: web y API
+desplegadas de forma permanente en Railway con PostgreSQL y Redis, demo
+pública y `/health/` verde; `statusLabel` y el caso dicen que no tiene
+usuarios reales. 62 de las 77 capturas del kit en 9 módulos (escritorio
+reducido a 1920), 8 decisiones de diseño comprobadas en el código, 27 nodos
+en los cinco carriles con 36 aristas y 55 tecnologías en 10 áreas. Trampa del
+esquema: si todas las pantallas entran por la API, elegir cualquiera enciende
+el sistema entero (`nodePath` es un cierre transitivo); las pantallas van a su
+dominio y el transporte va aparte. Rótulos sin palabras largas (a 1280 px se
+partían con guion). El botón del caso dice el `label` del enlace demo, como la
+mesa, y una sola captura con módulo ya no es un recorrido. Repositorio
+canónico `cs50w-network`; el caso publica las cuentas de la demo por decisión
+del dueño. CV ES/EN al día y en una página. Abierto: veredicto, y
+«Aprendizajes» en la voz del dueño.
+
+**Proyectos — OMSTA rehecho: web y app móvil, recorrido por módulos y
+tecnologías (2026-09-26):** el §18 de `docs/design/endurance-proyectos.md`
+manda sobre el §17 en cuántas pantallas monta la mesa, el final del caso y
+cómo se dicen las tecnologías. El dueño pidió que OMSTA abarcase de verdad
+un sistema «muy muy grande» —más información, capturas y módulos— y su app
+móvil (React Native + Expo), y que cada proyecto y su mesa detallen todas sus
+tecnologías. Material nuevo de otra sesión en `portfolio-content/omsta-2026/`,
+hecho de cero con la regla del dueño «si algo falla o no se ve bien, no se
+incluye»; la carpeta vieja `portfolio-content/omsta/` se borró con su
+permiso. Velite gana `module` por captura (todas o ninguna), `stack` (el
+inventario por áreas) y `tech` por nodo. El caso: sección **Tecnologías** y,
+con módulos, **Recorrido por módulos** con cada módulo entero. La mesa monta
+sólo las pantallas que levanta (`onTable`: 10 de 61 en OMSTA), aprieta las
+filas de un sistema grande (`92cqh / rows`, medido a 1280/1440/1920; hasta
+ocho filas no cambia nada) y quita miniaturas a un esquema de cinco carriles
+por debajo de 1800 px. El inspector dice las tecnologías del módulo elegido.
+Peldaño WebP de 1920 para el visor. Trampa: el carrete llevaba el foco por
+`:nth-of-type` y, con la mesa montando parte de las pantallas, lo dejaba en
+otra (`data-screen`). iOS se dice como es: probada en Android, configurada
+para iOS, sin build ni tiendas. Confirmado el mismo día: la agencia es
+**CristegnoViajes SRL** y son **15 usuarios** (caso y CV); las decisiones de
+diseño, revisadas por delegación del dueño (§18.5). Abierto: veredicto.
+
 **Proyectos — tercer pase: la mesa cambia de función y el caso se rehace
 (2026-09-25):** el §17 de `docs/design/endurance-proyectos.md` manda sobre el
 §16 en capas, lectura, mesa física, muelle y contenido de Diseño, y sustituye

@@ -2,15 +2,16 @@
 
 ## Versiones con soporte
 
-Mientras el sitio siga en desarrollo, solo la rama `main` recibe correcciones de
-seguridad. No se mantienen releases históricas.
+Mientras el sitio siga en desarrollo, sólo la rama `main` recibe correcciones
+de seguridad. No se mantienen releases históricas.
 
 ## Reportar una vulnerabilidad
 
 No publiques detalles explotables, secretos ni datos personales en un issue.
-Usa **Security → Advisories → Report a vulnerability** en GitHub cuando esa
-opción esté disponible. Si no lo está, abre un issue sin detalles técnicos para
-solicitar un canal privado de contacto.
+Envía el reporte a `jonasjavier.dev@gmail.com` con el asunto
+`[Seguridad · Jonás Orbit]`. Si GitHub habilita el reporte privado para este
+repositorio, también puede usarse **Security → Advisories → Report a
+vulnerability**.
 
 Incluye de forma privada:
 

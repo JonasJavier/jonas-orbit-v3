@@ -9,10 +9,10 @@
 ## Verificación
 
 - [ ] `npm run check`
-- [ ] `npm run test:e2e` (si afecta rutas, navegación o interacción)
-- [ ] HTML/navegación sin JavaScript (si afecta contenido esencial)
-- [ ] Desktop y 375 px (si afecta interfaz)
-- [ ] Movimiento ON/OFF y audio ON/OFF (si aplica)
+- [ ] `npm run test:e2e` si afecta rutas, navegación o interacción
+- [ ] HTML/navegación sin JavaScript si afecta contenido esencial
+- [ ] Desktop y 375 px si afecta interfaz
+- [ ] Movimiento ON/OFF y audio ON/OFF si aplica
 
 ## Evidencia visual
 
