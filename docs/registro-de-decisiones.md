@@ -12,6 +12,18 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Calidad del repositorio y publicación (2026-09-27):** por solicitud del dueño,
+el README se actualiza a los seis destinos y al estado real de los casos. Se
+añaden guías de contribución, seguridad, plantillas y responsables; los
+artefactos generados y temporales salen del checkout versionado y siguen
+recuperables en Git. `docs/repository-quality.md` define la higiene y la
+evidencia; `docs/production-readiness.md`, los gates y el contrato GitHub / Worker.
+El deploy espera también Firefox/WebKit y enlaces, declara los bindings
+obligatorios y conserva las variables de Cloudflare. La organización del
+repositorio no constituye aprobación visual ni certificación de producción:
+facturación de Actions, dominio, runtime, licencias y vulnerabilidades requieren
+su propia verificación. No cambia la arquitectura narrativa ni la interfaz.
+
 **Proyectos — Izak's Photos rehecho: caso completo, en línea, estudio de
 demostración (2026-09-27):** el §21 de `docs/design/endurance-proyectos.md`
 aplica el mismo método desde `portfolio-content/izaks-photos-2026/`. Izak's

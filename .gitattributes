@@ -1,6 +1,1 @@
-# Auto detect text files and perform LF normalization
-* text=auto
-
-# Los PDFs generados son binarios; evita filtros globales de Windows y diffs
-# de miles de líneas sobre su estructura interna.
-*.pdf binary
+* text=auto eol=lf
