@@ -74,6 +74,9 @@ La banda sonora conserva sus rampas en Firefox con una alternativa a
 `cancelAndHoldAtTime`. Un evento `pause` previo al permiso de autoplay no apaga
 la intención del visitante. Tres regresiones nuevas cubren estos contratos.
 `npm run check` pasa con 998 tests en 110 archivos y 34 rutas.
+El build final de OpenNext con la corrección de audio también termina
+correctamente y genera `.open-next/worker.js`; no equivale a probar el runtime
+publicado ni a desplegarlo.
 
 La ejecución completa de los cuatro proyectos, con cuatro workers, produjo
 610 aprobadas, 20 fallidas y dos omisiones: únicamente el swipe por CDP en
@@ -137,7 +140,7 @@ Evidencia local ignorada: `output/browser-compat-check.log`,
 `output/browser-compat-e2e.log`, `output/fallback-verification.log`,
 `output/firefox-dialog-verification.log`, `output/webkit-audio-platform.log`,
 `output/firefox-final-e2e.log`, `output/webkit-isolated-verification.log`,
-`output/lighthouse/` y
+`output/final-opennext-build.log`, `output/lighthouse/` y
 `output/repository-link-review.json`.
 
 ## Estado de GitHub
