@@ -13,8 +13,8 @@ sin sacrificar accesibilidad, rutas reales ni HTML útil sin JavaScript.
 > **Estado del producto:** desarrollo activo y candidato a producción. Los seis
 > destinos y los flujos principales están implementados; cuatro proyectos del
 > portafolio están en producción y uno está listo para producción. La publicación
-> de Jonás Orbit todavía requiere cerrar dominio, secretos, auditoría de
-> dependencias, licencias de audio y valoración visual del propietario.
+> de Jonás Orbit todavía requiere cerrar dominio, secretos, verificación
+> multinavegador, licencias de audio y valoración visual del propietario.
 
 ![System Map de Jonás Orbit v3](docs/media/readme/system-map.webp)
 
@@ -150,6 +150,9 @@ que pasen Chromium, Firefox, WebKit, Lighthouse y enlaces.
 Antes de publicar, sigue la
 [lista de preparación para producción](docs/production-readiness.md) y la
 matriz del [Appendix A](docs/plans/jonas-orbit-v3-mission-endurance.md).
+
+Los resultados y límites de la última revisión están en
+[`docs/reviews/repository-readiness-2026-09-27.md`](docs/reviews/repository-readiness-2026-09-27.md).
 
 ## Estructura del repositorio
 

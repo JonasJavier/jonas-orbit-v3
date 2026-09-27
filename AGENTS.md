@@ -56,6 +56,9 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
+- **Dependencias — seguridad** (09-27)
+  `docs/reviews/repository-readiness-2026-09-27.md` — versiones parcheadas,
+  auditorías y evidencia de la actualización dedicada.
 - **Calidad del repositorio y publicación** (09-27)
   `docs/repository-quality.md` y `docs/production-readiness.md` — higiene,
   evidencia reproducible, contrato de entorno y gates de producción.
