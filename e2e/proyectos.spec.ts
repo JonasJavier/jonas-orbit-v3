@@ -366,11 +366,18 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await expect(ingenieria).toHaveAttribute("aria-controls", "delicate-stage");
   await expectActive(page, "delicate");
 
-  // Tab: la salida al caso y, después, el módulo elegido del esquema. Las
-  // pantallas no son parada: en Ingeniería van inert.
+  // Tab: la salida al caso, el producto vivo y el código (Delicaté tiene los
+  // dos) y, después, el módulo elegido del esquema. Las pantallas no son
+  // parada: en Ingeniería van inert.
   const explore = section.getByRole("link", { name: /Explorar proyecto/ });
+  const site = section.getByRole("link", { name: /Visitar la tienda/ });
+  const code = section.getByRole("link", { name: /Ver código/ });
   await page.keyboard.press("Tab");
   await expect(explore).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(site).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(code).toBeFocused();
   await page.keyboard.press("Tab");
   // La parada de tabulador del esquema es el módulo elegido (`aria-current`).
   const selected = section.locator('.holo-node__box[aria-current="true"]');
@@ -396,7 +403,12 @@ test("P7 · sólo teclado: muelle, capa, nodo, decisión y salida; A20 en dos in
   await page.keyboard.press("ArrowUp");
   await expect(section.locator(`.holo-node[data-node-id="${first}"] .holo-node__box`)).toBeFocused();
 
-  // «Explorar proyecto» sigue a mano en cualquier capa: una tabulación atrás.
+  // «Explorar proyecto» sigue a mano en cualquier capa: tres tabulaciones
+  // atrás, pasando por el código y el producto vivo.
+  await page.keyboard.press("Shift+Tab");
+  await expect(code).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(site).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(explore).toBeFocused();
   await page.keyboard.press("Enter");

@@ -71,13 +71,17 @@ export const projectsData = {
   network: {
     order: 4,
     phase: "f1a",
-    kind: "brief",
-    status: "ready-for-production",
+    // Caso completo y desplegado desde el kit de 2026-09-26
+    // (`portfolio-content/network-2026/`): web y API en Railway, demo pública.
+    kind: "case-study",
+    status: "production",
   },
   delicate: {
     order: 5,
     phase: "f1a",
+    // Rehecho desde el kit de 2026-09-26 (`portfolio-content/delicate-2026/`):
+    // en línea en delicate.jonasjavier.dev (Railway, dominio propio).
     kind: "case-study",
-    status: "ready-for-production",
+    status: "production",
   },
 } as const satisfies Record<ProjectId, ProjectStructuralData>;

@@ -12,6 +12,41 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Proyectos — Delicaté rehecho: en producción con su dominio
+(2026-09-26):** el §20 de `docs/design/endurance-proyectos.md` aplica el mismo
+método desde `portfolio-content/delicate-2026/`. Delicaté pasa a
+`status: production`: en línea en `delicate.jonasjavier.dev` (Railway, un
+contenedor Docker, PostgreSQL, volumen de fotos); `statusLabel` y el caso dicen
+que la salida comercial del negocio sigue en validación. El dueño confirmó
+clienta real, catálogo real y la foto de «Jardín Botánico». 30 de las 42
+capturas del kit en 7 módulos, 8 decisiones de diseño, 18 nodos en los cinco
+carriles con 19 aristas y 43 tecnologías en 10 áreas. Corregido: 18 pruebas y
+no 12, sin «4.ª versión» ni WhatsApp como tecnología, saludo sin emoji.
+Trampa de orden: un módulo de una sola pantalla queda pobre en el recorrido, y
+el primer escritorio de la galería es el que la mesa pone a la derecha. Las
+cifras del pie de Endurance (3 en producción, 2 listos) estaban viejas desde
+Network. La prueba «sin módulos» pasa a Wiki Universe. CV ES/EN al día y en
+una página. Abierto: veredicto.
+
+**Proyectos — Network rehecho: caso completo, desplegado y con demo
+(2026-09-26):** el §19 de `docs/design/endurance-proyectos.md` aplica a Network
+el método del §18 desde `portfolio-content/network-2026/` (kit de otra
+sesión, misma regla: lo que falla o no se ve bien, fuera). Network pasa de
+ficha breve a **caso completo** y a `status: production`: web y API
+desplegadas de forma permanente en Railway con PostgreSQL y Redis, demo
+pública y `/health/` verde; `statusLabel` y el caso dicen que no tiene
+usuarios reales. 62 de las 77 capturas del kit en 9 módulos (escritorio
+reducido a 1920), 8 decisiones de diseño comprobadas en el código, 27 nodos
+en los cinco carriles con 36 aristas y 55 tecnologías en 10 áreas. Trampa del
+esquema: si todas las pantallas entran por la API, elegir cualquiera enciende
+el sistema entero (`nodePath` es un cierre transitivo); las pantallas van a su
+dominio y el transporte va aparte. Rótulos sin palabras largas (a 1280 px se
+partían con guion). El botón del caso dice el `label` del enlace demo, como la
+mesa, y una sola captura con módulo ya no es un recorrido. Repositorio
+canónico `cs50w-network`; el caso publica las cuentas de la demo por decisión
+del dueño. CV ES/EN al día y en una página. Abierto: veredicto, y
+«Aprendizajes» en la voz del dueño.
+
 **Proyectos — OMSTA rehecho: web y app móvil, recorrido por módulos y
 tecnologías (2026-09-26):** el §18 de `docs/design/endurance-proyectos.md`
 manda sobre el §17 en cuántas pantallas monta la mesa, el final del caso y

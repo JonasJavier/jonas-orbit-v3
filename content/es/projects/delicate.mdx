@@ -4,161 +4,396 @@ slug: delicate-4-0
 title: Delicaté 4.0
 eyebrow: E-commerce y sitio de marca
 summary: >-
-  Tienda y sitio de marca para un negocio de jabones artesanales: catálogo
-  administrable en Django, carrito persistente y pedidos que se cierran por
-  WhatsApp, sin cuentas de cliente ni cobros en línea.
-statusLabel: Listo para producción; salida comercial pendiente
-role: Levantamiento de necesidades, UX/UI y desarrollo full-stack
+  Jabones artesanales de República Dominicana, en línea con dominio propio:
+  catálogo administrable en Django, carrito sin cuenta que se mantiene al día y
+  pedidos que se cierran por WhatsApp.
+statusLabel: En línea con dominio propio · salida comercial en validación
+role: Levantamiento de necesidades, UX/UI, desarrollo full-stack y despliegue
 problem: >-
   El negocio necesitaba presentar su catálogo con una identidad propia y recibir
-  pedidos bien formados sin adoptar todavía pagos en línea ni una operación
-  logística que no existe detrás.
+  pedidos bien formados sin adoptar pagos en línea ni una operación logística
+  que no existe detrás.
 contribution: >-
-  Rediseñé y reconstruí el producto completo: API de catálogo de sólo lectura en
-  Django REST, administración del inventario, experiencia responsive en React y
-  un flujo de pedido que termina en una conversación de WhatsApp.
+  Rediseñé y reconstruí la tienda completa —API de catálogo en Django REST,
+  administración del inventario y una tienda responsive en React— y la llevé a
+  producción en Railway con dominio propio, integración continua y 18 pruebas.
 decision: >-
   Retiré el registro de clientes, el carrito en servidor y el checkout de la
   versión anterior, y convertí el carrito en un pedido estructurado por
   WhatsApp: el mismo canal donde el negocio ya confirma, cobra y entrega.
-technologies: [React 19, Vite, Django 5.2, Django REST Framework, PostgreSQL, WhatsApp]
+technologies: [React 19, Vite 8, Django 5.2, Django REST Framework, PostgreSQL, Docker, Railway]
+stack:
+  - group: Lenguajes
+    items: [Python 3.13, JavaScript (JSX), CSS, HTML]
+  - group: Frontend
+    items: [React 19.2, Vite 8.2, Rolldown 1.2, "@vitejs/plugin-react 6.0"]
+  - group: Interfaz
+    items: [CSS propio sin framework, Lightning CSS 1.33, Tipografía del sistema, 8 iconos SVG en línea, "<dialog> nativo"]
+  - group: Estado en el navegador
+    items: [useReducer y un hook propio, localStorage, fetch con AbortController]
+  - group: Backend
+    items: [Django 5.2 LTS, Django REST Framework 3.17, Django Admin, django-cors-headers 4.9, Pillow 12.3, python-dotenv 1.2]
+  - group: Datos
+    items: [PostgreSQL, SQLite, psycopg 3.3, dj-database-url 3.1]
+  - group: Servidor y despliegue
+    items: [Docker multietapa, Gunicorn 23, WhiteNoise 6.12, Railway, Volumen persistente, Dominio propio con TLS]
+  - group: Integraciones
+    items: [Enlace wa.me de WhatsApp, Open Graph y Twitter Card]
+  - group: Calidad y CI
+    items: [Test runner de Django, APITestCase de DRF, ESLint 10.8, eslint-plugin-react-hooks 7.1, GitHub Actions]
+  - group: Herramientas
+    items: [Node.js 24, npm, Git, Railway CLI]
 highlights:
-  - Catálogo administrable desde Django, sin tocar código ni recompilar
-  - Carrito persistente en el navegador, sin obligar a registrarse
-  - Pedido completo, con cantidades y total, preformateado para WhatsApp
-  - Configuración de producción endurecida y límites de frecuencia en la API
-  - 12 pruebas de API, lint y build de producción en verde
+  - En línea en delicate.jonasjavier.dev como un solo contenedor Docker en Railway, con PostgreSQL y un volumen para las fotos
+  - Catálogo administrable desde Django, sin tocar código ni recompilar la tienda
+  - Carrito sin cuenta que se guarda en el navegador y, al volver, se actualiza con precios y existencias reales
+  - Pedido completo, con cantidades y total estimado, prearmado para WhatsApp; el sitio no cobra
+  - Migraciones antes de publicar, healthcheck con base de datos, CSP y límites de frecuencia
+  - 18 pruebas automatizadas y una CI que comprueba migraciones, lint y build en cada push
 featuredImage:
   src: /media/projects/delicate/01-home-desktop.png
-  alt: Portada de Delicaté con el titular «Cuidado hecho con amor», llamada a descubrir la colección y una composición de jabones artesanales con coco, naranja, avena y miel
-  caption: "La portada presenta la marca antes que la tienda: tipografía editorial, paleta cálida y una sola acción principal."
+  alt: "Portada de Delicaté con el titular «Cuidado hecho con amor» y jabones artesanales con coco, naranja y avena"
+  caption: "La portada vende la marca antes que el producto, con una sola acción principal."
+  module: Portada y marca
 gallery:
-  - src: /media/projects/delicate/02-catalog-filter-desktop.png
-    alt: Catálogo de Delicaté con el filtro Botánicos activo y tres jabones de esa categoría
-    caption: Seis categorías filtran el catálogo al instante, sin recargar la página.
-  - src: /media/projects/delicate/03-product-detail-desktop.png
-    alt: Ficha del jabón Cacao & Almendras con precio, existencias, beneficio, tipo de piel, ingredientes y botón para agregar al carrito
-    caption: La ficha responde lo que se pregunta antes de comprar —beneficio, piel, ingredientes, peso y existencias— en un diálogo nativo.
-  - src: /media/projects/delicate/04-cart-desktop.png
-    alt: Carrito lateral de Delicaté con tres jabones, cantidades editables, total estimado y botón para finalizar por WhatsApp
-    caption: El carrito prepara el pedido y aclara que el sitio no cobra; el cierre ocurre en la conversación.
-  - src: /media/projects/delicate/07-admin-catalog-desktop.png
-    alt: Administración de Django de Delicaté con la lista de diez productos y precio, existencias, destacado y activo editables en la misma tabla
-    caption: El negocio ajusta precio, existencias, destacados y visibilidad desde la propia lista del administrador.
-  - src: /media/projects/delicate/05-cart-mobile.png
-    alt: Carrito de Delicaté en un teléfono con tres productos, total estimado y botón verde para finalizar por WhatsApp
-    caption: En móvil el carrito ocupa la pantalla y la acción de WhatsApp queda al alcance del pulgar.
+  - src: /media/projects/delicate/28-story-desktop.png
+    alt: "Sección Nuestra historia con una foto de jabones cortándose a mano y el texto de la marca"
+    caption: "La historia de la marca respalda el precio de lo artesanal."
+    module: Portada y marca
+  - src: /media/projects/delicate/32-quote-desktop.png
+    alt: "Bloque verde con la frase Cada barra guarda el tiempo, el cuidado y el amor que ponemos en crearla"
+    caption: "Una pausa editorial refuerza el tono de la marca."
+    module: Portada y marca
+  - src: /media/projects/delicate/05-catalog-desktop.png
+    alt: "Catálogo de Delicaté con filtros por categoría y tres jabones marcados como favoritos"
+    caption: "El catálogo se carga desde Django y se filtra al instante."
+    module: Catálogo y ficha
+  - src: /media/projects/delicate/06-catalog-filter-desktop.png
+    alt: "Catálogo filtrado por Botánicos con Arcilla & Avena, Café Despierto y Jardín Botánico"
+    caption: "Cada tarjeta resume precio, tipo de piel y peso antes de abrir la ficha."
+    module: Catálogo y ficha
+  - src: /media/projects/delicate/08-product-hover-desktop.png
+    alt: "Tarjeta de Cacao & Almendras con el botón Agregar sobre la foto al pasar el ratón"
+    caption: "En escritorio, «Agregar» aparece al pasar el ratón sobre la foto."
+    module: Catálogo y ficha
+  - src: /media/projects/delicate/09-product-detail-desktop.png
+    alt: "Ficha de Cacao & Almendras con precio, existencias, beneficio, tipo de piel e ingredientes"
+    caption: "La ficha responde beneficio, piel, ingredientes y existencias sin salir del catálogo."
+    module: Catálogo y ficha
+  - src: /media/projects/delicate/12-catalog-soldout-desktop.png
+    alt: "Catálogo filtrado Para regalar con Corazón de Lavanda y Flor de Ámbar marcado como agotado"
+    caption: "Un producto sin existencias sigue a la vista, pero no se puede agregar."
+    module: Catálogo y ficha
+  - src: /media/projects/delicate/13-product-soldout-desktop.png
+    alt: "Ficha de Flor de Ámbar con la etiqueta Temporalmente agotado y el botón deshabilitado"
+    caption: "La ficha avisa que está agotado y desactiva la compra."
+    module: Catálogo y ficha
+  - src: /media/projects/delicate/18-cart-desktop.png
+    alt: "Carrito con Avena Calma, Corazón de Lavanda y Café Despierto y un total estimado de RD$1,575"
+    caption: "El carrito arma el pedido y aclara que el sitio no cobra."
+    module: Carrito y pedido
+  - src: /media/projects/delicate/16-cart-empty-desktop.png
+    alt: "Carrito lateral vacío con el mensaje Elige algo hecho con amor"
+    caption: "El carrito vacío invita a volver a la colección."
+    module: Carrito y pedido
+  - src: /media/projects/delicate/20-cart-updated-desktop.png
+    alt: "Carrito con el aviso de actualización de precios y disponibilidad y Avena Calma limitada a 12 unidades"
+    caption: "Al volver, el carrito se actualiza con los precios y las existencias de hoy."
+    module: Carrito y pedido
+  - src: /media/projects/delicate/30-process-desktop.png
+    alt: "Sección Pedir es muy fácil con tres pasos numerados"
+    caption: "Tres pasos explican cómo se pide sin un checkout."
+    module: Cómo se pide
+  - src: /media/projects/delicate/33-faq-desktop.png
+    alt: "Preguntas frecuentes con la primera respuesta desplegada"
+    caption: "Las preguntas resuelven dudas antes de escribir por WhatsApp."
+    module: Cómo se pide
+  - src: /media/projects/delicate/35-contact-desktop.png
+    alt: "Formulario de contacto con nombre y consulta y el botón Enviar por WhatsApp"
+    caption: "El formulario convierte una consulta en un mensaje de WhatsApp."
+    module: Cómo se pide
+  - src: /media/projects/delicate/24-error-desktop.png
+    alt: "Mensaje de catálogo no disponible con el botón Volver a intentar"
+    caption: "Si la API falla, se ofrece reintentar, nunca un catálogo inventado."
+    module: Estados del catálogo
+  - src: /media/projects/delicate/26-empty-category-desktop.png
+    alt: "Filtro Clásicos sin productos con el mensaje y el enlace Ver todos"
+    caption: "Una categoría vacía ofrece volver a todos los productos."
+    module: Estados del catálogo
+  - src: /media/projects/delicate/40-admin-products-desktop.png
+    alt: "Administración de Django con diez productos y precio, existencias, destacado y activo editables"
+    caption: "Precio, existencias y visibilidad se cambian desde la propia lista."
+    module: Administración
+  - src: /media/projects/delicate/41-admin-products-filter-desktop.png
+    alt: "Lista de productos del administrador filtrada por Botánicos con tres resultados"
+    caption: "El administrador filtra por categoría, destacado y estado."
+    module: Administración
+  - src: /media/projects/delicate/19-cart-mobile.png
+    alt: "Carrito en un teléfono con tres productos y el botón verde Finalizar por WhatsApp"
+    caption: "El pedido sale por WhatsApp desde el mismo teléfono."
+    module: En el teléfono
     frame: mobile
-  - src: /media/projects/delicate/06-catalog-mobile.png
-    alt: Catálogo de Delicaté en un teléfono con el filtro Nutritivos activo y la tarjeta del jabón Miel Dorada con su botón Agregar
-    caption: En una pantalla de 390 px los filtros se desplazan en una fila y «Agregar» queda siempre visible, sin depender del hover.
+  - src: /media/projects/delicate/21-cart-updated-mobile.png
+    alt: "Carrito en móvil con el aviso Actualizamos tu pedido con los precios y la disponibilidad de hoy"
+    caption: "El aviso explica el cambio antes de enviar el pedido."
+    module: En el teléfono
     frame: mobile
-  - src: /media/projects/delicate/08-story-desktop.png
-    alt: Sección Nuestra historia de Delicaté con una fotografía de jabones cortándose a mano y el texto sobre el origen de la marca
-    caption: La historia de la marca sostiene el precio de un producto artesanal; la fotografía de ambiente se generó para esta versión.
+  - src: /media/projects/delicate/07-catalog-filter-mobile.png
+    alt: "Tarjeta de Arcilla & Avena en móvil con el filtro Botánicos activo y el botón Agregar visible"
+    caption: "En táctil, «Agregar» siempre está visible y los filtros se deslizan."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/10-product-detail-mobile.png
+    alt: "Ficha de Cacao & Almendras en móvil con foto, precio y beneficios apilados"
+    caption: "En el teléfono la ficha se apila y se desplaza dentro del diálogo."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/11-product-detail-bottom-mobile.png
+    alt: "Parte final de la ficha en móvil con ingredientes y el botón Agregar al carrito"
+    caption: "La acción de compra cierra la ficha a todo el ancho."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/02-home-mobile.png
+    alt: "Portada de Delicaté en un teléfono con el titular y el botón Descubrir la colección"
+    caption: "El titular y la acción principal quedan al alcance del pulgar."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/03-menu-mobile.png
+    alt: "Menú desplegable en móvil con Colección, Nuestra historia, Proceso, Preguntas y Hablemos"
+    caption: "El menú se cierra con Escape o al elegir un destino."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/29-story-mobile.png
+    alt: "Sección Nuestra historia en móvil con la foto del corte de jabones"
+    caption: "La historia se lee de arriba abajo."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/31-process-mobile.png
+    alt: "Pasos para pedir en Delicaté apilados en un teléfono"
+    caption: "Los tres pasos para pedir, apilados."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/25-error-mobile.png
+    alt: "Mensaje de catálogo no disponible en móvil con el botón Volver a intentar"
+    caption: "El error se entiende y se resuelve igual en el teléfono."
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/delicate/27-empty-category-mobile.png
+    alt: "Mensaje de categoría vacía en móvil con el enlace Ver todos"
+    caption: "El estado vacío también está resuelto en el teléfono."
+    module: En el teléfono
+    frame: mobile
 scope:
-  - value: 4.ª
-    label: versión del producto
+  - value: "18"
+    label: pruebas automatizadas, en CI en cada push
   - value: "0"
     label: cuentas necesarias para comprar
-  - value: "12"
-    label: pruebas de API en verde
+  - value: 68 KB
+    label: de JavaScript en producción, con gzip
 designDecisions:
   - screen: /media/projects/delicate/01-home-desktop.png
-    problem: El precio de un producto artesanal lo sostiene la historia de la marca.
+    problem: El precio de un jabón artesanal se sostiene con la marca, no con un listado.
     decision: La portada presenta la marca antes que la tienda, con una sola acción principal.
-  - screen: /media/projects/delicate/03-product-detail-desktop.png
+  - screen: /media/projects/delicate/09-product-detail-desktop.png
     problem: Antes de comprar, el cliente pregunta por beneficio, tipo de piel e ingredientes.
     decision: La ficha lo responde en un diálogo nativo, sin salir del catálogo.
-  - screen: /media/projects/delicate/04-cart-desktop.png
+  - screen: /media/projects/delicate/18-cart-desktop.png
     problem: Un checkout que no puede cobrar es una promesa rota.
-    decision: El carrito arma el pedido y lo cierra en WhatsApp, donde el negocio ya cobra y entrega.
-  - screen: /media/projects/delicate/06-catalog-mobile.png
-    problem: En un teléfono no hay hover que descubra el botón de compra.
-    decision: Los filtros se desplazan en una fila y «Agregar» queda siempre visible.
-  - screen: /media/projects/delicate/07-admin-catalog-desktop.png
+    decision: El carrito arma el pedido, aclara que no cobra y lo cierra en WhatsApp.
+  - screen: /media/projects/delicate/20-cart-updated-desktop.png
+    problem: Un carrito guardado días antes puede enviar precios viejos o cantidades sin existencias.
+    decision: Al volver, el carrito se actualiza con el catálogo real y avisa de lo que cambió.
+  - screen: /media/projects/delicate/07-catalog-filter-mobile.png
+    problem: En una pantalla táctil no hay hover que descubra el botón de compra.
+    decision: En táctil «Agregar» queda siempre visible y los filtros se desplazan en una fila.
+  - screen: /media/projects/delicate/12-catalog-soldout-desktop.png
+    problem: Si un jabón agotado desaparece del catálogo, quien lo buscaba no sabe si volverá.
+    decision: Sigue a la vista con «Agotado» y la compra desactivada, igual en la tarjeta que en la ficha.
+  - screen: /media/projects/delicate/24-error-desktop.png
+    problem: Si la API falla, mostrar productos inventados engaña al comprador.
+    decision: Producción muestra un error con reintento; el catálogo de demostración sólo existe en desarrollo.
+  - screen: /media/projects/delicate/40-admin-products-desktop.png
     problem: El negocio tenía que cambiar su catálogo sin tocar código ni recompilar.
-    decision: Precio, existencias y visibilidad se editan en la propia lista del administrador.
+    decision: Precio, existencias, destacado y visibilidad se editan en la propia lista del administrador.
 architecture:
   nodes:
     - id: portada
       label: Portada
       lane: cliente
       screen: /media/projects/delicate/01-home-desktop.png
+      decision: >-
+        La marca antes que la tienda: una sola acción principal lleva a la
+        colección.
+      tech: [React 19, CSS propio]
+    - id: movil
+      label: En el teléfono
+      lane: cliente
+      screen: /media/projects/delicate/19-cart-mobile.png
+      decision: >-
+        Pensada para el teléfono: en táctil «Agregar» siempre está visible y el
+        carrito ocupa la pantalla entera.
+      tech: ["@media (hover: none)", CSS propio]
     - id: catalogo
-      label: Catálogo y filtros
+      label: Catálogo
       lane: cliente
-      screen: /media/projects/delicate/02-catalog-filter-desktop.png
-    - id: catalogo-movil
-      label: Catálogo en móvil
+      screen: /media/projects/delicate/06-catalog-filter-desktop.png
+      decision: >-
+        Se lee entero de la API, siguiendo todas sus páginas, y se filtra en el
+        navegador; los filtros declaran su estado con aria-pressed.
+      tech: [fetch con AbortController, React 19]
+    - id: ficha
+      label: Ficha
       lane: cliente
-      screen: /media/projects/delicate/06-catalog-mobile.png
-    - id: detalle
-      label: Ficha de producto
-      lane: cliente
-      screen: /media/projects/delicate/03-product-detail-desktop.png
+      screen: /media/projects/delicate/09-product-detail-desktop.png
+      decision: >-
+        Un diálogo nativo responde beneficio, piel, ingredientes y existencias
+        sin salir del catálogo.
+      tech: ["<dialog> nativo", React 19]
     - id: carrito
       label: Carrito
       lane: cliente
-      screen: /media/projects/delicate/04-cart-desktop.png
+      screen: /media/projects/delicate/18-cart-desktop.png
       decision: >-
-        Carrito en el navegador: se guarda en localStorage, sobrevive a la
-        recarga y limita cada cantidad a las existencias. Sin cuentas de
-        cliente: el comprador nunca se registra.
-    - id: carrito-movil
-      label: Carrito en móvil
+        Sin cuenta. Al volver se cruza con el catálogo: toma el precio actual,
+        limita cada cantidad a las existencias y avisa de lo que cambió.
+      tech: [useReducer, Hook propio useCart]
+    - id: contacto
+      label: Contacto
       lane: cliente
-      screen: /media/projects/delicate/05-cart-mobile.png
+      screen: /media/projects/delicate/35-contact-desktop.png
+      decision: >-
+        El formulario no guarda nada en el servidor: convierte la consulta en
+        un mensaje de WhatsApp.
+      tech: [React 19]
     - id: api
-      label: API de catálogo (DRF)
+      label: API de catálogo
       lane: servicio
       decision: >-
-        API pública de sólo lectura: el catálogo se consulta por la API y se
-        escribe únicamente desde el administrador de Django.
+        Pública y de sólo lectura: listado paginado con filtros y ficha por
+        slug. El catálogo sólo se escribe desde el administrador.
+      tech: [Django REST Framework 3.17, Paginación hasta 100]
     - id: admin
-      label: Administración del catálogo
+      label: Admin
       lane: servicio
-      screen: /media/projects/delicate/07-admin-catalog-desktop.png
+      screen: /media/projects/delicate/40-admin-products-desktop.png
+      decision: >-
+        Precio, existencias, destacado y visibilidad se editan en la propia
+        lista; las fotos se validan (JPG, PNG o WebP, hasta 5 MB).
+      tech: [Django Admin, Pillow 12.3]
+    - id: seguridad
+      label: Seguridad
+      lane: servicio
+      decision: >-
+        CSP y demás cabeceras en toda respuesta, HSTS de un año y límites de
+        frecuencia que cuentan la IP real detrás del proxy.
+      tech: [Middleware propio, Throttling de DRF]
+    - id: carrito-local
+      label: localStorage
+      lane: datos
+      decision: >-
+        El carrito vive en el navegador; el servidor nunca guarda pedidos ni
+        datos de compradores.
+      tech: [localStorage]
     - id: postgresql
       label: PostgreSQL
       lane: datos
+      decision: >-
+        Cuatro modelos, frente a ocho en 2024: productos, mensajes,
+        suscripciones y el usuario del equipo.
+      tech: [PostgreSQL, psycopg 3.3, dj-database-url 3.1]
+    - id: volumen
+      label: Fotos
+      lane: datos
+      decision: >-
+        Las fotos subidas viven en un volumen persistente; Django no arranca
+        si su ruta es relativa.
+      tech: [Volumen de Railway, Caché de 7 días]
+    - id: servidor
+      label: Servidor
+      lane: infraestructura
+      decision: >-
+        Un solo proceso sirve tienda, API, administración y fotos desde el
+        mismo origen: sin CORS.
+      tech: [Gunicorn 23, WhiteNoise 6.12]
+    - id: railway
+      label: Railway
+      lane: infraestructura
+      decision: >-
+        Migra antes de publicar y sólo da tráfico a la versión nueva si el
+        healthcheck, que consulta la base, responde 200.
+      tech: [Railway, railway.json]
+    - id: docker
+      label: Docker
+      lane: infraestructura
+      decision: >-
+        Imagen multietapa: Node construye la tienda y Python la sirve, con
+        DEBUG apagado por defecto.
+      tech: [node:24-alpine, python:3.13-slim]
+    - id: ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        En cada push: check de Django, migraciones pendientes, las 18 pruebas,
+        lint y build.
+      tech: [GitHub Actions]
     - id: whatsapp
       label: WhatsApp
       lane: integraciones
       decision: >-
-        WhatsApp como cierre: el carrito genera el pedido completo como mensaje
-        y abre la conversación donde el negocio ya confirma, cobra y entrega.
+        El pedido sale como mensaje prearmado por wa.me, en el canal donde el
+        negocio ya confirma, cobra y entrega.
+      tech: [Enlace wa.me]
+    - id: vista-previa
+      label: Vista previa
+      lane: integraciones
+      decision: >-
+        Al compartir el enlace, una imagen de 1200×630 y la URL canónica salen
+        de la configuración del build.
+      tech: [Open Graph, Twitter Card]
   edges:
     - [portada, catalogo]
-    - [catalogo, detalle]
-    - [detalle, carrito]
-    - [catalogo, api]
-    - [catalogo-movil, api]
-    - [detalle, api]
+    - [movil, catalogo]
+    - [catalogo, ficha]
+    - [ficha, carrito]
+    - [carrito, carrito-local]
     - [carrito, whatsapp]
-    - [carrito-movil, whatsapp]
+    - [contacto, whatsapp]
+    - [catalogo, api]
     - [api, postgresql]
     - [admin, postgresql]
+    - [admin, volumen]
+    - [ci, docker]
+    - [docker, railway]
+    - [railway, servidor]
+    - [servidor, api]
+    - [servidor, admin]
+    - [servidor, seguridad]
+    - [servidor, volumen]
+    - [portada, vista-previa]
 links:
-  - label: Hablemos de tu proyecto
-    href: /es/contacto
-    kind: contact
-seoTitle: Delicaté 4.0 — E-commerce artesanal con Django y React
-seoDescription: Caso de Delicaté, una tienda de jabones artesanales con catálogo administrable en Django REST, React, carrito persistente y pedidos por WhatsApp.
+  - label: Visitar la tienda
+    href: https://delicate.jonasjavier.dev
+    kind: demo
+  - label: Ver repositorio
+    href: https://github.com/JonasJavier/Delicate-4.0
+    kind: repository
+seoTitle: Delicaté 4.0 — E-commerce artesanal con Django y React | Caso de estudio
+seoDescription: Caso de Delicaté, tienda de jabones artesanales en línea con catálogo administrable en Django REST, React 19, carrito sin cuenta y pedidos por WhatsApp.
 ---
 
 ## 1. Contexto
 
 Delicaté es una marca de jabones artesanales hechos en pequeñas tandas en
-República Dominicana. Vende por conversación: el cliente pregunta, elige y
-coordina la entrega por WhatsApp. El sitio tenía que presentar la marca y el
-catálogo con una experiencia propia y llevar al cliente a esa conversación con
-el pedido ya armado.
+República Dominicana, y el sitio lo hice para ella. Vende por conversación: el
+cliente pregunta, elige y coordina la entrega por WhatsApp. El sitio tenía que
+presentar la marca y el catálogo con una experiencia propia y llevar al cliente
+a esa conversación con el pedido ya armado.
 
-Esta es la cuarta versión. La primera, de 2024, era una tienda convencional:
-inicio de sesión con Google, verificación por correo, carrito guardado en el
-servidor, historial de pedidos y blog. La versión 4.0, de agosto de 2026, parte
-de preguntar qué necesitaba de verdad el negocio.
+El repositorio conserva dos generaciones. La de 2024 era una tienda
+convencional: registro e inicio de sesión con Google, carrito guardado en el
+servidor, reseñas, historial de pedidos y blog. La 4.0, reconstruida en agosto
+de 2026 y en producción desde septiembre, parte de preguntar qué necesitaba de
+verdad el negocio.
 
 ## 2. Problema
 
@@ -169,63 +404,79 @@ hacía falta era mostrar bien los productos, ayudar a elegir y recibir un pedido
 claro, porque la confirmación, el cobro y la entrega seguirían ocurriendo por
 WhatsApp.
 
-## 3. Objetivo
+## 3. Mi función
 
-Una experiencia responsive que conecte descubrimiento de marca, exploración del
-catálogo, selección y envío del pedido, con un catálogo que el negocio pueda
-mantener sin tocar código y sin volver a publicar el frontend.
+Levanté las necesidades con el negocio, definí la arquitectura de información y
+el recorrido, diseñé la interfaz y desarrollé la tienda, la API y la
+administración. También la desplegué con su dominio y escribí la documentación
+técnica, la lista de salida a producción y la especificación de una futura
+línea de jabones personalizados.
 
-## 4. Mi función
+## 4. Usuarios
 
-Levanté las necesidades, definí la arquitectura de información y el recorrido,
-diseñé la interfaz y desarrollé frontend y backend. También preparé la
-documentación técnica, la lista de salida a producción y la especificación de
-una futura línea de jabones personalizados.
+El comprador explora la colección, filtra por categoría, abre la ficha de cada
+jabón y arma su pedido sin crear una cuenta. El equipo del negocio mantiene
+productos, precios, existencias, fotografías y destacados desde el
+administrador de Django, y recibe en WhatsApp un mensaje legible con cada
+producto, su cantidad y el total.
 
-## 5. Usuarios
+## 5. Restricciones
 
-El cliente explora la colección, filtra por categoría, abre la ficha de cada
-jabón y arma su pedido sin crear una cuenta. El equipo del negocio administra
-productos, precios, existencias, fotografías y destacados desde Django, y recibe
-en WhatsApp un mensaje legible con cada producto, su cantidad y el total.
+- **Sin pagos, sin logística y sin prometer existencias en tiempo real.** Por
+  eso el total del carrito es «estimado».
+- **Un catálogo que cambia sin recompilar nada.** La tienda lo lee de la API en
+  cada visita.
+- **Primero el teléfono.** Es donde compra el público de la marca y donde vive
+  WhatsApp.
+- **Ningún dato de compradores.** La tienda no guarda perfiles, direcciones ni
+  pedidos.
 
-## 6. Restricciones
-
-Sin pagos en línea, sin seguimiento logístico y sin prometer existencias en
-tiempo real. El flujo tenía que funcionar primero en el teléfono, conservar el
-carrito entre visitas y dejar que el catálogo cambiara sin recompilar nada.
-Tampoco se guardan datos de compradores: ni perfiles, ni direcciones, ni datos
-de facturación.
-
-## 7. Proceso
+## 6. Cómo lo construí
 
 Partí del recorrido comercial real —descubrir la marca, encontrar un producto,
 entender sus beneficios, armar el pedido y abrir la conversación— y retiré todo
 lo que no servía a ese recorrido. La reconstrucción eliminó los modelos de la
 versión anterior con migraciones explícitas (carrito, líneas de carrito,
-reseñas y perfiles de usuario), añadió una migración de datos para dar a cada
-producto un slug único y separó el catálogo administrable de la presentación
-pública. Probé el flujo completo con diez productos de demostración.
+reseñas y perfiles de usuario) y añadió una migración de datos para dar a cada
+producto un slug único. Pasó de ocho modelos a cuatro y de treinta dependencias
+de ejecución en el frontend a dos: React y React DOM.
 
-## 8. Decisiones importantes
+El backend son tres aplicaciones de Django: `shop` (catálogo, API y
+administración), `contact` (mensajes y suscripciones) y `accounts` (el usuario
+del equipo, que entra con su correo). El frontend son seis componentes de
+React, un hook para el carrito y CSS propio, sin librerías de estado ni de
+componentes. En septiembre de 2026 la preparé para producción: endurecí Django,
+hice que el carrito se sincronizara con el catálogo y la desplegué con su
+dominio.
+
+## 7. Decisiones de arquitectura
 
 - **Sin cuentas de cliente.** El usuario personalizado de Django existe sólo
-  para el equipo administrador; el comprador nunca se registra.
+  para el equipo; el comprador nunca se registra.
 - **API pública de sólo lectura.** El catálogo se consulta por la API y se
-  escribe únicamente desde el administrador de Django.
-- **Carrito en el navegador.** Se guarda en `localStorage`, sobrevive a la
-  recarga y limita cada cantidad a las existencias disponibles.
-- **WhatsApp como cierre.** El carrito genera el pedido completo como mensaje
-  y abre la conversación con el negocio.
+  escribe únicamente desde el administrador. La tienda pide todas las páginas
+  del listado, así que un catálogo más grande no deja productos fuera.
+- **Un carrito que no miente.** Vive en `localStorage` y sobrevive a la
+  recarga. Al llegar el catálogo, cada línea toma el precio actual, su cantidad
+  se limita a las existencias y los productos retirados salen del carrito; si
+  algo cambió, el cajón lo dice.
+- **Un solo contenedor en producción.** Django sirve la API, el administrador,
+  las fotos y el build de React desde el mismo dominio, con WhiteNoise: no hace
+  falta CORS. En desarrollo, Vite hace de proxy hacia Django.
 - **La demostración nunca sustituye a los datos reales.** El catálogo de
-  respaldo sólo aparece en desarrollo o si se activa explícitamente, y siempre
-  con un aviso visible. En producción, si la API falla, el cliente ve un error
-  con opción de reintentar, no productos inventados.
+  respaldo sólo aparece en desarrollo o si se activa explícitamente, con un
+  aviso visible. En producción, si la API falla, el cliente ve un error con
+  reintento, no productos inventados.
 
-Éste es el mensaje que genera el carrito de las capturas:
+## 8. El pedido por WhatsApp
+
+«Finalizar por WhatsApp» abre un enlace `wa.me` con el pedido ya escrito. No
+hay integración con la API de WhatsApp ni nada que pagar por mensaje: el
+servidor no registra el pedido y la conversación sigue en el teléfono del
+negocio. Éste es el mensaje que genera el carrito de las capturas:
 
 ```text
-Hola Delicaté 👋
+¡Hola, Delicaté!
 Quiero realizar este pedido:
 
 • 2 × Avena Calma — RD$700
@@ -240,79 +491,81 @@ Prefiero: entrega / recoger
 ¿Me confirman disponibilidad y forma de entrega? Gracias.
 ```
 
-## 9. Arquitectura y stack
+El saludo llevaba un emoji que la página web de WhatsApp convertía en «�» al
+redirigir el enlace; ahora va sin él. El formulario de contacto hace lo mismo
+con el nombre y la consulta: tampoco guarda nada en el servidor.
 
-El backend usa Django 5.2 LTS y Django REST Framework 3.17, organizado en tres
-aplicaciones: `shop` (productos, API y administración), `contact` (mensajes y
-suscripciones) y `accounts` (usuario administrador por correo). La API expone
-el listado paginado con filtros por categoría, destacados y búsqueda, el
-detalle por slug y un endpoint de salud. La base es SQLite en desarrollo y
-PostgreSQL en producción mediante `DATABASE_URL`; los estáticos se sirven
-comprimidos con WhiteNoise.
+## 9. Producción y seguridad
 
-El frontend es React 19 con Vite 8 y CSS propio, sin librerías de estado ni de
-componentes: React es su única dependencia de ejecución. El JavaScript de
-producción pesa 69 KB comprimido. En desarrollo, Vite hace de proxy de la API y
-de las imágenes del catálogo, así que frontend y backend corren como dos
-servicios independientes.
+- **Publicar sólo lo que funciona.** Cada push a `main` construye la imagen,
+  aplica las migraciones antes de publicar y sólo da tráfico a la versión nueva
+  si `/api/health/`, que consulta la base de datos, responde 200. Si algo
+  falla, sigue la anterior.
+- **Cabeceras en todas las respuestas**, también en las que sirve WhiteNoise:
+  política de seguridad de contenidos, Permissions-Policy y X-Frame-Options;
+  HTTPS obligatorio, HSTS de un año y cookies seguras.
+- **Límites de frecuencia** que cuentan la IP real detrás del proxy: mil
+  peticiones por hora y visitante, y topes propios para los endpoints de
+  escritura.
+- **Arranque seguro.** Con `DEBUG` apagado, Django se niega a arrancar con la
+  clave de desarrollo o con una ruta de fotos relativa.
+- **Fotos validadas** por formato (JPG, PNG, WebP) y peso (5 MB), y servidas
+  con caché de siete días.
 
 ## 10. Desafíos
 
 El principal fue construir una experiencia de compra convincente sin fingir una
 infraestructura de pagos o logística. El segundo, mantener coherentes el
-catálogo administrado, los filtros, la ficha de producto y un carrito que
-sobrevive a la recarga, incluso cuando la API tarda, falla o una imagen no
-carga. Y el tercero fue reducir: pasar de una tienda sobredimensionada a un
-producto de unas 2.200 líneas que se puede mantener.
+catálogo administrado, los filtros, la ficha y un carrito que sobrevive entre
+visitas cuando cambian los precios o las existencias. Y el tercero fue reducir:
+pasar de una tienda sobredimensionada a un producto de unas 2.600 líneas que se
+puede mantener.
 
-## 11. Soluciones implementadas
+## 11. Lo que enseñó el despliegue
 
-- El catálogo tiene estados de carga, error con reintento, categoría vacía y
-  producto agotado; la petición se cancela si el componente se desmonta y cada
-  imagen tiene una copia local de respaldo.
-- El comando `seed_products` crea o actualiza el catálogo de demostración, se
-  puede repetir sin duplicar y se niega a continuar si dos productos comparten
-  fotografía o si falta alguna imagen.
-- Las imágenes del catálogo se validan por formato (JPG, PNG, WebP) y por peso
-  (5 MB como máximo).
-- Los endpoints públicos de escritura tienen límite de frecuencia: 10 mensajes
-  de contacto y 5 suscripciones por hora y visitante, además de un tope general
-  para la API.
-- La configuración sale de variables de entorno. Con `DEBUG` apagado, Django se
-  niega a arrancar con la clave de desarrollo y activa por defecto la
-  redirección a HTTPS, HSTS de un año, cookies seguras y protección contra
-  *clickjacking*.
+- Railway no aplicó `railway.json` al servicio creado desde la línea de
+  comandos, y la primera versión salió sin migraciones. La configuración quedó
+  fijada en el propio servicio.
+- Git Bash convirtió la ruta `/data/media` en una ruta de Windows y las fotos
+  se perdieron en un redespliegue. Lo corregí y añadí la validación que hoy
+  impide arrancar con una ruta relativa.
+- Al añadir el dominio propio, Railway dejó de exponer la dirección
+  `*.up.railway.app`; ahora los dos hosts están autorizados de forma explícita.
 
 ## 12. Diseño y UX
 
 La dirección visual usa una paleta cálida de crema, verde bosque y terracota,
-una serif editorial para los titulares y mucho aire para comunicar artesanía.
-La página cuenta una historia en orden: portada, valores, colección, historia
-de la marca, cómo pedir en tres pasos, preguntas frecuentes y contacto. Al
-agregar un producto, el carrito se abre para confirmar el gesto. En
-accesibilidad, la ficha es un `<dialog>` nativo, el carrito atrapa y devuelve el
-foco, el menú móvil se cierra con Escape, hay enlace para saltar al contenido,
-los filtros declaran su estado con `aria-pressed` y se respeta
-`prefers-reduced-motion`.
+una serif editorial para los titulares y mucho aire para comunicar artesanía,
+sin descargar fuentes web. La página cuenta una historia en orden: portada,
+valores, colección, historia de la marca, cómo pedir en tres pasos, preguntas
+frecuentes y contacto. Al agregar un producto, el carrito se abre para
+confirmar el gesto.
 
-## 13. Capturas y demo
+Los estados están resueltos: carga, error con reintento, categoría vacía y
+producto agotado. En accesibilidad, la ficha es un `<dialog>` nativo, el
+carrito atrapa y devuelve el foco, el menú móvil se cierra con Escape, hay
+enlace para saltar al contenido, los filtros declaran su estado con
+`aria-pressed` y se respeta `prefers-reduced-motion`.
 
-La selección muestra portada, catálogo filtrado en escritorio y en móvil, ficha
-de producto, carrito en escritorio y en móvil, la administración del catálogo y
-la historia de la marca. Se capturaron el 23 de septiembre de 2026 sobre la
-aplicación en local, con una base de datos desechable y los diez productos de
-demostración, que no son una afirmación sobre el inventario comercial. Las
-fotografías de producto proceden del proyecto original; las de ambiente de la
-portada y la historia se generaron para esta versión.
+## 13. Lo que no tiene
 
-## 14. Resultados verificables
+Para que nadie lo dé por supuesto: no hay pagos, ni búsqueda en la tienda
+(sólo la API acepta `?search=`), ni variantes de producto, ni más de una foto
+por producto, ni una página propia con URL para cada jabón: la ficha es un
+diálogo. Tampoco hay panel de pedidos, porque los pedidos no pasan por el
+servidor. La API conserva dos endpoints de contacto y boletín, con límite de
+frecuencia, que ninguna pantalla de la tienda usa hoy.
 
-Verificado el 23 de septiembre de 2026 sobre el último commit: las 12 pruebas
-automatizadas pasan (API de catálogo, formularios, límite de frecuencia y
-permisos de administrador); `manage.py check` no reporta problemas; no hay
-migraciones pendientes; y el frontend supera lint y build de producción. No se
-atribuyen ventas ni conversiones porque todavía no existe evidencia de negocio
-publicada.
+## 14. Sobre las capturas
+
+Las capturas se hicieron el 25 de septiembre de 2026 sobre el build de
+producción de la tienda, servido en local con una base de datos desechable y
+los diez productos del catálogo. Algunos estados se provocaron a propósito para
+poder enseñarlos: el producto agotado, el catálogo que tarda o falla, la
+categoría vacía y el carrito guardado con precios viejos. Lo que se ve en cada
+uno es el código de producción. Las fotografías de producto son las del
+proyecto original; las de ambiente de la portada y la historia se generaron
+para esta versión. Las pantallas con algún defecto visible se dejaron fuera.
 
 ## 15. Aprendizajes
 
@@ -324,16 +577,15 @@ que mejor se ajustaba a cómo vende el negocio.
 
 ## 16. Estado actual
 
-El producto está técnicamente listo para desplegar. Antes de la salida
-comercial faltan las validaciones que dependen del negocio y están recogidas en
-su lista de salida a producción: contenido y precios finales, políticas de
-entrega y privacidad, prueba del pedido en Android e iPhone, copias de
-seguridad y monitoreo. Por eso no se etiqueta aún como «en producción».
+En línea en [delicate.jonasjavier.dev](https://delicate.jonasjavier.dev) desde
+el 25 de septiembre de 2026: un servicio Docker en Railway con PostgreSQL, un
+volumen para las fotos y dominio propio con HTTPS. El repositorio es público
+para evaluación, bajo licencia propietaria, con la integración continua en
+verde y 18 pruebas automatizadas que pasan. Antes de anunciarlo, quedan las
+validaciones que dependen del negocio y están en su lista de salida: políticas
+de entrega y privacidad, un pedido completo probado en Android e iPhone, copias
+de seguridad y monitoreo. No publico ventas ni visitas porque no las mido.
 
-## 17. Enlaces y siguiente paso
-
-El código vive en un repositorio privado y la URL pública se añadirá después
-del despliegue y la validación comercial. La siguiente línea del producto ya
-está especificada: un configurador guiado de jabón personalizado cuyo resultado
-es una solicitud por WhatsApp, no una compra automática. Todavía no forma parte
-del sistema.
+La siguiente línea del producto ya está especificada: un configurador guiado de
+jabón personalizado cuyo resultado es una solicitud por WhatsApp, no una compra
+automática. Todavía no forma parte del sistema.
