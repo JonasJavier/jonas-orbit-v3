@@ -1050,3 +1050,119 @@ iOS, la versión de iPhone espera la cuenta de Apple Developer.
 
 Veredicto del dueño; los otros cuatro proyectos, cuando lleguen sus carpetas
 `-2026`.
+
+## 19. Network rehecho: caso completo, desplegado y con demo (2026-09-26)
+
+Aplica el método de §18 a Network desde `portfolio-content/network-2026/`
+(kit de otra sesión sobre el commit `e90c581` del repositorio
+`cs50w-network`, con la misma regla: **lo que falla o no se ve bien, fuera**).
+No cambia la mesa ni el caso: sólo su contenido y dos detalles de código.
+
+### 19.1 Qué cambia
+
+- **Ficha breve → caso completo** (`projects.data.ts`: `kind: case-study`,
+  `status: production`). Está desplegado de forma permanente en Railway (web y
+  API, PostgreSQL y Redis; `/health/` responde) con demo pública.
+  `statusLabel` dice «Desplegado en Railway · demo pública»: sin usuarios
+  reales, y el caso lo dice.
+- **62 capturas** (43 de escritorio reducidas de 2880 a 1920 y 19 de teléfono
+  a 780×1688) de las 77 del kit, en 9 módulos. Fuera, además de la 17 que ya
+  excluía el kit: 01, 48 y 51 (el acceso sin el recuadro de cuentas demo:
+  duplican a 76, 77 y 78), 06 (el scroll infinito no se ve en una foto y la
+  cabecera translúcida emborrona la búsqueda), 10 (el contador de caracteres
+  sale como número desnudo), 28 (la tendencia sale dos veces en `/search`), 45
+  y 47 (duplican el modo oscuro), 50 (ReDoc: casi vacío a esa altura), 56
+  (nombres cortados en la cita), 66 (nombres cortados en la búsqueda) y 52,
+  54, 70 y 72 (duplican escritorio sin añadir nada).
+- **8 decisiones de diseño**, cada una sobre su captura y comprobadas en el
+  código: tres columnas, navegación inferior en el teléfono, esqueletos,
+  vacíos con acción, avisos por tipo, enlace al comentario exacto, borrado que
+  nombra lo que se pierde, tema sin destello.
+- **27 nodos en los 5 carriles, 36 aristas.** Las pantallas van directas a su
+  dominio (Feed → Feed por cursor → Contenido…) y la cadena de transporte
+  (Estado y caché → Cliente HTTP → API) va aparte: con todas las pantallas
+  entrando por la API, elegir cualquiera encendía el sistema entero y la ruta
+  no decía nada. Rótulos sin palabras de más de 11 letras: a 1280 px
+  «Publicaciones» y «Notificaciones» se partían con guion.
+- **55 tecnologías en 10 áreas**; `tech` en cada nodo.
+- **Enlaces**: demo (`Probar la demo`) y el repositorio canónico
+  `cs50w-network` (el de `Network-3.0` sólo llegaba por redirección 301). El
+  caso publica las cuentas de la demo y su contraseña, por decisión del dueño.
+- **CV**: tarjeta (ES) y línea (EN) nuevas —API REST + React/TS, 132 pruebas,
+  CI, Docker, demo en vivo—; los dos siguen en una página.
+
+### 19.2 Código
+
+- El botón del caso con demo dice el `label` del enlace, como la mesa, y no un
+  «Visitar el sitio» fijo: para una aplicación de demostración, «Probar la
+  demo».
+- Un proyecto con una sola captura con módulo ya no pinta un «recorrido» de
+  una pantalla que ya salió arriba (`touring` exige más de una).
+
+### 19.3 Abierto
+
+Veredicto del dueño. «Aprendizajes» es un borrador escrito a partir del
+historial (el kit lo marca como inferencia): conviene que lo diga él. Si
+Network sigue después de 3.1.0, falta el «siguiente paso»; hoy el caso lo
+presenta como terminado en esa versión, sin prometer continuidad.
+
+## 20. Delicaté rehecho: en producción con su dominio (2026-09-26)
+
+Aplica el método de §18 y §19 a Delicaté desde
+`portfolio-content/delicate-2026/` (kit de otra sesión sobre el commit
+`9f134109`, hoy `20b9246` en el repositorio público `Delicate-4.0`; misma
+regla: **lo que falla o no se ve bien, fuera**). No cambia la mesa ni el caso:
+sólo su contenido y una prueba.
+
+### 20.1 Qué cambia
+
+- **`status: production`.** La tienda está en línea en
+  `delicate.jonasjavier.dev` (Railway: un contenedor Docker, PostgreSQL y un
+  volumen para fotos; `/api/health/` verde). `statusLabel` dice «En línea con
+  dominio propio · salida comercial en validación»: la lista `GO_LIVE.md` del
+  negocio (políticas, pedido probado en Android e iPhone, copias) no consta
+  como hecha, y el caso lo dice. El dueño confirmó que es una clienta real, que
+  los diez productos y sus precios son el catálogo real y que la foto de
+  «Jardín Botánico» es la correcta.
+- **30 capturas** (19 de escritorio reducidas de 2880 a 1920 y 11 de teléfono
+  a 780×1688) de las 42 principales del kit, en 7 módulos: Portada y marca ·
+  Catálogo y ficha · Carrito y pedido · Cómo se pide · Estados del catálogo ·
+  Administración · En el teléfono. Fuera, además de las 14 que ya excluía el
+  kit: 04 (franja de la foto bajo la cabecera, y duplica a 01 y 05), 14, 15 y
+  17 (duplican escritorio), 22 y 23 (el esqueleto quieto se lee como cajas
+  vacías), 34 y 36 (el título sale cortado arriba), 37 y 38 (el pie, cortado
+  arriba y sin nada que decir), 39 (página completa de 26.000 px) y 42
+  (página completa del formulario, con el selector de archivo en inglés).
+- **Orden para la mesa.** El primer módulo lleva la portada, la historia y la
+  cita; el teléfono empieza por el carrito. La mesa en Producto queda: portada
+  en el centro, carrito con WhatsApp en el teléfono y la historia a la
+  derecha. Un módulo de una sola pantalla («Portada») quedaba pobre en el
+  recorrido.
+- **8 decisiones de diseño**: las 6 del kit más la lista editable del
+  administrador y el producto agotado que sigue a la vista.
+- **18 nodos en los 5 carriles, 19 aristas.** Las pantallas siguen el
+  recorrido de compra (Portada → Catálogo → Ficha → Carrito → WhatsApp) y la
+  infraestructura va aparte (CI → Docker → Railway → Servidor). «Admin» y no
+  «Administración»: a 1280 px se partía con guion.
+- **43 tecnologías en 10 áreas**; `tech` en cada nodo.
+- **Correcciones del kit**: 18 pruebas y no 12; fuera «4.ª versión» (Git sólo
+  muestra 2024 y 2026) y «WhatsApp» como tecnología (es un enlace `wa.me`, no
+  una integración); el saludo del pedido ya no lleva emoji; en producción es un
+  solo servicio, no dos.
+- **Enlaces**: «Visitar la tienda» (demo) y el repositorio, ya público.
+- **Endurance**: las cifras del pie (3 en producción, 2 listos) y el párrafo
+  de los casos completos seguían como antes de Network.
+- **CV**: tarjeta (ES) y línea (EN) nuevas; los dos siguen en una página.
+
+### 20.2 Código
+
+La prueba «sin módulos» del caso usaba Delicaté. Ninguna ficha real sin
+módulos deja hoy pantallas para «Más pantallas» (sus decisiones las cubren
+todas), así que la prueba usa Wiki Universe con una sola decisión. La e2e de
+teclado (P7) recorre Delicaté: ahora pasa por «Visitar la tienda» y «Ver
+código» entre «Explorar proyecto» y el esquema.
+
+### 20.3 Abierto
+
+Veredicto del dueño. «Aprendizajes» sigue siendo el texto anterior. El rol
+conserva «levantamiento de necesidades», que el repositorio no documenta.

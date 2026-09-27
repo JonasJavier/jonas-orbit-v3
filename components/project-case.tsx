@@ -231,8 +231,9 @@ export function ProjectCase({
   // decisiones. Con módulos, el final es un RECORRIDO del producto y cada
   // módulo va entero —un módulo al que le faltasen sus mejores pantallas
   // porque ya salieron arriba se leería incompleto—. El visor, que abre
-  // cualquiera, las recorre todas en el orden de la ficha.
-  const touring = entry.tour.length > 0;
+  // cualquiera, las recorre todas en el orden de la ficha. Una sola captura
+  // no es un recorrido: ya salió arriba.
+  const touring = entry.tour.length > 0 && entry.screens.length > 1;
   const shownAbove = new Set([featured.index, phone?.index, ...entry.reel.map((step) => step.screen)]);
   const moreScreens = touring ? entry.screens : entry.screens.filter((screen) => !shownAbove.has(screen.index));
   const stackCount = entry.stack.reduce((sum, group) => sum + group.items.length, 0);
@@ -298,7 +299,7 @@ export function ProjectCase({
           <div className="case-hero__actions">
             {demo ? (
               <a className="case-action case-action--site" href={demo.href} rel="noopener noreferrer" target="_blank">
-                Visitar el sitio <span aria-hidden="true">↗</span>
+                {demo.label} <span aria-hidden="true">↗</span>
                 <span className="visually-hidden"> (se abre en otra pestaña)</span>
               </a>
             ) : (

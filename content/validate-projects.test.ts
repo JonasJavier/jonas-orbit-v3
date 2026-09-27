@@ -174,7 +174,7 @@ describe("validateProjectProse · la mesa de ingeniería (P1)", () => {
   });
 
   it("una ficha breve puede no declararla: la capa se deriva del stack", () => {
-    expect(requiredLocale("es").find((entry) => entry.id === "network")?.architecture).toBeUndefined();
+    expect(requiredLocale("es").find((entry) => entry.id === "wikiverse")?.architecture).toBeUndefined();
     expect(() => validate(requiredLocale("es"))).not.toThrow();
   });
 

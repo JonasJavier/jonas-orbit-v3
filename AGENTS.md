@@ -104,7 +104,9 @@ MDX**, nunca en `worlds.data.ts`.
   completo; **§18, 09-26**: OMSTA rehecho con su app móvil desde
   `portfolio-content/omsta-2026/`, `module` por captura → «Recorrido por
   módulos», `stack` → sección Tecnologías, `tech` por nodo → inspector, la
-  mesa sólo monta lo que levanta) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
+  mesa sólo monta lo que levanta; **§19, 09-26**: Network, mismo método,
+  pasa a caso completo desplegado con demo; **§20, 09-26**: Delicaté, mismo
+  método, en producción con su dominio) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
   `designDecisions`: problema → decisión) · Ingeniería (ruta entera del
   módulo con `nodePath`, esquema sólo con carriles ocupados, anillo del
   sistema en la mesa); quinto carril `integraciones`; `scope` y `luma` por
@@ -112,9 +114,10 @@ MDX**, nunca en `worlds.data.ts`.
   mesa en `components/engineering-table.tsx` (parte pura en
   `lib/engineering-table.ts`); sala = render horneado. El caso
   `/es/proyectos/[slug]` rehecho (`components/project-case*.tsx`) y con la
-  escena dormida en TODA ruta de Endurance. «Visitar el sitio» sale de `links`
-  `kind: demo`, que aún no existe. Abiertos: valoración visual, redacción de
-  `scope`/`designDecisions` (borrador), arquitecturas y URLs de producción.
+  escena dormida en TODA ruta de Endurance. El botón del producto vivo sale de
+  `links` `kind: demo` con su `label` (Network la tiene). Abiertos:
+  valoración visual, redacción de `scope`/`designDecisions` (borrador),
+  arquitecturas y URLs de producción.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

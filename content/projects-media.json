@@ -1,7 +1,7 @@
 {
   "/media/projects/delicate/01-home-desktop.png": {
-    "width": 2160,
-    "height": 1350,
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -9,11 +9,29 @@
       1440,
       1920
     ],
-    "luma": 0.76
+    "luma": 0.78
   },
-  "/media/projects/delicate/02-catalog-filter-desktop.png": {
-    "width": 2160,
-    "height": 1350,
+  "/media/projects/delicate/02-home-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.83
+  },
+  "/media/projects/delicate/03-menu-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.84
+  },
+  "/media/projects/delicate/05-catalog-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -21,11 +39,44 @@
       1440,
       1920
     ],
-    "luma": 0.9
+    "luma": 0.93
   },
-  "/media/projects/delicate/03-product-detail-desktop.png": {
-    "width": 2160,
-    "height": 1350,
+  "/media/projects/delicate/06-catalog-filter-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.91
+  },
+  "/media/projects/delicate/07-catalog-filter-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.85
+  },
+  "/media/projects/delicate/08-product-hover-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/delicate/09-product-detail-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -35,9 +86,27 @@
     ],
     "luma": 0.62
   },
-  "/media/projects/delicate/04-cart-desktop.png": {
-    "width": 2160,
-    "height": 1350,
+  "/media/projects/delicate/10-product-detail-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.79
+  },
+  "/media/projects/delicate/11-product-detail-bottom-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.78
+  },
+  "/media/projects/delicate/12-catalog-soldout-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -45,9 +114,45 @@
       1440,
       1920
     ],
-    "luma": 0.67
+    "luma": 0.93
   },
-  "/media/projects/delicate/05-cart-mobile.png": {
+  "/media/projects/delicate/13-product-soldout-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.7
+  },
+  "/media/projects/delicate/16-cart-empty-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.7
+  },
+  "/media/projects/delicate/18-cart-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.66
+  },
+  "/media/projects/delicate/19-cart-mobile.png": {
     "width": 780,
     "height": 1688,
     "steps": [
@@ -56,18 +161,150 @@
     ],
     "luma": 0.92
   },
-  "/media/projects/delicate/06-catalog-mobile.png": {
+  "/media/projects/delicate/20-cart-updated-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.68
+  },
+  "/media/projects/delicate/21-cart-updated-mobile.png": {
     "width": 780,
     "height": 1688,
     "steps": [
       390,
       780
     ],
-    "luma": 0.89
+    "luma": 0.94
   },
-  "/media/projects/delicate/07-admin-catalog-desktop.png": {
-    "width": 2160,
-    "height": 1350,
+  "/media/projects/delicate/24-error-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/delicate/25-error-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.9
+  },
+  "/media/projects/delicate/26-empty-category-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/delicate/27-empty-category-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.92
+  },
+  "/media/projects/delicate/28-story-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.8
+  },
+  "/media/projects/delicate/29-story-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.72
+  },
+  "/media/projects/delicate/30-process-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/delicate/31-process-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/delicate/32-quote-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.58
+  },
+  "/media/projects/delicate/33-faq-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/delicate/35-contact-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.71
+  },
+  "/media/projects/delicate/40-admin-products-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -77,9 +314,9 @@
     ],
     "luma": 0.9
   },
-  "/media/projects/delicate/08-story-desktop.png": {
-    "width": 2160,
-    "height": 1350,
+  "/media/projects/delicate/41-admin-products-filter-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
@@ -87,7 +324,7 @@
       1440,
       1920
     ],
-    "luma": 0.8
+    "luma": 0.9
   },
   "/media/projects/izaks-photos/01-home-desktop.png": {
     "width": 2160,
@@ -131,46 +368,692 @@
     ],
     "luma": 0.15
   },
-  "/media/projects/network/01-feed-desktop.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/network/02-login-error-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.65
+  },
+  "/media/projects/network/03-register-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.65
+  },
+  "/media/projects/network/04-feed-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/05-feed-loading-skeleton-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.95
   },
-  "/media/projects/network/02-profile-desktop.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/network/07-feed-following-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/08-composer-with-image-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.88
+  },
+  "/media/projects/network/09-post-options-menu-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/network/11-post-delete-confirm-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.46
+  },
+  "/media/projects/network/12-quote-modal-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.57
+  },
+  "/media/projects/network/13-post-likes-list-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.51
+  },
+  "/media/projects/network/14-post-detail-comments-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.84
+  },
+  "/media/projects/network/15-post-detail-comment-deeplink-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.89
   },
-  "/media/projects/network/03-notifications-desktop.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/network/16-comment-reply-composer-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.91
+  },
+  "/media/projects/network/18-profile-own-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.86
+  },
+  "/media/projects/network/19-profile-media-grid-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.83
+  },
+  "/media/projects/network/20-profile-likes-tab-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/network/21-profile-edit-modal-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.58
+  },
+  "/media/projects/network/22-profile-followers-modal-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.55
+  },
+  "/media/projects/network/23-profile-following-modal-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.54
+  },
+  "/media/projects/network/24-profile-other-person-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/network/25-notifications-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/26-notifications-clear-confirm-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.5
+  },
+  "/media/projects/network/27-bookmarks-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.95
   },
-  "/media/projects/network/04-feed-mobile.png": {
-    "width": 390,
-    "height": 844,
+  "/media/projects/network/29-search-people-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
-      390
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/30-search-posts-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/31-search-hashtag-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/network/32-search-no-results-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
     ],
     "luma": 0.95
+  },
+  "/media/projects/network/33-account-menu-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/34-settings-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/35-settings-delete-account-modal-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.52
+  },
+  "/media/projects/network/36-not-found-404-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/37-empty-following-feed-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/38-empty-bookmarks-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/39-empty-notifications-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/40-empty-own-profile-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/network/41-feed-dark-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.11
+  },
+  "/media/projects/network/42-post-detail-dark-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.16
+  },
+  "/media/projects/network/43-profile-own-dark-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.15
+  },
+  "/media/projects/network/44-notifications-dark-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.11
+  },
+  "/media/projects/network/46-settings-dark-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.1
+  },
+  "/media/projects/network/49-api-docs-swagger-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/53-feed-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/55-composer-with-image-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.87
+  },
+  "/media/projects/network/57-post-detail-comments-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.83
+  },
+  "/media/projects/network/58-comment-reply-composer-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.89
+  },
+  "/media/projects/network/59-profile-own-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.84
+  },
+  "/media/projects/network/60-profile-media-grid-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.78
+  },
+  "/media/projects/network/61-profile-followers-modal-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.74
+  },
+  "/media/projects/network/62-profile-other-person-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.84
+  },
+  "/media/projects/network/63-notifications-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/64-bookmarks-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/65-search-idle-trending-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/network/67-search-hashtag-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.88
+  },
+  "/media/projects/network/68-account-menu-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/network/69-settings-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/network/71-empty-following-feed-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/network/73-feed-dark-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.12
+  },
+  "/media/projects/network/74-profile-own-dark-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.17
+  },
+  "/media/projects/network/75-notifications-dark-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/network/76-login-demo-accounts-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.65
+  },
+  "/media/projects/network/77-login-demo-accounts-dark-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.2
+  },
+  "/media/projects/network/78-login-demo-accounts-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.96
   },
   "/media/projects/omsta/m02-inicio.png": {
     "width": 1080,

@@ -70,15 +70,27 @@ describe("ProjectCase — primer pantallazo", () => {
     // OMSTA es de un cliente: ni repositorio ni demo publicados. La salida
     // del primer pantallazo son entonces sus decisiones.
     expect(screen.queryByRole("link", { name: /Ver código/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Visitar el sitio/ })).not.toBeInTheDocument();
+    expect(document.querySelector(".case-action--site")).toBeNull();
     expect(screen.getByRole("link", { name: /Ver las decisiones/ })).toHaveAttribute("href", "#decisiones");
     expect(screen.getByRole("link", { name: /Ver el sistema/ })).toHaveAttribute("href", "#sistema");
     unmount();
 
     const wiki = getProject("wikiverse", "es");
-    renderCase(wiki);
+    const { unmount: unmountWiki } = renderCase(wiki);
     const repository = wiki.prose.links?.find((link) => link.kind === "repository");
     expect(screen.getByRole("link", { name: /Ver código/ })).toHaveAttribute("href", repository?.href);
+    unmountWiki();
+
+    // Con demo publicada, la salida principal es el producto vivo, con el
+    // rótulo del propio enlace (el mismo que en la mesa).
+    const network = getProject("network", "es");
+    renderCase(network);
+    const demo = network.prose.links?.find((link) => link.kind === "demo");
+    const site = document.querySelector(".case-hero__actions .case-action--site") as HTMLElement;
+    expect(site).toHaveTextContent(demo?.label ?? "sin demo");
+    expect(site).toHaveAttribute("href", demo?.href);
+    expect(site).toHaveAttribute("target", "_blank");
+    expect(screen.queryByRole("link", { name: /Ver las decisiones/ })).not.toBeInTheDocument();
   });
 
   it("la ficha rápida dice papel, stack y el estado entero con su LED", () => {
@@ -194,10 +206,13 @@ describe("ProjectCase — el caso", () => {
   });
 
   it("sin módulos, cada pantalla se enseña una vez y todas abren su captura", () => {
-    const delicate = getProject("delicate", "es");
-    renderCase(delicate);
+    // Ninguna ficha real sin módulos deja hoy pantallas para la rejilla (sus
+    // decisiones las cubren todas): se le quitan dos para que la haya.
+    const base = getProject("wikiverse", "es");
+    const wiki = { ...base, prose: { ...base.prose, designDecisions: base.prose.designDecisions?.slice(0, 1) } };
+    renderCase(wiki);
 
-    const total = 1 + (delicate.prose.gallery?.length ?? 0);
+    const total = 1 + (wiki.prose.gallery?.length ?? 0);
     const shots = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-case-shot]"));
     // Sin JavaScript, cada aparato abre su captura (el peldaño WebP), y entre
     // el primer pantallazo, las decisiones y la rejilla están todas.
@@ -206,11 +221,11 @@ describe("ProjectCase — el caso", () => {
 
     // La rejilla sólo lleva las que no salieron antes, con su pie a la vista.
     const shown = new Set([
-      delicate.prose.featuredImage.src,
-      ...(delicate.prose.gallery ?? []).filter((image) => image.frame === "mobile").slice(0, 1).map((image) => image.src),
-      ...(delicate.prose.designDecisions ?? []).map((decision) => decision.screen),
+      wiki.prose.featuredImage.src,
+      ...(wiki.prose.gallery ?? []).filter((image) => image.frame === "mobile").slice(0, 1).map((image) => image.src),
+      ...(wiki.prose.designDecisions ?? []).map((decision) => decision.screen),
     ]);
-    const rest = (delicate.prose.gallery ?? []).filter((image) => !shown.has(image.src));
+    const rest = (wiki.prose.gallery ?? []).filter((image) => !shown.has(image.src));
     expect(rest.length).toBeGreaterThan(0);
     const more = screen.getByRole("region", { name: "Más pantallas" });
     expect(within(more).getAllByRole("link")).toHaveLength(rest.length);
