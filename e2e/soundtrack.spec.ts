@@ -84,8 +84,10 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }
     for (const control of [audioButton]) {
       const box = await control.boundingBox();
       expect(box).not.toBeNull();
-      expect(box!.width).toBeGreaterThanOrEqual(44);
-      expect(box!.height).toBeGreaterThanOrEqual(44);
+      // Firefox reports 43.999996 for a CSS width of 44 px. Normalize only
+      // floating-point noise; the required interaction target stays 44 px.
+      expect(Math.round(box!.width * 1000) / 1000).toBeGreaterThanOrEqual(44);
+      expect(Math.round(box!.height * 1000) / 1000).toBeGreaterThanOrEqual(44);
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.y).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);

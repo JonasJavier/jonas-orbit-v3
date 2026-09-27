@@ -6,6 +6,13 @@ describe("enabled-by-default, persistent soundtrack", () => {
   let media: HTMLAudioElement;
   let context: { resume: ReturnType<typeof vi.fn>; suspend: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
   let ramp: ReturnType<typeof vi.fn>;
+  let parameter: {
+    value: number;
+    cancelAndHoldAtTime?: ReturnType<typeof vi.fn>;
+    cancelScheduledValues: ReturnType<typeof vi.fn>;
+    setValueAtTime: ReturnType<typeof vi.fn>;
+    linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+  };
   let contextState: AudioContextState;
 
   beforeEach(() => {
@@ -16,18 +23,36 @@ describe("enabled-by-default, persistent soundtrack", () => {
     vi.spyOn(media, "pause").mockImplementation(() => {});
     vi.spyOn(media, "load").mockImplementation(() => {});
     ramp = vi.fn();
+    parameter = { value: 0, cancelAndHoldAtTime: vi.fn(), cancelScheduledValues: vi.fn(), setValueAtTime: vi.fn(), linearRampToValueAtTime: ramp };
     contextState = "running";
     context = { resume: vi.fn().mockResolvedValue(undefined), suspend: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined) };
     vi.stubGlobal("Audio", vi.fn(function () { return media; }));
     vi.stubGlobal("AudioContext", vi.fn(function () {
       return { ...context, get state() { return contextState; }, currentTime: 0, destination: {},
-        createGain: () => ({ gain: { value: 0, cancelAndHoldAtTime: vi.fn(), linearRampToValueAtTime: ramp }, connect: vi.fn() }),
+        createGain: () => ({ gain: parameter, connect: vi.fn() }),
         createMediaElementSource: () => ({ connect: vi.fn() }),
       };
     }));
     player = new Soundtrack();
   });
   afterEach(() => { player.dispose(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+  it("plays and adjusts volume without cancelAndHoldAtTime", async () => {
+    parameter.cancelAndHoldAtTime = undefined;
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("playing");
+    expect(parameter.cancelScheduledValues).toHaveBeenCalledWith(0);
+    expect(parameter.setValueAtTime).toHaveBeenCalledWith(0, 0);
+    expect(ramp).toHaveBeenCalledWith(0.28, 1.2);
+    parameter.value = 0.14;
+    expect(() => player.setVolume(0.5)).not.toThrow();
+    expect(parameter.setValueAtTime).toHaveBeenCalledWith(0.14, 0);
+    expect(ramp).toHaveBeenCalledWith(0.5, 0.08);
+    expect(() => player.toggleMute()).not.toThrow();
+    expect(() => player.pause()).not.toThrow();
+    expect(player.getSnapshot().playback).toBe("off");
+  });
 
   it("starts on entry with the saved volume", async () => {
     localStorage.setItem("jonas-orbit:audio-volume", "0.6");
@@ -68,6 +93,26 @@ describe("enabled-by-default, persistent soundtrack", () => {
     player.resumeWanted();
     await Promise.resolve(); await Promise.resolve();
     expect(player.getSnapshot().playback).toBe("playing");
+  });
+
+  it("a pause event from blocked autoplay keeps the intent armed for the next gesture", async () => {
+    vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    media.dispatchEvent(new Event("pause"));
+    expect(player.getSnapshot().playback).toBe("armed");
+    player.resumeWanted();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("playing");
+  });
+
+  it("a native pause after playback really started still stops the soundtrack", async () => {
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    media.dispatchEvent(new Event("pause"));
+    expect(player.getSnapshot().playback).toBe("paused");
+    player.resumeWanted();
+    expect(media.play).toHaveBeenCalledTimes(1);
   });
 
   it("a playing element behind a suspended context is not sound: the next gesture resumes it", async () => {

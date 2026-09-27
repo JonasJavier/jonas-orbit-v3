@@ -67,6 +67,7 @@ MDX**, nunca en `worlds.data.ts`.
   de AUDIO y nadie más. Portada y Miller usan las grabaciones de Jonás
   (`lib/audio-samples.ts`); el resto, recetas de `lib/sfx.ts`. Licencia de los
   dos archivos pendiente.
+  §2 «Compatibilidad» (09-27): rampas portables y autoplay `armed` hasta el gesto.
 - **Travesía — sonido, pestillo y alabeo** (09-22)
   `docs/design/travesia-espaciotemporal.md` §«Segundo pase» — sonido sintetizado
   (`lib/voyage-audio.ts`), latido de exposición y 3,4° de alabeo.

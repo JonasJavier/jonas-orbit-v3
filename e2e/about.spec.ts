@@ -61,7 +61,9 @@ test("hero cerrado, seis estados, foco, visor por teclado y carruseles", async (
     ),
   ).toBe(true);
   await page.keyboard.press("Shift+Tab");
-  await expect(viewer.getByRole("button", { name: "Cerrar ×" })).toBeFocused();
+  // Firefox returns to the dialog itself, Chromium to its close button. Both
+  // keep focus inside the native modal, never in the inert background.
+  expect(await page.evaluate(() => !!document.activeElement?.closest("dialog"))).toBe(true);
   await page.keyboard.press("Escape");
   await expect(viewer).toHaveCount(0);
   await expect(family).toBeFocused();
