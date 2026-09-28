@@ -16,9 +16,11 @@ todavía no existe:
 
 ## Archivos fuente y generados
 
-- `public/` contiene sólo recursos que sirve la aplicación.
+- `public/` contiene sólo recursos que sirve la aplicación: las PNG maestras
+  de las capturas NO (el navegador sólo recibe sus peldaños WebP).
 - `assets/`, `Fotos/`, `Disenos/` y `portfolio-content/` conservan fuentes y
-  evidencia con un consumidor o una procedencia documentada.
+  evidencia en disco, **fuera de Git** desde 2026-09-28 (repositorio público);
+  su historial vive en el privado `JonasJavier/jonas-orbit-v3-archivo`.
 - `.next/`, `.open-next/`, `.velite/`, `output/`, `mesa-shots/`, `.shots/`,
   reportes, logs y comparativas temporales permanecen fuera de Git.
 - Un artefacto estable de documentación debe vivir bajo `docs/media/` y explicar

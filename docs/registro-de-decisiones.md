@@ -19,6 +19,50 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Repositorio público, SEO y arranque de la escena (2026-09-28)
+
+El dueño pidió revisar organización, SEO, peso y rendimiento, y hacer público
+el repositorio protegiéndolo, con autorización para los cambios necesarios.
+
+- **Licencia: todos los derechos reservados** (`LICENSE`, ES + EN). Público
+  para leer y evaluar; prohibido copiar, derivar, desplegar, usar el contenido
+  o entrenar IA sin permiso escrito. `package.json`: `SEE LICENSE IN LICENSE`.
+  `CONTRIBUTING.md`: no se aceptan PR de terceros; sí issues.
+- **Las fuentes salen del repositorio y de su historial.** `Fotos/`,
+  `Disenos/`, `portfolio-content/`, `assets/` (~1,1 GB, fuera ya del build por
+  `.dockerignore`) quedan en disco e ignoradas; el historial completo se
+  conserva en el repositorio PRIVADO `JonasJavier/jonas-orbit-v3-archivo`. El
+  público se reescribió con `git filter-repo` (1,24 GB → pocas decenas de MB):
+  un clon anterior al 2026-09-28 no se puede fusionar, hay que volver a clonar.
+- **Las PNG maestras de las capturas no se publican.** Las 215 de
+  `public/media/projects/` (~122 MB) nunca se servían —todo pasa por
+  `screenSources`, que pide la escalera WebP—. Viven en
+  `assets/media/projects/`; `tools/prepare-projects.mjs` lee de ahí y escribe
+  en `public/`, como ya hacía con la sala. Velite comprueba ahora que existan
+  los peldaños WebP, no la PNG. La ruta `/media/projects/…png` sigue siendo la
+  CLAVE de cada captura en el MDX y en el manifiesto.
+- **SEO.** Plantilla de título `%s · Jonás Javier` (se busca por el nombre, no
+  por la marca). Cada mundo lleva `seoTitle` (≤55) y `seoDescription`
+  (110–160) en su MDX, validados por Velite; `title` y `summary` siguen siendo
+  la voz de la página. Los casos, sin «| Caso de estudio» y con descripción
+  ≤160. `twitter` del layout sólo declara la tarjeta: su título viajaba a
+  TODAS las rutas. JSON-LD: `knowsAbout`, migas de varios niveles y
+  `CreativeWork` en cada caso y espécimen. `/` → `/es` sigue siendo 307 a
+  propósito: `/en` llegará con detección de idioma y un 308 se cachea para
+  siempre.
+- **La escena compila sus shaders en paralelo antes del primer fotograma**
+  (`compileAsync`, `KHR_parallel_shader_compile`), con un render target activo
+  —el programa depende de él— y un pestillo `warming` para que `setCovered`
+  no arranque el bucle antes de tiempo (ese fue el primer intento fallido).
+  Medido con GPU real (AMD integrada, ANGLE/D3D11): la tarea de 2,4–2,7 s al
+  llegar a `/es` desaparece; Lighthouse móvil pasa de TBT 7,95 s a ~2,0 s,
+  TTI 12,0 → 7,5 s, SI 7,1 → 4,1 s. Igual en `observatory-scene.ts` (−0,9 s
+  al abrir un espécimen) y `gargantua-observatory.ts`.
+- **La sonda de capacidad no se toca:** su contexto WebGL2 cuesta ~700 ms en
+  headless pero 3 ms en un navegador real con el canal de GPU abierto.
+- **Código muerto:** fuera la colección Velite `designProse` (sin contenido
+  ni consumidor).
+
 ## Publicación — rama `production`, cabeceras y límite de tasa (2026-09-28)
 
 El dueño pidió dejar el repositorio listo y subir Jonás Orbit a producción,

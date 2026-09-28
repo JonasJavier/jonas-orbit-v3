@@ -90,6 +90,11 @@ MDX**, nunca en `worlds.data.ts`.
   nunca publica. CSP y cabeceras viven en `next.config.ts`; el límite de tasa
   del contacto, en la app. El preview de Cloudflare conserva su prueba de
   compatibilidad `npm run test:worker`.
+- **Repositorio público, SEO y arranque** (09-28) — licencia de sólo lectura
+  (`LICENSE`); fuentes (`Fotos/`, `Disenos/`, `portfolio-content/`,
+  `assets/`) fuera del repo y del historial, archivadas en el privado
+  `jonas-orbit-v3-archivo`; PNG maestras en `assets/media/projects/`;
+  `seoTitle`/`seoDescription` por mundo; shaders con `compileAsync`.
 - **Dependencias — seguridad** (09-27)
   `docs/reviews/repository-readiness-2026-09-27.md` — versiones parcheadas,
   auditorías y evidencia de la actualización dedicada.

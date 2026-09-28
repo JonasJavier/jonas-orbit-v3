@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Portafolio espacial de Jonás Javier: narrativa interactiva, WebGL progresivo y contenido accesible.",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JonasJavier/jonas-orbit-v3.git"

@@ -89,3 +89,13 @@ crash.log
 # codebase-memory-mcp: el índice es por máquina (~/.cache/codebase-memory-mcp).
 # La opción de artefacto versionado quedó obsoleta y con conflictos (2026-09-22).
 /.codebase-memory/
+
+# Fuentes originales: fotografías, piezas de diseño, capturas PNG maestras y
+# kits de evidencia de cada proyecto. Viven en disco y en el archivo privado
+# (JonasJavier/jonas-orbit-v3-archivo), no en el repositorio público:
+# `tools/prepare-*.mjs` genera desde ellas lo que se publica en `public/`.
+/Fotos/
+/Disenos/
+/portfolio-content/
+/assets/
+/music/

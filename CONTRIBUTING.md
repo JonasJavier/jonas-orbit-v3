@@ -1,8 +1,12 @@
 # Contribuir a Jonás Orbit v3
 
-Jonás Orbit es un portafolio personal en desarrollo activo. Las contribuciones
-son bienvenidas cuando respetan la dirección narrativa, la autoría del contenido
-y los presupuestos de accesibilidad y rendimiento.
+Jonás Orbit es un portafolio personal y su código no es abierto (ver
+[`LICENSE`](LICENSE)). **No se aceptan pull requests de terceros.** Si
+encuentras un error, un problema de accesibilidad o una vulnerabilidad, abre un
+issue —o sigue [`SECURITY.md`](SECURITY.md) si es de seguridad— y lo reviso.
+
+El resto de esta guía es el flujo de trabajo interno del proyecto: lo que se
+exige a cada cambio que entra en `main`.
 
 ## Antes de empezar
 

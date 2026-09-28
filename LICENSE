@@ -1,0 +1,90 @@
+Jonás Orbit — Licencia de solo lectura / Read-only license
+
+Copyright (c) 2026 Jonás Javier Encarnación. Todos los derechos reservados.
+All rights reserved.
+
+────────────────────────────────────────────────────────────────────────────
+ESPAÑOL
+────────────────────────────────────────────────────────────────────────────
+
+Este repositorio es público únicamente para que el código y el proceso de
+trabajo puedan leerse y evaluarse. NO es software de código abierto.
+
+1. Qué se permite
+   a) Ver y leer el contenido del repositorio en GitHub.
+   b) Clonarlo o descargarlo para evaluarlo de forma privada y temporal —por
+      ejemplo, en un proceso de selección, una propuesta de trabajo o una
+      revisión técnica— sin publicarlo ni ponerlo en producción.
+   c) Citar fragmentos breves con atribución, en comentarios, reseñas o
+      análisis, como permita la ley aplicable.
+   d) Lo que los Términos de Servicio de GitHub conceden a sus usuarios sobre
+      los repositorios públicos (verlos y bifurcarlos dentro de GitHub). Esa
+      concesión no amplía ninguno de los permisos de esta licencia.
+
+2. Qué NO se permite sin autorización previa y por escrito del titular
+   a) Copiar, reproducir, modificar, adaptar, traducir o crear obras derivadas
+      del código, del diseño, de la escena 3D, de los shaders o de la
+      arquitectura, total o parcialmente.
+   b) Publicar, distribuir, sublicenciar, vender, alquilar o desplegar este
+      proyecto o una versión derivada, con o sin ánimo de lucro.
+   c) Usar el contenido —textos, fotografías, diseños, audio, CV, datos
+      personales, nombres «Jonás Orbit» y «Jonás Javier», identidad visual—
+      para cualquier fin, ni presentar este trabajo o parte de él como propio.
+   d) Usar el repositorio o su contenido para entrenar, ajustar o evaluar
+      modelos de inteligencia artificial, o para construir conjuntos de datos.
+
+3. Terceros
+   Las dependencias y los recursos de terceros conservan sus propias
+   licencias, que prevalecen sobre esta en lo que les corresponde.
+
+4. Sin garantía
+   El contenido se ofrece «tal cual», sin garantía de ningún tipo. El titular
+   no responde de ningún daño derivado de su uso.
+
+5. Permisos
+   Para cualquier uso no previsto aquí, escribe a jonasjavier.dev@gmail.com.
+   Cualquier uso que infrinja esta licencia la termina de inmediato y puede
+   dar lugar a las acciones legales que correspondan.
+
+────────────────────────────────────────────────────────────────────────────
+ENGLISH
+────────────────────────────────────────────────────────────────────────────
+
+This repository is public solely so that its code and working process can be
+read and evaluated. It is NOT open-source software.
+
+1. Permitted
+   a) Viewing and reading the repository's contents on GitHub.
+   b) Cloning or downloading it for private, temporary evaluation — e.g. a
+      hiring process, a work proposal or a technical review — without
+      publishing it or running it in production.
+   c) Quoting short excerpts with attribution in commentary, reviews or
+      analysis, as permitted by applicable law.
+   d) Whatever GitHub's Terms of Service grant its users over public
+      repositories (viewing and forking within GitHub). That grant does not
+      extend any permission in this license.
+
+2. NOT permitted without the owner's prior written authorization
+   a) Copying, reproducing, modifying, adapting, translating or creating
+      derivative works of the code, design, 3D scene, shaders or
+      architecture, in whole or in part.
+   b) Publishing, distributing, sublicensing, selling, renting or deploying
+      this project or any derivative version, commercially or otherwise.
+   c) Using the content — texts, photographs, designs, audio, résumé, personal
+      data, the names "Jonás Orbit" and "Jonás Javier", visual identity — for
+      any purpose, or presenting this work or any part of it as your own.
+   d) Using the repository or its contents to train, fine-tune or evaluate
+      artificial intelligence models, or to build datasets.
+
+3. Third parties
+   Dependencies and third-party assets keep their own licenses, which prevail
+   over this one where they apply.
+
+4. No warranty
+   The contents are provided "as is", without warranty of any kind. The owner
+   is not liable for any damage arising from their use.
+
+5. Permissions
+   For any use not covered here, write to jonasjavier.dev@gmail.com. Any use
+   that infringes this license terminates it immediately and may lead to the
+   corresponding legal action.
