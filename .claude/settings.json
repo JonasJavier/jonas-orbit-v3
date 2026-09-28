@@ -31,7 +31,6 @@
       "PowerShell(git status:*)",
       "PowerShell(git diff:*)",
       "PowerShell(gh run:*)",
-      "Read(//C/Users/hachi/OneDrive/Documentos/GitHub/jonas-orbit-v3/**)",
       "mcp__codebase-memory-mcp__search_graph",
       "mcp__codebase-memory-mcp__search_code",
       "mcp__codebase-memory-mcp__get_code_snippet",
