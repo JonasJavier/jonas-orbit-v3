@@ -53,10 +53,27 @@ se indica Railway.
 | --- | --- | --- |
 | `89c8869e` | `347a197` | FAILED en build: 120 tests de componentes con `React.act is not a function` (`NODE_ENV=production` heredado por Vitest) |
 | `befd7573` | `1050317` | Build PASS (Node 24.21.0, 588 tests, `next build`); `next start` listo en 75 ms en el puerto 8080; healthcheck 503 durante 5 minutos: faltan `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY` |
+| `8b89a5c3` | `1050317` | Build PASS; healthcheck 503: `TURNSTILE_EXPECTED_HOSTNAME` seguía en `orbit.jonasjavier.dev` y el health exige el host de `NEXT_PUBLIC_SITE_URL` |
+| `b74c2ca9` | `1050317` | **SUCCESS** con `TURNSTILE_EXPECTED_HOSTNAME=jonasjavier.dev` |
+
+En vivo tras `b74c2ca9`: `/api/health` → `{"ok":true}`; `/` → 307 a `/es`;
+las seis rutas 200; `/es/nada`, `/es/laboratorio` y `/en` 404; `http://` →
+301 a `https://`; `orbit.jonasjavier.dev/<ruta>` → 308 al canónico; CSP, HSTS
+y las demás cabeceras presentes; Turnstile se renderiza en `/es/contacto`; la
+portada monta la escena sin errores de consola.
+
+## Firefox y WebKit (Linux, imagen de Playwright 1.61.1)
+
+Incompleto: el disco del equipo se llenó a mitad de la ejecución y cortó el
+informe antes de los detalles de los errores. Firefox: 129 PASS y 28 FAIL,
+todos en pruebas que exigen la escena WebGL viva (océano de Miller, escena
+persistente que duerme y despierta, Observatorio, interruptor de movimiento);
+hipótesis sin confirmar: sin GPU el contenedor cae al perfil plano. WebKit:
+sólo 36 pruebas corrieron, 33 PASS y 3 FAIL en la cubierta 3D de Edmunds. CI
+sólo cubre Chromium.
 
 ## Sin verificar en esta revisión
 
-- Entrega real del formulario (requiere las claves de Turnstile y una prueba
-  autorizada por el dueño).
+- Entrega real del formulario (requiere una prueba autorizada por el dueño).
 - Lighthouse de esta versión (la anterior: 98/100/100/100 en `?no3d=1`).
 - Netflix (403) y LinkedIn (999) bloquean al cliente automático de enlaces.
