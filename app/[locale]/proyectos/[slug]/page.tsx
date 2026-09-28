@@ -4,11 +4,16 @@ import { ProjectCase } from "@/components/project-case";
 import { SiteShell } from "@/components/site-shell";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { getF1AProjectBySlug, getF1AProjects } from "@/lib/projects";
+import { projectOgImagePath, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
 import { getWorld, getWorldPath } from "@/lib/worlds";
 
 type ProjectPageProps = {
   params: Promise<{ locale: string; slug: string }>;
 };
+
+// Sólo existen los casos del catálogo: un slug desconocido es un 404 directo,
+// sin renderizarse bajo demanda ni escribirse en la caché del disco.
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.flatMap((locale) =>
@@ -38,14 +43,16 @@ export async function generateMetadata({
     description: project.prose.seoDescription,
     alternates: { canonical: path },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       title: project.prose.seoTitle,
       description: project.prose.seoDescription,
       type: "article",
-      locale: "es_DO",
       url: path,
       images: [
         {
-          url: project.prose.featuredImage.src,
+          url: projectOgImagePath(project.prose.featuredImage.src),
+          width: 1200,
+          height: 630,
           alt: project.prose.featuredImage.alt,
         },
       ],

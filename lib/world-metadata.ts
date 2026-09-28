@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/content/site.data";
+import { SITE_OPEN_GRAPH } from "./site-metadata";
 import { getWorldPath, type World } from "./worlds";
 
 /**
@@ -21,6 +22,7 @@ export function buildWorldMetadata(world: World, locale: Locale): Metadata {
     description: world.prose.summary,
     alternates: { canonical: path },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       type: "article",
       title: `${world.prose.title} · ${world.cosmicName}`,
       description: world.prose.summary,

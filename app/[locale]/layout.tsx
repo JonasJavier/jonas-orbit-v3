@@ -8,6 +8,14 @@ import { worldsData } from "@/content/worlds.data";
 import { getWorlds } from "@/lib/worlds";
 import type { WorldRoute } from "@/lib/world-route";
 
+export function generateStaticParams() {
+  return PUBLISHED_LOCALES.map((locale) => ({ locale }));
+}
+
+// Sólo existen los idiomas publicados: `/fr` o `/xx/contacto` son un 404
+// directo, sin renderizarse bajo demanda ni escribirse en la caché del disco.
+export const dynamicParams = false;
+
 /**
  * Layout de idioma: lo único que NO depende de la ruta concreta.
  *

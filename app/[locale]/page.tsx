@@ -4,6 +4,7 @@ import { Hero } from "@/components/hero";
 import { StructuredData } from "@/components/structured-data";
 import { SystemMap } from "@/components/system-map";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
+import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
 import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
 
 const HOME_TITLE =
@@ -37,9 +38,11 @@ export async function generateMetadata({
       ]),
     },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       title: HOME_TITLE,
       description: HOME_DESCRIPTION,
       url: path,
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }

@@ -14,9 +14,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // `/spike/` es el banco de pruebas desechable de G0: no es producto y no
-      // debe rastrearse. Desaparece de aquí cuando se borre `app/spike/`.
-      disallow: ["/api/", "/*/contacto/gracias", "/spike/"],
+      disallow: ["/api/", "/*/contacto/gracias"],
     },
     sitemap: absoluteUrl("/sitemap.xml"),
   };

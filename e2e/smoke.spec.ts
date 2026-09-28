@@ -485,10 +485,17 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
       "content",
       "OMSTA — ERP en Django y app móvil en React Native | Caso de estudio",
     );
+    // La tarjeta JPEG de 1200 × 630, no el PNG destacado de ~3 MB: las vistas
+    // previas de WhatsApp y compañía no se generan con imágenes tan pesadas.
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      /\/media\/projects\/omsta\/w02-dashboard\.png$/,
+      /\/media\/projects\/omsta\/w02-dashboard-og\.jpg$/,
     );
+    await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "Jonás Orbit");
+    const card = await page.request.get("/media/projects/omsta/w02-dashboard-og.jpg");
+    expect(card.status()).toBe(200);
+    expect((await card.body()).byteLength).toBeLessThan(300_000);
 
     const response = await visit(page, "/es/proyectos/no-existe");
     expect(response?.status()).toBe(404);

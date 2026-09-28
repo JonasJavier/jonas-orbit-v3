@@ -22,20 +22,19 @@ import { getWorlds } from "@/lib/worlds";
  * nadie: no había un solo enlace hacia ella en todo el repositorio ni una línea
  * en este archivo. Salen de la misma tabla que la recepción y el raíl, así que
  * montar el tercer espécimen lo añade aquí sin tocar este archivo.
+ *
+ * Sin `lastModified`: sellar cada URL con la fecha del build afirmaría un
+ * cambio que no ocurrió, y los buscadores descartan un `lastmod` poco fiable.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
-
   return PUBLISHED_LOCALES.flatMap((locale) => [
     {
       url: absoluteUrl(`/${locale}`),
-      lastModified,
       changeFrequency: "weekly" as const,
       priority: 1,
     },
     ...getWorlds(locale).map((world) => ({
       url: absoluteUrl(`/${locale}/${world.prose.slug}`),
-      lastModified,
       changeFrequency: "monthly" as const,
       // Por debajo del home y por encima de los casos: son las páginas de
       // aterrizaje temáticas, la puerta de entrada desde una búsqueda.
@@ -43,7 +42,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...Object.keys(OBSERVATORY_SLUGS).map((objeto) => ({
       url: absoluteUrl(`/${locale}/experimentos/observatorio/${objeto}`),
-      lastModified,
       changeFrequency: "monthly" as const,
       // Por debajo de su sección y a la altura de un caso: es una pieza de
       // trabajo con URL propia, no una página de aterrizaje.
@@ -51,7 +49,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...getF1AProjects(locale).map((project) => ({
       url: absoluteUrl(`/${locale}/proyectos/${project.prose.slug}`),
-      lastModified,
       changeFrequency: "monthly" as const,
       // Los casos son la prueba profesional: por debajo del home, por encima
       // de las páginas legales.
@@ -59,7 +56,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     {
       url: absoluteUrl(`/${locale}/privacidad`),
-      lastModified,
       changeFrequency: "yearly" as const,
       priority: 0.3,
     },

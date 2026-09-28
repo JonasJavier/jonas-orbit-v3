@@ -3,15 +3,25 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/site-shell";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
+import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
 import { getWorld, getWorldPath } from "@/lib/worlds";
 
+const TITLE = "Privacidad del canal de contacto";
+const DESCRIPTION = "Cómo se procesan los datos enviados a través de Jonás Orbit.";
+
 export const metadata: Metadata = {
-  title: "Privacidad del canal de contacto",
-  description: "Cómo se procesan los datos enviados a través de Jonás Orbit.",
+  title: TITLE,
+  description: DESCRIPTION,
   // Ruta ES-only en F1A; el canonical evita duplicados si la URL llega con
   // parámetros de campaña desde LinkedIn o el CV.
   alternates: { canonical: "/es/privacidad" },
-  openGraph: { url: "/es/privacidad" },
+  openGraph: {
+    ...SITE_OPEN_GRAPH,
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/es/privacidad",
+    images: [DEFAULT_OG_IMAGE],
+  },
 };
 
 export function generateStaticParams() {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_OPEN_GRAPH } from "@/lib/site-metadata";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
@@ -20,9 +21,7 @@ export const metadata: Metadata = {
   // Defaults heredados por todas las rutas; cada página los afina y la de
   // gracias los sobrescribe con noindex (conversión fuera del índice).
   openGraph: {
-    type: "website",
-    siteName: "Jonás Orbit",
-    locale: "es_DO",
+    ...SITE_OPEN_GRAPH,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },

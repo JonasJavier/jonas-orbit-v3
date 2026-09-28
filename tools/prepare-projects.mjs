@@ -15,6 +15,9 @@
  * omiten y la página lo sabe por el manifiesto. Los PNG no se tocan:
  * `ProjectCase` y `ProjectCard` los siguen sirviendo por `next/image`.
  *
+ * De la captura destacada de cada caso deja también `<nombre>-og.jpg`, la
+ * tarjeta de 1200 × 630 que usan las vistas previas al compartir el enlace.
+ *
  * Además escribe `content/projects-media.json` con el ancho y el alto MEDIDOS
  * de cada original, sus peldaños disponibles y su luma media (§17). Es lo que permite que Velite
  * compruebe `frame: mobile` contra la imagen real y que la página componga el
@@ -106,6 +109,48 @@ for (const project of projects) {
 
 await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`${Object.keys(manifest).length} capturas registradas en content/projects-media.json`);
+
+/*
+  La tarjeta para compartir de cada caso (`og:image`).
+
+  El PNG destacado pesa 2–3 MB y WhatsApp, entre otros, no genera vista previa
+  con imágenes tan pesadas. De cada `featuredImage` del MDX sale
+  `<nombre>-og.jpg`: 1200 × 630, recortada desde arriba —donde vive la cabecera
+  del producto— y en JPEG progresivo, el formato que aceptan todos los clientes.
+*/
+const OG_WIDTH = 1200;
+const OG_HEIGHT = 630;
+const OG_QUALITY = 82;
+
+const featured = new Set();
+for (const locale of await readdir(path.join(root, "content"), { withFileTypes: true })) {
+  if (!locale.isDirectory()) continue;
+  const proseDir = path.join(root, "content", locale.name, "projects");
+  let entries = [];
+  try {
+    entries = await readdir(proseDir);
+  } catch {
+    continue;
+  }
+  for (const file of entries.filter((name) => name.endsWith(".mdx"))) {
+    const source = await readFile(path.join(proseDir, file), "utf8");
+    const match = source.match(/^featuredImage:\s*\n\s+src:\s*(\S+\.png)\s*$/m);
+    if (match) featured.add(match[1]);
+  }
+}
+
+for (const src of [...featured].sort()) {
+  const source = path.join(root, "public", src);
+  const target = source.replace(/\.png$/, "-og.jpg");
+  if (await isFresh(target, (await stat(source)).mtimeMs)) continue;
+  const jpeg = await sharp(await readFile(source))
+    .resize({ width: OG_WIDTH, height: OG_HEIGHT, fit: "cover", position: "top", kernel: "lanczos3" })
+    .flatten({ background: "#05070f" })
+    .jpeg({ quality: OG_QUALITY, progressive: true, mozjpeg: true })
+    .toBuffer();
+  await writeFile(target, jpeg);
+  console.log(`${path.relative(root, target)}  ${(jpeg.length / 1024) | 0} KB`);
+}
 
 /*
   La sala — el fondo de la página, horneado por `tools/render-projects-room.mjs`.

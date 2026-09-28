@@ -10,6 +10,7 @@ import {
   observatoryCatalog,
   OBSERVATORY_SLUGS,
 } from "@/lib/observatory-catalog";
+import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
 import { getWorld } from "@/lib/worlds";
 
@@ -70,13 +71,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!id) return { title: "Espécimen no encontrado" };
   const world = getWorld(id, locale as Locale);
   const path = `/${locale}/experimentos/observatorio/${objeto}`;
+  const title = `${world.cosmicName} · Observatorio`;
+  const description = `Observación de cerca de ${world.cosmicName}: geometría, material e iluminación.`;
   return {
-    title: `${world.cosmicName} · Observatorio`,
-    description: `Observación de cerca de ${world.cosmicName}: geometría, material e iluminación.`,
+    title,
+    description,
     // El §1.3 vende «mira la Endurance» como enlace compartible dentro de una
     // candidatura. Un enlace compartible que ningún buscador conoce y que no
     // declara su canónica es sólo una URL que funciona por casualidad.
     alternates: { canonical: absoluteUrl(path) },
+    openGraph: {
+      ...SITE_OPEN_GRAPH,
+      title,
+      description,
+      url: path,
+      images: [DEFAULT_OG_IMAGE],
+    },
   };
 }
 
