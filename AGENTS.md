@@ -4,10 +4,33 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-**Contexto de código:** el repo está indexado en codebase-memory-mcp. Antes de
-explorar código, consulta el grafo (`search_graph`, `trace_path`,
-`get_code_snippet`) en vez de leer archivos enteros: guía y mapa por dominio en
-`docs/ai/codebase-memory.md`.
+## Cómo trabajar aquí sin gastar contexto (todo agente)
+
+1. **Código → el grafo primero.** El repo tiene UN solo grafo en
+   codebase-memory-mcp: proyecto
+   `C-Users-savage-Documents-kimi-Workspaces-portafolio-espacial-jonas-orbit-v3`
+   (también desde un worktree: no indexes otro). `search_graph` para encontrar
+   (siempre con `limit` 5–20: sin él devuelve hasta 200 resultados),
+   `trace_path(direction="inbound")` para saber qué rompe un cambio,
+   `get_code_snippet` para leer sólo esa función. `Read` antes de editar;
+   `Grep` para texto literal, CSS y copy. Guía, mapa por dominio y
+   mantenimiento: `docs/ai/codebase-memory.md`.
+2. **Decisiones → una entrada, no el registro.** `docs/registro-de-decisiones.md`
+   pasa de 120 KB: `grep -n '^## ' docs/registro-de-decisiones.md` y lee sólo
+   la entrada (o `search_graph(name_pattern="(?i).*tema.*", label="Section")`,
+   que también busca en `docs/design/`). Igual con los
+   documentos de diseño largos y `tools/README.md`: índice de `^#` y la sección.
+3. **Nada de >40 KB se lee entero.** Código: `components/scene/bodies.ts`
+   (230 KB), `gargantua-shaders.ts` (140), `observatory-viewer.tsx` (90),
+   `system-scene.ts` / `observatory-scene.ts` → `get_code_snippet`. CSS:
+   `app/globals.css` (120), `observatory.css`, `projects-page.css`,
+   `about-page.css` → `Grep` del selector y `offset`/`limit`. Diseño:
+   `tesseract-experimentos.md` (200), `hero-gargantua-direction.md` (125),
+   `world-visual-language.md`, `endurance-proyectos.md` → sólo la sección.
+4. **Salidas largas a un archivo** (`npm run check`, e2e, `tools/`) y lee el
+   final o los errores.
+5. **El veredicto es visual:** las capturas NO se racionan; `read_page` /
+   `get_page_text` comprueban texto, no sustituyen una captura.
 
 # Jonás Orbit v3 — reglas del repositorio
 
@@ -110,26 +133,17 @@ MDX**, nunca en `worlds.data.ts`.
   corren con reduced-motion). Publicación de E03/Bonao City pendiente.
 - **Formación / Miller** `docs/design/miller-formacion.md` §«Océano en WebGL2 y
   formación en curso» (09-12) — `education.inProgress`.
-- **Proyectos** `docs/design/endurance-proyectos.md` (09-21; §15 y §16,
-  09-24; **§17 «Tercer pase», 09-25, manda** en capas, mesa, muelle y caso
-  completo; **§18, 09-26**: OMSTA rehecho con su app móvil desde
-  `portfolio-content/omsta-2026/`, `module` por captura → «Recorrido por
-  módulos», `stack` → sección Tecnologías, `tech` por nodo → inspector, la
-  mesa sólo monta lo que levanta; **§19, 09-26**: Network, mismo método,
-  pasa a caso completo desplegado con demo; **§20, 09-26**: Delicaté, mismo
-  método, en producción con su dominio; **§21, 09-27**: Izak's Photos, caso
-  completo en línea, estudio de demostración) — capas **Producto** (alcance en la mesa) · Diseño (carrete de
-  `designDecisions`: problema → decisión) · Ingeniería (ruta entera del
-  módulo con `nodePath`, esquema sólo con carriles ocupados, anillo del
-  sistema en la mesa); quinto carril `integraciones`; `scope` y `luma` por
-  captura. Esquema e inspector compartidos en `components/system-diagram.*`;
-  mesa en `components/engineering-table.tsx` (parte pura en
-  `lib/engineering-table.ts`); sala = render horneado. El caso
-  `/es/proyectos/[slug]` rehecho (`components/project-case*.tsx`) y con la
-  escena dormida en TODA ruta de Endurance. El botón del producto vivo sale de
-  `links` `kind: demo` con su `label` (Network la tiene). Abiertos:
-  valoración visual, redacción de `scope`/`designDecisions` (borrador),
-  arquitecturas y URLs de producción.
+- **Proyectos** `docs/design/endurance-proyectos.md` — **§17 «Tercer pase»
+  (09-25) manda** en capas, mesa, muelle y caso completo: **Producto**
+  (alcance en la mesa) · Diseño (`designDecisions`: problema → decisión) ·
+  Ingeniería (`nodePath`, sólo carriles ocupados, quinto carril
+  `integraciones`); sala = render horneado. §18–§21 (09-26/27): OMSTA (con
+  app móvil), Network, Delicaté e Izak's Photos (estudio de demostración)
+  rehechos con el mismo método desde `portfolio-content/<proyecto>-2026/`
+  (`module`/`scope`/`luma` por captura, `stack`, `tech` por nodo; la mesa sólo
+  monta lo que levanta). Escena dormida en TODA ruta de Endurance; el botón del
+  producto vivo sale de `links` `kind: demo`. Abiertos: redacción de
+  `scope`/`designDecisions` (borrador) y URLs de producción.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.
@@ -243,13 +257,9 @@ se lee como verde. Redirige a un archivo y consulta `$?`.
 
 ## Referencias de v2
 
-`docs/reference/v2/` conserva código de la versión anterior SOLO como
-referencia (excluido de tsconfig y Knip): `universe.ts` (copy ya migrado a
-`content/es/worlds/` corrigiendo Marketing Digital a carrera terminada),
-`use-reduced-motion.ts`, `use-device-capability.ts`, `performance.ts` (base
-para el gate de capacidad de F2B — adaptar al puerto nuevo cuando se
-implemente, no importar directo). El `app/api/contact` de v2 estaba vacío: el
-Worker de contacto de F1A se construye desde cero según la spec del plan.
+`docs/reference/v2/` es código de la versión anterior SOLO como referencia
+(fuera de tsconfig, Knip y el grafo): se adapta, nunca se importa.
+`performance.ts` es la base del gate de capacidad de F2B.
 
 ## Al terminar una feature
 

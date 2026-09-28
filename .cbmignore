@@ -21,3 +21,21 @@ output/
 Disenos/
 Fotos/
 music/
+
+# Artefactos locales que .gitignore ya excluye, repetidos aquí a propósito: el
+# 2026-09-27 el grafo tenía dentro los informes de .lighthouseci/ (indexados
+# antes de que .gitignore los listara) y un reindexado incremental no los saca.
+.lighthouseci/
+.claude/
+.gstack/
+.playwright-cli/
+.shots/
+.next/
+.open-next/
+.velite/
+.wrangler/
+test-results/
+playwright-report/
+tmp/
+*.tsbuildinfo
+package-lock.json

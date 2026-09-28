@@ -40,6 +40,7 @@
       "mcp__codebase-memory-mcp__query_graph",
       "mcp__codebase-memory-mcp__index_status",
       "mcp__codebase-memory-mcp__detect_changes",
+      "mcp__codebase-memory-mcp__index_repository",
       "WebSearch",
       "WebFetch(domain:threejs.org)",
       "WebFetch(domain:r3f.docs.pmnd.rs)",

@@ -5,14 +5,23 @@ movidas aquí sin editar para que `AGENTS.md` —que se carga en cada sesión de
 cada agente— quede en un índice corto. El índice de `AGENTS.md` dice QUÉ
 documento manda en QUÉ; aquí está el porqué, las cifras medidas y las trampas.
 
-**Las entradas nuevas se escriben aquí**, arriba del todo, y en `AGENTS.md` sólo
-se añade su línea de índice. El orden es el que tenían (no estrictamente
+**Las entradas nuevas se escriben aquí**, arriba del todo, como
+`## Ámbito — título (AAAA-MM-DD)` seguido del texto, y en `AGENTS.md` sólo se
+añade su línea de índice. El orden es el que tenían (no estrictamente
 cronológico): ante contradicción, manda lo que diga cada entrada sobre qué
 sustituye, y si no lo dice, la más reciente.
 
+**Cómo leerlo sin cargarlo entero** (pesa >120 KB):
+`grep -n '^## ' docs/registro-de-decisiones.md` da el índice con número de
+línea; después `Read` con `offset`/`limit` sólo esa entrada. Cada `## ` es
+también un nodo del grafo: `search_graph(name_pattern="(?i).*agujero.*",
+label="Section", file_pattern="docs/registro*")` la encuentra por tema.
+
 ---
 
-**Publicación en Railway (2026-09-27):** el dueño eligió Railway para Jonás
+## Publicación en Railway (2026-09-27)
+
+El dueño eligió Railway para Jonás
 Orbit v3, autorizó crear un proyecto nuevo y eligió `orbit.jonasjavier.dev`.
 Esto sustituye a Cloudflare Workers como destino de producción en el README,
 la guía operativa y el workflow; las pruebas y el adaptador OpenNext se
@@ -29,7 +38,9 @@ cerrar esos gates. La protección de tasa de la antigua infraestructura
 Cloudflare no se traslada automáticamente a Railway: resolverla antes de
 abrir el formulario al tráfico público.
 
-**Cloudflare — caché de páginas prerenderizadas (2026-09-27):** el preview real
+## Cloudflare — caché de páginas prerenderizadas (2026-09-27)
+
+El preview real
 del candidato con Wrangler 4.141.0 sí arranca en Windows, pero la caché `dummy`
 de OpenNext deja cuatro destinos en 404 y OMSTA en 500. Se configura la caché
 de Static Assets de sólo lectura y su interceptación, siguiendo el modo SSG
@@ -43,7 +54,9 @@ entra en CI tras el build del Worker. `public/_headers` da caché immutable sól
 a los chunks con hash de Next. Procedimiento y evidencia en
 `docs/production-readiness.md` y `docs/reviews/repository-readiness-2026-09-27.md`.
 
-**Compatibilidad de audio y pruebas de capacidad (2026-09-27):** la revisión
+## Compatibilidad de audio y pruebas de capacidad (2026-09-27)
+
+La revisión
 multinavegador detecta `cancelAndHoldAtTime` ausente en Firefox y un evento de
 pausa que podía apagar la intención antes de desbloquear el autoplay. La banda
 sonora conserva la rampa y `armed` mediante APIs disponibles y prueba ambos
@@ -61,7 +74,9 @@ El dispatch manual de CI incluye multinavegador y enlaces para comprobar una
 rama candidata antes de fusionar; los PR ordinarios conservan Chromium y el
 deploy sigue restringido a `main`.
 
-**Dependencias — actualización dedicada de seguridad (2026-09-27):** dentro
+## Dependencias — actualización dedicada de seguridad (2026-09-27)
+
+Dentro
 de la preparación de producción solicitada por el dueño, la rama
 `codex/security-hardening` fija Next/ESLint 16.3.6, OpenNext 1.20.6,
 Vitest 4.1.11 y Wrangler 4.141.0. PostCSS 8.5.28 y Sharp 0.35.4 conservan
@@ -71,7 +86,9 @@ evidencia y los gates pendientes viven en
 `docs/reviews/repository-readiness-2026-09-27.md`; CI añade auditoría de avisos
 altos/críticos. La actualización permanece separada de cambios de interfaz.
 
-**Calidad del repositorio y publicación (2026-09-27):** por solicitud del dueño,
+## Calidad del repositorio y publicación (2026-09-27)
+
+Por solicitud del dueño,
 el README se actualiza a los seis destinos y al estado real de los casos. Se
 añaden guías de contribución, seguridad, plantillas y responsables; los
 artefactos generados y temporales salen del checkout versionado y siguen
@@ -83,8 +100,9 @@ repositorio no constituye aprobación visual ni certificación de producción:
 facturación de Actions, dominio, runtime, licencias y vulnerabilidades requieren
 su propia verificación. No cambia la arquitectura narrativa ni la interfaz.
 
-**Proyectos — Izak's Photos rehecho: caso completo, en línea, estudio de
-demostración (2026-09-27):** el §21 de `docs/design/endurance-proyectos.md`
+## Proyectos — Izak's Photos rehecho: caso completo, en línea, estudio de demostración (2026-09-27)
+
+El §21 de `docs/design/endurance-proyectos.md`
 aplica el mismo método desde `portfolio-content/izaks-photos-2026/`. Izak's
 pasa de ficha breve a **caso completo** y a `status: production`: en línea en
 `izaksphotos.jonasjavier.dev` con las mejoras del kit ya desplegadas. El
@@ -97,8 +115,9 @@ repositorio de Job Nacor. 44 de las 57 capturas en 7 módulos, 8 decisiones,
 Endurance: 4 en producción, 1 lista. Abierto: veredicto y el origen de las
 fotografías.
 
-**Proyectos — Delicaté rehecho: en producción con su dominio
-(2026-09-26):** el §20 de `docs/design/endurance-proyectos.md` aplica el mismo
+## Proyectos — Delicaté rehecho: en producción con su dominio (2026-09-26)
+
+El §20 de `docs/design/endurance-proyectos.md` aplica el mismo
 método desde `portfolio-content/delicate-2026/`. Delicaté pasa a
 `status: production`: en línea en `delicate.jonasjavier.dev` (Railway, un
 contenedor Docker, PostgreSQL, volumen de fotos); `statusLabel` y el caso dicen
@@ -113,8 +132,9 @@ cifras del pie de Endurance (3 en producción, 2 listos) estaban viejas desde
 Network. La prueba «sin módulos» pasa a Wiki Universe. CV ES/EN al día y en
 una página. Abierto: veredicto.
 
-**Proyectos — Network rehecho: caso completo, desplegado y con demo
-(2026-09-26):** el §19 de `docs/design/endurance-proyectos.md` aplica a Network
+## Proyectos — Network rehecho: caso completo, desplegado y con demo (2026-09-26)
+
+El §19 de `docs/design/endurance-proyectos.md` aplica a Network
 el método del §18 desde `portfolio-content/network-2026/` (kit de otra
 sesión, misma regla: lo que falla o no se ve bien, fuera). Network pasa de
 ficha breve a **caso completo** y a `status: production`: web y API
@@ -132,8 +152,9 @@ canónico `cs50w-network`; el caso publica las cuentas de la demo por decisión
 del dueño. CV ES/EN al día y en una página. Abierto: veredicto, y
 «Aprendizajes» en la voz del dueño.
 
-**Proyectos — OMSTA rehecho: web y app móvil, recorrido por módulos y
-tecnologías (2026-09-26):** el §18 de `docs/design/endurance-proyectos.md`
+## Proyectos — OMSTA rehecho: web y app móvil, recorrido por módulos y tecnologías (2026-09-26)
+
+El §18 de `docs/design/endurance-proyectos.md`
 manda sobre el §17 en cuántas pantallas monta la mesa, el final del caso y
 cómo se dicen las tecnologías. El dueño pidió que OMSTA abarcase de verdad
 un sistema «muy muy grande» —más información, capturas y módulos— y su app
@@ -155,8 +176,9 @@ para iOS, sin build ni tiendas. Confirmado el mismo día: la agencia es
 **CristegnoViajes SRL** y son **15 usuarios** (caso y CV); las decisiones de
 diseño, revisadas por delegación del dueño (§18.5). Abierto: veredicto.
 
-**Proyectos — tercer pase: la mesa cambia de función y el caso se rehace
-(2026-09-25):** el §17 de `docs/design/endurance-proyectos.md` manda sobre el
+## Proyectos — tercer pase: la mesa cambia de función y el caso se rehace (2026-09-25)
+
+El §17 de `docs/design/endurance-proyectos.md` manda sobre el
 §16 en capas, lectura, mesa física, muelle y contenido de Diseño, y sustituye
 la ficha antigua de `/es/proyectos/[slug]`. El dueño hizo suya una crítica
 larga de la mesa y pidió rehacer «Explorar proyecto» «totalmente diferente,
@@ -189,7 +211,9 @@ verde; `e2e/proyectos.spec.ts` al día y `e2e/proyecto-caso.spec.ts` nuevo,
 dueño, redacción de `scope`/`designDecisions`, dos llamadas a contacto al
 final del caso, arquitecturas y URL `kind: demo`.
 
-**Proyectos — la mesa en limpio, segundo pase (2026-09-24):** el §16 de
+## Proyectos — la mesa en limpio, segundo pase (2026-09-24)
+
+El §16 de
 `docs/design/endurance-proyectos.md` manda sobre §4, §5, §7 y §15 en
 composición, lectura, capas, mesa física, sala e interacción. El dueño
 rechazó la construcción del mismo día («hay mucho texto»; minimalista,
@@ -216,7 +240,9 @@ atributo al hidratar escondía lo ya pintado. Unit, componente y
 `e2e/proyectos.spec.ts` en verde. Abierto: veredicto visual del dueño,
 arquitecturas, URL `kind: demo`.
 
-**Proyectos — la mesa de ingeniería construida (2026-09-24):** el §15
+## Proyectos — la mesa de ingeniería construida (2026-09-24)
+
+El §15
 «Construcción» de `docs/design/endurance-proyectos.md` manda sobre §5-§9 y
 §12 en **cómo está hecha la mesa y en qué se aparta del plan**. El dueño
 pidió continuar con los cinco proyectos ya documentados y un sitio visible
@@ -245,7 +271,9 @@ de móvil se rompe; y `container-type: size` no puede vivir en el mismo
 elemento que `preserve-3d`. Abiertos: confirmar arquitecturas, URL de
 producción, foto de la sala, conector por fila en móvil, valoración visual.
 
-**Proyectos — Delicaté publicado antes de la mesa (2026-09-23):** el dueño
+## Proyectos — Delicaté publicado antes de la mesa (2026-09-23)
+
+El dueño
 pidió incluir Delicaté antes de construir la mesa de ingeniería; cierra la
 decisión abierta §13.1 de `docs/design/endurance-proyectos.md` a favor de
 cinco proyectos y modifica el plan principal, que lo dejaba en F1B.
@@ -272,7 +300,9 @@ credenciales. Volverá cuando el dueño rote esas credenciales, limpie el
 historial y lo haga público. Pendiente del dueño: confirmar «negocio real»
 (el README de Delicaté lo llama «proyecto de portafolio personal»).
 
-**Gargantúa — sin retículo fijo en el centro (2026-09-23):** §7 bis de
+## Gargantúa — sin retículo fijo en el centro (2026-09-23)
+
+§7 bis de
 `docs/design/hero-gargantua-direction.md` sustituye §7 sólo en la marca de
 calibración centrada del visor. El dueño señaló sus dos trazos laterales como
 dos rayitas que parecían estar dentro de Gargantúa. Se retira el glifo completo,
@@ -280,7 +310,9 @@ incluidos sus dos trazos verticales; marco, brackets, franja superior, TARGET y
 retículo móvil del puntero siguen intactos. No se toca Gargantúa, el raymarch,
 el bloom ni el rastro de polvo.
 
-**Footer — misma paleta exacta y más animación (2026-09-23):** el dueño
+## Footer — misma paleta exacta y más animación (2026-09-23)
+
+El dueño
 corrige el primer pase: mismos colores que la navbar y movimiento más
 visible, con estrellas fugaces. `footer-observatorio.md` §«Segundo pase»
 manda en paleta y ritmo: tokens compartidos en `voyage-palette.css`, fuera
@@ -289,7 +321,9 @@ el baño violeta y el degradado del título. Perfil de cielo del footer a
 El interruptor global y la suspensión por visibilidad siguen mandando.
 La navbar conserva su paleta y ritmo. Valoración visual pendiente.
 
-**Footer — complemento vivo de la navbar (2026-09-23):** petición del dueño
+## Footer — complemento vivo de la navbar (2026-09-23)
+
+Petición del dueño
 de mejorar el footer y darle una animación similar a la cabecera. El pase
 candidato se documenta en `docs/design/footer-observatorio.md`: mismo
 `VoyageSky`, marca y acento por mundo; invitación con acceso orbital al mapa,
@@ -300,7 +334,9 @@ sigue abriendo el correo; los demás llevan a Contacto. Pruebas de servidor,
 pausa y reanudación añadidas; navbar, typecheck, Knip y build verificados.
 **La valoración visual del dueño sigue pendiente.**
 
-**La Ranger despega siempre al entrar (2026-09-23):** el dueño tenía que
+## La Ranger despega siempre al entrar (2026-09-23)
+
+El dueño tenía que
 recargar varias veces para que el vuelo arrancara. Causa: la limpieza del
 efecto del ventanal llamaba a `loseContext()` sobre un `<canvas>` que React
 NO retira —el doble montaje de StrictMode en desarrollo, Fast Refresh—; el
@@ -318,8 +354,9 @@ y los draws salen a 0–22/s; para medir el ritmo, `HEADED=1`
 (`node .shots/ranger-boot-probe.mjs`). La suite e2e corre el build de
 producción, sin StrictMode: no habría visto este fallo.
 
-**El encendido por defecto no monta la escena en un equipo que no puede
-(2026-09-23):** `docs/design/movimiento-unificado.md` §«Tres lecturas». El
+## El encendido por defecto no monta la escena en un equipo que no puede (2026-09-23)
+
+`docs/design/movimiento-unificado.md` §«Tres lecturas». El
 commit 5711581 (09-22) hizo `useForcedEffects()` verdadero por defecto para
 que reduced-motion no congelara la escena, y de paso el gate dejó de mirar al
 equipo: el System Map se montaba sobre GPU por software, donde **un fotograma
@@ -351,7 +388,9 @@ suite limita por eso el paralelismo a cuatro workers locales y dos en CI: los
 fallos de C2/C4 y salida del Observatorio del 2026-09-26 pasaron 6/6 al
 repetirlos aislados y no justificaban relajar sus aserciones.
 
-**Ranger — hero mínimo y panel de enlace (2026-09-23):** la sección
+## Ranger — hero mínimo y panel de enlace (2026-09-23)
+
+La sección
 homónima de `docs/design/ranger-contacto.md` manda en la primera pantalla y
 en el orden de `/es/contacto`. Hero como la referencia del dueño: destino,
 título, una línea, UN botón y «o abrir mi correo»; el panel derecho baja a un
@@ -363,7 +402,9 @@ cinta de rumbo, el retículo y el bloque «Tripulación» suelto. En móvil la
 consola sube antes del manifiesto para que el botón aterrice en el
 formulario. Valoración visual abierta.
 
-**Ranger — travesía por el agujero de gusano (2026-09-22):** la sección
+## Ranger — travesía por el agujero de gusano (2026-09-22)
+
+La sección
 `Travesía por el agujero de gusano` de `docs/design/ranger-contacto.md` manda
 sobre `Cabina de mando` en **ventanal, vuelo, marco y composición de la primera
 pantalla de `/es/contacto`**. Pedido del dueño: vuelo ligado al interruptor
@@ -384,7 +425,8 @@ del sistema la cabina devuelve sus animaciones CSS mientras el interruptor esté
 en «on». Medido en GPU integrada a 2048 px: 16,2 cuadros/s contra 14,7 del
 ventanal anterior. Valoración visual abierta.
 
-**Bandeja — ON/OFF legible y audio encendido por defecto (2026-09-22):**
+## Bandeja — ON/OFF legible y audio encendido por defecto (2026-09-22)
+
 `docs/design/movimiento-unificado.md` §«El icono» y
 `docs/design/sonido-del-sitio.md` §2. El dueño no distinguía encendido de
 apagado: con reduced-motion el satélite no gira, y sólo cambiaba un punto de
@@ -393,8 +435,9 @@ discontinuo, icono tachado y `OFF`; el audio añade `MUTE` en ámbar. El audio
 retenido por el navegador hasta el primer gesto es `armed` y se muestra ON; la
 clave guardada pasa a `jonas-orbit:audio-on` para olvidar «apagados» viejos.
 
-**EL SONIDO DEL SITIO (2026-09-22) — manda sobre todo lo anterior en qué suena,
-con qué peso y quién lo apaga:** `docs/design/sonido-del-sitio.md`. Lo pidió el
+## EL SONIDO DEL SITIO (2026-09-22) — manda sobre todo lo anterior en qué suena, con qué peso y quién lo apaga
+
+`docs/design/sonido-del-sitio.md`. Lo pidió el
 dueño tras aprobar la travesía: sonido leve al apuntar los objetos de la
 portada, agua en Miller, y carta blanca para el resto. **Un solo bus**
 (`lib/audio-bus.ts`): un `AudioContext`, un maestro, un limitador y un único
@@ -469,7 +512,9 @@ procedencia y la licencia de los dos archivos.** Escena, cámara, materiales y
 composición no cambian. Su valoración sonora queda abierta.
 
 
-**Travesía — el sonido, el pestillo y el alabeo (2026-09-22):** el apartado
+## Travesía — el sonido, el pestillo y el alabeo (2026-09-22)
+
+El apartado
 `Segundo pase — el sonido, el pestillo y el alabeo` de
 `docs/design/travesia-espaciotemporal.md` manda sobre el resto de ese documento
 en **qué se oye al viajar, quién lo apaga y qué hace la cámara durante la
@@ -508,7 +553,8 @@ mitad de viaje. Duración, fases, momento del cambio de ruta, versión reducida 
 flavours no cambian. Su valoración visual y sonora queda abierta.
 
 
-**Proyectos — la mesa de ingeniería (2026-09-21, plan aprobado, sin construir):**
+## Proyectos — la mesa de ingeniería (2026-09-21, plan aprobado, sin construir)
+
 `docs/design/endurance-proyectos.md` manda sobre `WorldPage` + `ProjectGrid` en
 **composición, interacción, contenido de arquitectura y límites de
 `/es/proyectos`**. Dirección del dueño: una sala oscura con una mesa de
@@ -525,7 +571,9 @@ borradores de arquitectura del §6, y la fotografía de la sala
 (`assets/proyectos/FUENTES.md`). `/es/proyectos/[slug]` no cambia.
 
 
-**Endurance — doce módulos de tres familias (2026-09-21):** el apartado
+## Endurance — doce módulos de tres familias (2026-09-21)
+
+El apartado
 `Cuarto pase — doce módulos y tres siluetas` de `docs/design/endurance-jerarquia.md`
 sustituye el tercer pase. El dueño pidió menos módulos y diferencias reales
 según dos referencias nuevas. Doce: cuatro estaciones largas de doble panel
@@ -535,7 +583,9 @@ con escotillas circulares por ambas caras. Anillo 1.22, dos brazos, núcleo y
 Rangers conservados. Cuatro draws, 12 123 vértices; radio medido 6.2575212966.
 SVG, conteos y registro factual actualizados. Valoración visual pendiente.
 
-**Endurance — catorce módulos y forma de referencia (2026-09-21):** el apartado
+## Endurance — catorce módulos y forma de referencia (2026-09-21)
+
+El apartado
 `Tercer pase — catorce módulos y cuerpos prismáticos` de
 `docs/design/endurance-jerarquia.md` manda sobre el segundo pase. El dueño pide
 retirar dos módulos y corregir su forma contra las mismas tres referencias.
@@ -547,7 +597,9 @@ las Rangers atracadas. 28 caras térmicas expuestas. Radio del anillo 1.22,
 `boundsFill` 0.96 y cuatro draws conservados; radio físico medido 6.0906807906.
 El SVG y los conteos reflejan los 14 módulos. Valoración visual pendiente.
 
-**Endurance — segundo pase con referencias (2026-09-21):** el apartado
+## Endurance — segundo pase con referencias (2026-09-21)
+
+El apartado
 `Segundo pase — referencias de la Endurance` de `docs/design/endurance-jerarquia.md`
 manda sobre el pase anterior. El dueño retiró explícitamente las alas térmicas
 y pidió más módulos, menores, con un anillo mayor. Ahora son dieciséis, unidos
@@ -559,7 +611,8 @@ las alas y el muelle rectangular del anillo. Cuatro draws; radio físico
 El SVG y `DATOS` reflejan la arquitectura. No cambia `placement`, la cámara del
 mapa ni la luz compartida. Valoración visual pendiente de Jonás.
 
-**Endurance — jerarquía y muelle de misión (2026-09-20):**
+## Endurance — jerarquía y muelle de misión (2026-09-20)
+
 `docs/design/endurance-jerarquia.md` manda sobre los pases anteriores en
 geometría y materiales de la Endurance. Pedido explícito del dueño: mejorar
 la nave, usando sus capturas del Observatorio como referencia. Doce módulos
@@ -572,7 +625,8 @@ El esquema SVG refleja la misma arquitectura. No es la implementación de la
 página Proyectos ni un despliegue interactivo de proyectos. Su valoración
 visual queda pendiente de Jonás.
 
-**Sobre mí — constelación personal (2026-09-14):**
+## Sobre mí — constelación personal (2026-09-14)
+
 `docs/design/sobre-mi-constelacion.md` manda en contenido y composición de
 `/es/sobre-mi`. El dueño aprobó la maqueta y pidió construir conservando la
 navbar. Seis constelaciones, F40 como retrato central y F28 en Cómo soy,
@@ -582,7 +636,9 @@ escena persistente duerme también en Gargantúa porque ahora la cubre el álbum
 No convertir las aficiones en CV ni publicar los detalles privados del sueño.
 La autorización de publicación de E03/Bonao City sigue pendiente; ver las fuentes.
 
-**Sobre mí — explorar una constelación (2026-09-15):** el apartado `Pase de
+## Sobre mí — explorar una constelación (2026-09-15)
+
+El apartado `Pase de
 exploración` de `docs/design/sobre-mi-constelacion.md` manda en navegación,
 copy, fotos y encaje del hero. Entrada sin capítulo abierto; un único slot,
 índice contextual y seis hashes canónicos, también sin JS vía CSS `:target`.
@@ -593,7 +649,9 @@ de public. Mantenimiento no se etiqueta como Betel: nuevas fotos pendientes.
 Dos carruseles pequeños de portadas sin autoplay. Navbar, cierre y footer
 conservados. Aprobación visual del pase pendiente del dueño.
 
-**Sobre mí — revisión editorial (2026-09-15):** el apartado `Revisión editorial
+## Sobre mí — revisión editorial (2026-09-15)
+
+El apartado `Revisión editorial
 del pase` de `docs/design/sobre-mi-constelacion.md` sustituye el pase inicial en
 hero, fondos y carruseles. Título compacto sin subtítulo ni frase duplicada;
 F23 mejorada de miniaturas sustituye a E03 (retirada de public); fuera F42/hielo
@@ -602,7 +660,8 @@ ampliados con autoplay de 5,5 s solicitado por el dueño: sólo visibles, pausa
 al interactuar, interruptor global y reduced-motion. Retrato real de Zimmer con
 crédito. Betel explicado. Navbar/cierre/footer intactos; aprobación visual pendiente.
 
-**Experimentos — simplificación y silencio (2026-09-23):**
+## Experimentos — simplificación y silencio (2026-09-23)
+
 `tesseract-experimentos.md` §«Pase de simplificación» manda en el pie de
 `/es/experimentos` (una frase y su eco, sin hechos), en el estado de las filas
 (sin «LISTO» en reposo) y en la pista táctil del visor. El Observatorio deja de
@@ -611,14 +670,18 @@ sonar: fuera `acquire`/`lock`/`mount`/`deploy`/`stow` y sus `detent`
 escuchar» mientras la música espera el primer gesto. Aprobación visual
 pendiente.
 
-**Sonido — desbloqueo al primer gesto (2026-09-23):** `sonido-del-sitio.md`
+## Sonido — desbloqueo al primer gesto (2026-09-23)
+
+`sonido-del-sitio.md`
 §2 «Dice ON pero no suena». Rueda y puntero nunca desbloquean (política del
 navegador); el primer toque en táctil sí se perdía y ya no: la banda sonora
 escucha los cinco eventos de activación en captura. Un `<audio>` que suena en
 un contexto suspendido cuenta como `armed`. Indicador de «esperando un clic»
 pendiente de decisión del dueño.
 
-**Sobre mí — pase de pulido (2026-09-22):** `Pase de pulido` en
+## Sobre mí — pase de pulido (2026-09-22)
+
+`Pase de pulido` en
 `docs/design/sobre-mi-constelacion.md` manda en Raíces (dos columnas, F23 entera
 y ampliable), copy de Mi gente, abuelos y Cómo soy, listas de gustos (sólo
 artistas; 18 + 18; sin Fight Club ni Psycho-Pass) y cintas automáticas en CSS
@@ -627,16 +690,21 @@ quitar el crédito. Las cintas y el centelleo corren con reduced-motion mientras
 el interruptor esté encendido (restauración valor a valor, como Edmunds).
 Aprobación visual pendiente.
 
-**Sobre mí — simplificación (2026-09-15):** `Simplificación de recuerdos` en
+## Sobre mí — simplificación (2026-09-15)
+
+`Simplificación de recuerdos` en
 `docs/design/sobre-mi-constelacion.md` manda en copy de vínculos, disfrute y
 camino: frases breves, abuelos con foto mayor y planes a todo el ancho bajo las
 fotos. No recuperar los párrafos retirados. Aprobación visual pendiente.
 
-**Fuente de verdad:** `docs/plans/jonas-orbit-v3-mission-endurance.md` (plan
+## Fuente de verdad
+
+`docs/plans/jonas-orbit-v3-mission-endurance.md` (plan
 aprobado con eng review CLEAR). No abras decisiones arquitectónicas nuevas sin
 pasar por ese documento. La matriz de tests vive en su Appendix A.
 
-**Página de Edmunds — cubierta de observación (2026-09-11):**
+## Página de Edmunds — cubierta de observación (2026-09-11)
+
 `docs/design/edmunds-creatividad.md` documenta la segunda implementación de
 `/es/creatividad`, pedida por el dueño el mismo día tras rechazar la primera
 («la galería 3D no me gusta, quiero que sea más inmersiva; el foco de toda la
@@ -666,7 +734,8 @@ cabeceras de sector y bitácora; el arrastre lleva el anillo con la mano. El
 System Map, sus cuerpos, cámara y materiales no cambian. Su valoración visual
 queda abierta.
 
-**Página de Miller — océano en WebGL2 y formación en curso (2026-09-12):**
+## Página de Miller — océano en WebGL2 y formación en curso (2026-09-12)
+
 la sección `Océano en WebGL2 y formación en curso` de
 `docs/design/miller-formacion.md` manda sobre el resto de ese documento en
 **cómo se anima el hero de `/es/formacion` y cómo se presenta lo que Jonás está
@@ -682,7 +751,9 @@ estudios y el punto de partida; cuando un curso tenga documento, la entrada se
 MUEVE a `certificates`, no se duplica. La dirección de vídeo del hero queda
 descartada. El System Map, sus cuerpos, cámara y materiales no cambian.
 
-**Página de la Ranger — cabina de mando (2026-09-13):** la sección `Cabina de
+## Página de la Ranger — cabina de mando (2026-09-13)
+
+La sección `Cabina de
 mando` de `docs/design/ranger-contacto.md` manda sobre el resto de ese
 documento en **composición, interacción y límites de `/es/contacto`**. El
 dueño rechazó la cabina de comunicaciones del día anterior («no me gusta la
@@ -709,7 +780,9 @@ de rumbo sigue el mismo `yaw`, y el mundo gira bajo la nave con la distancia.
 La búsqueda de estrellas es de cuatro celdas, exacta porque ninguna mide más
 de media celda. Su valoración visual queda abierta.
 
-**Experimentos — recepción y encendido del instrumento (2026-09-17):** la
+## Experimentos — recepción y encendido del instrumento (2026-09-17)
+
+La
 sección `La recepción y el encendido del instrumento` de
 `docs/design/tesseract-experimentos.md` manda sobre el §4 y el §5 de ese
 documento en **cómo se entra al Observatorio**. Dirección fijada por el dueño:
@@ -747,7 +820,9 @@ vive en el MDX (`observatory.pair`) y `registro` es opcional. El tramo final de
 cámara (fov 50→40 y barrido de fase) queda **aplazado a propósito** hasta el
 veredicto visual. Su valoración visual queda abierta.
 
-**Observatorio V1.5 — instrumentos, no interruptores (2026-09-17):** la sección
+## Observatorio V1.5 — instrumentos, no interruptores (2026-09-17)
+
+La sección
 `V1.5 — de manipular un modelo a investigar un objeto` de
 `docs/design/tesseract-experimentos.md` manda sobre el §5 y el §8 en **qué
 instrumentos ofrece el Observatorio y qué puede enseñar como medido**. Cuatro
@@ -772,7 +847,9 @@ se sentaba encima del raíl. `MEDIR` A→B y alambre/normales siguen aplazados. 
 valoración visual queda abierta.
 
 
-**Observatorio V2 — dos modos y una luz que se mueve (2026-09-18):** la sección
+## Observatorio V2 — dos modos y una luz que se mueve (2026-09-18)
+
+La sección
 `V2 — dos modos, y una luz que se puede mover` de
 `docs/design/tesseract-experimentos.md` manda sobre `V1.5` y sobre el §5 en
 **qué se ve al entrar al Observatorio y dónde vive cada mando**. Diagnóstico del
@@ -810,7 +887,9 @@ desbordamiento, `DATOS` y `REGISTRO` quedaban fuera y O10 bis los cazó —un ma
 que hay que desplazar para tocar es un mando que no está—. Su valoración visual
 queda abierta.
 
-**Observatorio V3 — Gargantúa, el espécimen sin malla (2026-09-19):** la sección
+## Observatorio V3 — Gargantúa, el espécimen sin malla (2026-09-19)
+
+La sección
 `V3 — Gargantúa, el espécimen que no es una malla` de
 `docs/design/tesseract-experimentos.md` manda sobre `V2`, el §6 y el §7 en **qué
 ofrece el Observatorio a un objeto sin geometría y dónde viven los números que
@@ -858,7 +937,9 @@ clave de almacenamiento renombrada. El System Map, sus cuerpos, cámara y
 materiales no cambian. **El `registro` de Gargantúa sigue en borrador,
 pendiente de Jonás, y su valoración visual queda abierta.**
 
-**Observatorio V4 — la Ranger, y el cuadro que nadie medía (2026-09-19):** la
+## Observatorio V4 — la Ranger, y el cuadro que nadie medía (2026-09-19)
+
+La
 sección `V4 — la Ranger, y el cuadro que nadie medía` de
 `docs/design/tesseract-experimentos.md` manda sobre `V3`, el §5 y el §6 en
 **cómo se ilumina y se encuadra un espécimen de malla**. El catálogo pasa a
@@ -913,7 +994,9 @@ conserva su textura a 128. El System Map, sus cuerpos, cámara y materiales no
 cambian. **El `registro` de la Ranger no está escrito: es la voz de Jonás. Su
 valoración visual queda abierta.**
 
-**Observatorio V5 — Miller, Edmunds y el laboratorio completo (2026-09-20):** la
+## Observatorio V5 — Miller, Edmunds y el laboratorio completo (2026-09-20)
+
+La
 sección `V5 — Miller y Edmunds, y el laboratorio completo` de
 `docs/design/tesseract-experimentos.md` manda sobre `V4` y el §6 en **cómo se
 ilumina y se encuadra un cuerpo esférico**, y sobre el §5 en **qué significa
@@ -959,7 +1042,9 @@ El System Map, sus cuerpos, cámara y materiales no cambian. **Los `registro` de
 Miller y Edmunds no están escritos: son la voz de Jonás. Su valoración visual
 —los dos presets y las seis vistas— queda abierta.**
 
-**Observatorio V6 — el eje de la figura (2026-09-20):** la sección `V6 — el eje
+## Observatorio V6 — el eje de la figura (2026-09-20)
+
+La sección `V6 — el eje
 de la figura, el tercer gesto` de `docs/design/tesseract-experimentos.md` manda
 sobre `V2` y el §5 en **qué mandos ofrece la consola** y sobre el §6 en **qué
 puede tocar el laboratorio de un espécimen**. Lo pidió el dueño: «un control
@@ -997,8 +1082,8 @@ El System Map, sus cuerpos, cámara y materiales no cambian: `spinAt` da
 exactamente lo mismo que antes. **Su valoración visual queda abierta**, con
 cuatro barridos de seis ángulos enviados.
 
-**UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo
-anterior en consentimiento, pausa y perfil ligero:**
+## UN SOLO INTERRUPTOR DE MOVIMIENTO (2026-09-13) — manda sobre todo lo anterior en consentimiento, pausa y perfil ligero
+
 `docs/design/movimiento-unificado.md`. Un icono en la bandeja inferior
 derecha (`components/motion-toggle.tsx`, junto a la banda sonora, en todas las
 rutas) enciende y apaga TODO lo que se mueve: escena 3D y su polvo, cielo de
@@ -1015,9 +1100,9 @@ escena). `?no3d=1` sigue siendo la puerta al perfil ligero y se persiste con
 la clave de siempre. Cualquier texto anterior que describa botones de
 consentimiento por página está obsoleto.
 
-**Travesía espacio-temporal (2026-09-14) — manda sobre el §7 del pivote en
-duración, fases, momento del cambio de ruta y versión reducida de la
-transición de aproximación:** `docs/design/travesia-espaciotemporal.md`. Al
+## Travesía espacio-temporal (2026-09-14) — manda sobre el §7 del pivote en duración, fases, momento del cambio de ruta y versión reducida de la transición de aproximación
+
+`docs/design/travesia-espaciotemporal.md`. Al
 activar un destino desde el System Map (proxy o raíl, clic o Enter) la
 navegación es una travesía cinematográfica de 2,6 s en cuatro fases —bloqueo
 de objetivo (0–0,4 s), aceleración con easing de potencia y campo de 35° a
@@ -1041,7 +1126,9 @@ compresión del centro; **poco refuerzo al destino** (+15 % luz, +40 %
 emisión) o sale lavado; **las trazas orbitales se retiran al caer**. Su
 valoración visual queda abierta.
 
-**Cabecera — observatorio y acento por mundo (2026-09-13):** la sección
+## Cabecera — observatorio y acento por mundo (2026-09-13)
+
+La sección
 `Observatorio y acento por mundo` de `docs/design/identity-gargantua.md`
 manda sobre el resto de ese documento en **estado activo, línea viajera, CV y
 cielo de la barra**. **La navbar es minimalista por decisión del dueño**:
@@ -1063,7 +1150,9 @@ ligero (el dueño tiene movimiento reducido en su equipo y no veía nada). El
 estado previo vive en
 `output/archive/navbar-cristal-editorial-20260913-antes-instrumento.zip`.
 
-**Edmunds — el mosaico en filas justificadas (2026-09-22):** la sección
+## Edmunds — el mosaico en filas justificadas (2026-09-22)
+
+La sección
 `Noveno pase — el mosaico en filas justificadas` de
 `docs/design/edmunds-creatividad.md` manda sobre el resto de ese documento en
 **cómo se compone la vista Mosaico**. El dueño reportó huecos negros con cinco
@@ -1087,7 +1176,9 @@ Medido en diez anchos de 320 a 1905 px: holgura 0 px en todas las filas,
 desalineación 0 px, sin desbordamiento. Cubierta 3D, visor, catálogo y paleta
 no cambian. Su valoración visual queda abierta.
 
-**Edmunds — sexto pase (2026-09-12):** la sección `Sexto pase` de
+## Edmunds — sexto pase (2026-09-12)
+
+La sección `Sexto pase` de
 `docs/design/edmunds-creatividad.md` manda en **nitidez de las obras, gesto de
 arrastre, transición del anillo y cielo de la cubierta**. Tres reglas que
 costaron verificación: **un WebP visto a 1:1 se ve blando y el mismo archivo
@@ -1100,12 +1191,15 @@ vuelve a poner una transición sobre el `transform` de cada obra, ni un
 no desde negro. El cielo es noche azul marino con auroras de degradado, sin
 `filter`. La curación del catálogo sigue siendo del dueño.
 
-**Pivote vigente (2026-08-06):** `docs/plans/sistema-gargantua.md` manda sobre el
+## Pivote vigente (2026-08-06)
+
+`docs/plans/sistema-gargantua.md` manda sobre el
 plan principal en **arquitectura de rutas, contrato de cámara, capa visual,
 transiciones y presupuestos**. En todo lo demás el plan principal sigue intacto.
 Ante contradicción entre ambos, manda el pivote.
 
-**Dirección artística del hero (2026-08-29):**
+## Dirección artística del hero (2026-08-29)
+
 `docs/design/hero-gargantua-direction.md` manda sobre los dos anteriores en
 **composición del hero, identidad visible, diseño de los mundos, HUD, interacción,
 escala de Gargantúa, posiciones de los cuerpos, motion en reposo, trayectorias,
@@ -1117,7 +1211,8 @@ cuerpos orbitando continuamente, Endurance como toro o el
 copy personal como bloque visible está obsoleto. El viaje continuo y
 `SYSTEM MAP ↑` siguen diferidos en `docs/design/continuous-journey-phase.md`.
 
-**Lenguaje visual de los mundos (2026-09-03):**
+## Lenguaje visual de los mundos (2026-09-03)
+
 `docs/design/world-visual-language.md` manda sobre los tres anteriores en
 **material, iluminación y criterio de aceptación de los cinco cuerpos secundarios**. No toca
 composición, cámara, HUD ni interacción, que siguen perteneciendo a la dirección
@@ -1126,7 +1221,9 @@ diferentes— y define el bloom-off test: un cuerpo que pierde su identidad al
 apagar el glow no está terminado. Gargantúa queda **congelada** durante la fase.
 El `Rediseño imposible` del Tesseracto conserva su geometría y material.
 
-**Revisión de Edmunds (2026-09-05):** la sección `Mundo mineral` de
+## Revisión de Edmunds (2026-09-05)
+
+La sección `Mundo mineral` de
 `docs/design/world-visual-language.md` sustituye su material y su paleta por
 petición del dueño: roca seca, ocre, arena y hierro, sin nubes ni apariencia
 incandescente; provincias geológicas, crestas orientadas hacia Gargantúa y
@@ -1134,7 +1231,9 @@ atmósfera fina direccional. Posición, tamaño, órbita y el resto de los cuerp
 siguen intactos. Dos sitios de FBM, dos menos que antes. El apartado anterior
 `Mundo habitable` queda como referencia histórica sustituida.
 
-**Revisión de Miller (2026-09-05):** las secciones `Océano global`,
+## Revisión de Miller (2026-09-05)
+
+Las secciones `Océano global`,
 `Corrientes y dirección de luz` y `Trenes largos y filo sin halo` de
 `docs/design/world-visual-language.md` sustituyen su material, su paleta, su
 modelo de reflejo y su atmósfera por petición del dueño: océano continuo azul
@@ -1147,32 +1246,42 @@ construcción no puede ser direccional: todo el aire visible lo pone su filo
 propio. Posición, tamaño, órbita, inclinación, cámara y el resto de los cuerpos
 siguen intactos. Tres sitios de FBM, los mismos que antes.
 
-**Revisión de Endurance (2026-09-05):** la sección `Endurance — peso, escala e
+## Revisión de Endurance (2026-09-05)
+
+La sección `Endurance — peso, escala e
 integración` de `docs/design/world-visual-language.md` sustituye su material,
 núcleo y pose por petición del dueño: aluminio marfil apagado, luz facetada desde
 Gargantúa, cavidades oscuras, eje esbelto, módulos en planos distintos, dos
 radiadores más largos y 6.9° adicionales de yaw. Posición, escala del conjunto,
 cámara, HUD, fallback plano y otros cuerpos siguen intactos. Cuatro draws.
 
-**Revisión del Tesseracto (2026-09-05):** la sección `Umbral vivo` de
+## Revisión del Tesseracto (2026-09-05)
+
+La sección `Umbral vivo` de
 `docs/design/world-visual-language.md` sustituye sus límites anteriores de
 deriva mínima y acabado por petición del dueño. Tres grupos interiores se
 reconfiguran de forma perceptible; cáscara, posición, tamaño y cámara siguen
 fijos. El Tesseracto usa cuatro draws con un material compartido.
 
-**Pase de autoridad de Gargantúa (2026-09-05):** la sección `14 quáter` de
+## Pase de autoridad de Gargantúa (2026-09-05)
+
+La sección `14 quáter` de
 `docs/design/hero-gargantua-direction.md` sustituye la escala de los cinco
 destinos secundarios por petición del dueño — Endurance −10 %, Miller y Edmunds
 −8 %, Tesseracto −5.6 %, Ranger −3.5 %. Gargantúa no se toca. Posición, fase,
 inclinación, cámara, material y HUD siguen intactos.
 
-**Pase de respiración (2026-09-05):** la sección `14 quinquies` de
+## Pase de respiración (2026-09-05)
+
+La sección `14 quinquies` de
 `docs/design/hero-gargantua-direction.md` mueve Miller (26/242/31 → 28/240/37) y
 el Tesseracto (30/298/26 → 32/300/30) para despegarlos del arco brillante de
 Gargantúa. No cambia tamaño, cámara ni los otros tres cuerpos. Sustituye radio,
 fase e inclinación de esos dos en `docs/design/sistema-seis-destinos.md`.
 
-**Pase de puntero (2026-09-05):** las secciones `11 bis` y `11 ter` de
+## Pase de puntero (2026-09-05)
+
+Las secciones `11 bis` y `11 ter` de
 `docs/design/hero-gargantua-direction.md` sustituyen la figura del retículo y la
 presencia del stardust en WebGL por petición del dueño. El retículo pasa de cruz
 de cuatro trazos a anillo + núcleo + marcas laterales, con `target` abriendo el
@@ -1183,14 +1292,18 @@ tamaño y vida, y alarga la curva de apagado. No cambian el ámbito de la capa
 —exponente de apagado a 1,2— y añade un **segundo calibre**: motas finas con
 sprite propio sembradas encima de las de cuerpo, no en su lugar.
 
-**Segundo recorte de escala (2026-09-05):** la sección `14 sexies` de
+## Segundo recorte de escala (2026-09-05)
+
+La sección `14 sexies` de
 `docs/design/hero-gargantua-direction.md` sustituye otra vez la escala de los
 cinco destinos secundarios por petición del dueño — Endurance −2 %, Tesseracto
 −1.5 %, Miller y Edmunds −1 %, Ranger −0.5 %. Gargantúa no se toca. Posición,
 fase, inclinación, cámara, material y HUD siguen intactos. Sustituye la columna
 de tamaño de `14 quáter` y la de `docs/design/sistema-seis-destinos.md`.
 
-**Fase 1 — presencia, lectura y cine (2026-09-05):** la sección `9 bis` de
+## Fase 1 — presencia, lectura y cine (2026-09-05)
+
+La sección `9 bis` de
 `docs/design/world-visual-language.md` manda sobre todo lo anterior en
 **iluminación, material, silueta, acento de propulsión y pose de Endurance,
 Edmunds y la Ranger**. No toca composición, cámara, HUD ni fallback plano, y no
@@ -1219,7 +1332,8 @@ macroforma (cuenca pálida) bajando la frecuencia de provincia de 1.62 a 1.28, y
 la Ranger cambia su relleno plano por un **rebote dirigido**: ámbar hacia
 Gargantúa, azul de campo estelar en la espalda.
 
-**Raíl, atlas plano y Tesseracto (2026-09-06):**
+## Raíl, atlas plano y Tesseracto (2026-09-06)
+
 `docs/design/atlas-tesseract-reference.md` manda sobre los documentos anteriores
 en **el orden visible de las etiquetas del raíl, la composición y el acabado del
 mapa 2D, y la geometría del Tesseracto en las dos versiones**. El raíl nombra
@@ -1235,7 +1349,9 @@ solo material. No cambian posición, cámara ni datos orbitales de ningún cuerp
 encima del raíl, enlaces y proxies de 44 px, centro de cada proxy alcanzable y
 cero desbordamiento horizontal.
 
-**Tercer recorte de escala (2026-09-06):** la sección `14 septies` de
+## Tercer recorte de escala (2026-09-06)
+
+La sección `14 septies` de
 `docs/design/hero-gargantua-direction.md` sustituye la columna de tamaño de
 `14 sexies` para **tres** cuerpos y sólo tres — Endurance −3.5 % (4.547 →
 4.388), Tesseracto −1.5 % (2.669 → 2.629), Ranger −0.5 % (1.92 → 1.9104).
@@ -1244,7 +1360,9 @@ contrapeso del cuadro y encogerlos otra vez habría movido la composición, no l
 escala. Gargantúa, posición, fase, inclinación, cámara, material y HUD siguen
 intactos.
 
-**El cielo deja de participar del remolino (2026-09-06):** la sección
+## El cielo deja de participar del remolino (2026-09-06)
+
+La sección
 `14 octies` de `docs/design/hero-gargantua-direction.md` manda sobre `6` en
 **cuánto se estira el fondo estelar y dónde**. El estiramiento se reserva para
 la vecindad del agujero —puerta por parámetro de impacto, entera hasta 17 rs y
@@ -1253,7 +1371,9 @@ cerrada en 30— y en la periferia pagan sólo las escalas gruesas; **el campo f
 presencia luminosa en la periferia, 0 % de cambio en el anillo de 250-400 px. No
 se toca el lensing del disco.
 
-**El rastro del puntero vuelve a la cabina (2026-09-06):** la sección
+## El rastro del puntero vuelve a la cabina (2026-09-06)
+
+La sección
 `14 nonies` de `docs/design/hero-gargantua-direction.md` sustituye `11 ter` y
 `11 quater` en **densidad, cola, calibre y color** del perfil `webgl` del
 stardust: 21 % de la densidad anterior, cola un 65 % más corta, motas a la mitad
@@ -1262,7 +1382,9 @@ blanco frío) — la navegación ya había convergido al cian y el rastro era la
 única pieza que seguía hablando en magenta. El retículo de `11 bis` no se toca y
 el perfil `flat` sigue congelado byte a byte.
 
-**Miller — océano gigantesco (2026-09-06):** la sección `9 ter` de
+## Miller — océano gigantesco (2026-09-06)
+
+La sección `9 ter` de
 `docs/design/world-visual-language.md` sustituye material, paleta e iluminación
 de Miller. **Su posición no se toca**, por petición explícita del dueño. Cambios
 centrales: ley difusa propia sin meseta de terminador, Fresnel de agua sobre la
@@ -1270,7 +1392,9 @@ lámina, camino de luz cálido contra sábana fría, agua honda más profunda y 
 pálidas retiradas, y suelo nocturno y filos propios en vez de los comunes. Ni un
 sitio de FBM, ni una textura, ni un draw call nuevos.
 
-**Miller — océano encendido y en movimiento (2026-09-06):** la sección
+## Miller — océano encendido y en movimiento (2026-09-06)
+
+La sección
 `9 quinquies` de `docs/design/world-visual-language.md` **revierte** la
 dirección de `9 ter` para Miller y manda sobre `9`, `9 ter` y la parte de
 `9 quater` que le toca, en **paleta, exposición, nubes, animación de superficie
@@ -1313,7 +1437,9 @@ no dependía de que el cuerpo fuera oscuro. Presupuesto intacto: tres sitios de
 FBM, una octava suelta, ni un draw call ni un uniforme nuevos. El movimiento no
 toca accesibilidad: con reduced-motion no hay canvas.
 
-**El foco no puede borrar el material (2026-09-06):** la sección `9 quater` de
+## El foco no puede borrar el material (2026-09-06)
+
+La sección `9 quater` de
 `docs/design/world-visual-language.md` manda sobre la respuesta de adquisición
 de los seis cuerpos. El tinte de navegación deja de ser uniforme y se reparte por
 material: Edmunds al 8 % y Endurance al 16 %, con la diferencia devuelta en
@@ -1321,7 +1447,9 @@ ganancia propia y filo. Es la aplicación directa del criterio de la capa visual
 —la misma luz toca materiales diferentes sin borrar su identidad— al único sitio
 donde el sistema lo incumplía.
 
-**Edmunds — geología, no textura (2026-09-07):** la sección `9 sexies` de
+## Edmunds — geología, no textura (2026-09-07)
+
+La sección `9 sexies` de
 `docs/design/world-visual-language.md` manda sobre `8`, sobre el `Pase 2 ·
 Edmunds` de `9 bis` y sobre `Edmunds: cuatro macroformas` en **campo geográfico,
 relieve, paleta, ley difusa y filo de limbo** de Edmunds. **Tamaño y posición
@@ -1347,7 +1475,9 @@ Seis minerales —ocre, cobre, carbón, arcilla, arena, oliva apagado— sin sub
 saturación media, porque Edmunds es Creatividad. Presupuesto intacto: dos sitios
 de fbm, uno de noise, cero draws y cero uniformes nuevos.
 
-**El marco del overlay (2026-09-08):** la sección `13` de
+## El marco del overlay (2026-09-08)
+
+La sección `13` de
 `docs/design/endurance-navigation-interface.md` manda sobre `7` y `12` en **en
 qué espacio se miden las coordenadas del mapa**, y es la causa raíz de «el HUD
 está descentrado» y «el hover sólo funciona en zonas muy específicas». La escena
@@ -1371,7 +1501,9 @@ la Endurance 1.7 %, y en el Tesseracto el centro de la caja es peor ancla que el
 pivote porque `sampleTesseract` ya normaliza sus vértices a radio 1.5 alrededor
 de su centroide en cada fase.
 
-**Pase de cierre del puntero (2026-09-08):** la sección `12` de
+## Pase de cierre del puntero (2026-09-08)
+
+La sección `12` de
 `docs/design/endurance-navigation-interface.md` manda sobre `6` y `7` del mismo
 documento en **tamaño del raíl y condiciones bajo las que un cuerpo recibe el
 puntero**. No toca composición, cámara, material, HUD ni el contrato
@@ -1388,7 +1520,9 @@ un mapa con blancos solapados gana siempre el más pequeño—, `setFocus` conge
 el paralaje mientras hay destino adquirido, y soltar sólo apaga lo que uno
 encendió. `.nav-rail__name` sube de 0.69 a 0.78 rem.
 
-**El bloom no puede encender la sombra (2026-09-08):** la sección `14 undecies`
+## El bloom no puede encender la sombra (2026-09-08)
+
+La sección `14 undecies`
 de `docs/design/hero-gargantua-direction.md` manda sobre `6` en **qué le está
 permitido al halo dentro del disco de la sombra**. Es la única excepción a la
 congelación de Gargantúa y la pidió el dueño. No se toca el bloom —ni fuerza, ni
@@ -1399,7 +1533,9 @@ viven ahí dentro. La regla: **el halo no puede encender lo que estaba apagado, 
 no toca nada de lo que ya estaba encendido.** Medido: el núcleo de la sombra baja
 de 106.8 a 18.2 y fuera del disco no cambia ni un dígito.
 
-**Pase visual final de Gargantúa (2026-09-12):** la sección `14 duodecies` de
+## Pase visual final de Gargantúa (2026-09-12)
+
+La sección `14 duodecies` de
 `docs/design/hero-gargantua-direction.md` manda sobre `4`, `6` y `14 undecies`
 en **cómo se separan materia, luz y vacío en la sombra, cuánto blanco hay en el
 disco y dónde, la estructura interna de las bandas, qué es el arco inferior y
@@ -1426,7 +1562,9 @@ por máscara sobre tejido y masas, borde del negro más apretado, algo más de
 estructura en la masa crema y contraste extra en el lado que se aleja— y se
 detuvo ahí. El pase queda cerrado salvo veredicto contrario.
 
-**Pase de cohesión del disco de Gargantúa (2026-09-19):** la sección
+## Pase de cohesión del disco de Gargantúa (2026-09-19)
+
+La sección
 `14 terdecies` de `docs/design/hero-gargantua-direction.md` manda sobre
 `14 duodecies` en **cómo se muestrea la altura del disco, en qué familia de
 tono vive su rampa, dónde entra la absorción del polvo y qué comparten los dos
@@ -1456,7 +1594,9 @@ Chromium headless la acumulación sólo avanza si algo fuerza un pintado; el
 laboratorio se empuja con pantallazos de 8 px y la portada no (tarda minutos
 por fotograma): se espera. Su valoración visual queda abierta.
 
-**Pase de gramática común del disco de Gargantúa (2026-09-20):** la sección
+## Pase de gramática común del disco de Gargantúa (2026-09-20)
+
+La sección
 `14 quaterdecies` de `docs/design/hero-gargantua-direction.md` manda sobre
 `14 terdecies` en **qué términos del material dependen del lado, cómo se
 reparten cortes, grano y polvo entre sectores densos y vacíos, y cómo se
@@ -1520,7 +1660,8 @@ puras). `DISK_PHASE` queda como palanca documentada en 0. El dueño eligió
 de sombra del centro; no hay blanco puro en la cara lejana con ninguna
 rodilla). Exposición y bloom intactos. Su valoración visual queda abierta.
 
-**El cielo del mapa — menos trazo, más negro y un gas lejano (2026-09-21):**
+## El cielo del mapa — menos trazo, más negro y un gas lejano (2026-09-21)
+
 la sección `14 quindecies` de `docs/design/hero-gargantua-direction.md` manda
 sobre `6` y sobre `14 octies` en **cuánto se estira el cielo y dónde, con qué
 densidad y qué reparto de brillo se siembra el campo estelar, y cuánto pesa
@@ -1585,7 +1726,9 @@ en el recorte de la banda encima de la sombra y no en la media del anillo de
 `jonas-orbit:reducir-efectos = "false"` en `localStorage` o sirve el perfil
 plano y no mide la escena. Su valoración visual queda abierta.
 
-**System Map — dos respuestas al puntero (2026-09-21):** la sección `14` de
+## System Map — dos respuestas al puntero (2026-09-21)
+
+La sección `14` de
 `docs/design/endurance-navigation-interface.md` manda sobre `6`, `7` y `12` en
 **qué ocurre al apuntar un destino**. Pedido del dueño: «quiero probar quitar
 el target lock y esos efectos de hover […] guárdalo, no lo elimines». Apuntar
@@ -1624,8 +1767,9 @@ que siempre dijo ser. **No se ha tocado el retículo del puntero**,
 que sigue abriendo sus arcos sobre un cuerpo: es la sexta de la lista y sale
 con una condición más en el mismo interruptor si el dueño lo quiere fuera.
 
-**ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en
-significado, etiquetas y rutas:** `docs/design/arquitectura-narrativa.md` fija la
+## ARQUITECTURA NARRATIVA (2026-09-06) — manda sobre todo lo anterior en significado, etiquetas y rutas
+
+`docs/design/arquitectura-narrativa.md` fija la
 asociación canónica entre cuerpo y sección:
 
 | `WorldId` | Significado | Ruta ES |
@@ -1656,7 +1800,9 @@ decisión del 2026-09-04 al retirar Cooper Station. Lo retirado entonces fue un
 CUERPO y sigue retirado; lo que vuelve es un SIGNIFICADO sobre un cuerpo que ya
 existía. Siguen siendo seis destinos.
 
-**Tesseracto V4 — pase de pulido (2026-09-06):** la sección `V4 — pase de pulido
+## Tesseracto V4 — pase de pulido (2026-09-06)
+
+La sección `V4 — pase de pulido
 sobre la base canónica` de `docs/design/atlas-tesseract-reference.md` manda sobre
 `Hipercubo de cristal` en **material de la arista, oclusión de cruces, ritmo de la
 animación y tamaño de la punta**. V3 queda como BASE CANÓNICA por decisión del
@@ -1683,7 +1829,9 @@ o HUD, ni las cuatro guardas donde vive «ni mota ni inflado»: suelo aparente
 0.035, Miller el menor, el Tesseracto por encima de Miller y la Ranger entre el
 Tesseracto y el 65 % de la Endurance.
 
-**Hipercubo de cristal (2026-09-06):** la sección `Hipercubo de cristal` de
+## Hipercubo de cristal (2026-09-06)
+
+La sección `Hipercubo de cristal` de
 `docs/design/atlas-tesseract-reference.md` manda sobre todo lo anterior en
 **geometría, material y versión plana del Tesseracto**. Sustituye el corredor de
 marcos por el 4-cubo real —dieciséis vértices, treinta y dos aristas y rotación
@@ -1708,7 +1856,9 @@ añade nada alrededor: ni partículas, ni energía, ni rayos, ni esfera de glow�
 siete frentes abiertos por orden de techo. El checkpoint intacto de esa V2 vive
 en `output/archive/tesseract-crystal-v2-2026-09-06.zip`.
 
-**Decisión del dueño (2026-09-04):** `docs/design/sistema-seis-destinos.md`
+## Decisión del dueño (2026-09-04)
+
+`docs/design/sistema-seis-destinos.md`
 manda sobre los documentos anteriores en catálogo y recomposición: seis destinos
 (Tesseracto, Miller, Endurance, Edmunds, Gargantúa, Ranger), sin Cooper Station
 ni su ruta de Formación. No se reasigna contenido. La composición nueva necesita
