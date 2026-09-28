@@ -1208,3 +1208,58 @@ que falla o no se ve bien, fuera**).
 Veredicto del dueño. «Aprendizajes» sale de las notas del kit. El origen de
 las fotografías no consta: el caso sólo dice que sus derechos son aparte del
 código.
+
+## 22. Wikiverse rehecho: caso completo, en producción con dominio propio (2026-09-28)
+
+Aplica el método de §18–§21 a Wiki Universe desde
+`portfolio-content/wikiverse-2026/` (kit sobre `9246759` más la rama local
+`fix/search-snippets-and-deploy-defaults`, sin subir; misma regla: **lo que
+falla o no se ve bien, fuera**). Con él, los cinco proyectos son casos
+completos y ya no queda ninguna ficha breve real.
+
+### 22.1 Qué cambia
+
+- **Nombre: Wikiverse** (logo, README, dominio y repositorio). Ficha breve →
+  caso completo, `status: production`: responde en `wikiverse.jonasjavier.dev`
+  (nginx, Django, PostgreSQL y Redis en Railway). El repositorio se renombró a
+  `JonasJavier/wikiverse`; el enlace viejo redirigía con 301.
+- **Lo publicado estaba mal**: no hay «universos ni personajes» (es una
+  enciclopedia de ciencia, geografía e informática), no eran 23 pruebas sino
+  608 en CI, la búsqueda no es sólo `SearchVector`/`SearchRank` (trigger con
+  pesos, `websearch_to_tsquery`, trigram) y faltaba nginx en la arquitectura.
+  El caso cuenta además el origen en CS50W (2024) y que el dueño escribió los
+  63 artículos.
+- **18 capturas** (14 de escritorio y 4 de teléfono) de las 23 principales del
+  kit, en 5 módulos. Fuera: 08 (historial con la columna de resumen apretada
+  en cinco líneas), 10 (el mismo diff que 09, en una columna), 12 (discusión
+  cuyas respuestas del seed no se siguen), 13 (seguimiento casi igual a
+  cambios recientes) y 16 (editor vacío con un marcador de otra página). La 04
+  del kit (tarjeta de vista previa cortada por el borde) se rehízo **en
+  producción** sobre el enlace «light itself», cuyo extracto sale limpio (el
+  de General relativity pega un título de sección al texto). Las 4 capturas
+  de agosto se retiraron.
+- **8 decisiones**, **18 nodos en los 5 carriles con 17 aristas** (cada
+  pantalla va directa a su servicio: con «Artículo» de centro, «Portada»
+  encendía once módulos) y **49 tecnologías en 10 áreas**.
+- **Endurance**: pie «5 en producción · 2 para clientes reales · 5 casos
+  completos»; el panel y el párrafo de casos completos, al día.
+- **CV**: tarjeta (ES) y línea (EN) nuevas. El inglés pasaba a dos páginas:
+  se acortaron la línea de Izak's y la viñeta de freelance.
+- **Pruebas**: las que usaban a Wiki Universe como la ficha breve real o como
+  el caso sin módulos (`validate-projects`, `project-case`) usan ahora copias
+  de prueba; las e2e siguen midiendo Wikiverse, ya como caso completo.
+- **De paso**: a 1280 px las cabeceras «Infraestructura» e «Integraciones» se
+  tocaban en todo esquema de cinco carriles (espaciado 0,06em entre 1100 y
+  1299 px). Y `main` no pasaba `npm run check`: `capture.cjs` del kit usa
+  `require` (regla apagada para `*.cjs`) y knip no conocía el binario
+  `codebase-memory-mcp` de `tools/graph-check.mjs` (`ignoreBinaries`).
+
+### 22.2 Abierto
+
+- **La rama de arreglos del repositorio sin subir.** Producción sigue
+  enseñando Markdown crudo en los fragmentos de búsqueda y el historial
+  desbordado en el teléfono; las capturas 07 y 21 muestran el código ya
+  arreglado. Hay que subir la rama, fusionarla y desplegar.
+- Veredicto del dueño. «Aprendizajes» sale de las notas del kit.
+- Sin arreglar en Wikiverse (pantallas fuera): la fecha de alta del perfil y el
+  recuento del índice de categorías.

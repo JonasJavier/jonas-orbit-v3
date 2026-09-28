@@ -174,8 +174,19 @@ describe("validateProjectProse · la mesa de ingeniería (P1)", () => {
   });
 
   it("una ficha breve puede no declararla: la capa se deriva del stack", () => {
-    expect(requiredLocale("es").find((entry) => entry.id === "wikiverse")?.architecture).toBeUndefined();
-    expect(() => validate(requiredLocale("es"))).not.toThrow();
+    // Hoy los cinco son casos completos: la ficha breve se declara aquí.
+    const briefData: Record<ProjectId, ProjectStructuralData> = {
+      ...projectsData,
+      network: { ...projectsData.network, kind: "brief" },
+    };
+    const entries = withProject("network", (entry) => {
+      const bare = { ...entry };
+      delete bare.architecture;
+      return bare;
+    });
+    expect(() =>
+      validateProjectProse(entries, ["es"], PROJECT_IDS, F1A_PROJECT_IDS, briefData),
+    ).not.toThrow();
   });
 
   it("un caso completo exige al menos cuatro nodos y una decisión", () => {

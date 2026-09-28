@@ -226,7 +226,7 @@ test("P5 · sin JavaScript la mesa es el contenido: cinco proyectos, :target, al
   await expect(page).toHaveURL(/#wikiverse$/);
   await expect(page.locator("#wikiverse")).toBeVisible();
   await expect(page.locator("#omsta")).toBeHidden();
-  await expect(page.locator("#wikiverse").getByRole("heading", { level: 2 })).toHaveText("Wiki Universe");
+  await expect(page.locator("#wikiverse").getByRole("heading", { level: 2 })).toHaveText("Wikiverse");
   await expect(page.locator("#wikiverse .table-fallback")).toBeVisible();
   await expect(page.locator("#wikiverse .table-fallback dl dt")).toHaveCount(mdx("wikiverse").architecture.nodes.length);
   await expect(page.locator("#wikiverse .holo-scope dd")).toHaveText((mdx("wikiverse").scope ?? []).map((entry) => entry.value));
@@ -250,8 +250,8 @@ test("P5 · Producto: el alcance son las tres cifras del MDX, caben en su column
   test.setTimeout(90_000);
   for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
     await openTable(page, viewport, `${MESA}#omsta`);
-    // OMSTA son cifras; Wiki Universe, palabras («Markdown», «OpenAPI»), que
-    // son las que desbordaban su columna.
+    // Dos filas reales de cifras. Las palabras («Markdown», «OpenAPI») que
+    // desbordaban la columna las cubre la prueba unitaria de `data-words`.
     for (const id of ["omsta", "wikiverse"]) {
       const where = `${viewport.width}/${id}`;
       if (id !== "omsta") {

@@ -140,13 +140,13 @@ MDX**, nunca en `worlds.data.ts`.
   (09-25) manda** en capas, mesa, muelle y caso completo: **Producto**
   (alcance en la mesa) · Diseño (`designDecisions`: problema → decisión) ·
   Ingeniería (`nodePath`, sólo carriles ocupados, quinto carril
-  `integraciones`); sala = render horneado. §18–§21 (09-26/27): OMSTA (con
-  app móvil), Network, Delicaté e Izak's Photos (estudio de demostración)
-  rehechos con el mismo método desde `portfolio-content/<proyecto>-2026/`
+  `integraciones`); sala = render horneado. §18–§22 (09-26/28): OMSTA (con
+  app móvil), Network, Delicaté, Izak's Photos (estudio de demostración) y
+  Wikiverse rehechos con el mismo método desde `portfolio-content/<proyecto>-2026/`
   (`module`/`scope`/`luma` por captura, `stack`, `tech` por nodo; la mesa sólo
   monta lo que levanta). Escena dormida en TODA ruta de Endurance; el botón del
-  producto vivo sale de `links` `kind: demo`. Abiertos: redacción de
-  `scope`/`designDecisions` (borrador) y URLs de producción.
+  producto vivo sale de `links` `kind: demo`. Ya no hay fichas breves reales.
+  Abiertos: redacción de `scope`/`designDecisions` (borrador).
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

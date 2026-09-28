@@ -26,6 +26,12 @@ const eslintConfig = defineConfig([
     // Referencia v2 conservada, no se lintea:
     "docs/**",
   ]),
+  // Un .cjs es CommonJS por definición: `require()` es su forma de importar
+  // (p. ej. los scripts de captura de `portfolio-content/*/scripts/`).
+  {
+    files: ["**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ]);
 
 export default eslintConfig;

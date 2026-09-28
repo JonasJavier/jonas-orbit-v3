@@ -1,139 +1,475 @@
 ---
 id: wikiverse
 slug: wikiverse
-title: Wiki Universe
-eyebrow: Plataforma de exploración de contenido
+title: Wikiverse
+eyebrow: Enciclopedia web full-stack
 summary: >-
-  Plataforma full-stack para explorar universos, personajes y contenidos
-  relacionados mediante categorías, búsqueda y navegación temática.
-statusLabel: Listo para producción
-role: Diseño de producto, arquitectura de contenido y desarrollo full-stack
+  Una enciclopedia construida desde cero, sin MediaWiki: 63 artículos con
+  historial de revisiones, comparación palabra por palabra, discusiones, enlaces
+  rojos y búsqueda de texto completo en PostgreSQL, en producción con dominio
+  propio.
+statusLabel: En producción en Railway · dominio propio
+role: Producto, interfaz, desarrollo full-stack, contenido y despliegue
 problem: >-
-  Una experiencia tipo wiki necesita organizar mucho contenido sin perder
-  orientación, búsqueda ni trazabilidad de los cambios.
+  En una wiki cualquiera puede cambiar el texto, y el lector tiene que poder
+  confiar en él y orientarse entre muchos artículos: la trazabilidad y la
+  navegación son el producto; mostrar artículos es la parte fácil.
 contribution: >-
-  Diseñé la navegación temática y construí artículos en Markdown, búsqueda en
-  PostgreSQL, categorías, autenticación y un historial visible de revisiones.
+  Convertí mi proyecto de CS50W de 2024 en una enciclopedia completa —revisiones,
+  comparación de versiones, discusiones, búsqueda en PostgreSQL, editor con
+  vista previa y seguridad del contenido—, la llevé a producción con 608 pruebas
+  en CI y escribí sus 63 artículos.
 decision: >-
-  Separé el contenido editable en Markdown de sus metadatos y revisiones, y usé
-  búsqueda nativa de PostgreSQL para evitar una infraestructura adicional.
-technologies: [React, TypeScript, Django, Django REST Framework, PostgreSQL, Redis]
+  Cada guardado es una revisión inmutable y el índice de búsqueda lo mantiene un
+  trigger de PostgreSQL: ni el historial ni la búsqueda dependen de que el
+  código se acuerde de actualizarlos.
+technologies: [React 19, TypeScript, Django REST Framework, PostgreSQL, Redis, Railway]
+stack:
+  - group: Lenguajes
+    items: [TypeScript 5.9, Python 3.13, SQL (PL/pgSQL), CSS]
+  - group: Frontend
+    items: [React 19.2, React Router 7.18, Vite 6.4, react-markdown 9, remark-gfm 4, Plugin remark propio]
+  - group: Interfaz
+    items: [Tailwind CSS 4.3, lucide-react, Source Serif 4, Inter, IBM Plex Mono, Temas claro y oscuro]
+  - group: Estado y datos del cliente
+    items: [TanStack Query 5, Zustand 5, Axios 1.18]
+  - group: Backend y API
+    items: [Django 5.2, Django REST Framework 3.17, SimpleJWT 5.5, drf-spectacular 0.30, django-filter 25]
+  - group: Datos y búsqueda
+    items: [PostgreSQL 16 y 18, tsvector + GIN, pg_trgm, unaccent, psycopg 3, SQLite en desarrollo]
+  - group: Caché
+    items: [Redis 7, django-redis 5.4]
+  - group: Servidor y despliegue
+    items: [nginx 1.27, Gunicorn 23, WhiteNoise 6.12, Docker Compose, Railway]
+  - group: Calidad y CI
+    items: [pytest 8.4, Vitest 4.1, Testing Library, Playwright 1.61, Ruff, ESLint 9, GitHub Actions]
+  - group: Herramientas
+    items: [Node.js 22, Makefile, Comandos de gestión propios, Git]
 highlights:
-  - Artículos en Markdown con historial de revisiones
-  - Búsqueda de texto completo con ranking en PostgreSQL
-  - Categorías, temas, autenticación JWT y selector de apariencia
-  - API documentada con un esquema OpenAPI
+  - En producción en wikiverse.jonasjavier.dev con nginx, Django, PostgreSQL y Redis en Railway
+  - Revisiones inmutables, historial y comparación palabra por palabra entre dos versiones cualesquiera
+  - Búsqueda de texto completo en PostgreSQL con ranking, autocompletado y tolerancia a erratas
+  - Enlaces rojos, notas al pie en ambos sentidos y vista previa de cada enlace al pasar el ratón
+  - Editor con vista previa en vivo y una infobox que se edita por filas
+  - 608 pruebas en CI, CSP estricta y ningún HTML crudo en el contenido
 featuredImage:
-  src: /media/projects/wikiverse/01-home-desktop.png
-  alt: Página inicial de Wiki Universe con búsqueda, categorías y artículos destacados
-  caption: El inicio prioriza la búsqueda y ofrece varias rutas de exploración sin abrumar.
+  src: /media/projects/wikiverse/02-articulo-desktop.png
+  alt: Artículo Entropy con índice lateral, infobox de termodinámica y un enlace rojo
+  caption: Cada artículo combina índice, infobox, citas y enlaces rojos a lo que falta.
+  module: Portada y artículos
 gallery:
-  - src: /media/projects/wikiverse/02-article-desktop.png
-    alt: Artículo de Wiki Universe con contenido estructurado y navegación contextual
-    caption: La lectura conserva jerarquía editorial y acceso al contexto del contenido.
-  - src: /media/projects/wikiverse/03-history-desktop.png
-    alt: Historial de revisiones de un artículo en Wiki Universe
-    caption: Cada edición permanece visible para dar trazabilidad al contenido.
-  - src: /media/projects/wikiverse/04-home-mobile.png
-    alt: Inicio de Wiki Universe adaptado a una pantalla móvil
-    caption: La exploración temática y la búsqueda mantienen su prioridad en móvil.
+  - src: /media/projects/wikiverse/03-articulo-oscuro-desktop.png
+    alt: Artículo Black hole en tema oscuro con la imagen de M87 y su crédito de licencia
+    caption: Tema oscuro completo; cada imagen de Wikimedia muestra su autor y su licencia.
+    module: Portada y artículos
+  - src: /media/projects/wikiverse/01-portada-desktop.png
+    alt: Portada de Wikiverse con el artículo destacado Entropy y los paneles Did you know y On this day
+    caption: La portada reúne un artículo destacado, curiosidades y efemérides.
+    module: Portada y artículos
+  - src: /media/projects/wikiverse/05-referencias-desktop.png
+    alt: Final del artículo Entropy con notas numeradas y la lista de referencias con DOI
+    caption: Las notas al pie enlazan en ambos sentidos con referencias completas.
+    module: Portada y artículos
+  - src: /media/projects/wikiverse/04-vista-previa-desktop.png
+    alt: Tarjeta de vista previa del artículo Light sobre el artículo Black hole
+    caption: Al pasar sobre un enlace aparece un resumen, sin salir de la lectura.
+    module: Navegar y buscar
+  - src: /media/projects/wikiverse/06-autocompletado-desktop.png
+    alt: Buscador de Wikiverse con sugerencias para mer, Mercury planeta, elemento y desambiguación
+    caption: El buscador sugiere títulos mientras se escribe y tolera erratas.
+    module: Navegar y buscar
+  - src: /media/projects/wikiverse/07-busqueda-desktop.png
+    alt: Resultados de búsqueda para energy con fragmentos resaltados, filtro de categoría y orden
+    caption: Búsqueda de texto completo en PostgreSQL, con ranking y coincidencias resaltadas.
+    module: Navegar y buscar
+  - src: /media/projects/wikiverse/18-explorar-desktop.png
+    alt: Página All articles con filtros, índice alfabético y los primeros artículos
+    caption: Todo el catálogo se explora por letra, categoría, recientes o extensión.
+    module: Navegar y buscar
+  - src: /media/projects/wikiverse/17-categoria-desktop.png
+    alt: Categoría Physics con índice alfabético y artículos agrupados por letra
+    caption: Las categorías reúnen artículos principales y secundarios con índice alfabético.
+    module: Navegar y buscar
+  - src: /media/projects/wikiverse/09-diff-lado-a-lado-desktop.png
+    alt: Comparación lado a lado de dos revisiones de Marie Curie con la sección Legacy añadida
+    caption: Cualquier par de revisiones se compara lado a lado, por líneas y palabras.
+    module: Historial y cambios
+  - src: /media/projects/wikiverse/11-cambios-recientes-desktop.png
+    alt: Cambios recientes de Wikiverse con filtros por tipo, periodo y colaborador
+    caption: Ediciones y discusiones en un solo feed, con cada filtro guardado en la URL.
+    module: Historial y cambios
+  - src: /media/projects/wikiverse/14-editor-desktop.png
+    alt: Editor del artículo Entropy con los campos a la izquierda y la vista previa a la derecha
+    caption: El editor previsualiza con el mismo render que el artículo publicado.
+    module: Edición y API
+  - src: /media/projects/wikiverse/15-editor-infobox-desktop.png
+    alt: Editor estructurado de la infobox de Entropy con filas reordenables
+    caption: La infobox se edita por filas tipadas, sin tocar código.
+    module: Edición y API
+  - src: /media/projects/wikiverse/23-api-docs-desktop.png
+    alt: Documentación interactiva de la API de Wikiverse generada con OpenAPI
+    caption: 36 rutas documentadas con OpenAPI y explorables desde el navegador.
+    module: Edición y API
+  - src: /media/projects/wikiverse/20-articulo-mobile.png
+    alt: Artículo Coral reef en un teléfono con la imagen principal y la infobox
+    caption: Los artículos se leen cómodos en el teléfono, sin columnas laterales.
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/wikiverse/19-portada-mobile.png
+    alt: Portada de Wikiverse en un teléfono con el artículo destacado Entropy
+    caption: En el teléfono la portada abre con el artículo destacado y la búsqueda a mano.
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/wikiverse/21-busqueda-mobile.png
+    alt: Resultados de búsqueda para energy en un teléfono con fragmentos resaltados
+    caption: La búsqueda completa funciona igual en el teléfono.
+    module: En el teléfono
+    frame: mobile
+  - src: /media/projects/wikiverse/22-diff-mobile.png
+    alt: Comparación de revisiones de Coral reef adaptada a la pantalla de un teléfono
+    caption: La comparación de versiones pasa a una columna en el teléfono.
+    module: En el teléfono
     frame: mobile
 scope:
-  - value: "23"
-    label: pruebas de backend en verde
-  - value: Markdown
-    label: artículos con historial de revisiones
-  - value: OpenAPI
-    label: API documentada, con autenticación JWT
+  - value: "608"
+    label: pruebas en CI, del backend a Playwright
+  - value: "63"
+    label: artículos escritos, con 428 referencias
+  - value: "36"
+    label: rutas de API documentadas con OpenAPI
 designDecisions:
-  - screen: /media/projects/wikiverse/01-home-desktop.png
-    problem: Mucho contenido relacionado se vuelve fácil de perder sin orientación.
-    decision: El inicio prioriza la búsqueda y abre varias rutas de exploración sin abrumar.
-  - screen: /media/projects/wikiverse/02-article-desktop.png
-    problem: Se llega a un artículo por búsqueda, por categoría o desde otro contenido.
-    decision: La lectura conserva jerarquía editorial y el acceso a su contexto.
-  - screen: /media/projects/wikiverse/03-history-desktop.png
-    problem: Un contenido editable pierde confianza si sus cambios no se ven.
-    decision: Cada edición queda visible en un historial de revisiones.
+  - screen: /media/projects/wikiverse/09-diff-lado-a-lado-desktop.png
+    problem: Un texto que cualquiera edita pierde confianza si no se ve quién cambió qué.
+    decision: Cada guardado es una revisión inmutable con autor, resumen y delta; dos cualesquiera se comparan palabra a palabra.
+  - screen: /media/projects/wikiverse/22-diff-mobile.png
+    problem: Comparar palabra por palabra un artículo largo de una sola pasada tardaba decenas de segundos.
+    decision: El diff compara primero líneas y sólo después palabras dentro de las líneas cambiadas.
+  - screen: /media/projects/wikiverse/07-busqueda-desktop.png
+    problem: Un índice de búsqueda que el código tiene que acordarse de actualizar acaba desfasado.
+    decision: Un trigger de PostgreSQL recalcula el vector ponderado de título, resumen y cuerpo en cada cambio.
+  - screen: /media/projects/wikiverse/06-autocompletado-desktop.png
+    problem: Una búsqueda con una errata no encuentra nada y el lector se va.
+    decision: Sugerencias mientras se escribe y similitud trigram como segundo intento; «entrpy» encuentra Entropy.
+  - screen: /media/projects/wikiverse/04-vista-previa-desktop.png
+    problem: Abrir cada enlace para saber de qué trata interrumpe la lectura.
+    decision: Al pasar el ratón, una tarjeta muestra la descripción corta y el extracto del artículo enlazado.
+  - screen: /media/projects/wikiverse/02-articulo-desktop.png
+    problem: Un enlace a un artículo que aún no existe suele romperse o esconderse.
+    decision: Se muestra en rojo, abre el editor con el título listo y se vuelve azul solo cuando alguien lo escribe.
+  - screen: /media/projects/wikiverse/14-editor-desktop.png
+    problem: Una vista previa con otro render acaba mostrando algo distinto de lo que se publica.
+    decision: El editor previsualiza con el mismo pipeline de Markdown que el artículo.
+  - screen: /media/projects/wikiverse/20-articulo-mobile.png
+    problem: Índice, artículo y herramientas en tres columnas no caben en un teléfono.
+    decision: Por debajo de 960 px el índice pasa a la cabecera y la infobox se apila; nada se desborda a 390 px.
 architecture:
   nodes:
-    - id: inicio
-      label: Inicio y búsqueda
+    - id: portada
+      label: Portada
       lane: cliente
-      screen: /media/projects/wikiverse/01-home-desktop.png
+      screen: /media/projects/wikiverse/01-portada-desktop.png
+      decision: >-
+        Artículo destacado, curiosidades y efemérides que salen de bloques
+        editables; la portada se guarda en caché por tiempo.
+      tech: [React 19, TanStack Query 5]
     - id: articulo
       label: Artículo
       lane: cliente
-      screen: /media/projects/wikiverse/02-article-desktop.png
+      screen: /media/projects/wikiverse/02-articulo-desktop.png
+      decision: >-
+        El Markdown se renderiza en el cliente con un plugin propio para
+        wikilinks, notas al pie y enlaces rojos, sin HTML crudo.
+      tech: [react-markdown 9, remark-gfm 4, Plugin remark propio]
+    - id: movil
+      label: En el teléfono
+      lane: cliente
+      screen: /media/projects/wikiverse/20-articulo-mobile.png
+      decision: >-
+        Por debajo de 960 px el índice pasa a la cabecera y la infobox se
+        apila; ninguna pantalla se desborda a 390 px.
+      tech: [Tailwind CSS 4.3]
+    - id: busqueda
+      label: Búsqueda
+      lane: cliente
+      screen: /media/projects/wikiverse/07-busqueda-desktop.png
+      decision: >-
+        La consulta, el filtro y el orden viven en la URL: una búsqueda se
+        puede enlazar y el botón atrás funciona.
+      tech: [React Router 7, TanStack Query 5]
     - id: historial
-      label: Historial de revisiones
+      label: Historial
       lane: cliente
-      screen: /media/projects/wikiverse/03-history-desktop.png
-    - id: inicio-movil
-      label: Inicio en móvil
+      screen: /media/projects/wikiverse/09-diff-lado-a-lado-desktop.png
+      decision: >-
+        Dos revisiones cualesquiera se comparan lado a lado o en una columna,
+        con el delta de bytes de cada cambio.
+      tech: [React 19]
+    - id: cambios
+      label: Cambios
       lane: cliente
-      screen: /media/projects/wikiverse/04-home-mobile.png
+      screen: /media/projects/wikiverse/11-cambios-recientes-desktop.png
+      decision: >-
+        Ediciones y mensajes de discusión en un solo feed, con cada filtro en
+        la URL y un feed RSS.
+      tech: [React Router 7]
+    - id: editor
+      label: Editor
+      lane: cliente
+      screen: /media/projects/wikiverse/14-editor-desktop.png
+      decision: >-
+        Se carga sólo al usarlo, previsualiza con el mismo render que el
+        artículo y guarda borradores sin restaurarlos solo.
+      tech: [React.lazy, localStorage]
     - id: api
-      label: API DRF con JWT y OpenAPI
+      label: API REST
       lane: servicio
-    - id: articulos
-      label: Artículos en Markdown
-      lane: servicio
+      decision: >-
+        36 rutas documentadas con OpenAPI; JWT de 30 minutos con refresco
+        rotado y revocado al cerrar sesión.
+      tech: [Django REST Framework 3.17, SimpleJWT 5.5, drf-spectacular 0.30]
     - id: revisiones
       label: Revisiones
       lane: servicio
       decision: >-
-        El contenido editable en Markdown vive separado de sus metadatos y de
-        sus revisiones, y cada edición queda visible.
-    - id: postgresql
+        Una revisión inmutable por guardado, con padre, autor y delta; un
+        guardado sin cambios no crea ninguna.
+      tech: [Django 5.2]
+    - id: buscador
+      label: Buscador
+      lane: servicio
+      decision: >-
+        websearch_to_tsquery con ranking, trigram cuando no hay resultados y
+        fragmentos escapados antes de resaltar.
+      tech: [PostgreSQL full-text, pg_trgm]
+    - id: bots
+      label: Vista para bots
+      lane: servicio
+      decision: >-
+        nginx envía sólo los bots de vista previa a Django, que responde con
+        Open Graph y JSON-LD; las personas reciben la SPA.
+      tech: [Django 5.2, Open Graph]
+    - id: postgres
       label: PostgreSQL
       lane: datos
       decision: >-
-        Búsqueda de texto completo con ranking nativo de PostgreSQL, para no
-        añadir un motor de búsqueda aparte.
+        Un trigger mantiene el vector de búsqueda con pesos A, B y C; lo
+        exclusivo de Postgres se decide al llamar, no al importar.
+      tech: [PostgreSQL 18 en Railway, tsvector + GIN]
     - id: redis
       label: Redis
       lane: datos
+      decision: >-
+        Estadísticas, portada, sugerencias, diffs y límites de peticiones:
+        perder Redis cuesta rendimiento, no datos.
+      tech: [Redis, django-redis 5.4]
+    - id: corpus
+      label: Corpus
+      lane: datos
+      decision: >-
+        63 artículos en 21 módulos validados con 31 reglas; sembrar dos veces
+        da exactamente la misma historia.
+      tech: [Comando seed propio]
+    - id: nginx
+      label: nginx
+      lane: infraestructura
+      decision: >-
+        Sirve la SPA, hace de proxy de /api y emite la misma CSP que Django;
+        index.html sin caché y los assets con hash para siempre.
+      tech: [nginx 1.27]
+    - id: railway
+      label: Railway
+      lane: infraestructura
+      decision: >-
+        Frontend, backend, PostgreSQL y Redis como cuatro servicios; se
+        despliega al hacer push a main.
+      tech: [Railway, Docker]
+    - id: ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        608 pruebas y además migraciones completas, esquema OpenAPI sin avisos
+        y el corpus validado antes de fusionar.
+      tech: [GitHub Actions, pytest, Vitest, Playwright]
+    - id: commons
+      label: Commons
+      lane: integraciones
+      decision: >-
+        Imágenes sólo de Wikimedia Commons, con autor y licencia; la lista
+        blanca se valida también en el servidor.
+      tech: [Wikimedia Commons]
   edges:
-    - [inicio, api]
+    - [portada, api]
     - [articulo, api]
-    - [historial, api]
-    - [inicio-movil, api]
-    - [api, articulos]
-    - [api, revisiones]
+    - [cambios, api]
+    - [movil, articulo]
+    - [articulo, commons]
+    - [busqueda, buscador]
+    - [historial, revisiones]
+    - [editor, revisiones]
+    - [api, postgres]
     - [api, redis]
-    - [articulos, postgresql]
-    - [revisiones, postgresql]
+    - [buscador, postgres]
+    - [revisiones, postgres]
+    - [corpus, postgres]
+    - [nginx, api]
+    - [nginx, bots]
+    - [railway, nginx]
+    - [ci, api]
 links:
+  - label: Visitar Wikiverse
+    href: https://wikiverse.jonasjavier.dev
+    kind: demo
   - label: Ver repositorio
-    href: https://github.com/JonasJavier/Wikipedia-
+    href: https://github.com/JonasJavier/wikiverse
     kind: repository
-seoTitle: Wiki Universe — Plataforma full-stack de contenido
-seoDescription: Wiki temática con React, Django, Markdown, revisiones y búsqueda de texto completo en PostgreSQL.
+seoTitle: Wikiverse — Enciclopedia full-stack con React, Django y PostgreSQL | Caso de estudio
+seoDescription: Caso de Wikiverse, enciclopedia construida desde cero con revisiones inmutables, diffs por palabra, discusiones, enlaces rojos y búsqueda de texto completo en PostgreSQL, en producción en Railway.
 ---
 
-## Necesidad
+## 1. Contexto
 
-El reto no era mostrar una lista de artículos, sino diseñar una forma clara de
-recorrer universos, personajes y conceptos relacionados. El lector debía poder
-llegar por búsqueda, por categoría o desde otro contenido y seguir entendiendo
-dónde estaba.
+Wikiverse empezó en abril de 2024 como el proyecto «Wiki» de CS50W, el curso
+de programación web de Harvard, que entregué y aprobé: Django con plantillas y
+cuatro entradas guardadas como archivos Markdown. En junio de 2026 lo
+reconstruí como una API en Django REST Framework con una aplicación en React, y
+en septiembre lo convertí en una enciclopedia completa y lo llevé a producción.
 
-## Mi función
+El diseño visual parte de Wikipedia como referencia, con tipografías, colores y
+maquetación propios. Los 63 artículos —unas 75.000 palabras sobre ciencia,
+geografía e informática— los escribí yo, y comprobé sus 428 referencias.
 
-Definí la arquitectura de contenido y desarrollé la experiencia completa: interfaz
-en React y TypeScript, API en Django REST Framework, autenticación, categorías,
-búsqueda y persistencia en PostgreSQL.
+## 2. Problema
 
-## Decisión relevante
+Una wiki tiene que resolver dos cosas a la vez: cualquiera puede cambiar el
+texto, y el lector tiene que poder confiar en él y orientarse entre muchos
+artículos. Por eso la trazabilidad —quién cambió qué y cuándo— y la navegación
+—enlaces, categorías y búsqueda— son el producto. Mostrar artículos es la parte
+fácil.
 
-Los artículos se escriben en Markdown y las revisiones se guardan como entidades
-propias. Esa separación permite conservar historial sin complicar la escritura.
-Para buscar, aproveché `SearchVector` y `SearchRank` de PostgreSQL: una solución
-suficiente para el alcance real y más simple de operar que un motor externo.
+## 3. Mi función
 
-## Estado actual
+El proyecto es mío de principio a fin: el producto, la interfaz, el modelo de
+datos, la API, la búsqueda, la seguridad, las pruebas, la integración continua,
+el despliegue, la documentación y el contenido.
 
-El backend pasa 23 pruebas y el frontend compila sin errores. El proyecto está
-listo para desplegar; el enlace de demo se publicará únicamente cuando la URL final
-esté disponible.
+## 4. De CS50W a una enciclopedia
+
+El enunciado pedía una página por entrada, un índice, una búsqueda por
+subcadena, crear y editar en Markdown y una página aleatoria. Wikiverse
+conserva esas funciones y añade lo que hace que una wiki sea una wiki:
+
+- revisiones inmutables y comparación palabra por palabra entre dos versiones;
+- páginas de discusión con respuestas anidadas;
+- cambios recientes con filtros en la URL y feed RSS;
+- lista de seguimiento, cuentas con JWT y protección de páginas;
+- enlaces rojos que se vuelven azules solos cuando alguien escribe el artículo;
+- notas al pie en ambos sentidos y vista previa de cada enlace;
+- búsqueda de texto completo con autocompletado y tolerancia a erratas;
+- un modelo relacional en PostgreSQL en lugar de archivos sueltos.
+
+## 5. Restricciones
+
+- **Dos bases de datos.** Todo funciona en SQLite y en PostgreSQL; lo exclusivo
+  de Postgres se elige al llamar, nunca al importar.
+- **Nada de HTML crudo.** Ni `dangerouslySetInnerHTML` ni HTML dentro del
+  Markdown: una prueba falla si reaparece.
+- **Un backend también público.** En Railway el backend responde en su propio
+  host, fuera de nginx, así que Django emite las mismas cabeceras de seguridad.
+- **Servicios que duermen.** Tras un rato sin visitas, el primer acceso tarda
+  unos segundos.
+
+## 6. Decisiones de arquitectura
+
+- **Revisiones.** `Article` guarda el estado actual y cada guardado crea una
+  `Revision` inmutable con su padre, autor, resumen, tamaño y delta. Un
+  guardado sin cambios no crea revisión, y borrar conserva el historial.
+- **Grafo de enlaces.** Se reconstruye en cada guardado. Un destino que no
+  existe queda como enlace rojo con su título, y se vuelve azul el día que
+  alguien lo escribe.
+- **Un solo render.** Artículos, discusiones, infoboxes, referencias y la vista
+  previa del editor pasan por el mismo pipeline de Markdown con un plugin
+  propio para wikilinks y notas.
+- **Búsqueda.** Un trigger de PostgreSQL mantiene el vector con pesos para el
+  título, el resumen y el cuerpo. Si la consulta no encuentra nada, se repite
+  con similitud trigram y se propone un título.
+- **Diffs en dos etapas.** Primero por líneas y luego por palabras, sólo dentro
+  de las líneas que cambiaron, con límites que truncan en lugar de agotar el
+  tiempo.
+- **Caché en Redis.** Estadísticas, portada, sugerencias y diffs históricos,
+  que no expiran porque son inmutables.
+
+## 7. Seguridad
+
+- La misma CSP sale de nginx y de Django: scripts sólo del propio origen, el
+  sitio no se puede incrustar y las imágenes sólo vienen de Wikimedia.
+- Las coincidencias de búsqueda se marcan con delimitadores de control, se
+  escapan y sólo después se convierten en resaltado.
+- Nueve límites de peticiones configurables; el inicio de sesión y el registro
+  también se limitan por usuario, así que cambiar de IP no los reinicia.
+- JWT de 30 minutos con un refresco de dos días que rota y se revoca al cerrar
+  sesión.
+- Las tipografías se sirven desde el propio sitio.
+
+## 8. Una SPA que se comparte bien
+
+Una aplicación de una sola página no ofrece tarjetas de vista previa a las
+redes sociales. nginx reconoce a los bots de vista previa y sólo a ellos los
+envía a una vista de Django con Open Graph y JSON-LD; las personas y los
+buscadores reciben la aplicación. El sitemap y el robots.txt salen del mismo
+origen.
+
+## 9. Datos reproducibles
+
+El corpus vive en 21 módulos y se valida con 31 reglas antes de escribir nada
+en la base. La historia de cada artículo —de dos a nueve revisiones— se deriva
+del título, así que sembrar dos veces da exactamente lo mismo. El CI lo
+comprueba junto con las migraciones y el esquema de la API.
+
+## 10. Desafíos
+
+- **Una base vacía con todo en verde.** Producción salió sin artículos y los
+  healthchecks no lo detectaban. Se sembró y el proceso de publicación ahora
+  pide comprobar el contenido, no sólo la salud.
+- **Un diff cuadrático.** Comparar por palabras un texto largo de una sola
+  pasada tardaba decenas de segundos; las dos etapas lo resolvieron.
+- **Cinco especificaciones contradictorias.** Se contradecían en 35 puntos, y
+  un solo documento de decisiones pasó a ser la fuente de verdad.
+- **Un proxy atado a un nombre.** El host del backend estaba fijo en la
+  configuración de nginx; renombrar el servicio rompía el sitio sin ningún
+  error. Pasó a variables de entorno.
+- **Una contraseña en el historial.** Una contraseña de administrador de
+  desarrollo quedó en git; se revocó con una migración y la cuenta se crea
+  ahora con un comando propio.
+
+## 11. Lo que falta
+
+La interfaz sólo está en inglés. Quedan 57 artículos planificados que hoy son
+enlaces rojos, las imágenes principales se sirven a resolución completa en
+lugar de en miniatura, la protección máxima de una página nueva aún no se
+restringe al personal y el monitoreo de errores está conectado pero apagado.
+«On this day» muestra ocho efemérides fijas, no las del día.
+
+## 12. Sobre el contenido y las capturas
+
+El texto de los artículos es mío y se publica bajo CC BY 4.0; las imágenes
+vienen de Wikimedia Commons, cada una con su autor y su licencia. Los usuarios,
+las visitas, las discusiones y la historia de ediciones los genera el seed del
+proyecto: no son tráfico ni colaboradores reales. Las capturas se hicieron el
+28 de septiembre de 2026 con el stack de producción en local, sobre el código
+más reciente, y la de la vista previa, en producción. Las pantallas con algún
+defecto visible se dejaron fuera.
+
+## 13. Aprendizajes
+
+Un healthcheck en verde no demuestra que el producto funcione: hay que
+comprobar el contenido. Fijar un contrato escrito antes de construir evitó
+reabrir decisiones. Y la seguridad que se prueba sola —una prueba que falla si
+reaparece HTML crudo— resiste mejor que la que se revisa a mano.
+
+## 14. Estado actual
+
+En producción en [wikiverse.jonasjavier.dev](https://wikiverse.jonasjavier.dev):
+nginx y Django en Railway, con PostgreSQL y Redis. Si lleva un rato sin
+visitas, la primera carga puede tardar unos segundos. El repositorio es público
+bajo licencia MIT, y la integración continua pasa 608 pruebas: 333 del
+backend, 258 de Vitest y 17 recorridos de Playwright.

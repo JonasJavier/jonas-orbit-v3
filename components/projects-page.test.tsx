@@ -139,7 +139,7 @@ describe("ProjectsPage", () => {
     expect(projects.map((project) => project.name)).toEqual([
       "OMSTA",
       "Izak's Photos",
-      "Wiki Universe",
+      "Wikiverse",
       "Network 3.0",
       "Delicaté 4.0",
     ]);
@@ -419,7 +419,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
       table().map((project) => `#${project.id}`),
     );
     // El nombre accesible es el título entero; lo visible, el índice y el nombre corto.
-    const wiki = within(dock()).getByRole("link", { name: /Wiki Universe/ });
+    const wiki = within(dock()).getByRole("link", { name: /Wikiverse/ });
     const omstaLink = within(dock()).getByRole("link", { name: "OMSTA — ERP y app móvil para una agencia de viajes" });
     expect(omstaLink).toHaveAttribute("aria-current", "true");
     expect(omstaLink.querySelector(".table-dock__index")).toHaveTextContent("01");
@@ -436,7 +436,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     expect(wiki).toHaveAttribute("aria-current", "true");
     expect(within(dock()).getByRole("link", { name: /OMSTA/ })).not.toHaveAttribute("aria-current");
     expect(tab(/Producto/)).toHaveAttribute("aria-controls", "wikiverse-stage");
-    expect(live()).toHaveTextContent("Wiki Universe · Producto");
+    expect(live()).toHaveTextContent("Wikiverse · Producto");
     await waitFor(() => expect(section("omsta")).toHaveAttribute("data-state", "hidden"));
   });
 
@@ -610,7 +610,7 @@ describe("EngineeringTable · proyectos y muelle", () => {
     // Escape la cierra siempre, esté donde esté el puntero (WCAG 1.4.13).
     fireEvent.pointerEnter(dockLink("wikiverse"), { pointerType: "mouse" });
     expect(peek()).toHaveAttribute("data-open", "true");
-    expect(peek()).toHaveTextContent("Wiki Universe");
+    expect(peek()).toHaveTextContent("Wikiverse");
     fireEvent.keyDown(document.body, { key: "Escape" });
     expect(peek()).not.toHaveAttribute("data-open");
 
@@ -949,7 +949,7 @@ describe("EngineeringTable · Producto y Diseño", () => {
     expect(note.querySelector(".holo-note__label")).toBeNull();
     fireEvent.click(within(note).getByRole("button", { name: "Pantalla siguiente" }));
     expect(noteText("wikiverse")).toBe(`02 / ${pad(wiki.screens.length)}${wiki.screens[1].caption}`);
-    expect(live()).toHaveTextContent(`Wiki Universe · Diseño · pantalla 2 de ${wiki.screens.length}: ${wiki.screens[1].caption}`);
+    expect(live()).toHaveTextContent(`Wikiverse · Diseño · pantalla 2 de ${wiki.screens.length}: ${wiki.screens[1].caption}`);
     expect(section("wikiverse").querySelectorAll("figure.holo-screen[data-far]")).toHaveLength(Math.max(0, wiki.screens.length - 5));
   });
 

@@ -68,8 +68,11 @@ export const projectsData = {
   wikiverse: {
     order: 3,
     phase: "f1a",
-    kind: "brief",
-    status: "ready-for-production",
+    // Caso completo desde el kit de 2026-09-28
+    // (`portfolio-content/wikiverse-2026/`): en producción en
+    // wikiverse.jonasjavier.dev (Railway, dominio propio).
+    kind: "case-study",
+    status: "production",
   },
   network: {
     order: 4,

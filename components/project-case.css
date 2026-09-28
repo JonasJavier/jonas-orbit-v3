@@ -159,7 +159,7 @@ html:has(.case-route) { scroll-padding-top: calc(67px + 48px + 20px); }
 
 /*
   Expuesta con su luma medida, como en la mesa: una interfaz casi blanca se
-  apaga un poco (Wiki Universe, 0,93 → ×0,82) y su halo desaparece; una
+  apaga un poco (Wikiverse, 0,93 → ×0,82) y su halo desaparece; una
   oscura (Izak's Photos) conserva brillo y un resplandor tenue.
 */
 .case-frame {

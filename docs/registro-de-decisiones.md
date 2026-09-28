@@ -19,6 +19,22 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Proyectos — Wikiverse rehecho: caso completo, en producción (2026-09-28)
+
+El §22 de `docs/design/endurance-proyectos.md` aplica el mismo método desde
+`portfolio-content/wikiverse-2026/`. «Wiki Universe» pasa a llamarse
+**Wikiverse** y de ficha breve a **caso completo** con `status: production`
+(`wikiverse.jonasjavier.dev`): los cinco proyectos son ahora casos completos.
+Lo publicado estaba mal —«universos y personajes», 23 pruebas en lugar de 608,
+la búsqueda descrita a medias, sin nginx— y se corrigió. 18 de las 23 capturas
+en 5 módulos (la de la vista previa, rehecha en producción), 8 decisiones, 18
+nodos con 17 aristas y 49 tecnologías. Pie de Endurance: 5 en producción, 2
+para clientes reales, 5 casos completos. De paso, `npm run check` vuelve a
+pasar en `main` (`*.cjs` con `require`, binario del grafo en knip) y las
+cabeceras de cinco carriles ya no se tocan a 1280 px. Abierto: subir y
+desplegar la rama de arreglos de Wikiverse (búsqueda e historial) y el
+veredicto.
+
 ## Publicación en Railway (2026-09-27)
 
 El dueño eligió Railway para Jonás

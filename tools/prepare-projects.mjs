@@ -51,7 +51,7 @@ async function isFresh(target, sourceMtime) {
 /**
  * Cuánta luz emite una captura: la media de luma (Rec. 709 sobre los valores
  * sRGB, es decir, como se VE y no en radiancia), de 0 a 1. Una interfaz casi
- * blanca como Wiki Universe ronda 0,9 y una oscura como Izak's Photos 0,1. La
+ * blanca como Wikiverse ronda 0,9 y una oscura como Izak's Photos 0,1. La
  * mesa la usa para exponer cada pantalla (§17): una pantalla blanca se apaga
  * un poco para que se lea encendida dentro de la sala y no pegada encima.
  */

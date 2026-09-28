@@ -12,5 +12,8 @@
   ],
   "ignoreDependencies": [
     "tailwindcss"
+  ],
+  "ignoreBinaries": [
+    "codebase-memory-mcp"
   ]
 }

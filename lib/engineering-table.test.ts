@@ -844,7 +844,7 @@ describe("el catálogo real sobre la mesa", () => {
     expect(projects.map((project) => project.name)).toEqual([
       "OMSTA",
       "Izak's Photos",
-      "Wiki Universe",
+      "Wikiverse",
       "Network 3.0",
       "Delicaté 4.0",
     ]);
@@ -975,15 +975,15 @@ describe("el catálogo real sobre la mesa", () => {
   });
 
   /*
-    Garantiza que cada esquema real tiene el ancho de lo que ocupa: OMSTA,
-    Izak's Photos, Network y Delicaté, los cinco; Wiki Universe, tres.
+    Garantiza que cada esquema real tiene el ancho de lo que ocupa: los cinco
+    casos completos ocupan los cinco carriles.
     Evita el rectángulo lleno de vacío de un carril sin módulos (§17).
   */
   it("cada esquema real tiene tantas columnas como carriles ocupa", () => {
     expect(Object.fromEntries(projects.map((project) => [project.id, project.architecture.cols]))).toEqual({
       omsta: 5,
       "izaks-photos": 5,
-      wikiverse: 3,
+      wikiverse: 5,
       network: 5,
       delicate: 5,
     });
@@ -1014,7 +1014,7 @@ describe("el catálogo real sobre la mesa", () => {
 
   /*
     Garantiza que toda captura real lleva su luma medida (0-1): sin ella, la
-    mesa no puede apagar una interfaz blanca. Evita que Wiki Universe vuelva a
+    mesa no puede apagar una interfaz blanca. Evita que Wikiverse vuelva a
     comerse la sala por una captura añadida sin pasar el preparador.
   */
   it("toda captura real lleva su luma medida", () => {

@@ -234,7 +234,7 @@
 /*
   El nombre, en UNA línea si razonablemente cabe (§17): el tamaño sale de su
   longitud (`--len`, de la ficha) contra el ancho de la columna. OMSTA llega al
-  tope; «Wiki Universe» e «Izak's Photos» se quedan hacia 48 px sin partirse.
+  tope; «Wikiverse» e «Izak's Photos» se quedan hacia 48 px sin partirse.
   Si aun así no cabe, se parte equilibrado.
 */
 .table-read__title {
@@ -680,13 +680,13 @@
   La EXPOSICIÓN sale de la luma medida de cada captura (`--luma`, de
   `tools/prepare-projects.mjs`): una interfaz blanca baja de brillo y deja de
   irradiar, una oscura conserva su luz y su halo. Así una pantalla parece
-  encendida dentro de la nave y no un PNG pegado (Wiki Universe es la prueba).
+  encendida dentro de la nave y no un PNG pegado (Wikiverse es la prueba).
 */
 .holo-screen {
   --x: var(--r-x); --y: var(--r-y); --z: var(--r-z); --ry: var(--r-ry); --s: var(--r-s); --o: var(--r-o);
   --luma: 0.5;
   /* La curva de §17 y, por encima de 0,8, una rodilla: una interfaz casi
-     blanca (Wiki Universe, 0,95) baja un 30 % y deja de comerse la sala; una
+     blanca (Wikiverse, 0,95) baja un 30 % y deja de comerse la sala; una
      de tonos medios (OMSTA, 0,76) apenas se toca. */
   --expo: calc(1 - 0.42 * max(0, var(--luma) - 0.5) - 0.8 * max(0, var(--luma) - 0.8));
   --glow: calc((1 - var(--luma)) * 0.26);
@@ -1459,6 +1459,9 @@ html[data-motion="off"] .projects-page *::after {
 @media (min-width: 1100px) and (max-width: 1299px) {
   .table-dock__step { display: none; }
   .table-dock__item { padding: 0 12px; }
+  /* Con los cinco carriles, «Infraestructura» e «Integraciones» se tocaban a
+     1280 px: con 0,14em cada columna se queda corta para quince letras. */
+  .table .holo-lane__title { letter-spacing: 0.06em; }
 }
 
 /* ── Ventanas bajas: la mesa cede alto y la lectura sube ─────────────────── */

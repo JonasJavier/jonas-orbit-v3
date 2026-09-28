@@ -10,8 +10,8 @@ import { F1A_PROJECT_IDS, projectsData } from "../content/projects.data";
  *
  * C1 sin JavaScript se lee entero —nombre, alcance, reto, cada decisión de
  *    diseño (problema y decisión), sistema, resultados y el cuerpo con su
- *    índice— y ningún enlace interno está muerto. En un caso de estudio
- *    (OMSTA) y en una ficha (Wiki Universe).
+ *    índice— y ningún enlace interno está muerto. En un caso sin demo ni
+ *    repositorio (OMSTA) y en uno con los dos (Wikiverse).
  * C2 la escena persistente duerme en el caso: el mismo canvas, cubierto, sin
  *    dibujar; y vuelve a dibujar al salir al mapa.
  * C3 el visor de pantallas (`<dialog>`) abre desde cualquier pantalla,

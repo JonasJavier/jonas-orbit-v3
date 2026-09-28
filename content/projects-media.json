@@ -2162,45 +2162,208 @@
     ],
     "luma": 0.94
   },
-  "/media/projects/wikiverse/01-home-desktop.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/wikiverse/01-portada-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/02-articulo-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/03-articulo-oscuro-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/wikiverse/04-vista-previa-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.9
+  },
+  "/media/projects/wikiverse/05-referencias-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/06-autocompletado-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/07-busqueda-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/wikiverse/09-diff-lado-a-lado-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/11-cambios-recientes-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.95
+  },
+  "/media/projects/wikiverse/14-editor-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/15-editor-infobox-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.94
+  },
+  "/media/projects/wikiverse/17-categoria-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.97
+  },
+  "/media/projects/wikiverse/18-explorar-desktop.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.96
+  },
+  "/media/projects/wikiverse/19-portada-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.92
+  },
+  "/media/projects/wikiverse/20-articulo-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.86
+  },
+  "/media/projects/wikiverse/21-busqueda-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
     ],
     "luma": 0.93
   },
-  "/media/projects/wikiverse/02-article-desktop.png": {
-    "width": 1440,
-    "height": 900,
+  "/media/projects/wikiverse/22-diff-mobile.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.93
+  },
+  "/media/projects/wikiverse/23-api-docs-desktop.png": {
+    "width": 1920,
+    "height": 1200,
     "steps": [
       480,
       720,
       960,
-      1440
+      1440,
+      1920
     ],
-    "luma": 0.87
-  },
-  "/media/projects/wikiverse/03-history-desktop.png": {
-    "width": 1440,
-    "height": 900,
-    "steps": [
-      480,
-      720,
-      960,
-      1440
-    ],
-    "luma": 0.89
-  },
-  "/media/projects/wikiverse/04-home-mobile.png": {
-    "width": 390,
-    "height": 844,
-    "steps": [
-      390
-    ],
-    "luma": 0.96
+    "luma": 0.94
   }
 }

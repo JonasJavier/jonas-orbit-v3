@@ -15,6 +15,22 @@ import { ProjectCase } from "./project-case";
 
 const projects = getF1AProjects("es");
 
+/**
+ * Hoy los cinco proyectos son casos completos con módulos: la ficha breve y
+ * el recorrido sin módulos se prueban sobre una copia de Wikiverse sin ellos.
+ */
+function withoutModules(project: Project): Project {
+  const strip = (image: Project["prose"]["featuredImage"]) => {
+    const bare = { ...image };
+    delete bare.module;
+    return bare;
+  };
+  return {
+    ...project,
+    prose: { ...project.prose, featuredImage: strip(project.prose.featuredImage), gallery: project.prose.gallery?.map(strip) },
+  };
+}
+
 function renderCase(project: Project) {
   return render(
     <ProjectCase contactHref="/es/contacto" project={project} projects={projects} projectsHref="/es/proyectos" />,
@@ -60,7 +76,7 @@ describe("ProjectCase — primer pantallazo", () => {
     expect(screen.getByText("Caso de estudio")).toBeInTheDocument();
     unmount();
 
-    renderCase(getProject("wikiverse", "es"));
+    renderCase({ ...getProject("wikiverse", "es"), kind: "brief" });
     expect(screen.getByText("Ficha")).toBeInTheDocument();
   });
 
@@ -135,7 +151,18 @@ describe("ProjectCase — el caso", () => {
   });
 
   it("una fila de alcance con palabras lo dice a la hoja de estilo", () => {
-    const wiki = getProject("wikiverse", "es");
+    const base = getProject("wikiverse", "es");
+    const wiki: Project = {
+      ...base,
+      prose: {
+        ...base.prose,
+        scope: [
+          { value: "Markdown", label: "artículos con historial" },
+          { value: "OpenAPI", label: "API documentada" },
+          { value: "JWT", label: "sesiones con refresco" },
+        ],
+      },
+    };
     renderCase(wiki);
 
     const list = within(screen.getByRole("region", { name: "Alcance" })).getByRole("list");
@@ -172,8 +199,10 @@ describe("ProjectCase — el caso", () => {
   });
 
   it("sin decisiones declaradas, recorre las capturas con su pie", () => {
-    const source = getProject("wikiverse", "es");
-    const project: Project = { ...source, prose: { ...source.prose, designDecisions: undefined } };
+    const source = withoutModules(getProject("wikiverse", "es"));
+    // Sin demo: la salida del primer pantallazo es entonces el recorrido.
+    const links = source.prose.links?.filter((link) => link.kind !== "demo");
+    const project: Project = { ...source, prose: { ...source.prose, designDecisions: undefined, links } };
     renderCase(project);
 
     const section = screen.getByRole("region", { name: "El producto, pantalla a pantalla" });
@@ -206,9 +235,9 @@ describe("ProjectCase — el caso", () => {
   });
 
   it("sin módulos, cada pantalla se enseña una vez y todas abren su captura", () => {
-    // Ninguna ficha real sin módulos deja hoy pantallas para la rejilla (sus
-    // decisiones las cubren todas): se le quitan dos para que la haya.
-    const base = getProject("wikiverse", "es");
+    // Una copia sin módulos y con una sola decisión, para que la rejilla
+    // tenga pantallas que enseñar.
+    const base = withoutModules(getProject("wikiverse", "es"));
     const wiki = { ...base, prose: { ...base.prose, designDecisions: base.prose.designDecisions?.slice(0, 1) } };
     renderCase(wiki);
 
