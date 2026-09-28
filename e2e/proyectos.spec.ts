@@ -483,10 +483,17 @@ test("P7 · el muelle: ← → dentro, botones anterior/siguiente, flechas globa
     return { prevented: event.defaultPrevented, hash: location.hash };
   });
   expect(vertical, "la rueda vertical es de la página").toEqual({ prevented: false, hash: `#${at(0)}` });
-  const dockBox = await dock.boundingBox();
-  if (!dockBox) throw new Error("El muelle no tiene caja");
-  await page.mouse.move(dockBox.x + dockBox.width / 2, dockBox.y + dockBox.height / 2);
-  for (let i = 0; i < 3; i++) await page.mouse.wheel(120, 0);
+  // Los tres eventos salen en el mismo tick: con `page.mouse.wheel` uno a uno,
+  // una máquina cargada los separaba más que el descanso del muelle (650 ms)
+  // y el test leía dos gestos donde había uno.
+  const horizontal = await dock.evaluate((nav) =>
+    Array.from({ length: 3 }, () => {
+      const event = new WheelEvent("wheel", { deltaX: 120, bubbles: true, cancelable: true });
+      nav.dispatchEvent(event);
+      return event.defaultPrevented;
+    }),
+  );
+  expect(horizontal, "la rueda horizontal es del muelle").toEqual([true, true, true]);
   await expectActive(page, at(1));
 
   /*
