@@ -31,12 +31,10 @@ el repositorio protegiéndolo, con autorización para los cambios necesarios.
 - **Las fuentes salen del repositorio y de su historial.** `Fotos/`,
   `Disenos/`, `portfolio-content/`, `assets/` (~1,1 GB, fuera ya del build por
   `.dockerignore`) quedan en disco e ignoradas; el historial completo se
-  conservará en el repositorio PRIVADO `JonasJavier/jonas-orbit-v3-archivo`
-  (espejo local listo en `../jonas-orbit-v3-archivo.git`). **Pendiente del
-  dueño a 2026-09-28:** subir ese espejo, reescribir el historial con
-  `git filter-repo` (1,24 GB → decenas de MB) y sólo después hacer público el
-  repositorio. Tras la purga, un clon anterior no se puede fusionar: se vuelve
-  a clonar.
+  conserva en el repositorio PRIVADO `JonasJavier/jonas-orbit-v3-archivo`
+  (y en el espejo local `../jonas-orbit-v3-archivo.git`). El historial del
+  público se reescribió con `git filter-repo` antes de publicarlo: un clon
+  anterior al 2026-09-28 no se puede fusionar, hay que volver a clonar.
 - **Las PNG maestras de las capturas no se publican.** Las 215 de
   `public/media/projects/` (~122 MB) nunca se servían —todo pasa por
   `screenSources`, que pide la escalera WebP—. Viven en
@@ -65,6 +63,9 @@ el repositorio protegiéndolo, con autorización para los cambios necesarios.
   headless pero 3 ms en un navegador real con el canal de GPU abierto.
 - **Código muerto:** fuera la colección Velite `designProse` (sin contenido
   ni consumidor).
+- **El formulario valida con `zod/mini`.** Next precarga la ruta de Contacto
+  desde la portada y la API clásica de Zod llevaba ~72 KB comprimidos a cada
+  visita; el chunk de contacto, formulario incluido, queda en 23,5 KB.
 
 ## Publicación — rama `production`, cabeceras y límite de tasa (2026-09-28)
 
