@@ -7,6 +7,7 @@ import {
   fieldErrorsFromZod,
   type ContactFormData,
 } from "./contact-schema";
+import { clientAddress } from "./rate-limit";
 
 const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
 const TURNSTILE_VERIFY_URL =
@@ -89,7 +90,7 @@ export function readContactBindings(): ContactBindings {
   ) as ContactBindings;
 }
 
-function getContactRuntimeMode(
+export function getContactRuntimeMode(
   bindings: ContactBindings,
 ): ContactRuntimeMode {
   const configured = bindings.CONTACT_RUNTIME_ENV;
@@ -355,7 +356,7 @@ export async function handleContactRequest(
       const verified = await verifyTurnstile({
         secret: config.secret,
         token: parsed.data.turnstileToken,
-        remoteIp: clean(request.headers.get("cf-connecting-ip") ?? undefined),
+        remoteIp: clientAddress(request.headers),
         mode: config.mode,
         expectedHostname: config.expectedHostname,
         fetchImplementation,

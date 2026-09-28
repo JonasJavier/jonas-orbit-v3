@@ -23,3 +23,13 @@ otro recurso paralelo.
 La regla actual cuenta por centro de datos e IP, admite cinco `POST /api/contact`
 en 60 segundos y bloquea durante 600 segundos al superar el límite. El cliente
 debe tratar una respuesta 429 como recuperable y no reintentar automáticamente.
+
+## Producción en Railway
+
+`jonasjavier.dev` apunta directamente a Railway (sin proxy de Cloudflare), así
+que esta regla no protege el origen publicado. El mismo contrato —cinco
+`POST /api/contact` por minuto e IP, bloqueo de 600 segundos y respuesta 429—
+se aplica dentro de la aplicación (`app/api/contact/route.ts`,
+`lib/rate-limit.ts`), con la IP que escribe el borde de Railway en
+`x-real-ip`. Este Terraform sólo vuelve a hacer falta si la zona pasa a
+servirse a través del proxy de Cloudflare.
