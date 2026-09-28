@@ -12,6 +12,20 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Cloudflare — caché de páginas prerenderizadas (2026-09-27):** el preview real
+del candidato con Wrangler 4.141.0 sí arranca en Windows, pero la caché `dummy`
+de OpenNext deja cuatro destinos en 404 y OMSTA en 500. Se configura la caché
+de Static Assets de sólo lectura y su interceptación, siguiendo el modo SSG
+del adaptador: las mismas 20 rutas HTML pasan, con redirect y cuatro 404
+canónicos conservados. El gate comprueba además contenido semántico, los seis
+destinos, el CV y un chunk con header `immutable`. No se añade R2, otro pipeline
+MDX, evaluación permisiva,
+revalidación ni rutas nuevas. `/api/contact` sigue dinámico y el POST inválido
+devuelve 400 sin correo. `npm run test:worker` reproduce el fallo anterior y
+entra en CI tras el build del Worker. `public/_headers` da caché immutable sólo
+a los chunks con hash de Next. Procedimiento y evidencia en
+`docs/production-readiness.md` y `docs/reviews/repository-readiness-2026-09-27.md`.
+
 **Compatibilidad de audio y pruebas de capacidad (2026-09-27):** la revisión
 multinavegador detecta `cancelAndHoldAtTime` ausente en Firefox y un evento de
 pausa que podía apagar la intención antes de desbloquear el autoplay. La banda

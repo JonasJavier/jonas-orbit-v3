@@ -56,6 +56,8 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
+- **Runtime de Cloudflare** (09-27) `docs/production-readiness.md` — caché
+  prerenderizada de Static Assets y gate `npm run test:worker`; contacto dinámico.
 - **Dependencias — seguridad** (09-27)
   `docs/reviews/repository-readiness-2026-09-27.md` — versiones parcheadas,
   auditorías y evidencia de la actualización dedicada.

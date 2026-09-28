@@ -143,6 +143,39 @@ Evidencia local ignorada: `output/browser-compat-check.log`,
 `output/final-opennext-build.log`, `output/lighthouse/` y
 `output/repository-link-review.json`.
 
+### Preview real de Cloudflare
+
+Con Wrangler actualizado, el Worker local arranca. La primera comprobación
+encuentra cuatro destinos dinámicos de SSG en 404 y OMSTA en 500, aunque
+`next start` los sirve correctamente: la configuración de OpenNext sólo tenía
+la caché vacía por defecto. El nuevo gate `npm run test:worker` falla contra
+esa configuración en `/es/creatividad`.
+
+La caché de Static Assets de sólo lectura y la interceptación, modo SSG
+[documentado por OpenNext](https://opennext.js.org/cloudflare/caching#ssg-site),
+sirven el HTML/RSC prerenderizado sin añadir infraestructura ni cambiar Velite.
+Después de reconstruir completamente, `npm run test:worker` pasa: 20 rutas
+HTML con `<main>` y `<h1>`, los seis enlaces de la portada, CV PDF, redirect
+`/` → `/es`, cuatro rutas inexistentes/retiradas en 404 y validación de un
+POST vacío en 400. No se entregó correo. `/api/contact` conserva `force-dynamic`
+y `no-store`; su GET devuelve el 503 de configuración esperado mientras falten
+los bindings reales. No se confunde la prueba de validación con una entrega.
+
+En Edge, el preview navega con JavaScript de `/es?no3d=1` a `/es/proyectos` y
+de ahí a `/es/proyectos/omsta`: títulos y caso completo visibles, cero errores
+de consola. El aviso de autoplay sin gesto es la política del navegador.
+
+Los chunks con hash de `/_next/static/` incorporan la política immutable
+recomendada por el adaptador; el gate descarga un chunk y comprueba su header
+`immutable`. Los documentos, CV y las imágenes de contenido no heredan esa
+política de un año.
+
+Evidencia: `output/worker-before-cache-fix.log` (FAIL),
+`output/worker-after-cache-fix.log` y `output/final-worker-smoke.log` (PASS),
+`output/final-static-worker-build.log` y `output/final-worker-preview.log`.
+CI prueba el runtime real después del build, en vez de considerar suficiente
+la generación del bundle.
+
 ## Estado de GitHub
 
 Alertas de vulnerabilidades activadas y temas del proyecto actualizados.
