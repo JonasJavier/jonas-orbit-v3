@@ -1,8 +1,8 @@
 /**
  * Las capturas de la mesa de ingeniería — peldaños WebP y dimensiones medidas.
  *
- * De cada PNG de `public/media/projects/<id>/` deja copias WebP en los anchos
- * que la mesa pinta de verdad (`docs/design/endurance-proyectos.md` §9):
+ * De cada PNG maestro de `assets/media/projects/<id>/` deja copias WebP en
+ * `public/media/projects/<id>/`, en los anchos que la mesa pinta de verdad (`docs/design/endurance-proyectos.md` §9):
  *
  *   escritorio (más ancha que alta)  480 · 720 · 960 · 1440 · 1920
  *   teléfono   (más alta que ancha)  390 · 780
@@ -12,8 +12,10 @@
  *
  * **No se amplía nunca**: un peldaño mayor que el original sería un archivo
  * más pesado y más blando, no una imagen mejor; los peldaños que no caben se
- * omiten y la página lo sabe por el manifiesto. Los PNG no se tocan:
- * `ProjectCase` y `ProjectCard` los siguen sirviendo por `next/image`.
+ * omiten y la página lo sabe por el manifiesto. Los PNG maestros no se
+ * publican —como el original de la sala, viven en `assets/`, fuera del repo y
+ * del despliegue—; su ruta `/media/projects/…png` sigue siendo la clave con la
+ * que el MDX y el manifiesto nombran cada captura.
  *
  * De la captura destacada de cada caso deja también `<nombre>-og.jpg`, la
  * tarjeta de 1200 × 630 que usan las vistas previas al compartir el enlace.
@@ -31,6 +33,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 const root = process.cwd();
+const sourceRoot = path.join(root, "assets/media/projects");
 const mediaRoot = path.join(root, "public/media/projects");
 const manifestPath = path.join(root, "content/projects-media.json");
 
@@ -38,9 +41,9 @@ const DESKTOP_STEPS = [480, 720, 960, 1440, 1920];
 const MOBILE_STEPS = [390, 780];
 const QUALITY = 84;
 
-/** El peldaño `<nombre>-<ancho>.webp` junto a su original. */
-function stepPath(pngPath, width) {
-  return pngPath.replace(/\.png$/, `-${width}.webp`);
+/** El peldaño público `<nombre>-<ancho>.webp` de un original. */
+function stepPath(project, file, width) {
+  return path.join(mediaRoot, project, file.replace(/\.png$/, `-${width}.webp`));
 }
 
 async function isFresh(target, sourceMtime) {
@@ -72,14 +75,14 @@ async function meanLuma(buffer) {
 }
 
 const manifest = {};
-const projects = (await readdir(mediaRoot, { withFileTypes: true }))
+const projects = (await readdir(sourceRoot, { withFileTypes: true }))
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort();
 
 for (const project of projects) {
-  const dir = path.join(mediaRoot, project);
-  await mkdir(dir, { recursive: true });
+  const dir = path.join(sourceRoot, project);
+  await mkdir(path.join(mediaRoot, project), { recursive: true });
   const files = (await readdir(dir)).filter((file) => file.endsWith(".png")).sort();
 
   for (const file of files) {
@@ -93,7 +96,7 @@ for (const project of projects) {
     const sourceMtime = (await stat(source)).mtimeMs;
 
     for (const step of steps) {
-      const target = stepPath(source, step);
+      const target = stepPath(project, file, step);
       if (await isFresh(target, sourceMtime)) continue;
       const webp = await sharp(buffer)
         .resize({ width: step, fit: "inside", kernel: "lanczos3" })
@@ -140,8 +143,8 @@ for (const locale of await readdir(path.join(root, "content"), { withFileTypes: 
 }
 
 for (const src of [...featured].sort()) {
-  const source = path.join(root, "public", src);
-  const target = source.replace(/\.png$/, "-og.jpg");
+  const source = path.join(root, "assets", src);
+  const target = path.join(root, "public", src).replace(/\.png$/, "-og.jpg");
   if (await isFresh(target, (await stat(source)).mtimeMs)) continue;
   const jpeg = await sharp(await readFile(source))
     .resize({ width: OG_WIDTH, height: OG_HEIGHT, fit: "cover", position: "top", kernel: "lanczos3" })
