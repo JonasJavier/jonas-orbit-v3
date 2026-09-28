@@ -1,9 +1,10 @@
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react()],
+  // Vite resuelve los alias de tsconfig (`@/*`, `@velite`) de forma nativa.
+  resolve: { tsconfigPaths: true },
   test: {
     // globals habilita el auto-cleanup de Testing Library entre tests.
     globals: true,
