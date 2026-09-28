@@ -4,7 +4,7 @@ Dirección solicitada por el dueño: cabina espacial minimalista y elegante.
 La dirección vigente es **Ventana de observación** (opción 2), recuperada por
 el dueño después de comparar la consola. Se conserva la marca JONÁS ØRBIT que gustó
 al dueño. Los iconos conservan Horizonte, por petición explícita.
-Se conservó el original anterior en `public/brand/previous-icon.svg`.
+Se conservó el original anterior en `docs/media/brand/previous-icon.svg`.
 
 ## Dirección vigente — Observatorio y acento por mundo (2026-09-13)
 
@@ -197,7 +197,8 @@ El HUD de la portada conserva su propia identidad y composición.
 
 Cada familia incluye SVG transparente claro, versión en tinta oscura y favicon
 con base oscura. No usan fuentes externas, filtros ni recursos incrustados.
-`public/brand/logo-options.html` es una comparativa no indexable, con tamaños
+`docs/media/brand/logo-options.html` es una comparativa de archivo (fuera de
+`public/` desde 2026-09-28, ya no se sirve), con tamaños
 reales y botones que cambian únicamente la muestra de navbar. Permite descargar
 los SVG y conserva las alternativas como referencia histórica.
 
