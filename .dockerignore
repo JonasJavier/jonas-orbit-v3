@@ -1,0 +1,32 @@
+# Contexto de build en Railway: Railpack respeta este archivo.
+# El build (`npm run check`) sólo necesita el código, `content/` y `public/`;
+# las fuentes fotográficas, piezas de diseño, kits de evidencia y documentos
+# se quedan fuera del contexto y de la imagen.
+.git
+node_modules
+.next
+.open-next
+.velite
+.wrangler
+*.tsbuildinfo
+.env*
+!.env.example
+
+Fotos
+Disenos
+portfolio-content
+assets
+music
+docs
+infra
+tmp
+
+.claude
+.gstack
+.shots
+.lighthouseci
+.playwright-cli
+output
+test-results
+playwright-report
+blob-report
