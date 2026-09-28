@@ -145,6 +145,26 @@ function getServerContactConfig(bindings: ContactBindings) {
   };
 }
 
+/** Readiness for a production deployment: never expose which credential is missing. */
+export function isProductionContactReady(
+  bindings: ContactBindings,
+  siteUrl: string,
+): boolean {
+  try {
+    const config = getServerContactConfig(bindings);
+    const site = new URL(siteUrl);
+    return (
+      config.mode === "production" &&
+      site.protocol === "https:" &&
+      config.expectedHostname === site.hostname &&
+      config.deliveryMode !== "test" &&
+      Boolean(config.resendApiKey && config.fromEmail && config.toEmail)
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function fetchWithTimeout(
   fetchImplementation: FetchImplementation,
   input: string,

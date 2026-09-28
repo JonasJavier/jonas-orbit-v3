@@ -16,8 +16,9 @@ el documento enlazado es la fuente de verdad en ESE ámbito y sustituye a los
 anteriores en él. El texto completo de cada entrada —porqué, cifras medidas y
 trampas— está en `docs/registro-de-decisiones.md`: **léelo (la entrada, no el
 archivo entero) antes de tocar ese ámbito**. Las entradas nuevas se escriben
-allí, y aquí sólo su línea. Casi todo lo visual tiene **valoración del dueño
-pendiente**: no se da por aprobado.
+allí, y aquí sólo su línea. El dueño aprobó el diseño actual para publicación
+el 2026-09-27; las notas históricas de valoración pendiente siguen describiendo
+revisiones individuales, no bloquean por sí solas el diseño actual.
 
 ### Jerarquía base
 
@@ -56,8 +57,9 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
-- **Runtime de Cloudflare** (09-27) `docs/production-readiness.md` — caché
-  prerenderizada de Static Assets y gate `npm run test:worker`; contacto dinámico.
+- **Publicación en Railway** (09-27) `docs/production-readiness.md` — destino
+  actual, healthcheck y gates; no hay autodeploy habilitado. El preview de
+  Cloudflare conserva su prueba de compatibilidad `npm run test:worker`.
 - **Dependencias — seguridad** (09-27)
   `docs/reviews/repository-readiness-2026-09-27.md` — versiones parcheadas,
   auditorías y evidencia de la actualización dedicada.
@@ -68,7 +70,7 @@ MDX**, nunca en `worlds.data.ts`.
   peso y quién lo apaga. Un solo bus (`lib/audio-bus.ts`); lo apaga el control
   de AUDIO y nadie más. Portada y Miller usan las grabaciones de Jonás
   (`lib/audio-samples.ts`); el resto, recetas de `lib/sfx.ts`. Licencia de los
-  dos archivos pendiente.
+  dos archivos: el dueño confirmó derechos de publicación (09-27).
   §2 «Compatibilidad» (09-27): rampas portables y autoplay `armed` hasta el gesto.
 - **Travesía — sonido, pestillo y alabeo** (09-22)
   `docs/design/travesia-espaciotemporal.md` §«Segundo pase» — sonido sintetizado
@@ -198,8 +200,9 @@ se lee como verde. Redirige a un archivo y consulta `$?`.
 - `.env.local` (ignorado por git) lleva los ajustes de máquina. Si `workerd`
   no arranca en tu equipo — Windows con VBS/HVCI aborta con *access violation* —
   usa `CF_DEV_CONTEXT=off`: `next.config.ts` se salta Miniflare y
-  `readContactBindings()` cae a `process.env`. El runtime real de Cloudflare se
-  sigue verificando en CI y en el deploy.
+  `readContactBindings()` cae a `process.env`. El preview real de Cloudflare se
+  sigue verificando en CI; producción apunta a Railway con `next start` y
+  variables de entorno del servicio.
 
 ## Reglas no negociables (vienen del plan)
 

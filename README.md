@@ -4,7 +4,7 @@
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
 ![TypeScript 5](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Node.js 24](https://img.shields.io/badge/Node.js-24-5FA04E?logo=nodedotjs&logoColor=white)
-![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)
+![Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?logo=railway&logoColor=white)
 
 Portafolio espacial de **Jonás Javier Encarnación**: una experiencia narrativa
 que combina producto digital, contenido editorial y una escena WebGL progresiva
@@ -13,13 +13,15 @@ sin sacrificar accesibilidad, rutas reales ni HTML útil sin JavaScript.
 > **Estado del producto:** desarrollo activo y candidato a producción. Los seis
 > destinos y los flujos principales están implementados; cuatro proyectos del
 > portafolio están en producción y uno está listo para producción. La publicación
-> de Jonás Orbit todavía requiere cerrar dominio, secretos, verificación
-> multinavegador, licencias de audio y valoración visual del propietario.
+> de Jonás Orbit todavía requiere configurar el formulario, cerrar WebKit y
+> restablecer GitHub Actions. El dominio `orbit.jonasjavier.dev` ya está
+> verificado, pero el sitio todavía no se ha desplegado. El propietario aprobó
+> el diseño actual y confirmó derechos de publicación del audio.
 
 ![System Map de Jonás Orbit v3](docs/media/readme/system-map.webp)
 
 _System Map · build de producción · 1440 × 860 · movimiento encendido · captura
-del 26 de septiembre de 2026 · valoración visual pendiente._
+del 26 de septiembre de 2026 · diseño actual aprobado por el propietario._
 
 ## La experiencia
 
@@ -60,7 +62,7 @@ Ruta de Next.js
        ├─ escena Three.js / WebGL2
        └─ audio y movimiento globales
 
-Build de OpenNext → Cloudflare Workers
+Build de Next.js → Railway (`npm start`)
 ```
 
 | Capa | Tecnología |
@@ -70,7 +72,8 @@ Build de OpenNext → Cloudflare Workers
 | Contenido | Velite como único pipeline MDX |
 | Validación | Zod, ESLint, Knip, Vitest, Testing Library |
 | Navegador | Playwright, Lighthouse CI, Lychee |
-| Runtime | OpenNext sobre Cloudflare Workers |
+| Runtime de producción | Next.js en Railway |
+| Compatibilidad | Preview de OpenNext/Cloudflare con tests de Worker |
 
 Las versiones están fijadas en `package.json`. Las actualizaciones de
 dependencias se hacen como tareas dedicadas y deben pasar la suite completa.
@@ -114,7 +117,8 @@ las variables desde `process.env`.
 | `CONTACT_FROM_EMAIL` / `CONTACT_TO_EMAIL` | Remitente verificado y destino |
 
 Consulta [`.env.example`](.env.example) para desarrollo. Los valores reales de
-producción viven en GitHub/Cloudflare, nunca en el repositorio.
+producción viven en las variables del servicio `web` en Railway, nunca en el
+repositorio.
 
 ## Comandos
 
@@ -131,7 +135,7 @@ producción viven en GitHub/Cloudflare, nunca en el repositorio.
 | `npm run test:e2e` | Chromium desktop y móvil; requiere build previo |
 | `npm run test:worker` | Rutas prerenderizadas y validación de contacto contra un preview local abierto |
 | `npm run preview` | Build y preview local de OpenNext/Cloudflare |
-| `npm run deploy` | Build y despliegue a Cloudflare Workers |
+| `npm run deploy:cloudflare` | Publicación manual heredada; no es el destino de producción actual |
 
 Nunca canalices `npm run check` por `head`, `tail` u otra tubería: se perdería
 el código de salida real del comando que falle.
@@ -145,9 +149,9 @@ El proyecto conserva tres perfiles verificables:
 3. Experiencia WebGL completa cuando la persona mantiene los efectos activos.
 
 CI ejecuta lint, tipos, Knip, tests, build de Next/OpenNext, rutas reales del
-Worker, Playwright,
-Lighthouse y comprobación de enlaces. El deploy sólo puede comenzar después de
-que pasen Chromium, Firefox, WebKit, Lighthouse y enlaces.
+Worker, Playwright, Lighthouse y comprobación de enlaces. No hay autodeploy
+habilitado: publicar en Railway requiere primero que pasen Chromium, Firefox,
+WebKit, Lighthouse y enlaces, además de validar `/api/health` y el contacto real.
 
 Antes de publicar, sigue la
 [lista de preparación para producción](docs/production-readiness.md) y la

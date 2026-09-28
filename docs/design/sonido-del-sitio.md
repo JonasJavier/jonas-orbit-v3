@@ -385,3 +385,8 @@ muestra**.
 Su valoración sonora queda abierta. Y queda una pregunta para el dueño que no
 es técnica: **la procedencia y la licencia de los dos archivos**, que en este
 repositorio se declaran en un `FUENTES.md` junto a las fotos.
+
+**Actualización de publicación (2026-09-27):** el propietario confirmó que
+puede publicar las dos grabaciones y la banda sonora usadas por el sitio.
+Esa confirmación autoriza su uso en Jonás Orbit; no otorga una licencia de
+reutilización del audio a terceros ni sustituye la ficha de procedencia.

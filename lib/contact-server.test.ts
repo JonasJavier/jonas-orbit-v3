@@ -4,6 +4,7 @@ import {
   deliverContactMessage,
   getPublicContactConfig,
   handleContactRequest,
+  isProductionContactReady,
   verifyTurnstile,
   type ContactBindings,
 } from "./contact-server";
@@ -41,6 +42,25 @@ describe("configuración del contacto", () => {
         TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
       }),
     ).toThrow(/production Turnstile/);
+  });
+
+  it("sólo declara saludable un contacto de producción completo y del mismo dominio", () => {
+    const ready: ContactBindings = {
+      CONTACT_RUNTIME_ENV: "production",
+      TURNSTILE_SITE_KEY: "live-site-key",
+      TURNSTILE_SECRET_KEY: "live-secret-key",
+      TURNSTILE_EXPECTED_HOSTNAME: "orbit.jonasjavier.dev",
+      RESEND_API_KEY: "re_live-test-fixture",
+      CONTACT_FROM_EMAIL: "contacto@jonasjavier.dev",
+      CONTACT_TO_EMAIL: "owner@example.com",
+    };
+    const origin = "https://orbit.jonasjavier.dev";
+    expect(isProductionContactReady(ready, origin)).toBe(true);
+    expect(isProductionContactReady({ ...ready, RESEND_API_KEY: undefined }, origin)).toBe(false);
+    expect(isProductionContactReady({ ...ready, CONTACT_DELIVERY_MODE: "test" }, origin)).toBe(false);
+    expect(isProductionContactReady({ ...ready, TURNSTILE_SITE_KEY: TEST_BINDINGS.TURNSTILE_SITE_KEY }, origin)).toBe(false);
+    expect(isProductionContactReady(ready, "https://other.example.com")).toBe(false);
+    expect(isProductionContactReady(ready, "http://orbit.jonasjavier.dev")).toBe(false);
   });
 });
 

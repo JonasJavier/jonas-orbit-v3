@@ -19,39 +19,49 @@ npm run preview
 npm run test:worker
 ```
 
-En GitHub, el deploy depende de Chromium, Firefox, WebKit, Lighthouse y la
-comprobación de enlaces. El workflow tiene permisos de sólo lectura y límites
-de tiempo por job.
+En GitHub, el workflow de verificación cubre Chromium, Firefox, WebKit,
+Lighthouse y enlaces. Tiene permisos de sólo lectura y límites de tiempo por
+job. No hay un deploy automático activo mientras estos gates estén abiertos.
 
 Para validar una rama candidata antes de fusionarla, ejecuta manualmente el
-workflow **CI** eligiendo esa rama. También comprueba Firefox/WebKit y enlaces;
-el deploy sigue restringido a `main`. Esto requiere resolver primero el bloqueo
-de facturación de Actions, no credenciales de producción.
+workflow **CI** eligiendo esa rama. También comprueba Firefox/WebKit y enlaces.
+Esto requiere resolver primero el bloqueo de facturación de Actions.
 
 ## Bloqueos vigentes al 27 de septiembre de 2026
 
 - **Compatibilidad y calidad:** quedan fallos de WebKit que deben verificarse
-  en un entorno compatible. Lighthouse pasa y los 351 enlaces internos responden;
+  en Linux/Safari. En Windows, el WebKit de Playwright no ofrece `AudioContext`;
+  la ejecución local terminó con 139 tests aprobados, 18 fallidos y 1 omitido.
+  Lighthouse pasa y los 351 enlaces internos responden;
   dos destinos externos bloquean al cliente automático y requieren revisión.
   Consulta la [revisión con resultados](reviews/repository-readiness-2026-09-27.md).
 - **GitHub Actions:** los runs no llegan a iniciar por un problema de facturación
   o límite de gasto de la cuenta. Es un bloqueo externo al código.
-- **Dominio:** `jonasjavier.dev` todavía no resuelve. No se publica como enlace
-  activo ni se configura como canonical hasta que DNS y TLS estén verificados.
-- **Runtime:** faltan confirmar en Cloudflare los bindings requeridos del
-  formulario y aplicar la regla de rate limiting de `infra/cloudflare/`.
-- **Recursos:** siguen pendientes los derechos de publicación de las dos
-  grabaciones de efectos y de la banda sonora aportada por el propietario.
-- **Producto:** la valoración visual del propietario continúa pendiente en las
-  áreas marcadas por `AGENTS.md`.
+- **Railway:** el proyecto aislado `jonas-orbit-v3`, ambiente `production` y
+  servicio `web` existen. `orbit.jonasjavier.dev` tiene DNS verificado y TLS
+  válido, pero el servicio todavía no tiene un deployment. Faltan las cinco
+  variables del formulario indicadas abajo y una entrega real verificada.
+- **Control de abuso:** la regla de `infra/cloudflare/` no protege un origen en
+  Railway por sí sola. Antes de abrir el formulario al público, hace falta
+  protección de tasa en el borde o un mecanismo equivalente probado.
+- **Recursos y producto:** el propietario confirmó derechos para publicar las
+  tres pistas de audio y aprobó el diseño actual. Esto no sustituye las
+  pruebas técnicas.
 
 ## Contrato de entorno
 
-OpenNext sirve las rutas prerenderizadas desde una caché de Static Assets de
-sólo lectura, con interceptación habilitada. No requiere R2 ni revalidación.
-El formulario sigue siendo dinámico. El gate `test:worker` prueba el runtime
-local real: rutas HTML, redirect, 404 canónicos y un POST deliberadamente
-inválido que no entrega correo. Esto no sustituye una entrega real autorizada.
+El destino de producción es Next.js con `npm start` en Railway. El servicio
+escucha el `PORT` suministrado por Railway. `/api/health` devuelve 200 sólo
+cuando el modo de contacto es producción, el origen es HTTPS y las variables
+de Turnstile/Resend están presentes y son coherentes con el hostname; si no,
+devuelve 503 sin revelar qué valor falta. Esto no verifica por sí solo que el
+dominio de Resend esté autorizado ni que un correo llegue: hace falta una
+entrega real.
+
+El preview de OpenNext/Cloudflare se conserva como prueba de compatibilidad:
+su caché de Static Assets sirve rutas prerenderizadas sin R2. `test:worker`
+comprueba rutas, redirect, 404 y un POST inválido sin correo. No despliega la
+versión de producción en Railway.
 
 La actualización dedicada de seguridad fija Next.js 16.3.6, OpenNext 1.20.6,
 Vitest 4.1.11 y Wrangler 4.141.0, con PostCSS 8.5.28 y Sharp 0.35.4. Las
@@ -59,44 +69,54 @@ auditorías de producción y del árbol completo reportan cero avisos en esta
 rama al 2026-09-27. CI bloquea avisos altos/críticos nuevos; la auditoría sigue
 siendo obligatoria para cada candidato.
 
-### GitHub Actions
+### Railway `jonas-orbit-v3` / `production` / `web`
 
-| Tipo | Nombre | Propósito |
-| --- | --- | --- |
-| Secret | `CLOUDFLARE_API_TOKEN` | Desplegar el Worker con alcance mínimo |
-| Secret | `CLOUDFLARE_ACCOUNT_ID` | Cuenta destino de Cloudflare |
-| Variable | `NEXT_PUBLIC_SITE_URL` | Canonical, Open Graph y sitemap durante build |
-
-### Cloudflare Worker
-
-`wrangler.jsonc` declara como obligatorios estos secretos/bindings de runtime:
+Ya están definidos `NEXT_PUBLIC_SITE_URL=https://orbit.jonasjavier.dev`,
+`CONTACT_RUNTIME_ENV=production` y
+`TURNSTILE_EXPECTED_HOSTNAME=orbit.jonasjavier.dev`. Faltan en el servicio,
+sin valores en Git ni en el chat:
 
 - `TURNSTILE_SITE_KEY`
 - `TURNSTILE_SECRET_KEY`
-- `TURNSTILE_EXPECTED_HOSTNAME`
 - `RESEND_API_KEY`
 - `CONTACT_FROM_EMAIL`
 - `CONTACT_TO_EMAIL`
 
-El deploy falla si falta alguno. `keep_vars` conserva los valores administrados
-en Cloudflare; ningún secreto se copia al repositorio.
+El remitente debe pertenecer a un dominio verificado en Resend. El widget de
+Turnstile debe autorizar `orbit.jonasjavier.dev`. El build configurado en
+Railway es `npm run check`, el arranque es `npm start` y el healthcheck es
+`/api/health`. No se debe añadir un `railway.json` a un servicio nuevo: Railway
+lo ha sustituido por Infrastructure as Code; por ahora esta configuración se
+mantiene en el servicio.
+
+Para completar las credenciales sin exponerlas: crear o seleccionar un widget
+en [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+con ese hostname, tomar su site key y secret key, verificar un dominio de envío
+en [Resend Domains](https://resend.com/domains) y crear en
+[Resend API Keys](https://resend.com/api-keys) una clave limitada a envío y a
+ese dominio. Introducir los cinco valores únicamente en Railway → proyecto
+`jonas-orbit-v3` → servicio `web` → entorno `production` → Variables. Aplicar
+los cambios pendientes; no copiar valores a issues, chats ni commits.
 
 ## Publicación
 
-1. Cerrar o aceptar explícitamente cada bloqueo anterior.
+1. Cerrar los bloqueos de compatibilidad, facturación y control de abuso.
 2. Ejecutar la suite local desde un checkout limpio.
 3. Verificar el preview de OpenNext y el formulario en modo de prueba.
 4. Confirmar DNS, TLS, canonical, Open Graph, `robots.txt` y `sitemap.xml`.
-5. Configurar variables y secretos en GitHub y Cloudflare.
-6. Aplicar `infra/cloudflare/` y comprobar el 429 sin reintento automático.
-7. Publicar desde `main` sólo con todos los jobs verdes.
-8. Probar `/es`, los seis destinos, un caso de proyecto y el contacto real.
+5. Configurar los cinco valores pendientes directamente en Railway y verificar
+   Resend/Turnstile; no imprimir secretos en terminales ni logs.
+6. Publicar desde `main` sólo con todos los jobs verdes. Conectar el repositorio
+   a Railway únicamente con **Wait for CI** habilitado, o desplegar manualmente
+   una revisión exacta tras los gates; no activar autodeploy sin esa protección.
+7. Confirmar que `/api/health` responde 200 y probar `/es`, los seis destinos,
+   un caso de proyecto y el contacto con una entrega real autorizada.
 
 ## Recuperación
 
-- Conserva el identificador del último deployment sano de Cloudflare.
+- Conserva el identificador del último deployment sano de Railway.
 - Ante una regresión, vuelve a esa versión antes de investigar en producción.
-- Si falla el contacto, revierte también sus bindings al último conjunto
+- Si falla el contacto, revierte también sus variables al último conjunto
   verificado y comprueba una entrega real; las claves de prueba no sirven en
   el runtime de producción.
 - Documenta la causa y añade una prueba que reproduzca el fallo antes del nuevo

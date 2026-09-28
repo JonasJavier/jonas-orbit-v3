@@ -12,6 +12,23 @@ sustituye, y si no lo dice, la más reciente.
 
 ---
 
+**Publicación en Railway (2026-09-27):** el dueño eligió Railway para Jonás
+Orbit v3, autorizó crear un proyecto nuevo y eligió `orbit.jonasjavier.dev`.
+Esto sustituye a Cloudflare Workers como destino de producción en el README,
+la guía operativa y el workflow; las pruebas y el adaptador OpenNext se
+conservan como compatibilidad, pero no publican el sitio. El servicio `web`
+del proyecto `6a8d4331-4025-4ab1-a6fb-d618bc054a7c` ejecutará el build y
+`npm start`, con `/api/health` como gate de preparación. El dominio tiene DNS
+verificado y TLS válido, pero el servicio sigue sin código desplegado. El
+dueño confirmó derechos de publicación del audio y aprobó el diseño actual;
+no son aprobación de las pruebas técnicas. Faltan las credenciales de
+Turnstile/Resend, verificación de entrega real, cierre de WebKit y restablecer
+GitHub Actions (facturación). Ningún push puede activar un deploy en
+Cloudflare. No se conecta el repositorio a autodeploy ni se publica hasta
+cerrar esos gates. La protección de tasa de la antigua infraestructura
+Cloudflare no se traslada automáticamente a Railway: resolverla antes de
+abrir el formulario al tráfico público.
+
 **Cloudflare — caché de páginas prerenderizadas (2026-09-27):** el preview real
 del candidato con Wrangler 4.141.0 sí arranca en Windows, pero la caché `dummy`
 de OpenNext deja cuatro destinos en 404 y OMSTA en 500. Se configura la caché
