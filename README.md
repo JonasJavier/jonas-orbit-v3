@@ -11,11 +11,11 @@ que combina producto digital, contenido editorial y una escena WebGL progresiva
 sin sacrificar accesibilidad, rutas reales ni HTML útil sin JavaScript.
 
 > **Estado del producto:** desarrollo activo y candidato a producción. Los seis
-> destinos y los flujos principales están implementados; cuatro proyectos del
-> portafolio están en producción y uno está listo para producción. La publicación
+> destinos y los flujos principales están implementados; cinco proyectos del
+> portafolio están en producción. La publicación
 > de Jonás Orbit todavía requiere configurar el formulario, cerrar WebKit y
-> restablecer GitHub Actions. El dominio `orbit.jonasjavier.dev` ya está
-> verificado, pero el sitio todavía no se ha desplegado. El propietario aprobó
+> restablecer GitHub Actions. El dominio principal `jonasjavier.dev` ya tiene
+> DNS y TLS, pero el sitio todavía no se ha desplegado. El propietario aprobó
 > el diseño actual y confirmó derechos de publicación del audio.
 
 ![System Map de Jonás Orbit v3](docs/media/readme/system-map.webp)

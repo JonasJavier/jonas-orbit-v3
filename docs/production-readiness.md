@@ -31,16 +31,19 @@ Esto requiere resolver primero el bloqueo de facturación de Actions.
 
 - **Compatibilidad y calidad:** quedan fallos de WebKit que deben verificarse
   en Linux/Safari. En Windows, el WebKit de Playwright no ofrece `AudioContext`;
-  la ejecución local terminó con 139 tests aprobados, 18 fallidos y 1 omitido.
+  la ejecución local del 2026-09-28 terminó con 295 tests aprobados, 19
+  fallidos (18 WebKit, 1 Firefox) y 2 omitidos.
   Lighthouse pasa y los 351 enlaces internos responden;
   dos destinos externos bloquean al cliente automático y requieren revisión.
   Consulta la [revisión con resultados](reviews/repository-readiness-2026-09-27.md).
 - **GitHub Actions:** los runs no llegan a iniciar por un problema de facturación
   o límite de gasto de la cuenta. Es un bloqueo externo al código.
 - **Railway:** el proyecto aislado `jonas-orbit-v3`, ambiente `production` y
-  servicio `web` existen. `orbit.jonasjavier.dev` tiene DNS verificado y TLS
-  válido, pero el servicio todavía no tiene un deployment. Faltan las cinco
-  variables del formulario indicadas abajo y una entrega real verificada.
+  servicio `web` existen. El dominio canónico `jonasjavier.dev` tiene DNS y
+  TLS válidos, pero responde 404 porque el servicio todavía no tiene un
+  deployment. El dueño informó de la configuración de Resend y correo;
+  siguen pendientes la verificación de los nombres de variables, Turnstile
+  para la raíz y una entrega real del formulario.
 - **Control de abuso:** la regla de `infra/cloudflare/` no protege un origen en
   Railway por sí sola. Antes de abrir el formulario al público, hace falta
   protección de tasa en el borde o un mecanismo equivalente probado.
@@ -71,10 +74,10 @@ siendo obligatoria para cada candidato.
 
 ### Railway `jonas-orbit-v3` / `production` / `web`
 
-Ya están definidos `NEXT_PUBLIC_SITE_URL=https://orbit.jonasjavier.dev`,
-`CONTACT_RUNTIME_ENV=production` y
-`TURNSTILE_EXPECTED_HOSTNAME=orbit.jonasjavier.dev`. Faltan en el servicio,
-sin valores en Git ni en el chat:
+El dueño indicó que cambió `NEXT_PUBLIC_SITE_URL` a
+`https://jonasjavier.dev` y `TURNSTILE_EXPECTED_HOSTNAME` a
+`jonasjavier.dev`; `CONTACT_RUNTIME_ENV=production` permanece. Comprobar
+la presencia y coherencia de estas variables sin imprimir secretos:
 
 - `TURNSTILE_SITE_KEY`
 - `TURNSTILE_SECRET_KEY`
@@ -82,9 +85,10 @@ sin valores en Git ni en el chat:
 - `CONTACT_FROM_EMAIL`
 - `CONTACT_TO_EMAIL`
 
-El remitente debe pertenecer a un dominio verificado en Resend. El widget de
-Turnstile debe autorizar `orbit.jonasjavier.dev`. El build configurado en
-Railway es `npm run check`, el arranque es `npm start` y el healthcheck es
+El remitente debe pertenecer al dominio `send.jonasjavier.dev`, verificado en
+Resend. El widget de Turnstile debe autorizar `jonasjavier.dev`. El build
+configurado en Railway es `npm run check`, el arranque es `npm start` y el
+healthcheck es
 `/api/health`. No se debe añadir un `railway.json` a un servicio nuevo: Railway
 lo ha sustituido por Infrastructure as Code; por ahora esta configuración se
 mantiene en el servicio.

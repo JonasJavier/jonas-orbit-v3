@@ -19,6 +19,19 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Publicación — jonasjavier.dev es el dominio canónico (2026-09-28)
+
+El dueño sustituyó `orbit.jonasjavier.dev` por `jonasjavier.dev` como URL
+principal de Jonás Orbit. Esta elección prevalece sobre el dominio de la
+entrada «Publicación en Railway» del 2026-09-27. El subdominio
+`send.jonasjavier.dev` permanece dedicado al envío por Resend y no cambia.
+`NEXT_PUBLIC_SITE_URL` debe ser `https://jonasjavier.dev`, la validación del
+contacto debe esperar `jonasjavier.dev` y el widget de Turnstile debe autorizar
+ese hostname. El dominio raíz resuelve y tiene TLS válido, pero responde 404
+porque el servicio `web` aún no tiene deployment. Conservar `orbit` hasta
+verificar el sitio en la raíz; no activar autodeploy ni publicar antes de
+cerrar los gates técnicos y de facturación de `docs/production-readiness.md`.
+
 ## Proyectos — Wikiverse rehecho: caso completo, en producción (2026-09-28)
 
 El §22 de `docs/design/endurance-proyectos.md` aplica el mismo método desde
