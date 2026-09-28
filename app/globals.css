@@ -785,6 +785,12 @@ html[data-starfield="ready"] .space-backdrop__stars {
   font-size: 1.08rem;
 }
 
+.not-found__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .not-found__orbit {
   position: absolute;
   right: -8vw;
