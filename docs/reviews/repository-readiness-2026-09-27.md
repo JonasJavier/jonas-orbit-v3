@@ -68,12 +68,127 @@ Referencias de los mantenedores:
 - Otros fallos de foco, imágenes, audio y navegación necesitan verificación
   aislada. No se han convertido en pruebas omitidas ni se han relajado los gates.
 
+### Correcciones verificadas
+
+La banda sonora conserva sus rampas en Firefox con una alternativa a
+`cancelAndHoldAtTime`. Un evento `pause` previo al permiso de autoplay no apaga
+la intención del visitante. Tres regresiones nuevas cubren estos contratos.
+`npm run check` pasa con 998 tests en 110 archivos y 34 rutas.
+El build final de OpenNext con la corrección de audio también termina
+correctamente y genera `.open-next/worker.js`; no equivale a probar el runtime
+publicado ni a desplegarlo.
+
+La ejecución completa de los cuatro proyectos, con cuatro workers, produjo
+610 aprobadas, 20 fallidas y dos omisiones: únicamente el swipe por CDP en
+Firefox/WebKit, porque esa API es exclusiva de Chromium. Los 316 casos de
+Chromium desktop/móvil pasaron con las dependencias parcheadas.
+
+Después se corrigieron las dos suposiciones pendientes de Firefox:
+
+- Los tres tests del fondo 2D fijan la ausencia de WebGL, en vez de inferirla
+  del navegador del host. Los seis casos Firefox/WebKit pasan aislados.
+- Después de Shift+Tab, Firefox enfoca el `dialog` nativo y Chromium su botón.
+  Se exige que el foco vuelva al visor, no un destino específico del motor;
+  Escape y restauración del foco siguen comprobándose. El caso pasa aislado.
+
+La repetición completa de Firefox, con dos workers, termina con **157 aprobadas,
+una omisión por CDP y cero fallos** (`npx playwright test --project firefox
+--workers 2`). No sustituye la validación de WebKit pendiente.
+
+En el WebKit de Playwright instalado en Windows, la sonda nativa informa
+`typeof AudioContext === "undefined"`: no se sustituyó el audio por un mock
+para presentar resultados verdes. Los 18 fallos de WebKit incluyen audio,
+recorrido por Tab, imágenes responsivas, suspensión de dibujo y navegación.
+Requieren validación en el runner compatible de CI; no se declara Safari listo
+a partir de este resultado. Playwright explica los
+[límites de plataforma de WebKit](https://playwright.dev/docs/browsers#webkit).
+Una repetición de cinco casos con un solo worker devuelve uno aprobado (Ranger)
+y cuatro fallidos (reposo de Edmunds, suspensión de Miller y dos de navbar).
+No se atribuyen todos los fallos a concurrencia ni a la ausencia de audio.
+
+### Rendimiento y enlaces
+
+Tres auditorías Lighthouse del build local de producción, perfil ligero
+`/es?no3d=1`, móvil y 4G simulada:
+
+| Medida | Resultado |
+| --- | --- |
+| Performance / Accessibility / Best Practices / SEO | 98 / 100 / 100 / 100 |
+| LCP mediana | 2,32 s |
+| TBT mediana | 66,5 ms |
+| CLS | 0 en las tres pasadas |
+
+`lhci assert --config=lighthouserc.json` pasa. El comentario de LCP se mueve
+fuera de `assertions` porque LHCI lo interpretaba como un audit inexistente;
+no cambia ningún umbral ni el nivel histórico `warn` de LCP.
+
+La inspección de los once scripts iniciales de `/es` suma 202.841 bytes gzip
+(198,1 KiB) en los artefactos del build. No es una medición de transferencia
+del Worker. El límite antiguo de 150 KiB está sustituido por el
+[pivote, §8 y §14](../plans/sistema-gargantua.md): baseline compartido congelado
+y presupuesto propio de ruta. Esta suma no separa ambas capas ni certifica
+sus límites; la subida respecto a la línea histórica requiere investigación.
+No se acepta una nueva línea base ni se cambia el presupuesto en esta revisión.
+
+La revisión de 24 HTML construidos encontró 401 enlaces únicos: los 351
+internos responden correctamente. De los 50 externos, 48 responden 200,
+incluido el prototipo de Figma por GET (HEAD devuelve 404). Netflix devuelve
+403 y LinkedIn 999 al cliente automático: pendientes de comprobación humana,
+no clasificados como enlaces sanos ni excluidos del gate para ocultarlos.
+
+Evidencia local ignorada: `output/browser-compat-check.log`,
+`output/browser-compat-e2e.log`, `output/fallback-verification.log`,
+`output/firefox-dialog-verification.log`, `output/webkit-audio-platform.log`,
+`output/firefox-final-e2e.log`, `output/webkit-isolated-verification.log`,
+`output/final-opennext-build.log`, `output/lighthouse/` y
+`output/repository-link-review.json`.
+
+### Preview real de Cloudflare
+
+Con Wrangler actualizado, el Worker local arranca. La primera comprobación
+encuentra cuatro destinos dinámicos de SSG en 404 y OMSTA en 500, aunque
+`next start` los sirve correctamente: la configuración de OpenNext sólo tenía
+la caché vacía por defecto. El nuevo gate `npm run test:worker` falla contra
+esa configuración en `/es/creatividad`.
+
+La caché de Static Assets de sólo lectura y la interceptación, modo SSG
+[documentado por OpenNext](https://opennext.js.org/cloudflare/caching#ssg-site),
+sirven el HTML/RSC prerenderizado sin añadir infraestructura ni cambiar Velite.
+Después de reconstruir completamente, `npm run test:worker` pasa: 20 rutas
+HTML con `<main>` y `<h1>`, los seis enlaces de la portada, CV PDF, redirect
+`/` → `/es`, cuatro rutas inexistentes/retiradas en 404 y validación de un
+POST vacío en 400. No se entregó correo. `/api/contact` conserva `force-dynamic`
+y `no-store`; su GET devuelve el 503 de configuración esperado mientras falten
+los bindings reales. No se confunde la prueba de validación con una entrega.
+
+En Edge, el preview navega con JavaScript de `/es?no3d=1` a `/es/proyectos` y
+de ahí a `/es/proyectos/omsta`: títulos y caso completo visibles, cero errores
+de consola. El aviso de autoplay sin gesto es la política del navegador.
+
+Los chunks con hash de `/_next/static/` incorporan la política immutable
+recomendada por el adaptador; el gate descarga un chunk y comprueba su header
+`immutable`. Los documentos, CV y las imágenes de contenido no heredan esa
+política de un año.
+
+Evidencia: `output/worker-before-cache-fix.log` (FAIL),
+`output/worker-after-cache-fix.log` y `output/final-worker-smoke.log` (PASS),
+`output/final-static-worker-build.log` y `output/final-worker-preview.log`.
+CI prueba el runtime real después del build, en vez de considerar suficiente
+la generación del bundle.
+
 ## Estado de GitHub
 
 Alertas de vulnerabilidades activadas y temas del proyecto actualizados.
 El repositorio mantiene su visibilidad privada.
 
-El [run de organización](https://github.com/JonasJavier/jonas-orbit-v3/actions/runs/36322458189)
+La organización y el README quedaron publicados en `main` mediante el
+[PR #3](https://github.com/JonasJavier/jonas-orbit-v3/pull/3), squash
+`4596a1bc63f0c96d3a36795c8d5233208ab90539`. La actualización de dependencias y
+la compatibilidad permanecen separadas hasta cerrar los gates correspondientes.
+El dispatch manual del workflow CI permite validar el candidato en Linux con
+Firefox/WebKit y enlaces antes de fusionarlo; sólo `main` puede desplegar.
+
+El [run de main](https://github.com/JonasJavier/jonas-orbit-v3/actions/runs/36324221380)
 no ejecutó pasos: su anotación indica pagos fallidos o límite de gasto
 insuficiente. Los resultados locales no equivalen a checks remotos verdes.
 
@@ -82,7 +197,8 @@ público. No se cambió la visibilidad para obtener protección de ramas.
 
 ## Condiciones pendientes
 
-- Verificación multinavegador completa y auditoría Lighthouse/enlaces.
+- Verificación multinavegador completa y revisión de los dos enlaces externos
+  bloqueados para clientes automáticos.
 - Facturación/límite de gasto de Actions y protección de la rama según el plan
   de GitHub disponible.
 - Dominio, TLS, canonical y configuración de GitHub/Cloudflare.

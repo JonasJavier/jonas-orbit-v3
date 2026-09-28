@@ -95,6 +95,14 @@ Para que el navegador del dueño suene sin clic, la vía es suya: permitir el
 sonido o la reproducción automática para el sitio en la configuración del
 navegador. Un visitante nuevo siempre necesitará un gesto.
 
+**Compatibilidad de la banda sonora (2026-09-27).** La revisión de producción
+en Firefox detectó una llamada a `cancelAndHoldAtTime`, API que ese motor no
+implementa. Se conserva el valor actual de ganancia antes de cancelar y anclar
+la siguiente rampa con las APIs disponibles. Un evento `pause` mientras el
+autoplay espera permiso tampoco cambia la intención `armed`: sólo una pausa
+de reproducción ya iniciada cuenta como interrupción. Se conservan volumen,
+envolventes, control único y desbloqueo por gesto, con pruebas de regresión.
+
 ## 3 · La paleta
 
 `lib/sfx.ts`: catorce recetas y **un** renderizador. Cada receta es una lista de

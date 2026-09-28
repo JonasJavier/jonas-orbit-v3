@@ -35,6 +35,15 @@ jobs:
       - run: npm run build
       - name: Verificar build de OpenNext
         run: npx opennextjs-cloudflare build
+      - name: Verificar rutas en el Worker real
+        run: |
+          npx opennextjs-cloudflare preview --port 8787 > /tmp/jonas-orbit-worker.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          if ! npm run test:worker; then
+            cat /tmp/jonas-orbit-worker.log
+            exit 1
+          fi
 
   e2e:
     name: E2E (Chromium)
@@ -60,12 +69,13 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # Multi-navegador solo en main (plan: Chromium por PR; Firefox/WebKit en main).
+  # Chromium por PR; multinavegador en main o en una validación manual del
+  # candidato. El dispatch permite verificar una rama sin desplegarla.
   e2e-cross-browser:
     name: E2E (Firefox · WebKit)
     runs-on: ubuntu-latest
     needs: check
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -119,11 +129,12 @@ jobs:
 
   # Criterio de éxito del plan: "cero enlaces rotos". Solo en main para no
   # castigar cada PR con la latencia (y el rate limiting) de hosts externos.
+  # También disponible en la validación manual, sin habilitar deploy de ramas.
   links:
     name: Comprobación de enlaces
     runs-on: ubuntu-latest
     needs: check
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

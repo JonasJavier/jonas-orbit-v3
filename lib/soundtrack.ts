@@ -42,7 +42,15 @@ export class Soundtrack {
     if (!this.context || !this.gain) return;
     const now = this.context.currentTime;
     const parameter = this.gain.gain;
-    parameter.cancelAndHoldAtTime(now);
+    if (typeof parameter.cancelAndHoldAtTime === "function") {
+      parameter.cancelAndHoldAtTime(now);
+    } else {
+      // Firefox does not implement cancelAndHoldAtTime. Read the live value
+      // before cancelling a ramp, then anchor the next one at that level.
+      const held = parameter.value;
+      parameter.cancelScheduledValues(now);
+      parameter.setValueAtTime(held, now);
+    }
     parameter.linearRampToValueAtTime(
       this.wanted && !this.hidden && !this.state.muted ? this.state.volume : 0,
       now + seconds,
@@ -84,7 +92,7 @@ export class Soundtrack {
     media.onerror = () => this.fail();
     media.onpause = () => {
       // Browser/OS interruptions must not leave a false ON indicator.
-      if (media.paused && this.wanted && !this.hidden && !this.pauseTimer) {
+      if (media.paused && this.wanted && !this.hidden && !this.pauseTimer && this.state.playback === "playing") {
         this.wanted = false;
         this.update({ playback: "paused" });
       }

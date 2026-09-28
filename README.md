@@ -129,6 +129,7 @@ producción viven en GitHub/Cloudflare, nunca en el repositorio.
 | `npm run build` | Build de producción de Next.js |
 | `npm run check` | Lint, tipos, Knip, tests y build |
 | `npm run test:e2e` | Chromium desktop y móvil; requiere build previo |
+| `npm run test:worker` | Rutas prerenderizadas y validación de contacto contra un preview local abierto |
 | `npm run preview` | Build y preview local de OpenNext/Cloudflare |
 | `npm run deploy` | Build y despliegue a Cloudflare Workers |
 
@@ -143,7 +144,8 @@ El proyecto conserva tres perfiles verificables:
 2. Perfil ligero (`?no3d=1`) para auditorías y equipos limitados.
 3. Experiencia WebGL completa cuando la persona mantiene los efectos activos.
 
-CI ejecuta lint, tipos, Knip, tests, build de Next/OpenNext, Playwright,
+CI ejecuta lint, tipos, Knip, tests, build de Next/OpenNext, rutas reales del
+Worker, Playwright,
 Lighthouse y comprobación de enlaces. El deploy sólo puede comenzar después de
 que pasen Chromium, Firefox, WebKit, Lighthouse y enlaces.
 

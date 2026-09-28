@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { withoutWebGL } from "./capability-fixtures";
 
 /**
  * Suite E2E del Sistema Gargantúa.
@@ -372,9 +373,10 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     );
   });
 
-  test("el campo estelar 2D se difiere hasta después de la hidratación", async ({
+  test("sin WebGL, el campo estelar 2D se difiere hasta después de la hidratación", async ({
     page,
   }) => {
+    await withoutWebGL(page);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/es");
     await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
@@ -386,7 +388,8 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     );
   });
 
-  test("el fondo sobrevive a la navegación sin remontarse", async ({ page }) => {
+  test("sin WebGL, el fondo sobrevive a la navegación sin remontarse", async ({ page }) => {
+    await withoutWebGL(page);
     // Precursor de G6: el canvas de G2 vivirá en el mismo layout. Si una
     // navegación lo remontara, la escena parpadearía en negro en cada viaje.
     await page.goto("/es");
@@ -621,9 +624,10 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
     );
   });
 
-  test("la URL canónica sin el parámetro sí monta el starfield", async ({
+  test("sin WebGL, la URL canónica sin el parámetro sí monta el starfield", async ({
     page,
   }) => {
+    await withoutWebGL(page);
     await page.goto("/es");
     await expect(page.getByTestId("starfield-2d")).toHaveCount(1);
     await expect(page.locator("html")).toHaveAttribute(
