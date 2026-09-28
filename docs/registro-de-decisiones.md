@@ -19,6 +19,44 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Publicación — rama `production`, cabeceras y límite de tasa (2026-09-28)
+
+El dueño pidió dejar el repositorio listo y subir Jonás Orbit a producción,
+con autorización para los cambios necesarios. Esto sustituye, en el método de
+publicación, a «no se conecta el repositorio a autodeploy» (09-27):
+
+- **Publicar es mover `production`.** `railway up` no puede con el sitio
+  (`public/` comprime a ~280 MB y la subida devuelve 413). El servicio `web`
+  construye desde GitHub, rama `production`; un push a `main` nunca publica.
+  Se publica con `git push origin <commit>:production` tras los gates, que es
+  el «desplegar manualmente una revisión exacta» ya aprobado. `.dockerignore`
+  (Railpack lo respeta) deja fuera fuentes, diseño, evidencia y `docs/`.
+- **El build de Railway es un gate real.** Corre `npm run check` en Linux con
+  `NODE_ENV=production`; el primer intento rompió 120 tests de componentes
+  (React sin `act`). `vitest.config.ts` fija `NODE_ENV=test` y 15 s por test.
+- **Seguridad en Next, no en `_headers`.** CSP sin nonces (todo se
+  prerenderiza; Turnstile es el único origen externo), HSTS sin subdominios,
+  `nosniff`, `SAMEORIGIN`, COOP, Permissions-Policy con sensores de movimiento
+  permitidos; sin `X-Powered-By`. Recorrido con escena encendida: cero
+  violaciones.
+- **Límite de tasa en la aplicación.** El dominio no pasa por el proxy de
+  Cloudflare: 5 POST/min por IP (`x-real-ip`), bloqueo de 10 min, 429. Cierra
+  el bloqueo de «control de abuso».
+- **`orbit.jonasjavier.dev` redirige** con 308 al canónico.
+- **Metadatos y rutas:** base común de Open Graph (antes `/es` no tenía
+  imagen), tarjetas JPEG de 1200 × 630 por caso (55–86 KB frente a PNG de
+  2–3 MB), `dynamicParams = false` en idioma y casos (URL inventada = 404 sin
+  escribir disco; Next lo registra como `NoFallbackError`), sin `/spike/` en
+  robots ni `lastmod` falso en el sitemap. Páginas de error propias.
+- **Limpieza:** la comparativa de logos sale de `public/` a
+  `docs/media/brand/`; fuera `file.svg`, `globe.svg`, los F42 descartados y el
+  cielo de 768 px sin uso. `vite-tsconfig-paths` sobra (Vite lo hace nativo).
+
+Queda del dueño: las dos claves de Turnstile en Railway (sin ellas
+`/api/health` da 503 y Railway no enruta el deployment), una entrega real del
+formulario y la revisión humana de los enlaces de Netflix y LinkedIn.
+Evidencia en `docs/reviews/production-release-2026-09-28.md`.
+
 ## Publicación — jonasjavier.dev es el dominio canónico (2026-09-28)
 
 El dueño sustituyó `orbit.jonasjavier.dev` por `jonasjavier.dev` como URL

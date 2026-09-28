@@ -10,13 +10,13 @@ Portafolio espacial de **Jonás Javier Encarnación**: una experiencia narrativa
 que combina producto digital, contenido editorial y una escena WebGL progresiva
 sin sacrificar accesibilidad, rutas reales ni HTML útil sin JavaScript.
 
-> **Estado del producto:** desarrollo activo y candidato a producción. Los seis
-> destinos y los flujos principales están implementados; cinco proyectos del
-> portafolio están en producción. La publicación
-> de Jonás Orbit todavía requiere configurar el formulario, cerrar WebKit y
-> restablecer GitHub Actions. El dominio principal `jonasjavier.dev` ya tiene
-> DNS y TLS, pero el sitio todavía no se ha desplegado. El propietario aprobó
-> el diseño actual y confirmó derechos de publicación del audio.
+> **Estado del producto:** versión de producción preparada. Los seis destinos
+> y los flujos principales están implementados; cinco proyectos del portafolio
+> están en producción. Railway ya construye y arranca el sitio desde la rama
+> `production` (`npm run check` completo en Linux); falta que el formulario
+> reciba sus claves de Turnstile para que el healthcheck publique la versión en
+> `jonasjavier.dev`. El propietario aprobó el diseño actual y confirmó derechos
+> de publicación del audio.
 
 ![System Map de Jonás Orbit v3](docs/media/readme/system-map.webp)
 
@@ -149,9 +149,14 @@ El proyecto conserva tres perfiles verificables:
 3. Experiencia WebGL completa cuando la persona mantiene los efectos activos.
 
 CI ejecuta lint, tipos, Knip, tests, build de Next/OpenNext, rutas reales del
-Worker, Playwright, Lighthouse y comprobación de enlaces. No hay autodeploy
-habilitado: publicar en Railway requiere primero que pasen Chromium, Firefox,
-WebKit, Lighthouse y enlaces, además de validar `/api/health` y el contacto real.
+Worker, Playwright, Lighthouse y comprobación de enlaces. Un push a `main` no
+publica: Railway construye la rama `production`, que sólo avanza
+(`git push origin <commit>:production`) a un commit que ya pasó los gates, y
+enruta tráfico cuando `/api/health` responde 200.
+
+El sitio sirve una Content-Security-Policy y cabeceras de seguridad desde
+`next.config.ts`, y el formulario limita los envíos por IP dentro de la
+aplicación.
 
 Antes de publicar, sigue la
 [lista de preparación para producción](docs/production-readiness.md) y la

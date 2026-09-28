@@ -84,9 +84,12 @@ MDX**, nunca en `worlds.data.ts`.
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
 - **Publicación en Railway** (09-28) `docs/production-readiness.md` —
-  `jonasjavier.dev` es el dominio canónico; healthcheck y gates; no hay
-  autodeploy habilitado. El preview de
-  Cloudflare conserva su prueba de compatibilidad `npm run test:worker`.
+  `jonasjavier.dev` es el dominio canónico; Railway construye la rama
+  `production` desde GitHub (`npm run check` + healthcheck): **publicar es
+  `git push origin <commit>:production` tras los gates**, un push a `main`
+  nunca publica. CSP y cabeceras viven en `next.config.ts`; el límite de tasa
+  del contacto, en la app. El preview de Cloudflare conserva su prueba de
+  compatibilidad `npm run test:worker`.
 - **Dependencias — seguridad** (09-27)
   `docs/reviews/repository-readiness-2026-09-27.md` — versiones parcheadas,
   auditorías y evidencia de la actualización dedicada.
