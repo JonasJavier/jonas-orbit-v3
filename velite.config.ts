@@ -37,6 +37,14 @@ const worldProse = defineCollection({
       eyebrow: s.string(),
       shortLabel: s.string(),
       summary: s.string(),
+      /**
+       * Lo que ve un buscador, no la página: `title` y `summary` son la voz
+       * de la sección («Sobre mí»); estos dos dicen quién y qué para quien
+       * todavía no conoce el sitio. El layout añade « · Jonás Javier» al
+       * título, así que 55 + 15 caracteres caben enteros en un resultado.
+       */
+      seoTitle: s.string().max(55),
+      seoDescription: s.string().min(110).max(160),
       introduction: s.string(),
       closing: s.string(),
       /**
@@ -284,22 +292,8 @@ const projectProse = defineCollection({
           }),
         )
         .optional(),
-      seoTitle: s.string(),
-      seoDescription: s.string(),
-      body: s.mdx(),
-      path: s.path(),
-    })
-    .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
-});
-
-const designProse = defineCollection({
-  name: "DesignProse",
-  pattern: "{es,en}/designs/*.mdx",
-  schema: s
-    .object({
-      slug: s.string().regex(/^[a-z0-9-]+$/),
-      title: s.string(),
-      summary: s.string(),
+      seoTitle: s.string().max(60),
+      seoDescription: s.string().min(110).max(160),
       body: s.mdx(),
       path: s.path(),
     })
@@ -308,7 +302,7 @@ const designProse = defineCollection({
 
 export default defineConfig({
   root: "content",
-  collections: { worldProse, projectProse, designProse },
+  collections: { worldProse, projectProse },
   prepare: ({ worldProse, projectProse }) => {
     // Todas las validaciones que rompen el build viven en una función pura
     // (content/validate-worlds.ts) para poder cubrirlas con fixtures.
@@ -319,7 +313,18 @@ export default defineConfig({
       PROJECT_IDS,
       F1A_PROJECT_IDS,
       projectsData,
-      (src) => existsSync(join(process.cwd(), "public", src)),
+      // Lo publicado de cada captura es su escalera WebP; el PNG maestro se
+      // queda en `assets/` (ver `tools/prepare-projects.mjs`).
+      (src) => {
+        const entry = projectsMedia[src as keyof typeof projectsMedia];
+        return (
+          entry !== undefined &&
+          entry.steps.length > 0 &&
+          entry.steps.every((step) =>
+            existsSync(join(process.cwd(), "public", src.replace(/\.png$/, `-${step}.webp`))),
+          )
+        );
+      },
       // Dimensiones medidas por `tools/prepare-projects.mjs`, no declaradas.
       (src) => projectsMedia[src as keyof typeof projectsMedia] ?? null,
     );

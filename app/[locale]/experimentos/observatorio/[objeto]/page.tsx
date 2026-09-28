@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FlatWorldBody } from "@/components/flat-world-body";
 import { ObservatoryViewer } from "@/components/observatory-viewer";
+import { StructuredData } from "@/components/structured-data";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
 import { instrumentsFor } from "@/lib/observatory";
@@ -71,8 +72,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!id) return { title: "Espécimen no encontrado" };
   const world = getWorld(id, locale as Locale);
   const path = `/${locale}/experimentos/observatorio/${objeto}`;
-  const title = `${world.cosmicName} · Observatorio`;
-  const description = `Observación de cerca de ${world.cosmicName}: geometría, material e iluminación.`;
+  const title = `${world.cosmicName} en 3D · Observatorio`;
+  const description = `${world.cosmicName} en 3D interactivo: un espécimen del observatorio de experimentos WebGL de Jonás Javier, para ver de cerca su geometría, material y luz.`;
   return {
     title,
     description,
@@ -142,8 +143,24 @@ export default async function ObservatoryRoute({ params }: Props) {
     ...(observatory?.registro ? ["Registro"] : []),
   ];
 
+  const path = `${indexHref}/observatorio/${objeto}`;
+
   return (
     <main className="observatory-route" id="main-content">
+      <StructuredData
+        locale={typedLocale}
+        breadcrumb={[
+          { path: indexHref, name: getWorld("tesseract", typedLocale).prose.title },
+          { path, name: world.cosmicName },
+        ]}
+        work={{
+          "@type": "CreativeWork",
+          "@id": `${absoluteUrl(path)}#especimen`,
+          name: `${world.cosmicName} en 3D`,
+          genre: "Experimento interactivo en WebGL",
+          url: absoluteUrl(path),
+        }}
+      />
       <ObservatoryViewer
         key={id}
         descriptor={descriptor}

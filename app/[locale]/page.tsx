@@ -8,9 +8,9 @@ import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
 import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
 
 const HOME_TITLE =
-  "Jonás Javier Encarnación — Desarrollador full-stack y creador visual";
+  "Jonás Javier Encarnación — Desarrollador full-stack y diseñador UX/UI";
 const HOME_DESCRIPTION =
-  "Sistema Gargantúa: seis destinos que recorren el trabajo de Jonás Javier Encarnación — sobre mí, formación, proyectos, creatividad, experimentos y contacto. No separo creatividad y tecnología: las mantengo en la misma órbita.";
+  "Portafolio de Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana: proyectos, formación, fotografía y experimentos 3D.";
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.map((locale) => ({ locale }));
@@ -26,7 +26,8 @@ export async function generateMetadata({
 
   const path = `/${locale}`;
   return {
-    title: HOME_TITLE,
+    // Absoluto: la plantilla del layout repetiría el nombre.
+    title: { absolute: HOME_TITLE },
     description: HOME_DESCRIPTION,
     alternates: {
       canonical: path,

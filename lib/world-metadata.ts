@@ -11,21 +11,22 @@ import { getWorldPath, type World } from "./worlds";
  * o el mismo canonical: ocho páginas indexables mal etiquetadas se canibalizan
  * entre sí y comparten peor que una sola.
  *
- * `title` es la prosa localizada y `description` su `summary`, así que ambos
- * salen distintos por construcción — no por disciplina de quien edite.
+ * Título y descripción salen de `seoTitle`/`seoDescription` del MDX: la voz de
+ * la sección («Sobre mí») se queda en la página y el buscador recibe quién y
+ * qué. El esquema de Velite acota su longitud y G2 exige que no se repitan.
  */
 export function buildWorldMetadata(world: World, locale: Locale): Metadata {
   const path = getWorldPath(world, locale);
 
   return {
-    title: world.prose.title,
-    description: world.prose.summary,
+    title: world.prose.seoTitle,
+    description: world.prose.seoDescription,
     alternates: { canonical: path },
     openGraph: {
       ...SITE_OPEN_GRAPH,
       type: "article",
-      title: `${world.prose.title} · ${world.cosmicName}`,
-      description: world.prose.summary,
+      title: `${world.prose.seoTitle} · Jonás Javier`,
+      description: world.prose.seoDescription,
       url: path,
     },
   };

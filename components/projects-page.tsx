@@ -81,7 +81,7 @@ export function ProjectsPage({
     >
       <StructuredData
         locale={locale}
-        breadcrumb={{ path: projectsHref, name: prose.title }}
+        breadcrumb={[{ path: projectsHref, name: prose.title }]}
       />
 
       <ProjectsRoom />

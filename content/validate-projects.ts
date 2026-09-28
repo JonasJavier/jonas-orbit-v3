@@ -118,7 +118,7 @@ export function validateProjectProse(
       }
       if (!assetExists(image.src)) {
         throw new Error(
-          `[content] Asset inexistente en "${idKey}": public${image.src}.`,
+          `[content] Captura sin publicar en "${idKey}": ${image.src} (faltan sus WebP en public/; corre tools/prepare-projects.mjs).`,
         );
       }
       /*

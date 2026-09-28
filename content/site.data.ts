@@ -26,4 +26,19 @@ export const SITE_PROFILE = {
   github: "https://github.com/JonasJavier",
   locality: "Santo Domingo",
   country: "DO",
+  /** Para `knowsAbout` en JSON-LD: sólo lo que un caso o experimento publicado prueba. */
+  knowsAbout: [
+    "Desarrollo full-stack",
+    "Django",
+    "Django REST Framework",
+    "React",
+    "TypeScript",
+    "Next.js",
+    "PostgreSQL",
+    "React Native",
+    "Three.js",
+    "WebGL",
+    "Diseño UX/UI",
+    "Fotografía",
+  ],
 } as const;

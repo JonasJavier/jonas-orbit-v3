@@ -105,7 +105,7 @@ export function ExperimentsPage({
     >
       <StructuredData
         locale={locale}
-        breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }}
+        breadcrumb={[{ path: getWorldPath(world, locale), name: prose.title }]}
       />
 
       <ExperimentsHall />

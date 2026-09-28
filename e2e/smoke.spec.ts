@@ -483,7 +483,13 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     await expect(page).toHaveTitle(/OMSTA — ERP en Django/);
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       "content",
-      "OMSTA — ERP en Django y app móvil en React Native | Caso de estudio",
+      "OMSTA — ERP en Django y app móvil en React Native",
+    );
+    // Next copia og:title a twitter:title cuando el layout no fija uno; un
+    // twitter:title en el layout le ponía el título de la portada a cada caso.
+    await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
+      "content",
+      "OMSTA — ERP en Django y app móvil en React Native",
     );
     // La tarjeta JPEG de 1200 × 630, no el PNG destacado de ~3 MB: las vistas
     // previas de WhatsApp y compañía no se generan con imágenes tan pesadas.

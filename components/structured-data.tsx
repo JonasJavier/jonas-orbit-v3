@@ -1,9 +1,12 @@
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { absoluteUrl } from "@/lib/site-url";
 
+type Crumb = { path: string; name: string };
+
 /**
- * Datos estructurados (Person + WebSite en la home, BreadcrumbList en las
- * páginas de mundo).
+ * Datos estructurados: Person + WebSite en todas las páginas, BreadcrumbList
+ * fuera de la home y, en una página que ES una obra (un caso, un espécimen),
+ * el nodo de esa obra.
  *
  * Regla de contenido honesto del plan: aquí solo entran hechos verificables y
  * ya publicados en el propio sitio. Nada de premios, valoraciones, número de
@@ -12,14 +15,20 @@ import { absoluteUrl } from "@/lib/site-url";
 export function StructuredData({
   locale,
   breadcrumb,
+  work,
 }: {
   locale: Locale;
   /**
-   * Ruta y nombre de la página actual cuando NO es la home. Con ocho páginas
-   * indexables, la miga de pan es lo que le dice a un buscador que `/es` es el
-   * padre y no un octavo documento suelto.
+   * Camino desde la home hasta la página actual (sin la home), cuando NO es
+   * la home. La miga de pan es lo que le dice a un buscador que `/es` es el
+   * padre y no un documento suelto más.
    */
-  breadcrumb?: { path: string; name: string };
+  breadcrumb?: readonly Crumb[];
+  /**
+   * El nodo de la obra que la página presenta. Se completa aquí con `author`
+   * para que apunte a la misma Person del grafo.
+   */
+  work?: Record<string, unknown>;
 }) {
   const home = absoluteUrl(`/${locale}`);
 
@@ -38,35 +47,36 @@ export function StructuredData({
         addressCountry: SITE_PROFILE.country,
       },
       sameAs: [SITE_PROFILE.github, SITE_PROFILE.linkedin],
+      // Lo que el propio sitio demuestra con casos y experimentos publicados.
+      knowsAbout: SITE_PROFILE.knowsAbout,
     },
     {
       "@type": "WebSite",
       "@id": `${home}#website`,
       name: "Jonás Orbit",
+      alternateName: SITE_PROFILE.name,
       url: home,
       inLanguage: locale,
       author: { "@id": `${home}#jonas` },
     },
   ];
 
-  if (breadcrumb) {
+  if (breadcrumb?.length) {
     graph.push({
       "@type": "BreadcrumbList",
-      itemListElement: [
-        {
+      itemListElement: [{ path: `/${locale}`, name: "Jonás Orbit" }, ...breadcrumb].map(
+        (crumb, index) => ({
           "@type": "ListItem",
-          position: 1,
-          name: "Jonás Orbit",
-          item: home,
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: breadcrumb.name,
-          item: absoluteUrl(breadcrumb.path),
-        },
-      ],
+          position: index + 1,
+          name: crumb.name,
+          item: absoluteUrl(crumb.path),
+        }),
+      ),
     });
+  }
+
+  if (work) {
+    graph.push({ ...work, author: { "@id": `${home}#jonas` }, inLanguage: locale });
   }
 
   return (

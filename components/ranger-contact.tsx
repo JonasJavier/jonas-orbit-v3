@@ -25,7 +25,7 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
 
   return (
     <article className="ranger-page" data-world="ranger">
-      <StructuredData locale={locale} breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }} />
+      <StructuredData locale={locale} breadcrumb={[{ path: getWorldPath(world, locale), name: prose.title }]} />
       <RangerCockpit>
         <RangerViewport />
         <RangerVisor />

@@ -32,7 +32,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
   const inProgress = education.inProgress ?? [];
   return (
     <MillerWater>
-      <StructuredData locale={locale} breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }} />
+      <StructuredData locale={locale} breadcrumb={[{ path: getWorldPath(world, locale), name: prose.title }]} />
       <header className="miller-hero" id="panorama">
         <MillerOcean />
         <div className="miller-viewport-frame" aria-hidden="true"><i /><i /><i /><i /></div>

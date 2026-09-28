@@ -128,7 +128,7 @@ describe("validateProjectProse", () => {
 
   it("falla si una imagen declarada no existe", () => {
     expect(() => validate(requiredLocale("es"), () => false)).toThrow(
-      /Asset inexistente/,
+      /Captura sin publicar/,
     );
   });
 

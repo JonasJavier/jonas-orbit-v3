@@ -14,7 +14,7 @@ export function EdmundsPage({ world, locale }: { world: World; locale: Locale })
   if (!creativity) return null;
   return (
     <article className="edmunds-page">
-      <StructuredData locale={locale} breadcrumb={{ path: getWorldPath(world, locale), name: prose.title }} />
+      <StructuredData locale={locale} breadcrumb={[{ path: getWorldPath(world, locale), name: prose.title }]} />
       <header className="edmunds-intro">
         <div className="edmunds-intro__title">
           <p className="edmunds-eyebrow"><span className="edmunds-intro__dot" aria-hidden="true" /> DESTINO 04 <span>/</span> EDMUNDS</p>

@@ -42,10 +42,7 @@ export function WorldPage({
     >
       <StructuredData
         locale={locale}
-        breadcrumb={{
-          path: getWorldPath(world, locale),
-          name: prose.title,
-        }}
+        breadcrumb={[{ path: getWorldPath(world, locale), name: prose.title }]}
       />
       <div className="world-page__atmosphere" aria-hidden="true" />
 

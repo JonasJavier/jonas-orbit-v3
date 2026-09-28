@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectCase } from "@/components/project-case";
 import { SiteShell } from "@/components/site-shell";
+import { StructuredData } from "@/components/structured-data";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { getF1AProjectBySlug, getF1AProjects } from "@/lib/projects";
 import { projectOgImagePath, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
+import { absoluteUrl } from "@/lib/site-url";
 import { getWorld, getWorldPath } from "@/lib/worlds";
 
 type ProjectPageProps = {
@@ -76,6 +78,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   // como mundo activo aunque la ruta sea hija. `case-route` le da la paleta
   // de la mesa (`system-diagram.css`) y su fondo propio, opaco: la escena
   // persistente duerme detrás (`gargantua-system.tsx`).
+  const projectsHref = getWorldPath(getWorld("endurance", typedLocale), typedLocale);
+  const casePath = `${projectsHref}/${project.prose.slug}`;
   return (
     <SiteShell
       locale={typedLocale}
@@ -83,10 +87,27 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       mainClassName="case-route"
       footerLabel={`JONÁS ORBIT · ARCHIVO DE MISIÓN ${String(project.order).padStart(2, "0")}`}
     >
+      <StructuredData
+        locale={typedLocale}
+        breadcrumb={[
+          { path: projectsHref, name: getWorld("endurance", typedLocale).prose.title },
+          { path: casePath, name: project.prose.title },
+        ]}
+        work={{
+          "@type": "CreativeWork",
+          "@id": `${absoluteUrl(casePath)}#caso`,
+          name: project.prose.title,
+          headline: project.prose.seoTitle,
+          description: project.prose.seoDescription,
+          url: absoluteUrl(casePath),
+          image: absoluteUrl(projectOgImagePath(project.prose.featuredImage.src)),
+          keywords: project.prose.technologies.join(", "),
+        }}
+      />
       <ProjectCase
         project={project}
         projects={getF1AProjects(typedLocale)}
-        projectsHref={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
+        projectsHref={projectsHref}
         contactHref={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}
       />
     </SiteShell>

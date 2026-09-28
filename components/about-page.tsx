@@ -14,10 +14,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
     <AboutExperience>
       <StructuredData
         locale={locale}
-        breadcrumb={{
-          path: getWorldPath(world, locale),
-          name: world.prose.title,
-        }}
+        breadcrumb={[{ path: getWorldPath(world, locale), name: world.prose.title }]}
       />
       <header className="about-hero" id="constelacion" data-about-sky="">
         <picture className="about-landscape">
