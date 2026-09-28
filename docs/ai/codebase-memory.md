@@ -20,8 +20,15 @@ project = "C-Users-savage-Documents-kimi-Workspaces-portafolio-espacial-jonas-or
   no llames a `index_repository` con otra ruta ni con `name`, que crea un
   segundo grafo que nadie mantiene.
 - El servidor tiene `auto_index` y `auto_watch` activos
-  (`codebase-memory-mcp config list`): los cambios del checkout principal
-  entran solos en segundos. Si una sesión en `.claude/worktrees/…` crea un
+  (`codebase-memory-mcp config list`): los archivos nuevos y editados del
+  checkout principal entran solos en menos de un minuto. **Los borrados y
+  renombrados NO salen** (medido el 2026-09-28: un `.md` eliminado seguía en
+  el grafo minutos después). Por eso existe `npm run graph:check`
+  (`tools/graph-check.mjs`), que encuentra fantasmas, ruido excluido y grafos
+  de más; en Claude Code corre solo al abrir la sesión y sólo habla si hay algo
+  que arreglar. Otros agentes: córrelo al terminar si borraste o moviste
+  archivos. En otro equipo el nombre del proyecto cambia con la ruta: el
+  comprobador lo busca por la raíz del repo. Si una sesión en `.claude/worktrees/…` crea un
   proyecto propio, bórralo (`delete_project`) cuando el worktree desaparezca;
   `list_projects` marca `root_exists: false` en los huérfanos.
 - No uses `persistence: true`: el artefacto versionado está retirado
@@ -105,8 +112,10 @@ aunque `.gitignore` ya los excluya. `node_modules` nunca entra.
   `Permission denied`). El 2026-09-27 eso bajó el grafo de 8 174 a unos 4 600
   nodos: tenía los informes de `.lighthouseci/` y los scripts Python de otros
   proyectos.
-- Comprobación de limpieza (debe devolver 0 filas):
-  `MATCH (n) WHERE n.file_path STARTS WITH '.lighthouseci' OR n.file_path CONTAINS '/scripts/' OR n.file_path STARTS WITH 'docs/reference' RETURN n.file_path, count(*)`.
+- Comprobación de limpieza: `npm run graph:check` (exit 0 = «Grafo limpio.»).
+  Compara cada ruta del grafo con el disco y con `.gitignore` + `.cbmignore`
+  (vía `git check-ignore --no-index`), y lista proyectos indexados dentro de
+  la raíz. Sólo lee: el arreglo es siempre la reconstrucción de arriba.
 - Síntoma de índice viejo: `search_graph` no encuentra una función que sabes que
   existe. Solución: `index_repository` (permitido sin preguntar en
   `.claude/settings.json`).

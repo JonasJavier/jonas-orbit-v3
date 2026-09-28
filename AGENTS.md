@@ -13,8 +13,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
    (siempre con `limit` 5–20: sin él devuelve hasta 200 resultados),
    `trace_path(direction="inbound")` para saber qué rompe un cambio,
    `get_code_snippet` para leer sólo esa función. `Read` antes de editar;
-   `Grep` para texto literal, CSS y copy. Guía, mapa por dominio y
-   mantenimiento: `docs/ai/codebase-memory.md`.
+   `Grep` para texto literal, CSS y copy. **Mantenerlo limpio es tuyo:** lo
+   nuevo y lo editado entra solo, lo borrado o renombrado NO. Si borraste o
+   moviste archivos, al terminar corre `npm run graph:check`; si falla,
+   reconstruye (`delete_project` + `index_repository` desde el MCP). Guía, mapa
+   por dominio y mantenimiento: `docs/ai/codebase-memory.md`.
 2. **Decisiones → una entrada, no el registro.** `docs/registro-de-decisiones.md`
    pasa de 120 KB: `grep -n '^## ' docs/registro-de-decisiones.md` y lee sólo
    la entrada (o `search_graph(name_pattern="(?i).*tema.*", label="Section")`,

@@ -35,6 +35,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=chromium --project=mobile-chromium",
     "test:worker": "node tools/check-worker.mjs",
+    "graph:check": "node tools/graph-check.mjs",
     "check": "npm run lint && npm run typecheck && npm run knip && npm run test && npm run build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
