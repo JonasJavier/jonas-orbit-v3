@@ -35,6 +35,15 @@ jobs:
       - run: npm run build
       - name: Verificar build de OpenNext
         run: npx opennextjs-cloudflare build
+      - name: Verificar rutas en el Worker real
+        run: |
+          npx opennextjs-cloudflare preview --port 8787 > /tmp/jonas-orbit-worker.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          if ! npm run test:worker; then
+            cat /tmp/jonas-orbit-worker.log
+            exit 1
+          fi
 
   e2e:
     name: E2E (Chromium)

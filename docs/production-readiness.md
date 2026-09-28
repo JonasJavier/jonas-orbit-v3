@@ -15,6 +15,8 @@ npm run check
 npm run test:e2e
 npx playwright test --project=firefox --project=webkit
 npm run preview
+# En otra terminal, mientras el preview esté abierto:
+npm run test:worker
 ```
 
 En GitHub, el deploy depende de Chromium, Firefox, WebKit, Lighthouse y la
@@ -44,6 +46,12 @@ de facturación de Actions, no credenciales de producción.
   áreas marcadas por `AGENTS.md`.
 
 ## Contrato de entorno
+
+OpenNext sirve las rutas prerenderizadas desde una caché de Static Assets de
+sólo lectura, con interceptación habilitada. No requiere R2 ni revalidación.
+El formulario sigue siendo dinámico. El gate `test:worker` prueba el runtime
+local real: rutas HTML, redirect, 404 canónicos y un POST deliberadamente
+inválido que no entrega correo. Esto no sustituye una entrega real autorizada.
 
 La actualización dedicada de seguridad fija Next.js 16.3.6, OpenNext 1.20.6,
 Vitest 4.1.11 y Wrangler 4.141.0, con PostCSS 8.5.28 y Sharp 0.35.4. Las
