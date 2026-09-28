@@ -504,7 +504,23 @@ export function createGargantuaObservatory(
 
   resize();
   applyView();
-  frame = requestAnimationFrame(renderFrame);
+
+  // Compilación en paralelo antes del primer fotograma, sólo si el navegador
+  // la ofrece: ver `system-scene.ts`.
+  const startLoop = () => {
+    if (!disposed && !frame) frame = requestAnimationFrame(renderFrame);
+  };
+  if (renderer.extensions.has("KHR_parallel_shader_compile")) {
+    renderer.setRenderTarget(historyWrite);
+    const compiled = Promise.all([
+      renderer.compileAsync(marchScene, quadCamera),
+      canAccumulate ? renderer.compileAsync(displayScene, quadCamera) : null,
+    ]);
+    renderer.setRenderTarget(null);
+    void compiled.catch(() => undefined).then(startLoop);
+  } else {
+    startLoop();
+  }
 
   const { inner, outer } = diskRadiiInRs(DISK_INNER, DISK_OUTER);
 

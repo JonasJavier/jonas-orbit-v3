@@ -1083,6 +1083,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   let frameHandle = 0;
   let disposed = false;
   let covered = false;
+  /** Los programas todavía compilan en paralelo: nadie arranca el bucle. */
+  let warming = true;
   let lastWidth = 0;
   let lastHeight = 0;
   let lastFrozenDraw = 0;
@@ -1457,7 +1459,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     if (document.hidden || covered) {
       if (frameHandle) cancelAnimationFrame(frameHandle);
       frameHandle = 0;
-    } else if (!frameHandle && !disposed) {
+    } else if (!frameHandle && !disposed && !warming) {
       timer.reset();
       resetAccumulation();
       frameHandle = requestAnimationFrame(renderFrame);
@@ -1479,7 +1481,42 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   resize();
   lastWidth = canvas.clientWidth;
   lastHeight = canvas.clientHeight;
-  frameHandle = requestAnimationFrame(renderFrame);
+
+  /*
+    Los programas se compilan en paralelo ANTES del primer fotograma.
+
+    El raymarch de Gargantúa son ~140 KB de GLSL. Compilado dentro del primer
+    `render()`, ANGLE sobre D3D11 bloqueaba el hilo principal 2,7 s seguidos en
+    un portátil con GPU integrada (perfil del 2026-09-28), y Lighthouse en móvil
+    medía 7,9 s de TBT: la portada dejaba de responder justo al llegar.
+    `compileAsync` usa KHR_parallel_shader_compile y ESPERA sin bloquear;
+    mientras, se ve el cielo 2D. Sin la extensión (Firefox) no hay nada que
+    ganar —compilar es bloquear igual— y sólo adelantaría el bloqueo antes de
+    que se monte el cielo: se arranca como siempre y compila el primer
+    fotograma.
+
+    Se compila con un render target activo porque los tres pases pintan en uno
+    (la historia o el composer) y el programa depende de ello —espacio de color
+    y tone mapping—: compilados contra la pantalla serían OTROS programas.
+  */
+  const startLoop = () => {
+    warming = false;
+    // Oculta o cubierta, lo arrancará `handleVisibility` al volver.
+    if (disposed || frameHandle || document.hidden || covered) return;
+    frameHandle = requestAnimationFrame(renderFrame);
+  };
+  if (renderer.extensions.has("KHR_parallel_shader_compile")) {
+    renderer.setRenderTarget(historyWrite);
+    const compiled = Promise.all([
+      renderer.compileAsync(marchScene, quadCamera),
+      renderer.compileAsync(bodyScene, bodyCamera),
+      canAccumulate ? renderer.compileAsync(displayScene, quadCamera) : null,
+    ]);
+    renderer.setRenderTarget(null);
+    void compiled.catch(() => undefined).then(startLoop);
+  } else {
+    startLoop();
+  }
 
   return {
     setCovered(next) {

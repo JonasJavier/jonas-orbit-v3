@@ -893,7 +893,22 @@ export function createObservatoryScene(
   resize();
   applyCamera();
   body.animateAt(bench.clock ?? 0);
-  frame = requestAnimationFrame(renderFrame);
+
+  // Los programas compilan en paralelo antes del primer fotograma, con un
+  // render target activo porque el composer pinta en uno; sin la extensión se
+  // arranca como siempre. El porqué y la medida están en `system-scene.ts`:
+  // aquí evitaba ~0,9 s de bloqueo al abrir un espécimen.
+  const startLoop = () => {
+    if (!disposed && !frame) frame = requestAnimationFrame(renderFrame);
+  };
+  if (renderer.extensions.has("KHR_parallel_shader_compile")) {
+    renderer.setRenderTarget(composer.readBuffer);
+    const compiled = renderer.compileAsync(scene, camera);
+    renderer.setRenderTarget(null);
+    void compiled.catch(() => undefined).then(startLoop);
+  } else {
+    startLoop();
+  }
 
   /**
    * Coloca una vista curada.
