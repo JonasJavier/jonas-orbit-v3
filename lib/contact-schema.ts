@@ -1,4 +1,7 @@
-import { z } from "zod";
+// `zod/mini` y no `zod`: el formulario valida también en el navegador, y la
+// API clásica llevaba ~72 KB comprimidos a cada visita (Next precarga la ruta
+// de Contacto desde la portada). La mini es la misma validación, por piezas.
+import * as z from "zod/mini";
 
 export const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 export const TURNSTILE_TEST_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
@@ -34,32 +37,32 @@ const MISSION_VALUES = MISSION_OPTIONS.map(
 ];
 
 export const contactFormSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Escribe tu nombre.")
-    .max(80, "Usa un nombre de 80 caracteres o menos."),
-  email: z
-    .string()
-    .trim()
-    .max(254, "El correo es demasiado largo.")
-    .email("Escribe un correo válido."),
+  name: z.string().check(
+    z.trim(),
+    z.minLength(2, "Escribe tu nombre."),
+    z.maxLength(80, "Usa un nombre de 80 caracteres o menos."),
+  ),
+  email: z.string().check(
+    z.trim(),
+    z.maxLength(254, "El correo es demasiado largo."),
+    z.email("Escribe un correo válido."),
+  ),
   mission: z.enum(MISSION_VALUES, {
     error: "Selecciona el tipo de misión.",
   }),
-  message: z
-    .string()
-    .trim()
-    .min(20, "Cuéntame un poco más: usa al menos 20 caracteres.")
-    .max(2000, "El mensaje debe tener 2,000 caracteres o menos."),
-  website: z.string().max(120).optional().default(""),
+  message: z.string().check(
+    z.trim(),
+    z.minLength(20, "Cuéntame un poco más: usa al menos 20 caracteres."),
+    z.maxLength(2000, "El mensaje debe tener 2,000 caracteres o menos."),
+  ),
+  website: z._default(z.optional(z.string().check(z.maxLength(120))), ""),
   privacyAccepted: z.literal(true, {
     error: "Confirma que has leído la nota de privacidad.",
   }),
-  turnstileToken: z
-    .string()
-    .min(1, "Completa la verificación de seguridad.")
-    .max(2048, "La verificación de seguridad no es válida."),
+  turnstileToken: z.string().check(
+    z.minLength(1, "Completa la verificación de seguridad."),
+    z.maxLength(2048, "La verificación de seguridad no es válida."),
+  ),
 });
 
 export type ContactFormInput = Omit<
@@ -82,7 +85,7 @@ export function contactPayloadFromForm(form: FormData): ContactFormInput {
 }
 
 export function fieldErrorsFromZod(
-  error: z.ZodError,
+  error: z.core.$ZodError,
 ): Partial<Record<ContactField, string>> {
   const errors: Partial<Record<ContactField, string>> = {};
   for (const issue of error.issues) {
