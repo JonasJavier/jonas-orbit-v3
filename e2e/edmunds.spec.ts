@@ -101,8 +101,14 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   // Night sky: the auroras move on their own, and the deck asks for a file
   // larger than the pixels it paints — never a 1:1 WebP, which reads soft.
   expect(await page.locator(".edmunds-deck__aurora").first().evaluate((aurora) => getComputedStyle(aurora).animationName)).toContain("edmunds-aurora");
-  const served = await page.locator('.edmunds-artwork[data-offset="0"] img').evaluate((image: HTMLImageElement) => ({ natural: image.naturalWidth, painted: image.getBoundingClientRect().width * devicePixelRatio, src: image.currentSrc }));
-  expect(served.natural).toBeGreaterThanOrEqual(served.painted * 1.2);
+  const served = await page.locator('.edmunds-artwork[data-offset="0"] img').evaluate((image: HTMLImageElement) => ({ painted: image.getBoundingClientRect().width * devicePixelRatio, src: image.currentSrc, dpr: devicePixelRatio }));
+  // The file's real width comes from its name (`-1280.webp`): with a `w`
+  // srcset, `naturalWidth` is density-corrected and reads as CSS pixels. The
+  // 1.2× margin is for density 1; at density 2 any browser picks the smallest
+  // candidate that covers it, so there it is enough not to upscale.
+  const fileWidth = Number(/-(\d+)\.webp$/.exec(served.src)?.[1]);
+  expect(fileWidth, served.src).toBeGreaterThan(0);
+  expect(fileWidth).toBeGreaterThanOrEqual(served.painted * (served.dpr >= 2 ? 1 : 1.2));
   // The deck is a viewport of its own below the heading; the anchor lands on it
   // exactly under the sticky navigation bar.
   const viewport = page.viewportSize()!;

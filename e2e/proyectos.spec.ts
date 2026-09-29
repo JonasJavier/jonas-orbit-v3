@@ -654,7 +654,7 @@ test("P9 · cada pantalla pintada sirve un archivo ≥ 1,2× su tamaño pintado"
             de la caja, o su alto por la proporción de la captura.
           */
           const aspect = img.naturalWidth / img.naturalHeight;
-          return { painted: Math.max(box.width, box.height * aspect) * devicePixelRatio, src: img.currentSrc };
+          return { painted: Math.max(box.width, box.height * aspect) * devicePixelRatio, src: img.currentSrc, dpr: devicePixelRatio };
         });
         /*
           El ancho REAL del archivo sale de su nombre (`-480.webp`), no de
@@ -665,7 +665,14 @@ test("P9 · cada pantalla pintada sirve un archivo ≥ 1,2× su tamaño pintado"
         */
         const step = Number(/-(\d+)\.webp$/.exec(served.src)?.[1]);
         expect(step, `${viewport.width}/${layer}: ${served.src}`).toBeGreaterThan(0);
-        expect(step / served.painted, `${served.src} a ${viewport.width}/${layer} (${Math.round(served.painted)} px)`).toBeGreaterThanOrEqual(1.2);
+        /*
+          El margen de 1,2× es para densidad 1, donde un WebP 1:1 se lee
+          blando. Con densidad 2 el `srcset` elige, en cualquier navegador, el
+          candidato más pequeño que cubre la densidad (720 para 672 px de
+          dispositivo): ahí basta con no ampliar.
+        */
+        const margin = served.dpr >= 2 ? 1 : 1.2;
+        expect(step / served.painted, `${served.src} a ${viewport.width}/${layer} (${Math.round(served.painted)} px)`).toBeGreaterThanOrEqual(margin);
       }
     }
   }
