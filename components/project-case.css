@@ -1199,3 +1199,22 @@ html[data-motion="off"] .case *::after {
 @media (prefers-reduced-motion: reduce) {
   html:not([data-motion="off"]) .case-reveal { animation-duration: auto !important; }
 }
+
+/* ── Teléfono: el ritmo vertical se mide en px, no en vh (auditoría 2026-09-29) ──
+   Los huecos entre bloques iban en `vh` pensados para una pantalla de
+   escritorio; en un teléfono alto se convertían en 120-160 px de negro entre
+   cada decisión, y el caso —28 000 px de largo— se leía a trozos. La jerarquía
+   se conserva: el hueco entre secciones sigue siendo el mayor. */
+@media (max-width: 767px) {
+  .case-summary { gap: 64px; margin-top: 72px; }
+  .case-section { margin-top: 84px; }
+  .case-section__head { margin-bottom: 32px; }
+  .case-decisions__list { gap: 64px; }
+  .case-tour__stop + .case-tour__stop { margin-top: 56px; }
+  .case-close { gap: 48px; margin-top: 88px; }
+  /* La barra de capítulos se desliza de lado: el filo se funde para que se
+     note que hay más a la derecha. */
+  .case-localnav ol {
+    mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent);
+  }
+}

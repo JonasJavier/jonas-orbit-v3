@@ -1184,6 +1184,26 @@ html[data-starfield="ready"] .space-backdrop__stars {
   font-size: 0.68rem;
 }
 
+/* Móvil (auditoría 2026-09-29). Los tres enlaces del pie medían 17 px de alto:
+   pasan a blancos de 44 px. Y la escena de la home —esta ruta no tiene cielo
+   propio— caía con Gargantúa y sus cuerpos justo debajo del titular y del
+   primer párrafo, que en una sola columna ocupan todo el ancho: se atenúa. */
+@media (max-width: 60rem) {
+  .privacy-page__links {
+    gap: 0.25rem 1.5rem;
+  }
+
+  .privacy-page__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  html[data-scene-live="true"] body:has(.privacy-page) .system-canvas {
+    opacity: 0.28;
+  }
+}
+
 @keyframes orbit-spin {
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }

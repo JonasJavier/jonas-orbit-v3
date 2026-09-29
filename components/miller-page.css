@@ -130,7 +130,13 @@ body:has(.miller-route) .scene-toggle { display: none; }
   .miller-hero .miller-hero__coordinate { font-size: .52rem; margin-top: 30px; letter-spacing: .15em; }
   .miller-ocean__shade { background: linear-gradient(90deg, rgb(3 16 26 / 70%), rgb(3 16 26 / 20%)), linear-gradient(0deg, #06131c, transparent 50%); }
   .miller-hero .miller-hero__intro { font-size: .87rem; line-height: 1.8; max-width: 310px; margin-top: 28px; }
-  .miller-hero__actions { gap: 14px 22px; margin-top: 26px; }
+  /* Tres botones sueltos se repartían en dos filas de anchos distintos: el
+     recorrido ocupa la fila entera y certificados y CV comparten la segunda
+     (auditoría móvil 2026-09-29). */
+  .miller-hero__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 26px; max-width: 420px; }
+  .miller-hero__actions > .miller-button { grid-column: 1 / -1; }
+  .miller-hero__actions > .miller-text-link, .miller-hero__actions .miller-cv > summary { justify-content: space-between; width: 100%; min-height: 48px; }
+  .miller-hero__actions .miller-cv__menu { right: auto; left: 0; width: min(210px, calc(100vw - 32px)); }
   .miller-button { font-size: .76rem; padding: 11px 15px; gap: 18px; }
   .miller-text-link, .miller-cv > summary { font-size: .73rem; }
   .miller-hero__descend { bottom: 26px; font-size: .52rem; }
@@ -286,4 +292,19 @@ html[data-motion="off"] .miller-page *, html[data-motion="off"] .miller-page *::
   .miller-origin { grid-template-columns: 38px 1fr; gap: 8px 14px; margin-top: -28px; padding-block: 23px; }
   .miller-origin__year { width: 36px; height: 36px; font-size: .45rem; }
   .miller-origin > p { grid-column: 2; font-size: .75rem; }
+}
+
+/* Suelo de lectura en el teléfono (auditoría móvil 2026-09-29): los rótulos
+   mono bajaban a 7-8 px. Ninguno pasa de su caja; sólo dejan de hacer falta
+   acercarse a la pantalla para leerlos. */
+@media (max-width: 600px) {
+  .miller-hero .miller-hero__coordinate,
+  .miller-hero__descend,
+  .miller-study__heading > .miller-eyebrow,
+  .miller-now__marker,
+  .miller-now__badge,
+  .miller-now__area,
+  .miller-origin .miller-eyebrow,
+  .miller-cv__menu small { font-size: .62rem; }
+  .miller-origin__year { width: 40px; height: 40px; font-size: .58rem; }
 }

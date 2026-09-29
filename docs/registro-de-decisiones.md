@@ -19,6 +19,40 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Auditoría responsive del sitio en móvil (2026-09-29)
+
+El dueño pidió, tras la home, auditar y mejorar TODAS las páginas en móvil
+«con excelente UX». Medido en 320 × 568, 390 × 844, 768 × 1024 y 844 × 390
+(desbordes, texto < 11 px, blancos < 32 px y capturas por pantallazos). Ninguna
+página desbordaba a lo ancho; los fallos eran de uso:
+
+- **La bandeja de MOVIMIENTO/AUDIO tapaba texto y botones al pie de todas las
+  páginas.** `components/system-tray.tsx`: en pantallas táctiles estrechas se
+  retira al bajar leyendo (48 px seguidos) y vuelve al subir, arriba del todo
+  y al final de la página (patrón de la barra del navegador). Nunca con el foco
+  dentro ni el panel de audio abierto; con ratón no se mueve. El pie reserva
+  68 px en su última fila para que al volver no caiga sobre «Privacidad».
+- **Creatividad: filtros, flechas y pie de la galería se quedaban al 8 %.** El
+  modo cine los atenúa a los 3,5 s quietos y en táctil ni el scroll ni nada los
+  despertaba. El atenuado queda sólo con puntero fino (`hover: hover`).
+- **Privacidad: la escena de la home caía bajo el titular.** En pantallas
+  estrechas el canvas baja a 0,28 en esa ruta; enlaces del pie a 44 px.
+- **Observatorio:** la fila OBSERVAR/ESTUDIO/REAJUSTAR deja 100 px a la bandeja
+  en vertical (REAJUSTAR baja de línea si no cabe); índices 01–06 con blanco
+  táctil de 44 px sin cambiar lo que se ve.
+- **Formación:** los tres botones del hero pasan a rejilla (recorrido a lo
+  ancho; certificados y CV a medias).
+- **Sobre mí en apaisado:** usa la maqueta de teléfono (dos columnas) en vez
+  de la constelación de escritorio cortada.
+- **Caso de proyecto:** ritmo vertical en px y no en `vh` en teléfono (se
+  quitan 50-90 px de negro entre cada bloque) y la barra de capítulos se funde
+  en los bordes para que se note que desliza.
+- **Suelo de lectura:** rótulos mono de 7-9 px suben a ~10 px en teléfono (pie,
+  Formación, Contacto —las etiquetas del formulario a 11 px—, panel de audio).
+
+e2e `mobile-ux.spec.ts` (bandeja, desbordes, galería en táctil) y suite
+Chromium completa 322/322. Valoración visual del dueño pendiente.
+
 ## Home en móvil — escenario compartido, cabecera en una fila y raíl en panel (2026-09-28)
 
 El dueño: el index en móvil «se ve mal», tanto en 3D como en 2D; lo quiere

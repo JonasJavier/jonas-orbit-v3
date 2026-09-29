@@ -2,6 +2,7 @@ import { MotionToggle } from "@/components/motion-toggle";
 import { GargantuaSystem } from "@/components/scene/gargantua-system";
 import { SiteBackdrop } from "@/components/site-backdrop";
 import { SoundtrackControl } from "@/components/soundtrack-control";
+import { SystemTray } from "@/components/system-tray";
 import { VoyageLayer } from "@/components/voyage-layer";
 import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
@@ -74,10 +75,10 @@ export default async function LocaleLayout({
       {/* Bandeja fija inferior derecha: el único interruptor de movimiento del
           sitio y la banda sonora, en todas las rutas. */}
       {published ? (
-        <div className="system-tray">
+        <SystemTray>
           <MotionToggle />
           <SoundtrackControl />
-        </div>
+        </SystemTray>
       ) : null}
     </>
   );

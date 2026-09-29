@@ -2544,3 +2544,31 @@ html[data-motion="off"] .observatory-face *::after {
     display: none;
   }
 }
+
+/* Móvil (auditoría 2026-09-29). Los seis índices miden 24 × 34 a propósito
+   (ver `.observatory__slot`); con el dedo el blanco crece hasta 44 px sin
+   cambiar lo que se ve. Y la fila de modos dejaba REAJUSTAR debajo de la
+   bandeja de MOVIMIENTO/AUDIO, que aquí no se retira porque no hay scroll. */
+@media (hover: none) and (pointer: coarse) {
+  a.observatory__slot::after {
+    content: "";
+    position: absolute;
+    inset: -5px -10px -5px -10px;
+  }
+}
+@media (max-width: 60rem) and (max-aspect-ratio: 1/1) {
+  body:has(.observatory) .observatory__controls {
+    padding-right: 100px;
+  }
+}
+/* En un teléfono bajo (320 × 568) la consola de ESTUDIO, oculta pero en el
+   flujo, empujaba la fila de modos por debajo del borde de la pantalla. En
+   OBSERVAR sale del flujo; al entrar en ESTUDIO vuelve y ocupa su sitio. */
+@media (max-width: 60rem) and (max-height: 720px) {
+  .observatory[data-mode="observar"] .observatory__console {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+}

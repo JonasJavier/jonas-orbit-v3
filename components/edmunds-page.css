@@ -73,8 +73,13 @@ html:has(.edmunds-route) { scroll-padding-top: 67px; }
 /* Cinema mode: after a few quiet seconds the controls dim and the works have
    the deck to themselves. Any pointer, key or touch brings them back. */
 .edmunds-gallery[data-view="space"] .edmunds-top, .edmunds-gallery[data-view="space"] .edmunds-gallery__foot { transition: opacity 1.1s ease; }
+/* El modo cine es de escritorio: con un dedo no hay «mover el ratón» que lo
+   despierte y hacer scroll no cuenta, así que en un móvil filtros, flechas y
+   pie se quedaban al 8 % justo al llegar a la galería (auditoría 2026-09-29). */
+@media (hover: hover) and (pointer: fine) {
 .edmunds-gallery[data-view="space"][data-idle="true"] .edmunds-top, .edmunds-gallery[data-view="space"][data-idle="true"] .edmunds-gallery__foot { opacity: .08; transition-duration: 1.6s; }
 .edmunds-gallery[data-view="space"][data-idle="true"] .edmunds-artwork[data-offset="0"] .edmunds-artwork__brackets { opacity: .35; }
+}
 
 /* Sky: deep space, a faint nebula in the rock's own colours, two star fields,
    drifting dust, the active work's ambient light and, low on the horizon,

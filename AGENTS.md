@@ -134,6 +134,10 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Por página
 
+- **Móvil en todo el sitio** (09-29) registro «Auditoría responsive del sitio
+  en móvil» — bandeja que se retira al leer en táctil (`system-tray.tsx`),
+  galería sin modo cine en táctil, suelo de lectura ~10 px, observatorio y
+  caso ajustados. Valoración visual pendiente.
 - **Home en móvil** (09-28) registro «Home en móvil — escenario compartido…» —
   cabecera en una fila, escenario `--home-stage-*` y UNA composición vertical
   (`portrait` de `lib/flat-composition.ts`) para atlas y escena; raíl en panel

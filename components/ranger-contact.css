@@ -270,3 +270,20 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 }
 /* El interruptor único de movimiento para también el CSS de la cabina. */
 html[data-motion="off"] .ranger-page *, html[data-motion="off"] .ranger-page *::before, html[data-motion="off"] .ranger-page *::after { animation: none !important; transition: none !important; }
+
+/* Suelo de lectura en el teléfono (auditoría móvil 2026-09-29). Las etiquetas
+   del formulario —NOMBRE, CORREO, MENSAJE— y los rótulos mono de la consola
+   bajaban a 8-9 px: en un formulario, la etiqueta es la instrucción, y tiene
+   que leerse sin acercarse. */
+@media (max-width: 760px) {
+  .ranger-page .contact-form label > span:first-child:not(.privacy-check span) { font-size: .68rem; }
+  .ranger-readouts__name,
+  .ranger-readouts dt,
+  .ranger-module__label,
+  .ranger-relay__tag,
+  .ranger-manifest dt,
+  .ranger-console__bar,
+  .ranger-missions__label,
+  .ranger-neighbours small,
+  .ranger-neighbours > .ranger-kicker { font-size: .62rem; }
+}
