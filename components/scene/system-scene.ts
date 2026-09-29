@@ -53,6 +53,7 @@ import {
   type SceneBody,
   type SceneBodyInput,
 } from "./bodies";
+import { createResolutionGovernor } from "./resolution-governor";
 import { createVoyagePass } from "./voyage-pass";
 
 /**
@@ -309,6 +310,18 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     : "GPU oculta por el navegador";
   // Media resolución en un rasterizador por software: ver `SOFTWARE_RENDER_SCALE`.
   const renderScale = isSoftwareRenderer(rendererName(gl)) ? SOFTWARE_RENDER_SCALE : 1;
+  /*
+    En táctil el nivel `orbit` no se queda clavado en 1 píxel por punto: prueba
+    escalones más finos mientras el teléfono vaya holgado (ver
+    `resolution-governor.ts`). Ni en `deep`, que ya tiene su densidad, ni en
+    un rasterizador por software, que va a media resolución a propósito.
+  */
+  const governor =
+    tier === "orbit" &&
+    renderScale === 1 &&
+    window.matchMedia("(pointer: coarse)").matches
+      ? createResolutionGovernor(window.devicePixelRatio || 1)
+      : null;
 
   /**
    * Varios Android exponen WebGL2 pero no dejan renderizar a half-float, y ahí
@@ -1177,7 +1190,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   function resize() {
     const width = Math.max(1, canvas.clientWidth || canvas.offsetWidth || 0);
     const height = Math.max(1, canvas.clientHeight || canvas.offsetHeight || 0);
-    const dpr = Math.min(window.devicePixelRatio || 1, TIER[tier].dpr) * renderScale;
+    const cap = governor ? governor.dpr : TIER[tier].dpr;
+    const dpr = Math.min(window.devicePixelRatio || 1, cap) * renderScale;
+    canvas.dataset.renderDpr = dpr.toFixed(2);
 
     cssWidth = width;
     cssHeight = height;
@@ -1577,12 +1592,20 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       return;
     }
     cameraMoved = false;
+
+    // Sólo cuenta el sistema en reposo animado: la travesía y la pose
+    // congelada tienen otro ritmo y no dicen nada del margen del equipo.
+    if (governor) {
+      if (voyage || !pose.animated) governor.interrupt();
+      else if (governor.sample(timestamp)) resize();
+    }
   }
 
   function handleVisibility() {
     if (document.hidden || covered) {
       if (frameHandle) cancelAnimationFrame(frameHandle);
       frameHandle = 0;
+      governor?.interrupt();
     } else if (!frameHandle && !disposed && !warming) {
       timer.reset();
       resetAccumulation();
