@@ -5,7 +5,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { playSfx } from "@/lib/sfx";
-import { flushSync } from "react-dom";
+import { flushSync, preload } from "react-dom";
 import type { World } from "@/lib/worlds";
 import { useMotionEnabled } from "@/lib/effects-mode";
 import { MOSAIC_SCALES, mosaicRows } from "@/lib/mosaic-rows";
@@ -171,6 +171,10 @@ function ArtImage({ art, large = false, eager = false, sizes }: { art: Artwork; 
  * that used to make the ring rubbery and the release abrupt. */
 export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const t = COPY[useLocale()];
+  // The deck's star field is the page's LCP, and as a CSS background the
+  // browser only found it after parsing the stylesheet (300-570 ms late in
+  // PageSpeed, 2026-09-29). Asked for from the <head> instead.
+  preload("/brand/edmunds-night-stars.svg", { as: "image", fetchPriority: "high" });
   const [collection, setCollection] = useState("all");
   const [active, setActive] = useState(0);
   const [view, setView] = useState<"space" | "grid" | null>(null);

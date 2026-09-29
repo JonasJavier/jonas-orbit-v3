@@ -153,6 +153,12 @@ la comparación.
   tarde, el simulador carga todo el JS descargado al FCP/LCP y la nota cae de
   ~80 a ~55. No es de la página: comparar peso y TBT, y confirmar en
   PageSpeed.
+- **Creatividad:** el LCP es el cielo de estrellas de la cubierta, un SVG de
+  fondo en CSS que el navegador descubría 300–570 ms tarde: se precarga con
+  `fetchPriority: "high"` desde `EdmundsGallery`. Contra producción (Lighthouse
+  local): Creatividad 83, Proyectos 84, Formación 92, capítulos 81–83.
+- **Descartado:** recomprimir `cielo-montanas-movil.webp` a 72 (90 → 57 KB):
+  al 200 % pierde el polvo de estrellas débiles, que es el carácter del cielo.
 - **Contacto:** el contenedor de Turnstile lleva `role="group"`: un `div` sin
   rol no admite `aria-label` («Navegación agéntica» 1/2 en PageSpeed).
 - **Lo que queda y por qué.** El LCP simulado está atado al JavaScript de
