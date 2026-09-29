@@ -15,9 +15,10 @@ import type {
   ObservatoryHandle,
   ProbeReading,
 } from "@/components/scene/observatory-scene";
-import type {
-  ObservationTelemetry,
-  ObservationView,
+import {
+  viewText,
+  type ObservationTelemetry,
+  type ObservationView,
 } from "@/lib/observation-views";
 import type { SpecimenContract } from "@/components/scene/specimen-contract";
 import type { QualityTier } from "@/components/scene/gargantua-render";
@@ -27,16 +28,85 @@ import {
   readSignals,
 } from "@/components/scene/capability";
 import {
+  OBSERVATORY_LABELS,
   architectureLabel,
   AXIS_LABELS,
-  LIGHT_LABELS,
-  OBSERVATION_LABELS,
-  RAYMARCH_LABELS,
   REGISTRO_SECTIONS,
-  RENDER_LABELS,
-  TURN_LABEL,
 } from "./observatory-labels";
+import { defineCopy } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
 import "./observatory.css";
+
+const COPY = defineCopy({
+  es: {
+    close: (title: string) => `Cerrar ${title.toLowerCase()}`,
+    canonical: "Canónico",
+    noBloom: "sin bloom",
+    noEmission: "sin emisión",
+    probeHint: "Señala una arista del hipercubo",
+    studyHint: "Mantén un mando para comparar",
+    orbit: "Arrastra para orbitar",
+    zoom: "rueda para acercar",
+    fourViews: "Cuatro vistas en",
+    specimens: "Especímenes",
+    previous: "Muestra anterior:",
+    specimen: (position: number, total: number) => `Espécimen ${position} de ${total}`,
+    next: "Muestra siguiente:",
+    exit: "Salir del Observatorio",
+    data: "Datos",
+    object: "Objeto",
+    observation: "Observación",
+    radii: "radios",
+    render: "Render",
+    record: "Registro",
+    recordSections: "Secciones del registro",
+    view: "Vista",
+    views: "Vistas de observación",
+    light: "Luz",
+    figure: "Figura",
+    camera: "Cámara",
+    inspect: "Inspeccionar",
+    probe: "Sonda",
+    mode: "Modo del instrumento",
+    observe: "Observar",
+    study: "Estudio",
+    reset: "Reajustar",
+  },
+  en: {
+    close: (title: string) => `Close ${title.toLowerCase()}`,
+    canonical: "Canonical",
+    noBloom: "no bloom",
+    noEmission: "no emission",
+    probeHint: "Point at an edge of the hypercube",
+    studyHint: "Hold a control to compare",
+    orbit: "Drag to orbit",
+    zoom: "scroll to zoom",
+    fourViews: "Four views in",
+    specimens: "Specimens",
+    previous: "Previous specimen:",
+    specimen: (position: number, total: number) => `Specimen ${position} of ${total}`,
+    next: "Next specimen:",
+    exit: "Leave the Observatory",
+    data: "Data",
+    object: "Object",
+    observation: "Observation",
+    radii: "radii",
+    render: "Render",
+    record: "Log",
+    recordSections: "Log sections",
+    view: "View",
+    views: "Observation views",
+    light: "Light",
+    figure: "Figure",
+    camera: "Camera",
+    inspect: "Inspect",
+    probe: "Probe",
+    mode: "Instrument mode",
+    observe: "Observe",
+    study: "Study",
+    reset: "Reset",
+  },
+});
 
 /**
  * El visor del Observatorio.
@@ -313,6 +383,7 @@ function Instrument({
  * que en escritorio tampoco aparece para quien navega escuchando.
  */
 function SheetHead({ title, onClose }: { title: string; onClose: () => void }) {
+  const t = COPY[useLocale()];
   return (
     <div className="observatory__sheet-head">
       <p className="observatory__legend">{title}</p>
@@ -321,7 +392,7 @@ function SheetHead({ title, onClose }: { title: string; onClose: () => void }) {
         onClick={onClose}
         type="button"
       >
-        <span className="sr-only">Cerrar {title.toLowerCase()}</span>
+        <span className="sr-only">{t.close(title)}</span>
         <span aria-hidden="true">—</span>
       </button>
     </div>
@@ -393,6 +464,9 @@ export function ObservatoryViewer({
   /** `null` mientras un espécimen no tenga registro escrito. */
   record: SpecimenRecord | null;
 }) {
+  const locale = useLocale();
+  const t = COPY[locale];
+  const labels = OBSERVATORY_LABELS[locale];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<ObservatoryHandle | null>(null);
   const motion = useMotionEnabled();
@@ -1167,16 +1241,16 @@ export function ObservatoryViewer({
    */
   const hint = holding ? (
     <>
-      Canónico
+      {t.canonical}
       <span aria-hidden="true" className="observatory__sep">
         |
       </span>
-      {holding === "bloom" ? "sin bloom" : "sin emisión"}
+      {holding === "bloom" ? t.noBloom : t.noEmission}
     </>
   ) : probe ? (
-    <>Señala una arista del hipercubo</>
+    <>{t.probeHint}</>
   ) : mode === "estudio" ? (
-    <>Mantén un mando para comparar</>
+    <>{t.studyHint}</>
   ) : canOrbit ? (
     /*
       «Orbitar» y no «girar», y el cambio de palabra lo obligó el mando `EJE`.
@@ -1188,14 +1262,14 @@ export function ObservatoryViewer({
       el que se enseña aquí es justo el que NO conserva la iluminación.
     */
     <>
-      Arrastra para orbitar
+      {t.orbit}
       {/* En táctil no hay rueda ni pellizco: la pista no promete un gesto
           que no existe (observatory.css, `observatory__wheel`). */}
       <span className="observatory__wheel">
         <span aria-hidden="true" className="observatory__sep">
           ·
         </span>
-        rueda para acercar
+        {t.zoom}
       </span>
     </>
   ) : (
@@ -1206,11 +1280,11 @@ export function ObservatoryViewer({
       lista, no se busca uno.
     */
     <>
-      Cuatro vistas en
+      {t.fourViews}
       <span aria-hidden="true" className="observatory__sep">
         ·
       </span>
-      Estudio
+      {t.study}
     </>
   );
 
@@ -1335,7 +1409,7 @@ export function ObservatoryViewer({
         `display: none` ni `visibility: hidden`, que lo sacarían del nombre
         accesible del enlace y dejarían seis enlaces llamados «01».
       */}
-      <nav aria-label="Especímenes" className="observatory__rail" inert={!ready}>
+      <nav aria-label={t.specimens} className="observatory__rail" inert={!ready}>
         <ol>
           {rail.map((slot) => {
             const activo = slot.id === id;
@@ -1403,7 +1477,7 @@ export function ObservatoryViewer({
                 <Link className="observatory__step-arrow" href={previous.href!}>
                   <span aria-hidden="true">‹</span>
                   <span className="sr-only">
-                    Muestra anterior: {previous.name}
+                    {t.previous} {previous.name}
                   </span>
                 </Link>
               ) : (
@@ -1417,7 +1491,7 @@ export function ObservatoryViewer({
               <p className="observatory__index">
                 <span aria-hidden="true" className="observatory__state-dot" />
                 <span className="sr-only">
-                  Espécimen {position} de {rail.length}
+                  {t.specimen(position, rail.length)}
                 </span>
                 <span aria-hidden="true">
                   {pad(position)}
@@ -1428,7 +1502,7 @@ export function ObservatoryViewer({
               {next ? (
                 <Link className="observatory__step-arrow" href={next.href!}>
                   <span aria-hidden="true">›</span>
-                  <span className="sr-only">Muestra siguiente: {next.name}</span>
+                  <span className="sr-only">{t.next} {next.name}</span>
                 </Link>
               ) : (
                 <span
@@ -1467,7 +1541,7 @@ export function ObservatoryViewer({
               <span aria-hidden="true" className="observatory__arrow">
                 ←
               </span>
-              <span className="observatory__ink">Salir del Observatorio</span>
+              <span className="observatory__ink">{t.exit}</span>
             </Link>
           </div>
         </div>
@@ -1478,7 +1552,7 @@ export function ObservatoryViewer({
               no hacia fuera del cuadro. */}
           {panel === "datos" && contract ? (
             <div className="observatory__data">
-              <SheetHead title="Datos" onClose={() => setPanel(null)} />
+              <SheetHead title={t.data} onClose={() => setPanel(null)} />
               {/*
                 TRES FAMILIAS, Y EL ORDEN ES LA LECTURA.
 
@@ -1490,12 +1564,12 @@ export function ObservatoryViewer({
               */}
               {contract.architecture ? (
                 <section>
-                  <h2 className="observatory__legend">Objeto</h2>
+                  <h2 className="observatory__legend">{t.object}</h2>
                   <dl>
                     {Object.entries(contract.architecture).map(
                       ([key, value]) => (
                         <div key={key}>
-                          <dt>{architectureLabel(key)}</dt>
+                          <dt>{architectureLabel(key, locale)}</dt>
                           <dd>{value}</dd>
                         </div>
                       ),
@@ -1505,27 +1579,27 @@ export function ObservatoryViewer({
               ) : null}
 
               <section>
-                <h2 className="observatory__legend">Observación</h2>
+                <h2 className="observatory__legend">{t.observation}</h2>
                 <dl>
                   {views.length > 1 ? (
                     <div>
-                      <dt>{OBSERVATION_LABELS.view}</dt>
-                      <dd>{views[view]?.label}</dd>
+                      <dt>{labels.observation.view}</dt>
+                      <dd>{views[view] ? viewText(world.id, views[view], locale).label : null}</dd>
                     </div>
                   ) : null}
                   <div>
-                    <dt>{OBSERVATION_LABELS.azimuth}</dt>
+                    <dt>{labels.observation.azimuth}</dt>
                     <dd>{readout("", "panel-azimuth")}</dd>
                   </div>
                   <div>
-                    <dt>{OBSERVATION_LABELS.elevation}</dt>
+                    <dt>{labels.observation.elevation}</dt>
                     <dd>{readout("", "panel-elevation")}</dd>
                   </div>
                   <div>
-                    <dt>{OBSERVATION_LABELS.distance}</dt>
+                    <dt>{labels.observation.distance}</dt>
                     <dd>
                       {readout("", "panel-distance")}
-                      <span className="observatory__unit"> radios</span>
+                      <span className="observatory__unit"> {t.radii}</span>
                     </dd>
                   </div>
                   {/* El ángulo de clave sólo donde hay clave que medir. En
@@ -1533,19 +1607,19 @@ export function ObservatoryViewer({
                       entera se va en vez de enseñar un cero. */}
                   {hasLight ? (
                     <div>
-                      <dt>{OBSERVATION_LABELS.key}</dt>
+                      <dt>{labels.observation.key}</dt>
                       <dd>{readout("", "panel-key")}</dd>
                     </div>
                   ) : null}
                   <div>
-                    <dt>{OBSERVATION_LABELS.fov}</dt>
+                    <dt>{labels.observation.fov}</dt>
                     <dd>{readout("", "panel-fov")}</dd>
                   </div>
                 </dl>
               </section>
 
               <section>
-                <h2 className="observatory__legend">Render</h2>
+                <h2 className="observatory__legend">{t.render}</h2>
                 <dl>
                   {/*
                     LO QUE DEFINE A UN OBJETO SIN MALLA.
@@ -1562,11 +1636,11 @@ export function ObservatoryViewer({
                   {contract.raymarch ? (
                     <>
                       <div>
-                        <dt>{RAYMARCH_LABELS.rs}</dt>
+                        <dt>{labels.raymarch.rs}</dt>
                         <dd>{fixed(contract.raymarch.rs, 2)}</dd>
                       </div>
                       <div>
-                        <dt>{RAYMARCH_LABELS.disk}</dt>
+                        <dt>{labels.raymarch.disk}</dt>
                         <dd>
                           {fixed(contract.raymarch.diskInner, 2)} –{" "}
                           {fixed(contract.raymarch.diskOuter, 0)}
@@ -1574,29 +1648,29 @@ export function ObservatoryViewer({
                         </dd>
                       </div>
                       <div>
-                        <dt>{RAYMARCH_LABELS.steps}</dt>
+                        <dt>{labels.raymarch.steps}</dt>
                         <dd>{contract.raymarch.steps}</dd>
                       </div>
                       <div>
-                        <dt>{RAYMARCH_LABELS.blend}</dt>
+                        <dt>{labels.raymarch.blend}</dt>
                         <dd>{readout("", "panel-blend")}</dd>
                       </div>
                       <div>
-                        <dt>{RAYMARCH_LABELS.accumulated}</dt>
+                        <dt>{labels.raymarch.accumulated}</dt>
                         <dd>{readout("", "panel-accumulated")}</dd>
                       </div>
                     </>
                   ) : null}
                   <div>
-                    <dt>{RENDER_LABELS.draws}</dt>
+                    <dt>{labels.render.draws}</dt>
                     <dd>{contract.draws}</dd>
                   </div>
                   <div>
-                    <dt>{RENDER_LABELS.materials}</dt>
+                    <dt>{labels.render.materials}</dt>
                     <dd>{contract.materials}</dd>
                   </div>
                   <div>
-                    <dt>{RENDER_LABELS.vertices}</dt>
+                    <dt>{labels.render.vertices}</dt>
                     <dd>{contract.vertices.toLocaleString("es-DO")}</dd>
                   </div>
                 </dl>
@@ -1614,14 +1688,14 @@ export function ObservatoryViewer({
           */}
           {panel === "registro" && record ? (
             <div className="observatory__data observatory__record">
-              <SheetHead title="Registro" onClose={() => setPanel(null)} />
+              <SheetHead title={t.record} onClose={() => setPanel(null)} />
               <div
-                aria-label="Secciones del registro"
+                aria-label={t.recordSections}
                 className="observatory__tabs"
                 ref={tabsRef}
                 role="tablist"
               >
-                {REGISTRO_SECTIONS.map(([key, label]) => (
+                {labels.registro.map(([key, label]) => (
                   <button
                     aria-controls={`registro-${key}`}
                     aria-selected={section === key}
@@ -1684,10 +1758,10 @@ export function ObservatoryViewer({
               */}
               {views.length > 1 ? (
                 <div className="observatory__row">
-                  <p className="observatory__legend">Vista</p>
+                  <p className="observatory__legend">{t.view}</p>
                   <div className="observatory__slots">
                     <div
-                      aria-label="Vistas de observación"
+                      aria-label={t.views}
                       className="observatory__views"
                       role="radiogroup"
                     >
@@ -1710,7 +1784,7 @@ export function ObservatoryViewer({
                             {pad(index + 1)}
                           </span>
                           <span className="observatory__ink">
-                            {option.label}
+                            {viewText(world.id, option, locale).label}
                           </span>
                         </button>
                       ))}
@@ -1720,7 +1794,7 @@ export function ObservatoryViewer({
                       cámara en un instrumento: sin ella son tres ángulos, con
                       ella son tres preguntas.
                     */}
-                    <p className="observatory__study">{views[view]?.study}</p>
+                    <p className="observatory__study">{views[view] ? viewText(world.id, views[view], locale).study : null}</p>
                   </div>
                 </div>
               ) : null}
@@ -1752,7 +1826,7 @@ export function ObservatoryViewer({
               */}
               {hasLight ? (
               <div className="observatory__row">
-                <p className="observatory__legend">Luz</p>
+                <p className="observatory__legend">{t.light}</p>
                 <div className="observatory__dials">
                   {/*
                     `CLAVE` va de 0 a 180 porque es un ángulo entre dos
@@ -1762,8 +1836,8 @@ export function ObservatoryViewer({
                     media vuelta de la luz quedaba recortada contra el tope y el
                     mando mentía sobre lo que puede hacer.
                   */}
-                  {dial("key", "Clave", LIGHT_LABELS.key, 0, 180)}
-                  {dial("roll", "Giro", LIGHT_LABELS.roll, -180, 180)}
+                  {dial("key", labels.dials.key, labels.light.key, 0, 180)}
+                  {dial("roll", labels.dials.roll, labels.light.roll, -180, 180)}
                 </div>
               </div>
               ) : null}
@@ -1793,7 +1867,7 @@ export function ObservatoryViewer({
               */}
               {hasTurn ? (
                 <div className="observatory__row">
-                  <p className="observatory__legend">Figura</p>
+                  <p className="observatory__legend">{t.figure}</p>
                   <div className="observatory__dials">
                     {/*
                       De −180 a 180 y no de 0 a 360, aunque la vuelta sea la
@@ -1804,7 +1878,7 @@ export function ObservatoryViewer({
                       cero en el tope izquierdo, media figura quedaba a una
                       travesía entera del mando.
                     */}
-                    {dial("turn", "Eje", TURN_LABEL, -180, 180)}
+                    {dial("turn", labels.dials.turn, labels.turn, -180, 180)}
                   </div>
                 </div>
               ) : null}
@@ -1828,7 +1902,7 @@ export function ObservatoryViewer({
                 `DATOS`, quietos y con su nombre entero, que es donde sirven.
               */}
               <div className="observatory__row">
-                <p className="observatory__legend">Cámara</p>
+                <p className="observatory__legend">{t.camera}</p>
                 <p aria-hidden="true" className="observatory__readout">
                   {readout("AZ", "azimuth")}
                   {readout("EL", "elevation")}
@@ -1837,7 +1911,7 @@ export function ObservatoryViewer({
               </div>
 
               <div className="observatory__row observatory__inspect">
-                <p className="observatory__legend">Inspeccionar</p>
+                <p className="observatory__legend">{t.inspect}</p>
                 <div className="observatory__bank">
                   <Instrument
                     label="Bloom"
@@ -1906,7 +1980,7 @@ export function ObservatoryViewer({
                     <>
                       <span aria-hidden="true" className="observatory__div" />
                       <Instrument
-                        label="Sonda"
+                        label={t.probe}
                         pressed={probe}
                         onToggle={() => setProbe((on) => !on)}
                       />
@@ -1914,7 +1988,7 @@ export function ObservatoryViewer({
                   ) : null}
                   <span aria-hidden="true" className="observatory__div" />
                   <Instrument
-                    label="Datos"
+                    label={t.data}
                     pressed={panel === "datos"}
                     onToggle={() =>
                       setPanel((abierto) =>
@@ -1932,7 +2006,7 @@ export function ObservatoryViewer({
                     <>
                       <span aria-hidden="true" className="observatory__div" />
                       <Instrument
-                        label="Registro"
+                        label={t.record}
                         pressed={panel === "registro"}
                         onToggle={() =>
                           setPanel((abierto) =>
@@ -1958,14 +2032,14 @@ export function ObservatoryViewer({
           */}
           <div className="observatory__controls">
             <div
-              aria-label="Modo del instrumento"
+              aria-label={t.mode}
               className="observatory__modes"
               role="radiogroup"
             >
               {(
                 [
-                  ["observar", "Observar"],
-                  ["estudio", "Estudio"],
+                  ["observar", t.observe],
+                  ["estudio", t.study],
                 ] as const
               ).map(([value, label]) => (
                 <button
@@ -2022,7 +2096,7 @@ export function ObservatoryViewer({
                 writeTurn(0);
               }}
             >
-              <span className="observatory__ink">Reajustar</span>
+              <span className="observatory__ink">{t.reset}</span>
             </button>
 
             <p className="observatory__hint" data-comparing={holding ?? "none"}>

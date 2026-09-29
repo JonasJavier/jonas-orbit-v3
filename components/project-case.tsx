@@ -4,8 +4,10 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { preload } from "react-dom";
+import type { Locale } from "@/content/site.data";
 import { caseOutline, nodeText, type CaseHeading, type CaseOutline } from "@/lib/case-outline";
 import { tableProject, type TableProject, type TableScreen } from "@/lib/engineering-table";
+import { defineCopy } from "@/lib/i18n";
 import type { Project } from "@/lib/projects";
 import { MDXContent } from "./mdx-content";
 import { CaseBackLink, CaseLocalNav, CaseReadingIndex } from "./project-case-nav";
@@ -57,15 +59,108 @@ type SectionId = (typeof SECTION_IDS)[number];
 /** El cuerpo de la lectura larga: el índice sabe por él cuándo acaba. */
 const BODY_ID = "caso-cuerpo";
 
-const SECTION_LABEL: Record<SectionId, string> = {
-  resumen: "Resumen",
-  decisiones: "Decisiones",
-  sistema: "Sistema",
-  tecnologias: "Tecnologías",
-  resultados: "Resultados",
-  pantallas: "Pantallas",
-  caso: "Caso completo",
-};
+const COPY = defineCopy({
+  es: {
+    sections: {
+      resumen: "Resumen",
+      decisiones: "Decisiones",
+      sistema: "Sistema",
+      tecnologias: "Tecnologías",
+      resultados: "Resultados",
+      pantallas: "Pantallas",
+      caso: "Caso completo",
+    } satisfies Record<SectionId, string>,
+    projects: "Proyectos",
+    caseStudy: "Caso de estudio",
+    brief: "Ficha",
+    newTab: " (se abre en otra pestaña)",
+    seeDecisions: "Ver las decisiones",
+    seeProduct: "Ver el producto",
+    seeCode: "Ver código",
+    onGitHub: " en GitHub (se abre en otra pestaña)",
+    seeSystem: "Ver el sistema",
+    role: "Mi papel",
+    stack: "Stack",
+    status: "Estado",
+    scope: "Alcance",
+    challenge: "El reto",
+    built: "Lo que construí",
+    decision: "Decisión técnica clave",
+    designDecisions: "Decisiones de diseño",
+    productTour: "El producto, pantalla a pantalla",
+    problem: "Problema",
+    choice: "Decisión",
+    system: "Sistema",
+    wide: "Elige un módulo: se enciende su ruta.",
+    narrow: "Elige un módulo: debajo, su decisión.",
+    technologies: "Tecnologías",
+    stackLead: (tools: number, areas: number) => `${tools} herramientas en ${areas} áreas. En el sistema, cada módulo dice las suyas.`,
+    results: "Resultados verificables",
+    tour: "Recorrido por módulos",
+    tourLead: (screens: number, modules: number) => `${screens} pantallas en ${modules} módulos.`,
+    modules: "Módulos",
+    screens: (n: number): string => (n === 1 ? "pantalla" : "pantallas"),
+    moreScreens: "Más pantallas",
+    minutes: (n: number) => `${n} min de lectura`,
+    fullCase: "El caso completo",
+    otherProjects: "Otros proyectos",
+    contactTitle: "¿Tienes un sistema difícil de ordenar?",
+    contactBody: "Puedo ayudarte a convertir procesos complejos en un producto claro, mantenible y listo para operar.",
+    contactCta: "Trabajemos juntos",
+    previous: "Anterior",
+    next: "Siguiente",
+  },
+  en: {
+    sections: {
+      resumen: "Overview",
+      decisiones: "Decisions",
+      sistema: "System",
+      tecnologias: "Technologies",
+      resultados: "Results",
+      pantallas: "Screens",
+      caso: "Full case",
+    },
+    projects: "Projects",
+    caseStudy: "Case study",
+    brief: "Brief",
+    newTab: " (opens in a new tab)",
+    seeDecisions: "See the decisions",
+    seeProduct: "See the product",
+    seeCode: "View code",
+    onGitHub: " on GitHub (opens in a new tab)",
+    seeSystem: "See the system",
+    role: "My role",
+    stack: "Stack",
+    status: "Status",
+    scope: "Scope",
+    challenge: "The challenge",
+    built: "What I built",
+    decision: "Key technical decision",
+    designDecisions: "Design decisions",
+    productTour: "The product, screen by screen",
+    problem: "Problem",
+    choice: "Decision",
+    system: "System",
+    wide: "Pick a module: its path lights up.",
+    narrow: "Pick a module: its decision appears below.",
+    technologies: "Technologies",
+    stackLead: (tools: number, areas: number) => `${tools} tools across ${areas} areas. In the system, each module lists its own.`,
+    results: "Verifiable results",
+    tour: "Tour by module",
+    tourLead: (screens: number, modules: number) => `${screens} screens across ${modules} modules.`,
+    modules: "Modules",
+    screens: (n: number): string => (n === 1 ? "screen" : "screens"),
+    moreScreens: "More screens",
+    minutes: (n: number) => `${n} min read`,
+    fullCase: "The full case",
+    otherProjects: "Other projects",
+    contactTitle: "Got a system that’s hard to tame?",
+    contactBody: "I can help you turn complex processes into a clear, maintainable product that’s ready to run.",
+    contactCta: "Let’s work together",
+    previous: "Previous",
+    next: "Next",
+  },
+});
 
 /* ── Piezas ─────────────────────────────────────────────────────────────── */
 
@@ -195,6 +290,8 @@ export function ProjectCase({
   contactHref: string;
 }) {
   const { prose } = project;
+  const locale = prose.locale as Locale;
+  const t = COPY[locale];
   const entry = tableProject(project, projectsHref);
   const outline = caseOutline(prose.body, [...SECTION_IDS, BODY_ID, ...entry.tour.map((stop) => stop.id)]);
   const isCaseStudy = project.kind === "case-study";
@@ -258,9 +355,10 @@ export function ProjectCase({
       <CaseSala />
 
       <CaseLocalNav
+        label={locale === "es" ? "Secciones del caso" : "Case sections"}
         heroId="case-hero"
         name={entry.name}
-        sections={sections.map((id) => ({ id, label: SECTION_LABEL[id] }))}
+        sections={sections.map((id) => ({ id, label: t.sections[id] }))}
       />
 
       {/* ── Primer pantallazo ─────────────────────────────────────────── */}
@@ -268,14 +366,14 @@ export function ProjectCase({
         <div className="case-hero__copy">
           <div className="case-hero__trail">
             <CaseBackLink href={`${projectsHref}#${entry.id}`}>
-              <span aria-hidden="true">←</span> Proyectos
+              <span aria-hidden="true">←</span> {t.projects}
             </CaseBackLink>
             <p className="case-hero__index">
               <span className="case-hero__count">
                 {pad(project.order)} / {pad(projects.length)}
               </span>
               <span aria-hidden="true"> · </span>
-              <span>{isCaseStudy ? "Caso de estudio" : "Ficha"}</span>
+              <span>{isCaseStudy ? t.caseStudy : t.brief}</span>
             </p>
           </div>
 
@@ -300,23 +398,23 @@ export function ProjectCase({
             {demo ? (
               <a className="case-action case-action--site" href={demo.href} rel="noopener noreferrer" target="_blank">
                 {demo.label} <span aria-hidden="true">↗</span>
-                <span className="visually-hidden"> (se abre en otra pestaña)</span>
+                <span className="visually-hidden">{t.newTab}</span>
               </a>
             ) : (
               <a className="case-action" href="#decisiones">
-                {entry.reelKind === "decisions" ? "Ver las decisiones" : "Ver el producto"}{" "}
+                {entry.reelKind === "decisions" ? t.seeDecisions : t.seeProduct}{" "}
                 <span aria-hidden="true">↓</span>
               </a>
             )}
             {repository ? (
               <a className="case-code" href={repository.href} rel="noopener noreferrer" target="_blank">
                 <GitHubMark />
-                Ver código <span aria-hidden="true">↗</span>
-                <span className="visually-hidden"> en GitHub (se abre en otra pestaña)</span>
+                {t.seeCode} <span aria-hidden="true">↗</span>
+                <span className="visually-hidden">{t.onGitHub}</span>
               </a>
             ) : null}
             <a className="case-anchor" href="#sistema">
-              Ver el sistema <span aria-hidden="true">↓</span>
+              {t.seeSystem} <span aria-hidden="true">↓</span>
             </a>
           </div>
         </div>
@@ -332,17 +430,17 @@ export function ProjectCase({
 
         <dl className="case-facts">
           <div>
-            <dt>Mi papel</dt>
+            <dt>{t.role}</dt>
             <dd>{prose.role}</dd>
           </div>
           <div>
-            <dt>Stack</dt>
+            <dt>{t.stack}</dt>
             <dd>{prose.technologies.join(" · ")}</dd>
           </div>
           {/* El estado se lee una sola vez en el primer pantallazo: el LED
               y la etiqueta entera, aquí, junto a quién y con qué. */}
           <div>
-            <dt>Estado</dt>
+            <dt>{t.status}</dt>
             <dd className="case-status">
               <span aria-hidden="true" className="case-led" data-state={project.status} />
               {prose.statusLabel}
@@ -356,7 +454,7 @@ export function ProjectCase({
         {entry.scope.length > 0 ? (
           <section aria-labelledby="case-scope-title" className="case-scope case-reveal">
             <h2 className="case-kicker" id="case-scope-title">
-              Alcance
+              {t.scope}
             </h2>
             <ul
               data-words={scopeLength > 4 ? "true" : undefined}
@@ -375,17 +473,17 @@ export function ProjectCase({
         <section aria-labelledby="case-brief-title" className="case-brief case-reveal">
           <div className="case-brief__problem">
             <h2 className="case-kicker" id="case-brief-title">
-              El reto
+              {t.challenge}
             </h2>
             <p className="case-brief__statement">{prose.problem}</p>
           </div>
           <dl className="case-brief__answer">
             <div>
-              <dt>Lo que construí</dt>
+              <dt>{t.built}</dt>
               <dd>{prose.contribution}</dd>
             </div>
             <div data-tone="decision">
-              <dt>Decisión técnica clave</dt>
+              <dt>{t.decision}</dt>
               <dd>{prose.decision}</dd>
             </div>
           </dl>
@@ -397,7 +495,7 @@ export function ProjectCase({
         {/* Sin antetítulo: cuántas son ya lo dice el índice de cada una. */}
         <header className="case-section__head case-reveal">
           <h2 className="case-h2" id="decisiones-title">
-            {entry.reelKind === "decisions" ? "Decisiones de diseño" : "El producto, pantalla a pantalla"}
+            {entry.reelKind === "decisions" ? t.designDecisions : t.productTour}
           </h2>
         </header>
         <ol className="case-decisions__list">
@@ -418,11 +516,11 @@ export function ProjectCase({
                   {step.problem ? (
                     <dl>
                       <div className="case-decision__problem">
-                        <dt>Problema</dt>
+                        <dt>{t.problem}</dt>
                         <dd>{step.problem}</dd>
                       </div>
                       <div className="case-decision__choice">
-                        <dt>Decisión</dt>
+                        <dt>{t.choice}</dt>
                         <dd>{step.note}</dd>
                       </div>
                     </dl>
@@ -449,11 +547,11 @@ export function ProjectCase({
             (la otra frase queda en `display: none`: nadie la oye dos veces). */}
         <header className="case-section__head case-section__head--row case-reveal">
           <h2 className="case-h2" id="sistema-title">
-            Sistema
+            {t.system}
           </h2>
           <p className="case-section__lead">
-            <span className="case-lead--wide">Elige un módulo: se enciende su ruta.</span>
-            <span className="case-lead--narrow">Elige un módulo: debajo, su decisión.</span>
+            <span className="case-lead--wide">{t.wide}</span>
+            <span className="case-lead--narrow">{t.narrow}</span>
           </p>
         </header>
         <SystemExplorer className="case-system__explorer" project={entry} />
@@ -464,11 +562,9 @@ export function ProjectCase({
         <section aria-labelledby="tecnologias-title" className="case-section case-stack" id="tecnologias">
           <header className="case-section__head case-section__head--row case-reveal">
             <h2 className="case-h2" id="tecnologias-title">
-              Tecnologías
+              {t.technologies}
             </h2>
-            <p className="case-section__lead">
-              {stackCount} herramientas en {entry.stack.length} áreas. En el sistema, cada módulo dice las suyas.
-            </p>
+            <p className="case-section__lead">{t.stackLead(stackCount, entry.stack.length)}</p>
           </header>
           <div className="case-stack__grid">
             {entry.stack.map((group, index) => (
@@ -505,7 +601,7 @@ export function ProjectCase({
         <section aria-labelledby="resultados-title" className="case-section case-results" id="resultados">
           <header className="case-section__head case-reveal">
             <h2 className="case-h2" id="resultados-title">
-              Resultados verificables
+              {t.results}
             </h2>
           </header>
           <ul className="case-results__list case-reveal">
@@ -524,13 +620,11 @@ export function ProjectCase({
         <section aria-labelledby="pantallas-title" className="case-section case-screens case-tour" id="pantallas">
           <header className="case-section__head case-section__head--row case-reveal">
             <h2 className="case-h2" id="pantallas-title">
-              Recorrido por módulos
+              {t.tour}
             </h2>
-            <p className="case-section__lead">
-              {entry.screens.length} pantallas en {entry.tour.length} módulos.
-            </p>
+            <p className="case-section__lead">{t.tourLead(entry.screens.length, entry.tour.length)}</p>
           </header>
-          <nav aria-label="Módulos" className="case-tour__index case-reveal">
+          <nav aria-label={t.modules} className="case-tour__index case-reveal">
             <ol>
               {entry.tour.map((stop, index) => (
                 <li key={stop.id}>
@@ -542,7 +636,7 @@ export function ProjectCase({
                     <span className="case-tour__count">
                       <span className="visually-hidden">, </span>
                       {stop.screens.length}
-                      <span className="visually-hidden"> pantallas</span>
+                      <span className="visually-hidden"> {t.screens(stop.screens.length)}</span>
                     </span>
                   </a>
                 </li>
@@ -557,7 +651,7 @@ export function ProjectCase({
                 </span>
                 {stop.module}
                 <span className="case-tour__count">
-                  {stop.screens.length} {stop.screens.length === 1 ? "pantalla" : "pantallas"}
+                  {stop.screens.length} {t.screens(stop.screens.length)}
                 </span>
               </h3>
               <CaseShots screens={stop.screens.map((screen) => entry.screens[screen])} />
@@ -568,7 +662,7 @@ export function ProjectCase({
         <section aria-labelledby="pantallas-title" className="case-section case-screens" id="pantallas">
           <header className="case-section__head case-reveal">
             <h2 className="case-h2" id="pantallas-title">
-              Más pantallas
+              {t.moreScreens}
             </h2>
           </header>
           <CaseShots screens={moreScreens} />
@@ -580,13 +674,13 @@ export function ProjectCase({
       {outline.headings.length > 0 ? (
         <section aria-labelledby="caso-title" className="case-section case-longread" id="caso">
           <header className="case-section__head case-reveal">
-            <p className="case-kicker">{outline.minutes} min de lectura</p>
+            <p className="case-kicker">{t.minutes(outline.minutes)}</p>
             <h2 className="case-h2" id="caso-title">
-              El caso completo
+              {t.fullCase}
             </h2>
           </header>
           <div className="case-longread__grid">
-            <CaseReadingIndex endId={BODY_ID} headings={outline.headings} />
+            <CaseReadingIndex endId={BODY_ID} headings={outline.headings} label={locale === "es" ? "Índice del caso" : "Case contents"} />
             <div className="case-longread__body" id={BODY_ID}>
               <MDXContent code={prose.body} components={{ h2: outlineHeading(outline) }} />
             </div>
@@ -597,9 +691,9 @@ export function ProjectCase({
       {/* ── Cierre ────────────────────────────────────────────────────── */}
       <footer className="case-close">
         {neighbours ? (
-          <nav aria-label="Otros proyectos" className="case-neighbours">
-            <CaseNeighbour direction="previous" entry={neighbours.previous} total={projects.length} />
-            <CaseNeighbour direction="next" entry={neighbours.next} total={projects.length} />
+          <nav aria-label={t.otherProjects} className="case-neighbours">
+            <CaseNeighbour direction="previous" entry={neighbours.previous} total={projects.length} label={t.previous} />
+            <CaseNeighbour direction="next" entry={neighbours.next} total={projects.length} label={t.next} />
           </nav>
         ) : null}
 
@@ -608,15 +702,12 @@ export function ProjectCase({
         <aside aria-labelledby="case-contact-title" className="case-contact case-reveal">
           <div className="case-contact__text">
             <h2 className="case-contact__title" id="case-contact-title">
-              ¿Tienes un sistema difícil de ordenar?
+              {t.contactTitle}
             </h2>
-            <p>
-              Puedo ayudarte a convertir procesos complejos en un producto claro,
-              mantenible y listo para operar.
-            </p>
+            <p>{t.contactBody}</p>
           </div>
           <Link className="case-action" href={contactHref}>
-            Trabajemos juntos <span aria-hidden="true">→</span>
+            {t.contactCta} <span aria-hidden="true">→</span>
           </Link>
         </aside>
       </footer>
@@ -691,10 +782,13 @@ function CaseNeighbour({
   entry,
   direction,
   total,
+  label,
 }: {
   entry: TableProject;
   direction: "previous" | "next";
   total: number;
+  /** «Anterior» o «Siguiente», en el idioma de la página. */
+  label: string;
 }) {
   const screen = entry.screens[0];
   return (
@@ -713,11 +807,11 @@ function CaseNeighbour({
         <span className="case-neighbour__dir">
           {direction === "previous" ? (
             <>
-              <span aria-hidden="true">←</span> Anterior
+              <span aria-hidden="true">←</span> {label}
             </>
           ) : (
             <>
-              Siguiente <span aria-hidden="true">→</span>
+              {label} <span aria-hidden="true">→</span>
             </>
           )}
           <span aria-hidden="true" className="case-neighbour__count">

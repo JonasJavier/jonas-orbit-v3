@@ -63,6 +63,10 @@
 .site-header--voyage .voyage-cv__menu > a:hover { color: #fff; background: var(--voyage-hover); }
 .site-header--voyage .voyage-map-link { min-width: 44px; display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 0 2px 0 9px; color: var(--voyage-tool); font-size: .76rem; white-space: nowrap; transition: color .2s; }
 .site-header--voyage .voyage-map-link:hover { color: #efffff; }
+/* Language: next to the CV on desktop, in the bar on touch layouts. */
+.site-header--voyage .site-header__bar-tools { display: flex; align-items: center; gap: 12px; }
+.site-header--voyage .language-switch--bar { display: none; }
+.site-header--voyage .language-switch--tools { margin-inline: 6px 8px; }
 
 /* ── Sky ──────────────────────────────────────────────────────────────── */
 .voyage-sky { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; z-index: -1; pointer-events: none; }
@@ -90,6 +94,8 @@
   .site-header.site-header--voyage { display: block; padding-inline: 24px; }
   .site-header--voyage .site-header__bar { min-height: 63px; display: flex; justify-content: space-between; gap: 12px; }
   .site-header--voyage .brand-lockup { border: 0; padding: 0; }
+  .site-header--voyage .language-switch--bar { display: inline-grid; }
+  .site-header--voyage .language-switch--tools { display: none; }
   .site-header--voyage .voyage-menu-toggle { display: flex; align-items: center; gap: 18px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 0; background: transparent; color: #d9edef; font: .78rem var(--font-body); cursor: pointer; }
   .site-header--voyage .voyage-menu-icon { width: 18px; display: grid; gap: 5px; }
   .site-header--voyage .voyage-menu-icon > i { display: block; height: 1px; background: #b8e0e6; transition: transform .2s; }

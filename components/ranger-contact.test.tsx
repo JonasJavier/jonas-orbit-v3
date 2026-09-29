@@ -194,7 +194,7 @@ describe("Ranger · cabina de mando", () => {
   });
 
   it("la consola mide la señal campo a campo y las misiones escriben en el select real", async () => {
-    render(<RangerConsole />);
+    render(<RangerConsole thanksHref="/es/contacto/gracias" privacyHref="/es/privacidad" />);
     const meter = () => screen.getByText(/^Señal \d\/4/);
     expect(meter()).toHaveTextContent("Señal 0/4 · esperando tus datos");
     fireEvent.input(screen.getByLabelText("Nombre"), { target: { value: "Ada" } });

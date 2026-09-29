@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { defineCopy } from "@/lib/i18n";
 import type { SpecimenEntry } from "@/lib/observatory-catalog";
 import { shouldNavigateToWorld } from "@/lib/world-navigation";
+import { useLocale } from "./locale-provider";
 import {
   useExplicitEffects,
   useForcedEffects,
@@ -41,11 +43,22 @@ import {
  * cinemática: 1,08 s es tiempo suficiente para leer tres cambios y demasiado
  * poco para convertirse en un peaje al tercer uso.
  */
-const STAGES = [
-  { at: 0, label: "Adquiriendo" },
-  { at: 420, label: "Bloqueo" },
-  { at: 760, label: "Montando" },
-] as const;
+const STAGES = [{ at: 0 }, { at: 420 }, { at: 760 }] as const;
+
+const COPY = defineCopy({
+  es: {
+    stages: ["Adquiriendo", "Bloqueo", "Montando"],
+    announce: (stage: string) => `${stage} espécimen`,
+    index: "Índice de especímenes",
+    unmounted: "Sin montar",
+  },
+  en: {
+    stages: ["Acquiring", "Locked", "Mounting"],
+    announce: (stage: string) => `${stage} specimen`,
+    index: "Specimen index",
+    unmounted: "Not mounted",
+  },
+});
 
 const ARRIVAL_MS = 1080;
 
@@ -54,6 +67,7 @@ export function ExperimentsIndex({
 }: {
   specimens: readonly SpecimenEntry[];
 }) {
+  const t = COPY[useLocale()];
   const router = useRouter();
   const motion = useMotionEnabled();
   const reducedMotion = usePrefersReducedMotion();
@@ -153,7 +167,7 @@ export function ExperimentsIndex({
         por encabezados o por regiones, y es el nombre accesible de esta.
       */}
       <h2 className="sr-only" id="specimen-index-title">
-        Índice de especímenes
+        {t.index}
       </h2>
 
       <ol className="specimen-index__list">
@@ -191,7 +205,7 @@ export function ExperimentsIndex({
                       «LISTO» eran ruido (2026-09-23). Habla sólo mientras
                       el aparato cambia de estado. */}
                   <span className="specimen-row__state">
-                    {activo ? STAGES[stage].label : null}
+                    {activo ? t.stages[stage] : null}
                   </span>
                   <span aria-hidden="true" className="specimen-row__arrow">
                     →
@@ -217,7 +231,7 @@ export function ExperimentsIndex({
                 <span aria-disabled="true" className="specimen-row specimen-row--off">
                   {cifra}
                   {cuerpo}
-                  <span className="specimen-row__state">Sin montar</span>
+                  <span className="specimen-row__state">{t.unmounted}</span>
                 </span>
               )}
             </li>
@@ -228,7 +242,7 @@ export function ExperimentsIndex({
       {/* Lo que el protocolo dice en voz alta. Sin esto, quien navega
           escuchando se encontraría en otra página sin saber por qué. */}
       <p aria-live="polite" className="sr-only">
-        {acquiring ? `${STAGES[stage].label} espécimen` : ""}
+        {acquiring ? t.announce(t.stages[stage]) : ""}
       </p>
     </section>
   );

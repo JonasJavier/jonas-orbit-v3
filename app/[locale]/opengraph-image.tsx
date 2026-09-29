@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { SITE_PROFILE } from "@/content/site.data";
+import { PUBLISHED_LOCALES, SITE_PROFILE, isPublishedLocale } from "@/content/site.data";
 
 /**
  * Imagen Open Graph por defecto del sitio.
@@ -12,12 +12,29 @@ import { SITE_PROFILE } from "@/content/site.data";
  * prueba/acción y cian `#7fe5ff` para navegación y sistemas.
  */
 
-export const alt =
-  "Jonás Javier Encarnación — Desarrollador full-stack y creador visual";
+// El archivo no conoce su ruta: un solo texto, con el nombre primero. Las
+// páginas que declaran su `openGraph` llevan el alt de su idioma
+// (`defaultOgImage` en `lib/site-metadata.ts`).
+export const alt = "Jonás Javier Encarnación · Jonás Orbit";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpengraphImage() {
+const STACK = {
+  es: "Python · Django · React · TypeScript · UX/UI · Fotografía",
+  en: "Python · Django · React · TypeScript · UX/UI · Photography",
+};
+
+export function generateStaticParams() {
+  return PUBLISHED_LOCALES.map((locale) => ({ locale }));
+}
+
+export default async function OpengraphImage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale: raw } = await params;
+  const locale = isPublishedLocale(raw) ? raw : "en";
   return new ImageResponse(
     (
       <div
@@ -79,7 +96,7 @@ export default function OpengraphImage() {
               color: "#f2c879",
             }}
           >
-            {SITE_PROFILE.jobTitle}
+            {SITE_PROFILE.jobTitle[locale]}
           </div>
         </div>
 
@@ -101,7 +118,7 @@ export default function OpengraphImage() {
             }}
           />
           <div style={{ display: "flex" }}>
-            Python · Django · React · TypeScript · UX/UI · Fotografía
+            {STACK[locale]}
           </div>
         </div>
       </div>

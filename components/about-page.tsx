@@ -1,15 +1,49 @@
 /* The photographs are responsive files prepared by tools/prepare-about.mjs. */
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
+import { homePath, worldPath } from "@/lib/page-paths";
+import { WORLD_COPY } from "@/lib/world-copy";
 import type { World } from "@/lib/worlds";
-import { getWorldPath } from "@/lib/worlds";
+import { getWorld, getWorldPath } from "@/lib/worlds";
+import { ABOUT_COPY, type AboutPhoto } from "./about-page.copy";
 import { StructuredData } from "./structured-data";
 import { AboutExperience } from "./about-experience";
-import { AboutImage, aboutPhotoPath } from "./about-image";
+import { AboutImage, aboutPhotoPath, type PhotoId } from "./about-image";
 import { AboutShelf } from "./about-shelf";
 import "./about-page.css";
 
+const WIDE = "(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw";
+const NODE = "(max-width: 700px) 43vw, 240px";
+
+/** Una foto que se amplía en el visor de la página (`about-experience.tsx`). */
+function PhotoButton({
+  id,
+  photo,
+  sizes,
+  className = "about-photo-button",
+}: {
+  id: PhotoId;
+  photo: AboutPhoto;
+  sizes?: string;
+  className?: string;
+}) {
+  return (
+    <a
+      className={className}
+      data-photo={id}
+      data-title={photo.title}
+      data-caption={photo.caption}
+      aria-label={photo.label}
+      href={aboutPhotoPath(id)}
+    >
+      <AboutImage id={id} alt={photo.alt} sizes={sizes} />
+    </a>
+  );
+}
+
 export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
+  const t = ABOUT_COPY[locale];
+  const next = getWorld("miller", locale);
   return (
     <AboutExperience>
       <StructuredData
@@ -44,20 +78,17 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
         </div>
         <div className="about-wrap">
           <div className="about-intro">
-            <span className="about-eyebrow">01 / SOBRE MÍ</span>
+            <span className="about-eyebrow">{t.heroEyebrow}</span>
             <h1 tabIndex={-1}>
-              <span className="visually-hidden">Sobre mí. </span>Mi pequeño
-              universo.
+              <span className="visually-hidden">{t.heroHidden}</span>
+              {t.heroTitle}
             </h1>
             <p className="about-intro-note">
-              Misma persona, <br />
-              distintos cielos.
+              {t.heroNote[0]} <br />
+              {t.heroNote[1]}
             </p>
           </div>
-          <nav
-            className="about-constellation"
-            aria-label="Explora las seis constelaciones"
-          >
+          <nav className="about-constellation" aria-label={t.constellation}>
             <svg
               className="about-connections"
               viewBox="0 0 1100 615"
@@ -82,126 +113,60 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
             <div className="about-portrait">
               <div className="about-portrait-ring">
                 <div className="about-portrait-crop">
-                  <AboutImage
-                    id="F40"
-                    alt="Jonás sonriendo, con abrigo y luces al fondo"
-                    sizes="480px"
-                    eager
-                  />
+                  <AboutImage id="F40" alt={t.portraitAlt} sizes="480px" eager />
                 </div>
               </div>
               <h2>Jonás</h2>
-              <small>BONAO · REPÚBLICA DOMINICANA</small>
+              <small>{t.place}</small>
             </div>
-            <a className="about-node about-node-roots" href="#mis-raices">
-              <div className="about-node-image">
-                <AboutImage
-                  id="F23"
-                  alt="Río rodeado de vegetación en Bonao"
-                  sizes="(max-width: 700px) 43vw, 240px"
-                  eager
-                />
-              </div>
-              <h3>Mis raíces</h3>
-              <p>Donde empezó todo.</p>
-            </a>
-            <a className="about-node about-node-people" href="#mi-gente">
-              <div className="about-node-image">
-                <AboutImage
-                  id="F50"
-                  alt="Jonás con su familia en una asamblea internacional"
-                  sizes="(max-width: 700px) 43vw, 240px"
-                  eager
-                />
-              </div>
-              <h3>Mi gente</h3>
-              <p>Las personas que hacen hogar.</p>
-            </a>
-            <a className="about-node about-node-self" href="#como-soy">
-              <div className="about-node-image">
-                <AboutImage
-                  id="F28"
-                  alt="Jonás junto al mar"
-                  eager
-                  sizes="(max-width: 700px) 43vw, 240px"
-                />
-              </div>
-              <h3>Cómo soy</h3>
-              <p>Todavía aprendiendo.</p>
-            </a>
-            <a className="about-node about-node-enjoy" href="#lo-que-disfruto">
-              <div className="about-node-image">
-                <AboutImage
-                  id="F44"
-                  alt="Una gran cascada entre vegetación"
-                  sizes="(max-width: 700px) 43vw, 240px"
-                  eager
-                />
-              </div>
-              <h3>Lo que disfruto</h3>
-              <p>Curiosidad, naturaleza y buenas historias.</p>
-            </a>
-            <a className="about-node about-node-path" href="#mi-camino">
-              <div className="about-node-image">
-                <AboutImage
-                  id="F11"
-                  alt="Un momento compartido durante el voluntariado de mantenimiento"
-                  sizes="(max-width: 700px) 43vw, 240px"
-                  eager
-                />
-              </div>
-              <h3>Mi camino</h3>
-              <p>Servir, aprender y compartir.</p>
-            </a>
-            <a className="about-node about-node-dream" href="#lo-que-sueno">
-              <div className="about-node-image">
-                <AboutImage
-                  id="F45"
-                  alt="Una persona contemplando un lago entre montañas"
-                  sizes="(max-width: 700px) 43vw, 240px"
-                  eager
-                />
-              </div>
-              <h3>Lo que sueño</h3>
-              <p>Una vida sencilla. Mucho por descubrir.</p>
-            </a>
+            {(
+              [
+                ["roots", "about-node-roots", "#mis-raices", "F23"],
+                ["people", "about-node-people", "#mi-gente", "F50"],
+                ["self", "about-node-self", "#como-soy", "F28"],
+                ["enjoy", "about-node-enjoy", "#lo-que-disfruto", "F44"],
+                ["path", "about-node-path", "#mi-camino", "F11"],
+                ["dream", "about-node-dream", "#lo-que-sueno", "F45"],
+              ] as const
+            ).map(([key, className, href, photo]) => (
+              <a key={key} className={`about-node ${className}`} href={href}>
+                <div className="about-node-image">
+                  <AboutImage id={photo} alt={t.nodes[key].alt} sizes={NODE} eager />
+                </div>
+                <h3>{t.nodes[key].title}</h3>
+                <p>{t.nodes[key].lead}</p>
+              </a>
+            ))}
           </nav>
           <div className="about-hero-bottom">
             <p className="about-invitation">
-              <span aria-hidden="true">✧</span> Elige una constelación
+              <span aria-hidden="true">✧</span> {t.invitation}
               <span className="about-invitation-line" aria-hidden="true" />
             </p>
           </div>
         </div>
       </header>
       <div className="about-detail">
-        <nav className="about-journey-nav" aria-label="Tu lugar en la historia">
+        <nav className="about-journey-nav" aria-label={t.journeyNav}>
           <div className="about-wrap">
-            <a
-              className="about-back-map"
-              href="#constelacion"
-              aria-label="Volver a la constelación"
-            >
+            <a className="about-back-map" href="#constelacion" aria-label={t.backToMap}>
               ✧
             </a>
-            <a href="#mis-raices">
-              <span>01</span>Mis raíces
-            </a>
-            <a href="#mi-gente">
-              <span>02</span>Mi gente
-            </a>
-            <a href="#como-soy">
-              <span>03</span>Cómo soy
-            </a>
-            <a href="#lo-que-disfruto">
-              <span>04</span>Lo que disfruto
-            </a>
-            <a href="#mi-camino">
-              <span>05</span>Mi camino
-            </a>
-            <a href="#lo-que-sueno">
-              <span>06</span>Lo que sueño
-            </a>
+            {(
+              [
+                ["roots", "#mis-raices"],
+                ["people", "#mi-gente"],
+                ["self", "#como-soy"],
+                ["enjoy", "#lo-que-disfruto"],
+                ["path", "#mi-camino"],
+                ["dream", "#lo-que-sueno"],
+              ] as const
+            ).map(([key, href], index) => (
+              <a key={key} href={href}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {t.nodes[key].title}
+              </a>
+            ))}
           </div>
         </nav>
         <div className="about-slot">
@@ -212,43 +177,27 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
           >
             <div className="about-roots-layout">
               <div className="about-roots-copy">
-                <span className="about-eyebrow">01 / EL PUNTO DE PARTIDA</span>
+                <span className="about-eyebrow">{t.rootsEyebrow}</span>
                 <h2 tabIndex={-1} id="roots-title">
-                  Mis raíces.
+                  {t.rootsTitle}
                 </h2>
                 <p className="about-place">
-                  <span>Bonao · República Dominicana</span>
-                  <span className="about-coordinates">18°56′ N · 70°25′ O</span>
+                  <span>{t.rootsPlace}</span>
+                  <span className="about-coordinates">{t.rootsCoordinates}</span>
                 </p>
-                <h3 className="about-roots-words">
-                  Crecí entre ríos y montañas.
-                </h3>
-                <p className="about-roots-story">
-                  Bonao es mi punto de partida. Crecer rodeado de montañas, ríos
-                  y tanto verde dejó algo en mí: todavía busco esos lugares
-                  cuando quiero desconectarme, pensar o simplemente mirar. De
-                  ahí viene buena parte de mi gusto por explorar.
-                </p>
+                <h3 className="about-roots-words">{t.rootsWords}</h3>
+                <p className="about-roots-story">{t.rootsStory}</p>
               </div>
               <figure className="about-roots-landscape">
-                <a
-                  className="about-photo-button"
-                  data-photo="F23"
-                  data-title="Mis raíces"
-                  data-caption="Entre ríos y montañas, con mis amigos."
-                  aria-label="Ampliar fotografía de la cascada con mis amigos"
-                  href={aboutPhotoPath("F23")}
-                >
-                  <AboutImage
-                    id="F23"
-                    alt="Jonás con sus amigos frente a una cascada rodeada de vegetación"
-                    sizes="(max-width: 700px) 92vw, (min-width: 1400px) 780px, 58vw"
-                  />
-                </a>
+                <PhotoButton
+                  id="F23"
+                  photo={t.rootsPhoto}
+                  sizes="(max-width: 700px) 92vw, (min-width: 1400px) 780px, 58vw"
+                />
               </figure>
             </div>
             <a className="about-section-end" href="#mi-gente">
-              Y LAS PERSONAS QUE ME ACOMPAÑAN
+              {t.rootsNext}
             </a>
           </section>
           <section
@@ -260,145 +209,64 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
             <div className="about-wrap">
               <div className="about-people-opening">
                 <div className="about-people-copy">
-                  <span className="about-eyebrow">02 / MIS VÍNCULOS</span>
+                  <span className="about-eyebrow">{t.peopleEyebrow}</span>
                   <h2 tabIndex={-1} id="people-title">
-                    Mi gente.
+                    {t.peopleTitle}
                   </h2>
-                  <p className="about-section-lead">
-                    Mi familia es mi primer hogar.
-                  </p>
-                  <p className="about-people-sub">
-                    La alegría de mi madre, el esfuerzo de mi padre y la amistad
-                    de mi hermana.
-                  </p>
+                  <p className="about-section-lead">{t.peopleLead}</p>
+                  <p className="about-people-sub">{t.peopleSub}</p>
                 </div>
                 <figure className="about-paper">
-                  <a
-                    className="about-photo-button"
-                    data-photo="F50"
-                    data-title="Mi familia"
-                    data-caption="Juntos en una asamblea internacional."
-                    aria-label="Ampliar fotografía de mi familia"
-                    href={aboutPhotoPath("F50")}
-                  >
-                    <AboutImage
-                      id="F50"
-                      alt="Jonás y su familia en el auditorio de una asamblea internacional"
-                      sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                    />
-                  </a>
-                  <figcaption className="about-caption">
-                    Juntos en una asamblea internacional.
-                  </figcaption>
+                  <PhotoButton id="F50" photo={t.familyPhoto} sizes={WIDE} />
+                  <figcaption className="about-caption">{t.familyPhoto.caption}</figcaption>
                 </figure>
               </div>
               <div className="about-people-stories">
                 <article className="about-story">
                   <div className="about-friend-pair">
-                    <a
+                    <PhotoButton
+                      id="F09"
+                      photo={t.childhoodPhoto}
+                      sizes={WIDE}
                       className="about-photo-button about-childhood"
-                      data-photo="F09"
-                      data-title="Desde pequeños"
-                      data-caption="Aquí hablábamos de nuestras metas, entre ellas ir a Betel."
-                      aria-label="Ampliar recuerdo de infancia con mi mejor amigo"
-                      href={aboutPhotoPath("F09")}
-                    >
-                      <AboutImage
-                        id="F09"
-                        alt="Jonás y su mejor amigo de niños, frente a unas filas de asientos"
-                        sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                      />
-                    </a>
-                    <a
+                    />
+                    <PhotoButton
+                      id="F29"
+                      photo={t.bethelPhoto}
+                      sizes={WIDE}
                       className="about-photo-button about-betel"
-                      data-photo="F29"
-                      data-title="Un sueño compartido"
-                      data-caption="Con mi mejor amigo durante nuestra etapa en Betel."
-                      aria-label="Ampliar fotografía de los dos amigos en Betel"
-                      href={aboutPhotoPath("F29")}
-                    >
-                      <AboutImage
-                        id="F29"
-                        alt="Jonás y su mejor amigo en Betel"
-                        sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                      />
-                    </a>
+                    />
                   </div>
-                  <p className="about-memory-line">
-                    Mi mejor amigo y yo, cumpliendo metas y sueños juntos.
-                  </p>
+                  <p className="about-memory-line">{t.friendsLine}</p>
                 </article>
                 <article className="about-story about-grandparents">
                   <figure>
-                    <a
-                      className="about-photo-button"
-                      data-photo="F04"
-                      data-title="Mis abuelos"
-                      data-caption="Lo que aprendí a su lado."
-                      aria-label="Ampliar fotografía de mis abuelos maternos"
-                      href={aboutPhotoPath("F04")}
-                    >
-                      <AboutImage
-                        id="F04"
-                        alt="Los abuelos maternos de Jonás juntos en una mesa"
-                        sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                      />
-                    </a>
+                    <PhotoButton id="F04" photo={t.grandparentsPhoto} sizes={WIDE} />
                   </figure>
                   <div>
-                    <span className="about-eyebrow">MIS ABUELOS</span>
-                    <p className="about-memory-line">
-                      Cariño, sabiduría y muchos recuerdos.
-                    </p>
+                    <span className="about-eyebrow">{t.grandparentsEyebrow}</span>
+                    <p className="about-memory-line">{t.grandparentsLine}</p>
                   </div>
                 </article>
               </div>
               <div className="about-chosen-family">
                 <div>
-                  <span className="about-eyebrow">AMIGOS, CASI FAMILIA</span>
-                  <h3>También hacen hogar.</h3>
+                  <span className="about-eyebrow">{t.chosenEyebrow}</span>
+                  <h3>{t.chosenTitle}</h3>
                 </div>
                 <div className="about-friends-album">
                   <figure className="about-paper">
-                    <a
-                      className="about-photo-button"
-                      data-photo="F34"
-                      data-title="Amigos, casi familia"
-                      data-caption="Amigos que se sienten como familia."
-                      aria-label="Ampliar fotografía: Amigos, casi familia"
-                      href={aboutPhotoPath("F34")}
-                    >
-                      <AboutImage
-                        id="F34"
-                        alt="Amigos compartiendo un rato al aire libre, entre árboles y sillas de jardín"
-                      />
-                    </a>
-                    <figcaption className="about-caption">
-                      Amigos que se sienten como familia.
-                    </figcaption>
+                    <PhotoButton id="F34" photo={t.friendsPhoto} />
+                    <figcaption className="about-caption">{t.friendsPhoto.caption}</figcaption>
                   </figure>
                   <figure className="about-paper about-collage">
-                    <a
-                      className="about-photo-button"
-                      data-photo="F15"
-                      data-title="Recuerdos compartidos"
-                      data-caption="Cerca, también a través de una pantalla."
-                      aria-label="Ampliar fotografía: Recuerdos compartidos"
-                      href={aboutPhotoPath("F15")}
-                    >
-                      <AboutImage
-                        id="F15"
-                        alt="Collage de videollamadas con amigos, con un marco de hojas y mensajes"
-                      />
-                    </a>
-                    <figcaption className="about-caption">
-                      Cerca, también a través de una pantalla.
-                    </figcaption>
+                    <PhotoButton id="F15" photo={t.callsPhoto} />
+                    <figcaption className="about-caption">{t.callsPhoto.caption}</figcaption>
                   </figure>
                 </div>
               </div>
               <a className="about-section-end" href="#como-soy">
-                UN POCO MÁS DE MÍ
+                {t.peopleNext}
               </a>
             </div>
           </section>
@@ -409,55 +277,29 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
           >
             <div className="about-self-layout">
               <figure className="about-self-photo">
-                <a
-                  className="about-photo-button"
-                  data-photo="F28"
-                  data-title="Junto al mar"
-                  data-caption="Un momento al aire libre."
-                  aria-label="Ampliar retrato junto al mar"
-                  href={aboutPhotoPath("F28")}
-                >
-                  <AboutImage
-                    id="F28"
-                    alt="Retrato de Jonás de perfil junto al mar"
-                    sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                  />
-                </a>
+                <PhotoButton id="F28" photo={t.selfPhoto} sizes={WIDE} />
               </figure>
               <div className="about-self-copy">
-                <span className="about-eyebrow">03 / MI FORMA DE SER</span>
+                <span className="about-eyebrow">{t.selfEyebrow}</span>
                 <h2 tabIndex={-1} id="self-title">
-                  Cómo soy.
+                  {t.selfTitle}
                 </h2>
-                <p className="about-section-lead">Curioso por naturaleza.</p>
-                <p>
-                  Me gusta conocer personas, entender cómo funcionan las cosas y
-                  aprender algo nuevo cada día. Antes era tímido; hoy me abro
-                  más, aunque sigo disfrutando mis ratos a solas.
-                </p>
+                <p className="about-section-lead">{t.selfLead}</p>
+                <p>{t.selfStory}</p>
                 <div className="about-traits">
-                  <span className="about-eyebrow">
-                    Así me describen mis amigos
-                  </span>
+                  <span className="about-eyebrow">{t.traitsEyebrow}</span>
                   <ul>
-                    <li>Tranquilo</li>
-                    <li>Auténtico</li>
-                    <li>Amable</li>
-                    <li>Servicial</li>
+                    {t.traits.map((trait) => (
+                      <li key={trait}>{trait}</li>
+                    ))}
                   </ul>
                 </div>
-                <p>
-                  Mi fe ocupa un lugar importante en mi vida y orienta muchas de
-                  mis decisiones.
-                </p>
-                <p className="about-script">
-                  Le doy demasiadas vueltas a algunas cosas. Estoy trabajando en
-                  eso.
-                </p>
+                <p>{t.faith}</p>
+                <p className="about-script">{t.selfScript}</p>
               </div>
             </div>
             <a className="about-section-end" href="#lo-que-disfruto">
-              LAS COSAS QUE DISFRUTO
+              {t.selfNext}
             </a>
           </section>
           <section
@@ -467,87 +309,41 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
           >
             <div className="about-wrap">
               <div className="about-enjoy-head">
-                <span className="about-eyebrow">04 / LO QUE DISFRUTO</span>
+                <span className="about-eyebrow">{t.enjoyEyebrow}</span>
                 <h2 tabIndex={-1} id="enjoy-title">
-                  Lo que disfruto.
+                  {t.enjoyTitle}
                 </h2>
-                <p className="about-section-lead">
-                  Siempre hay algo por descubrir.
-                </p>
+                <p className="about-section-lead">{t.enjoyLead}</p>
               </div>
               <div className="about-enjoy-grid">
                 <figure className="about-waterfall">
-                  <a
-                    className="about-photo-button"
-                    data-photo="F44"
-                    data-title="Explorar"
-                    data-caption="Montañas, ríos y tiempo al aire libre."
-                    aria-label="Ampliar fotografía de la cascada"
-                    href={aboutPhotoPath("F44")}
-                  >
-                    <AboutImage
-                      id="F44"
-                      alt="Una persona al pie de una gran cascada cubierta de vegetación"
-                      sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                    />
-                  </a>
+                  <PhotoButton id="F44" photo={t.waterfallPhoto} sizes={WIDE} />
                 </figure>
                 <div className="about-enjoy-side">
                   <div className="about-photography-copy">
                     <div>
-                      <span className="about-eyebrow">FOTOGRAFÍA</span>
+                      <span className="about-eyebrow">{t.photographyEyebrow}</span>
                       <h3>
-                        Mirar. Detenerme.
+                        {t.photographyTitle[0]}
                         <br />
-                        Recordar.
+                        {t.photographyTitle[1]}
                       </h3>
-                      <p>
-                        Fotografío para guardar paisajes, pequeños detalles y
-                        buenos momentos.
-                      </p>
+                      <p>{t.photographyBody}</p>
                     </div>
                   </div>
                   <div className="about-adventures">
                     <div>
-                      <span className="about-eyebrow">EN BUENA COMPAÑÍA</span>
-                      <h3>Y si es con amigos, mejor.</h3>
+                      <span className="about-eyebrow">{t.companyEyebrow}</span>
+                      <h3>{t.companyTitle}</h3>
                     </div>
                     <div className="about-adventure-photos">
                       <figure className="">
-                        <a
-                          className="about-photo-button"
-                          data-photo="F20"
-                          data-title="Un día con amigos"
-                          data-caption="Buenos momentos con mis amigos."
-                          aria-label="Ampliar fotografía: Un día con amigos"
-                          href={aboutPhotoPath("F20")}
-                        >
-                          <AboutImage
-                            id="F20"
-                            alt="Amigos con chalecos salvavidas junto a una moto acuática"
-                          />
-                        </a>
-                        <figcaption className="about-caption">
-                          Buenos momentos con mis amigos.
-                        </figcaption>
+                        <PhotoButton id="F20" photo={t.dayPhoto} />
+                        <figcaption className="about-caption">{t.dayPhoto.caption}</figcaption>
                       </figure>
                       <figure className="">
-                        <a
-                          className="about-photo-button"
-                          data-photo="F07"
-                          data-title="Dentro del agua"
-                          data-caption="Salir a descubrir, juntos."
-                          aria-label="Ampliar fotografía: Dentro del agua"
-                          href={aboutPhotoPath("F07")}
-                        >
-                          <AboutImage
-                            id="F07"
-                            alt="Dos personas con casco y chaleco dentro del agua, entre paredes de roca"
-                          />
-                        </a>
-                        <figcaption className="about-caption">
-                          Salir a descubrir, juntos.
-                        </figcaption>
+                        <PhotoButton id="F07" photo={t.waterPhoto} />
+                        <figcaption className="about-caption">{t.waterPhoto.caption}</figcaption>
                       </figure>
                     </div>
                   </div>
@@ -555,30 +351,27 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
               </div>
               <div className="about-plans">
                 <div>
-                  <span className="about-eyebrow">EXPLORAR</span>
-                  <h3>Mis planes favoritos.</h3>
+                  <span className="about-eyebrow">{t.plansEyebrow}</span>
+                  <h3>{t.plansTitle}</h3>
                 </div>
-                <p>Montañas, ríos, lugares nuevos y tiempo con amigos.</p>
+                <p>{t.plansBody}</p>
               </div>
               <div className="about-listening-room">
                 <article className="about-taste">
-                  <span className="about-eyebrow">MÚSICA</span>
-                  <h3>La música que me acompaña.</h3>
-                  <p>
-                    Bandas sonoras, baladas de siempre y canciones con un poco
-                    de nostalgia.
-                  </p>
-                  <AboutShelf group="music" />
+                  <span className="about-eyebrow">{t.musicEyebrow}</span>
+                  <h3>{t.musicTitle}</h3>
+                  <p>{t.musicBody}</p>
+                  <AboutShelf group="music" locale={locale} />
                 </article>
                 <article className="about-taste">
-                  <span className="about-eyebrow">HISTORIAS</span>
-                  <h3>Después de los créditos.</h3>
-                  <p>Cine, anime y series para seguir pensando un rato más.</p>
-                  <AboutShelf group="stories" />
+                  <span className="about-eyebrow">{t.storiesEyebrow}</span>
+                  <h3>{t.storiesTitle}</h3>
+                  <p>{t.storiesBody}</p>
+                  <AboutShelf group="stories" locale={locale} />
                 </article>
               </div>
               <a className="about-section-end" href="#mi-camino">
-                EXPERIENCIAS QUE ME HAN FORMADO
+                {t.enjoyNext}
               </a>
             </div>
           </section>
@@ -589,122 +382,52 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
           >
             <div className="about-path-head">
               <div>
-                <span className="about-eyebrow">
-                  05 / EXPERIENCIAS QUE ME HAN FORMADO
-                </span>
+                <span className="about-eyebrow">{t.pathEyebrow}</span>
                 <h2 tabIndex={-1} id="path-title">
-                  Mi camino.
+                  {t.pathTitle}
                 </h2>
-                <p className="about-section-lead">
-                  Servir. Aprender. Compartir.
-                </p>
+                <p className="about-section-lead">{t.pathLead}</p>
               </div>
             </div>
             <article className="about-service-story">
               <div className="about-service-copy">
-                <span className="about-eyebrow">PREDICAR · UNA CONSTANTE</span>
-                <h3>Aprender a escuchar.</h3>
-                <p>
-                  Predicar desde joven me ayudó a conocer personas muy distintas
-                  y a dejar atrás parte de mi timidez.
-                </p>
+                <span className="about-eyebrow">{t.preachingEyebrow}</span>
+                <h3>{t.preachingTitle}</h3>
+                <p>{t.preachingBody}</p>
               </div>
               <div className="about-preaching-photos">
                 <figure className="">
-                  <a
-                    className="about-photo-button"
-                    data-photo="F02"
-                    data-title="Predicar, en compañía"
-                    data-caption="Predicar · En compañía."
-                    aria-label="Ampliar fotografía: Predicar, en compañía"
-                    href={aboutPhotoPath("F02")}
-                  >
-                    <AboutImage
-                      id="F02"
-                      alt="Un grupo de distintas edades al aire libre durante la predicación"
-                    />
-                  </a>
-                  <figcaption className="about-caption">
-                    Predicar · En compañía.
-                  </figcaption>
+                  <PhotoButton id="F02" photo={t.preachingPhoto} />
+                  <figcaption className="about-caption">{t.preachingPhoto.caption}</figcaption>
                 </figure>
                 <figure className="about-preaching-memory">
-                  <a
-                    className="about-photo-button"
-                    data-photo="F16"
-                    data-title="Desde pequeño"
-                    data-caption="Un recuerdo de cuando era pequeño."
-                    aria-label="Ampliar fotografía: Desde pequeño"
-                    href={aboutPhotoPath("F16")}
-                  >
-                    <AboutImage
-                      id="F16"
-                      alt="Un adulto y tres niños compartiendo un momento de la etapa de predicación"
-                    />
-                  </a>
-                  <figcaption className="about-caption">
-                    Un recuerdo de cuando era pequeño.
-                  </figcaption>
+                  <PhotoButton id="F16" photo={t.littlePhoto} />
+                  <figcaption className="about-caption">{t.littlePhoto.caption}</figcaption>
                 </figure>
               </div>
             </article>
             <article className="about-service-story about-betel-story">
               <div className="about-service-copy">
-                <span className="about-eyebrow">
-                  BETEL · UNA ETAPA ESPECIAL
-                </span>
-                <h3>Crecer junto a otros.</h3>
-                <p>
-                  En Betel, un centro de voluntarios de los testigos de Jehová,
-                  compartí trabajo, aprendizajes y amistades que siguen conmigo.
-                </p>
+                <span className="about-eyebrow">{t.bethelEyebrow}</span>
+                <h3>{t.bethelTitle}</h3>
+                <p>{t.bethelBody}</p>
               </div>
               <div className="about-volunteer-album">
-                <span className="about-eyebrow">
-                  RECUERDOS DEL VOLUNTARIADO DE MANTENIMIENTO
-                </span>
+                <span className="about-eyebrow">{t.volunteerEyebrow}</span>
                 <div className="about-path-photos">
                   <figure className="">
-                    <a
-                      className="about-photo-button"
-                      data-photo="F11"
-                      data-title="Voluntariado de mantenimiento"
-                      data-caption="Voluntariado de mantenimiento · Un momento compartido."
-                      aria-label="Ampliar fotografía: Voluntariado de mantenimiento"
-                      href={aboutPhotoPath("F11")}
-                    >
-                      <AboutImage
-                        id="F11"
-                        alt="Voluntarios de mantenimiento junto a un muro, varios con chalecos de trabajo"
-                      />
-                    </a>
-                    <figcaption className="about-caption">
-                      Voluntariado de mantenimiento · Un momento compartido.
-                    </figcaption>
+                    <PhotoButton id="F11" photo={t.volunteerPhoto} />
+                    <figcaption className="about-caption">{t.volunteerPhoto.caption}</figcaption>
                   </figure>
                   <figure className="">
-                    <a
-                      className="about-photo-button"
-                      data-photo="F36"
-                      data-title="En plena actividad"
-                      data-caption="Voluntariado de mantenimiento · En plena actividad."
-                      aria-label="Ampliar fotografía: En plena actividad"
-                      href={aboutPhotoPath("F36")}
-                    >
-                      <AboutImage
-                        id="F36"
-                        alt="Tres voluntarios sobre una plataforma de trabajo"
-                      />
-                    </a>
-                    <figcaption className="about-caption">
-                      Voluntariado de mantenimiento · En plena actividad.
-                    </figcaption>
+                    <PhotoButton id="F36" photo={t.workPhoto} />
+                    <figcaption className="about-caption">{t.workPhoto.caption}</figcaption>
                   </figure>
                 </div>
               </div>
             </article>
             <a className="about-section-end" href="#lo-que-sueno">
-              Y TODAVÍA QUEDA CAMINO
+              {t.pathNext}
             </a>
           </section>
           <section
@@ -714,55 +437,38 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
           >
             <div className="about-dream-layout">
               <div className="about-dream-copy">
-                <span className="about-eyebrow">06 / HACIA DONDE MIRO</span>
+                <span className="about-eyebrow">{t.dreamEyebrow}</span>
                 <h2 tabIndex={-1} id="dream-title">
-                  Lo que sueño.
+                  {t.dreamTitle}
                 </h2>
-                <p>
-                  Una vida sencilla, cerca de la naturaleza, con tiempo para la
-                  gente que quiero, trabajo que me entusiasme y lugares que
-                  todavía no conozco.
-                </p>
+                <p>{t.dreamBody}</p>
                 <p className="about-script">
-                  Todavía queda mucho
+                  {t.dreamScript[0]}
                   <br />
-                  por descubrir.
+                  {t.dreamScript[1]}
                 </p>
               </div>
               <figure>
-                <a
-                  className="about-photo-button"
-                  data-photo="F45"
-                  data-title="Lo que sueño"
-                  data-caption="Una vida sencilla, cerca de la naturaleza."
-                  aria-label="Ampliar fotografía junto al lago"
-                  href={aboutPhotoPath("F45")}
-                >
-                  <AboutImage
-                    id="F45"
-                    alt="Una persona de espaldas mirando un lago y las montañas"
-                    sizes="(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw"
-                  />
-                </a>
+                <PhotoButton id="F45" photo={t.dreamPhoto} sizes={WIDE} />
               </figure>
             </div>
           </section>
         </div>
       </div>
       <footer className="about-ending">
-        <span className="about-eyebrow">ESTO ES LO QUE LLEVO CONMIGO</span>
+        <span className="about-eyebrow">{t.endingEyebrow}</span>
         <h2>
-          Mi pequeño universo
+          {t.endingTitle[0]}
           <br />
-          sigue creciendo.
+          {t.endingTitle[1]}
         </h2>
-        <a href="#constelacion">VOLVER A LA CONSTELACIÓN ↑</a>
-        <Link className="about-system-return" href={`/${locale}`}>
-          VOLVER A ORBIT ↗
+        <a href="#constelacion">{t.endingBack}</a>
+        <Link className="about-system-return" href={homePath(locale)}>
+          {t.endingOrbit}
         </Link>
-        <nav className="about-neighbours" aria-label="Destinos contiguos">
-          <Link href={`/${locale}/formacion`}>
-            Siguiente destino · Formación / Miller →
+        <nav className="about-neighbours" aria-label={WORLD_COPY[locale].neighbours}>
+          <Link href={worldPath("miller", locale)}>
+            {t.nextDestination} · {next.prose.title} / {next.cosmicName} →
           </Link>
         </nav>
       </footer>

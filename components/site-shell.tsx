@@ -1,5 +1,6 @@
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
+import { pageAlternates, type PageRef } from "@/lib/page-paths";
 import { getWorldNavItems } from "@/lib/worlds";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
@@ -18,12 +19,15 @@ import { SiteFooter } from "./site-footer";
  */
 export function SiteShell({
   locale,
+  page,
   activeWorldId,
   mainClassName,
   footerLabel,
   children,
 }: {
   locale: Locale;
+  /** Qué página es, para ofrecerla en el otro idioma desde la cabecera. */
+  page: PageRef;
   activeWorldId?: WorldId;
   mainClassName?: string;
   /** Línea del pie. Cada ruta dice dónde está el visitante. */
@@ -36,6 +40,7 @@ export function SiteShell({
         locale={locale}
         worlds={getWorldNavItems(locale)}
         activeWorldId={activeWorldId}
+        languages={pageAlternates(page)}
       />
 
       <main id="main-content" className={mainClassName}>

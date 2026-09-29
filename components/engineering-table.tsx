@@ -18,6 +18,7 @@ import {
   type PointerEvent,
 } from "react";
 import { useMotionEnabled } from "@/lib/effects-mode";
+import { defineCopy } from "@/lib/i18n";
 import {
   initialNode,
   nodePath,
@@ -37,6 +38,7 @@ import {
   type TableScope,
   type TableScreen,
 } from "@/lib/engineering-table";
+import { useLocale } from "./locale-provider";
 import { LANE_LABEL, SystemDiagram, SystemInspector } from "./system-diagram";
 
 /**
@@ -63,11 +65,52 @@ import { LANE_LABEL, SystemDiagram, SystemInspector } from "./system-diagram";
  * none`) lista las pantallas con su nota y el sistema con sus decisiones.
  */
 
-const LAYER_LABEL: Record<TableLayer, string> = {
-  producto: "Producto",
-  diseno: "Diseño",
-  ingenieria: "Ingeniería",
-};
+const COPY = defineCopy({
+  es: {
+    layers: { producto: "Producto", diseno: "Diseño", ingenieria: "Ingeniería" } satisfies Record<TableLayer, string>,
+    problem: "Problema",
+    decision: "Decisión",
+    scope: "Alcance",
+    modules: (n: number) => `${n} módulos`,
+    step: (kind: "decisions" | "captions"): string => (kind === "decisions" ? "decisión" : "pantalla"),
+    of: "de",
+    projects: "Proyectos",
+    previousProject: "Proyecto anterior",
+    nextProject: "Proyecto siguiente",
+    depth: "Profundidad de lectura",
+    technologies: "Tecnologías",
+    explore: "Explorar proyecto",
+    code: "Ver código",
+    screensOf: (name: string) => `Pantallas de ${name}`,
+    previousStep: (kind: "decisions" | "captions"): string => (kind === "decisions" ? "Decisión anterior" : "Pantalla anterior"),
+    nextStep: (kind: "decisions" | "captions"): string => (kind === "decisions" ? "Decisión siguiente" : "Pantalla siguiente"),
+    designDecisions: "Decisiones de diseño",
+    screens: "Pantallas",
+    system: "Sistema",
+  },
+  en: {
+    layers: { producto: "Product", diseno: "Design", ingenieria: "Engineering" },
+    problem: "Problem",
+    decision: "Decision",
+    scope: "Scope",
+    modules: (n: number) => `${n} modules`,
+    step: (kind: "decisions" | "captions"): string => (kind === "decisions" ? "decision" : "screen"),
+    of: "of",
+    projects: "Projects",
+    previousProject: "Previous project",
+    nextProject: "Next project",
+    depth: "Reading depth",
+    technologies: "Technologies",
+    explore: "Explore project",
+    code: "View code",
+    screensOf: (name: string) => `${name} screens`,
+    previousStep: (kind: "decisions" | "captions"): string => (kind === "decisions" ? "Previous decision" : "Previous screen"),
+    nextStep: (kind: "decisions" | "captions"): string => (kind === "decisions" ? "Next decision" : "Next screen"),
+    designDecisions: "Design decisions",
+    screens: "Screens",
+    system: "System",
+  },
+});
 
 /** Cuánto dura el cruce entre proyectos: el saliente se apaga en la mesa. */
 const SWITCH_MS = 450;
@@ -140,6 +183,7 @@ function Screen({
   operable: boolean;
   onPick: () => void;
 }) {
+  const t = COPY[useLocale()];
   const noteId = `${projectId}-screen-${screen.index}-note`;
   const decisionId = `${projectId}-screen-${screen.index}-decision`;
   const style = {
@@ -205,7 +249,7 @@ function Screen({
           pinta, dicho para quien elige la pantalla con el teclado. */}
       {step?.problem ? (
         <span className="visually-hidden" id={decisionId}>
-          Problema: {step.problem} Decisión: {step.note}
+          {t.problem}: {step.problem} {t.decision}: {step.note}
         </span>
       ) : null}
       <span aria-hidden="true" className="holo-screen__tether" />
@@ -221,6 +265,7 @@ function Screen({
  * Es texto: sin JavaScript y en móvil se lee igual, bajo las pantallas.
  */
 function Scope({ projectId, items }: { projectId: string; items: readonly TableScope[] }) {
+  const t = COPY[useLocale()];
   if (items.length === 0) return null;
   // Las tres cifras comparten tamaño, el que deja caber la más larga en su
   // columna: «Markdown» no puede desbordar hacia «OpenAPI».
@@ -228,7 +273,7 @@ function Scope({ projectId, items }: { projectId: string; items: readonly TableS
   return (
     <div className="holo-scope" style={{ "--vlen": longest } as CSSProperties}>
       <p className="holo-scope__title" id={`${projectId}-scope`}>
-        Alcance
+        {t.scope}
       </p>
       <dl aria-labelledby={`${projectId}-scope`}>
         {items.map((item) => (
@@ -264,6 +309,7 @@ const ETCH_STRETCH = 1.7;
 function SystemRing({ project, focus, path }: { project: TableProject; focus: string | null; path: NodePath }) {
   // La geometría es del sistema, no del foco: pasar el puntero por el
   // esquema no la recalcula.
+  const locale = useLocale();
   const ring = useMemo(() => systemRing(project.architecture), [project.architecture]);
   const focusLane = project.architecture.nodes.find((node) => node.id === focus)?.lane;
   const lit = project.architecture.lanes.find((entry) => entry.lane === focusLane);
@@ -304,7 +350,7 @@ function SystemRing({ project, focus, path }: { project: TableProject; focus: st
             {pad(lit.count)}
           </tspan>
           <tspan className="console__readout-lane" x="0" y="14">
-            {LANE_LABEL[lit.lane]}
+            {LANE_LABEL[locale][lit.lane]}
           </tspan>
         </text>
       ) : null}
@@ -368,6 +414,8 @@ export function EngineeringTable({
   /** Kicker y título de la página: el destino, no el proyecto. */
   head: { kicker: string; title: string };
 }) {
+  const locale = useLocale();
+  const t = COPY[locale];
   const rootRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -673,12 +721,12 @@ export function EngineeringTable({
   const peeked = peek ? projects.find((entry) => entry.id === peek.id) : undefined;
   const announcement =
     layer === "ingenieria"
-      ? `${current.name} · Ingeniería · ${current.counts.modules} módulos`
+      ? `${current.name} · ${t.layers.ingenieria} · ${t.modules(current.counts.modules)}`
       : layer === "diseno"
-        ? `${current.name} · Diseño · ${current.reelKind === "decisions" ? "decisión" : "pantalla"} ${front + 1} de ${
+        ? `${current.name} · ${t.layers.diseno} · ${t.step(current.reelKind)} ${front + 1} ${t.of} ${
             current.reel.length
           }${viaRing || !frontStep ? "" : `: ${frontStep.note}`}`
-        : `${current.name} · Producto`;
+        : `${current.name} · ${t.layers.producto}`;
 
   return (
     <div
@@ -705,12 +753,12 @@ export function EngineeringTable({
       */}
       <nav
         ref={dockRef}
-        aria-label="Proyectos"
+        aria-label={t.projects}
         className="table-dock"
         style={{ "--n": projects.length, "--active": currentIndex } as CSSProperties}
       >
         <button
-          aria-label="Proyecto anterior"
+          aria-label={t.previousProject}
           className="table-dock__step"
           data-dir="prev"
           onClick={() => stepProject(-1)}
@@ -792,7 +840,7 @@ export function EngineeringTable({
           ) : null}
         </div>
         <button
-          aria-label="Proyecto siguiente"
+          aria-label={t.nextProject}
           className="table-dock__step"
           data-dir="next"
           onClick={() => stepProject(1)}
@@ -802,7 +850,7 @@ export function EngineeringTable({
         </button>
       </nav>
 
-      <div aria-label="Profundidad de lectura" className="table-tabs" onKeyDown={onTabKey} role="tablist">
+      <div aria-label={t.depth} className="table-tabs" onKeyDown={onTabKey} role="tablist">
         {TABLE_LAYERS.map((entry) => (
           <button
             key={entry}
@@ -816,7 +864,7 @@ export function EngineeringTable({
             tabIndex={layer === entry ? 0 : -1}
             type="button"
           >
-            {LAYER_LABEL[entry]}
+            {t.layers[entry]}
           </button>
         ))}
       </div>
@@ -833,7 +881,6 @@ export function EngineeringTable({
         const entryFront = entry.id === current.id ? front : 0;
         const step = entry.reel[entryFront];
         const operable = (target: TableLayer) => Boolean(isActive) && layer === target;
-        const stepLabel = entry.reelKind === "decisions" ? "Decisión" : "Pantalla";
         return (
           <section
             key={entry.id}
@@ -858,19 +905,19 @@ export function EngineeringTable({
               <p className="table-read__status">
                 <span aria-hidden="true" className="table-led" data-state={entry.status} />
                 {/* Se ve la lectura corta; se lee la etiqueta entera del MDX. */}
-                <span aria-hidden="true">{statusReadout(entry.status)}</span>
+                <span aria-hidden="true">{statusReadout(entry.status, locale)}</span>
                 <span className="visually-hidden">{entry.statusLabel}</span>
               </p>
               {/* En escritorio el stack va grabado en la mesa; aquí lo lee el
                   lector de pantalla, y en móvil, donde no hay mesa, todos. */}
-              <ul aria-label="Tecnologías" className="table-read__stack">
+              <ul aria-label={t.technologies} className="table-read__stack">
                 {entry.technologies.map((technology) => (
                   <li key={technology}>{technology}</li>
                 ))}
               </ul>
               <div className="table-read__actions">
                 <Link className="table-cta" href={entry.href}>
-                  Explorar proyecto <span aria-hidden="true">→</span>
+                  {t.explore} <span aria-hidden="true">→</span>
                 </Link>
                 {demo ? (
                   <a className="table-cta table-cta--site" href={demo.href} rel="noopener noreferrer" target="_blank">
@@ -880,7 +927,7 @@ export function EngineeringTable({
                 {repository ? (
                   <a className="table-read__code" href={repository.href} rel="noopener noreferrer" target="_blank">
                     <GithubMark />
-                    <span className="table-read__code-label">Ver código</span>
+                    <span className="table-read__code-label">{t.code}</span>
                     <span aria-hidden="true" className="table-read__code-out">
                       ↗
                     </span>
@@ -912,7 +959,7 @@ export function EngineeringTable({
               <span aria-hidden="true" className="holo-shade" />
               <div className="holo">
                 <div
-                  aria-label={`Pantallas de ${entry.name}`}
+                  aria-label={t.screensOf(entry.name)}
                   className="holo-screens"
                   onKeyDown={onRingKey}
                   role="group"
@@ -968,7 +1015,7 @@ export function EngineeringTable({
               */}
               <div className="holo-note" data-kind={entry.reelKind} inert={!operable("diseno")}>
                 <button
-                  aria-label={`${stepLabel} anterior`}
+                  aria-label={t.previousStep(entry.reelKind)}
                   className="holo-note__step"
                   onClick={() => setFront(entryFront - 1)}
                   type="button"
@@ -982,11 +1029,11 @@ export function EngineeringTable({
                   {step?.problem ? (
                     <>
                       <p className="holo-note__line" data-part="problem">
-                        <span className="holo-note__label">Problema</span>
+                        <span className="holo-note__label">{t.problem}</span>
                         <span className="holo-note__problem">{step.problem}</span>
                       </p>
                       <p className="holo-note__line" data-part="decision">
-                        <span className="holo-note__label">Decisión</span>
+                        <span className="holo-note__label">{t.decision}</span>
                         <span className="holo-note__decision">{step.note}</span>
                       </p>
                     </>
@@ -997,7 +1044,7 @@ export function EngineeringTable({
                   )}
                 </div>
                 <button
-                  aria-label={`${stepLabel} siguiente`}
+                  aria-label={t.nextStep(entry.reelKind)}
                   className="holo-note__step"
                   onClick={() => setFront(entryFront + 1)}
                   type="button"
@@ -1014,18 +1061,18 @@ export function EngineeringTable({
             <div className="table-fallback">
               {entry.reelKind === "decisions" ? (
                 <>
-                  <h3>Decisiones de diseño</h3>
+                  <h3>{t.designDecisions}</h3>
                   <ol>
                     {entry.reel.map((step) => (
                       <li key={step.screen}>
-                        <span>Problema: {step.problem}</span> <b>Decisión: {step.note}</b>
+                        <span>{t.problem}: {step.problem}</span> <b>{t.decision}: {step.note}</b>
                       </li>
                     ))}
                   </ol>
                 </>
               ) : (
                 <>
-                  <h3>Pantallas</h3>
+                  <h3>{t.screens}</h3>
                   <ol>
                     {entry.screens.map((screen) => (
                       <li key={screen.src}>{screen.caption}</li>
@@ -1033,12 +1080,12 @@ export function EngineeringTable({
                   </ol>
                 </>
               )}
-              <h3>Sistema</h3>
+              <h3>{t.system}</h3>
               <dl>
                 {entry.architecture.nodes.map((node) => (
                   <div key={node.id}>
                     <dt>
-                      {node.label} <small>· {LANE_LABEL[node.lane]}</small>
+                      {node.label} <small>· {LANE_LABEL[locale][node.lane]}</small>
                     </dt>
                     {node.decision ? <dd>{node.decision}</dd> : null}
                   </div>

@@ -6,12 +6,41 @@ import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import type { WorldNavItem } from "@/lib/worlds";
 import { useMotionEnabled } from "@/lib/effects-mode";
+import { defineCopy } from "@/lib/i18n";
 import { DownloadIcon } from "./download-icon";
+import { LanguageSwitch } from "./language-switch";
 import { MissionNavigation } from "./mission-navigation";
 import { VoyageSky } from "./voyage-sky";
 import "./site-header.css";
 
 type Marker = { x: number; width: number; accent: string };
+
+const COPY = defineCopy({
+  es: {
+    home: "Jonás Orbit, inicio",
+    worldsNav: "Navegación de mundos",
+    close: "Cerrar",
+    explore: "Explorar",
+    cv: "Descargar CV",
+    map: "Mapa estelar",
+    mapLabel: "Volver al mapa",
+  },
+  en: {
+    home: "Jonás Orbit, home",
+    worldsNav: "Destinations",
+    close: "Close",
+    explore: "Explore",
+    cv: "Download CV",
+    map: "Star map",
+    mapLabel: "Back to the star map",
+  },
+});
+
+/** Los dos CV, con el del idioma de la página primero. */
+const CV = [
+  { locale: "es", name: "Español", href: "/cv/jonas-javier-cv-es.pdf" },
+  { locale: "en", name: "English", href: "/cv/jonas-javier-cv-en-ats.pdf" },
+] as const;
 
 /**
  * Dónde quedó la línea del destino activo en la última cabecera montada.
@@ -28,11 +57,16 @@ export function SiteHeader({
   locale,
   worlds,
   activeWorldId,
+  languages,
 }: {
   locale: Locale;
   worlds: readonly WorldNavItem[];
   activeWorldId?: WorldId;
+  /** La página actual en cada idioma, para el selector. */
+  languages: Record<Locale, string>;
 }) {
+  const copy = COPY[locale];
+  const cvs = [...CV].sort((a, b) => Number(b.locale === locale) - Number(a.locale === locale));
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -154,7 +188,7 @@ export function SiteHeader({
         <Link
           className="brand-lockup"
           href={`/${locale}`}
-          aria-label="Jonás Orbit, inicio"
+          aria-label={copy.home}
         >
           <strong className="voyage-wordmark" aria-hidden="true">
             <span>JONÁS</span>
@@ -168,17 +202,23 @@ export function SiteHeader({
           </strong>
         </Link>
 
-        <button ref={toggleRef} className="voyage-menu-toggle" type="button" aria-expanded={open} aria-controls="voyage-navigation" onClick={() => setOpen(!open)}>
-          {open ? "Cerrar" : "Explorar"}<span className="voyage-menu-icon" aria-hidden="true"><i /><i /></span>
-        </button>
+        <div className="site-header__bar-tools">
+          {/* En táctil el selector vive en la barra, siempre a la vista; en
+              escritorio, junto al CV (el CSS enseña uno de los dos). */}
+          <LanguageSwitch className="language-switch--bar" languages={languages} />
+          <button ref={toggleRef} className="voyage-menu-toggle" type="button" aria-expanded={open} aria-controls="voyage-navigation" onClick={() => setOpen(!open)}>
+            {open ? copy.close : copy.explore}<span className="voyage-menu-icon" aria-hidden="true"><i /><i /></span>
+          </button>
+        </div>
       </div>
 
       <div id="voyage-navigation" className="voyage-navigation" onClick={(event) => { if ((event.target as HTMLElement).closest("a")) setOpen(false); }}>
         <div className="voyage-destinations" ref={destinationsRef}>
-          <MissionNavigation worlds={worlds} activeWorldId={activeWorldId} />
+          <MissionNavigation worlds={worlds} activeWorldId={activeWorldId} label={copy.worldsNav} />
           <i className="voyage-marker" aria-hidden="true" />
         </div>
         <div className="voyage-return">
+          <LanguageSwitch className="language-switch--tools" languages={languages} />
           <details
             className="voyage-cv"
             ref={cvRef}
@@ -186,13 +226,14 @@ export function SiteHeader({
               if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
             }}
           >
-            <summary className="voyage-cv__summary" aria-label="Descargar CV" title="Descargar CV"><DownloadIcon /><span aria-hidden="true">CV</span></summary>
+            <summary className="voyage-cv__summary" aria-label={copy.cv} title={copy.cv}><DownloadIcon /><span aria-hidden="true">CV</span></summary>
             <div className="voyage-cv__menu" onClick={() => { if (cvRef.current) cvRef.current.open = false; }}>
-              <a download href="/cv/jonas-javier-cv-es.pdf">Español <span>PDF</span></a>
-              <a download href="/cv/jonas-javier-cv-en-ats.pdf">English <span>PDF</span></a>
+              {cvs.map((cv) => (
+                <a key={cv.locale} download href={cv.href} hrefLang={cv.locale}>{cv.name} <span>PDF</span></a>
+              ))}
             </div>
           </details>
-          <Link className="voyage-map-link" href={`/${locale}`} aria-label="Volver al mapa"><span>Mapa estelar</span><span aria-hidden="true">↑</span></Link>
+          <Link className="voyage-map-link" href={`/${locale}`} aria-label={copy.mapLabel}><span>{copy.map}</span><span aria-hidden="true">↑</span></Link>
         </div>
       </div>
     </header>

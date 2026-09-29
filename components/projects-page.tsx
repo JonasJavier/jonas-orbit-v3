@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
 import { tableProject } from "@/lib/engineering-table";
+import { WORLD_COPY } from "@/lib/world-copy";
 import type { Project } from "@/lib/projects";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { EngineeringTable } from "./engineering-table";
@@ -65,6 +66,7 @@ export function ProjectsPage({
   projects: Project[];
 }) {
   const { prose } = world;
+  const shared = WORLD_COPY[locale];
   const { previous, next } = getWorldNeighbours(world, locale);
   const projectsHref = getWorldPath(world, locale);
   const table = projects.map((project) => tableProject(project, projectsHref));
@@ -88,7 +90,7 @@ export function ProjectsPage({
 
       <EngineeringTable
         head={{
-          kicker: `${world.cosmicName} / Mesa de ingeniería`,
+          kicker: `${world.cosmicName} / ${locale === "es" ? "Mesa de ingeniería" : "Engineering table"}`,
           title: prose.shortLabel,
         }}
         projects={table}
@@ -112,13 +114,13 @@ export function ProjectsPage({
         </dl>
       </div>
 
-      <nav aria-label="Destinos contiguos" className="projects-neighbours">
+      <nav aria-label={shared.neighbours} className="projects-neighbours">
         {previous ? (
           <Link href={getWorldPath(previous, locale)} rel="prev">
             <span aria-hidden="true">←</span>
             <span>
               <small>
-                Destino {String(previous.order).padStart(2, "0")} ·{" "}
+                {shared.destination} {String(previous.order).padStart(2, "0")} ·{" "}
                 {previous.cosmicName}
               </small>
               {previous.prose.title}
@@ -131,7 +133,7 @@ export function ProjectsPage({
           <Link href={getWorldPath(next, locale)} rel="next">
             <span>
               <small>
-                Destino {String(next.order).padStart(2, "0")} · {next.cosmicName}
+                {shared.destination} {String(next.order).padStart(2, "0")} · {next.cosmicName}
               </small>
               {next.prose.title}
             </span>

@@ -18,6 +18,7 @@ import { getWorldNavItems } from "@/lib/worlds";
 import { SystemMap } from "./system-map";
 
 const worlds = getWorldNavItems("es");
+const languages = { en: "/en", es: "/es" };
 const MAP_LABEL = "Destinos del Sistema Gargantúa";
 
 /*
@@ -39,7 +40,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("expone la marca mínima y un TARGET en reposo sin copy personal", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
 
     expect(container.querySelector(".hud__system")).toHaveTextContent(
       /Jonas Orbit/i,
@@ -53,7 +54,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("sirve los 6 destinos como enlaces reales", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
 
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const links = within(map).getAllByRole("link");
@@ -77,7 +78,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("pinta cinco cuerpos 2D en los mismos slots del fallback", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
     const bodies = container.querySelectorAll<HTMLElement>("[data-flat-world]");
 
     expect(bodies).toHaveLength(5);
@@ -111,7 +112,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
       cuele en el nombre. Con él dentro, cada destino se anunciaba con una frase
       entera de más, que es justo el ruido del que la home se quitó de encima.
     */
-    render(<SystemMap worlds={worlds} />);
+    render(<SystemMap worlds={worlds} languages={languages} />);
 
     for (const world of worlds) {
       const esperado = new RegExp(
@@ -127,7 +128,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     // Quien tabula recorre la historia de principio a fin; la posición la ponen
     // el CSS y, cuando existe, la escena. El orden es real aunque ya no se
     // imprima delante de cada destino.
-    render(<SystemMap worlds={worlds} />);
+    render(<SystemMap worlds={worlds} languages={languages} />);
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const hrefs = within(map)
       .getAllByRole("link")
@@ -140,7 +141,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     // --map-y sobre estos. Si el atributo desapareciera, los cuerpos 3D
     // quedarían mudos y sin blanco de clic — y ningún test de la escena lo
     // notaría, porque la escena seguiría dibujando igual.
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
 
     for (const world of worlds) {
       const proxy = container.querySelector<HTMLElement>(
@@ -201,7 +202,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     llegara a tardar de verdad quince segundos, seguiría fallando.
   */
   it("todo el volumen conceptual —centro y cuatro bordes— adquiere target", () => {
-    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} hoverMode="instrumento" />);
     const samplePoints = [
       { clientX: 50, clientY: 50 },
       { clientX: 0, clientY: 50 },
@@ -229,14 +230,14 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   }, 15_000);
 
   it("Gargantúa es el nodo central del sistema", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
     const centres = container.querySelectorAll('[data-centre="true"]');
     expect(centres).toHaveLength(1);
     expect(centres[0].querySelector('[data-world="gargantua"]')).not.toBeNull();
   });
 
   it("hover despierta HUD, raíl y brackets sólo para el destino apuntado", () => {
-    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} hoverMode="instrumento" />);
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const endurance = within(map).getByRole("link", {
       name: /^Proyectos Endurance$/i,
@@ -272,7 +273,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("focus de teclado produce el mismo TARGET sin depender de glow", () => {
-    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} hoverMode="instrumento" />);
     const miller = screen.getByRole("link", {
       name: /^Formación Miller$/i,
     });
@@ -297,7 +298,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("clic principal bloquea el destino y navega por la abstracción", () => {
     vi.useFakeTimers();
-    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} hoverMode="instrumento" />);
     const endurance = screen.getByRole("link", {
       name: /^Proyectos Endurance$/i,
     });
@@ -330,7 +331,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     `lib/map-hover.ts`.
   */
   it("sencillo · apuntar marca el slot y no enciende el panel de adquisición", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
     const map = screen.getByRole("navigation", { name: MAP_LABEL });
     const endurance = within(map).getByRole("link", {
       name: /^Proyectos Endurance$/i,
@@ -358,7 +359,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("sencillo · el foco de teclado responde igual que el puntero", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
     const miller = screen.getByRole("link", { name: /^Formación Miller$/i });
 
     fireEvent.focus(miller);
@@ -378,7 +379,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("sencillo · el clic sigue navegando aunque el bloqueo no se pinte", () => {
     vi.useFakeTimers();
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
     const endurance = screen.getByRole("link", {
       name: /^Proyectos Endurance$/i,
     });
@@ -405,7 +406,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
       el dueño lo rechazó—. Lo único que usa es el trazo que ya cuelga del
       rótulo, que está en el marcado en los dos modos.
     */
-    const sencillo = render(<SystemMap worlds={worlds} />);
+    const sencillo = render(<SystemMap worlds={worlds} languages={languages} />);
     expect(
       sencillo.container.querySelectorAll(".system-map__target-brackets"),
     ).toHaveLength(0);
@@ -415,7 +416,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     sencillo.unmount();
 
     const instrumento = render(
-      <SystemMap worlds={worlds} hoverMode="instrumento" />,
+      <SystemMap worlds={worlds} languages={languages} hoverMode="instrumento" />,
     );
     expect(
       instrumento.container.querySelectorAll(".system-map__target-brackets"),
@@ -424,7 +425,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("G9 · una tecla durante la travesía pide la ruta al instante", () => {
     vi.useFakeTimers();
-    render(<SystemMap worlds={worlds} />);
+    render(<SystemMap worlds={worlds} languages={languages} />);
     const miller = screen.getByRole("link", { name: /^Formación Miller$/i });
 
     fireEvent.click(miller, { button: 0 });
@@ -437,7 +438,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
   });
 
   it("un clic modificado conserva el comportamiento nativo del enlace", () => {
-    const { container } = render(<SystemMap worlds={worlds} />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} />);
     const endurance = screen.getByRole("link", {
       name: /^Proyectos Endurance$/i,
     });
@@ -461,7 +462,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
 
   it("el proxy visual comparte lock y respeta clicks modificados", () => {
     vi.useFakeTimers();
-    const { container } = render(<SystemMap worlds={worlds} hoverMode="instrumento" />);
+    const { container } = render(<SystemMap worlds={worlds} languages={languages} hoverMode="instrumento" />);
     const millerProxy = container.querySelector<HTMLElement>(
       '[data-hitbox-proxy="miller"]',
     );
@@ -492,7 +493,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
       no vuelve en la siguiente visita.
     */
     localStorage.removeItem("jonas-orbit:explorar-visto");
-    const first = render(<SystemMap worlds={worlds} />);
+    const first = render(<SystemMap worlds={worlds} languages={languages} />);
     const hint = first.container.querySelector(".system-map__explore");
     expect(hint).toHaveAttribute("aria-hidden", "true");
     expect(hint).toHaveTextContent(/Toca para explorar/i);
@@ -505,7 +506,7 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     expect(localStorage.getItem("jonas-orbit:explorar-visto")).toBe("1");
     first.unmount();
 
-    const again = render(<SystemMap worlds={worlds} />);
+    const again = render(<SystemMap worlds={worlds} languages={languages} />);
     expect(again.container.querySelector(".system-map__explore")).toBeNull();
     localStorage.removeItem("jonas-orbit:explorar-visto");
   });

@@ -5,6 +5,7 @@ import {
   type ProjectId,
   type ProjectStructuralData,
 } from "@/content/projects.data";
+import type { Locale } from "@/content/site.data";
 import type { Project } from "@/lib/projects";
 
 /**
@@ -857,14 +858,15 @@ export function tableProject(project: Project, projectsHref: string): TableProje
  * de la identidad estructural, no un texto nuevo: `statusLabel` sigue siendo
  * el nombre accesible y completo.
  */
-export function statusReadout(status: ProjectStructuralData["status"]): string {
+export function statusReadout(status: ProjectStructuralData["status"], locale: Locale = "es"): string {
+  const es = locale === "es";
   switch (status) {
     case "production":
-      return "En producción";
+      return es ? "En producción" : "In production";
     case "ready-for-production":
-      return "Listo para producción";
+      return es ? "Listo para producción" : "Ready for production";
     case "in-development":
-      return "En desarrollo";
+      return es ? "En desarrollo" : "In development";
   }
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/content/site.data";
-import { SITE_OPEN_GRAPH } from "./site-metadata";
+import { pageAlternatesMetadata } from "./page-paths";
+import { siteOpenGraph } from "./site-metadata";
 import { getWorldPath, type World } from "./worlds";
 
 /**
@@ -21,9 +22,9 @@ export function buildWorldMetadata(world: World, locale: Locale): Metadata {
   return {
     title: world.prose.seoTitle,
     description: world.prose.seoDescription,
-    alternates: { canonical: path },
+    alternates: pageAlternatesMetadata({ kind: "world", id: world.id }, locale),
     openGraph: {
-      ...SITE_OPEN_GRAPH,
+      ...siteOpenGraph(locale),
       type: "article",
       title: `${world.prose.seoTitle} · Jonás Javier`,
       description: world.prose.seoDescription,

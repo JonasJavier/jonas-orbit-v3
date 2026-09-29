@@ -3,14 +3,24 @@ import { notFound } from "next/navigation";
 import { Hero } from "@/components/hero";
 import { StructuredData } from "@/components/structured-data";
 import { SystemMap } from "@/components/system-map";
-import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
-import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
-import { getWorld, getWorldNavItems, getWorldPath } from "@/lib/worlds";
+import { PUBLISHED_LOCALES, isPublishedLocale } from "@/content/site.data";
+import { defineCopy } from "@/lib/i18n";
+import { pageAlternates, pageAlternatesMetadata, worldPath } from "@/lib/page-paths";
+import { defaultOgImage, siteOpenGraph } from "@/lib/site-metadata";
+import { getWorldNavItems } from "@/lib/worlds";
 
-const HOME_TITLE =
-  "Jonás Javier Encarnación — Desarrollador full-stack y diseñador UX/UI";
-const HOME_DESCRIPTION =
-  "Portafolio de Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana: proyectos, formación, fotografía y experimentos 3D.";
+const COPY = defineCopy({
+  es: {
+    title: "Jonás Javier Encarnación — Desarrollador full-stack y diseñador UX/UI",
+    description:
+      "Portafolio de Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana: proyectos, formación, fotografía y experimentos 3D.",
+  },
+  en: {
+    title: "Jonás Javier Encarnación — Full-Stack Developer & UX/UI Designer",
+    description:
+      "Portfolio of Jonás Javier Encarnación, a full-stack developer and UX/UI designer in the Dominican Republic: web and mobile apps, photography and 3D experiments.",
+  },
+});
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.map((locale) => ({ locale }));
@@ -22,34 +32,26 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  if (!PUBLISHED_LOCALES.includes(locale as Locale)) return {};
+  if (!isPublishedLocale(locale)) return {};
+  const copy = COPY[locale];
 
-  const path = `/${locale}`;
   return {
     // Absoluto: la plantilla del layout repetiría el nombre.
-    title: { absolute: HOME_TITLE },
-    description: HOME_DESCRIPTION,
-    alternates: {
-      canonical: path,
-      // Solo se declaran los idiomas PUBLICADOS: anunciar /en antes de F2A
-      // enviaría a los buscadores a una ruta que todavía no existe.
-      languages: Object.fromEntries([
-        ...PUBLISHED_LOCALES.map((published) => [published, `/${published}`]),
-        ["x-default", `/${PUBLISHED_LOCALES[0]}`],
-      ]),
-    },
+    title: { absolute: copy.title },
+    description: copy.description,
+    alternates: pageAlternatesMetadata({ kind: "home" }, locale),
     openGraph: {
-      ...SITE_OPEN_GRAPH,
-      title: HOME_TITLE,
-      description: HOME_DESCRIPTION,
-      url: path,
-      images: [DEFAULT_OG_IMAGE],
+      ...siteOpenGraph(locale),
+      title: copy.title,
+      description: copy.description,
+      url: `/${locale}`,
+      images: [defaultOgImage(locale)],
     },
   };
 }
 
 /**
- * `/es` — el Sistema Gargantúa.
+ * `/en` y `/es` — el Sistema Gargantúa.
  *
  * Una sola pantalla, sin scroll. La escena ocupa el viewport entero y este
  * marcado vive encima: no es un documento con un fondo bonito, es un LUGAR
@@ -66,11 +68,8 @@ export default async function SystemPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  if (!PUBLISHED_LOCALES.includes(locale as Locale)) {
-    notFound();
-  }
-  const typedLocale = locale as Locale;
-  const worlds = getWorldNavItems(typedLocale);
+  if (!isPublishedLocale(locale)) notFound();
+  const worlds = getWorldNavItems(locale);
 
   return (
     // Sin cabecera y sin pie, a propósito.
@@ -81,12 +80,13 @@ export default async function SystemPage({
     // conservan el shell completo, porque ahí sí eres un visitante leyendo un
     // documento y necesitas saber dónde estás.
     <main className="system-home" id="main-content">
-      <StructuredData locale={typedLocale} />
+      <StructuredData locale={locale} />
       <Hero
-        projectsHref={getWorldPath(getWorld("endurance", typedLocale), typedLocale)}
-        contactHref={getWorldPath(getWorld("ranger", typedLocale), typedLocale)}
+        locale={locale}
+        projectsHref={worldPath("endurance", locale)}
+        contactHref={worldPath("ranger", locale)}
       />
-      <SystemMap worlds={worlds} />
+      <SystemMap worlds={worlds} languages={pageAlternates({ kind: "home" })} />
     </main>
   );
 }

@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
-import { PUBLISHED_LOCALES, SITE_PROFILE } from "@/content/site.data";
+import { DEFAULT_LOCALE, PUBLISHED_LOCALES, SITE_PROFILE, type Locale } from "@/content/site.data";
+import { WORLD_IDS } from "@/content/worlds.data";
 import { screenSources } from "@/lib/engineering-table";
-import { OBSERVATORY_SLUGS } from "@/lib/observatory-catalog";
-import { getF1AProjects } from "@/lib/projects";
+import { OBSERVATORY_IDS } from "@/lib/observatory-slugs";
+import { pageAlternates, type PageRef } from "@/lib/page-paths";
+import { getF1AProjects, getProject } from "@/lib/projects";
 import { projectOgImagePath } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
-import { getWorlds, type World } from "@/lib/worlds";
+import { getWorld } from "@/lib/worlds";
 
 /**
  * Imágenes que cada página quiere en Google Imágenes (sitemap de imágenes).
@@ -13,72 +15,73 @@ import { getWorlds, type World } from "@/lib/worlds";
  * retrato son contenido que se busca por imagen. De «Sobre mí» sólo va el
  * retrato: las fotos de su gente se ven en la página, no se empujan al índice.
  */
-function worldImages(world: World): string[] {
-  if (world.id === "gargantua") return [absoluteUrl(SITE_PROFILE.portrait)];
-  const artworks = world.prose.creativity?.artworks ?? [];
-  return artworks.map((art) => absoluteUrl(`/art/edmunds/${art.id}-1920.webp`));
+function pageImages(page: PageRef, locale: Locale): string[] | undefined {
+  if (page.kind === "world") {
+    if (page.id === "gargantua") return [absoluteUrl(SITE_PROFILE.portrait)];
+    const artworks = getWorld(page.id, locale).prose.creativity?.artworks ?? [];
+    return artworks.length
+      ? artworks.map((art) => absoluteUrl(`/art/edmunds/${art.id}-1920.webp`))
+      : undefined;
+  }
+  if (page.kind === "project") {
+    const image = getProject(page.id, locale).prose.featuredImage;
+    return [
+      absoluteUrl(projectOgImagePath(image.src)),
+      absoluteUrl(screenSources(image.src, image.frame ?? "desktop").src),
+    ];
+  }
+  return undefined;
 }
 
 /**
- * Sitemap.
- *
- * Solo entran los idiomas PUBLICADOS (F1A: únicamente ES) y las rutas indexables.
- * `/{locale}/contacto/gracias` queda deliberadamente FUERA: el plan la marca
- * `noindex` y fuera del sitemap porque es una confirmación privada, no una
- * página de aterrizaje.
- *
- * Home, seis destinos, los especímenes montados del Observatorio, cuatro casos
- * y privacidad. Las rutas se derivan del catálogo vigente; no se conservan
- * destinos retirados.
+ * Cada página indexable, con su prioridad. `/…/contacto/gracias` queda
+ * deliberadamente FUERA: el plan la marca `noindex` y fuera del sitemap porque
+ * es una confirmación privada, no una página de aterrizaje.
  *
  * Los especímenes entran porque el §1.3 vende «mira la Endurance» como enlace
- * compartible dentro de una candidatura, y hasta ahora esa URL no la conocía
- * nadie: no había un solo enlace hacia ella en todo el repositorio ni una línea
- * en este archivo. Salen de la misma tabla que la recepción y el raíl, así que
- * montar el tercer espécimen lo añade aquí sin tocar este archivo.
+ * compartible dentro de una candidatura. Salen de la misma tabla que la
+ * recepción y el raíl, así que montar uno nuevo lo añade aquí solo.
+ */
+const PAGES: readonly { page: PageRef; priority: number; changeFrequency: "weekly" | "monthly" | "yearly" }[] = [
+  { page: { kind: "home" }, priority: 1, changeFrequency: "weekly" },
+  // Por debajo del home y por encima de los casos: son las páginas de
+  // aterrizaje temáticas, la puerta de entrada desde una búsqueda.
+  ...WORLD_IDS.map((id) => ({ page: { kind: "world", id } as const, priority: 0.9, changeFrequency: "monthly" as const })),
+  // Los casos son la prueba profesional; un espécimen es una pieza de trabajo
+  // con URL propia, a la misma altura.
+  ...getF1AProjects(DEFAULT_LOCALE).map((project) => ({
+    page: { kind: "project", id: project.id } as const,
+    priority: 0.8,
+    changeFrequency: "monthly" as const,
+  })),
+  ...OBSERVATORY_IDS.map((id) => ({ page: { kind: "observatory", id } as const, priority: 0.8, changeFrequency: "monthly" as const })),
+  { page: { kind: "privacy" }, priority: 0.3, changeFrequency: "yearly" },
+];
+
+/**
+ * Sitemap: cada página en cada idioma publicado, y cada entrada declara sus
+ * hermanas (`xhtml:link rel="alternate" hreflang`). Es la misma relación que
+ * el `hreflang` del `<head>`, dicha también aquí porque el buscador lee el
+ * sitemap antes de rastrear.
  *
  * Sin `lastModified`: sellar cada URL con la fecha del build afirmaría un
  * cambio que no ocurrió, y los buscadores descartan un `lastmod` poco fiable.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  return PUBLISHED_LOCALES.flatMap((locale) => [
-    {
-      url: absoluteUrl(`/${locale}`),
-      changeFrequency: "weekly" as const,
-      priority: 1,
-    },
-    ...getWorlds(locale).map((world) => ({
-      url: absoluteUrl(`/${locale}/${world.prose.slug}`),
-      images: worldImages(world),
-      changeFrequency: "monthly" as const,
-      // Por debajo del home y por encima de los casos: son las páginas de
-      // aterrizaje temáticas, la puerta de entrada desde una búsqueda.
-      priority: 0.9,
-    })),
-    ...Object.keys(OBSERVATORY_SLUGS).map((objeto) => ({
-      url: absoluteUrl(`/${locale}/experimentos/observatorio/${objeto}`),
-      changeFrequency: "monthly" as const,
-      // Por debajo de su sección y a la altura de un caso: es una pieza de
-      // trabajo con URL propia, no una página de aterrizaje.
-      priority: 0.8,
-    })),
-    ...getF1AProjects(locale).map((project) => ({
-      url: absoluteUrl(`/${locale}/proyectos/${project.prose.slug}`),
-      images: [
-        absoluteUrl(projectOgImagePath(project.prose.featuredImage.src)),
-        absoluteUrl(
-          screenSources(project.prose.featuredImage.src, project.prose.featuredImage.frame ?? "desktop").src,
-        ),
-      ],
-      changeFrequency: "monthly" as const,
-      // Los casos son la prueba profesional: por debajo del home, por encima
-      // de las páginas legales.
-      priority: 0.8,
-    })),
-    {
-      url: absoluteUrl(`/${locale}/privacidad`),
-      changeFrequency: "yearly" as const,
-      priority: 0.3,
-    },
-  ]);
+  return PAGES.flatMap(({ page, priority, changeFrequency }) => {
+    const alternates = pageAlternates(page);
+    const languages = Object.fromEntries(
+      Object.entries(alternates).map(([locale, path]) => [locale, absoluteUrl(path)]),
+    );
+    return PUBLISHED_LOCALES.map((locale) => {
+      const images = pageImages(page, locale);
+      return {
+        url: absoluteUrl(alternates[locale]),
+        changeFrequency,
+        priority,
+        alternates: { languages },
+        ...(images ? { images } : {}),
+      };
+    });
+  });
 }

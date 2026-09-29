@@ -771,7 +771,7 @@ describe("EngineeringTable · la mesa física", () => {
     expect(segment(omsta, "railway-web")).toHaveAttribute("data-state", "path");
     expect(segment(omsta, "railway-web")).not.toHaveAttribute("data-lane-on");
     const cliente = omsta.architecture.lanes.find(({ lane }) => lane === "cliente")!;
-    expect(readout()).toBe(`${pad(cliente.count)}${LANE_LABEL.cliente}`);
+    expect(readout()).toBe(`${pad(cliente.count)}${LANE_LABEL.es.cliente}`);
     expect(etched.querySelectorAll(".console__lane")).toHaveLength(omsta.architecture.lanes.length);
     expect(etched.querySelectorAll('.console__lane[data-on="true"]')).toHaveLength(1);
 
@@ -786,14 +786,14 @@ describe("EngineeringTable · la mesa física", () => {
     expect(states()).toEqual(expected(izaks, chosen));
     const focusLane = izaks.architecture.nodes.find((node) => node.id === chosen)!.lane;
     const lit = izaks.architecture.lanes.find(({ lane }) => lane === focusLane)!;
-    expect(readout()).toBe(`${pad(lit.count)}${LANE_LABEL[focusLane]}`);
+    expect(readout()).toBe(`${pad(lit.count)}${LANE_LABEL.es[focusLane]}`);
 
     // Apuntar otro módulo del esquema mueve el foco del anillo con él.
     const other = izaks.architecture.nodes.find((node) => node.lane !== focusLane)!;
     fireEvent.pointerEnter(nodeButton("izaks-photos", other.id));
     expect(states()).toEqual(expected(izaks, other.id));
     expect(segment(izaks, other.id)).toHaveAttribute("data-state", "focus");
-    expect(readout()).toContain(LANE_LABEL[other.lane]);
+    expect(readout()).toContain(LANE_LABEL.es[other.lane]);
   });
 });
 

@@ -7,8 +7,8 @@
 A navigable star system where each destination tells a different part of my story. Built with Next.js, React, and a hand-crafted WebGL2 scene.
 
 [**🌐 Explore the live site**](https://jonasjavier.dev) ·
-[Projects](https://jonasjavier.dev/es/proyectos) ·
-[Contact](https://jonasjavier.dev/es/contacto) ·
+[Projects](https://jonasjavier.dev/en/projects) ·
+[Contact](https://jonasjavier.dev/en/contact) ·
 [LinkedIn](https://www.linkedin.com/in/jonas-javier-247b50425/)
 
 [![CI](https://github.com/JonasJavier/jonas-orbit-v3/actions/workflows/ci.yml/badge.svg)](https://github.com/JonasJavier/jonas-orbit-v3/actions/workflows/ci.yml)
@@ -25,7 +25,7 @@ A navigable star system where each destination tells a different part of my stor
 
 </div>
 
-> **Language note:** The main guides are in English; the historical design and decision records retain their original Spanish text. The live portfolio and its editorial MDX content currently use Spanish routes under `/es`. Route labels below use the actual site paths.
+> **Language note:** The site is fully bilingual. English is the default (`/en`) and Spanish lives under `/es`, with a switch in the header and `hreflang` on every page. The main guides are in English; the historical design and decision records keep their original Spanish text.
 
 ## Contents
 
@@ -46,12 +46,12 @@ The home page is a map. Each body leads to its own server-rendered route, visual
 
 | Body | Destination | What you will find |
 | --- | --- | --- |
-| 🕳️ Gargantua | [About me](https://jonasjavier.dev/es/sobre-mi) | My background, roots, and the people and ideas that shape my work |
-| 🌊 Miller | [Education](https://jonasjavier.dev/es/formacion) | Studies, certificates, and a WebGL2 ocean |
-| 🛰️ Endurance | [Projects](https://jonasjavier.dev/es/proyectos) | An engineering table with five detailed case studies |
-| 🪨 Edmunds | [Creative work](https://jonasjavier.dev/es/creatividad) | Photography and design in a 3D gallery |
-| 🧊 Tesseract | [Experiments](https://jonasjavier.dev/es/experimentos) | An observatory for exploring the 3D objects up close |
-| 🚀 Ranger | [Contact](https://jonasjavier.dev/es/contacto) | Contact form, email, WhatsApp, and LinkedIn |
+| 🕳️ Gargantua | [About me](https://jonasjavier.dev/en/about) | My background, roots, and the people and ideas that shape my work |
+| 🌊 Miller | [Education](https://jonasjavier.dev/en/education) | Studies, certificates, and a WebGL2 ocean |
+| 🛰️ Endurance | [Projects](https://jonasjavier.dev/en/projects) | An engineering table with five detailed case studies |
+| 🪨 Edmunds | [Creative work](https://jonasjavier.dev/en/creativity) | Photography and design in a 3D gallery |
+| 🧊 Tesseract | [Experiments](https://jonasjavier.dev/en/experiments) | An observatory for exploring the 3D objects up close |
+| 🚀 Ranger | [Contact](https://jonasjavier.dev/en/contact) | Contact form, email, WhatsApp, and LinkedIn |
 
 <table>
   <tr>
@@ -70,11 +70,11 @@ Each case explains a real product problem, the design choices, the engineering a
 
 | Project | What it is | Main stack |
 | --- | --- | --- |
-| [**OMSTA**](https://jonasjavier.dev/es/proyectos/omsta) | Production travel-agency ERP with a mobile app | Django · DRF · PostgreSQL · React Native · Expo |
-| [**Izak's Photos**](https://jonasjavier.dev/es/proyectos/izaks-photos) | Bilingual photography-studio demo | React · Django REST · Railway |
-| [**Wikiverse**](https://jonasjavier.dev/es/proyectos/wikiverse) | Encyclopedia with immutable revisions and full-text search | Django · React · PostgreSQL |
-| [**Network 3.0**](https://jonasjavier.dev/es/proyectos/network-3-0) | Social network with cursor-based feeds and rotating JWTs | Django REST · React · TypeScript |
-| [**Delicaté 4.0**](https://jonasjavier.dev/es/proyectos/delicate-4-0) | Handmade-products store with WhatsApp orders | Django REST · React 19 |
+| [**OMSTA**](https://jonasjavier.dev/en/projects/omsta) | Production travel-agency ERP with a mobile app | Django · DRF · PostgreSQL · React Native · Expo |
+| [**Izak's Photos**](https://jonasjavier.dev/en/projects/izaks-photos) | Bilingual photography-studio demo | React · Django REST · Railway |
+| [**Wikiverse**](https://jonasjavier.dev/en/projects/wikiverse) | Encyclopedia with immutable revisions and full-text search | Django · React · PostgreSQL |
+| [**Network 3.0**](https://jonasjavier.dev/en/projects/network-3-0) | Social network with cursor-based feeds and rotating JWTs | Django REST · React · TypeScript |
+| [**Delicaté 4.0**](https://jonasjavier.dev/en/projects/delicate-4-0) | Handmade-products store with WhatsApp orders | Django REST · React 19 |
 
 Explore the live products: [Wikiverse](https://wikiverse.jonasjavier.dev) and [Delicaté 4.0](https://delicate.jonasjavier.dev).
 
@@ -99,7 +99,7 @@ Explore the live products: [Wikiverse](https://wikiverse.jonasjavier.dev) and [D
 ```mermaid
 flowchart LR
   subgraph Content
-    MDX["MDX (content/es)"] --> V["Velite + Zod"]
+    MDX["MDX (content/en, content/es)"] --> V["Velite + Zod"]
     DATA["Typed structure (worlds / projects)"] --> V
   end
   V --> R["App Router · prerendered routes"]

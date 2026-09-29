@@ -2,12 +2,20 @@
  * Configuración de idiomas del sitio.
  *
  * PUBLISHED_LOCALES controla qué idiomas exigen paridad de contenido en el
- * build (ver velite.config.ts). En F1A solo ES está publicado; EN se añade
- * aquí en F2A cuando su contenido esté completo — nunca antes.
+ * build (ver velite.config.ts) y qué rutas existen. El español es la fuente
+ * del contenido; el inglés se publicó el 2026-09-29 y es el idioma POR DEFECTO
+ * (decisión de Jonás): `/` lleva a `/en` y `x-default` apunta al inglés. El
+ * orden de la lista es el del selector de idioma.
  */
 export type Locale = "es" | "en";
 
-export const PUBLISHED_LOCALES: readonly Locale[] = ["es"];
+export const PUBLISHED_LOCALES: readonly Locale[] = ["en", "es"];
+
+export const DEFAULT_LOCALE: Locale = "en";
+
+export function isPublishedLocale(value: string): value is Locale {
+  return (PUBLISHED_LOCALES as readonly string[]).includes(value);
+}
 
 /**
  * Identidad y canales públicos de Jonás, neutrales al idioma.
@@ -25,7 +33,10 @@ export const SITE_PROFILE = {
   alternateNames: ["Jonás Javier", "Jonas Javier Encarnacion", "Jonas Javier", "Jonás Encarnación"],
   /** Retrato publicado en «Sobre mí» (F40), para `image` en JSON-LD. */
   portrait: "/images/sobre-mi/F40-960.webp",
-  jobTitle: "Desarrollador full-stack y diseñador UX/UI",
+  jobTitle: {
+    es: "Desarrollador full-stack y diseñador UX/UI",
+    en: "Full-stack developer and UX/UI designer",
+  },
   email: "jonasjavier.dev@gmail.com",
   phone: "+18498625049",
   whatsapp: "18498625049",
@@ -36,18 +47,10 @@ export const SITE_PROFILE = {
   /** Para `knowsAbout` en JSON-LD: sólo lo que un caso o experimento publicado prueba. */
   /** Idiomas que el sitio acredita (Formación: inglés avanzado en curso). */
   languages: ["es", "en"],
-  knowsAbout: [
-    "Desarrollo full-stack",
-    "Django",
-    "Django REST Framework",
-    "React",
-    "TypeScript",
-    "Next.js",
-    "PostgreSQL",
-    "React Native",
-    "Three.js",
-    "WebGL",
-    "Diseño UX/UI",
-    "Fotografía",
-  ],
+  knowsAbout: {
+    es: ["Desarrollo full-stack", "Django", "Django REST Framework", "React", "TypeScript", "Next.js", "PostgreSQL", "React Native", "Three.js", "WebGL", "Diseño UX/UI", "Fotografía"],
+    en: ["Full-stack development", "Django", "Django REST Framework", "React", "TypeScript", "Next.js", "PostgreSQL", "React Native", "Three.js", "WebGL", "UX/UI design", "Photography"],
+  },
+  /** El país, dicho en cada idioma (JSON-LD `nationality`). */
+  countryName: { es: "República Dominicana", en: "Dominican Republic" },
 } as const;

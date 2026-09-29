@@ -66,14 +66,14 @@ revisiones individuales, no bloquean por sí solas el diseño actual.
 
 `docs/design/arquitectura-narrativa.md`:
 
-| `WorldId` | Significado | Ruta ES |
-| --- | --- | --- |
-| `gargantua` | Sobre mí | `/es/sobre-mi` |
-| `miller` | Formación | `/es/formacion` |
-| `endurance` | Proyectos | `/es/proyectos` |
-| `edmunds` | Creatividad | `/es/creatividad` |
-| `tesseract` | Experimentos | `/es/experimentos` |
-| `ranger` | Contacto | `/es/contacto` |
+| `WorldId` | Significado | Ruta ES | Ruta EN |
+| --- | --- | --- | --- |
+| `gargantua` | Sobre mí | `/es/sobre-mi` | `/en/about` |
+| `miller` | Formación | `/es/formacion` | `/en/education` |
+| `endurance` | Proyectos | `/es/proyectos` | `/en/projects` |
+| `edmunds` | Creatividad | `/es/creatividad` | `/en/creativity` |
+| `tesseract` | Experimentos | `/es/experimentos` | `/en/experiments` |
+| `ranger` | Contacto | `/es/contacto` | `/en/contact` |
 
 El nombre visible de `tesseract` es `Experimentos`, nunca `Laboratorio`.
 `/es/desarrollo` y `/es/laboratorio` son 404 sin alias. **`order` es orden
@@ -90,6 +90,12 @@ MDX**, nunca en `worlds.data.ts`.
   nunca publica. CSP y cabeceras viven en `next.config.ts`; el límite de tasa
   del contacto, en la app. El preview de Cloudflare conserva su prueba de
   compatibilidad `npm run test:worker`.
+- **Idiomas** (09-29) registro «Idiomas — el sitio en inglés» — inglés por
+  defecto (`/` → `/en`, cookie para quien eligió español); cada página con
+  ruta propia en los dos idiomas, todas desde `lib/page-paths.ts`; layout raíz
+  en `app/[locale]`; texto de interfaz en `defineCopy({ es, en })` junto a su
+  componente; contenido en `content/{es,en}`. Nada de texto visible nuevo en
+  un solo idioma.
 - **Repositorio público, SEO y arranque** (09-28) — licencia de sólo lectura
   (`LICENSE`); fuentes (`Fotos/`, `Disenos/`, `portfolio-content/`,
   `assets/`) fuera del repo y del historial, archivadas en el privado
@@ -273,8 +279,9 @@ se lee como verde. Redirige a un archivo y consulta `$?`.
    Googlebot conservan el mismo significado y las mismas rutas.
 8. **Contenido honesto.** Sin lorem ipsum, sin métricas inventadas, sin
    placeholders disfrazados. Las fichas breves son un formato completo.
-9. **Middleware:** no existe en F1 (redirect estático `/` → `/es` en
-   `next.config.ts`). En F2A llega como `proxy.ts` (así se llama en Next 16).
+9. **Middleware:** no existe. `/` → `/en` (o `/es` con la cookie del
+   selector) es un redirect estático en `next.config.ts`; con el inglés ya
+   publicado, el `proxy.ts` de F2A no hace falta (registro «Idiomas»).
 
 ## Referencias de v2
 

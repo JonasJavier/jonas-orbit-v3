@@ -1,3 +1,5 @@
+import type { Locale } from "@/content/site.data";
+
 /**
  * Las palabras del panel `DATOS`. Los números los pone `specimen-contract.ts`.
  *
@@ -78,7 +80,7 @@ export const ARCHITECTURE_LABELS: Readonly<Record<string, string>> = {
  * números de esta ficha: ponerle «rs» detrás diría que el radio de
  * Schwarzschild se mide en radios de Schwarzschild.
  */
-export const RAYMARCH_LABELS = {
+const RAYMARCH_LABELS = {
   rs: "Radio de Schwarzschild",
   disk: "Disco",
   steps: "Pasos por píxel",
@@ -117,7 +119,7 @@ export const AXIS_LABELS = ["X", "Y", "Z", "W"] as const;
  * homónima del panel `DATOS`, y eso no es una coincidencia que convenga
  * romper: son el mismo número, uno para leerlo y otro para ponerlo.
  */
-export const LIGHT_LABELS = {
+const LIGHT_LABELS = {
   key: "Ángulo de clave de la luz",
   roll: "Giro de la luz en la pantalla",
 } as const;
@@ -135,9 +137,9 @@ export const LIGHT_LABELS = {
  * deslizantes que empiezan igual en la misma consola se confunden al oírlos, y
  * se vuelven ambiguos para cualquiera que los busque por nombre.
  */
-export const TURN_LABEL = "Rotación del espécimen sobre su eje";
+const TURN_LABEL = "Rotación del espécimen sobre su eje";
 
-export const OBSERVATION_LABELS = {
+const OBSERVATION_LABELS = {
   view: "Vista",
   azimuth: "Azimut",
   elevation: "Elevación",
@@ -175,6 +177,82 @@ export const REGISTRO_SECTIONS = [
  * propósito. Si el modelo publica un conteo nuevo y nadie lo traduce, aparece
  * en crudo en el HUD — y el test de cobertura cae antes de que llegue ahí.
  */
-export function architectureLabel(key: string): string {
-  return ARCHITECTURE_LABELS[key] ?? key;
+export function architectureLabel(key: string, locale: Locale = "es"): string {
+  return OBSERVATORY_LABELS[locale].architecture[key] ?? key;
 }
+
+/**
+ * LAS MISMAS PALABRAS EN INGLÉS.
+ *
+ * Mismas claves y mismas familias que las de arriba; lo que se dijo de ellas
+ * vale igual aquí: `Draw calls` y `Mesh vertices` son dos cosas y se llaman
+ * distinto, y la clave de la luz y la del panel siguen siendo la misma palabra.
+ */
+const ARCHITECTURE_LABELS_EN: Readonly<Record<string, string>> = {
+  vertices: "Vertices",
+  edges: "Edges",
+  renderedFacets: "Rendered facets",
+  modules: "Modules",
+  groups: "Groups",
+  arms: "Arms",
+  primaryModules: "Primary modules",
+  engineBells: "Engine bells",
+  thermalPanels: "Integrated thermal panels",
+  dockedRangers: "Docked Rangers",
+  dockedLanders: "Docked landers",
+  manoeuvringPods: "Maneuvering pods",
+  manoeuvringNozzles: "Maneuvering nozzles",
+  rcsNozzles: "RCS nozzles",
+  firingNozzles: "Firing nozzles",
+  warmLights: "Warm lights",
+  technicalLights: "Technical lights",
+  wings: "Half-wings",
+  tailFins: "Tail fins",
+  leadingEdgeSpars: "Leading-edge spars",
+  plumes: "Exhaust plumes",
+  navBeacons: "Navigation beacons",
+  servicePanels: "Service panels",
+  cockpitFrame: "Cockpit frame pieces",
+};
+
+export const OBSERVATORY_LABELS = {
+  es: {
+    render: RENDER_LABELS,
+    architecture: ARCHITECTURE_LABELS,
+    raymarch: RAYMARCH_LABELS,
+    light: LIGHT_LABELS,
+    turn: TURN_LABEL,
+    observation: OBSERVATION_LABELS,
+    registro: REGISTRO_SECTIONS,
+    dials: { key: "Clave", roll: "Giro", turn: "Eje" },
+  },
+  en: {
+    render: { draws: "Draw calls", materials: "Materials", vertices: "Mesh vertices" },
+    architecture: ARCHITECTURE_LABELS_EN,
+    raymarch: {
+      rs: "Schwarzschild radius",
+      disk: "Disk",
+      steps: "Steps per pixel",
+      blend: "Temporal blend",
+      accumulated: "Averaged frames",
+    },
+    light: { key: "Light key angle", roll: "Light roll on screen" },
+    turn: "Specimen rotation on its axis",
+    observation: {
+      view: "View",
+      azimuth: "Azimuth",
+      elevation: "Elevation",
+      distance: "Distance",
+      key: "Key angle",
+      fov: "Field of view",
+    },
+    registro: [
+      ["intencion", "Intent"],
+      ["prueba", "Test"],
+      ["construccion", "Build"],
+      ["resultado", "Result"],
+      ["iteraciones", "Iterations"],
+    ],
+    dials: { key: "Key", roll: "Roll", turn: "Axis" },
+  },
+} as const satisfies Record<Locale, unknown>;

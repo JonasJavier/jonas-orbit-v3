@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
+import { LANGUAGE_COOKIE } from "./lib/language-cookie";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -56,11 +57,17 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // El layout raíz vive bajo `app/[locale]`: una URL fuera de los idiomas
+  // publicados no tiene layout que componga su 404 (`app/global-not-found.tsx`).
+  experimental: { globalNotFound: true },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
-  // F1A/F1B: sin proxy/middleware — redirect estático cubre todo el tráfico.
-  // La detección Accept-Language llega en F2A (proxy.ts) junto con /en.
+  // Sin proxy/middleware: un redirect estático cubre todo el tráfico. `/` va
+  // al inglés, el idioma por defecto (decisión de Jonás, 2026-09-29), y no
+  // se negocia con `Accept-Language`: la versión en español está a un clic en
+  // la cabecera, y una portada que cambia según quién pregunte es una portada
+  // que Google no puede cachear ni enlazar de forma estable.
   async redirects() {
     const canonicalHost = CANONICAL_ORIGIN
       ? new URL(CANONICAL_ORIGIN).host
@@ -75,9 +82,16 @@ const nextConfig: NextConfig = {
       : [];
     return [
       ...legacy,
+      // Quien eligió español en el selector vuelve a entrar en español.
       {
         source: "/",
+        has: [{ type: "cookie" as const, key: LANGUAGE_COOKIE, value: "es" }],
         destination: "/es",
+        permanent: false,
+      },
+      {
+        source: "/",
+        destination: "/en",
         permanent: false,
       },
     ];

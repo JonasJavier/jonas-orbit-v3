@@ -1,4 +1,23 @@
 import Link from "next/link";
+import type { Locale } from "@/content/site.data";
+import { defineCopy } from "@/lib/i18n";
+
+const COPY = defineCopy({
+  es: {
+    role: "Desarrollador full-stack · Diseñador de producto digital",
+    actions: "Acciones principales",
+    projects: "Proyectos",
+    contact: "Contacto",
+    cv: "/cv/jonas-javier-cv-es.pdf",
+  },
+  en: {
+    role: "Full-stack developer · Digital product designer",
+    actions: "Main actions",
+    projects: "Projects",
+    contact: "Contact",
+    cv: "/cv/jonas-javier-cv-en-ats.pdf",
+  },
+});
 
 /**
  * Respaldo semántico de identidad y conversión de la home.
@@ -10,29 +29,32 @@ import Link from "next/link";
  * mínima vive en el HUD como `JONAS ORBIT`.
  */
 export function Hero({
+  locale,
   projectsHref,
   contactHref,
 }: {
+  locale: Locale;
   projectsHref: string;
   contactHref: string;
 }) {
+  const copy = COPY[locale];
   return (
     <header className="hero-semantic visually-hidden" aria-labelledby="hero-title">
       <h1 id="hero-title">
         Jonás Javier Encarnación
       </h1>
-      <p>Desarrollador full-stack · Diseñador de producto digital</p>
+      <p>{copy.role}</p>
       {/* El raíl ya ofrece Proyectos y Contacto de forma accesible. Esta copia
           contractual permanece en el HTML de origen para el fallback, pero no
           añade tres paradas invisibles al recorrido de teclado. */}
-      <nav aria-label="Acciones principales" hidden>
+      <nav aria-label={copy.actions} hidden>
         <Link href={projectsHref}>
-          Proyectos
+          {copy.projects}
         </Link>
         <Link href={contactHref}>
-          Contacto
+          {copy.contact}
         </Link>
-        <a download href="/cv/jonas-javier-cv-es.pdf">
+        <a download href={copy.cv}>
           CV
         </a>
       </nav>

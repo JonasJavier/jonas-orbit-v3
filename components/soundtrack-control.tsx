@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Soundtrack } from "@/lib/soundtrack";
 import { configureAudio } from "@/lib/audio-bus";
+import { defineCopy } from "@/lib/i18n";
 import { playSfx } from "@/lib/sfx";
+import { useLocale } from "./locale-provider";
 import "./soundtrack-control.css";
 
 type TrayState = "on" | "off" | "muted";
@@ -30,8 +32,60 @@ function PlaybackIcon({ active }: { active: boolean }) {
   );
 }
 
+const COPY = defineCopy({
+  es: {
+    loading: "Cargando",
+    retry: "Reintentar",
+    pause: "Pausa",
+    ready: "Listo",
+    muted: "Silenciado",
+    playing: "Reproduciendo",
+    armed: "Activado · suena al primer clic",
+    stopped: "Audio detenido",
+    region: "Banda sonora",
+    clickHint: "Haz clic para escuchar",
+    tapHint: "Toca para escuchar",
+    waitingTitle: "Audio activado · suena con tu primer clic",
+    onTitle: "Audio activado",
+    mutedTitle: "Audio silenciado",
+    offTitle: "Audio desactivado",
+    pauseMusic: "Pausar música",
+    retryMusic: "Reintentar música",
+    playMusic: "Activar música",
+    volume: "Volumen",
+    unmute: "Restaurar sonido",
+    mute: "Silenciar",
+    error: "No se pudo reproducir la música. Puedes reintentarlo; la navegación sigue disponible.",
+  },
+  en: {
+    loading: "Loading",
+    retry: "Retry",
+    pause: "Paused",
+    ready: "Ready",
+    muted: "Muted",
+    playing: "Playing",
+    armed: "On · plays on your first click",
+    stopped: "Audio stopped",
+    region: "Soundtrack",
+    clickHint: "Click to listen",
+    tapHint: "Tap to listen",
+    waitingTitle: "Audio on · plays with your first click",
+    onTitle: "Audio on",
+    mutedTitle: "Audio muted",
+    offTitle: "Audio off",
+    pauseMusic: "Pause music",
+    retryMusic: "Retry music",
+    playMusic: "Play music",
+    volume: "Volume",
+    unmute: "Unmute",
+    mute: "Mute",
+    error: "The music couldn’t play. You can try again; navigation still works.",
+  },
+});
+
 /** Mounted beside the pages in the locale layout, never inside a world. */
 export function SoundtrackControl() {
+  const copy = COPY[useLocale()];
   const [player] = useState(() => new Soundtrack());
   const state = useSyncExternalStore(player.subscribe, player.getSnapshot, player.getServerSnapshot);
   const details = useRef<HTMLDetailsElement>(null);
@@ -40,9 +94,9 @@ export function SoundtrackControl() {
   // ON is the default, and it stays ON while the browser waits for the first
   // gesture to let it sound (`armed`): the tray shows the intent, not the wait.
   const tray: TrayState = quiet ? "muted" : active || state.playback === "armed" ? "on" : "off";
-  const status = quiet ? "Mute" : state.playback === "loading" ? "Cargando" : state.playback === "error" ? "Reintentar"
-    : state.playback === "paused" ? "Pausa" : state.playback === "armed" ? "Listo" : active ? "On" : "Off";
-  const panelStatus = quiet ? "Silenciado" : active ? "Reproduciendo" : state.playback === "armed" ? "Activado · suena al primer clic" : "Audio detenido";
+  const status = quiet ? "Mute" : state.playback === "loading" ? copy.loading : state.playback === "error" ? copy.retry
+    : state.playback === "paused" ? copy.pause : state.playback === "armed" ? copy.ready : active ? "On" : "Off";
+  const panelStatus = quiet ? copy.muted : active ? copy.playing : state.playback === "armed" ? copy.armed : copy.stopped;
   /*
     ON pero todavía mudo: el navegador espera un gesto (sonido-del-sitio.md §2).
     El dueño lo leía como una avería, así que ese estado se enseña: una
@@ -95,11 +149,11 @@ export function SoundtrackControl() {
   }, [player]);
 
   return (
-    <aside className="soundtrack" aria-label="Banda sonora" data-playing={active} data-muted={quiet} data-state={tray} data-waiting={waiting}>
+    <aside className="soundtrack" aria-label={copy.region} data-playing={active} data-muted={quiet} data-state={tray} data-waiting={waiting}>
       {waiting ? (
         <span className="soundtrack__hint" aria-hidden="true">
-          <span className="soundtrack__hint-click">Haz clic para escuchar</span>
-          <span className="soundtrack__hint-touch">Toca para escuchar</span>
+          <span className="soundtrack__hint-click">{copy.clickHint}</span>
+          <span className="soundtrack__hint-touch">{copy.tapHint}</span>
         </span>
       ) : null}
       <details className="soundtrack__settings" ref={details} onKeyDown={(event) => {
@@ -109,7 +163,7 @@ export function SoundtrackControl() {
           event.currentTarget.querySelector("summary")?.focus();
         }
       }}>
-        <summary aria-label="Audio" title={waiting ? "Audio activado · suena con tu primer clic" : tray === "on" ? "Audio activado" : tray === "muted" ? "Audio silenciado" : "Audio desactivado"}>
+        <summary aria-label="Audio" title={waiting ? copy.waitingTitle : tray === "on" ? copy.onTitle : tray === "muted" ? copy.mutedTitle : copy.offTitle}>
           <Speaker state={tray} />
           <span className="tray-state" aria-hidden="true">{tray === "muted" ? "Mute" : tray}</span>
         </summary>
@@ -120,7 +174,7 @@ export function SoundtrackControl() {
             <button
               className="soundtrack__power"
               type="button"
-              aria-label={active ? "Pausar música" : state.playback === "error" ? "Reintentar música" : "Activar música"}
+              aria-label={active ? copy.pauseMusic : state.playback === "error" ? copy.retryMusic : copy.playMusic}
               aria-pressed={active}
               onClick={() => {
                 if (active) {
@@ -137,16 +191,16 @@ export function SoundtrackControl() {
               <span className="visually-hidden">{status}</span>
             </button>
           </div>
-          <div className="soundtrack__volume-label"><label htmlFor="soundtrack-volume">Volumen</label><output htmlFor="soundtrack-volume">{Math.round(state.volume * 100)} %</output></div>
+          <div className="soundtrack__volume-label"><label htmlFor="soundtrack-volume">{copy.volume}</label><output htmlFor="soundtrack-volume">{Math.round(state.volume * 100)} %</output></div>
           <input id="soundtrack-volume" type="range" min="0" max="100" step="1" value={Math.round(state.volume * 100)}
             onChange={(event) => player.setVolume(Number(event.target.value) / 100)} />
           <button className="soundtrack__mute" type="button" aria-pressed={quiet} onClick={() => player.toggleMute()}>
-            <Speaker state={quiet ? "muted" : "on"} />{quiet ? "Restaurar sonido" : "Silenciar"}
+            <Speaker state={quiet ? "muted" : "on"} />{quiet ? copy.unmute : copy.mute}
           </button>
         </div>
       </details>
       <span className="visually-hidden" role="status">
-        {state.playback === "error" ? "No se pudo reproducir la música. Puedes reintentarlo; la navegación sigue disponible." : ""}
+        {state.playback === "error" ? copy.error : ""}
       </span>
     </aside>
   );

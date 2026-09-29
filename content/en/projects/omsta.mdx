@@ -1,0 +1,719 @@
+---
+id: omsta
+slug: omsta
+title: OMSTA — ERP and mobile app for a travel agency
+eyebrow: Featured case study
+summary: >-
+  A production ERP for a Dominican travel agency — bookings, payments,
+  double-entry accounting, tax reporting, payroll and branches — with a native
+  mobile app for the team.
+statusLabel: In daily production · mobile app in development
+role: Sole developer; architecture, backend, web, mobile app, deployment and maintenance
+problem: >-
+  An agency sells eight kinds of product, gets paid in pesos and dollars and
+  files with the DGII, the Dominican tax authority. Sales, money and accounting
+  needed one system, with no data typed in twice.
+contribution: >-
+  I designed and built, on my own, a 19-app Django monolith — from booking to
+  tax report — plus a React Native and Expo app that runs on the same services
+  as the web.
+decision: >-
+  Every economic event is captured once and then propagated: atomic,
+  idempotent services, invariants in the model and PostgreSQL as the single
+  source of truth.
+technologies: [Python, Django, Django REST Framework, PostgreSQL, Redis, Django Q2, React Native, Expo, TypeScript, Railway]
+stack:
+  - group: Languages
+    items: [Python 3.12, TypeScript 6.0, JavaScript, HTML and Django Templates, CSS]
+  - group: Backend
+    items: [Django 5.2, WhiteNoise 6.12, django-filter 25.1, django-select2 8.3, bleach 6.3]
+  - group: Web interface
+    items: [Bootstrap 5.3, Bootstrap Icons 1.11, jQuery 3.7, Select2 4.1, HTMX 2.0, Chart.js 4.4, flatpickr 4.6, SweetAlert2 11]
+  - group: Mobile app
+    items: [React Native 0.86, React 19.2, Expo SDK 57, Expo Router, TanStack Query 5, react-native-mmkv 4.3, Expo SecureStore, Expo Local Authentication, Expo Location, Expo Image Picker, Expo Document Picker]
+  - group: API and contracts
+    items: [Django REST Framework 3.16, Simple JWT 5.5, drf-spectacular 0.30, OpenAPI 3.0, openapi-typescript 7.13]
+  - group: Data and queues
+    items: [PostgreSQL, psycopg 3.3, Redis, Django Q2 1.9, django-storages 1.14, boto3 1.42]
+  - group: PDF and export
+    items: [WeasyPrint 65, ReportLab 4.4, qrcode 8.0, openpyxl 3.1, XlsxWriter 3.2]
+  - group: Integrations
+    items: [Google Places API, Google Maps JavaScript API, IPinfo, SMTP email]
+  - group: Infrastructure
+    items: [Railway, Railpack, Gunicorn 23, Private S3 storage]
+  - group: Mobile build
+    items: [EAS Build, Expo Dev Client, Metro]
+  - group: Quality and CI
+    items: [pytest 8.4, pytest-django 4.11, coverage 7.16, Ruff 0.15, Black 23.12, pre-commit, Jest 29, ESLint 9, GitHub Actions, expo-doctor, Playwright 1.61]
+highlights:
+  - In production and used every day by 15 people, with automatic deploys to Railway from the main branch
+  - Full cycle from sale → payment → NCF invoice → journal entries → DGII reports 606, 607, 608 and 623
+  - Double-entry accounting with invariants enforced in the model and in the database
+  - A native mobile app and its REST API, built in 16 days on the same backend
+  - An end-to-end typed OpenAPI contract, with CI that fails if the app and the API drift apart
+  - 3,164 automated pytest tests against PostgreSQL, with continuous integration on GitHub Actions
+featuredImage:
+  src: /media/projects/omsta/w02-dashboard.png
+  alt: OMSTA dashboard with the month's bookings, amount collected, commission, balance due and operational alerts, on synthetic data
+  caption: The agency's month at a glance, with alerts that lead to action.
+  module: Dashboard and bookings
+gallery:
+  - src: /media/projects/omsta/w04-reserva-hotel-resumen.png
+    alt: Hotel booking record with 70% collected, a status ladder and the outstanding balance
+    caption: A booking shows how much was sold, how much was collected and what's left.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w03-reservas-listado.png
+    alt: Booking list with portfolio, collected, receivable, commission and the status of each sale
+    caption: Every booking with its sales and payment status.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w05-reserva-agenda-pago-suplidor.png
+    alt: Payments tab of a booking with the supplier payment scheduled before check-in
+    caption: The hotel payment date is worked out from the check-in date.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w06-reserva-facturada-paquete-contable.png
+    alt: Invoiced booking with its NCF tax receipt and the posted journal entries
+    caption: The NCF invoice and its entries, right from the booking.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w07-reserva-historial-auditado.png
+    alt: Booking history with twenty-five audited and financial events
+    caption: Everything that happened to the booking, audited.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w08-reserva-paquete-componentes.png
+    alt: Travel package with hotel, transfer and tour, each component with its cost
+    caption: Packages built from components, each with its own cost.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w09-reserva-seguro-asegurados.png
+    alt: Paid-in-full travel insurance with two insured travelers and their travel documents
+    caption: Insurance, cruises, flights and other services, too.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w10-nueva-reserva-vuelo.png
+    alt: Flight booking form with quick section navigation and a live price summary
+    caption: Guided entry by section, with the price summarized live.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/w11-nueva-reserva-crucero.png
+    alt: Cruise booking form with itinerary, passengers and a live summary
+    caption: The same entry pattern for every product type.
+    module: Dashboard and bookings
+  - src: /media/projects/omsta/m02-inicio.png
+    alt: Mobile app home with overdue payments, upcoming check-ins, balance due, amount collected and the month's commission
+    caption: The agency's month, in your pocket.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m03-reservas.png
+    alt: Booking list in the app with search, filters, amounts and statuses
+    caption: Every booking with its sales and payment status.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m04-reserva-ficha.png
+    alt: Booking record in the app with outstanding balance, 70% collected, due date and quick actions
+    caption: Balance, due date and quick actions for a booking.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m05-reserva-pagos.png
+    alt: Payments tab of a booking in the app, with a receipt, WhatsApp and email for each payment
+    caption: Each payment with its receipt, ready to send over WhatsApp.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m06-registrar-cobro.png
+    alt: App form to record a payment that stays pending review until accounting applies it
+    caption: Collect away from the office; accounting reviews it afterwards.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m07-nueva-reserva.png
+    alt: Picker with six product types and a saved draft to continue
+    caption: Six products, and drafts that never get lost.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m10-asistente-calendario.png
+    alt: The wizard's date-range calendar with check-in, check-out and four nights
+    caption: "A custom calendar: check-in, check-out and nights in one tap."
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m11-asistente-habitaciones.png
+    alt: Rooms step of the wizard with lead guest, companion and nightly rate
+    caption: Rooms, guests and rate, step by step.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m12-asistente-dinero.png
+    alt: Money step of the wizard with discount, commission, down payment and installments
+    caption: Discount, commission, down payment and installments in one step.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m13-clientes.png
+    alt: Client list in the app with individuals and companies and status filters
+    caption: Clients and companies, filterable by status.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m14-cliente-ficha.png
+    alt: Client record in the app with outstanding balance and call, WhatsApp and email buttons
+    caption: "Client record: balance and contact in one tap."
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m15-avisos.png
+    alt: App notifications with payments recorded and verified by accounting
+    caption: Alerts when accounting verifies a payment.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m16-catalogos.png
+    alt: Catalog index in the app with suppliers, hotels, airlines, airports, cruise lines and ships
+    caption: Catalogs of suppliers, flights and cruises.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m18-configuracion.png
+    alt: App settings center with users, company, branches, currencies and withholdings
+    caption: Administration, from the phone too.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/m19-retenciones.png
+    alt: AFP, SFS and ISR payroll withholdings that can be switched on from the app
+    caption: Statutory withholdings you can configure from the app.
+    frame: mobile
+    module: Mobile app
+  - src: /media/projects/omsta/w13-crm-clientes.png
+    alt: CRM with twenty-six clients and three companies, with filters and export
+    caption: Clients and companies in one CRM.
+    module: Clients and catalogs
+  - src: /media/projects/omsta/w14-crm-empresa-ficha.png
+    alt: Company record with tax details, representative and contact
+    caption: Company record with RNC tax ID and invoicing regime.
+    module: Clients and catalogs
+  - src: /media/projects/omsta/w12-catalogo-aerolineas.png
+    alt: Airline catalog with IATA code, country and frequent use
+    caption: Catalogs that feed autocomplete in bookings.
+    module: Clients and catalogs
+  - src: /media/projects/omsta/w15-caja-pagos.png
+    alt: Cash and payments with the method, status and receipt of each payment
+    caption: Every payment with its method, status and receipt.
+    module: Payments
+  - src: /media/projects/omsta/w16-pago-protegido.png
+    alt: Posted payment that can't be edited directly and offers receipts, a guided correction or a refund
+    caption: "A posted payment isn't edited: it's corrected or refunded."
+    module: Payments
+  - src: /media/projects/omsta/w17-reembolso-guiado.png
+    alt: Refund of a payment with its accounting trail and a required reason
+    caption: A refund with its accounting reversal and a required reason.
+    module: Payments
+  - src: /media/projects/omsta/w18-cuentas-por-cobrar.png
+    alt: Accounts receivable with portfolio, commission and amount still to collect
+    caption: Receivables derived from bookings and payments.
+    module: Payments
+  - src: /media/projects/omsta/w19-cuentas-por-pagar.png
+    alt: Accounts payable with overdue, due-today and upcoming items
+    caption: What's owed to suppliers, sorted by due date.
+    module: Payments
+  - src: /media/projects/omsta/w20-cxp-saldada.png
+    alt: Supplier payable settled in full
+    caption: "From cost to payment: the payable gets settled."
+    module: Payments
+  - src: /media/projects/omsta/w23-libro-diario.png
+    alt: General journal with balanced entries and the document behind each one
+    caption: Every entry balances and knows which document created it.
+    module: Accounting
+  - src: /media/projects/omsta/w24-asiento-explicado.png
+    alt: Entry detail that explains its debit, credit and origin in plain language
+    caption: Each entry explains in plain Spanish what it records and why.
+    module: Accounting
+  - src: /media/projects/omsta/w25-asientos-de-una-reserva.png
+    alt: Six entries from one booking, from payment to invoice, cost and supplier payment
+    caption: All the accounting for a sale in one table.
+    module: Accounting
+  - src: /media/projects/omsta/w26-salud-contable.png
+    alt: Read-only accounting health check, with no closing blockers and nine of nine identities balanced
+    caption: "An internal auditor: accounting identities that have to balance."
+    module: Accounting
+  - src: /media/projects/omsta/w27-cierre-de-periodo.png
+    alt: Period-close checklist with its checks and warnings
+    caption: Before the month closes, the system reviews everything.
+    module: Accounting
+  - src: /media/projects/omsta/w30-mapa-de-cuentas.png
+    alt: The system's account map with the debit and credit account for each operation
+    caption: Which account each operation uses, and who decides it.
+    module: Accounting
+  - src: /media/projects/omsta/w21-documento-fiscal-suplidor.png
+    alt: Supplier tax document with NCF, 606 expense type and applied payment
+    caption: The supplier's invoice feeds the DGII 606 report.
+    module: DGII tax
+  - src: /media/projects/omsta/w22-factura-paquete-contable.png
+    alt: Invoice with its three entries posted as a single accounting package
+    caption: Issuing the invoice posts its entries as one unit.
+    module: DGII tax
+  - src: /media/projects/omsta/w28-configuracion-fiscal-itbis.png
+    alt: ITBIS regime by service type with its revenue and cost accounts
+    caption: ITBIS (Dominican VAT) and accounts per service type, configurable.
+    module: DGII tax
+  - src: /media/projects/omsta/w29-secuencias-ncf.png
+    alt: Authorized NCF receipt ranges with availability and validity
+    caption: Automatic tax numbering, with no duplicates.
+    module: DGII tax
+  - src: /media/projects/omsta/w31-banco-transacciones.png
+    alt: Bank transactions with inflows, outflows and net flow in pesos
+    caption: Bank movements generated by payments in and out.
+    module: Banking
+  - src: /media/projects/omsta/w32-banco-conciliacion.png
+    alt: Bank reconciliation that requires the journal entry before reconciling a movement
+    caption: Bulk reconciliation with safe validations.
+    module: Banking
+  - src: /media/projects/omsta/w33-nomina-resumen.png
+    alt: Payroll summary with a monthly chart and headcount by department
+    caption: "Payroll inside the ERP: employees, periods and payments."
+    module: Payroll
+  - src: /media/projects/omsta/w34-nomina-empleado.png
+    alt: Employee record with salary, estimated net pay, vacation and loans
+    caption: The employee record with salary, net pay and vacation.
+    module: Payroll
+  - src: /media/projects/omsta/w35-nomina-retenciones-legales.png
+    alt: AFP, SFS and ISR statutory withholdings with their calculation base
+    caption: Dominican AFP, SFS and ISR, configurable without code.
+    module: Payroll
+  - src: /media/projects/omsta/w36-nomina-configuracion-contable.png
+    alt: Mapping of the payroll's salary, bank and withholding accounts
+    caption: Running payroll posts its journal entry automatically.
+    module: Payroll
+  - src: /media/projects/omsta/w37-sucursales.png
+    alt: Two active branches with their employees and departments
+    caption: Multi-branch operations, with permissions per branch.
+    module: Administration
+  - src: /media/projects/omsta/w42-usuarios.png
+    alt: User list with each user's status, role and access actions
+    caption: Users with role, status and access control.
+    module: Administration
+  - src: /media/projects/omsta/w43-evento-auditado.png
+    alt: Immutable audit event showing who changed what, on which record
+    caption: Every change lands in a log that can't be edited.
+    module: Administration
+  - src: /media/projects/omsta/w41-notificaciones.png
+    alt: Notifications of payments recorded by bookings and applied by accounting
+    caption: Bookings records the payment; accounting verifies it.
+    module: Administration
+  - src: /media/projects/omsta/w38-centro-de-documentos.png
+    alt: Document center with seven configurable client documents
+    caption: Seven client-facing documents, configurable.
+    module: Administration
+  - src: /media/projects/omsta/w39-correos-automaticos.png
+    alt: Automatic confirmation and reminder emails that can be switched on one by one
+    caption: Client emails you switch on one at a time.
+    module: Administration
+  - src: /media/projects/omsta/w40-centro-de-reportes.png
+    alt: Report center with operational, accounting and tax reports
+    caption: Operational, accounting and tax reports in one place.
+    module: Administration
+  - src: /media/projects/omsta/w44-tutoriales.png
+    alt: Tutorial center with seventy-one tutorials organized by module
+    caption: 71 in-app tutorials, organized by module.
+    module: Administration
+  - src: /media/projects/omsta/w45-responsive-dashboard.png
+    alt: OMSTA dashboard at phone width
+    caption: The web app adapts to the phone, too.
+    frame: mobile
+    module: The web on a phone
+  - src: /media/projects/omsta/w46-responsive-reserva.png
+    alt: Booking record at phone width with 70% collected
+    caption: The booking record, readable on a small screen.
+    frame: mobile
+    module: The web on a phone
+  - src: /media/projects/omsta/w47-responsive-crm.png
+    alt: CRM as cards at phone width
+    caption: Below 768 px, tables turn into cards.
+    frame: mobile
+    module: The web on a phone
+scope:
+  - value: "19"
+    label: Django apps in a modular monolith
+  - value: "150"
+    label: domain models
+  - value: "54"
+    label: screens in the mobile app
+designDecisions:
+  - screen: /media/projects/omsta/w04-reserva-hotel-resumen.png
+    problem: A booking mixes sales status, payments and balance, and it has to be readable at a glance.
+    decision: A status ladder, percent collected and balance in the header, with sales and payments kept apart.
+  - screen: /media/projects/omsta/m06-registrar-cobro.png
+    problem: Away from the office, a sales agent needs to collect without opening the web app or bypassing accounting.
+    decision: Collecting from the phone uses the same service as the web and stays "pending review" until accounting applies it.
+  - screen: /media/projects/omsta/w16-pago-protegido.png
+    problem: Editing a posted payment would throw bank, entries and balances out of balance.
+    decision: A posted payment can't be edited; you manage receipts, make a guided correction or issue a refund.
+  - screen: /media/projects/omsta/w24-asiento-explicado.png
+    problem: For the people who sell, accounting is a black box.
+    decision: Each entry explains in plain language what it records, and the booking shows all of its entries.
+  - screen: /media/projects/omsta/w05-reserva-agenda-pago-suplidor.png
+    problem: Paying the hotel late puts the client's reservation at risk.
+    decision: The supplier payment date is calculated from check-in and scheduled by due date.
+  - screen: /media/projects/omsta/w26-salud-contable.png
+    problem: An accounting error found at month-end arrives too late and costs too much.
+    decision: A read-only accounting health check, and a period close that locks if any identity doesn't balance.
+  - screen: /media/projects/omsta/w10-nueva-reserva-vuelo.png
+    problem: Six product types with different data end up as six forms that look nothing alike.
+    decision: One entry pattern for all of them, with section navigation and a live price summary.
+  - screen: /media/projects/omsta/m07-nueva-reserva.png
+    problem: Creating a booking on a phone takes a while, and a phone call can interrupt it halfway.
+    decision: A step-by-step wizard that saves every draft encrypted on the phone; you pick up where you left off.
+architecture:
+  nodes:
+    - id: cliente-web
+      label: Django web
+      lane: cliente
+      screen: /media/projects/omsta/w02-dashboard.png
+      decision: >-
+        Server-rendered HTML, with no SPA and no build step, so critical logic
+        and permissions live only in the backend.
+      tech: [Django Templates, Bootstrap 5.3, jQuery 3.7, Select2, HTMX 2.0, Chart.js 4.4]
+    - id: app-movil
+      label: Mobile app
+      lane: cliente
+      screen: /media/projects/omsta/m02-inicio.png
+      decision: >-
+        A second client that never calculates balances or statuses: it renders
+        what the server describes.
+      tech: [React Native 0.86, Expo SDK 57, Expo Router, TypeScript 6.0, TanStack Query 5, react-native-mmkv, Expo SecureStore]
+    - id: api-movil
+      label: Mobile API
+      lane: servicio
+      decision: >-
+        Its own Django app with device-bound JWT and an OpenAPI contract that
+        generates the app's TypeScript types.
+      tech: [Django REST Framework 3.16, Simple JWT 5.5, drf-spectacular 0.30, openapi-typescript 7.13]
+    - id: acceso-seguridad
+      label: Security
+      lane: servicio
+      screen: /media/projects/omsta/w43-evento-auditado.png
+      decision: >-
+        Closed by default: mandatory login, effective roles (role plus modules)
+        and URL-prefix rules enforced in middleware.
+      tech: [Django 5.2, django-user-agents, django-crum]
+    - id: reservas
+      label: Bookings and CRM
+      lane: servicio
+      screen: /media/projects/omsta/w04-reserva-hotel-resumen.png
+      decision: >-
+        Eight product types in a domain that talks to accounting only through a
+        neutral contract, guarded by boundary tests.
+      tech: [Django 5.2, django-filter, django-select2, django-countries]
+    - id: cobros
+      label: Payments
+      lane: servicio
+      screen: /media/projects/omsta/w16-pago-protegido.png
+      decision: >-
+        One recording service for web and mobile; every payment is born
+        "pending review", with an idempotency key, and accounting applies it.
+      tech: [Django 5.2, Django REST Framework, django-storages]
+    - id: contabilidad
+      label: Accounting
+      lane: servicio
+      screen: /media/projects/omsta/w22-factura-paquete-contable.png
+      decision: >-
+        The invoice posts an atomic package of entries so receivables never go
+        into credit and advances never stay unreclassified.
+      tech: [Django 5.2, openpyxl 3.1]
+    - id: ledger
+      label: General ledger
+      lane: servicio
+      screen: /media/projects/omsta/w25-asientos-de-una-reserva.png
+      decision: >-
+        A generic ledger layer that doesn't import accounting and blocks
+        posting into closed periods.
+      tech: [Django 5.2, PostgreSQL]
+    - id: fiscal-dgii
+      label: DGII tax
+      lane: servicio
+      screen: /media/projects/omsta/w21-documento-fiscal-suplidor.png
+      decision: >-
+        An immutable tax snapshot at posting time; it generates the official
+        TXT and the XLSX, and filing with the DGII stays in human hands.
+      tech: [Django 5.2, openpyxl 3.1]
+    - id: banco-divisas
+      label: Banking and FX
+      lane: servicio
+      screen: /media/projects/omsta/w31-banco-transacciones.png
+      decision: >-
+        One bank account per currency, with the exchange rate frozen on every
+        payment in pesos or dollars.
+      tech: [Chart.js 4.4, chartjs-plugin-zoom, openpyxl 3.1]
+    - id: nomina
+      label: Payroll
+      lane: servicio
+      screen: /media/projects/omsta/w33-nomina-resumen.png
+      tech: [ReportLab 4.4, XlsxWriter 3.2, Chart.js 4.4]
+    - id: documentos-pdf
+      label: Documents
+      lane: servicio
+      screen: /media/projects/omsta/w38-centro-de-documentos.png
+      decision: >-
+        Receipts rendered live; only the NCF invoice is immutable.
+      tech: [WeasyPrint 65, ReportLab 4.4, qrcode 8.0, bleach 6.3]
+    - id: postgresql
+      label: PostgreSQL
+      lane: datos
+      decision: >-
+        The single source of truth: everything accounting, auditable or durable
+        lives here.
+      tech: [PostgreSQL, psycopg 3.3]
+    - id: redis
+      label: Redis
+      lane: datos
+      decision: >-
+        Only the Django Q2 queue, cache and sessions; it can be lost without
+        losing any business state.
+      tech: [Redis, redis-py 6.1, hiredis]
+    - id: bucket-s3
+      label: S3 bucket
+      lane: datos
+      decision: >-
+        Receipts and documents in private storage with signed URLs, because
+        they hold personal and financial data.
+      tech: [django-storages 1.14, boto3 1.42]
+    - id: railway-web
+      label: Railway web
+      lane: infraestructura
+      decision: >-
+        Threaded Gunicorn, staggered worker recycling and a /health/ probe
+        exempt from login and from the HTTPS redirect.
+      tech: [Railway, Railpack, Gunicorn 23, WhiteNoise 6.12]
+    - id: worker-q2
+      label: Q2 worker
+      lane: infraestructura
+      decision: >-
+        Django Q2 instead of Celery; jobs are queued on transaction commit and
+        are idempotent.
+      tech: [Django Q2 1.9, Redis]
+    - id: github-ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        Every push to the main branch deploys production and the demo after
+        lint, checks and pytest pass on GitHub Actions.
+      tech: [GitHub Actions, pytest 8.4, Ruff, Black, Jest]
+    - id: eas-build
+      label: EAS Build
+      lane: infraestructura
+      decision: >-
+        Internal development builds tested on a real Android phone; the app
+        stores wait for the business's own accounts.
+      tech: [EAS Build, Expo Dev Client, expo-doctor]
+    - id: smtp
+      label: SMTP email
+      lane: integraciones
+      tech: [Django email, SMTP]
+    - id: ipinfo
+      label: IPinfo
+      lane: integraciones
+      decision: >-
+        IP lookups cached for 24 hours (negative ones for one), so geolocation
+        isn't paid for or waited on in every request.
+      tech: [IPinfo API, requests]
+    - id: google-places
+      label: Google Places
+      lane: integraciones
+      decision: >-
+        Queried from the server, to locate hotels without exposing the key in
+        the app.
+      tech: [Google Places API, Google Maps JavaScript API]
+  edges:
+    - [cliente-web, railway-web]
+    - [app-movil, railway-web]
+    - [railway-web, acceso-seguridad]
+    - [railway-web, api-movil]
+    - [api-movil, acceso-seguridad]
+    - [acceso-seguridad, reservas]
+    - [api-movil, reservas]
+    - [api-movil, cobros]
+    - [reservas, cobros]
+    - [reservas, contabilidad]
+    - [cobros, contabilidad]
+    - [cobros, banco-divisas]
+    - [contabilidad, ledger]
+    - [contabilidad, fiscal-dgii]
+    - [nomina, ledger]
+    - [contabilidad, documentos-pdf]
+    - [ledger, postgresql]
+    - [reservas, postgresql]
+    - [contabilidad, postgresql]
+    - [cobros, bucket-s3]
+    - [documentos-pdf, bucket-s3]
+    - [acceso-seguridad, redis]
+    - [redis, worker-q2]
+    - [worker-q2, postgresql]
+    - [worker-q2, bucket-s3]
+    - [worker-q2, smtp]
+    - [acceso-seguridad, ipinfo]
+    - [api-movil, google-places]
+    - [github-ci, railway-web]
+    - [github-ci, worker-q2]
+    - [eas-build, app-movil]
+links:
+  - label: Let's talk about your system
+    href: /en/contact
+    kind: contact
+seoTitle: OMSTA — Django ERP and React Native Mobile App
+seoDescription: Case study of OMSTA, a Django ERP in production — bookings, payments, double-entry accounting, tax, payroll and branches — plus its React Native app.
+---
+
+## 1. Context
+
+OMSTA is the system CristegnoViajes SRL, a travel agency in the Dominican
+Republic, runs on. The agency sells hotels, flights, packages, cruises,
+insurance and other services, gets paid in pesos and dollars, pays its
+suppliers, runs payroll and files with the DGII, the Dominican tax authority.
+It operates two branches, Santo Domingo and Santiago, on a single platform.
+
+The first commit dates from April 2025. Today the web app is in production and
+15 people use it every day, and since September 2026 the team also has its own
+mobile app.
+
+## 2. The problem
+
+An agency ties together three worlds that usually live apart: sales, money and
+accounting. When each one lives in a different tool, the same data gets typed
+in several times, balances don't match and nobody can reconstruct what
+happened to a booking.
+
+The challenge was to capture a sale **exactly once** and have everything else
+follow from it without retyping a thing: the payment, the NCF tax invoice, the
+journal entries, the supplier payable, the bank movement and the tax reports.
+And to let the team do their part away from the office, too.
+
+## 3. My role
+
+I'm the system's only developer: I modeled the domain, designed the
+architecture, built the backend, the web interface, the API and the mobile
+app, and I handle deployment, maintenance and production incidents. The
+repository has more than eleven hundred commits.
+
+## 4. Users and permissions
+
+Five base roles — super admin, admin, accounting, bookings and clients — with
+individual modules on top that extend what each user can see. An agent creates
+bookings and records payments; accounting verifies them, invoices and closes;
+admin manages users, branches and settings. Permissions are enforced on the
+server, by URL prefix, and never depend on what the interface happens to hide.
+
+## 5. Constraints
+
+- **Dominican tax rules**: NCF receipts from authorized ranges and the 606,
+  607, 608 and 623 formats. The system prepares, validates and exports; a
+  person does the actual filing with the DGII.
+- **Multiple currencies**: every payment keeps the rate it was collected at,
+  and every layer balances against its own total.
+- **Accounting invariants**: receivables never go into credit, a posted entry
+  is never rewritten and a closed period accepts no new entries.
+- **Sensitive data**: payment receipts live in private storage behind signed
+  URLs.
+- **A single developer**: the infrastructure had to stay small and
+  predictable.
+
+## 6. How I built it
+
+By domain and by layer: bookings and clients first; then the services that move
+money; then the general ledger and, finally, tax reporting. Views orchestrate,
+services open the transaction and post the entry, selectors read, and the
+invariants live in the model and in database constraints, because repair
+commands don't go through forms.
+
+The boundaries between domains are guarded by tests: the ledger doesn't import
+accounting, bookings talks to accounting through a neutral contract, and the
+public surface of the largest models can only shrink. Every change goes
+through lint, formatting, Django checks, migrations and pytest on GitHub
+Actions before it ships.
+
+## 7. Architecture decisions
+
+- **A modular monolith, not microservices.** A one-person team and
+  transactions that cross domains call for a single process with clear
+  boundaries.
+- **Server-rendered HTML.** No SPA and no build step: Bootstrap, jQuery and
+  HTMX over Django templates, with the logic only in the backend.
+- **Django Q2, not Celery.** PostgreSQL is the single source of truth, job
+  state included; Redis is queue, cache and sessions, and it can be lost
+  without losing business.
+- **An atomic accounting package.** Issuing an invoice posts the sale, cost,
+  advances and payments in a single service.
+- **An immutable tax snapshot.** What was reported to the DGII doesn't change,
+  even if the source data changes later.
+- **The app doesn't calculate.** The server sends it formatted amounts,
+  statuses with their labels and even the shape of the forms.
+
+## 8. The mobile app
+
+The web app used sessions and CSRF, and there was no API designed for a client
+outside the browser. I built a dedicated REST API with JWT bound to each
+device (with rotation and a blocklist), an OpenAPI contract generated with
+drf-spectacular, and the app's TypeScript types generated from that contract:
+if the API and the app drift apart, continuous integration fails.
+
+The app is built with React Native, Expo and TypeScript. It has 54 screens:
+a home screen with the month's key numbers, bookings with their record and a
+step-by-step creation wizard with drafts and a custom calendar, clients,
+payments, alerts, catalogs and administrative settings. It unlocks with the
+phone's biometrics, stores tokens in the system keychain, works offline from a
+persisted cache and records payments with a photo of the receipt using the same
+service as the web.
+
+The API and the app were built in sixteen days, between September 10 and 25,
+2026. Today they're distributed as internal Android builds through EAS and
+tested on a real phone. The project is already set up for iOS; the iPhone
+version is waiting on the business's Apple Developer account.
+
+## 9. Challenges
+
+Money crosses three domains — bookings, accounting and the ledger — and a
+payment can be applied, corrected, reversed or leave an overpayment. Keeping
+idempotency and integrity intact across all those paths was the hardest part.
+Close behind: Dominican tax rules, and reducing the natural coupling of a large
+monolith without slowing down daily operations.
+
+## 10. Real incidents, solved
+
+- **Payments submitted twice**: every payment carries an idempotency key with
+  a unique constraint in the database; a retry returns the payment that
+  already exists.
+- **An app retry came back as "possible duplicate payment"** because the form
+  validated before the service did. Now the key is resolved first.
+- **Broken PDFs in production** because of system libraries WeasyPrint
+  needed: the deploy image now installs them at build time and at runtime.
+- **A health check behind the login** made Railway treat a healthy deploy as
+  down: `/health/` is now exempt from login and from the HTTPS redirect.
+- **A discount applied to an already-paid booking** created a correct credit
+  balance, but nobody found out. I fixed the notice on save and the receipt,
+  and added a read-only diagnostic to audit overpayments.
+
+## 11. Design and UX
+
+The dashboard puts first what drives the day: bookings, payments, commission,
+balances and alerts that lead to action. The booking record separates sales
+status from payment status and shows the status ladder, the percent collected
+and the balance. The six product types share the same entry pattern, with
+section navigation and a live price summary.
+
+Accounting stops being a black box: each entry explains in plain language what
+it records, and the booking shows all of its own entries. A posted payment
+isn't edited; it's corrected through a guided flow or refunded. And below
+768 px, tables turn into cards.
+
+## 12. About the screenshots
+
+Every screenshot comes from an isolated database, seeded with synthetic data by
+the same services the system uses: invented names, example emails and fictional
+tax documents. None of them show data from the agency or its clients. Screens
+that showed a bug or weren't finished were left out.
+
+## 13. What I learned
+
+In software that handles money, communicating the result matters as much as
+calculating it. Invariants have to live in the model and in the database, not
+in forms. Idempotency comes before validation: otherwise, a retry looks like a
+duplicate. And reusing the web's service from the mobile API avoided having two
+versions of the same business rule.
+
+## 14. Current status
+
+The web app is in production and used every day. The mobile app is in active
+development: bookings, clients, payments and alerts already work on a real
+phone, with push notifications and the app store releases still ahead. Current
+work focuses on a phased accounting audit and on paying down technical debt
+without interrupting operations.
+
+## 15. Next step
+
+The repository is private because it's a client's system. If you need a
+platform that connects operations, money and accounting with real
+traceability, on the web and on the phone, you can [get in touch](/en/contact).

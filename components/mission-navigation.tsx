@@ -17,13 +17,16 @@ import type { WorldNavItem } from "@/lib/worlds";
 export function MissionNavigation({
   worlds,
   activeWorldId,
+  label,
 }: {
   worlds: readonly WorldNavItem[];
   activeWorldId?: WorldId;
+  /** Nombre accesible del `<nav>`, en el idioma de la página. */
+  label: string;
 }) {
   return (
     <nav
-      aria-label="Navegación de mundos"
+      aria-label={label}
       className="mission-nav"
       data-active-world={activeWorldId ?? "home"}
     >

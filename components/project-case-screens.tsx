@@ -5,6 +5,25 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import type { TableScreen } from "@/lib/engineering-table";
+import { defineCopy } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
+
+const COPY = defineCopy({
+  es: {
+    current: (name: string, index: number, total: number) => `${name}: pantalla ${index} de ${total}`,
+    all: (name: string) => `Pantallas de ${name}`,
+    close: "Cerrar",
+    previous: "Pantalla anterior",
+    next: "Pantalla siguiente",
+  },
+  en: {
+    current: (name: string, index: number, total: number) => `${name}: screen ${index} of ${total}`,
+    all: (name: string) => `${name} screens`,
+    close: "Close",
+    previous: "Previous screen",
+    next: "Next screen",
+  },
+});
 
 /**
  * EL VISOR DE PANTALLAS DEL CASO — una captura a pantalla completa
@@ -34,6 +53,7 @@ interface Opened {
 }
 
 export function CaseViewer({ screens, name }: { screens: readonly Shot[]; name: string }) {
+  const t = COPY[useLocale()];
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const [viewed, setViewed] = useState<number | null>(null);
@@ -113,7 +133,7 @@ export function CaseViewer({ screens, name }: { screens: readonly Shot[]; name: 
   return (
     <dialog
       ref={dialog}
-      aria-label={shot ? `${name}: pantalla ${index1(viewed)} de ${total}` : `Pantallas de ${name}`}
+      aria-label={shot ? t.current(name, index1(viewed), total) : t.all(name)}
       className="case-viewer"
       onClick={(event) => {
         // Un clic en el telón —fuera de la captura, su pie y los mandos— cierra.
@@ -132,7 +152,7 @@ export function CaseViewer({ screens, name }: { screens: readonly Shot[]; name: 
               {pad(index1(viewed))} / {pad(total)}
             </p>
             <button autoFocus className="case-viewer__close" onClick={() => dialog.current?.close()} type="button">
-              Cerrar <span aria-hidden="true">×</span>
+              {t.close} <span aria-hidden="true">×</span>
             </button>
           </div>
           <figure className="case-viewer__figure" data-frame={shot.frame}>
@@ -159,10 +179,10 @@ export function CaseViewer({ screens, name }: { screens: readonly Shot[]; name: 
           </figure>
           {total > 1 ? (
             <div className="case-viewer__nav">
-              <button aria-label="Pantalla anterior" onClick={() => step(-1)} type="button">
+              <button aria-label={t.previous} onClick={() => step(-1)} type="button">
                 <span aria-hidden="true">←</span>
               </button>
-              <button aria-label="Pantalla siguiente" onClick={() => step(1)} type="button">
+              <button aria-label={t.next} onClick={() => step(1)} type="button">
                 <span aria-hidden="true">→</span>
               </button>
             </div>

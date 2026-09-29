@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { playSfx } from "@/lib/sfx";
 import {
-  MISSION_OPTIONS,
   TURNSTILE_TEST_TOKEN,
-  contactFormSchema,
   contactPayloadFromForm,
+  createContactFormSchema,
   fieldErrorsFromZod,
+  missionOptions,
   type ContactField,
 } from "@/lib/contact-schema";
+import { defineCopy } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
 
 type TurnstileWidget = {
   render: (
@@ -45,17 +47,80 @@ type PublicConfig = {
 type FormState = "idle" | "submitting" | "error" | "rate-limited";
 type FieldErrors = Partial<Record<ContactField, string>>;
 
-const ERROR_MESSAGES = {
-  configuration:
-    "La baliza segura no está disponible ahora. Puedes escribirme por correo o WhatsApp.",
-  delivery:
-    "La transmisión no pudo salir. Tus datos siguen aquí: inténtalo de nuevo o usa un canal directo.",
-  invalid_request: "No pude interpretar la transmisión. Revisa los datos e inténtalo de nuevo.",
-  turnstile: "La verificación expiró o no fue válida. Complétala de nuevo.",
-  verification_unavailable:
-    "La verificación está tardando más de lo normal. Espera un momento y reintenta.",
-  validation: "Hay campos que necesitan tu atención.",
-} as const;
+const COPY = defineCopy({
+  es: {
+    errors: {
+      configuration: "La baliza segura no está disponible ahora. Puedes escribirme por correo o WhatsApp.",
+      delivery: "La transmisión no pudo salir. Tus datos siguen aquí: inténtalo de nuevo o usa un canal directo.",
+      invalid_request: "No pude interpretar la transmisión. Revisa los datos e inténtalo de nuevo.",
+      turnstile: "La verificación expiró o no fue válida. Complétala de nuevo.",
+      verification_unavailable: "La verificación está tardando más de lo normal. Espera un momento y reintenta.",
+      validation: "Hay campos que necesitan tu atención.",
+    },
+    verificationFailed: "No pude completar la verificación. Reintenta en unos segundos.",
+    checkFields: "Revisa los campos señalados antes de transmitir.",
+    rateLimited: "Hay demasiadas transmisiones desde esta red. Espera unos minutos o usa un canal directo.",
+    failed: "La transmisión falló. Tus datos no se borraron; puedes reintentar.",
+    timeout: "La transmisión tardó demasiado. Tus datos siguen aquí; puedes reintentar.",
+    offline: "Perdimos la señal. Comprueba tu conexión e inténtalo de nuevo.",
+    heading: "Prepara tu mensaje",
+    lead: "No necesitas tenerlo todo resuelto. Una idea es un buen comienzo.",
+    noscript: "Para enviar el formulario necesitas JavaScript. También puedes usar el correo, WhatsApp o el teléfono de arriba.",
+    form: "Enviar un mensaje a Jonás",
+    name: "Nombre",
+    namePlaceholder: "¿Cómo te llamas?",
+    email: "Correo",
+    emailPlaceholder: "tu@correo.com",
+    mission: "Tipo de misión",
+    missionPlaceholder: "Selecciona una ruta",
+    message: "Mensaje",
+    messagePlaceholder: "Qué necesitas, para quién y qué resultado te gustaría conseguir…",
+    honeypot: "Sitio web",
+    privacy: ["He leído la ", "nota de privacidad", " y acepto que estos datos se usen para responderme."],
+    security: "Verificación de seguridad",
+    testReady: "Verificación de pruebas preparada",
+    preparing: "Preparando verificación…",
+    sending: "Transmitiendo…",
+    send: "Enviar transmisión",
+  },
+  en: {
+    errors: {
+      configuration: "The secure beacon isn’t available right now. You can reach me by email or WhatsApp.",
+      delivery: "The transmission couldn’t go out. Your details are still here: try again or use a direct channel.",
+      invalid_request: "I couldn’t read the transmission. Check your details and try again.",
+      turnstile: "The verification expired or wasn’t valid. Please complete it again.",
+      verification_unavailable: "Verification is taking longer than usual. Wait a moment and try again.",
+      validation: "A few fields need your attention.",
+    },
+    verificationFailed: "I couldn’t complete the verification. Try again in a few seconds.",
+    checkFields: "Check the highlighted fields before sending.",
+    rateLimited: "Too many transmissions from this network. Wait a few minutes or use a direct channel.",
+    failed: "The transmission failed. Your details weren’t erased; you can try again.",
+    timeout: "The transmission took too long. Your details are still here; you can try again.",
+    offline: "We lost the signal. Check your connection and try again.",
+    heading: "Write your message",
+    lead: "You don’t need to have it all figured out. An idea is a great place to start.",
+    noscript: "Sending the form requires JavaScript. You can also use the email, WhatsApp or phone above.",
+    form: "Send Jonás a message",
+    name: "Name",
+    namePlaceholder: "What’s your name?",
+    email: "Email",
+    emailPlaceholder: "you@email.com",
+    mission: "Mission type",
+    missionPlaceholder: "Choose a route",
+    message: "Message",
+    messagePlaceholder: "What you need, who it’s for and what outcome yo’d like…",
+    honeypot: "Website",
+    privacy: ["I’ve read the ", "privacy note", " and agree to this information being used to reply to me."],
+    security: "Security check",
+    testReady: "Test verification ready",
+    preparing: "Preparing verification…",
+    sending: "Sending…",
+    send: "Send transmission",
+  },
+});
+
+type ErrorCode = keyof (typeof COPY)["es"]["errors"];
 
 function focusFirstError(errors: FieldErrors) {
   const firstField = Object.keys(errors)[0];
@@ -63,7 +128,16 @@ function focusFirstError(errors: FieldErrors) {
   document.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
 }
 
-export function ContactForm() {
+export function ContactForm({
+  thanksHref,
+  privacyHref,
+}: {
+  /** La confirmación del envío, en el idioma de la página. */
+  thanksHref: string;
+  privacyHref: string;
+}) {
+  const locale = useLocale();
+  const copy = COPY[locale];
   const router = useRouter();
   const widgetContainerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | undefined>(undefined);
@@ -121,7 +195,7 @@ export function ContactForm() {
       "expired-callback": () => setTurnstileToken(""),
       "error-callback": () => {
         setTurnstileToken("");
-        setFormMessage("No pude completar la verificación. Reintenta en unos segundos.");
+        setFormMessage(copy.verificationFailed);
       },
     });
 
@@ -131,7 +205,7 @@ export function ContactForm() {
         widgetIdRef.current = undefined;
       }
     };
-  }, [config, scriptReady]);
+  }, [config, scriptReady, copy.verificationFailed]);
 
   useEffect(
     () => () => {
@@ -155,11 +229,11 @@ export function ContactForm() {
 
     const payload = contactPayloadFromForm(new FormData(event.currentTarget));
     payload.turnstileToken = turnstileToken;
-    const parsed = contactFormSchema.safeParse(payload);
+    const parsed = createContactFormSchema(locale).safeParse(payload);
     if (!parsed.success) {
       const errors = fieldErrorsFromZod(parsed.error);
       setFieldErrors(errors);
-      setFormMessage("Revisa los campos señalados antes de transmitir.");
+      setFormMessage(copy.checkFields);
       // Dos notas graves que bajan. Un error es una información, no un
       // castigo: nada de pitido agudo ni de disonancia.
       playSfx("reject");
@@ -178,35 +252,32 @@ export function ContactForm() {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(parsed.data),
+        // El idioma viaja con el mensaje: el servidor valida en él y se lo
+        // dice a Jonás en el correo.
+        body: JSON.stringify({ ...parsed.data, locale }),
         signal: controller.signal,
       });
       const result = (await response.json().catch(() => ({}))) as {
         ok?: boolean;
-        code?: keyof typeof ERROR_MESSAGES;
+        code?: ErrorCode;
         fieldErrors?: FieldErrors;
       };
 
       if (response.ok && result.ok) {
         // El mensaje sale: dos pulsos que suben y aire que se va con ellos.
         playSfx("transmit");
-        router.push("/es/contacto/gracias");
+        router.push(thanksHref);
         return;
       }
 
       playSfx("reject");
       if (response.status === 429) {
         setFormState("rate-limited");
-        setFormMessage(
-          "Hay demasiadas transmisiones desde esta red. Espera unos minutos o usa un canal directo.",
-        );
+        setFormMessage(copy.rateLimited);
       } else {
         setFormState("error");
         setFieldErrors(result.fieldErrors ?? {});
-        setFormMessage(
-          (result.code && ERROR_MESSAGES[result.code]) ??
-            "La transmisión falló. Tus datos no se borraron; puedes reintentar.",
-        );
+        setFormMessage((result.code && copy.errors[result.code]) ?? copy.failed);
         if (result.fieldErrors) focusFirstError(result.fieldErrors);
       }
       resetVerification();
@@ -214,9 +285,7 @@ export function ContactForm() {
       setFormState("error");
       playSfx("reject");
       setFormMessage(
-        error instanceof DOMException && error.name === "AbortError"
-          ? "La transmisión tardó demasiado. Tus datos siguen aquí; puedes reintentar."
-          : "Perdimos la señal. Comprueba tu conexión e inténtalo de nuevo.",
+        error instanceof DOMException && error.name === "AbortError" ? copy.timeout : copy.offline,
       );
       resetVerification();
     } finally {
@@ -248,24 +317,22 @@ export function ContactForm() {
       ) : null}
 
       <div className="contact-form-shell__heading">
-        <h3>Prepara tu mensaje</h3>
-        <p>
-          No necesitas tenerlo todo resuelto. Una idea es un buen comienzo.
-        </p>
+        <h3>{copy.heading}</h3>
+        <p>{copy.lead}</p>
       </div>
 
-      <noscript><p>Para enviar el formulario necesitas JavaScript. También puedes usar el correo, WhatsApp o el teléfono de arriba.</p></noscript>
-      <form className="contact-form" aria-label="Enviar un mensaje a Jonás" noValidate onSubmit={handleSubmit}>
+      <noscript><p>{copy.noscript}</p></noscript>
+      <form className="contact-form" aria-label={copy.form} noValidate onSubmit={handleSubmit}>
         <div className="contact-form__grid">
           <label>
-            <span>Nombre</span>
+            <span>{copy.name}</span>
             <input
               aria-describedby={fieldErrors.name ? "contact-name-error" : undefined}
               aria-invalid={Boolean(fieldErrors.name)}
               autoComplete="name"
               maxLength={80}
               name="name"
-              placeholder="¿Cómo te llamas?"
+              placeholder={copy.namePlaceholder}
             />
             {fieldErrors.name ? (
               <small className="field-error" id="contact-name-error">
@@ -275,7 +342,7 @@ export function ContactForm() {
           </label>
 
           <label>
-            <span>Correo</span>
+            <span>{copy.email}</span>
             <input
               aria-describedby={fieldErrors.email ? "contact-email-error" : undefined}
               aria-invalid={Boolean(fieldErrors.email)}
@@ -283,7 +350,7 @@ export function ContactForm() {
               inputMode="email"
               maxLength={254}
               name="email"
-              placeholder="tu@correo.com"
+              placeholder={copy.emailPlaceholder}
               type="email"
             />
             {fieldErrors.email ? (
@@ -295,7 +362,7 @@ export function ContactForm() {
         </div>
 
         <label>
-          <span>Tipo de misión</span>
+          <span>{copy.mission}</span>
           <select
             aria-describedby={fieldErrors.mission ? "contact-mission-error" : undefined}
             aria-invalid={Boolean(fieldErrors.mission)}
@@ -303,9 +370,9 @@ export function ContactForm() {
             name="mission"
           >
             <option disabled value="">
-              Selecciona una ruta
+              {copy.missionPlaceholder}
             </option>
-            {MISSION_OPTIONS.map((option) => (
+            {missionOptions(locale).map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -319,13 +386,13 @@ export function ContactForm() {
         </label>
 
         <label>
-          <span>Mensaje</span>
+          <span>{copy.message}</span>
           <textarea
             aria-describedby={fieldErrors.message ? "contact-message-error" : undefined}
             aria-invalid={Boolean(fieldErrors.message)}
             maxLength={2000}
             name="message"
-            placeholder="Qué necesitas, para quién y qué resultado te gustaría conseguir…"
+            placeholder={copy.messagePlaceholder}
             rows={5}
           />
           {fieldErrors.message ? (
@@ -336,15 +403,14 @@ export function ContactForm() {
         </label>
 
         <label className="contact-form__honeypot" aria-hidden="true">
-          Sitio web
+          {copy.honeypot}
           <input autoComplete="off" name="website" tabIndex={-1} />
         </label>
 
         <label className="privacy-check">
           <input name="privacyAccepted" type="checkbox" />
           <span>
-            He leído la <Link href="/es/privacidad">nota de privacidad</Link> y acepto
-            que estos datos se usen para responderme.
+            {copy.privacy[0]}<Link href={privacyHref}>{copy.privacy[1]}</Link>{copy.privacy[2]}
           </span>
         </label>
         {fieldErrors.privacyAccepted ? (
@@ -357,12 +423,12 @@ export function ContactForm() {
         <div
           className="contact-form__turnstile"
           ref={widgetContainerRef}
-          aria-label="Verificación de seguridad"
+          aria-label={copy.security}
         >
           {config?.mode === "test" ? (
-            <span>Verificación de pruebas preparada</span>
+            <span>{copy.testReady}</span>
           ) : !config && !configError ? (
-            <span>Preparando verificación…</span>
+            <span>{copy.preparing}</span>
           ) : null}
         </div>
         {fieldErrors.turnstileToken ? (
@@ -371,14 +437,14 @@ export function ContactForm() {
 
         <div className="contact-form__footer">
           <p aria-live="polite" className="contact-form__status" role="status">
-            {configError ? ERROR_MESSAGES.configuration : formMessage}
+            {configError ? copy.errors.configuration : formMessage}
           </p>
           <button
             className="button button--primary contact-form__submit"
             disabled={!securityReady || configError || formState === "submitting"}
             type="submit"
           >
-            {formState === "submitting" ? "Transmitiendo…" : "Enviar transmisión"}
+            {formState === "submitting" ? copy.sending : copy.send}
           </button>
         </div>
       </form>

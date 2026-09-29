@@ -2,18 +2,52 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SITE_PROFILE } from "@/content/site.data";
+import { defineCopy } from "@/lib/i18n";
 import { playSfx } from "@/lib/sfx";
+import { useLocale } from "./locale-provider";
 
-const WHATSAPP_HREF = `https://wa.me/${SITE_PROFILE.whatsapp}?text=Hola%20Jon%C3%A1s%2C%20quiero%20conversar%20sobre%20un%20proyecto.`;
+const COPY = defineCopy({
+  es: {
+    whatsappText: "Hola Jonás, quiero conversar sobre un proyecto.",
+    email: "Correo",
+    emailCopied: "Correo copiado.",
+    phoneCopied: "Número copiado.",
+    copyFailed: "No se pudo copiar. Puedes seleccionar el dato o usar el enlace directo.",
+    region: "Canales directos",
+    frequencies: "Frecuencias",
+    tuning: "Sintonizando",
+    earth: "Tierra ↔ Ranger",
+    emailId: "01 / CORREO",
+    emailHint: "Las buenas conversaciones empiezan aquí.",
+    whatsappHint: "Un hola, sin rodeos.",
+    linkedinHint: "Perfil profesional",
+    copied: "Copiado",
+    copy: (value: string) => `Copiar ${value}`,
+  },
+  en: {
+    whatsappText: "Hi Jonás, I’d like to talk about a project.",
+    email: "Email",
+    emailCopied: "Email copied.",
+    phoneCopied: "Number copied.",
+    copyFailed: "Couldn’t copy. You can select the text or use the direct link.",
+    region: "Direct channels",
+    frequencies: "Frequencies",
+    tuning: "Tuning",
+    earth: "Earth ↔ Ranger",
+    emailId: "01 / EMAIL",
+    emailHint: "Good conversations start here.",
+    whatsappHint: "A quick hello, no detours.",
+    linkedinHint: "Professional profile",
+    copied: "Copied",
+    copy: (value: string) => `Copy ${value}`,
+  },
+});
+
+const whatsappHref = (text: string) => `https://wa.me/${SITE_PROFILE.whatsapp}?text=${encodeURIComponent(text)}`;
 /** El número de WhatsApp es el mismo que el del teléfono: se muestra una vez. */
 const DISPLAY_PHONE = SITE_PROFILE.phone.replace(/^(\+\d)(\d{3})(\d{3})(\d{4})$/, "$1 ($2) $3-$4");
 
 type Frequency = { id: string; name: string };
-const FREQUENCIES = {
-  email: { id: "01", name: "Correo" },
-  whatsapp: { id: "02", name: "WhatsApp" },
-  linkedin: { id: "03", name: "LinkedIn" },
-} satisfies Record<string, Frequency>;
 
 /**
  * Las tres frecuencias: correo, WhatsApp y LinkedIn. Enlaces reales (mailto,
@@ -28,6 +62,12 @@ const FREQUENCIES = {
  * busca el campo por su etiqueta —lector de pantalla o Playwright por igual.
  */
 export function ContactChannels() {
+  const t = COPY[useLocale()];
+  const frequencies = {
+    email: { id: "01", name: t.email },
+    whatsapp: { id: "02", name: "WhatsApp" },
+    linkedin: { id: "03", name: "LinkedIn" },
+  } satisfies Record<string, Frequency>;
   const [frequency, setFrequency] = useState<Frequency | null>(null);
   const [feedback, setFeedback] = useState("");
   const [copied, setCopied] = useState<"email" | "phone" | null>(null);
@@ -43,12 +83,12 @@ export function ContactChannels() {
       await navigator.clipboard.writeText(value);
       if (request !== requestRef.current) return;
       setCopied(channel);
-      setFeedback(channel === "email" ? "Correo copiado." : "Número copiado.");
+      setFeedback(channel === "email" ? t.emailCopied : t.phoneCopied);
       timerRef.current = setTimeout(() => { setCopied(null); setFeedback(""); }, 2600);
     } catch {
       if (request !== requestRef.current) return;
       setCopied(null);
-      setFeedback("No se pudo copiar. Puedes seleccionar el dato o usar el enlace directo.");
+      setFeedback(t.copyFailed);
     }
   }
 
@@ -65,29 +105,29 @@ export function ContactChannels() {
   });
 
   return (
-    <div className="ranger-channels" aria-label="Canales directos">
-      <div className="ranger-module__label"><span>Frecuencias</span><span className="ranger-channels__tuned" aria-hidden="true" data-live={frequency ? "frequency" : undefined}>{frequency ? `Sintonizando ${frequency.id} · ${frequency.name}` : "Tierra ↔ Ranger"}</span></div>
+    <div className="ranger-channels" aria-label={t.region}>
+      <div className="ranger-module__label"><span>{t.frequencies}</span><span className="ranger-channels__tuned" aria-hidden="true" data-live={frequency ? "frequency" : undefined}>{frequency ? `${t.tuning} ${frequency.id} · ${frequency.name}` : t.earth}</span></div>
       <div className="ranger-freq-list">
-        <article className="ranger-freq" {...tune(FREQUENCIES.email, 1)}>
+        <article className="ranger-freq" {...tune(frequencies.email, 1)}>
           <a href={`mailto:${SITE_PROFILE.email}`}>
-            <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" />01 / CORREO</span>
-            <span className="ranger-freq__value"><strong>{SITE_PROFILE.email}</strong><span className="ranger-freq__hint">Las buenas conversaciones empiezan aquí.</span></span>
+            <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" />{t.emailId}</span>
+            <span className="ranger-freq__value"><strong>{SITE_PROFILE.email}</strong><span className="ranger-freq__hint">{t.emailHint}</span></span>
             <span className="ranger-freq__arrow" aria-hidden="true">↗</span>
           </a>
-          <button type="button" onClick={() => copy(SITE_PROFILE.email, "email")} data-copied={copied === "email"} aria-label={copied === "email" ? "Copiado" : `Copiar ${SITE_PROFILE.email}`}>{copied === "email" ? "✓" : <CopyIcon />}</button>
+          <button type="button" onClick={() => copy(SITE_PROFILE.email, "email")} data-copied={copied === "email"} aria-label={copied === "email" ? t.copied : t.copy(SITE_PROFILE.email)}>{copied === "email" ? "✓" : <CopyIcon />}</button>
         </article>
-        <article className="ranger-freq" {...tune(FREQUENCIES.whatsapp, 1.25)}>
-          <a href={WHATSAPP_HREF} rel="noreferrer" target="_blank">
+        <article className="ranger-freq" {...tune(frequencies.whatsapp, 1.25)}>
+          <a href={whatsappHref(t.whatsappText)} rel="noreferrer" target="_blank">
             <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" />02 / WHATSAPP</span>
-            <span className="ranger-freq__value"><strong>{DISPLAY_PHONE}</strong><span className="ranger-freq__hint">Un hola, sin rodeos.</span></span>
+            <span className="ranger-freq__value"><strong>{DISPLAY_PHONE}</strong><span className="ranger-freq__hint">{t.whatsappHint}</span></span>
             <span className="ranger-freq__arrow" aria-hidden="true">↗</span>
           </a>
-          <button type="button" onClick={() => copy(SITE_PROFILE.phone, "phone")} data-copied={copied === "phone"} aria-label={copied === "phone" ? "Copiado" : `Copiar ${DISPLAY_PHONE}`}>{copied === "phone" ? "✓" : <CopyIcon />}</button>
+          <button type="button" onClick={() => copy(SITE_PROFILE.phone, "phone")} data-copied={copied === "phone"} aria-label={copied === "phone" ? t.copied : t.copy(DISPLAY_PHONE)}>{copied === "phone" ? "✓" : <CopyIcon />}</button>
         </article>
-        <article className="ranger-freq" {...tune(FREQUENCIES.linkedin, 1.5)}>
+        <article className="ranger-freq" {...tune(frequencies.linkedin, 1.5)}>
           <a href={SITE_PROFILE.linkedin} rel="noreferrer" target="_blank">
             <span className="ranger-freq__id"><i className="ranger-led" aria-hidden="true" />03 / LINKEDIN</span>
-            <span className="ranger-freq__value"><strong>{SITE_PROFILE.name}</strong><span className="ranger-freq__hint">Perfil profesional</span></span>
+            <span className="ranger-freq__value"><strong>{SITE_PROFILE.name}</strong><span className="ranger-freq__hint">{t.linkedinHint}</span></span>
             <span className="ranger-freq__arrow" aria-hidden="true">↗</span>
           </a>
         </article>

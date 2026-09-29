@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useMotionEnabled } from "@/lib/effects-mode";
 import { playSfx } from "@/lib/sfx";
+import { useLocale } from "./locale-provider";
 
 type Photo = { src: string; alt: string; title: string; caption: string };
 
@@ -18,6 +19,7 @@ type Photo = { src: string; alt: string; title: string; caption: string };
  * The story stays server-rendered; this boundary owns only navigation, motion
  * visibility and one native modal. It never controls the system camera. */
 export function AboutExperience({ children }: { children: ReactNode }) {
+  const close = useLocale() === "es" ? "Cerrar" : "Close";
   const rootRef = useRef<HTMLElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLAnchorElement | null>(null);
@@ -311,7 +313,7 @@ export function AboutExperience({ children }: { children: ReactNode }) {
           <div className="about-dialog-head">
             <h2 id="about-photo-title">{photo.title}</h2>
             <button type="button" autoFocus onClick={() => closePhoto()}>
-              Cerrar ×
+              {close} ×
             </button>
           </div>
           <img src={photo.src} alt={photo.alt} />

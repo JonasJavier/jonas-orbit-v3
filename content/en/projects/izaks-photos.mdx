@@ -1,0 +1,579 @@
+---
+id: izaks-photos
+slug: izaks-photos
+title: Izak's Photos
+eyebrow: Photography site and portfolio
+summary: >-
+  A bilingual, live demo photography studio: a 42-photo gallery with shareable
+  links, an accessible viewer and bookings stored in Django, all served by a
+  single Railway service.
+statusLabel: Live on Railway · demo studio
+role: Full-stack evolution; interface, bilingual experience, API, performance and deployment
+problem: >-
+  An archive of photos in four series tends to turn into a generic grid, and
+  the same site has to take a visitor from "I like this work" to "I'm sending a
+  request".
+contribution: >-
+  I rebuilt the site in React and Django — a filterable gallery with the open
+  photo in the URL, a keyboard-friendly viewer, English and Spanish, validated
+  bookings — and took it to production with WebP thumbnails, rate limiting and
+  CI.
+decision: >-
+  A single service in production: Django serves the Vite build, the API and the
+  admin from the same origin, with no CORS.
+technologies: [React 18, Vite 8, React Router 7, Django 5.2, Django REST Framework, Railway]
+stack:
+  - group: Languages
+    items: [JavaScript (JSX), Python 3, CSS, HTML]
+  - group: Frontend
+    items: [React 18.3, React Router 7.18, Vite 8.3, "@vitejs/plugin-react 6.1"]
+  - group: Interface
+    items: [Custom CSS with variables, Fraunces and DM Sans, lucide-react 0.468, IntersectionObserver]
+  - group: State and language
+    items: [React Context, useSearchParams, localStorage, fetch]
+  - group: Backend
+    items: [Django 5.2, Django REST Framework 3, Django Admin, django-cors-headers 4, python-dotenv 1]
+  - group: Data
+    items: [SQLite, PostgreSQL, dj-database-url 2, psycopg2 2.9]
+  - group: Images
+    items: [720 px WebP thumbnails, Pillow (thumbnail script), Vite import.meta.glob]
+  - group: Server and deployment
+    items: [Gunicorn 23, WhiteNoise 6.12, Railway, Railpack]
+  - group: Quality and CI
+    items: [Django TestCase, GitHub Actions, EditorConfig]
+  - group: Tooling
+    items: [Node.js 24, npm, Git]
+highlights:
+  - Live at izaksphotos.jonasjavier.dev as a single Railway service, with migrations before release and a health check
+  - A 42-photo gallery in 4 series with filters and the open photo in the URL, so every image has its own link
+  - A full-screen viewer with keyboard support, touch swipe and focus kept inside the dialog
+  - The full interface in English and Spanish, with the language remembered
+  - WebP thumbnails that cut the full mobile gallery from 9.3 MB to 2.4 MB
+  - Bookings stored in Django with per-field errors, rate limiting and a honeypot field; 8 tests in CI
+featuredImage:
+  src: /media/projects/izaks-photos/01-home-desktop.png
+  alt: "Izak's Photos home page with a warm-light portrait and buttons to view the gallery and book"
+  caption: "The photo leads, and the two main actions are visible at first glance."
+  module: Home and navigation
+gallery:
+  - src: /media/projects/izaks-photos/07-home-featured-hover-desktop.png
+    alt: "Wedding photo from the featured mosaic with the First Dance label on hover"
+    caption: "Each featured photo shows its series and opens that image in the viewer."
+    module: Home and navigation
+  - src: /media/projects/izaks-photos/09-home-services-desktop.png
+    alt: "Three service cards, Portrait Session, Brand Editorial and Wedding & Events, with sample prices"
+    caption: "Three packages with length, what's included and price; the prices are samples."
+    module: Home and navigation
+  - src: /media/projects/izaks-photos/11-home-process-desktop.png
+    alt: "The Process section with four steps: Connect, Plan, Create and Deliver"
+    caption: "Four steps explain the work from first idea to delivery."
+    module: Home and navigation
+  - src: /media/projects/izaks-photos/13-home-testimonials-desktop.png
+    alt: "Three sample testimonial cards with five stars, a quote, a name and the session type"
+    caption: "A testimonials block ready for real ones; the current ones are samples."
+    module: Home and navigation
+  - src: /media/projects/izaks-photos/15-home-cta-footer-desktop.png
+    alt: "Final call to action with the Start Booking button and a footer with navigation and a link to send a request"
+    caption: "The footer leads to the form instead of to an email that doesn't exist."
+    module: Home and navigation
+  - src: /media/projects/izaks-photos/53-not-found-desktop.png
+    alt: "404 page with the headline This frame didn't make the final edit and buttons to the gallery and home"
+    caption: "A broken URL gets its own page, with a way back to the gallery."
+    module: Home and navigation
+  - src: /media/projects/izaks-photos/17-gallery-desktop.png
+    alt: "Gallery with the All, Portraits, Editorial, Weddings and Travel filters and the photo count for each"
+    caption: "The filters say how many photos each series holds."
+    module: Gallery and viewer
+  - src: /media/projects/izaks-photos/19-gallery-grid-desktop.png
+    alt: "Photo mosaic mixing portrait, wedding, editorial and travel across four columns"
+    caption: "“All” interleaves the series so the mosaic doesn't cluster by type."
+    module: Gallery and viewer
+  - src: /media/projects/izaks-photos/22-gallery-weddings-desktop.png
+    alt: "Wedding series with nine photos and the Weddings filter active"
+    caption: "Each series has its own URL, ready to share."
+    module: Gallery and viewer
+  - src: /media/projects/izaks-photos/24-gallery-travel-desktop.png
+    alt: "Travel series with portrait and landscape photos of stars, streets, flowers and landscapes"
+    caption: "Portrait and landscape photos sit together because each one reserves its aspect ratio."
+    module: Gallery and viewer
+  - src: /media/projects/izaks-photos/26-lightbox-desktop.png
+    alt: "Full-screen viewer with the Red Motion photo, its title and the 02 of 42 counter"
+    caption: "Every photo has its own link that opens the viewer directly."
+    module: Gallery and viewer
+  - src: /media/projects/izaks-photos/28-lightbox-landscape-desktop.png
+    alt: "Viewer with The Arch, a landscape photo of a couple under a flower arch"
+    caption: "The viewer adapts its frame to portrait and landscape photos."
+    module: Gallery and viewer
+  - src: /media/projects/izaks-photos/31-about-desktop.png
+    alt: "About page with a portrait labeled From the portfolio and the headline about photography"
+    caption: "About opens with a photo from the portfolio, labeled as such."
+    module: About
+  - src: /media/projects/izaks-photos/33-about-story-desktop.png
+    alt: "The Studio text next to a card with the quote Less posing More presence and a portrait"
+    caption: "The story and a quote sum up the philosophy: less posing, more presence."
+    module: About
+  - src: /media/projects/izaks-photos/38-booking-desktop.png
+    alt: "Booking page with package selection, the form and the confirmation panel"
+    caption: "Package, form and summary share a single view."
+    module: Bookings
+  - src: /media/projects/izaks-photos/41-booking-filled-desktop.png
+    alt: "Filled-in form with Brand Editorial and a summary with price, date, location and email"
+    caption: "The summary updates as the visitor types."
+    module: Bookings
+  - src: /media/projects/izaks-photos/43-booking-success-desktop.png
+    alt: "You're all set confirmation panel with a summary of the saved request"
+    caption: "After submitting, the confirmation sums up exactly what was sent."
+    module: Bookings
+  - src: /media/projects/izaks-photos/45-booking-validation-desktop.png
+    alt: "Form with the email field marked in red and the message Enter a valid email address"
+    caption: "If the API rejects a value, the exact field is marked and explained."
+    module: Bookings
+  - src: /media/projects/izaks-photos/47-booking-offline-desktop.png
+    alt: "Couldn't reach the server error message under the button, with the form still filled in"
+    caption: "If the network fails, the notice says so and the data stays typed in."
+    module: Bookings
+  - src: /media/projects/izaks-photos/48-home-es-desktop.png
+    alt: "Spanish home page with the headline Retratos en luz tranquila and the language switcher on ES"
+    caption: "The whole site exists in English and Spanish, and remembers the choice."
+    module: In Spanish
+  - src: /media/projects/izaks-photos/51-gallery-es-desktop.png
+    alt: "Gallery in Spanish with the Todo, Retratos, Editorial, Bodas and Viajes filters"
+    caption: "Filters and counters, in Spanish too."
+    module: In Spanish
+  - src: /media/projects/izaks-photos/52-booking-es-desktop.png
+    alt: "Booking page in Spanish with the packages and the form translated"
+    caption: "The booking form, translated from start to finish."
+    module: In Spanish
+  - src: /media/projects/izaks-photos/55-admin-inquiries-desktop.png
+    alt: "Inquiry list in Django Admin with name, email, type, preferred date, handled and created"
+    caption: "Every request reaches the admin, where it can be filtered and searched."
+    module: Admin
+  - src: /media/projects/izaks-photos/57-admin-inquiries-handled-desktop.png
+    alt: "Notice of two requests marked as handled and the list filtered to the four still pending"
+    caption: "One action marks several requests as handled at once."
+    module: Admin
+  - src: /media/projects/izaks-photos/20-gallery-grid-mobile.png
+    alt: "Two-column mosaic on mobile with Stillness, Newsprint, Red Motion and Vows labeled"
+    caption: "On touch screens each photo shows its location and title."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/23-gallery-weddings-mobile.png
+    alt: "Wedding series on mobile with photos labeled First Dance, Just Married and The Arch"
+    caption: "The wedding series on the phone, every photo labeled."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/27-lightbox-mobile.png
+    alt: "Viewer on mobile with the Red Motion photo and previous and next buttons at the bottom"
+    caption: "Move between photos with the arrows or by swiping."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/29-lightbox-landscape-mobile.png
+    alt: "Viewer on mobile with Sunlit Walk, a landscape photo of a couple walking"
+    caption: "Landscape photos center at full width."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/18-gallery-mobile.png
+    alt: "Gallery on mobile with the series filters on two rows and the photo counter"
+    caption: "The filters fit on two rows without hiding a single series."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/02-home-mobile.png
+    alt: "Izak's Photos home page on a phone with the headline and two full-width buttons"
+    caption: "Actions go full width, and “Reserve” never disappears."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/03-menu-mobile.png
+    alt: "Mobile menu with three links, the Reserve button and the language switcher"
+    caption: "The menu holds navigation, booking and language; Escape closes it."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/08-home-featured-mobile.png
+    alt: "Red Motion featured photo on mobile with its title visible over the image"
+    caption: "Titles are always visible, with no mouse required."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/10-home-services-mobile.png
+    alt: "Portrait Session package card on mobile with length, details and price"
+    caption: "Each package reads in full on a single card."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/12-home-process-mobile.png
+    alt: "Connect, Plan and Create steps stacked on a phone screen"
+    caption: "The steps stack with large numbers."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/32-about-mobile.png
+    alt: "About on mobile with the Winter Gaze portrait on top and the headline below"
+    caption: "The photo comes first, cropped to 4:5 so it doesn't take the whole screen."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/34-about-story-mobile.png
+    alt: "The Studio text on mobile with the Santo Domingo location"
+    caption: "The story reads straight through in one column."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/35-about-quote-mobile.png
+    alt: "Card with the quote Less posing More presence and Izak's signature on mobile"
+    caption: "The quote and the signature close the story."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/39-booking-mobile.png
+    alt: "Booking page on mobile with the headline and the three priced packages"
+    caption: "Pick the package first, then fill in the form."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/40-booking-packages-mobile.png
+    alt: "Three packages and the Tuesday-to-Saturday note with a 30 percent deposit on mobile"
+    caption: "A note spells out session days and the deposit before the form."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/42-booking-form-mobile.png
+    alt: "Filled-in booking form on mobile with name, email, phone, type, date and location"
+    caption: "The form goes to one column with roomy fields."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/44-booking-success-mobile.png
+    alt: "Booking confirmation on mobile with the session summary and the saved message"
+    caption: "After submitting, the page scrolls down to the confirmation on its own."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/46-booking-validation-mobile.png
+    alt: "Email field flagged with an error on the booking form on mobile"
+    caption: "The same per-field notice, on the phone."
+    module: On the phone
+    frame: mobile
+  - src: /media/projects/izaks-photos/49-home-es-mobile.png
+    alt: "Spanish home page on a phone with the Ver la Galería and Reservar Sesión buttons"
+    caption: "The Spanish version keeps its hierarchy on the phone."
+    module: On the phone
+    frame: mobile
+scope:
+  - value: −74 %
+    label: lighter gallery thumbnails
+  - value: "42"
+    label: photos in 4 series, each with its own link
+  - value: "2"
+    label: languages, English and Spanish
+designDecisions:
+  - screen: /media/projects/izaks-photos/01-home-desktop.png
+    problem: The site has to show off the work and, at the same time, lead to a booking.
+    decision: A full-bleed hero with two actions and “Reserve” pinned in the header on every page.
+  - screen: /media/projects/izaks-photos/19-gallery-grid-desktop.png
+    problem: Forty-two photos in four series turn into a generic grid.
+    decision: A mosaic that interleaves the series, filters with counts and a full-screen, keyboard-ready viewer.
+  - screen: /media/projects/izaks-photos/26-lightbox-desktop.png
+    problem: There was no way to share or link to a specific photo.
+    decision: The category and the open photo live in the URL; every photo has its own link.
+  - screen: /media/projects/izaks-photos/20-gallery-grid-mobile.png
+    problem: On the phone, titles never showed, because they only appeared on hover.
+    decision: On touch screens, the location and title stay visible over every photo.
+  - screen: /media/projects/izaks-photos/24-gallery-travel-desktop.png
+    problem: The gallery downloaded 9.3 MB of full JPEGs just to show small thumbnails.
+    decision: 720 px WebP thumbnails in the grids; the full JPEG only loads in the viewer.
+  - screen: /media/projects/izaks-photos/44-booking-success-mobile.png
+    problem: On the phone, the booking confirmation landed off-screen.
+    decision: After submitting, the page scrolls to the confirmation, which sums up what was sent.
+  - screen: /media/projects/izaks-photos/45-booking-validation-desktop.png
+    problem: A generic error makes you guess what failed and type everything again.
+    decision: The API returns each field's error and the form marks it in place, without clearing what was typed.
+  - screen: /media/projects/izaks-photos/48-home-es-desktop.png
+    problem: A studio that works at home and abroad can't speak just one language.
+    decision: English and Spanish across the site in one click; the choice is remembered and updates the page lang.
+architecture:
+  nodes:
+    - id: portada
+      label: Home page
+      lane: cliente
+      screen: /media/projects/izaks-photos/01-home-desktop.png
+      decision: >-
+        A full-bleed hero with a pause button and “Reserve” pinned in the
+        header; featured photos open that image in the viewer.
+      tech: [React 18, React Router 7]
+    - id: movil
+      label: On the phone
+      lane: cliente
+      screen: /media/projects/izaks-photos/20-gallery-grid-mobile.png
+      decision: >-
+        On touch, each photo's location and title are always visible: there's
+        no hover to reveal them.
+      tech: ["@media (hover: none)", Custom CSS]
+    - id: galeria
+      label: Gallery
+      lane: cliente
+      screen: /media/projects/izaks-photos/19-gallery-grid-desktop.png
+      decision: >-
+        The mosaic interleaves the series and each photo reserves its aspect
+        ratio; the category lives in the URL.
+      tech: [useSearchParams, Custom CSS]
+    - id: visor
+      label: Viewer
+      lane: cliente
+      screen: /media/projects/izaks-photos/26-lightbox-desktop.png
+      decision: >-
+        Keyboard, swipe and focus kept inside the dialog; the open photo is a
+        link, and its thumbnail covers it while the JPEG arrives.
+      tech: [React 18, useSearchParams]
+    - id: sobre-mi
+      label: About
+      lane: cliente
+      screen: /media/projects/izaks-photos/31-about-desktop.png
+      decision: >-
+        Photos are labeled as portfolio work, not as a portrait of anyone.
+      tech: [React 18]
+    - id: reservas
+      label: Bookings
+      lane: cliente
+      screen: /media/projects/izaks-photos/43-booking-success-desktop.png
+      decision: >-
+        Per-field errors returned by the API and, after submitting, a summary
+        the page scrolls to on the phone.
+      tech: [fetch, aria-invalid]
+    - id: idioma
+      label: Language
+      lane: cliente
+      screen: /media/projects/izaks-photos/48-home-es-desktop.png
+      decision: >-
+        A custom Context with t({ en, es }), no translation library; the
+        language is remembered and updates the page lang.
+      tech: [React Context, localStorage]
+    - id: api
+      label: Booking API
+      lane: servicio
+      decision: >-
+        Validates and stores each request; ten per hour per client, and a
+        honeypot field that accepts bots without saving them.
+      tech: [Django REST Framework 3, DRF throttling]
+    - id: admin
+      label: Admin
+      lane: servicio
+      screen: /media/projects/izaks-photos/55-admin-inquiries-desktop.png
+      decision: >-
+        Filters, search and two actions: mark requests as handled or reopen
+        them.
+      tech: [Django Admin]
+    - id: salud
+      label: Health check
+      lane: servicio
+      decision: >-
+        Railway only releases the new version if /api/health/ responds.
+      tech: [Django 5.2]
+    - id: base
+      label: Database
+      lane: datos
+      decision: >-
+        SQLite locally and PostgreSQL with DATABASE_URL, without code changes;
+        a single ten-field model for requests.
+      tech: [SQLite, PostgreSQL, dj-database-url]
+    - id: fotos
+      label: Photos
+      lane: datos
+      decision: >-
+        Shipped in the build: the full JPEG for the viewer and hero, and 720 px
+        WebP thumbnails for the grids.
+      tech: [import.meta.glob, WebP]
+    - id: preferencia
+      label: localStorage
+      lane: datos
+      decision: >-
+        Stores only the chosen language: the site has no accounts and no
+        tracking cookies.
+      tech: [localStorage]
+    - id: servidor
+      label: Server
+      lane: infraestructura
+      decision: >-
+        A single process serves the Vite build, the API and the admin from the
+        same origin: no CORS in production.
+      tech: [Gunicorn 23, WhiteNoise 6.12]
+    - id: railway
+      label: Railway
+      lane: infraestructura
+      decision: >-
+        Railpack builds everything, migrates before release and restarts the
+        service if the health check fails.
+      tech: [Railway, Railpack]
+    - id: ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        On every push and pull request: pending migrations, the 8 tests and the
+        frontend build.
+      tech: [GitHub Actions]
+    - id: fuentes
+      label: Google Fonts
+      lane: integraciones
+      decision: >-
+        Fraunces and DM Sans: the only external runtime dependency.
+      tech: [Google Fonts]
+  edges:
+    - [portada, galeria]
+    - [portada, visor]
+    - [galeria, visor]
+    - [portada, reservas]
+    - [sobre-mi, reservas]
+    - [movil, galeria]
+    - [idioma, preferencia]
+    - [galeria, fotos]
+    - [visor, fotos]
+    - [reservas, api]
+    - [api, base]
+    - [admin, base]
+    - [portada, fuentes]
+    - [ci, servidor]
+    - [railway, servidor]
+    - [railway, salud]
+    - [servidor, api]
+    - [servidor, admin]
+    - [servidor, fotos]
+links:
+  - label: Visit the site
+    href: https://izaksphotos.jonasjavier.dev
+    kind: demo
+  - label: View repository
+    href: https://github.com/JonasJavier/IZAK-S-PHOTOS
+    kind: repository
+seoTitle: Izak's Photos — Photography Portfolio in React and Django
+seoDescription: Case study of Izak's Photos, a bilingual photography site with a linkable gallery, an accessible viewer and Django REST bookings, on a single Railway service.
+---
+
+## 1. Context
+
+Izak's Photos is the site of a portrait, wedding, editorial and travel
+photography studio based in Santo Domingo. **The studio is fictional**: Izak
+doesn't exist, and the prices, studio figures and testimonials are sample
+content to show off the product. What is real is the software: it's live, it
+stores requests and it deploys like any client's site.
+
+The project started in May 2024 in a repository created by Job Nacor, where we
+collaborated: a React and Bootstrap site with seven pages and a four-field
+contact form. In June 2026 I rebuilt it from scratch, and in September I took
+it to production. Today I maintain this edition, and the repository keeps both
+of our authorship.
+
+## 2. The problem
+
+A large archive of photos tends to become a generic grid, and a photographer's
+site has two jobs at once: show off the work and turn a visit into a request.
+On top of that, a photo you can't link to is a photo you can't share, and on
+the phone everything that depends on a mouse disappears.
+
+## 3. My role
+
+The 2026 rebuild is mine: the responsive interface, the bilingual experience,
+the gallery and the viewer, the booking API, the admin, image performance, the
+Railway deployment, the tests, continuous integration and the documentation.
+
+## 4. Constraints
+
+- **A single service.** Django serves the API, the admin and the Vite build
+  from the same domain.
+- **No photo uploads.** Images are build files: adding one requires a deploy.
+- **No outgoing email.** Requests stay in the database and are handled from
+  the admin.
+- **Hand-written bilingual copy.** 256 Spanish strings next to their English
+  versions, with no translation library.
+
+## 5. How I built it
+
+The 2026 version went from 25 runtime dependencies to 6, and from seven
+sections to four pages — home, gallery, about and bookings — plus a custom
+404. The four-field contact model became a ten-field booking request, and the
+form talks to the API in camelCase while the serializer maps it to the model's
+fields.
+
+In September I reviewed it at five widths (1440, 1024, 768, 390 and 360 px)
+and in both languages, and fixed what that review turned up before deploying:
+shareable links, an accessible viewer, WebP thumbnails, rate limiting, a 404
+page and a stricter production configuration.
+
+## 6. Architecture decisions
+
+- **Same origin in production.** Django and WhiteNoise serve the build with
+  hashed, compressed file names, and a catch-all route returns `index.html` for
+  React's routes. The form calls `/api/contact/`, so no CORS is needed. In
+  development, Vite and Django run separately.
+- **Gallery state in the URL.** `?category=` and `?photo=`: a series or an open
+  photo can be linked, and the featured photos on the home page open their own
+  directly.
+- **Minimal, custom translation.** A Context with `t({ en, es })` that detects
+  the browser language, remembers it and updates `<html lang>`.
+- **The database by configuration.** SQLite locally and PostgreSQL if
+  `DATABASE_URL` exists, with no code changes.
+- **Ship only what works.** Railway migrates before release and checks
+  `/api/health/` before sending traffic to the new version.
+
+## 7. Image performance
+
+The gallery downloaded full JPEGs to paint small thumbnails: 9,303 KB on a
+phone. A script now generates 720 px WebP thumbnails, 74% lighter than the
+JPEGs (8,986 KB versus 2,372 KB); the full JPEG is only requested when the
+viewer opens. Browsing the whole gallery on a phone went from 9.3 MB to 2.4 MB.
+Each photo reserves its aspect ratio with its real width and height, so the
+page doesn't jump while loading.
+
+## 8. Accessibility and security
+
+- The home page carousel has a pause button, stops when it receives focus and
+  doesn't autoplay with `prefers-reduced-motion`.
+- The viewer keeps focus inside and returns it to the thumbnail when it
+  closes; you can move through it with the arrow keys or by swiping.
+- There's a skip-to-content link, a visible focus ring and a tab title for
+  every page.
+- The booking API accepts ten requests per hour per client, and a honeypot
+  field accepts bot submissions without saving them.
+- Outside development, cookies are secure and DRF's browsable API is turned
+  off.
+
+## 9. Challenges
+
+The multi-width review found defects that were easy to miss by eye:
+
+- **An uneven frame around every thumbnail.** The button wrapping each photo
+  kept the browser's default padding.
+- **A header that never blurred the background.** With both forms of
+  `backdrop-filter` written, Vite 8's minifier kept only the prefixed one.
+- **A 0×0 viewer while loading.** `width` and `height` don't reserve space if
+  the CSS overrides them with `auto`.
+- **A floating language switcher** that covered photos, packages and the
+  booking confirmation; it now lives in the header and the menu.
+- **A UTC date** in the title of each request in the admin, which didn't match
+  the local time it was created.
+
+## 10. Design and UX
+
+A near-black background and muted gold so the photos carry the color, an
+editorial serif (Fraunces) for headlines and a sans (DM Sans) for text. Booking
+fits in one view: you choose a package, fill in the form and a summary updates
+as you type. If the network fails, the notice says so and the data stays typed
+in; if the API rejects a value, the exact field is marked.
+
+## 11. What it doesn't have
+
+So nobody assumes otherwise: there are no payments, no client accounts, no
+private galleries, no photo uploads from the admin and no outgoing email:
+requests only show up in `/admin/`. There are also no frontend tests and no
+analytics.
+
+## 12. About the content and screenshots
+
+The studio, its prices, figures and testimonials are samples, and the
+production form stores demo requests: don't use it with real data. The
+photographs, and the people in them, carry rights separate from the code's,
+and the site doesn't attribute them to a real author. The screenshots were
+taken on September 25, 2026, on the production build served locally, with
+invented requests in the admin. Screens with any visible defect were left out.
+
+## 13. What I learned
+
+Automated screenshots found three defects a manual review didn't catch. And the
+hardest bugs weren't in the logic: an incomplete button reset, a minifier that
+dropped a property and a size the CSS overrode. Reviewing the site at several
+widths, in both languages and with a throttled network is what brought them to
+light.
+
+## 14. Current status
+
+Live at [izaksphotos.jonasjavier.dev](https://izaksphotos.jonasjavier.dev) as a
+single Railway service, with the repository public under the GPL-3.0 license,
+continuous integration green and 8 backend tests passing. It's a demo studio:
+it has no real clients or bookings, so I don't publish usage figures.

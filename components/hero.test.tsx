@@ -5,7 +5,7 @@ import { Hero } from "./hero";
 describe("Hero — respaldo semántico fuera del plano visual", () => {
   it("conserva identidad y rol en HTML sin recuperar el bloque de presentación", () => {
     const { container } = render(
-      <Hero projectsHref="/es/proyectos" contactHref="/es/contacto" />,
+      <Hero locale="es" projectsHref="/es/proyectos" contactHref="/es/contacto" />,
     );
 
     const fallback = container.querySelector(".hero-semantic");
@@ -22,7 +22,7 @@ describe("Hero — respaldo semántico fuera del plano visual", () => {
 
   it("mantiene los tres accesos contractuales como enlaces reales", () => {
     const { container } = render(
-      <Hero projectsHref="/es/proyectos" contactHref="/es/contacto" />,
+      <Hero locale="es" projectsHref="/es/proyectos" contactHref="/es/contacto" />,
     );
     const fallback = container.querySelector(".hero-semantic");
     expect(fallback).not.toBeNull();

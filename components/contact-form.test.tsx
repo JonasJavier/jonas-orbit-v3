@@ -54,7 +54,7 @@ describe("ContactForm", () => {
   });
 
   it("muestra validación dirigida sin enviar datos incompletos", async () => {
-    render(<ContactForm />);
+    render(<ContactForm thanksHref="/es/contacto/gracias" privacyHref="/es/privacidad" />);
     const button = await screen.findByRole("button", { name: "Enviar transmisión" });
     await waitFor(() => expect(button).toBeEnabled());
 
@@ -72,7 +72,7 @@ describe("ContactForm", () => {
         : jsonResponse({ mode: "test", siteKey: "test-sitekey" }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    render(<ContactForm />);
+    render(<ContactForm thanksHref="/es/contacto/gracias" privacyHref="/es/privacidad" />);
     fillValidForm();
 
     const button = screen.getByRole("button", { name: "Enviar transmisión" });
@@ -93,7 +93,7 @@ describe("ContactForm", () => {
           : jsonResponse({ mode: "test", siteKey: "test-sitekey" }),
       );
     vi.stubGlobal("fetch", fetchMock);
-    render(<ContactForm />);
+    render(<ContactForm thanksHref="/es/contacto/gracias" privacyHref="/es/privacidad" />);
     fillValidForm();
 
     const button = screen.getByRole("button", { name: "Enviar transmisión" });
@@ -121,7 +121,7 @@ describe("ContactForm", () => {
       },
     );
     vi.stubGlobal("fetch", fetchMock);
-    const { unmount } = render(<ContactForm />);
+    const { unmount } = render(<ContactForm thanksHref="/es/contacto/gracias" privacyHref="/es/privacidad" />);
     fillValidForm();
 
     const button = screen.getByRole("button", { name: "Enviar transmisión" });

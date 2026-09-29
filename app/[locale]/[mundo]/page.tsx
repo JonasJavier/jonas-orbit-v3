@@ -1,29 +1,28 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/site-shell";
-import { WorldPage } from "@/components/world-page";
 import { MillerPage } from "@/components/miller-page";
 import { EdmundsPage } from "@/components/edmunds-page";
 import { AboutPage } from "@/components/about-page";
 import { ExperimentsPage } from "@/components/experiments-page";
-import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
+import { ProjectsPage } from "@/components/projects-page";
+import { RangerContact } from "@/components/ranger-contact";
+import { PUBLISHED_LOCALES, isPublishedLocale } from "@/content/site.data";
+import type { WorldId } from "@/content/worlds.data";
+import { destinationLabel } from "@/lib/footer-labels";
+import { getF1AProjects } from "@/lib/projects";
 import { buildWorldMetadata } from "@/lib/world-metadata";
-import { BESPOKE_WORLD_IDS, getWorldBySlug, getWorlds } from "@/lib/worlds";
+import { getWorldBySlug, getWorlds } from "@/lib/worlds";
 
 /**
- * Los cuatro mundos resueltos desde MDX. Miller, Edmunds y Experimentos tienen
- * presentación propia, igual que Sobre mí.
+ * Los seis mundos, cada uno con su slug localizado del MDX (`/es/proyectos`,
+ * `/en/projects`). Una sola ruta dinámica para los seis es lo que deja que el
+ * slug cambie con el idioma sin carpetas duplicadas: una carpeta estática
+ * `proyectos/` sólo podría llamarse de una manera.
  *
- * Experimentos entra por esta cascada y NO por una carpeta a medida: la ruta no
- * cambia de forma, así que conserva `generateStaticParams`, su OG, su metadata
- * y las pruebas que ya la cubren. Lo que cambia es sólo qué componente la
- * dibuja — de ficha editorial a recepción del laboratorio. El Observatorio
- * cuelga de `app/[locale]/experimentos/observatorio/`, que es un segmento
- * estático hermano y gana al dinámico sin que este archivo se entere.
- *
- * Endurance (`/es/proyectos`) y Ranger (`/es/contacto`) tienen carpeta propia
- * porque montan el índice de proyectos y el formulario; sus segmentos estáticos
- * ganan a este dinámico y por eso quedan fuera de `generateStaticParams`.
+ * Endurance monta el índice de proyectos y Ranger el formulario; el resto,
+ * su presentación propia. Los hijos —un caso, la confirmación del contacto y
+ * el Observatorio— cuelgan de `[mundo]/[sub]`.
  *
  * `dynamicParams = false` hace que cualquier otro segmento responda 404 sin
  * escribir una línea: es la mitad de la garantía del test G1.
@@ -36,9 +35,7 @@ type WorldRouteProps = {
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.flatMap((locale) =>
-    getWorlds(locale)
-      .filter((world) => !BESPOKE_WORLD_IDS.includes(world.id))
-      .map((world) => ({ locale, mundo: world.prose.slug })),
+    getWorlds(locale).map((world) => ({ locale, mundo: world.prose.slug })),
   );
 }
 
@@ -46,43 +43,51 @@ export async function generateMetadata({
   params,
 }: WorldRouteProps): Promise<Metadata> {
   const { locale, mundo } = await params;
-  if (!PUBLISHED_LOCALES.includes(locale as Locale)) return {};
+  if (!isPublishedLocale(locale)) return {};
 
-  const world = getWorldBySlug(mundo, locale as Locale);
-  if (!world) return { title: "Destino no encontrado" };
+  const world = getWorldBySlug(mundo, locale);
+  if (!world) return {};
 
-  return buildWorldMetadata(world, locale as Locale);
+  return buildWorldMetadata(world, locale);
 }
+
+/** La clase del `<main>` de cada mundo: su paleta y su composición. */
+const MAIN_CLASS: Record<WorldId, string> = {
+  gargantua: "about-route",
+  miller: "miller-route",
+  endurance: "projects-route",
+  edmunds: "edmunds-route",
+  tesseract: "experiments-route",
+  ranger: "ranger-route",
+};
 
 export default async function WorldRoute({ params }: WorldRouteProps) {
   const { locale, mundo } = await params;
-  if (!PUBLISHED_LOCALES.includes(locale as Locale)) {
-    notFound();
-  }
+  if (!isPublishedLocale(locale)) notFound();
 
-  const typedLocale = locale as Locale;
-  const world = getWorldBySlug(mundo, typedLocale);
-  if (!world || BESPOKE_WORLD_IDS.includes(world.id)) {
-    notFound();
-  }
+  const world = getWorldBySlug(mundo, locale);
+  if (!world) notFound();
 
   return (
     <SiteShell
-      locale={typedLocale}
+      locale={locale}
+      page={{ kind: "world", id: world.id }}
       activeWorldId={world.id}
-      mainClassName={world.id === "gargantua" ? "about-route" : world.id === "miller" ? "miller-route" : world.id === "edmunds" ? "edmunds-route" : world.id === "tesseract" ? "experiments-route" : "world-route"}
-      footerLabel={`JONÁS ORBIT · DESTINO ${String(world.order).padStart(2, "0")} / ${world.cosmicName.toUpperCase()}`}
+      mainClassName={MAIN_CLASS[world.id]}
+      footerLabel={destinationLabel(world, locale)}
     >
       {world.id === "gargantua" ? (
-        <AboutPage world={world} locale={typedLocale} />
+        <AboutPage world={world} locale={locale} />
       ) : world.id === "miller" ? (
-        <MillerPage world={world} locale={typedLocale} />
+        <MillerPage world={world} locale={locale} />
       ) : world.id === "edmunds" ? (
-        <EdmundsPage world={world} locale={typedLocale} />
+        <EdmundsPage world={world} locale={locale} />
       ) : world.id === "tesseract" ? (
-        <ExperimentsPage world={world} locale={typedLocale} />
+        <ExperimentsPage world={world} locale={locale} />
+      ) : world.id === "endurance" ? (
+        <ProjectsPage locale={locale} projects={getF1AProjects(locale)} world={world} />
       ) : (
-        <WorldPage world={world} locale={typedLocale} />
+        <RangerContact world={world} locale={locale} />
       )}
     </SiteShell>
   );

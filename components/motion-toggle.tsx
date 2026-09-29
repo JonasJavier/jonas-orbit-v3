@@ -2,7 +2,24 @@
 
 import { useEffect } from "react";
 import { setMotionEnabled, useMotionEnabled } from "@/lib/effects-mode";
+import { defineCopy } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
 import "./motion-toggle.css";
+
+const COPY = defineCopy({
+  es: {
+    turnOff: "Desactivar movimiento",
+    turnOn: "Activar movimiento",
+    onTitle: "Movimiento activado · pulsa para detenerlo",
+    offTitle: "Movimiento detenido · pulsa para activarlo",
+  },
+  en: {
+    turnOff: "Turn off motion",
+    turnOn: "Turn on motion",
+    onTitle: "Motion on · press to stop it",
+    offTitle: "Motion stopped · press to turn it on",
+  },
+});
 
 /**
  * El único interruptor de movimiento del sitio.
@@ -24,6 +41,7 @@ import "./motion-toggle.css";
  */
 export function MotionToggle() {
   const enabled = useMotionEnabled();
+  const copy = COPY[useLocale()];
 
   useEffect(() => {
     document.documentElement.dataset.motion = enabled ? "on" : "off";
@@ -34,8 +52,8 @@ export function MotionToggle() {
       className="motion-toggle"
       type="button"
       aria-pressed={enabled}
-      aria-label={enabled ? "Desactivar movimiento" : "Activar movimiento"}
-      title={enabled ? "Movimiento activado · pulsa para detenerlo" : "Movimiento detenido · pulsa para activarlo"}
+      aria-label={enabled ? copy.turnOff : copy.turnOn}
+      title={enabled ? copy.onTitle : copy.offTitle}
       data-state={enabled ? "on" : "off"}
       onClick={() => setMotionEnabled(!enabled)}
     >

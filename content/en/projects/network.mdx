@@ -1,0 +1,773 @@
+---
+id: network
+slug: network-3-0
+title: Network 3.0
+eyebrow: Full-stack social network
+summary: >-
+  A Django REST API and a React and TypeScript app: cursor-paginated feed,
+  reposts and quotes, hashtags, mentions and notifications, deployed on Railway
+  with a public demo.
+statusLabel: Deployed on Railway · public demo
+role: Sole developer; product design, API, frontend, testing and deployment
+problem: >-
+  In a social network everything is connected: one like changes a counter, a
+  profile, a list of people and someone else's notifications, while the feed
+  keeps moving under the reader.
+contribution: >-
+  I rewrote my CS50W project from scratch as a Django REST API and a React and
+  TypeScript app, and took it to production with Docker, continuous
+  integration and 132 tests.
+decision: >-
+  Cursor pagination so the feed never repeats, counters as subqueries instead
+  of multiple JOINs, and notifications as a domain of their own.
+technologies: [React, TypeScript, Vite, Tailwind CSS, TanStack Query, Django, Django REST Framework, PostgreSQL, Redis, Docker]
+stack:
+  - group: Languages
+    items: [Python 3.13, TypeScript 6.0, JavaScript, SQL, HTML and CSS]
+  - group: Frontend
+    items: [React 19.2, Vite 8.0, React Router 7.18, TanStack Query 5.101, Zustand 5.0, Axios 1.20]
+  - group: Interface
+    items: [Tailwind CSS 4.3, lucide-react 1.18, Inter (Fontsource) 5.3, clsx 2.1]
+  - group: Backend
+    items: [Django 6.0, Django REST Framework 3.17, django-filter 25.2, django-cors-headers 4.9, Pillow 12.3, python-dotenv 1.2]
+  - group: Authentication
+    items: [SimpleJWT 5.5, Token blocklist, Sign-in with username or email, Django password validators]
+  - group: API contract
+    items: [drf-spectacular 0.29, OpenAPI 3.0, Swagger UI, ReDoc]
+  - group: Data and cache
+    items: [PostgreSQL 17, SQLite 3, psycopg 3.3, dj-database-url 3.1, Redis 8, django-redis 7.0, django-storages 1.14]
+  - group: Infrastructure
+    items: [Docker, Docker Compose, nginx, Gunicorn 26, WhiteNoise 6.12, Railway, Sentry SDK 2.70]
+  - group: Quality and CI
+    items: [Django test runner, Vitest 5.0, Testing Library 16.3, jsdom 30.1, Ruff 0.16, ESLint 10.5, typescript-eslint 8.61, Prettier 3.9, GitHub Actions]
+  - group: Tooling
+    items: [Make, EditorConfig, Keep a Changelog]
+highlights:
+  - Deployed on Railway with a public demo; the web app and the API run as separate services on PostgreSQL and Redis
+  - A full rewrite of CS50W's project 4, from a template-based monolith to a versioned REST API and a React app
+  - Cursor-paginated feed, with counters resolved as subqueries rather than multiple JOINs
+  - JWT with refresh rotation and a blocklist; changing your password signs out every other session
+  - Reposts and quotes, trending hashtags, mentions, bookmarks and eight kinds of notifications
+  - 132 automated tests and a CI that also validates migrations, check --deploy and both Docker images
+featuredImage:
+  src: /media/projects/network/04-feed-desktop.png
+  alt: "Network feed with the composer, the For you and Following tabs, posts, who-to-follow suggestions and trending hashtags"
+  caption: "Post, talk and discover people in a single three-column view."
+  module: Feed and posts
+gallery:
+  - src: /media/projects/network/14-post-detail-comments-desktop.png
+    alt: "Post detail with its image, its actions and the comment thread"
+    caption: "The detail view brings the post and its whole conversation together."
+    module: Feed and posts
+  - src: /media/projects/network/15-post-detail-comment-deeplink-desktop.png
+    alt: "Comment thread with one comment highlighted by a ring after arriving from a notification"
+    caption: "The notification takes you to the exact comment and highlights it."
+    module: Feed and posts
+  - src: /media/projects/network/16-comment-reply-composer-desktop.png
+    alt: "Reply box open under a comment in the thread"
+    caption: "Replies happen under the comment, without leaving the thread."
+    module: Feed and posts
+  - src: /media/projects/network/08-composer-with-image-desktop.png
+    alt: "Post composer open with text, hashtags and an attached image in preview"
+    caption: "You see the image before posting; the server rewrites it as WebP."
+    module: Feed and posts
+  - src: /media/projects/network/07-feed-following-desktop.png
+    alt: "Feed with the Following tab active"
+    caption: "Following gathers posts from people you follow, plus your own."
+    module: Feed and posts
+  - src: /media/projects/network/05-feed-loading-skeleton-desktop.png
+    alt: "Feed with three skeleton cards while posts load"
+    caption: "While it loads, the skeleton takes the card's exact place."
+    module: Feed and posts
+  - src: /media/projects/network/09-post-options-menu-desktop.png
+    alt: "Menu on your own post with copy link, bookmark, edit and delete"
+    caption: "Edit and delete only show up on your own posts."
+    module: Feed and posts
+  - src: /media/projects/network/12-quote-modal-desktop.png
+    alt: "Modal to quote a post, with the original embedded below the text field"
+    caption: "When quoting, you see the full original, image included."
+    module: Feed and posts
+  - src: /media/projects/network/13-post-likes-list-desktop.png
+    alt: "Liked by modal with three people, their headline and their follow button"
+    caption: "The like counter opens into a list of people."
+    module: Feed and posts
+  - src: /media/projects/network/11-post-delete-confirm-desktop.png
+    alt: "Dialog to delete a post, warning that its replies, likes and reposts go with it"
+    caption: "The dialog names what you'll lose, not just the action."
+    module: Feed and posts
+  - src: /media/projects/network/18-profile-own-desktop.png
+    alt: "Your own profile with cover, avatar, headline, bio, location, website, counters and Posts, Media and Likes tabs"
+    caption: "The profile brings identity, relationships and posts together."
+    module: Profiles and connections
+  - src: /media/projects/network/24-profile-other-person-desktop.png
+    alt: "Another person's profile with the Follow button and the Follows you badge"
+    caption: "“Follows you” settles the relationship at a glance."
+    module: Profiles and connections
+  - src: /media/projects/network/19-profile-media-grid-desktop.png
+    alt: "Media tab of a profile with its images in a three-column grid"
+    caption: "The Media tab browses a profile image by image."
+    module: Profiles and connections
+  - src: /media/projects/network/20-profile-likes-tab-desktop.png
+    alt: "Likes tab of a profile with the posts that person liked"
+    caption: "What someone likes also says who they are."
+    module: Profiles and connections
+  - src: /media/projects/network/21-profile-edit-modal-desktop.png
+    alt: "Modal to edit the profile with cover, avatar and fields with character counters"
+    caption: "Edit the whole profile without leaving it, with a counter on every field."
+    module: Profiles and connections
+  - src: /media/projects/network/22-profile-followers-modal-desktop.png
+    alt: "Followers modal with seven people, their headline, the Follows you badge and their follow button"
+    caption: "Followers and following are modals with their own URL: you can link to them."
+    module: Profiles and connections
+  - src: /media/projects/network/23-profile-following-modal-desktop.png
+    alt: "Following modal with people's headlines and follow buttons"
+    caption: "You can walk the graph in both directions from the profile."
+    module: Profiles and connections
+  - src: /media/projects/network/25-notifications-desktop.png
+    alt: "Notification center with mentions, quotes, likes, comments, reposts and replies, each with its own icon and color"
+    caption: "Each kind of notification with its own icon, color and sentence."
+    module: Notifications
+  - src: /media/projects/network/26-notifications-clear-confirm-desktop.png
+    alt: "Dialog to clear all notifications"
+    caption: "Clearing the list asks for confirmation and says what it deletes."
+    module: Notifications
+  - src: /media/projects/network/31-search-hashtag-desktop.png
+    alt: "Results for the design hashtag with the tagged posts"
+    caption: "Typing a # jumps straight to the posts on that topic."
+    module: Search and bookmarks
+  - src: /media/projects/network/29-search-people-desktop.png
+    alt: "People search with eight results, their headline and their follow button"
+    caption: "People search covers the headline, not just the name."
+    module: Search and bookmarks
+  - src: /media/projects/network/30-search-posts-desktop.png
+    alt: "Post search for the term pagination"
+    caption: "The same box searches people and posts."
+    module: Search and bookmarks
+  - src: /media/projects/network/32-search-no-results-desktop.png
+    alt: "Search with no results that repeats the search term and suggests trying another"
+    caption: "With no results, the screen repeats the term and suggests what to try."
+    module: Search and bookmarks
+  - src: /media/projects/network/27-bookmarks-desktop.png
+    alt: "Bookmarks page with saved posts and a note that only you can see the list"
+    caption: "Bookmarks are private, and the screen says so."
+    module: Search and bookmarks
+  - src: /media/projects/network/76-login-demo-accounts-desktop.png
+    alt: "Sign-in screen with a brand panel and the demo accounts box with their password"
+    caption: "The public demo offers one-click test accounts."
+    module: Sign-in and account
+  - src: /media/projects/network/02-login-error-desktop.png
+    alt: "Sign-in form with an invalid credentials message"
+    caption: "The error appears right in the form, without a reload."
+    module: Sign-in and account
+  - src: /media/projects/network/03-register-desktop.png
+    alt: "Sign-up form with first name, last name, username, email and password"
+    caption: "Creating the account signs you in: one screen, not two."
+    module: Sign-in and account
+  - src: /media/projects/network/33-account-menu-desktop.png
+    alt: "Account menu open with profile, bookmarks, settings and sign out"
+    caption: "The account menu holds what isn't in the navigation."
+    module: Sign-in and account
+  - src: /media/projects/network/34-settings-desktop.png
+    alt: "Settings with profile, light, dark or system appearance, and password change"
+    caption: "Changing your password signs out your other devices."
+    module: Sign-in and account
+  - src: /media/projects/network/35-settings-delete-account-modal-desktop.png
+    alt: "Delete account dialog that lists what gets removed and asks for the password"
+    caption: "Deleting the account lists what you'll lose and asks for your password."
+    module: Sign-in and account
+  - src: /media/projects/network/37-empty-following-feed-desktop.png
+    alt: "Empty Following feed on a new account, with an explanation and a link to find people"
+    caption: "The empty state explains what goes here and links to the action that fills it."
+    module: Empty states and errors
+  - src: /media/projects/network/38-empty-bookmarks-desktop.png
+    alt: "Empty bookmarks with an explanation of how to save a post"
+    caption: "It shows the exact gesture that solves it."
+    module: Empty states and errors
+  - src: /media/projects/network/39-empty-notifications-desktop.png
+    alt: "Empty notifications on a new account"
+    caption: "It anticipates which notifications will land on this screen."
+    module: Empty states and errors
+  - src: /media/projects/network/40-empty-own-profile-desktop.png
+    alt: "Brand-new profile with no posts and an initials avatar"
+    caption: "A profile with no content still looks presentable."
+    module: Empty states and errors
+  - src: /media/projects/network/36-not-found-404-desktop.png
+    alt: "404 page with the logo and a button back to the feed"
+    caption: "The 404 keeps the brand and offers a way out."
+    module: Empty states and errors
+  - src: /media/projects/network/41-feed-dark-desktop.png
+    alt: "Feed in dark mode with posts, suggestions and trends"
+    caption: "In the dark theme, borders do the work of shadows."
+    module: Dark mode
+  - src: /media/projects/network/42-post-detail-dark-desktop.png
+    alt: "Post detail in dark mode with its comment thread"
+    caption: "The thread keeps its hierarchy when the theme changes."
+    module: Dark mode
+  - src: /media/projects/network/43-profile-own-dark-desktop.png
+    alt: "Your own profile in dark mode with cover and counters"
+    caption: "The gradient cover works on a dark background, too."
+    module: Dark mode
+  - src: /media/projects/network/44-notifications-dark-desktop.png
+    alt: "Notifications in dark mode with each kind in its own color"
+    caption: "Each notification color has its own dark variant."
+    module: Dark mode
+  - src: /media/projects/network/46-settings-dark-desktop.png
+    alt: "Settings in dark mode with the Dark option selected"
+    caption: "Light, dark or system, applied before the first paint."
+    module: Dark mode
+  - src: /media/projects/network/77-login-demo-accounts-dark-desktop.png
+    alt: "Sign-in screen in dark mode with the demo accounts box"
+    caption: "Sign-in and its demo accounts, in dark mode too."
+    module: Dark mode
+  - src: /media/projects/network/49-api-docs-swagger-desktop.png
+    alt: "Swagger UI for the Network 3.1.0 API with the authentication and comment endpoints"
+    caption: "Swagger and ReDoc come from the OpenAPI schema, which is generated from the code."
+    module: Documented API
+  - src: /media/projects/network/53-feed-mobile.png
+    alt: "Feed on a phone with the composer, the tabs and the bottom navigation bar"
+    caption: "One column and a bottom bar with four destinations."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/55-composer-with-image-mobile.png
+    alt: "Post composer on a phone with text and an image in preview"
+    caption: "Posting with an image works the same on the phone."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/57-post-detail-comments-mobile.png
+    alt: "Post detail on a phone with its image and comments"
+    caption: "The whole thread reads in one column."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/58-comment-reply-composer-mobile.png
+    alt: "Reply box open under a comment on a phone"
+    caption: "Replies still happen under the comment."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/59-profile-own-mobile.png
+    alt: "Your own profile on a phone with cover, details, counters and tabs"
+    caption: "The profile stacks cover, details and tabs."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/60-profile-media-grid-mobile.png
+    alt: "Media tab of a profile on a phone"
+    caption: "The media grid goes from three columns to two."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/61-profile-followers-modal-mobile.png
+    alt: "Followers list on a phone, open as a bottom sheet"
+    caption: "Lists of people slide up as a bottom sheet."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/62-profile-other-person-mobile.png
+    alt: "Another person's profile on a phone with the Follow button"
+    caption: "The follow button stays within reach on the phone."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/63-notifications-mobile.png
+    alt: "Notifications on a phone with each kind in its own color"
+    caption: "Each kind of notification still stands out on a narrow screen."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/64-bookmarks-mobile.png
+    alt: "Bookmarks on a phone"
+    caption: "Bookmarks read just as well in one column."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/65-search-idle-trending-mobile.png
+    alt: "Search with no query on a phone, showing trending hashtags"
+    caption: "With no query, search suggests topics."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/67-search-hashtag-mobile.png
+    alt: "Results for the design hashtag on a phone"
+    caption: "Hashtag search, the same on the phone."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/68-account-menu-mobile.png
+    alt: "Account menu open on a phone with profile, bookmarks, settings and sign out"
+    caption: "Bookmarks and settings live in the account menu."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/69-settings-mobile.png
+    alt: "Settings on a phone with profile, appearance and password"
+    caption: "Settings stack in the same order."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/71-empty-following-feed-mobile.png
+    alt: "Empty Following feed on a phone with a link to find people"
+    caption: "The empty state keeps its explanation on a narrow screen."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/73-feed-dark-mobile.png
+    alt: "Feed in dark mode on a phone"
+    caption: "Dark mode and phone at the same time."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/74-profile-own-dark-mobile.png
+    alt: "Your own profile in dark mode on a phone"
+    caption: "The profile keeps its hierarchy in dark mode."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/75-notifications-dark-mobile.png
+    alt: "Notifications in dark mode on a phone"
+    caption: "Each notification's color holds up in the dark and on a narrow screen."
+    frame: mobile
+    module: On the phone
+  - src: /media/projects/network/78-login-demo-accounts-mobile.png
+    alt: "Sign-in screen on a phone with the demo accounts and their password"
+    caption: "The demo accounts fit on the phone, too."
+    frame: mobile
+    module: On the phone
+scope:
+  - value: "132"
+    label: automated tests, backend and frontend
+  - value: "37"
+    label: API operations documented in OpenAPI
+  - value: "8"
+    label: notification types, each with its target
+designDecisions:
+  - screen: /media/projects/network/04-feed-desktop.png
+    problem: What you see on a social network depends on who you follow, and who to follow doesn't find itself.
+    decision: Posting, talking and discovering people share one three-column view, without leaving the feed.
+  - screen: /media/projects/network/53-feed-mobile.png
+    problem: A phone has no room for three columns or six navigation destinations.
+    decision: One column and a four-destination bottom bar; bookmarks and settings move into the account menu.
+  - screen: /media/projects/network/05-feed-loading-skeleton-desktop.png
+    problem: A centered spinner doesn't say what's coming, and the page jumps when the content arrives.
+    decision: Skeletons with the exact geometry of the real card; the space is already sized and nothing moves.
+  - screen: /media/projects/network/37-empty-following-feed-desktop.png
+    problem: A screen that only says "nothing here" looks like a half-finished feature.
+    decision: Each empty state explains what goes there and offers the action that fills it, like finding people.
+  - screen: /media/projects/network/25-notifications-desktop.png
+    problem: Eight kinds of activity in a single list read as an undifferentiated wall.
+    decision: Each kind has its icon, color and sentence; unread ones are marked and every row leads to its source.
+  - screen: /media/projects/network/15-post-detail-comment-deeplink-desktop.png
+    problem: A comment notification that only opens the post makes you hunt for the comment in the thread.
+    decision: The link goes to the exact comment; the page scrolls to it and highlights it with a ring.
+  - screen: /media/projects/network/35-settings-delete-account-modal-desktop.png
+    problem: '"Are you sure?" says nothing; people confirm without knowing what they''ll lose.'
+    decision: The dialog names what gets deleted and, when there's no going back, asks for the password.
+  - screen: /media/projects/network/46-settings-dark-desktop.png
+    problem: A dark mode that flashes white on load, or ignores the system setting, feels broken.
+    decision: Light, dark or system; the theme is applied before React mounts, with no flash.
+architecture:
+  nodes:
+    - id: feed
+      label: Feed
+      lane: cliente
+      screen: /media/projects/network/04-feed-desktop.png
+      decision: >-
+        Three columns: post, talk and discover people without leaving a feed
+        that loads more on its own when you reach the end.
+      tech: [React 19, IntersectionObserver]
+    - id: publicacion
+      label: Post
+      lane: cliente
+      screen: /media/projects/network/14-post-detail-comments-desktop.png
+      decision: >-
+        One level of replies: enough to hold a conversation without threads
+        that get lost in depth.
+      tech: [React 19, React Router 7]
+    - id: perfil
+      label: Profiles
+      lane: cliente
+      screen: /media/projects/network/18-profile-own-desktop.png
+      decision: >-
+        Posts, Media and Likes tabs; followers and following are modals with
+        their own URL.
+      tech: [React 19, React Router 7]
+    - id: avisos
+      label: Notification center
+      lane: cliente
+      screen: /media/projects/network/25-notifications-desktop.png
+      decision: >-
+        Each verb with its icon, color and sentence, and every row leads to its
+        exact source.
+      tech: [React 19, lucide-react]
+    - id: busqueda
+      label: Search
+      lane: cliente
+      screen: /media/projects/network/31-search-hashtag-desktop.png
+      decision: >-
+        One box for people, text and hashtags, with a / shortcut; typing a #
+        jumps to the posts.
+      tech: [React Router 7, 350 ms debounce]
+    - id: cuenta
+      label: Account
+      lane: cliente
+      screen: /media/projects/network/76-login-demo-accounts-desktop.png
+      decision: >-
+        Signing up signs you in, and the sign-in screen offers one-click demo
+        accounts.
+      tech: [Zustand 5, React 19]
+    - id: movil
+      label: On the phone
+      lane: cliente
+      screen: /media/projects/network/53-feed-mobile.png
+      decision: >-
+        One column and a four-destination bottom bar; bookmarks and settings go
+        to the account menu.
+      tech: [Tailwind CSS 4, Installable manifest]
+    - id: estado
+      label: State and cache
+      lane: cliente
+      decision: >-
+        An optimistic like shows up in the feed, the detail and the profile at
+        once, written in a single place.
+      tech: [TanStack Query 5, Zustand 5]
+    - id: cliente-http
+      label: HTTP client
+      lane: cliente
+      decision: >-
+        One shared refresh promise: ten requests with an expired token trigger
+        one refresh, not ten.
+      tech: [Axios 1.20]
+    - id: api
+      label: REST API v1
+      lane: servicio
+      decision: >-
+        Versioned under /api/v1/: 28 routes and 37 operations, with the OpenAPI
+        schema generated from the code itself.
+      tech: [Django REST Framework 3.17, django-filter, django-cors-headers]
+    - id: auth
+      label: JWT auth
+      lane: servicio
+      decision: >-
+        Rotated refresh tokens with a blocklist and 10 attempts per minute per
+        IP; changing the password signs out every other session.
+      tech: [SimpleJWT 5.5, Token blocklist]
+    - id: feed-cursor
+      label: Cursor feed
+      lane: servicio
+      decision: >-
+        A cursor on date and id: posting something new doesn't repeat the next
+        page; counters are subqueries, not JOINs.
+      tech: [DRF CursorPagination, Subquery and Exists]
+    - id: posts
+      label: Content
+      lane: servicio
+      decision: >-
+        Repost and quote are the same model; a conditional unique constraint
+        stops you from reposting the same thing twice.
+      tech: [Django 6.0, UniqueConstraint]
+    - id: grafo
+      label: Social graph
+      lane: servicio
+      decision: >-
+        Following yourself is forbidden by the database, not just the view.
+      tech: [Django 6.0, CheckConstraint]
+    - id: notificaciones
+      label: Notifications
+      lane: servicio
+      decision: >-
+        Its own app with eight verbs; undoing a like, a follow or a repost
+        deletes its notification.
+      tech: [Django 6.0]
+    - id: hashtags
+      label: Hashtags
+      lane: servicio
+      decision: >-
+        Extracted on save; trends count the last seven days and are cached for
+        five minutes.
+      tech: [Regular expressions, Django cache]
+    - id: imagenes
+      label: Images
+      lane: servicio
+      decision: >-
+        Every upload is validated, rotated by EXIF, stripped of metadata and
+        rewritten as WebP.
+      tech: [Pillow 12.3]
+    - id: postgresql
+      label: PostgreSQL
+      lane: datos
+      decision: >-
+        Eight models with indexes written for the queries that actually exist,
+        like the unread notifications one.
+      tech: [PostgreSQL 17, psycopg 3.3, dj-database-url]
+    - id: redis
+      label: Redis
+      lane: datos
+      decision: >-
+        Trends and suggestions only: if it goes down, the app slows down, it
+        doesn't break.
+      tech: [Redis 8, django-redis 7.0]
+    - id: media
+      label: Files
+      lane: datos
+      decision: >-
+        Local disk by default; an S3-compatible bucket just by setting the
+        variables.
+      tech: [django-storages 1.14]
+    - id: nginx
+      label: nginx
+      lane: infraestructura
+      decision: >-
+        Serves the app, applies the CSP and security headers, and returns
+        index.html for client-side routes.
+      tech: [nginx, Content-Security-Policy]
+    - id: gunicorn
+      label: Gunicorn
+      lane: infraestructura
+      decision: >-
+        WSGI: there's nothing real-time that would justify ASGI.
+      tech: [Gunicorn 26, WhiteNoise 6.12]
+    - id: docker
+      label: Docker
+      lane: infraestructura
+      decision: >-
+        Two multi-stage images that honor $PORT: the same one runs locally and
+        on Railway.
+      tech: [Docker, Docker Compose]
+    - id: ci
+      label: GitHub CI
+      lane: infraestructura
+      decision: >-
+        Beyond lint, types and tests, it validates migrations, check --deploy
+        and the build of both images.
+      tech: [GitHub Actions, Ruff, ESLint, Vitest]
+    - id: railway
+      label: Railway
+      lane: infraestructura
+      decision: >-
+        Both services, configured as code; the health check only fails if the
+        database goes down.
+      tech: [Railway, railway.json]
+    - id: openapi
+      label: OpenAPI
+      lane: integraciones
+      screen: /media/projects/network/49-api-docs-swagger-desktop.png
+      decision: >-
+        The schema comes from the code: the documentation can't go stale.
+      tech: [drf-spectacular 0.29, Swagger UI, ReDoc]
+    - id: sentry
+      label: Sentry
+      lane: integraciones
+      decision: >-
+        Built in but off unless SENTRY_DSN is set; it doesn't force a
+        dependency on an external service.
+      tech: [Sentry SDK 2.70]
+  edges:
+    - [feed, feed-cursor]
+    - [movil, feed-cursor]
+    - [publicacion, posts]
+    - [perfil, grafo]
+    - [avisos, notificaciones]
+    - [busqueda, hashtags]
+    - [busqueda, grafo]
+    - [cuenta, auth]
+    - [nginx, estado]
+    - [estado, cliente-http]
+    - [cliente-http, api]
+    - [api, auth]
+    - [api, feed-cursor]
+    - [api, posts]
+    - [api, grafo]
+    - [api, notificaciones]
+    - [api, hashtags]
+    - [feed-cursor, posts]
+    - [posts, imagenes]
+    - [posts, hashtags]
+    - [posts, notificaciones]
+    - [grafo, notificaciones]
+    - [auth, postgresql]
+    - [posts, postgresql]
+    - [grafo, postgresql]
+    - [notificaciones, postgresql]
+    - [hashtags, redis]
+    - [grafo, redis]
+    - [imagenes, media]
+    - [ci, docker]
+    - [docker, railway]
+    - [railway, nginx]
+    - [railway, gunicorn]
+    - [gunicorn, api]
+    - [api, openapi]
+    - [api, sentry]
+links:
+  - label: Try the demo
+    href: https://web-production-9475c.up.railway.app
+    kind: demo
+  - label: View repository
+    href: https://github.com/JonasJavier/cs50w-network
+    kind: repository
+seoTitle: Network 3.0 — Social Network with Django REST and React
+seoDescription: Case study of Network 3.0, a full-stack social network with a Django REST API, React and TypeScript, a cursor feed, rotating JWT, 132 tests and a live demo.
+---
+
+## 1. Context
+
+Network started as project 4 of CS50W, Harvard's web development course: a
+small social network built with Django templates and framework-free
+JavaScript. My first submission already went beyond the brief — comments with
+replies, images, deletion and search — but it was still a course monolith.
+
+Network 3.0 is a full rewrite, not a touch-up. I deleted the monolith, and in
+its place there are two independent services that share nothing but an HTTP
+contract: a Django REST API and a React and TypeScript single-page app. The
+current version, 3.1.0, is deployed on Railway with a public demo. It took a
+couple of weeks of solo work.
+
+## 2. The problem
+
+The hard part of a small social network isn't the screens: it's that
+everything is connected to everything else, and everything changes while
+you're looking at it. One like touches the card's counter, a profile's Likes
+tab and the list of who reacted, and it creates a notification for someone
+else. The feed moves while someone is reading it, every card needs five
+aggregated values, and any image a user uploads is, by definition, content you
+can't trust.
+
+## 3. My role
+
+I did it alone: product and interface design, the API, the frontend, the
+tests, the containers, continuous integration, deployment and documentation.
+
+## 4. What CS50W asked for, and what I added
+
+The brief asked for seven things: posting text, seeing all posts, a profile
+with followers and a follow button, a page of the people you follow,
+pagination ten at a time with buttons, editing without reloading and liking
+without reloading.
+
+Version 3 adds, on top of that:
+
+- **Architecture.** A versioned REST API and a single-page app, deployable
+  separately; JWT with rotation and a blocklist instead of sessions; cursor
+  pagination, and an OpenAPI 3 schema with Swagger and ReDoc.
+- **Product.** Reposts and quotes, private bookmarks, hashtags with weekly
+  trends, mentions that notify, eight kinds of notifications, profiles with a
+  cover and Posts, Media and Likes tabs, who-to-follow suggestions, light, dark
+  or system theme, password change and account deletion.
+- **Craft.** 132 automated tests where there used to be none, continuous
+  integration, Docker images, server-side image processing and security
+  headers.
+
+## 5. Constraints
+
+- **Nothing required to develop.** It starts with SQLite and an in-memory
+  cache; PostgreSQL and Redis switch on with environment variables. Everything
+  that uses the cache has to work without it.
+- **No guaranteed object storage.** Uploaded files go to disk unless an
+  S3-compatible bucket is configured.
+- **One person and no users to ask.** Every product decision was made without
+  usage data.
+
+## 6. How I built it
+
+First I deleted the monolith, in its own commit; then came the backend, the
+frontend and, finally, the containers. When I came back to take it to
+production, the order was: continuous integration first, then the
+dependencies with security advisories, and only after that the new features,
+the redesign and the documentation.
+
+The backend is four Django apps split by domain rather than by technical
+layer: `core`, `users`, `posts` and `notifications`. On the frontend, TanStack
+Query owns everything that lives on the server, and Zustand only what belongs
+to the client: the session, the theme and toasts. Each page loads on its own.
+
+## 7. Architecture decisions
+
+- **Cursor pagination on timelines.** Ordered by date and id, with the id as
+  the tiebreaker: posting something new doesn't shift the next page or repeat
+  what you've already read. Bounded lists, like people or comments, still use
+  page numbers. Pages are still ten items, as CS50W asked, but they load on
+  their own when you reach the end.
+- **Counters without multiple JOINs.** Each card brings likes, comments and
+  reposts as independent subqueries, and "did I like it?", "did I repost it?"
+  and "did I save it?" as `EXISTS`. The quoted post gets the same annotations.
+- **JWT with rotation and a blocklist.** Every refresh issues a new token and
+  invalidates the old one, and changing your password invalidates all the
+  others. On the client, requests that fail at the same time share a single
+  refresh.
+- **Repost and quote, one model.** A conditional unique constraint prevents
+  reposting the same thing twice without preventing multiple quotes, and the
+  database forbids following yourself.
+- **Notifications as their own domain.** A Django app with its eight verbs, its
+  endpoints and a composite index designed for the two queries that exist: the
+  list and the unread counter.
+- **Optional, non-critical Redis.** It only stores trends and suggestions, with
+  short timeouts: if it goes down, the app slows down rather than breaking.
+  The health check reports on the cache but only marks the service as down if
+  the database fails.
+
+## 8. Security and images
+
+- Every uploaded image is validated with Pillow, rotated by its EXIF data,
+  stripped of metadata, resized for its use and rewritten as WebP, with a
+  40-megapixel cap against decompression bombs.
+- Sign-up, sign-in and password change each have their own limit: ten requests
+  per minute per IP.
+- In production, Django sets HSTS, secure cookies and the security headers,
+  and nginx sets the Content Security Policy. The app refuses to start with the
+  development secret key.
+
+## 9. Challenges
+
+- **Keeping the feed from repeating while paginating:** a cursor with an id
+  tiebreaker.
+- **Keeping two simultaneous reposts from breaking anything:** the unique
+  constraint in the database, with the integrity error caught.
+- **Keeping an expired token from triggering a refresh storm:** a single
+  shared promise in the HTTP client.
+- **Keeping the theme from flashing on load:** a script in `index.html`
+  applies the theme before React mounts.
+- **Keeping notifications from duplicating or going orphan:** they're created
+  once and deleted when the like, follow or repost is undone.
+- **Making demo data reproducible:** seeded generators with a fixed seed.
+
+## 10. What deployment taught me
+
+The first Railway deploy exposed what the local environment couldn't show:
+permissions on the file volume, the home directory of the container's
+unprivileged user, a migration that didn't match the model and the need to
+seed the demo on startup. All four were fixed in their own pull request, and
+continuous integration now checks that no migration is missing.
+
+## 11. Design and UX
+
+A custom interface in Tailwind CSS 4, with the Inter typeface served from the
+site itself, no third-party requests. Every state is designed: loading states
+mirror the real card, empty states explain what goes there and offer the
+action that fills them, and destructive dialogs name what you'll lose. The
+dark theme isn't an inverted filter and respects the system setting, and on
+the phone navigation drops to a four-destination bar.
+
+## 12. What it doesn't have
+
+So nobody assumes otherwise: there's no real time — no WebSockets and no
+polling; data refreshes when it's requested again — there's no task queue and
+there's no service worker. The manifest makes the web app installable, but it
+doesn't work offline.
+
+## 13. About the screenshots
+
+The screenshots come from a local instance seeded with an invented cast — ten
+people with code-generated initials avatars — and abstract images generated
+with Pillow. The names and figures shown, like likes or followers, aren't
+metrics of anything. The public demo uses different sample accounts, so the
+names won't match. Screens with any visible defect were left out.
+
+## 14. Try the demo
+
+The demo lives at
+[web-production-9475c.up.railway.app](https://web-production-9475c.up.railway.app).
+Sign in as `ada`, `grace`, `linus`, `margaret`, `alan`, `katherine`, `tim` or
+`hedy`; the password for all of them is `network123`. The sign-in screen
+offers four of them with one click, and you can also create your own account.
+The API documentation is on
+[Swagger](https://api-production-53d41.up.railway.app/api/docs/).
+
+## 15. What I learned
+
+Rewriting was cleaner than refactoring: by deleting the monolith first, the
+API was designed without inheriting the shape of the templates. And
+deployment taught me what development couldn't: permissions, container users
+and migrations only truly fail in production.
+
+## 16. Current status
+
+Finished and running at version 3.1.0: permanently deployed on Railway on
+PostgreSQL and Redis, with the repository public under the GPL-3.0 license,
+continuous integration green and 132 automated tests — 98 backend and 34
+frontend — passing. It has no real users, so I don't publish usage figures:
+it's a project built to show how I work.

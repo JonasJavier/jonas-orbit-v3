@@ -1,10 +1,11 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import type { Locale } from "@/content/site.data";
 import {
-  MISSION_OPTIONS,
   TURNSTILE_TEST_SITE_KEY,
   TURNSTILE_TEST_TOKEN,
-  contactFormSchema,
+  createContactFormSchema,
   fieldErrorsFromZod,
+  missionOptions,
   type ContactFormData,
 } from "./contact-schema";
 import { clientAddress } from "./rate-limit";
@@ -245,20 +246,24 @@ function escapeHtml(value: string) {
   });
 }
 
+/** Jonás lee el correo en español, escriba en el idioma que escriba el visitante. */
 function missionLabel(mission: ContactFormData["mission"]) {
-  return (
-    MISSION_OPTIONS.find((option) => option.value === mission)?.label ?? mission
-  );
+  return missionOptions("es").find((option) => option.value === mission)?.label ?? mission;
 }
+
+const LANGUAGE_NAME: Record<Locale, string> = { es: "Español", en: "Inglés" };
 
 export async function deliverContactMessage({
   data,
+  locale = "es",
   apiKey,
   fromEmail,
   toEmail,
   fetchImplementation = fetch,
 }: {
   data: ContactFormData;
+  /** El idioma en que escribió el visitante: así sabe Jonás en cuál responder. */
+  locale?: Locale;
   apiKey: string;
   fromEmail: string;
   toEmail: string;
@@ -282,8 +287,8 @@ export async function deliverContactMessage({
       to: [toEmail],
       reply_to: data.email,
       subject: `[Jonás Orbit] ${mission}`,
-      text: `Nombre: ${data.name}\nCorreo: ${data.email}\nMisión: ${mission}\n\n${data.message}`,
-      html: `<h1>Nueva transmisión</h1><p><strong>Nombre:</strong> ${safeName}</p><p><strong>Correo:</strong> ${safeEmail}</p><p><strong>Misión:</strong> ${safeMission}</p><hr /><p>${safeMessage}</p>`,
+      text: `Nombre: ${data.name}\nCorreo: ${data.email}\nMisión: ${mission}\nIdioma: ${LANGUAGE_NAME[locale]}\n\n${data.message}`,
+      html: `<h1>Nueva transmisión</h1><p><strong>Nombre:</strong> ${safeName}</p><p><strong>Correo:</strong> ${safeEmail}</p><p><strong>Misión:</strong> ${safeMission}</p><p><strong>Idioma:</strong> ${LANGUAGE_NAME[locale]}</p><hr /><p>${safeMessage}</p>`,
     }),
   });
 
@@ -325,7 +330,10 @@ export async function handleContactRequest(
     return { status: 200, body: { ok: true } };
   }
 
-  const parsed = contactFormSchema.safeParse(payload);
+  // Los errores por campo vuelven en el idioma del formulario; sin idioma
+  // declarado, en español (el contrato anterior de la API).
+  const locale: Locale = payload.locale === "en" ? "en" : "es";
+  const parsed = createContactFormSchema(locale).safeParse(payload);
   if (!parsed.success) {
     return {
       status: 400,
@@ -383,6 +391,7 @@ export async function handleContactRequest(
   try {
     await deliverContactMessage({
       data: parsed.data,
+      locale,
       apiKey: config.resendApiKey,
       fromEmail: config.fromEmail,
       toEmail: config.toEmail,

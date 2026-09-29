@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { MISSION_OPTIONS } from "@/lib/contact-schema";
+import { missionOptions } from "@/lib/contact-schema";
+import { defineCopy } from "@/lib/i18n";
 import { playSfx } from "@/lib/sfx";
 import { ContactForm } from "./contact-form";
+import { useLocale } from "./locale-provider";
 
 /**
  * Consola de transmisión: el formulario de contacto leído como un instrumento.
@@ -31,15 +33,34 @@ function readSignal(form: HTMLFormElement): Signal {
   };
 }
 
-const HINTS: Record<number, string> = {
-  0: "esperando tus datos",
-  1: "sigue, va tomando forma",
-  2: "a mitad de camino",
-  3: "casi lista",
-  4: "lista para transmitir",
-};
+const COPY = defineCopy({
+  es: {
+    hints: ["esperando tus datos", "sigue, va tomando forma", "a mitad de camino", "casi lista", "lista para transmitir"],
+    newTransmission: "Nueva transmisión",
+    channel: "Canal 06 / Ranger",
+    chooseLabel: "Elegir misión",
+    choose: "Elige una misión",
+    signal: "Señal",
+  },
+  en: {
+    hints: ["waiting for your details", "keep going, it’s taking shape", "halfway there", "almost ready", "ready to transmit"],
+    newTransmission: "New transmission",
+    channel: "Channel 06 / Ranger",
+    chooseLabel: "Choose a mission",
+    choose: "Pick a mission",
+    signal: "Signal",
+  },
+});
 
-export function RangerConsole() {
+export function RangerConsole({
+  thanksHref,
+  privacyHref,
+}: {
+  thanksHref: string;
+  privacyHref: string;
+}) {
+  const locale = useLocale();
+  const copy = COPY[locale];
   const rootRef = useRef<HTMLDivElement>(null);
   const [signal, setSignal] = useState<Signal>(SILENT);
   const strength = [signal.name, signal.email, Boolean(signal.mission), signal.message].filter(Boolean).length;
@@ -60,13 +81,13 @@ export function RangerConsole() {
   return (
     <div className="ranger-console" ref={rootRef} onInput={sync} onChange={sync}>
       <div className="ranger-console__bar">
-        <span><i className="ranger-led" data-state={strength === 4 ? "ok" : "on"} aria-hidden="true" /> Nueva transmisión</span>
-        <span aria-hidden="true">Canal 06 / Ranger</span>
+        <span><i className="ranger-led" data-state={strength === 4 ? "ok" : "on"} aria-hidden="true" /> {copy.newTransmission}</span>
+        <span aria-hidden="true">{copy.channel}</span>
       </div>
-      <div className="ranger-missions" role="group" aria-label="Elegir misión">
-        <p className="ranger-missions__label">Elige una misión</p>
+      <div className="ranger-missions" role="group" aria-label={copy.chooseLabel}>
+        <p className="ranger-missions__label">{copy.choose}</p>
         <div className="ranger-missions__grid">
-          {MISSION_OPTIONS.map((option) => (
+          {missionOptions(locale).map((option) => (
             <button key={option.value} className="ranger-mission" type="button" aria-pressed={signal.mission === option.value} onClick={() => chooseMission(option.value)}>
               <strong>{option.label}</strong>
               <span>{option.description}</span>
@@ -78,9 +99,9 @@ export function RangerConsole() {
         <div className="ranger-meter__bars" aria-hidden="true">
           {[0, 1, 2, 3].map((segment) => <i key={segment} data-on={segment < strength} />)}
         </div>
-        <p className="ranger-meter__text">Señal {strength}/4 · {HINTS[strength]}</p>
+        <p className="ranger-meter__text">{copy.signal} {strength}/4 · {copy.hints[strength]}</p>
       </div>
-      <ContactForm />
+      <ContactForm thanksHref={thanksHref} privacyHref={privacyHref} />
     </div>
   );
 }

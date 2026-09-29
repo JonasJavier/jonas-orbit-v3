@@ -6,6 +6,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState, type CSSProperties, type KeyboardEvent } from "react";
 import type { ArchitectureLane } from "@/content/projects.data";
+import type { Locale } from "@/content/site.data";
+import { defineCopy } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
 import {
   DIAGRAM_BOX,
   edgeKey,
@@ -31,13 +34,47 @@ import "./system-diagram.css";
  * arquitectura, no sólo se ve.
  */
 
-export const LANE_LABEL: Record<ArchitectureLane, string> = {
-  cliente: "Cliente",
-  servicio: "Servicio",
-  datos: "Datos",
-  infraestructura: "Infraestructura",
-  integraciones: "Integraciones",
+export const LANE_LABEL: Record<Locale, Record<ArchitectureLane, string>> = {
+  es: {
+    cliente: "Cliente",
+    servicio: "Servicio",
+    datos: "Datos",
+    infraestructura: "Infraestructura",
+    integraciones: "Integraciones",
+  },
+  en: {
+    cliente: "Client",
+    servicio: "Services",
+    datos: "Data",
+    infraestructura: "Infrastructure",
+    integraciones: "Integrations",
+  },
 };
+
+const COPY = defineCopy({
+  es: {
+    architecture: "Arquitectura",
+    counts: (modules: string, connections: string) => `${modules} módulos · ${connections} conexiones`,
+    systemOf: (name: string) => `Sistema de ${name}`,
+    inspectorLabel: "Inspector del módulo",
+    inspector: "Inspector",
+    decisions: (n: string) => `${n} decisiones`,
+    technologies: "Tecnologías",
+    inputs: "Recibe de",
+    outputs: "Entrega a",
+  },
+  en: {
+    architecture: "Architecture",
+    counts: (modules: string, connections: string) => `${modules} modules · ${connections} connections`,
+    systemOf: (name: string) => `${name} system`,
+    inspectorLabel: "Module inspector",
+    inspector: "Inspector",
+    decisions: (n: string) => `${n} decisions`,
+    technologies: "Technologies",
+    inputs: "Receives from",
+    outputs: "Sends to",
+  },
+});
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
@@ -123,6 +160,8 @@ export function SystemDiagram({
   onHover: (id: string | null) => void;
   onPick: (id: string) => void;
 }) {
+  const locale = useLocale();
+  const t = COPY[locale];
   const { architecture } = project;
   const path = nodePath(architecture.edges, focus);
 
@@ -147,13 +186,13 @@ export function SystemDiagram({
       style={{ "--rows": architecture.rows, "--cols": architecture.cols } as CSSProperties}
     >
       <p className="holo-card__bar">
-        <span>Arquitectura</span>
+        <span>{t.architecture}</span>
         <span className="holo-card__meta">
-          {pad(project.counts.modules)} módulos · {pad(project.counts.connections)} conexiones
+          {t.counts(pad(project.counts.modules), pad(project.counts.connections))}
         </span>
       </p>
       <div
-        aria-label={`Sistema de ${project.name}`}
+        aria-label={t.systemOf(project.name)}
         className="holo-diagram__field"
         onKeyDown={onKey}
         onPointerLeave={() => onHover(null)}
@@ -193,14 +232,14 @@ export function SystemDiagram({
         {architecture.lanes.map(({ lane }, col) => (
           <div
             key={lane}
-            aria-label={LANE_LABEL[lane]}
+            aria-label={LANE_LABEL[locale][lane]}
             className="holo-lane"
             data-lane={lane}
             role="group"
             style={{ "--col": col } as CSSProperties}
           >
             <p aria-hidden="true" className="holo-lane__title">
-              {LANE_LABEL[lane]}
+              {LANE_LABEL[locale][lane]}
             </p>
             {architecture.nodes
               .filter((node) => node.lane === lane)
@@ -281,13 +320,15 @@ export function SystemDiagram({
  * conecta.
  */
 export function SystemInspector({ project, node }: { project: TableProject; node: TableNode | undefined }) {
+  const locale = useLocale();
+  const t = COPY[locale];
   const decision = node?.decision ?? (project.architecture.derived ? project.decision : null);
   const plates = [...project.architecture.lanes].reverse();
   return (
-    <section aria-label="Inspector del módulo" className="holo-card holo-inspector">
+    <section aria-label={t.inspectorLabel} className="holo-card holo-inspector">
       <p className="holo-card__bar">
-        <span>Inspector</span>
-        <span className="holo-card__meta">{pad(project.counts.decisions)} decisiones</span>
+        <span>{t.inspector}</span>
+        <span className="holo-card__meta">{t.decisions(pad(project.counts.decisions))}</span>
       </p>
       {node ? (
         <div className="holo-inspector__body" key={node.id}>
@@ -304,7 +345,7 @@ export function SystemInspector({ project, node }: { project: TableProject; node
             </span>
             <div>
               <p className="holo-inspector__lane" data-lane={node.lane}>
-                {LANE_LABEL[node.lane]}
+                {LANE_LABEL[locale][node.lane]}
               </p>
               <h3 className="holo-inspector__title">{node.label}</h3>
             </div>
@@ -317,19 +358,19 @@ export function SystemInspector({ project, node }: { project: TableProject; node
           <dl className="holo-inspector__links">
             {node.tech.length > 0 ? (
               <div data-kind="tech">
-                <dt>Tecnologías</dt>
+                <dt>{t.technologies}</dt>
                 <dd>{node.tech.join(" · ")}</dd>
               </div>
             ) : null}
             {node.inputs.length > 0 ? (
               <div>
-                <dt>Recibe de</dt>
+                <dt>{t.inputs}</dt>
                 <dd>{node.inputs.join(" · ")}</dd>
               </div>
             ) : null}
             {node.outputs.length > 0 ? (
               <div>
-                <dt>Entrega a</dt>
+                <dt>{t.outputs}</dt>
                 <dd>{node.outputs.join(" · ")}</dd>
               </div>
             ) : null}

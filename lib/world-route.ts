@@ -1,4 +1,5 @@
 import type { WorldId } from "@/content/worlds.data";
+import { PATH_SEGMENTS } from "./path-segments";
 
 /**
  * Resolución de la ruta activa a su mundo.
@@ -62,10 +63,13 @@ export function findWorldRoute(
  * lo que promete `AGENTS.md`. El Observatorio sube el listón porque su canvas
  * ocupa la pantalla entera durante toda la visita, no un hero.
  *
- * Se casa sólo por el segmento `observatorio`, que es una carpeta del router y
- * por tanto nuestra. El slug del mundo —`experimentos`— vive en el frontmatter
- * del MDX y no se duplica aquí: ésa es la regla 4 del repositorio.
+ * Se casa sólo por el segmento del Observatorio en cada idioma (`observatorio`,
+ * `observatory`), que es nuestro (`PATH_SEGMENTS`). El slug del mundo
+ * —`experimentos`— vive en el frontmatter del MDX y no se duplica aquí: ésa es
+ * la regla 4 del repositorio.
  */
+const OBSERVATORY_SEGMENTS: readonly string[] = Object.values(PATH_SEGMENTS.observatory);
+
 export function isObservatoryPath(pathname: string): boolean {
-  return pathname.split("/").includes("observatorio");
+  return pathname.split("/").some((segment) => OBSERVATORY_SEGMENTS.includes(segment));
 }

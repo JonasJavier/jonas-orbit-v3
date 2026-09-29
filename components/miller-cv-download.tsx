@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useLocale } from "./locale-provider";
+
+/** Los dos CV, con el del idioma de la página primero. */
+const CV = [
+  { locale: "es", name: "Español", href: "/cv/jonas-javier-cv-es.pdf", tag: "PDF · ES" },
+  { locale: "en", name: "English", href: "/cv/jonas-javier-cv-en-ats.pdf", tag: "PDF · EN" },
+] as const;
 
 /** Selector bilingüe del hero. El `<details>` conserva la descarga sin JS. */
 export function MillerCvDownload() {
   const details = useRef<HTMLDetailsElement>(null);
+  const locale = useLocale();
+  const label = locale === "es" ? "Descargar CV" : "Download CV";
+  const cvs = [...CV].sort((a, b) => Number(b.locale === locale) - Number(a.locale === locale));
 
   useEffect(() => {
     const closeOutside = (event: PointerEvent) => {
@@ -33,10 +43,11 @@ export function MillerCvDownload() {
         if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
       }}
     >
-      <summary aria-label="Descargar CV">Descargar CV</summary>
+      <summary aria-label={label}>{label}</summary>
       <div className="miller-cv__menu" onClick={() => { if (details.current) details.current.open = false; }}>
-        <a download href="/cv/jonas-javier-cv-es.pdf"><span>Español</span><small>PDF · ES</small></a>
-        <a download href="/cv/jonas-javier-cv-en-ats.pdf"><span>English</span><small>PDF · EN</small></a>
+        {cvs.map((cv) => (
+          <a key={cv.locale} download href={cv.href} hrefLang={cv.locale}><span>{cv.name}</span><small>{cv.tag}</small></a>
+        ))}
       </div>
     </details>
   );

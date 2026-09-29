@@ -3,11 +3,45 @@
    with movement off the row is an ordinary horizontal scroller. */
 /* eslint-disable @next/next/no-img-element */
 import tastes from "@/content/about-tastes.data.json";
+import type { Locale } from "@/content/site.data";
+import { defineCopy } from "@/lib/i18n";
 
 type Taste = (typeof tastes)[number];
 
-function Cover({ item, copy }: { item: Taste; copy?: boolean }) {
-  const note = "note" in item ? item.note : undefined;
+/*
+  Los datos (`about-tastes.data.json`) están escritos en español: el texto
+  alternativo es «Portada: <título de la obra>» y la nota, el formato. Aquí se
+  dicen en inglés sin duplicar la lista, porque lo único que cambia es la
+  palabra delante del título, que es un nombre propio.
+*/
+const NOTES_EN: Record<string, string> = {
+  Cine: "Film",
+  "Mi serie favorita": "My favorite series",
+  Serie: "Series",
+  "Cine · Henry Cavill": "Film · Henry Cavill",
+  "Serie · Grant Gustin": "Series · Grant Gustin",
+};
+
+const COPY = defineCopy({
+  es: {
+    music: "Selección de música",
+    stories: "Selección de cine, series y anime",
+    reference: "Ver referencia (nueva pestaña)",
+    alt: (item: Taste) => item.alt,
+    note: (note: string) => note,
+  },
+  en: {
+    music: "Music picks",
+    stories: "Film, TV and anime picks",
+    reference: "View reference (opens in a new tab)",
+    alt: (item: Taste) => `Cover: ${item.artworkTitle}`,
+    note: (note: string) => NOTES_EN[note] ?? note,
+  },
+});
+
+function Cover({ item, copy, locale }: { item: Taste; copy?: boolean; locale: Locale }) {
+  const t = COPY[locale];
+  const note = "note" in item && item.note ? t.note(item.note) : undefined;
   return (
     <li>
       <a
@@ -15,12 +49,12 @@ function Cover({ item, copy }: { item: Taste; copy?: boolean }) {
         target="_blank"
         rel="noopener noreferrer"
         tabIndex={copy ? -1 : undefined}
-        aria-label={`${item.title}${note ? ` · ${note}` : ""}. Ver referencia (nueva pestaña)`}
+        aria-label={`${item.title}${note ? ` · ${note}` : ""}. ${t.reference}`}
       >
         <span className="about-cover">
           <img
             src={item.src}
-            alt={copy ? "" : item.alt}
+            alt={copy ? "" : t.alt(item)}
             width={item.width}
             height={item.height}
             loading="lazy"
@@ -34,11 +68,8 @@ function Cover({ item, copy }: { item: Taste; copy?: boolean }) {
   );
 }
 
-export function AboutShelf({ group }: { group: "music" | "stories" }) {
-  const label =
-    group === "music"
-      ? "Selección de música"
-      : "Selección de cine, series y anime";
+export function AboutShelf({ group, locale }: { group: "music" | "stories"; locale: Locale }) {
+  const label = COPY[locale][group];
   const items = tastes.filter((item) => item.group === group);
   return (
     <div
@@ -51,12 +82,12 @@ export function AboutShelf({ group }: { group: "music" | "stories" }) {
         <div className="about-marquee">
           <ul id={`about-shelf-${group}`} className="about-shelf-track">
             {items.map((item) => (
-              <Cover key={item.id} item={item} />
+              <Cover key={item.id} item={item} locale={locale} />
             ))}
           </ul>
           <ul className="about-shelf-track about-shelf-copy" aria-hidden="true">
             {items.map((item) => (
-              <Cover key={item.id} item={item} copy />
+              <Cover key={item.id} item={item} locale={locale} copy />
             ))}
           </ul>
         </div>

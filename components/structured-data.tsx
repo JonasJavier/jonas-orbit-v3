@@ -31,16 +31,19 @@ export function StructuredData({
   work?: Record<string, unknown>;
 }) {
   const home = absoluteUrl(`/${locale}`);
+  // La persona es UNA en los dos idiomas: su `@id` cuelga del origen y no de
+  // `/es` o `/en`, para que el buscador no vea dos Jonás distintos.
+  const person = `${absoluteUrl("/")}#jonas`;
 
   const graph: Record<string, unknown>[] = [
     {
       "@type": "Person",
-      "@id": `${home}#jonas`,
+      "@id": person,
       name: SITE_PROFILE.name,
       alternateName: SITE_PROFILE.alternateNames,
       image: absoluteUrl(SITE_PROFILE.portrait),
-      jobTitle: SITE_PROFILE.jobTitle,
-      nationality: { "@type": "Country", name: "República Dominicana" },
+      jobTitle: SITE_PROFILE.jobTitle[locale],
+      nationality: { "@type": "Country", name: SITE_PROFILE.countryName[locale] },
       knowsLanguage: SITE_PROFILE.languages,
       email: `mailto:${SITE_PROFILE.email}`,
       telephone: SITE_PROFILE.phone,
@@ -52,7 +55,7 @@ export function StructuredData({
       },
       sameAs: [SITE_PROFILE.github, SITE_PROFILE.linkedin],
       // Lo que el propio sitio demuestra con casos y experimentos publicados.
-      knowsAbout: SITE_PROFILE.knowsAbout,
+      knowsAbout: SITE_PROFILE.knowsAbout[locale],
     },
     {
       "@type": "WebSite",
@@ -61,7 +64,7 @@ export function StructuredData({
       alternateName: SITE_PROFILE.name,
       url: home,
       inLanguage: locale,
-      author: { "@id": `${home}#jonas` },
+      author: { "@id": person },
     },
   ];
 
@@ -80,7 +83,7 @@ export function StructuredData({
   }
 
   if (work) {
-    graph.push({ ...work, author: { "@id": `${home}#jonas` }, inLanguage: locale });
+    graph.push({ ...work, author: { "@id": person }, inLanguage: locale });
   }
 
   return (

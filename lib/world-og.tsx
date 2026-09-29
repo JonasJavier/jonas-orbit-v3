@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import type { Locale } from "@/content/site.data";
 import type { World } from "./worlds";
 
 /**
@@ -16,7 +17,7 @@ import type { World } from "./worlds";
 export const WORLD_OG_SIZE = { width: 1200, height: 630 };
 export const WORLD_OG_CONTENT_TYPE = "image/png";
 
-export function renderWorldOgImage(world: World) {
+export function renderWorldOgImage(world: World, locale: Locale) {
   const { accent, secondary, cosmicName, order, prose } = world;
 
   return new ImageResponse(
@@ -50,7 +51,7 @@ export function renderWorldOgImage(world: World) {
           <div style={{ display: "flex" }}>JONÁS ORBIT</div>
           <div style={{ display: "flex", flex: 1 }} />
           <div style={{ display: "flex", color: "#9ba8c3" }}>
-            {`DESTINO ${String(order).padStart(2, "0")} / 07`}
+            {`${locale === "es" ? "DESTINO" : "DESTINATION"} ${String(order).padStart(2, "0")} / 06`}
           </div>
         </div>
 

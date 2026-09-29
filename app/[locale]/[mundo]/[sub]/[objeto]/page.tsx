@@ -4,21 +4,23 @@ import { notFound } from "next/navigation";
 import { FlatWorldBody } from "@/components/flat-world-body";
 import { ObservatoryViewer } from "@/components/observatory-viewer";
 import { StructuredData } from "@/components/structured-data";
-import { PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
-import { worldsData } from "@/content/worlds.data";
+import { PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
+import { worldsData, type WorldId } from "@/content/worlds.data";
+import { defineCopy } from "@/lib/i18n";
 import { instrumentsFor } from "@/lib/observatory";
-import {
-  observatoryCatalog,
-  OBSERVATORY_SLUGS,
-} from "@/lib/observatory-catalog";
-import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/lib/site-metadata";
+import { observatoryCatalog } from "@/lib/observatory-catalog";
+import { OBSERVATORY_IDS, observatoryIdBySlug, observatorySlug } from "@/lib/observatory-slugs";
+import { observatoryPath, pageAlternatesMetadata, worldPath } from "@/lib/page-paths";
+import { PATH_SEGMENTS } from "@/lib/path-segments";
+import { defaultOgImage, siteOpenGraph } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
-import { getWorld } from "@/lib/worlds";
+import { getWorld, getWorldBySlug } from "@/lib/worlds";
 
 /**
  * El Observatorio: un espécimen, pantalla completa.
  *
- * Ruta anidada bajo `/es/experimentos`, que desde este pase es la RECEPCIÓN del
+ * Ruta anidada bajo `/es/experimentos` (`/en/experiments/observatory/…` en
+ * inglés), que desde este pase es la RECEPCIÓN del
  * laboratorio y no la ficha editorial de la sección. `findWorldRoute` casa por
  * prefijo, de modo que esta ruta ya se resuelve al mundo `tesseract`: con él en
  * `COVERED_WORLDS` y con `isObservatoryPath`, la escena persistente ni dibuja
@@ -45,63 +47,114 @@ export const dynamicParams = false;
 
 export function generateStaticParams() {
   return PUBLISHED_LOCALES.flatMap((locale) =>
-    Object.keys(OBSERVATORY_SLUGS).map((objeto) => ({ locale, objeto })),
+    OBSERVATORY_IDS.map((id) => ({
+      locale,
+      mundo: getWorld("tesseract", locale).prose.slug,
+      sub: PATH_SEGMENTS.observatory[locale],
+      objeto: observatorySlug(id, locale),
+    })),
   );
 }
 
-type Props = { params: Promise<{ locale: string; objeto: string }> };
+type Props = { params: Promise<{ locale: string; mundo: string; sub: string; objeto: string }> };
 
 /** Dos dígitos: es tipografía de instrumento, no dato. */
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Los mandos del banco, en el orden en que los presenta el instrumento. */
-const INSTRUMENT_LABELS: Record<string, string> = {
-  bloom: "Bloom",
-  material: "Material",
-  datos: "Datos",
-  // Los tres de Gargantúa: ramas reales del raymarch, no adornos.
-  doppler: "Doppler",
-  secundarias: "Secundarias",
-  lente: "Lente",
-};
+const COPY = defineCopy({
+  es: {
+    title: (name: string) => `${name} en 3D · Observatorio`,
+    description: (name: string) =>
+      `${name} en 3D interactivo: un espécimen del observatorio de experimentos WebGL de Jonás Javier, para ver de cerca su geometría, material y luz.`,
+    workName: (name: string) => `${name} en 3D`,
+    genre: "Experimento interactivo en WebGL",
+    observatory: "Observatorio",
+    specimen: (index: number, total: number) => `Espécimen ${index} de ${total}`,
+    instrument: "Instrumento",
+    standby: "En espera",
+    unavailable: "no disponible",
+    back: "Volver a Experimentos",
+    /** Los mandos del banco, en el orden en que los presenta el instrumento. */
+    instruments: {
+      bloom: "Bloom",
+      material: "Material",
+      datos: "Datos",
+      // Los tres de Gargantúa: ramas reales del raymarch, no adornos.
+      doppler: "Doppler",
+      secundarias: "Secundarias",
+      lente: "Lente",
+      registro: "Registro",
+    } as Record<string, string>,
+  },
+  en: {
+    title: (name: string) => `${name} in 3D · Observatory`,
+    description: (name: string) =>
+      `${name} in interactive 3D: a specimen from Jonás Javier’s WebGL experiments observatory, built to study its geometry, material and light up close.`,
+    workName: (name: string) => `${name} in 3D`,
+    genre: "Interactive WebGL experiment",
+    observatory: "Observatory",
+    specimen: (index: number, total: number) => `Specimen ${index} of ${total}`,
+    instrument: "Instrument",
+    standby: "Standby",
+    unavailable: "unavailable",
+    back: "Back to Experiments",
+    instruments: {
+      bloom: "Bloom",
+      material: "Material",
+      datos: "Data",
+      doppler: "Doppler",
+      secundarias: "Secondary images",
+      lente: "Lens",
+      registro: "Log",
+    },
+  },
+});
+
+/** El espécimen detrás de la URL, si la URL es de verdad el Observatorio. */
+function resolveSpecimen(locale: Locale, mundo: string, sub: string, objeto: string): WorldId | undefined {
+  if (getWorldBySlug(mundo, locale)?.id !== "tesseract") return undefined;
+  if (sub !== PATH_SEGMENTS.observatory[locale]) return undefined;
+  return observatoryIdBySlug(objeto, locale);
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, objeto } = await params;
-  if (!PUBLISHED_LOCALES.includes(locale as Locale)) return {};
-  const id = OBSERVATORY_SLUGS[objeto];
-  if (!id) return { title: "Espécimen no encontrado" };
-  const world = getWorld(id, locale as Locale);
-  const path = `/${locale}/experimentos/observatorio/${objeto}`;
-  const title = `${world.cosmicName} en 3D · Observatorio`;
-  const description = `${world.cosmicName} en 3D interactivo: un espécimen del observatorio de experimentos WebGL de Jonás Javier, para ver de cerca su geometría, material y luz.`;
+  const { locale, mundo, sub, objeto } = await params;
+  if (!isPublishedLocale(locale)) return {};
+  const id = resolveSpecimen(locale, mundo, sub, objeto);
+  if (!id) return {};
+  const copy = COPY[locale];
+  const world = getWorld(id, locale);
+  const title = copy.title(world.cosmicName);
+  const description = copy.description(world.cosmicName);
   return {
     title,
     description,
     // El §1.3 vende «mira la Endurance» como enlace compartible dentro de una
     // candidatura. Un enlace compartible que ningún buscador conoce y que no
     // declara su canónica es sólo una URL que funciona por casualidad.
-    alternates: { canonical: absoluteUrl(path) },
+    alternates: pageAlternatesMetadata({ kind: "observatory", id }, locale),
     openGraph: {
-      ...SITE_OPEN_GRAPH,
+      ...siteOpenGraph(locale),
       title,
       description,
-      url: path,
-      images: [DEFAULT_OG_IMAGE],
+      url: observatoryPath(id, locale),
+      images: [defaultOgImage(locale)],
     },
   };
 }
 
 export default async function ObservatoryRoute({ params }: Props) {
-  const { locale, objeto } = await params;
-  if (!PUBLISHED_LOCALES.includes(locale as Locale)) notFound();
+  const { locale, mundo, sub, objeto } = await params;
+  if (!isPublishedLocale(locale)) notFound();
 
-  const id = OBSERVATORY_SLUGS[objeto];
+  const id = resolveSpecimen(locale, mundo, sub, objeto);
   if (!id) notFound();
 
-  const typedLocale = locale as Locale;
+  const typedLocale: Locale = locale;
+  const copy = COPY[typedLocale];
   const world = getWorld(id, typedLocale);
   const structure = worldsData[id];
-  const indexHref = `/${typedLocale}/experimentos`;
+  const indexHref = worldPath("tesseract", typedLocale);
 
   /*
     El catálogo sale del módulo compartido y ya no se arma aquí.
@@ -139,11 +192,11 @@ export default async function ObservatoryRoute({ params }: Props) {
     de «qué se puede hacer con ella».
   */
   const bank = [
-    ...instrumentsFor(id).map((key) => INSTRUMENT_LABELS[key] ?? key),
-    ...(observatory?.registro ? ["Registro"] : []),
+    ...instrumentsFor(id).map((key) => copy.instruments[key] ?? key),
+    ...(observatory?.registro ? [copy.instruments.registro] : []),
   ];
 
-  const path = `${indexHref}/observatorio/${objeto}`;
+  const path = observatoryPath(id, typedLocale);
 
   return (
     <main className="observatory-route" id="main-content">
@@ -156,8 +209,8 @@ export default async function ObservatoryRoute({ params }: Props) {
         work={{
           "@type": "CreativeWork",
           "@id": `${absoluteUrl(path)}#especimen`,
-          name: `${world.cosmicName} en 3D`,
-          genre: "Experimento interactivo en WebGL",
+          name: copy.workName(world.cosmicName),
+          genre: copy.genre,
           url: absoluteUrl(path),
         }}
       />
@@ -186,12 +239,12 @@ export default async function ObservatoryRoute({ params }: Props) {
         <div className="observatory-face">
           <div className="observatory-face__head">
             <p className="observatory-face__eyebrow">
-              Observatorio
+              {copy.observatory}
               <span aria-hidden="true" className="observatory-face__sep">
                 ·
               </span>
               <span className="sr-only">
-                Espécimen {entry.index} de {catalog.length}
+                {copy.specimen(entry.index, catalog.length)}
               </span>
               <span aria-hidden="true">
                 {pad(entry.index)} / {pad(catalog.length)}
@@ -228,11 +281,11 @@ export default async function ObservatoryRoute({ params }: Props) {
           <div className="observatory-face__foot">
             <p className="observatory-face__state">
               <span aria-hidden="true" className="observatory-face__dot" />
-              Instrumento
+              {copy.instrument}
               <span aria-hidden="true" className="observatory-face__sep">
                 ·
               </span>
-              En espera
+              {copy.standby}
             </p>
             <p className="observatory-route__summary">{world.prose.summary}</p>
 
@@ -241,14 +294,14 @@ export default async function ObservatoryRoute({ params }: Props) {
                 <li key={label}>
                   <span className="observatory-face__mando">{label}</span>
                   <span className="observatory-face__estado">
-                    no disponible
+                    {copy.unavailable}
                   </span>
                 </li>
               ))}
             </ul>
 
             <p className="observatory-face__exit">
-              <Link href={indexHref}>Volver a Experimentos</Link>
+              <Link href={indexHref}>{copy.back}</Link>
             </p>
           </div>
         </div>

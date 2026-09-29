@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import photos from "@/content/about-photos.data.json";
 
-type PhotoId = keyof typeof photos;
+export type PhotoId = keyof typeof photos;
 
 export function aboutPhotoPath(id: PhotoId) {
   return `/images/sobre-mi/${id}-${Math.max(...photos[id].widths)}.webp`;

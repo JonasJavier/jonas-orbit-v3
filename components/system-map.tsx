@@ -8,7 +8,9 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
+import { defineCopy } from "@/lib/i18n";
 import { MAP_HOVER_MODE, type MapHoverMode } from "@/lib/map-hover";
 import { playSample } from "@/lib/audio-samples";
 import { projectPlacement } from "@/lib/system-map";
@@ -21,11 +23,18 @@ import {
 } from "@/lib/world-navigation";
 import type { WorldNavItem } from "@/lib/worlds";
 import { FlatWorldBody } from "./flat-world-body";
+import { LanguageSwitch } from "./language-switch";
+import { useLocale } from "./locale-provider";
 import { NavRail } from "./nav-rail";
 import { SystemHud } from "./system-hud";
 import "./system-map-atlas.css";
 
 type HitboxShape = "box" | "craft" | "sphere";
+
+const COPY = defineCopy({
+  es: { destinations: "Destinos del Sistema Gargantúa", explore: "Toca para explorar" },
+  en: { destinations: "Destinations in the Gargantua System", explore: "Tap to explore" },
+});
 
 /** Quien ya tocó un destino no vuelve a ver «toca para explorar». */
 const EXPLORE_HINT_KEY = "jonas-orbit:explorar-visto";
@@ -73,14 +82,18 @@ function interactionVolumeFor(world: WorldNavItem): InteractionVolume {
  */
 export function SystemMap({
   worlds,
+  languages,
   /* Cuál de las dos respuestas al puntero corre. Es propiedad y no sólo
      constante para que los tests recorran las dos: un camino apagado que nadie
      ejecuta se pudre en silencio, y éste está apagado a propósito. */
   hoverMode = MAP_HOVER_MODE,
 }: {
   worlds: readonly WorldNavItem[];
+  /** La portada en cada idioma: la home no tiene cabecera y el selector vive aquí. */
+  languages: Record<Locale, string>;
   hoverMode?: MapHoverMode;
 }) {
+  const copy = COPY[useLocale()];
   const mapRef = useRef<HTMLElement>(null);
   const navigateToWorld = useWorldNavigation();
   const [pointerTarget, setPointerTarget] = useState<WorldId | null>(null);
@@ -245,10 +258,12 @@ export function SystemMap({
         worlds={worlds}
       />
 
+      <LanguageSwitch className="language-switch--home" languages={languages} />
+
       <nav
         className="system-map"
         id="sistema"
-        aria-label="Destinos del Sistema Gargantúa"
+        aria-label={copy.destinations}
         data-explore-hint={exploreHint ? "true" : undefined}
         ref={mapRef}
       >
@@ -256,7 +271,7 @@ export function SystemMap({
             accesible, así que no se anuncia. */}
         {exploreHint ? (
           <p className="system-map__explore" aria-hidden="true">
-            Toca para explorar
+            {copy.explore}
           </p>
         ) : null}
         {/*

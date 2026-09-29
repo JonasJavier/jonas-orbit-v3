@@ -1,3 +1,4 @@
+import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import {
   lightGeometry,
@@ -428,4 +429,109 @@ export function observationTelemetry(
 /** El preset de un espécimen, para quien tiene un `WorldId` y no un id acotado. */
 export function observationPreset(id: WorldId): ObservationPreset | null {
   return OBSERVATION_PRESETS[id as Exclude<WorldId, "gargantua">] ?? null;
+}
+
+/**
+ * Las vistas en inglés, por `mundo/vista`: nombre del mando y lo que estudia.
+ *
+ * Las de arriba siguen siendo la fuente —cada frase se rastrea hasta una línea
+ * del shader o del modelo— y éstas las dicen igual en otro idioma. Si una de
+ * aquéllas se reescribe porque dejó de ser cierta, ésta cae con ella; la
+ * prueba de `observation-views.test.ts` exige una traducción por vista.
+ */
+export const VIEW_TEXT_EN: Readonly<Record<string, { label: string; study: string }>> = {
+  "tesseract/canonica": {
+    label: "Canonical",
+    study: "Hierarchy in the fourth dimension: the cell nearer in W is thick and bright, the far one thin and dim. They only separate with the light behind.",
+  },
+  "tesseract/rasante": {
+    label: "Grazing",
+    study: "The six glass facets. Their Fresnel reflection only returns to the camera near grazing; head-on, the 4-cube is pure edge.",
+  },
+  "tesseract/silueta": {
+    label: "Silhouette",
+    study: "Pure backlight. The only thing holding the figure against the black is its cold rim, the only one in the lab.",
+  },
+  "ranger/canonica": {
+    label: "Canonical",
+    study: "High backlight: the ship has its own block in the shader, written for exactly this. What draws the leading edge, the cockpit and the nacelles isn\u2019t the diffuse term, it\u2019s the rim.",
+  },
+  "ranger/planta": {
+    label: "Top view",
+    study: "From above with the light to the side. The wing sweep, the V-tail and the sheet-metal paneling \u2014 the only riveted surface in the system \u2014 only appear with the terminator crossing the back.",
+  },
+  "ranger/propulsion": {
+    label: "Propulsion",
+    study: "From behind and almost in the dark: the two bells, their plumes and the beacons. Bluish-white exhaust and violet signal are the same material split by a vertex mask, and they\u2019re the only things that don\u2019t depend on the light.",
+  },
+  "ranger/perfil": {
+    label: "Profile",
+    study: "Exact side view, backlit. The fuselage is a lifting body, not a tube, and only the profile proves it: the heat shield\u2019s keel along the edge and the wing reduced to its spar.",
+  },
+  "endurance/canonica": {
+    label: "Canonical",
+    study: "Three-quarter view: where the facets and the aluminum cavities separate. Head-on it flattens into a silhouette.",
+  },
+  "endurance/rasante": {
+    label: "Grazing",
+    study: "Near-tangent light. The terminator splits the ship and shows that its modules don\u2019t sit on the same plane.",
+  },
+  "endurance/silueta": {
+    label: "Silhouette",
+    study: "Backlight. The chain of modules, the two arms and the shuttles read as structure rather than surface.",
+  },
+  "endurance/operaciones": {
+    label: "Operations",
+    study: "Against the night side: the lit nozzles and the beacons, the only things the ship emits on its own and the only ones that don\u2019t depend on the light.",
+  },
+  "miller/canonica": {
+    label: "Canonical",
+    study: "Three-quarter view: the glint path crosses the lit face with its crest \u2014 bright slope, dark trough and intermittent foam \u2014 and the terminator restores the volume that frontal light erases.",
+  },
+  "miller/espejo": {
+    label: "Mirror",
+    study: "Near-frontal light. The glint path opens into a sheet and shows how far the sparkle field reaches, which is what says there\u2019s water below and not gas. The price is no terminator: the body loses volume.",
+  },
+  "miller/corrientes": {
+    label: "Currents",
+    study: "The terminator crossing the disk. Latitudinal bands chop the sheet and modulate its brightness, and the rim of air peaks: it lights up looking toward the light, not with it behind.",
+  },
+  "edmunds/canonica": {
+    label: "Canonical",
+    study: "Three-quarter view: the six mineral provinces and the mountain range, defined by SLOPE, not height. The long shadow is already there, and light still covers 69% of the body\u2019s width.",
+  },
+  "edmunds/rasante": {
+    label: "Grazing",
+    study: "Near-tangent light. The only angle where a slope becomes a long shadow and the limb breaks into lit crest, hollow and short glint. In exchange, two thirds of the body fall into darkness.",
+  },
+  "edmunds/provincias": {
+    label: "Provinces",
+    study: "Near-frontal light. As the shading flattens, the only thing left drawing is color: ochre, copper, charcoal, clay, sand and muted olive, freed from the relief that usually hides them.",
+  },
+  "gargantua/cinematografica": {
+    label: "Cinematic",
+    study: "The approved composition: the flattened ellipse, the far side\u2019s arc passing over the shadow and the secondary image beneath.",
+  },
+  "gargantua/lente": {
+    label: "Lens",
+    study: "The photon ring and the doubled image. Rays that circle the hole cross the disk plane again and bring its far side above and below.",
+  },
+  "gargantua/disco": {
+    label: "Disk",
+    study: "The inner structure of the bands and the asymmetry between the two sides: the approaching one arrives brighter, denser and creamier; the receding one, dim and coppery.",
+  },
+  "gargantua/sombra": {
+    label: "Shadow",
+    study: "The true black and its edge. Inside the critical impact parameter nothing escapes, and the rim separating it from the disk is what says there\u2019s a hole there and not a lamp.",
+  },
+};
+
+/** El nombre y el estudio de una vista, en el idioma de la página. */
+export function viewText(
+  world: WorldId,
+  view: { id: string; label: string; study: string },
+  locale: Locale,
+): { label: string; study: string } {
+  if (locale === "es") return view;
+  return VIEW_TEXT_EN[`${world}/${view.id}`] ?? view;
 }

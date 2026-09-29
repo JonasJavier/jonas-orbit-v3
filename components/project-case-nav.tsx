@@ -88,10 +88,13 @@ export function CaseBackLink({ href, children }: { href: string; children: React
 }
 
 export function CaseLocalNav({
+  label,
   name,
   heroId,
   sections,
 }: {
+  /** Nombre accesible de la barra, en el idioma de la página. */
+  label: string;
   name: string;
   /** El primer pantallazo: la barra aparece cuando su pie pasa bajo la cabecera. */
   heroId: string;
@@ -128,7 +131,7 @@ export function CaseLocalNav({
   }, [heroId]);
 
   return (
-    <nav aria-label="Secciones del caso" className="case-localnav" data-shown={shown ? "true" : undefined} inert={!shown}>
+    <nav aria-label={label} className="case-localnav" data-shown={shown ? "true" : undefined} inert={!shown}>
       <div className="case-localnav__inner">
         <a className="case-localnav__name" href="#top">
           {name}
@@ -147,7 +150,15 @@ export function CaseLocalNav({
   );
 }
 
-export function CaseReadingIndex({ headings, endId }: { headings: readonly CaseHeading[]; endId: string }) {
+export function CaseReadingIndex({
+  headings,
+  endId,
+  label,
+}: {
+  headings: readonly CaseHeading[];
+  endId: string;
+  label: string;
+}) {
   const current = useCurrentSection(
     headings.map((heading) => heading.id),
     endId,
@@ -168,7 +179,7 @@ export function CaseReadingIndex({ headings, endId }: { headings: readonly CaseH
   }, [current]);
 
   return (
-    <nav ref={nav} aria-label="Índice del caso" className="case-index">
+    <nav ref={nav} aria-label={label} className="case-index">
       <ol>
         {headings.map((heading, index) => (
           <li key={heading.id}>

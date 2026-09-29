@@ -1,6 +1,8 @@
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import { OBSERVATION_ORDER } from "@/lib/observatory";
+import { OBSERVATORY_IDS } from "@/lib/observatory-slugs";
+import { observatoryPath } from "@/lib/page-paths";
 import { getWorld } from "@/lib/worlds";
 
 /**
@@ -18,43 +20,6 @@ import { getWorld } from "@/lib/worlds";
  * resuelto por props, igual que hacía la ruta del laboratorio.
  */
 
-/**
- * Los especímenes montados, por slug de URL.
- *
- * La identidad canónica sigue siendo `WorldId` (regla 4): el slug se resuelve
- * aquí, en el borde, y nada más abajo vuelve a mirar la URL. Montar el tercero
- * es añadir una línea a esta tabla y nada más — la recepción, el raíl, el
- * sitemap y `generateStaticParams` salen todos de aquí.
- */
-export const OBSERVATORY_SLUGS: Readonly<Record<string, WorldId>> = {
-  tesseracto: "tesseract",
-  endurance: "endurance",
-  /*
-    La tercera, y la que demuestra que la tabla era de verdad el único sitio:
-    montarla no tocó la recepción, ni el raíl, ni el sitemap, ni
-    `generateStaticParams`. Sigue siendo la muestra 06 del catálogo —ese orden
-    lo fija `OBSERVATION_ORDER` y no esta tabla— y ahora tiene puerta.
-  */
-  gargantua: "gargantua",
-  /*
-    La cuarta. Una línea otra vez, y esta vez la línea de verdad no costó nada:
-    lo que costó fue descubrir que el laboratorio la ILUMINABA por donde nadie
-    había mirado. Ver la nota de su preset en `lib/observatory.ts`.
-  */
-  ranger: "ranger",
-  /*
-    Las dos últimas, y con ellas el catálogo queda `06 / 06`. Son los dos
-    cuerpos que el §8 llama «una esfera con un material»: no tienen arquitectura
-    que contar —`specimenContract` devuelve `null` para las dos y el panel
-    `DATOS` se queda sin la familia `Objeto`— y toda su identidad vive en
-    parámetros de shader. Eso no las hace muestras pobres: las hace las dos
-    únicas del laboratorio donde lo que se observa es LUZ SOBRE MATERIAL y nada
-    más. Ver sus presets en `lib/observatory.ts`.
-  */
-  miller: "miller",
-  edmunds: "edmunds",
-};
-
 export interface SpecimenEntry {
   id: WorldId;
   /** Su sitio en el catálogo, desde 1. Lo fija `OBSERVATION_ORDER`. */
@@ -70,10 +35,7 @@ export interface SpecimenEntry {
 
 /** La URL del laboratorio para un espécimen montado, o `null`. */
 function observatoryHref(id: WorldId, locale: Locale): string | null {
-  const slug = Object.keys(OBSERVATORY_SLUGS).find(
-    (key) => OBSERVATORY_SLUGS[key] === id,
-  );
-  return slug ? `/${locale}/experimentos/observatorio/${slug}` : null;
+  return OBSERVATORY_IDS.includes(id) ? observatoryPath(id, locale) : null;
 }
 
 /**

@@ -19,6 +19,59 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Idiomas — el sitio en inglés, idioma por defecto (2026-09-29)
+
+Pedido de Jonás: versión completa en inglés, **inglés por defecto** y el
+español a un clic desde la cabecera, con un selector cuidado y responsive.
+Sustituye a la regla del plan «F1A publica sólo ES; `/` → `/es`».
+
+- **Rutas propias por idioma**, nunca reescrituras: `/en/about`,
+  `/en/education`, `/en/projects/omsta`, `/en/contact/thanks`,
+  `/en/experiments/observatory/tesseract`, `/en/privacy`. Los slugs de los
+  mundos siguen en el frontmatter (`content/en/worlds/*.mdx`); los demás
+  segmentos, en `lib/path-segments.ts`. Toda URL sale de `lib/page-paths.ts`
+  (`PageRef` → ruta en cada idioma): de ahí beben el selector, el `hreflang`
+  de cada página, el sitemap y `robots.txt`. Por eso las carpetas
+  `proyectos/`, `contacto/` y `experimentos/observatorio/` pasaron a
+  `[mundo]`, `[mundo]/[sub]` y `[mundo]/[sub]/[objeto]`: una carpeta estática
+  sólo puede llamarse de una manera, y una reescritura (`next.config` o proxy)
+  deja `usePathname` distinto en servidor y cliente. Privacidad sí tiene dos
+  carpetas (`privacidad/`, `privacy/`), cada una sólo en su idioma.
+- **`app/[locale]/layout.tsx` es el layout raíz** para que `<html lang>` sea el
+  de la página en el HTML servido. Cambiar de idioma recarga el documento
+  (dos layouts raíz): aceptado, se pulsa una vez. La 404 fuera de un idioma es
+  `app/global-not-found.tsx` (`experimental.globalNotFound`).
+- **`/` → `/en`** por redirect estático; si el visitante eligió español en el
+  selector, la cookie `jonas-orbit-lang=es` lleva `/` a `/es`. Sin
+  `Accept-Language`: una portada que cambia según quién pregunte no se
+  cachea ni se enlaza de forma estable, y un buscador siempre ve el inglés.
+- **SEO:** `hreflang` en/es + `x-default` → inglés en cada página y en el
+  sitemap; `og:locale` `en_US` / `es_DO` con su alterno; JSON-LD con
+  `jobTitle`, `knowsAbout` y país en el idioma de la página, y la Person con un
+  `@id` único para los dos idiomas. Títulos y descripciones en inglés escritos
+  para búsquedas en inglés («Full-Stack Developer», «Dominican Republic»,
+  «Django», «React»), no traducidos palabra por palabra.
+- **Texto de interfaz**: objetos `defineCopy({ es, en })` junto a cada
+  componente (`lib/i18n.ts`; `NoInfer` obliga a que el inglés tenga las mismas
+  claves). Los de cliente leen el idioma con `useLocale()`
+  (`components/locale-provider.tsx`); sin proveedor —sólo en pruebas de
+  componentes— hablan español, el idioma fuente. «Sobre mí» lleva su texto en
+  `components/about-page.copy.ts`. Las vistas del Observatorio tienen su
+  inglés en `VIEW_TEXT_EN` (una prueba exige una por vista).
+- **Contacto:** el formulario valida y el servidor responde en el idioma de la
+  página (`createContactFormSchema(locale)`; el cliente manda `locale`). El
+  correo a Jonás sigue en español y dice en qué idioma escribió el visitante.
+- **El selector** (`components/language-switch.tsx`): EN | ES en una píldora
+  de instrumento; son enlaces a la misma página en el otro idioma (funcionan
+  sin JavaScript), con el nombre nativo como nombre accesible, 44 px de área
+  táctil y la píldora que viaja al pulsar. Escritorio: junto al CV. Táctil: en
+  la barra, a la vista sin abrir el menú. Portada: arriba a la derecha bajo el
+  estado del HUD; en teléfono, bajo la marca (la esquina es de la bandeja).
+- `WorldPage` y `WorldGlyph` se borraron: ningún mundo los usaba ya.
+
+e2e: `e2e/idioma.spec.ts` (rutas, `hreflang`, selector, cookie, formulario,
+teléfono).
+
 ## Auditoría responsive del sitio en móvil (2026-09-29)
 
 El dueño pidió, tras la home, auditar y mejorar TODAS las páginas en móvil

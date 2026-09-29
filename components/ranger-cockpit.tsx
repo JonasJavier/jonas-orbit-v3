@@ -16,6 +16,7 @@ import { SITE_PROFILE } from "@/content/site.data";
 import { evaluateCapabilities, readSignals } from "@/components/scene/capability";
 import { useExplicitEffects, useMotionEnabled } from "@/lib/effects-mode";
 import { playSfx } from "@/lib/sfx";
+import { useLocale } from "./locale-provider";
 
 /**
  * Cabina de la Ranger: el visitante va sentado dentro de la nave de enlace,
@@ -83,6 +84,7 @@ function canCarryFlight(explicit: boolean) {
 }
 
 export function RangerCockpit({ children }: { children: ReactNode }) {
+  const bridgeLabel = useLocale() === "es" ? "Cabina de la Ranger" : "Ranger cockpit";
   const bridgeRef = useRef<HTMLElement>(null);
   const look = useRef<Look>({ x: 0, y: 0 });
   const running = useMotionEnabled();
@@ -136,7 +138,7 @@ export function RangerCockpit({ children }: { children: ReactNode }) {
         <section
           ref={bridgeRef}
           className="ranger-bridge"
-          aria-label="Cabina de la Ranger"
+          aria-label={bridgeLabel}
           data-motion={running ? "on" : "off"}
           onPointerMove={moveHead}
           onPointerLeave={restHead}
@@ -168,6 +170,7 @@ function subscribeClock(callback: () => void) {
  * cifras inventadas.
  */
 export function RangerReadouts({ name }: { name: string }) {
+  const es = useLocale() === "es";
   const { running, supported } = useRangerCockpit();
   const mounted = useMounted();
   // En travesía sólo si de verdad vuela: movimiento encendido y un equipo que lo aguanta.
@@ -178,11 +181,11 @@ export function RangerReadouts({ name }: { name: string }) {
       <p className="ranger-readouts__name">{name}</p>
       <dl>
         <div>
-          <dt className="visually-hidden">Vuelo</dt>
-          <dd data-live={flying ? "flight" : undefined}><i className="ranger-led" data-state={flying ? "cyan" : undefined} aria-hidden="true" /> {flying ? "En travesía" : "Detenido"}</dd>
+          <dt className="visually-hidden">{es ? "Vuelo" : "Flight"}</dt>
+          <dd data-live={flying ? "flight" : undefined}><i className="ranger-led" data-state={flying ? "cyan" : undefined} aria-hidden="true" /> {flying ? (es ? "En travesía" : "In transit") : (es ? "Detenido" : "Holding")}</dd>
         </div>
         <div>
-          <dt>Hora<span className="visually-hidden"> en {SITE_PROFILE.locality}</span></dt>
+          <dt>{es ? "Hora" : "Time"}<span className="visually-hidden"> {es ? "en" : "in"} {SITE_PROFILE.locality}</span></dt>
           <dd data-live="clock">{time}</dd>
         </div>
       </dl>

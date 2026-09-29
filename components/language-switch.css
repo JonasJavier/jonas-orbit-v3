@@ -1,0 +1,71 @@
+@import "./voyage-palette.css";
+
+/* Language switch: EN | ES as a small instrument pill. The thumb sits on the
+   page's language and travels to the chosen one while the next page loads.
+   The visible pill is 30px tall; each option's hit area reaches 44px. */
+.language-switch {
+  --switch-pad: 3px;
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: stretch;
+  flex: none;
+  height: 30px;
+  padding: var(--switch-pad);
+  border: 1px solid var(--voyage-edge);
+  border-radius: 999px;
+  background: rgb(3 9 15 / 62%);
+  box-shadow: inset 0 1px rgb(207 230 233 / 5%);
+  font: 600 .64rem / 1 var(--font-mono);
+  letter-spacing: .16em;
+}
+.language-switch > a {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  padding: 0 7px 0 calc(7px + .16em);
+  border-radius: 999px;
+  color: var(--voyage-muted);
+  transition: color .3s var(--ease-orbit);
+}
+/* The hit area, not the pill, is what meets the 44px target. */
+.language-switch > a::after { content: ""; position: absolute; inset: -8px -2px; }
+.language-switch > a:hover { color: var(--voyage-bright); }
+.language-switch__thumb {
+  position: absolute;
+  z-index: 0;
+  inset-block: var(--switch-pad);
+  inset-inline-start: var(--switch-pad);
+  width: calc(50% - var(--switch-pad));
+  border-radius: 999px;
+  background: linear-gradient(180deg, #d9fbff, var(--voyage-signal));
+  box-shadow: 0 0 12px rgb(181 237 243 / 32%), inset 0 -1px rgb(3 16 24 / 18%);
+  transition: transform .42s var(--ease-orbit);
+}
+.language-switch[data-active="es"] .language-switch__thumb { transform: translateX(100%); }
+/* While the chosen page loads, the old current label steps back so the
+   thumb and its text never disagree. */
+.language-switch[data-active="es"] > a[lang="en"],
+.language-switch[data-active="en"] > a[lang="es"] { color: var(--voyage-muted); }
+.language-switch[data-active="es"] > a[lang="es"],
+.language-switch[data-active="en"] > a[lang="en"] { color: #031018; }
+.language-switch > a:focus-visible { outline: 2px solid var(--voyage-focus); outline-offset: 5px; }
+
+@media (forced-colors: active) {
+  .language-switch__thumb { background: Highlight; }
+  .language-switch[data-active="es"] > a[lang="es"],
+  .language-switch[data-active="en"] > a[lang="en"] { color: HighlightText; }
+}
+html[data-motion="off"] .language-switch * { transition: none !important; }
+
+/* Home: no header there, so the switch rides the HUD's top-right corner on
+   desktop. On phones that corner belongs to the motion and audio tray, so
+   the switch drops under the wordmark, on the brand's side. */
+.language-switch--home { position: fixed; z-index: 6; top: 3.2rem; right: 3.4rem; }
+@media (max-width: 60rem) {
+  .language-switch--home { top: calc(var(--home-header-top, .75rem) + 46px); right: auto; left: var(--home-gutter, 1rem); }
+}

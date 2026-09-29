@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { WORLD_IDS } from "@/content/worlds.data";
 import { PUBLISHED_LOCALES } from "@/content/site.data";
 import {
-  BESPOKE_WORLD_IDS,
   RESERVED_SEGMENTS,
   getWorld,
   getWorldBySlug,
@@ -29,8 +28,27 @@ describe("getWorld / getWorlds (composición id + locale)", () => {
     }
   });
 
-  it("lanza error claro para un idioma sin prosa (en no publicado)", () => {
-    expect(() => getWorld("miller", "en")).toThrow(/miller.*en/);
+  it("lanza error claro para un idioma sin prosa", () => {
+    expect(() => getWorld("miller", "fr" as never)).toThrow(/miller.*fr/);
+  });
+
+  it("los dos idiomas publicados nombran los seis destinos con su propio slug", () => {
+    expect(getWorlds("en").map((w) => w.prose.slug)).toEqual([
+      "about",
+      "education",
+      "projects",
+      "creativity",
+      "experiments",
+      "contact",
+    ]);
+    expect(getWorlds("es").map((w) => w.prose.slug)).toEqual([
+      "sobre-mi",
+      "formacion",
+      "proyectos",
+      "creatividad",
+      "experimentos",
+      "contacto",
+    ]);
   });
 
   it("devuelve los 6 mundos en orden narrativo", () => {
@@ -91,14 +109,6 @@ describe("G1 · contrato de rutas WorldId ↔ slug", () => {
       }
     });
 
-    it(`[${locale}] los mundos a medida tienen carpeta propia y no la genera [mundo]`, () => {
-      // Si esta lista se desincroniza de las carpetas de app/, Next serviría la
-      // página genérica y el índice de proyectos o el formulario desaparecerían.
-      const bespoke = BESPOKE_WORLD_IDS.map(
-        (id) => getWorld(id, locale).prose.slug,
-      );
-      expect(bespoke).toEqual(["proyectos", "contacto"]);
-    });
   }
 
   it("los destinos de navegación llevan href resuelto y orden narrativo", () => {

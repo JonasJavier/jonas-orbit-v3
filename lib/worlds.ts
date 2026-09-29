@@ -15,20 +15,13 @@ export interface World extends WorldStructuralData {
 }
 
 /**
- * Segmentos de `/[locale]` que NO son mundos.
+ * Segmentos de `/[locale]` que NO son mundos: la página legal en cada idioma.
  *
- * El segmento dinámico `[mundo]` resuelve cualquier cosa que no case con una
- * carpeta estática, así que un mundo que se llamara "privacidad" secuestraría
- * silenciosamente la página legal. El test G1 lo impide.
+ * Son carpetas estáticas y ganan al segmento dinámico `[mundo]`, así que un
+ * mundo cuyo slug fuera "privacidad" o "privacy" quedaría tapado por la página
+ * legal sin que nadie lo notara. El test G1 lo impide.
  */
-export const RESERVED_SEGMENTS: readonly string[] = ["privacidad"];
-
-/**
- * Mundos con página propia escrita a mano porque su contenido no es solo prosa:
- * Endurance monta el índice de proyectos y Ranger el formulario de contacto.
- * El segmento dinámico no los genera — su carpeta estática ya existe.
- */
-export const BESPOKE_WORLD_IDS: readonly WorldId[] = ["endurance", "ranger"];
+export const RESERVED_SEGMENTS: readonly string[] = ["privacidad", "privacy"];
 
 /**
  * Compone los datos estructurales (neutrales) con la prosa localizada.

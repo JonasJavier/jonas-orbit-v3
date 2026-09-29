@@ -3,7 +3,9 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import type { Locale } from "@/content/site.data";
+import { defineCopy } from "@/lib/i18n";
 import { observatoryCatalog } from "@/lib/observatory-catalog";
+import { WORLD_COPY } from "@/lib/world-copy";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { ExperimentsIndex } from "./experiments-index";
 import { StructuredData } from "./structured-data";
@@ -81,6 +83,11 @@ function ExperimentsHall() {
   );
 }
 
+const COPY = defineCopy({
+  es: { edge: "Algunas cosas merecen una mirada más larga", state: "Observatorio experimental", mounted: "montados" },
+  en: { edge: "Some things deserve a longer look", state: "Experimental observatory", mounted: "mounted" },
+});
+
 export function ExperimentsPage({
   world,
   locale,
@@ -89,6 +96,8 @@ export function ExperimentsPage({
   locale: Locale;
 }) {
   const { prose } = world;
+  const copy = COPY[locale];
+  const shared = WORLD_COPY[locale];
   const { previous, next } = getWorldNeighbours(world, locale);
   const specimens = observatoryCatalog(locale);
   const mounted = specimens.filter((entry) => entry.href).length;
@@ -117,7 +126,7 @@ export function ExperimentsPage({
         inventado para la ocasión.
       */}
       <p aria-hidden="true" className="experiments-page__edge">
-        Algunas cosas merecen una mirada más larga
+        {copy.edge}
       </p>
 
       <div className="experiments-page__inner">
@@ -134,7 +143,7 @@ export function ExperimentsPage({
         */}
         <header className="experiments-head">
           <p className="experiments-head__kicker">
-            Destino {String(world.order).padStart(2, "0")}
+            {shared.destination} {String(world.order).padStart(2, "0")}
             <span aria-hidden="true" className="experiments-head__sep">
               /
             </span>
@@ -142,7 +151,7 @@ export function ExperimentsPage({
           </p>
           <h1 className="experiments-head__title">{prose.title}</h1>
           <p className="experiments-head__state">
-            Observatorio experimental
+            {copy.state}
             <span aria-hidden="true" className="experiments-head__sep">
               ·
             </span>
@@ -150,7 +159,7 @@ export function ExperimentsPage({
               {String(mounted).padStart(2, "0")} /{" "}
               {String(specimens.length).padStart(2, "0")}
             </span>{" "}
-            montados
+            {copy.mounted}
           </p>
         </header>
 
@@ -168,13 +177,13 @@ export function ExperimentsPage({
           <p className="experiments-page__intro">{prose.introduction}</p>
         </div>
 
-        <nav aria-label="Destinos contiguos" className="experiments-neighbours">
+        <nav aria-label={shared.neighbours} className="experiments-neighbours">
           {previous ? (
             <Link href={getWorldPath(previous, locale)} rel="prev">
               <span aria-hidden="true">←</span>
               <span>
                 <small>
-                  Destino {String(previous.order).padStart(2, "0")} ·{" "}
+                  {shared.destination} {String(previous.order).padStart(2, "0")} ·{" "}
                   {previous.cosmicName}
                 </small>
                 {previous.prose.title}
@@ -187,7 +196,7 @@ export function ExperimentsPage({
             <Link href={getWorldPath(next, locale)} rel="next">
               <span>
                 <small>
-                  Destino {String(next.order).padStart(2, "0")} ·{" "}
+                  {shared.destination} {String(next.order).padStart(2, "0")} ·{" "}
                   {next.cosmicName}
                 </small>
                 {next.prose.title}

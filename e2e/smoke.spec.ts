@@ -83,11 +83,11 @@ function missionNav(page: Page) {
 }
 
 test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
-  test("A19 · / redirige a /es con un único salto correcto", async ({
+  test("A19 · / redirige al idioma por defecto (/en) con un único salto correcto", async ({
     page,
   }) => {
     const response = await page.goto("/");
-    await expect(page).toHaveURL(/\/es$/);
+    await expect(page).toHaveURL(/\/en$/);
     expect(response?.status()).toBe(200);
     const from = response?.request().redirectedFrom();
     expect(from, "debe existir un redirect desde /").not.toBeNull();

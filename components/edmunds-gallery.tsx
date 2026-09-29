@@ -9,6 +9,67 @@ import { flushSync } from "react-dom";
 import type { World } from "@/lib/worlds";
 import { useMotionEnabled } from "@/lib/effects-mode";
 import { MOSAIC_SCALES, mosaicRows } from "@/lib/mosaic-rows";
+import { defineCopy } from "@/lib/i18n";
+import { useLocale } from "./locale-provider";
+
+const COPY = defineCopy({
+  es: {
+    imageFailed: "La imagen no se ha podido cargar.",
+    retry: "Reintentar",
+    openViewer: "Abre el visor para intentarlo otra vez.",
+    enlargeWork: (title: string) => `Ampliar: ${title}`,
+    figma: "Ver proyecto en Figma",
+    archive: "Archivo visual",
+    filter: "Filtrar por sector",
+    all: "Todo",
+    view: "Vista del archivo",
+    deck: "Galería 3D",
+    mosaic: "Mosaico",
+    empty: "Todavía no hay piezas en este sector. El archivo sigue abierto.",
+    carousel: "carrusel",
+    works: "Galería de obras",
+    previousWork: "Obra anterior",
+    nextWork: "Obra siguiente",
+    enlarge: "Ampliar",
+    count: (n: number) => `${n} piezas en esta selección`,
+    viewer: "Visor de obras",
+    close: "Cerrar",
+    viewerPrevious: "Anterior en el visor",
+    previous: "Anterior",
+    viewerNext: "Siguiente en el visor",
+    next: "Siguiente",
+    newTab: "en otra pestaña",
+    openImage: "Abrir imagen",
+  },
+  en: {
+    imageFailed: "The image couldn\u2019t load.",
+    retry: "Try again",
+    openViewer: "Open the viewer to try again.",
+    enlargeWork: (title: string) => `Enlarge: ${title}`,
+    figma: "View project in Figma",
+    archive: "Visual archive",
+    filter: "Filter by sector",
+    all: "All",
+    view: "Archive view",
+    deck: "3D gallery",
+    mosaic: "Mosaic",
+    empty: "No pieces in this sector yet. The archive is still open.",
+    carousel: "carousel",
+    works: "Artwork gallery",
+    previousWork: "Previous piece",
+    nextWork: "Next piece",
+    enlarge: "Enlarge",
+    count: (n: number) => `${n} pieces in this selection`,
+    viewer: "Artwork viewer",
+    close: "Close",
+    viewerPrevious: "Previous in the viewer",
+    previous: "Previous",
+    viewerNext: "Next in the viewer",
+    next: "Next",
+    newTab: "in a new tab",
+    openImage: "Open image",
+  },
+});
 
 type Creativity = NonNullable<World["prose"]["creativity"]>;
 type Artwork = Creativity["artworks"][number];
@@ -71,10 +132,11 @@ function mosaicCuts(items: Artwork[]) {
 }
 
 function ArtImage({ art, large = false, eager = false, sizes }: { art: Artwork; large?: boolean; eager?: boolean; sizes?: string }) {
+  const t = COPY[useLocale()];
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const suffix = attempt ? `?retry=${attempt}` : "";
-  if (failed) return <span className="edmunds-image-error" role="status"><span>La imagen no se ha podido cargar.</span>{large ? <button type="button" onClick={() => { setAttempt(attempt + 1); setFailed(false); }}>Reintentar</button> : <span>Abre el visor para intentarlo otra vez.</span>}</span>;
+  if (failed) return <span className="edmunds-image-error" role="status"><span>{t.imageFailed}</span>{large ? <button type="button" onClick={() => { setAttempt(attempt + 1); setFailed(false); }}>{t.retry}</button> : <span>{t.openViewer}</span>}</span>;
   return <img src={`/art/edmunds/${art.id}-${large ? 1920 : 960}.webp${suffix}`} srcSet={large ? undefined : RUNGS.map((width) => `/art/edmunds/${art.id}-${width}.webp${suffix} ${width}w`).join(", ")} sizes={large ? undefined : sizes} alt={art.alt} width={art.width} height={art.height} loading={eager || large ? "eager" : "lazy"} decoding="async" draggable={false} onError={() => setFailed(true)} />;
 }
 
@@ -93,6 +155,7 @@ function ArtImage({ art, large = false, eager = false, sizes }: { art: Artwork; 
  * with a single transition. The works never transition their own transform:
  * that used to make the ring rubbery and the release abrupt. */
 export function EdmundsGallery({ artworks, collections }: GalleryProps) {
+  const t = COPY[useLocale()];
   const [collection, setCollection] = useState("all");
   const [active, setActive] = useState(0);
   const [view, setView] = useState<"space" | "grid" | null>(null);
@@ -295,7 +358,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
     const hasPrototype = Boolean(art.prototypeHref);
     return <li className="edmunds-artwork" key={art.id} data-offset={distance} data-visible={visible} data-sector={sector(art.collection)} style={{ "--art-ratio": art.width / art.height, "--o": distance, "--oa": Math.abs(distance) } as CSSProperties}>
       <figure>
-        <a href={`/art/edmunds/${art.id}-1920.webp`} aria-label={`Ampliar: ${art.title}`} aria-current={mode === "space" && distance === 0 ? "true" : undefined} draggable={false} onDragStart={(event) => event.preventDefault()} onClick={(event) => {
+        <a href={`/art/edmunds/${art.id}-1920.webp`} aria-label={t.enlargeWork(art.title)} aria-current={mode === "space" && distance === 0 ? "true" : undefined} draggable={false} onDragStart={(event) => event.preventDefault()} onClick={(event) => {
           if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
           event.preventDefault();
           // On the deck a side work first comes to the centre; only the centred one opens.
@@ -306,13 +369,13 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
           <span className="edmunds-artwork__brackets" aria-hidden="true"><i /><i /><i /><i /></span>
           <span className="edmunds-artwork__expand" aria-hidden="true">↗</span>
         </a>
-        <figcaption><h3>{art.title}</h3>{hasPrototype && <a className="edmunds-project-link" href={art.prototypeHref} target="_blank" rel="noopener noreferrer">Ver proyecto en Figma <span aria-hidden="true">↗</span></a>}</figcaption>
+        <figcaption><h3>{art.title}</h3>{hasPrototype && <a className="edmunds-project-link" href={art.prototypeHref} target="_blank" rel="noopener noreferrer">{t.figma} <span aria-hidden="true">↗</span></a>}</figcaption>
       </figure>
     </li>;
   };
 
   return (
-    <section ref={galleryRef} className="edmunds-gallery" id="galeria" aria-label="Archivo visual" data-view={mode} data-reduced={still} data-idle={idle && cinema}
+    <section ref={galleryRef} className="edmunds-gallery" id="galeria" aria-label={t.archive} data-view={mode} data-reduced={still} data-idle={idle && cinema}
       onPointerMove={wake} onPointerDown={wake} onKeyDown={wake} onFocus={wake} onTouchStart={wake}>
       <noscript><style>{`.edmunds-gallery .edmunds-controls, .edmunds-gallery .edmunds-gallery__foot, .edmunds-gallery .edmunds-deck__sky, .edmunds-gallery .edmunds-stage__floor { display: none; } .edmunds-gallery[data-view="space"] { height: auto; min-height: 0; overflow: visible; } .edmunds-gallery .edmunds-stage { position: static; inset: auto; display: block; height: auto; min-height: 0; padding: 24px var(--page-gutter) 40px; overflow: visible; } .edmunds-gallery .edmunds-stage__space, .edmunds-gallery .edmunds-deck { position: static; inset: auto; perspective: none; transform: none; } .edmunds-gallery .edmunds-artworks { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 32px; height: auto; perspective: none; transform: none; } .edmunds-gallery .edmunds-artwork { display: block; position: static; width: auto; max-width: none; transform: none; opacity: 1; filter: none; visibility: visible; pointer-events: auto; } .edmunds-gallery .edmunds-artwork figcaption { display: block; }`}</style></noscript>
       {mode === "space" && current && <div className="edmunds-deck__sky" aria-hidden="true">
@@ -328,15 +391,15 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
       </div>}
       <div className="edmunds-top">
         <div className="edmunds-controls">
-          <div className="edmunds-filters" role="group" aria-label="Filtrar por sector">
-            <button type="button" aria-pressed={collection === "all"} onClick={() => select("all")}>Todo</button>
+          <div className="edmunds-filters" role="group" aria-label={t.filter}>
+            <button type="button" aria-pressed={collection === "all"} onClick={() => select("all")}>{t.all}</button>
             {collections.map((item, index) => <button key={item.id} type="button" data-sector={index} aria-pressed={collection === item.id} onClick={() => select(item.id)}><i aria-hidden="true" />{item.label}</button>)}
           </div>
-          <div className="edmunds-view-switch" role="group" aria-label="Vista del archivo"><button type="button" aria-pressed={mode === "space"} onClick={() => { setView("space"); playSfx("detent"); }}>Galería 3D</button><button type="button" aria-pressed={mode === "grid"} onClick={() => { setView("grid"); playSfx("detent"); }}>Mosaico</button></div>
+          <div className="edmunds-view-switch" role="group" aria-label={t.view}><button type="button" aria-pressed={mode === "space"} onClick={() => { setView("space"); playSfx("detent"); }}>{t.deck}</button><button type="button" aria-pressed={mode === "grid"} onClick={() => { setView("grid"); playSfx("detent"); }}>{t.mosaic}</button></div>
         </div>
       </div>
-      {!filtered.length ? <p className="edmunds-empty">Todavía no hay piezas en este sector. El archivo sigue abierto.</p> : (
-        <div className="edmunds-stage" ref={stageRef} role="region" aria-roledescription={mode === "space" ? "carrusel" : undefined} aria-label="Galería de obras" tabIndex={mode === "space" ? 0 : undefined}
+      {!filtered.length ? <p className="edmunds-empty">{t.empty}</p> : (
+        <div className="edmunds-stage" ref={stageRef} role="region" aria-roledescription={mode === "space" ? t.carousel : undefined} aria-label={t.works} tabIndex={mode === "space" ? 0 : undefined}
           onKeyDown={(event) => {
             if (mode !== "space") return;
             if (event.key === "Enter" && event.target === event.currentTarget) { event.preventDefault(); showViewer(active, event.currentTarget); return; }
@@ -416,12 +479,12 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
         </div>
       )}
       {mode === "space" && current && <div className="edmunds-gallery__foot">
-        <button type="button" aria-label="Obra anterior" disabled={filtered.length < 2} onClick={() => step(-1)}>←</button>
-        <div className="edmunds-gallery__caption" key={current.id} aria-live="polite" aria-atomic="true"><span>{label(current.collection)} · {pad(active + 1)} / {pad(filtered.length)}</span><h2>{current.title}</h2>{current.prototypeHref ? <a className="edmunds-open" href={current.prototypeHref} target="_blank" rel="noopener noreferrer">Ver proyecto en Figma <span aria-hidden="true">↗</span></a> : <button type="button" className="edmunds-open" onClick={(event) => showViewer(active, event.currentTarget)}>Ampliar <span aria-hidden="true">↗</span></button>}</div>
-        <button type="button" aria-label="Obra siguiente" disabled={filtered.length < 2} onClick={() => step(1)}>→</button>
+        <button type="button" aria-label={t.previousWork} disabled={filtered.length < 2} onClick={() => step(-1)}>←</button>
+        <div className="edmunds-gallery__caption" key={current.id} aria-live="polite" aria-atomic="true"><span>{label(current.collection)} · {pad(active + 1)} / {pad(filtered.length)}</span><h2>{current.title}</h2>{current.prototypeHref ? <a className="edmunds-open" href={current.prototypeHref} target="_blank" rel="noopener noreferrer">{t.figma} <span aria-hidden="true">↗</span></a> : <button type="button" className="edmunds-open" onClick={(event) => showViewer(active, event.currentTarget)}>{t.enlarge} <span aria-hidden="true">↗</span></button>}</div>
+        <button type="button" aria-label={t.nextWork} disabled={filtered.length < 2} onClick={() => step(1)}>→</button>
       </div>}
-      <p className="edmunds-grid-count" role="status">{filtered.length} piezas en esta selección</p>
-      <dialog className="edmunds-viewer" ref={dialogRef} aria-label="Visor de obras" aria-describedby="edmunds-viewer-title" onCancel={closeViewer} onClick={(event) => { if (event.target === event.currentTarget) closeViewer(); }} onKeyDown={(event) => {
+      <p className="edmunds-grid-count" role="status">{t.count(filtered.length)}</p>
+      <dialog className="edmunds-viewer" ref={dialogRef} aria-label={t.viewer} aria-describedby="edmunds-viewer-title" onCancel={closeViewer} onClick={(event) => { if (event.target === event.currentTarget) closeViewer(); }} onKeyDown={(event) => {
         if (event.key === "Tab") {
           const controls = event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]');
           const first = controls[0];
@@ -431,7 +494,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
         }
         if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); stepViewer(event.key === "ArrowRight" ? 1 : -1); }
       }}>
-        {viewed && <><span className="edmunds-viewer__frame" aria-hidden="true"><i /><i /><i /><i /></span><div className="edmunds-viewer__bar"><span>{label(viewed.collection)} <span>· {pad(viewer! + 1)} / {pad(filtered.length)}</span></span><button type="button" autoFocus onClick={closeViewer}>Cerrar <span aria-hidden="true">×</span></button></div><figure className="edmunds-viewer__art"><ArtImage key={viewed.id} art={viewed} large /><figcaption id="edmunds-viewer-title" aria-live="polite">{viewed.title}</figcaption></figure><div className="edmunds-viewer__nav"><button type="button" aria-label="Anterior en el visor" disabled={filtered.length < 2} onClick={() => stepViewer(-1)}>← <span>Anterior</span></button><span className="edmunds-viewer__actions">{viewed.prototypeHref ? <a className="edmunds-viewer__prototype" href={viewed.prototypeHref} target="_blank" rel="noopener noreferrer">Ver proyecto en Figma <span className="sr-only">en otra pestaña</span><span aria-hidden="true">↗</span></a> : <a href={`/art/edmunds/${viewed.id}-1920.webp`} target="_blank" rel="noopener noreferrer">Abrir imagen <span className="sr-only">en otra pestaña</span><span aria-hidden="true">↗</span></a>}</span><button type="button" aria-label="Siguiente en el visor" disabled={filtered.length < 2} onClick={() => stepViewer(1)}><span>Siguiente</span> →</button></div></>}
+        {viewed && <><span className="edmunds-viewer__frame" aria-hidden="true"><i /><i /><i /><i /></span><div className="edmunds-viewer__bar"><span>{label(viewed.collection)} <span>· {pad(viewer! + 1)} / {pad(filtered.length)}</span></span><button type="button" autoFocus onClick={closeViewer}>{t.close} <span aria-hidden="true">×</span></button></div><figure className="edmunds-viewer__art"><ArtImage key={viewed.id} art={viewed} large /><figcaption id="edmunds-viewer-title" aria-live="polite">{viewed.title}</figcaption></figure><div className="edmunds-viewer__nav"><button type="button" aria-label={t.viewerPrevious} disabled={filtered.length < 2} onClick={() => stepViewer(-1)}>← <span>{t.previous}</span></button><span className="edmunds-viewer__actions">{viewed.prototypeHref ? <a className="edmunds-viewer__prototype" href={viewed.prototypeHref} target="_blank" rel="noopener noreferrer">{t.figma} <span className="sr-only">{t.newTab}</span><span aria-hidden="true">↗</span></a> : <a href={`/art/edmunds/${viewed.id}-1920.webp`} target="_blank" rel="noopener noreferrer">{t.openImage} <span className="sr-only">{t.newTab}</span><span aria-hidden="true">↗</span></a>}</span><button type="button" aria-label={t.viewerNext} disabled={filtered.length < 2} onClick={() => stepViewer(1)}><span>{t.next}</span> →</button></div></>}
       </dialog>
     </section>
   );
