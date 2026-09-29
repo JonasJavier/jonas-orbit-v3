@@ -183,7 +183,10 @@ MDX**, nunca en `worlds.data.ts`.
   (`module`/`scope`/`luma` por captura, `stack`, `tech` por nodo; la mesa sólo
   monta lo que levanta). Escena dormida en TODA ruta de Endurance; el botón del
   producto vivo sale de `links` `kind: demo`. Ya no hay fichas breves reales.
-  Abiertos: redacción de `scope`/`designDecisions` (borrador).
+  Abiertos: redacción de `scope`/`designDecisions` (borrador). **Teléfono**
+  (09-29) registro «Proyectos en el teléfono»: la mesa no se aplana (sala,
+  holograma con perspectiva por pantalla y `z-index`, cristal en trapecio);
+  el caso compacto (carrusel de decisiones, lectura plegada con `CaseFold`).
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

@@ -193,3 +193,48 @@ export function CaseReadingIndex({
     </nav>
   );
 }
+
+/**
+ * La lectura larga, plegada en el teléfono (pase del 2026-09-29): ocho
+ * pantallas de prosa detrás de todo lo demás alargaban el caso hasta los
+ * 25 000 px. Se ven los primeros párrafos, fundidos, y «Seguir leyendo» la
+ * despliega entera. En escritorio el pliegue no existe (`display: contents`)
+ * y sin JavaScript tampoco (`scripting: enabled`): el texto está siempre en
+ * el HTML servido.
+ *
+ * Se abre sola si algo apunta dentro: un capítulo en el hash —al llegar o al
+ * cambiarlo— o el foco del teclado en un enlace de la prosa.
+ */
+export function CaseFold({ bodyId, label, children }: { bodyId: string; label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const fold = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const reveal = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      const target = id ? document.getElementById(id) : null;
+      if (target && fold.current?.contains(target)) setOpen(true);
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, []);
+
+  return (
+    <div
+      ref={fold}
+      className="case-fold"
+      data-open={open ? "true" : undefined}
+      onFocusCapture={(event) => {
+        if (document.getElementById(bodyId)?.contains(event.target)) setOpen(true);
+      }}
+    >
+      {children}
+      {open ? null : (
+        <button aria-controls={bodyId} aria-expanded="false" className="case-action case-fold__more" onClick={() => setOpen(true)} type="button">
+          {label} <span aria-hidden="true">↓</span>
+        </button>
+      )}
+    </div>
+  );
+}

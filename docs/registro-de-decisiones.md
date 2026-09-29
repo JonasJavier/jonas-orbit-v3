@@ -19,6 +19,44 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Proyectos en el teléfono — la misma mesa, más pequeña (2026-09-29)
+
+El dueño, con capturas de su teléfono: Proyectos en móvil «bien mal», pidió
+algo «mucho más profesional, sencillo y minimalista», **con el 3D**, «lo
+mismo que la versión normal pero más pequeño y compacto», quitando lo que en
+el teléfono no sirve, y revisar el resto de Endurance. Sustituye a «la mesa
+se aplana» por debajo de 768 px (§17 y auditoría responsive del 09-29 en lo
+que toque a la mesa y al caso en teléfono).
+
+- **La mesa (≤ 767 px)** ya no se aplana: la sala horneada vuelve a verse
+  (velo oscuro arriba y abajo, claro en el centro); el destino pequeño, los
+  proyectos en cápsulas de 34 px dentro de blancos de 44 que se deslizan y se
+  desvanecen en el canto; la lectura con el estado encima del nombre, sin el
+  stack (vive en el caso); el selector de capa en una pieza de cristal pegada
+  bajo la cabecera; y el holograma con las poses de escritorio —el arco de
+  Producto, el carrete de Diseño— de pie sobre un cristal de mesa en trapecio
+  (`.table-scene::before/::after`) que lleva el alcance o la decisión. A
+  412 × 915, del título al alcance cabe en una pantalla, como en escritorio.
+  Ingeniería sigue sin holograma: módulos de dos en dos, el elegido a toda la
+  fila con su decisión y su stack.
+- **Vara y orden en profundidad.** El holograma no es contenedor (su alto
+  depende de lo que lleva la mesa): las pantallas miden en `vw` y en
+  `--m-holo-h`; el centro de cada capa vuelve al eje (`--m-cx`) y el carrete
+  se abre (`--m-spread` 118vw). Cada pantalla lleva su propia `perspective()`
+  —tras el primer `translate`, así el punto de fuga es el centro del
+  holograma— en un grupo plano, y quién tapa a quién lo dice `z-index`
+  (`data-dist`, la distancia a la elegida, nuevo en `Screen`). Motivo: con GPU
+  por software (Playwright/SwiftShader, y Android sin GPU aceptada) Chromium
+  no ordenaba el carrete y la vecina cruzaba por delante de la elegida; con
+  GPU real sí. Sólo teléfono: escritorio conserva su contexto 3D.
+- **El caso (≤ 767 px)** pasa de ~25 000 a ~11 500 px en OMSTA: decisiones
+  en un carrusel con imán (asoma la siguiente), sistema de dos en dos, stack
+  en líneas corridas, tiras de pantallas más bajas y la lectura larga
+  plegada tras sus primeros párrafos con «Seguir leyendo» (`CaseFold` en
+  `project-case-nav.tsx`; se abre sola con un capítulo en el hash o el foco
+  dentro; sin JavaScript y en escritorio no existe). Nada se quita del HTML.
+- Pendiente: veredicto visual del dueño en su teléfono.
+
 ## Rendimiento móvil — PageSpeed de Sobre mí y Formación (2026-09-29)
 
 El dueño pasó PageSpeed (móvil) por las páginas: Sobre mí 86 y Formación 81,

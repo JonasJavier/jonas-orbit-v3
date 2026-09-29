@@ -204,6 +204,8 @@ function Screen({
       data-slot={screen.slot ?? "none"}
       data-front={front ? "true" : undefined}
       data-far={ring === null || Math.abs(ring) > 2 ? "true" : undefined}
+      // La distancia a la elegida: en el teléfono decide quién tapa a quién.
+      data-dist={ring === null ? undefined : Math.min(3, Math.abs(ring))}
       style={style}
     >
       {/*

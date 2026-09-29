@@ -10,7 +10,7 @@ import { tableProject, type TableProject, type TableScreen } from "@/lib/enginee
 import { defineCopy } from "@/lib/i18n";
 import type { Project } from "@/lib/projects";
 import { MDXContent } from "./mdx-content";
-import { CaseBackLink, CaseLocalNav, CaseReadingIndex } from "./project-case-nav";
+import { CaseBackLink, CaseFold, CaseLocalNav, CaseReadingIndex } from "./project-case-nav";
 import { CaseViewer } from "./project-case-screens";
 import { SystemExplorer } from "./system-diagram";
 import "./project-case.css";
@@ -103,6 +103,7 @@ const COPY = defineCopy({
     moreScreens: "Más pantallas",
     minutes: (n: number) => `${n} min de lectura`,
     fullCase: "El caso completo",
+    keepReading: "Seguir leyendo",
     otherProjects: "Otros proyectos",
     contactTitle: "¿Tienes un sistema difícil de ordenar?",
     contactBody: "Puedo ayudarte a convertir procesos complejos en un producto claro, mantenible y listo para operar.",
@@ -153,6 +154,7 @@ const COPY = defineCopy({
     moreScreens: "More screens",
     minutes: (n: number) => `${n} min read`,
     fullCase: "The full case",
+    keepReading: "Keep reading",
     otherProjects: "Other projects",
     contactTitle: "Got a system that’s hard to tame?",
     contactBody: "I can help you turn complex processes into a clear, maintainable product that’s ready to run.",
@@ -681,9 +683,11 @@ export function ProjectCase({
           </header>
           <div className="case-longread__grid">
             <CaseReadingIndex endId={BODY_ID} headings={outline.headings} label={locale === "es" ? "Índice del caso" : "Case contents"} />
-            <div className="case-longread__body" id={BODY_ID}>
-              <MDXContent code={prose.body} components={{ h2: outlineHeading(outline) }} />
-            </div>
+            <CaseFold bodyId={BODY_ID} label={t.keepReading}>
+              <div className="case-longread__body" id={BODY_ID}>
+                <MDXContent code={prose.body} components={{ h2: outlineHeading(outline) }} />
+              </div>
+            </CaseFold>
           </div>
         </section>
       ) : null}

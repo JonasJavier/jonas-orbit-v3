@@ -1565,171 +1565,55 @@ html[data-motion="off"] .projects-page *::after {
   .table .holo-diagram[data-cols="5"] .holo-node__chip { padding-inline: 8px 6px; }
 }
 
-/* ── Móvil: la mesa se aplana ───────────────────────────────────────────── */
+/* ── Móvil: la misma mesa, a escala de teléfono ─────────────────────────── */
 
 /*
-  Por debajo de 768 px no hay perspectiva que valga: el muelle es una fila de
-  proyectos bajo el título; el selector se pega bajo la cabecera; Producto es
-  la destacada con el teléfono encima y el alcance debajo; Diseño, una
-  pantalla con su decisión y sus flechas; Ingeniería, los carriles como filas
-  y cada decisión bajo su módulo al tocarlo. El scroll de página gana siempre.
+  Por debajo de 768 px la mesa NO se aplana (pase del 2026-09-29: el dueño
+  pidió «lo mismo que la versión normal, más pequeño y compacto», con el 3D).
+  Es la misma escena en una columna: la sala detrás; el destino y los
+  proyectos arriba; la lectura; el selector de capa, pegado bajo la cabecera;
+  y el holograma con perspectiva de verdad —las pantallas en arco en
+  Producto, el carrete en Diseño— de pie sobre el cristal de la mesa, que
+  lleva el alcance o la decisión. Ingeniería sigue en filas: cinco carriles
+  no se leen a 360 px.
+
+  Las poses son las de escritorio. Lo único que cambia es la vara: aquí el
+  holograma no es un contenedor (su alto depende de lo que lleva la mesa), así
+  que las pantallas miden en `vw` y en el alto del holograma, `--m-holo-h`.
+
+  Fuera lo que en el teléfono no sirve: el stack (vive en el caso completo),
+  el cuerpo de la mesa con su anillo, la sombra de los paneles y los cables.
+  El scroll de página gana siempre.
 */
 @media (max-width: 767px) {
   .table-project[data-state="leaving"] { display: none; }
   .table {
+    /* El alto del holograma: lo que ocupan las pantallas de pie. */
+    --m-holo-h: clamp(180px, 52vw, 300px);
     height: auto;
     display: flex;
     flex-direction: column;
-    padding: calc(var(--pj-header) + 22px) var(--pj-gutter) 24px;
+    padding: calc(var(--pj-header) + 16px) var(--pj-gutter) 8px;
   }
-  .table-head, .table-read, .table-tabs, .table-scene, .table-dock { position: static; translate: none; }
-  .table-head__title { font-size: 2.4rem; }
-  .table-read { display: block; width: auto; margin-top: 24px; }
-  .table-read__descriptor { margin-top: 10px; }
-  .table-read__status { margin-top: 14px; }
-  .table-read__rule { display: block; margin-bottom: 16px; }
-  .table-read__title { font-size: clamp(2.1rem, calc((100vw - 2 * var(--pj-gutter)) * 2.1 / var(--len, 8)), 2.6rem); }
-  .table-read__actions { flex-direction: row; align-items: center; gap: 10px 22px; margin-top: 20px; }
-  .console-wrap, .holo-beam, .holo-shade { display: none; }
-  .table-tabs {
-    position: sticky;
-    top: calc(var(--pj-header) + 8px);
-    z-index: 8;
-    order: 0;
-    margin: 22px 0 4px;
-    padding: 4px;
-    border: 1px solid rgb(160 190 225 / 16%);
-    border-radius: 4px;
-    background: rgb(4 7 12 / 92%);
-  }
-  .table-tab { flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 0.82rem; }
-  .table-tab::before { inset: 0; }
-  .table-scene {
-    height: auto;
-    margin-top: 16px;
-    container-type: normal;
-    perspective: none;
-    pointer-events: auto;
-  }
-  .holo, .holo-screens { position: static; transform: none !important; transform-style: flat; }
-  .holo-screens { position: relative; translate: none; }
+  .table-head, .table-read, .table-tabs, .table-scene, .table-dock { position: relative; inset: auto; translate: none; }
+  .console-wrap, .holo-shade, .holo-screen__tether { display: none; }
 
-  /* Pantallas en flujo. */
-  .holo-screen {
-    position: relative;
-    left: auto;
-    top: auto;
-    width: 100%;
-    transform: none !important;
-    opacity: 1 !important;
-    translate: none !important;
-    visibility: visible;
-    display: none;
-    transition: none;
-  }
-  .table[data-layer="producto"] .holo-screen[data-slot="main"] { display: block; }
-  .table[data-layer="producto"] .holo-screen[data-slot="left"][data-frame="mobile"] {
-    display: block;
-    position: absolute;
-    right: 4%;
-    bottom: -18%;
-    width: 27%;
-  }
-  .table[data-layer="producto"] .holo-screens:has([data-slot="left"][data-frame="mobile"]) { margin-bottom: 18%; }
-  .table[data-layer="diseno"] .holo-screen[data-front] { display: block; }
-  .table[data-layer="diseno"] .holo-screen[data-front][data-frame="mobile"] { width: 58%; margin: 0 auto; }
-  .holo-screen__tether { display: none; }
-
-  /* El alcance, bajo las pantallas en Producto. */
-  .holo-scope { position: static; translate: none; width: auto; margin-top: 26px; display: none; }
-  .table[data-layer="producto"] .holo-scope { display: block; }
-  .holo-scope { --scope-w: calc(100vw - 2 * var(--pj-gutter)); --cell-pad: 16px; }
-  .holo-scope dl > div { padding: 2px 8px; }
-  .holo-scope dd { font-size: clamp(1.1rem, (var(--scope-w) / 3 - var(--cell-pad)) * 1.7 / var(--vlen, 3), 1.75rem); }
-  .holo-scope dt { font-size: 0.76rem; }
-
-  /* La decisión de Diseño: el texto a todo el ancho y las flechas debajo. */
-  .holo-note {
-    position: static;
-    translate: none;
-    width: auto;
-    margin-top: 16px;
-    display: none;
-    grid-template-columns: 44px 1fr 44px;
-    grid-template-areas: "text text text" "prev . next";
-    gap: 14px 0;
-  }
-  .table[data-layer="diseno"] .holo-note { display: grid; }
-  .holo-note__text { grid-area: text; grid-template-columns: auto minmax(0, 1fr); justify-self: stretch; gap: 6px 12px; width: auto; }
-  .holo-note__index { grid-row: auto; grid-column: 1 / -1; padding: 0; }
-  .holo-note__step:first-child { grid-area: prev; }
-  .holo-note__step:last-child { grid-area: next; }
-  .holo-note__problem { font-size: 0.9rem; }
-  .holo-note__decision { font-size: 0.98rem; }
-  .holo-note__caption { grid-column: 1 / -1; font-size: 0.94rem; }
-
-  /* El sistema en filas. */
-  .holo-card { position: static; transform: none !important; opacity: 1 !important; visibility: visible; translate: none !important; display: none; width: auto !important; height: auto !important; }
-  .table[data-layer="ingenieria"] .holo-diagram { display: flex; }
-  .holo-inspector { display: none !important; }
-  .holo-diagram__field { margin: 8px 14px 16px; }
-  .holo-diagram__lines { display: none; }
-  .holo-lane { display: grid; gap: 6px; margin-top: 12px; }
-  .holo-lane__title { position: static; width: auto; text-align: left; margin-bottom: 2px; }
-  .holo-node { position: static; width: auto !important; height: auto !important; }
-  /* `auto`: en una rejilla el 100 % se resuelve contra la fila entera, que
-     incluye la decisión desplegada, y la caja crecía tapándola. */
-  .holo-node__box { height: auto; min-height: 44px; font-size: 0.86rem; }
-  .holo-node__chip { height: auto; min-height: 44px; padding: 8px 12px; }
-  .holo-node__label { -webkit-line-clamp: 3; }
-  /* Aquí no hay líneas y la selección persiste: fuera de la ruta, un módulo
-     a 0,26 parecía desactivado y es un botón. Se apaga su caja, no su nombre
-     (el texto queda por encima de 4,5:1); la ruta la marca el borde claro. */
-  .table .holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) { opacity: 1; }
-  .table .holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) .holo-node__chip {
-    border-color: rgb(160 228 255 / 12%);
-    color: #9fb0c4;
-  }
-  .holo-node[data-selected] .holo-node__decision {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
-    white-space: normal;
-    margin-top: 6px;
-    padding: 8px 0 8px 12px;
-    border-left: 2px solid var(--pj-amber);
-    font: 300 0.86rem/1.5 var(--font-body);
-    color: #e6edf6;
-  }
-  .table-read__stack {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
-    white-space: normal;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    margin-top: 14px;
-    font: 0.66rem/1.6 var(--font-mono);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--pj-muted);
-  }
-  .holo-diagram__field { height: auto; }
+  /* El destino, pequeño: manda el nombre del proyecto. */
+  .table-head { order: -3; }
+  .table-kicker { font-size: 0.6rem; letter-spacing: 0.16em; }
+  .table-head__title { margin-top: 2px; font-size: 1.85rem; }
 
   /*
-    El muelle: una fila de proyectos que se desplaza con el dedo, con imán en
-    cada uno, justo bajo el título de la página. Sin vista previa ni flechas:
-    aquí el gesto es deslizar y tocar.
+    El muelle: la fila de proyectos, justo bajo el título, que se desplaza con
+    el dedo y se desvanece en el canto (se lee que hay más). Cada proyecto es
+    una cápsula de 34 px dentro de un blanco de 44.
   */
   .table-dock {
     order: -2;
     display: block;
-    margin: 18px calc(-1 * var(--pj-gutter)) 0;
+    width: auto;
+    max-width: none;
+    margin: 12px calc(-1 * var(--pj-gutter)) 0;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -1738,37 +1622,284 @@ html[data-motion="off"] .projects-page *::after {
     backdrop-filter: none;
     box-shadow: none;
   }
-  .table-dock::before, .table-dock__step, .table-dock__glow, .table-dock__peek, .table-dock__rail::after { display: none; }
+  .table-dock::before, .table-dock__step, .table-dock__glow, .table-dock__peek, .table-dock__rail::after, .table-dock__item::after { display: none; }
   .table-dock__list {
     display: flex;
-    gap: 8px;
-    padding: 2px var(--pj-gutter);
+    gap: 6px;
+    padding: 0 var(--pj-gutter);
     overflow-x: auto;
     overflow-y: hidden;
     overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scroll-padding-inline: var(--pj-gutter);
     scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
   }
   .table-dock__list::-webkit-scrollbar { display: none; }
-  .table-dock__list > li { flex: none; scroll-snap-align: center; }
-  .table-dock__item {
-    padding: 0 16px;
-    border: 1px solid rgb(160 200 235 / 16%);
+  .table-dock__list > li { flex: none; scroll-snap-align: start; }
+  .table-dock__item { isolation: isolate; gap: 7px; min-height: 44px; padding: 0 14px; color: #9fadc2; }
+  .table-dock__item::before {
+    content: "";
+    position: absolute;
+    inset: 5px 0;
+    z-index: -1;
+    border: 1px solid rgb(160 200 235 / 14%);
     border-radius: 999px;
     background: rgb(8 13 20 / 72%);
-    color: #b6c3d5;
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
   }
-  .table-dock__item::after { display: none; }
-  .table-dock__item[aria-current="true"] {
-    border-color: rgb(127 229 255 / 72%);
-    background: rgb(10 30 42 / 88%);
-    box-shadow: 0 0 18px rgb(127 229 255 / 16%);
+  .table-dock__item[aria-current="true"]::before {
+    border-color: rgb(127 229 255 / 70%);
+    background: rgb(10 30 42 / 90%);
+    box-shadow: 0 0 16px rgb(127 229 255 / 18%), inset 0 0 10px rgb(127 229 255 / 10%);
   }
+  .table-dock__index { font-size: 0.6rem; }
+  .table-dock__name { font-size: 0.84rem; }
   .table-dock__item[aria-current="true"] .table-dock__name { scale: none; }
-  .table-scene { order: 1; }
-  .table-read { order: -1; }
-  .table-head { order: -3; }
 
-  .projects-room__veil { background: rgb(3 5 8 / 78%); }
+  /* La lectura: estado, nombre, qué es y la salida, en ese orden. */
+  .table-read {
+    order: -1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: auto;
+    margin-top: 22px;
+  }
+  .table-read__rule { display: none; }
+  .table-read__status { order: -1; margin: 0 0 8px; font-size: 0.6rem; letter-spacing: 0.16em; }
+  .table-read__title { font-size: clamp(1.9rem, calc((100vw - 2 * var(--pj-gutter)) * 1.9 / var(--len, 8)), 2.6rem); }
+  .table-read__descriptor { margin-top: 6px; font-size: 0.94rem; }
+  .table-read__actions { flex-direction: row; align-items: center; gap: 6px 18px; margin-top: 14px; }
+  .table-cta { gap: 14px; min-height: 44px; padding: 0 16px; font-size: 0.84rem; }
+
+  /* El selector de capa: una sola pieza de cristal, pegada bajo la cabecera. */
+  .table-tabs {
+    order: 0;
+    position: sticky;
+    top: calc(var(--pj-header) + 8px);
+    z-index: 8;
+    gap: 2px;
+    margin-top: 18px;
+    padding: 3px;
+    border: 1px solid rgb(160 200 235 / 14%);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgb(16 23 33 / 84%), rgb(6 9 14 / 92%));
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    box-shadow: inset 0 1px 0 rgb(220 240 255 / 7%), 0 14px 30px -16px rgb(0 0 0 / 85%);
+  }
+  .table-tab { flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 0.82rem; }
+  .table-tab::before { inset: 0; border-color: transparent; border-radius: 9px; background: none; }
+
+  /*
+    El escenario, a sangre: el holograma arriba y, debajo, el cristal de la
+    mesa con lo que la capa pone en él. La perspectiva no vive aquí sino en
+    cada pantalla (ver abajo), más cerca que en escritorio: el teléfono se
+    mira a un palmo.
+  */
+  .table-scene {
+    order: 1;
+    height: auto;
+    margin: 6px calc(-1 * var(--pj-gutter)) 0;
+    padding-bottom: 26px;
+    container-type: normal;
+    --base: 60vw;
+    perspective: none;
+    pointer-events: auto;
+  }
+  .holo { position: relative; inset: auto; z-index: 2; height: var(--m-holo-h); }
+  /*
+    Las poses de escritorio dejan sitio a la columna de lectura: la destacada
+    va un 3,5 % a la derecha y el carrete un 7 %. Aquí la lectura está encima,
+    así que el centro de cada capa (`--m-cx`) vuelve al eje; y el carrete se
+    abre más (`--m-spread`) para que sus vecinas asomen detrás de la elegida.
+
+    Y cada pantalla lleva su PROPIA perspectiva, con el punto de fuga en el
+    centro del holograma (va tras el primer `translate`), en un grupo plano:
+    quién tapa a quién lo dice `z-index`, no el orden en profundidad. Con la
+    GPU por software (la suite, y más de un Android) Chromium no ordenaba el
+    carrete y la vecina de la derecha cruzaba por delante de la elegida.
+  */
+  .holo, .holo-screens { transform-style: flat; }
+  .holo-screens { translate: none; --m-cx: 0.035; --m-spread: 88vw; }
+  .table[data-layer="diseno"] .holo-screens { --m-cx: var(--reel-x); --m-spread: 118vw; }
+  .holo-screen {
+    transform:
+      translate(-50%, -50%)
+      perspective(1000px)
+      translate3d(calc((var(--x) - var(--m-cx)) * var(--m-spread)), calc(var(--y) * var(--m-holo-h)), calc(var(--z) * 100vw + var(--lift)))
+      rotateY(calc(var(--ry) * var(--m-turn, 1) * 1deg))
+      scale(var(--s));
+  }
+  /* Un teléfono vecino del carrete, girado los 52° de escritorio, se quedaba
+     en 35 px de ancho: menos que un blanco táctil. Aquí gira menos. */
+  .table[data-layer="diseno"] .holo-screen[data-frame="mobile"] { --m-turn: 0.6; }
+  .table[data-layer="producto"] .holo-screen[data-slot="main"] { z-index: 2; }
+  .table[data-layer="producto"] .holo-screen[data-slot="left"][data-frame="mobile"] { z-index: 3; }
+  .table[data-layer="producto"] .holo-screen:is([data-slot="right"], [data-slot="left"][data-frame="desktop"]) { z-index: 1; }
+  .table[data-layer="diseno"] .holo-screen[data-dist="0"] { z-index: 4; }
+  .table[data-layer="diseno"] .holo-screen[data-dist="1"] { z-index: 3; }
+  .table[data-layer="diseno"] .holo-screen[data-dist="2"] { z-index: 2; }
+  /* La elegida, a su tamaño de escritorio: el 20 % extra de las tabletas la
+     hacía chocar con sus vecinas. */
+  .table[data-layer="diseno"] .holo-screen[data-front] { --s: var(--d-s); }
+  .table[data-layer="diseno"] .holo-screen[data-frame="mobile"] { width: calc(var(--base) * 0.36); }
+  /* Con el dedo no hay «apuntar»: la pantalla no se levanta al tocarla. */
+  .table .holo-screen:hover { --lift: 0px; }
+
+  /* La luz del proyector, del cristal a las pantallas. */
+  .holo-beam {
+    left: 50%;
+    top: calc(var(--m-holo-h) * 0.12);
+    bottom: auto;
+    z-index: 1;
+    width: 78vw;
+    height: calc(var(--m-holo-h) * 0.8);
+  }
+
+  /*
+    EL CRISTAL DE LA MESA: el marco de metal (`::before`) y el pozo oscuro con
+    su rejilla (`::after`), en trapecio —la mesa vista desde arriba y de
+    frente— y con un canto frontal. Crece con lo que lleva: tres cifras o una
+    decisión de cuatro líneas.
+  */
+  .table-scene::before,
+  .table-scene::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .table-scene::before {
+    left: 2%;
+    right: 2%;
+    top: calc(var(--m-holo-h) * 0.84);
+    bottom: 0;
+    clip-path: polygon(7% 0, 93% 0, 100% calc(100% - 14px), 99% 100%, 1% 100%, 0 calc(100% - 14px));
+    background:
+      linear-gradient(0deg, #040507 0, #0a0d12 8px, rgb(255 255 255 / 16%) 13px, transparent 14px),
+      linear-gradient(90deg, transparent 6%, rgb(190 240 255 / 38%) 50%, transparent 94%) top / 100% 1px no-repeat,
+      linear-gradient(180deg, #1b2129 0%, #0c1015 40%, #07090d 100%);
+    filter: drop-shadow(0 18px 24px rgb(0 0 0 / 80%));
+  }
+  .table-scene::after {
+    left: calc(2% + 10px);
+    right: calc(2% + 10px);
+    top: calc(var(--m-holo-h) * 0.84 + 7px);
+    bottom: 22px;
+    clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%);
+    background:
+      radial-gradient(ellipse 58% 42% at 50% 0%, rgb(127 229 255 / 18%), transparent 72%),
+      repeating-linear-gradient(90deg, rgb(127 229 255 / 6%) 0 1px, transparent 1px 36px),
+      repeating-linear-gradient(0deg, rgb(127 229 255 / 6%) 0 1px, transparent 1px 36px),
+      linear-gradient(180deg, #05080c, #070b10 60%, #0a1017);
+    box-shadow: inset 0 0 0 1px rgb(127 229 255 / 16%);
+  }
+  .table[data-layer="ingenieria"] .holo-beam,
+  .table[data-layer="ingenieria"] .table-scene::before,
+  .table[data-layer="ingenieria"] .table-scene::after { opacity: 0; }
+
+  /* Lo que la capa pone en el cristal. */
+  .holo-scope, .holo-note { position: relative; left: auto; top: auto; z-index: 3; translate: none; width: auto; margin: 4px calc(var(--pj-gutter) + 12px) 0; }
+
+  /* Producto: el alcance. */
+  .holo-scope { display: none; --scope-w: calc(100vw - 2 * var(--pj-gutter) - 24px); --cell-pad: 14px; }
+  .table[data-layer="producto"] .holo-scope { display: block; }
+  .holo-scope__title { font-size: 0.6rem; }
+  .holo-scope dl { margin-top: 10px; }
+  .holo-scope dl > div { gap: 5px; padding: 2px 6px; }
+  .holo-scope dd { font-size: clamp(1.1rem, (var(--scope-w) / 3 - var(--cell-pad)) * 1.7 / var(--vlen, 3), 1.8rem); }
+  .holo-scope dt { font-size: 0.72rem; }
+
+  /* Diseño: la decisión, con sus flechas a los lados del índice. */
+  .holo-note {
+    display: none;
+    grid-template-columns: 44px 1fr 44px;
+    grid-template-areas: "prev index next" "text text text";
+    align-items: center;
+    gap: 6px 0;
+  }
+  .table[data-layer="diseno"] .holo-note { display: grid; }
+  .holo-note__step:first-child { grid-area: prev; }
+  .holo-note__step:last-child { grid-area: next; }
+  .holo-note__text { display: contents; }
+  .holo-note__index { grid-area: index; justify-self: center; padding: 0; }
+  /* Cada línea, su rótulo encima: a dos columnas el rótulo se comía un
+     tercio del ancho. */
+  .holo-note__line { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 8px; }
+  .holo-note__line[data-part="caption"] { text-align: center; }
+  .holo-note__label { font-size: 0.58rem; }
+  .holo-note__problem { font-size: 0.84rem; text-wrap: pretty; }
+  .holo-note__decision { font-size: 0.92rem; text-wrap: pretty; }
+  .holo-note__caption { font-size: 0.9rem; }
+  .holo-note__step { width: 44px; height: 44px; }
+
+  /*
+    Ingeniería: el sistema en su panel, sin holograma encima. Cada carril es
+    un rótulo y sus módulos de dos en dos; el elegido ocupa la fila entera y
+    despliega debajo su decisión y su stack (aquí no cabe el inspector). Con
+    `.table` delante: `system-diagram.css` también pinta el esquema del caso
+    completo, y esta hoja sigue cargada al navegar hasta él.
+  */
+  .table[data-layer="ingenieria"] .holo { height: auto; }
+  .table .holo-card { position: static; transform: none !important; opacity: 1 !important; visibility: visible; translate: none !important; display: none; width: auto !important; height: auto !important; margin: 0 var(--pj-gutter); }
+  .table[data-layer="ingenieria"] .holo-diagram { display: flex; }
+  .table .holo-inspector { display: none !important; }
+  .table .holo-diagram__field { height: auto; margin: 4px 12px 14px; }
+  .table .holo-diagram__lines { display: none; }
+  .table .holo-lane { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .table .holo-lane__title { position: static; flex: 1 0 100%; width: auto; margin-bottom: 0; text-align: left; }
+  .table .holo-node { position: static; flex: 1 1 calc(50% - 3px); min-width: 0; width: auto !important; height: auto !important; }
+  .table .holo-node[data-selected] { flex-basis: 100%; }
+  /* `auto`: en una rejilla el 100 % se resuelve contra la fila entera, que
+     incluye la decisión desplegada, y la caja crecía tapándola. */
+  .table .holo-node__box { height: auto; min-height: 44px; font-size: 0.8rem; }
+  .table .holo-node__chip { height: auto; min-height: 44px; padding: 6px 10px; gap: 8px; }
+  .table .holo-node__chip :is(.holo-node__thumb, .holo-glyph) { display: none; }
+  .table .holo-node__label { -webkit-line-clamp: 2; }
+  /* Aquí no hay líneas y la selección persiste: fuera de la ruta, un módulo
+     a 0,26 parecía desactivado y es un botón. Se apaga su caja, no su nombre
+     (el texto queda por encima de 4,5:1); la ruta la marca el borde claro. */
+  .table .holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) { opacity: 1; }
+  .table .holo-diagram[data-focus] .holo-node:not([data-selected], [data-path]) .holo-node__chip {
+    border-color: rgb(160 228 255 / 12%);
+    color: #9fb0c4;
+  }
+  .table .holo-node[data-selected] .holo-node__decision {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    margin-top: 6px;
+    padding: 6px 0 6px 12px;
+    border-left: 2px solid var(--pj-amber);
+    font: 300 0.84rem/1.5 var(--font-body);
+    color: #e6edf6;
+  }
+
+  /* La sala, a la vista como en escritorio: el velo apaga arriba (la
+     lectura) y abajo (el pie), no el centro, donde está el holograma. */
+  .projects-room__photo { object-position: 58% 50%; }
+  .projects-room__veil {
+    background:
+      linear-gradient(180deg, rgb(3 5 8 / 86%) 0%, rgb(3 5 8 / 72%) 36%, rgb(3 5 8 / 44%) 52%, rgb(3 5 8 / 50%) 76%, rgb(3 5 8 / 90%) 100%),
+      radial-gradient(120% 80% at 50% 50%, transparent 55%, rgb(0 0 0 / 50%) 100%);
+  }
+
+  /* El pie: una frase, el párrafo y tres cifras en una fila. */
+  .projects-page__foot { padding: 44px var(--pj-gutter) 0; }
+  .projects-page__closing { font-size: 1.3rem; }
+  .projects-page__intro { margin-top: 12px; font-size: 0.92rem; line-height: 1.55; }
+  .projects-page__facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; padding-top: 18px; }
+  .projects-page__facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 6px; }
+  .projects-page__facts dt { font-size: 0.56rem; letter-spacing: 0.12em; }
+  .projects-page__facts dd { margin: 0; font-size: 1.6rem; }
+  .projects-neighbours { gap: 12px; padding: 22px var(--pj-gutter) 48px; }
+  .projects-neighbours small { font-size: 0.54rem; letter-spacing: 0.14em; }
+  .projects-neighbours a > span:not([aria-hidden]) { font-size: 0.74rem; letter-spacing: 0.12em; }
 }

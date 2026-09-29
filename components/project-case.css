@@ -1218,3 +1218,80 @@ html[data-motion="off"] .case *::after {
     mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent);
   }
 }
+
+/* ── Teléfono: el caso, compacto (pase del 2026-09-29) ─────────────────────
+   El dueño pidió Endurance «sencillo, minimalista y profesional» en el
+   teléfono, quitando lo que allí no sirve. El caso medía 25 000 px: las
+   decisiones pasan a un carrusel que se desliza con el dedo, el sistema a
+   módulos de dos en dos, las tecnologías a líneas corridas y la lectura larga
+   se pliega tras sus primeros párrafos (`CaseFold`). Nada se reescribe ni se
+   quita del HTML. */
+.case-fold { display: contents; }
+.case-fold__more { display: none; cursor: pointer; }
+
+@media (max-width: 767px) {
+  /* Decisiones: una tarjeta por decisión —pantalla, problema, decisión— y
+     asoma la siguiente, que es la señal de que se desliza. */
+  .case-decisions__list {
+    display: flex;
+    gap: 14px;
+    margin-inline: calc(-1 * var(--case-gutter));
+    padding: 2px var(--case-gutter) 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--case-gutter);
+    scrollbar-width: none;
+  }
+  .case-decisions__list::-webkit-scrollbar { display: none; }
+  .case-decision,
+  .case-decision:nth-child(even) {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: min(84vw, 520px);
+    scroll-snap-align: start;
+  }
+  /* Dentro de la tira el revelado mediría contra la propia tira. */
+  .case-decision .case-reveal { animation: none !important; }
+  .case-decision[data-frame="mobile"] .case-decision__screen,
+  .case-decision[data-frame="mobile"]:nth-child(even) .case-decision__screen { align-self: center; width: 46%; }
+  .case-decision__text { max-width: none; }
+  .case-decision dl { gap: 16px; margin-top: 14px; }
+  .case-decision__problem dd { margin-top: 6px; font-size: 0.92rem; line-height: 1.5; }
+  .case-decision__choice { padding-left: 14px; }
+  .case-decision__choice dd { margin-top: 8px; font-size: 1.12rem; line-height: 1.32; }
+
+  /* El sistema: los módulos de dos en dos; el elegido ocupa la fila y
+     despliega su decisión. */
+  .case-system .holo-lane { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .case-system .holo-lane__title { flex: 1 0 100%; margin-bottom: 0; }
+  .case-system .holo-node { flex: 1 1 calc(50% - 3px); min-width: 0; }
+  .case-system .holo-node[data-selected] { flex-basis: 100%; }
+  .case-system .holo-node__box { font-size: 0.8rem; }
+  .case-system .holo-node__chip { gap: 8px; padding: 6px 10px; }
+  .case-system .holo-node__chip :is(.holo-node__thumb, .holo-glyph) { display: none; }
+  .case-system .holo-node__label { -webkit-line-clamp: 2; }
+
+  /* Las tecnologías, en líneas corridas bajo cada área. */
+  .case-stack__grid { gap: 24px 18px; }
+  .case-stack__group ul { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; }
+  .case-stack__group li { font-size: 0.84rem; }
+
+  /* Las tiras de pantallas, algo más bajas. */
+  .case-shot { width: min(calc(var(--ar) * 170px), 72vw); }
+}
+
+@media (max-width: 767px) and (scripting: enabled) {
+  .case-fold { display: block; }
+  .case-fold:not([data-open]) .case-longread__body {
+    max-height: 26rem;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent);
+    mask-image: linear-gradient(180deg, #000 45%, transparent);
+  }
+  .case-fold__more { display: inline-flex; margin-top: 4px; }
+  .case-fold__more > span[aria-hidden] { color: var(--pj-cyan); }
+}
