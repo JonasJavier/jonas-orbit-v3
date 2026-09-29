@@ -192,6 +192,7 @@ test("Miller: formación y certificados funcionan sin JavaScript", async ({ brow
 });
 
 test("Miller: la escena persistente duerme detrás del océano y vuelve al mapa", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   await page.setViewportSize({ width: 640, height: 480 });
   await page.addInitScript(() => {
     // Encendido a propósito: sólo eso monta la escena sobre una GPU por software.

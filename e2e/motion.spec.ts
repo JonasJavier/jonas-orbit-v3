@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { skipWithoutWebGL2 } from "./capability-fixtures";
 
 /**
  * El interruptor único de movimiento: un icono en la bandeja inferior derecha,
@@ -30,6 +31,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("movimiento: la portada arranca activa incluso con reduced-motion", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es");
   await expect(page.getByRole("button", { name: "Desactivar movimiento", exact: true })).toBeVisible();
@@ -47,6 +49,7 @@ test("movimiento: la portada arranca activa incluso con reduced-motion", async (
 });
 
 test("movimiento: encendido por defecto, un solo icono lo apaga todo y se recuerda entre rutas", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/formacion");
   const toggle = page.getByRole("button", { name: "Desactivar movimiento", exact: true });

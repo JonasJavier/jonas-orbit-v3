@@ -1,4 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
+import { skipWithoutWebGL2 } from "./capability-fixtures";
+
+/**
+ * Casi todo este archivo mide la escena del laboratorio en marcha, así que
+ * sin WebGL2 (Firefox en un runner sin GPU) no hay nada que medir y la espera
+ * de `data-state="nominal"` agotaba el trozo entero de CI. Se ejecutan en todo
+ * navegador las pruebas que NO dependen de la escena: el espécimen plano y la
+ * ruta sin JavaScript (comprobado con WebGL apagado en Firefox).
+ */
+const SIN_ESCENA = [/^O7 ·/, /^O8 ·/];
+test.beforeEach(async ({ page }, testInfo) => {
+  if (SIN_ESCENA.some((pattern) => pattern.test(testInfo.title))) return;
+  await skipWithoutWebGL2(page);
+});
 
 /**
  * El Observatorio, comprobado en un navegador de verdad.

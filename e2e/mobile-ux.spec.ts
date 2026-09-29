@@ -31,6 +31,8 @@ test("la bandeja se retira al bajar leyendo y vuelve al subir", async ({ page })
 });
 
 test("ninguna página desborda a lo ancho en un teléfono", async ({ page }) => {
+  // Siete cargas completas seguidas: en Firefox/WebKit no caben en 30 s.
+  test.setTimeout(90_000);
   for (const path of [
     "/es/sobre-mi",
     "/es/formacion",
