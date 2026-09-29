@@ -385,7 +385,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
         <span className="edmunds-deck__stars edmunds-deck__stars--bright" />
         <span className="edmunds-deck__auroras"><span className="edmunds-deck__aurora" /><span className="edmunds-deck__aurora edmunds-deck__aurora--two" /></span>
         <span className="edmunds-deck__dust" />
-        {lights.map((art, index) => <img key={art.id} className={index === lights.length - 1 && lights.length > 1 ? "edmunds-deck__ambient edmunds-deck__ambient--in" : "edmunds-deck__ambient"} src={`/art/edmunds/${art.id}-480.webp`} alt="" width={art.width} height={art.height} decoding="async" draggable={false} onAnimationEnd={() => setAmbient((state) => ({ previous: null, current: state.current }))} />)}
+        {lights.map((art, index) => <img key={art.id} className={index === lights.length - 1 && lights.length > 1 ? "edmunds-deck__ambient edmunds-deck__ambient--in" : "edmunds-deck__ambient"} src={`/art/edmunds/${art.id}-320.webp`} alt="" width={art.width} height={art.height} decoding="async" draggable={false} onAnimationEnd={() => setAmbient((state) => ({ previous: null, current: state.current }))} />)}
         <span className="edmunds-deck__planet" />
         <span className="edmunds-deck__dune" />
       </div>}

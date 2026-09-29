@@ -57,7 +57,7 @@ que toque a la mesa y al caso en teléfono).
   dentro; sin JavaScript y en escritorio no existe). Nada se quita del HTML.
 - Pendiente: veredicto visual del dueño en su teléfono.
 
-## Rendimiento móvil — PageSpeed de Sobre mí y Formación (2026-09-29)
+## Rendimiento móvil — PageSpeed de las siete páginas (2026-09-29)
 
 El dueño pasó PageSpeed (móvil) por las páginas: Sobre mí 86 y Formación 81,
 con accesibilidad, prácticas y SEO a 100. La API de PageSpeed sin clave tiene
@@ -80,16 +80,41 @@ la comparación.
   cabecera se precarga desde el `<head>` con `fetchPriority: "high"` y una
   precarga por versión con su `media`. El shader de Miller calcula su `cover`
   con `naturalWidth`, así que la franja da el mismo agua.
-- **La escena persistente espera al ocio en las rutas cubiertas.** Todas las
-  páginas de mundo cubren la escena y aun así se bajaba three.js y se
-  compilaba al montar, en plena carga. Ahora, en ruta cubierta,
-  `gargantua-system.tsx` espera al `load` y a `requestIdleCallback` (tope de
-  2 s; Safari, sin esa API, arranca justo tras el `load`); una travesía o salir de la cobertura la despiertan
-  al momento. En la home no cambia nada.
+- **La escena persistente —y su sonda— esperan al ocio en las rutas
+  cubiertas.** Todas las páginas de mundo cubren la escena y aun así, nada
+  más hidratar, se sondeaba WebGL (`readSignals`: un contexto entero, ~250 ms
+  en el Chrome sin GPU de PageSpeed, que Lighthouse multiplica por 4: era la
+  tarea de ~1 s de TBT de TODAS las páginas) y se bajaba y compilaba
+  three.js. Ahora, en ruta cubierta, `gargantua-system.tsx` no decide el
+  nivel (ni publica `data-scene`) hasta que `lib/after-load-idle.ts` dice
+  que la página cargó y está ociosa (`requestIdleCallback`, tope de 2 s;
+  Safari, sin esa API, justo tras el `load`: un retraso fijo chocaba con la
+  primera interacción en el e2e de Edmunds en WebKit). Una travesía o salir
+  de la cobertura la despiertan al momento. En la home no cambia nada.
+- **El agua de Miller arranca con el mismo ocio.** Su contexto WebGL y sus
+  shaders (compilación síncrona, ~200 ms sin GPU) corrían al cargar la
+  imagen, en plena hidratación; mientras tanto se ve la misma foto quieta.
+- **Luz ambiente de Edmunds a 320 px** (antes 480): va a `blur(28–46px)` y
+  30 % de opacidad.
 - **Medido (A/B local, móvil simulado):** Sobre mí 61 → 70, LCP 5,25 → 4,54 s,
   TBT 765 → 537 ms, peso 1086 → 907 KB (imágenes 465 → 285 KB). Formación
   65 → 67, TBT 1096 → 808 ms, imágenes 193 → 54 KB; su LCP no se mueve
   (3,65 ↔ 3,83 s).
+- **Segundo pase, mismas condiciones (antes → después):** Proyectos 66 → 79–82
+  (TBT 762 → ~250 ms), Creatividad 72 → 84 (631 → ~130), Experimentos 74 →
+  81–92 (660 → ~180), Sobre mí 70 → 78–80 (522 → ~187), Formación 68 → 81
+  (806 → 410). Home (63, la escena ES la página) y Contacto (~70) no cambian:
+  `RangerCockpit` necesita su veredicto al instante para el vuelo de la
+  cabecera y sondea en el render; quitárselo pide rehacer cómo decide «vista
+  fija y Detenido» sin GPU.
+- **Trampa: FCP bimodal.** Con la hidratación ya ligera, el prefetch de rutas
+  de Next (`_rsc` y sus CSS) arranca a veces antes del primer pintado
+  observado y el simulador de Lighthouse lo carga al FCP: ~1,37 s o ~1,88 s
+  en la misma build (Experimentos 92 u 80). No es una regresión y no se
+  retrasa el prefetch, que es navegación real. Comparar medianas de ≥3.
+- **Abierto (decisión del dueño):** el `OVERSAMPLE` 1,5 de Edmunds hace que un
+  teléfono a DPR ≥ 2 baje la versión de 960 para una obra pintada a 233 px
+  (Creatividad baja ~600 KB de imágenes).
 - **Lo que queda y por qué.** El LCP simulado está atado al JavaScript de
   cliente del layout, no a la imagen: la imagen llega y el pintado espera
   ~400 ms a la hidratación (el chunk del framework se lleva ~1,9 s de CPU a

@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { WorldId, WorldStructuralData } from "@/content/worlds.data";
+import { useAfterLoadIdle } from "@/lib/after-load-idle";
 import { useExplicitEffects, useForcedEffects, useLightEffectsMode } from "@/lib/effects-mode";
 import { MAP_HOVER_MODE } from "@/lib/map-hover";
 import { cameraPoseForRoute } from "@/lib/scene-poses";
@@ -78,27 +79,6 @@ function serverReason(): LevelReason {
   return "ok";
 }
 
-/*
-  El tope de 2 s evita que una página que nunca queda ociosa se quede sin
-  escena para la travesía. Safari no tiene `requestIdleCallback` y no hay
-  otra forma honesta de saber cuándo está ocioso: ahí arranca justo tras el
-  `load`, que ya deja fuera la imagen principal y la hidratación. Un retraso
-  fijo la hacía coincidir con la primera interacción (e2e de Edmunds en
-  WebKit, 2026-09-29).
-*/
-function requestIdle(callback: () => void): number {
-  if (typeof window.requestIdleCallback === "function") {
-    return window.requestIdleCallback(callback, { timeout: 2000 });
-  }
-  return window.setTimeout(callback, 0);
-}
-
-function cancelIdle(id: number) {
-  if (!id) return;
-  if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(id);
-  else window.clearTimeout(id);
-}
-
 const isClient = () => true;
 const isServer = () => false;
 
@@ -119,8 +99,6 @@ export function GargantuaSystem({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<SceneHandle | null>(null);
   const labelsRef = useRef<LabelBinding | null>(null);
-  /** Arranca ya una escena que esperaba al ocio (ruta cubierta). */
-  const wakeRef = useRef<(() => void) | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
   const pathname = usePathname();
@@ -136,38 +114,6 @@ export function GargantuaSystem({
   const forced = useForcedEffects();
   // Sólo un encendido pedido monta la escena en un equipo que no la aguanta.
   const explicit = useExplicitEffects();
-
-  /**
-   * El nivel se lee como una fuente externa, no como estado calculado en un
-   * efecto. En servidor la instantánea es siempre `flat` —ahí no hay navegador
-   * al que preguntar— y tras la hidratación se resuelve con las capacidades
-   * reales, sin provocar mismatch. Es el mismo patrón que reduced-motion.
-   */
-  //
-  // Se leen tres VALORES PRIMITIVOS, no un objeto. `useSyncExternalStore`
-  // compara la instantánea con `Object.is`: devolver un objeto nuevo en cada
-  // llamada lo metería en un bucle infinito de re-renders.
-  const readVerdict = () =>
-    evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced, explicit }));
-
-  //
-  // Mientras hidrata, los hooks de arriba aún devuelven su valor de servidor
-  // (`lightEffects=false`, `forced=true`) y React comprueba estas instantáneas
-  // con ellos: en el perfil ligero eso sondeaba WebGL —un contexto entero,
-  // ~0,5 s en frío— para un veredicto que el render siguiente descarta. Hasta
-  // que la hidratación termina vale la instantánea de servidor.
-  const hydrated = useSyncExternalStore(subscribeNothing, isClient, isServer);
-  const detected = useSyncExternalStore(
-    subscribeNothing,
-    () => (hydrated ? readVerdict().level : serverLevel()),
-    serverLevel,
-  );
-  const reason = useSyncExternalStore(
-    subscribeNothing,
-    () => (hydrated ? readVerdict().reason : serverReason()),
-    serverReason,
-  );
-  const level: EffectsLevel = failed ? "flat" : detected;
 
   /*
     El Observatorio no se CUBRE: se libera.
@@ -205,10 +151,58 @@ export function GargantuaSystem({
   );
   const departureRef = useRef(departure);
 
+  /*
+    En una ruta cubierta la escena no dibuja nada: sólo tiene que estar lista
+    para la travesía de vuelta. Decidir el nivel ya cuesta un contexto WebGL
+    de sonda (~250 ms en un Chrome sin GPU, el de PageSpeed; medido
+    2026-09-29), y construirla —bajar three.js, subir la geometría, compilar
+    shaders— competía con la hidratación y la imagen principal de la página
+    que sí se ve. Ahí las dos cosas esperan a que la página cargue y el
+    navegador quede ocioso (`lib/after-load-idle.ts`); una travesía o salir
+    de la cobertura la despiertan al momento. Despierta, no vuelve a dormirse.
+  */
+  const idle = useAfterLoadIdle();
+  const [awake, setAwake] = useState(false);
+  if (!awake && (!covered || departure !== null || idle)) setAwake(true);
+
+  /**
+   * El nivel se lee como una fuente externa, no como estado calculado en un
+   * efecto. En servidor la instantánea es siempre `flat` —ahí no hay navegador
+   * al que preguntar— y tras la hidratación se resuelve con las capacidades
+   * reales, sin provocar mismatch. Es el mismo patrón que reduced-motion.
+   */
+  //
+  // Se leen tres VALORES PRIMITIVOS, no un objeto. `useSyncExternalStore`
+  // compara la instantánea con `Object.is`: devolver un objeto nuevo en cada
+  // llamada lo metería en un bucle infinito de re-renders.
+  const readVerdict = () =>
+    evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced, explicit }));
+
+  //
+  // Mientras hidrata, los hooks de arriba aún devuelven su valor de servidor
+  // (`lightEffects=false`, `forced=true`) y React comprueba estas instantáneas
+  // con ellos: en el perfil ligero eso sondeaba WebGL —un contexto entero,
+  // ~0,5 s en frío— para un veredicto que el render siguiente descarta. Hasta
+  // que la hidratación termina vale la instantánea de servidor.
+  const hydrated = useSyncExternalStore(subscribeNothing, isClient, isServer);
+  const detected = useSyncExternalStore(
+    subscribeNothing,
+    () => (hydrated && awake ? readVerdict().level : serverLevel()),
+    serverLevel,
+  );
+  const reason = useSyncExternalStore(
+    subscribeNothing,
+    () => (hydrated && awake ? readVerdict().reason : serverReason()),
+    serverReason,
+  );
+  const level: EffectsLevel = failed ? "flat" : detected;
+
   // Publica el nivel y el motivo en el DOM. Es lo que hace auditable el gate, lo
   // que permite que el CSS retire el fondo 2D cuando la escena está viva, y lo
   // que convierte «no se ve nada» en un diagnóstico de una sola línea.
   useEffect(() => {
+    // Sin veredicto todavía no hay nada que publicar: «flat» mentiría.
+    if (!awake) return;
     document.documentElement.dataset.scene = level;
     document.documentElement.dataset.sceneReason = failed
       ? "escena-fallida"
@@ -217,85 +211,51 @@ export function GargantuaSystem({
       delete document.documentElement.dataset.scene;
       delete document.documentElement.dataset.sceneReason;
     };
-  }, [level, reason, failed]);
+  }, [awake, level, reason, failed]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || level === "flat" || observatory) return;
 
     let cancelled = false;
-    let started = false;
     let handle: SceneHandle | null = null;
-    let idle = 0;
 
     /**
      * La escena se carga bajo demanda. three.js entero jamás entra en la carga
      * inicial de ninguna ruta: es el presupuesto de §8 y el motivo por el que el
      * nivel `flat` no descarga ni un byte de 3D.
      */
-    const load = () =>
-      import("./system-scene")
-        .then(({ createSystemScene }) => {
-          if (cancelled) return;
-          handle = createSystemScene({
-            canvas,
-            tier: level === "deep" ? "deep" : "orbit",
-            pose: cameraPoseForRoute(worldIdRef.current),
-            bodies,
-            onProject: (projected) => labelsRef.current?.update(projected),
-            onFailure: () => {
-              // Degradación real: se libera todo y se vuelve al nivel `flat`, que
-              // ya está construido y probado. Nunca se deja una escena rota.
-              handle?.dispose();
-              handle = null;
-              handleRef.current = null;
-              setFailed(true);
-            },
-          });
-          handleRef.current = handle;
-          handle.setCovered(coveredRef.current);
-          const current = departureRef.current;
-          if (current) {
-            handle.setVoyage({ id: current.id, startedAt: current.startedAt });
-          }
-        })
-        .catch(() => {
-          if (!cancelled) setFailed(true);
+    void import("./system-scene")
+      .then(({ createSystemScene }) => {
+        if (cancelled) return;
+        handle = createSystemScene({
+          canvas,
+          tier: level === "deep" ? "deep" : "orbit",
+          pose: cameraPoseForRoute(worldIdRef.current),
+          bodies,
+          onProject: (projected) => labelsRef.current?.update(projected),
+          onFailure: () => {
+            // Degradación real: se libera todo y se vuelve al nivel `flat`, que
+            // ya está construido y probado. Nunca se deja una escena rota.
+            handle?.dispose();
+            handle = null;
+            handleRef.current = null;
+            setFailed(true);
+          },
         });
-
-    const start = () => {
-      if (started || cancelled) return;
-      started = true;
-      wakeRef.current = null;
-      window.removeEventListener("load", whenIdle);
-      cancelIdle(idle);
-      void load();
-    };
-    const whenIdle = () => {
-      idle = requestIdle(start);
-    };
-
-    /*
-      En una ruta cubierta la escena no dibuja nada: sólo tiene que estar lista
-      para la travesía de vuelta. Construirla al montar —bajar three.js, subir
-      la geometría, compilar shaders— competía con la hidratación y la imagen
-      principal de la página que sí se ve (medido 2026-09-29 en Sobre mí y
-      Formación: ~0,4 s de CPU del chunk de three.js en plena carga). Ahí
-      espera a que la página termine de cargar y el navegador quede ocioso;
-      una travesía o salir de la cobertura la despiertan antes (`wakeRef`).
-    */
-    if (!coveredRef.current || departureRef.current) start();
-    else {
-      wakeRef.current = start;
-      if (document.readyState === "complete") whenIdle();
-      else window.addEventListener("load", whenIdle, { once: true });
-    }
+        handleRef.current = handle;
+        handle.setCovered(coveredRef.current);
+        const current = departureRef.current;
+        if (current) {
+          handle.setVoyage({ id: current.id, startedAt: current.startedAt });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
 
     return () => {
       cancelled = true;
-      if (wakeRef.current === start) wakeRef.current = null;
-      window.removeEventListener("load", whenIdle);
-      cancelIdle(idle);
       handle?.dispose();
       handleRef.current = null;
     };
@@ -343,7 +303,6 @@ export function GargantuaSystem({
   useEffect(() => {
     coveredRef.current = covered;
     handleRef.current?.setCovered(covered);
-    if (!covered) wakeRef.current?.();
   }, [covered]);
 
   // El despegue va a la escena tal cual llega: un objeto con id e instante, o
@@ -351,7 +310,6 @@ export function GargantuaSystem({
   // el efecto de arriba y también termina el viaje por su cuenta.
   useEffect(() => {
     departureRef.current = departure;
-    if (departure) wakeRef.current?.();
     handleRef.current?.setVoyage(
       departure ? { id: departure.id, startedAt: departure.startedAt } : null,
     );

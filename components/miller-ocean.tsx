@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
+import { useAfterLoadIdle } from "@/lib/after-load-idle";
 import { releaseWhenDetached } from "@/lib/webgl-release";
 import { useMillerWater } from "./miller-water";
 
@@ -131,11 +132,15 @@ export function MillerOcean() {
   const { running } = useMillerWater();
   const [ready, setReady] = useState(false);
   const [supported, setSupported] = useState(true);
+  // El agua (contexto WebGL y shaders, ~200 ms en un Chrome sin GPU) arranca
+  // cuando la página ya cargó y está ociosa: hasta entonces se ve la misma
+  // foto quieta, con el mismo encuadre, y no compite con la hidratación.
+  const settled = useAfterLoadIdle();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const surface = surfaceRef.current;
-    if (!canvas || !surface || !running || !ready || !supported) return;
+    if (!canvas || !surface || !running || !ready || !supported || !settled) return;
     const source = surface.querySelector("img");
     if (!source?.naturalWidth) return;
     const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: "low-power" });
@@ -251,9 +256,9 @@ export function MillerOcean() {
       // ocupar uno de los pocos que concede el navegador mientras está quieto.
       releaseWhenDetached(canvas, gl);
     };
-  }, [ready, running, supported]);
+  }, [ready, running, settled, supported]);
 
-  const flowing = running && ready && supported;
+  const flowing = running && ready && supported && settled;
   // El LCP se pide desde el <head>, antes que los CSS: una precarga por cada
   // versión del <picture>, con su media, para que ningún equipo baje las dos.
   preload("/images/miller/ocean-movil.webp", { as: "image", fetchPriority: "high", media: "(max-width: 600px)" });
@@ -283,7 +288,7 @@ export function MillerOcean() {
           onLoad={() => setReady(true)}
         />
       </picture>
-      {running && ready && supported ? <canvas aria-hidden="true" ref={canvasRef} /> : null}
+      {flowing ? <canvas aria-hidden="true" ref={canvasRef} /> : null}
       <div className="miller-ocean__shade" aria-hidden="true" />
     </div>
   );
