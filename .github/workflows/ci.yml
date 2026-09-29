@@ -45,11 +45,18 @@ jobs:
             exit 1
           fi
 
+  # La suite creció a ~316 escenarios y un runner de 2 núcleos con GPU por
+  # software no la termina en un solo job: se reparte en cuatro trozos
+  # paralelos (gratis en un repositorio público).
   e2e:
-    name: E2E (Chromium)
+    name: E2E (Chromium ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     needs: check
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,13 +66,13 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
         env:
           CI: "true"
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() || cancelled()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7
 
@@ -90,7 +97,7 @@ jobs:
         env:
           CI: "true"
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() || cancelled()
         with:
           name: playwright-report-cross-browser
           path: playwright-report/
