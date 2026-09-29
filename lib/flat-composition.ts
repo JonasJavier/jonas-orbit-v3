@@ -44,7 +44,7 @@ const COMPOSITION = {
   gargantua: { wide: [46, 49], portrait: [50, 42], short: [46, 47] },
   /* 78 → 70 en apaisado corto: es el cuerpo más bajo del atlas y el único que
      llegaba a tocar el raíl. */
-  ranger: { wide: [43, 78], portrait: [42, 93], short: [43, 70] },
+  ranger: { wide: [43, 78], portrait: [47, 90], short: [43, 70] },
 } as const satisfies Record<
   WorldId,
   {

@@ -60,7 +60,32 @@ en táctil tocar un planeta no hacía nada (el campo se apagaba entero).
 Medido a 390 × 844 (3D): Miller 33 px de radio de blanco, Edmunds 32,
 Tesseracto 45, Endurance 56, Ranger 28; 40 px de aire entre la Ranger y el
 panel. e2e `atlas`, `smoke`, `scene-overlay`, `soundtrack`, `voyage`, `motion`
-en chromium y mobile-chromium: 126/126. Valoración visual del dueño pendiente.
+en chromium y mobile-chromium: 126/126.
+
+**Segundo pase (2026-09-29), tras la primera valoración del dueño.** Le gustó
+la composición, Gargantúa como protagonista, el raíl en 3 × 2 y que la
+interfaz no compita con el universo. Pidió tres cosas, y manda esto:
+
+- **Más presencia de las naves.** `PORTRAIT_EMPHASIS` (sólo vertical): Ranger
+  ×1.5 y Endurance ×1.1 sobre `PORTRAIT_BODY_SCALE`; la Ranger pasa de
+  (42, 93) a (47, 90), centrada bajo Gargantúa. En el atlas plano, la baliza
+  sube a `clamp(72px, min(23vw, 12svh), 160px)`. A 390 × 844: Ranger 42 px de
+  radio de blanco (antes 28), Endurance 62 (antes 56).
+- **Que se note que se puede tocar.** Etiqueta «Toca para explorar» sobre el
+  borde del panel y un aro cian que late TRES veces en cada cuerpo, escalonado
+  por orden narrativo; sólo en táctil (`hover: none` y `pointer: coarse`), sin
+  aros con el movimiento apagado y sin etiqueta en apaisado corto. Se retira al
+  apuntar el primer destino (cuerpo o raíl) y no vuelve:
+  `localStorage["jonas-orbit:explorar-visto"]`. Es `aria-hidden`: el raíl ya es
+  el índice accesible. No es la respuesta al hover que el dueño rechazó
+  (endurance-navigation-interface.md §14): no responde al puntero, se apaga
+  sola y no vuelve.
+- **Raíl más bajo y más separado del borde.** Celdas de 52 → 46 px (el mínimo
+  táctil sigue en 44) y 1,25 rem de aire con el borde inferior (antes 0,75);
+  `--home-rail-*` alimenta también el escenario.
+
+e2e de la home 126/126; test unitario de la indicación en
+`system-map.test.tsx`. Valoración visual del dueño pendiente.
 
 ## Repositorio público, SEO y arranque de la escena (2026-09-28)
 

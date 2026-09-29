@@ -27,6 +27,9 @@ import "./system-map-atlas.css";
 
 type HitboxShape = "box" | "craft" | "sphere";
 
+/** Quien ya tocó un destino no vuelve a ver «toca para explorar». */
+const EXPLORE_HINT_KEY = "jonas-orbit:explorar-visto";
+
 interface InteractionVolume {
   /** Radio de respaldo para el mapa plano, antes de recibir `--map-radius`. */
   fallbackRadius: number;
@@ -93,6 +96,38 @@ export function SystemMap({
     repica la misma nota. No es estado de React a propósito: no pinta nada.
   */
   const sounded = useRef<WorldId | null>(null);
+
+  /*
+    «Toca para explorar».
+
+    En un móvil los cuerpos no tienen rótulo ni hover, y un planeta quieto se
+    lee como decoración: nada dice que se pueda tocar. La indicación sale una
+    vez, se retira con el primer destino apuntado —cuerpo o raíl— y no vuelve
+    en las siguientes visitas. Sólo se PINTA en pantallas táctiles (CSS); con
+    ratón el hover ya es la indicación. Arranca apagada y la enciende el
+    cliente: sin JavaScript no hay nada que tocar salvo el raíl, que se explica
+    solo.
+  */
+  const [exploreHint, setExploreHint] = useState(false);
+  useEffect(() => {
+    const read = () => {
+      try {
+        setExploreHint(localStorage.getItem(EXPLORE_HINT_KEY) !== "1");
+      } catch {
+        setExploreHint(true);
+      }
+    };
+    read();
+  }, []);
+
+  function explored() {
+    setExploreHint(false);
+    try {
+      localStorage.setItem(EXPLORE_HINT_KEY, "1");
+    } catch {
+      // Sin almacenamiento, la indicación sólo dura esta visita.
+    }
+  }
 
   /*
     LA MISMA SEÑAL, DOS LECTURAS. Ver `lib/map-hover.ts`.
@@ -171,6 +206,7 @@ export function SystemMap({
   function acquire(id: WorldId) {
     setPointerTarget(id);
     ping(id);
+    if (exploreHint) explored();
   }
 
   function release(id: WorldId) {
@@ -181,6 +217,7 @@ export function SystemMap({
   function focusOn(id: WorldId) {
     setFocusTarget(id);
     ping(id);
+    if (exploreHint) explored();
   }
 
   function blurFrom(id: WorldId) {
@@ -212,8 +249,16 @@ export function SystemMap({
         className="system-map"
         id="sistema"
         aria-label="Destinos del Sistema Gargantúa"
+        data-explore-hint={exploreHint ? "true" : undefined}
         ref={mapRef}
       >
+        {/* Instrucción visual para el dedo; el raíl ya es el índice
+            accesible, así que no se anuncia. */}
+        {exploreHint ? (
+          <p className="system-map__explore" aria-hidden="true">
+            Toca para explorar
+          </p>
+        ) : null}
         {/*
           Eco visual. El contenedor completo se retira del árbol accesible:
           teclado y lectores recorren únicamente el raíl, en orden 01→06.

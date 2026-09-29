@@ -137,7 +137,8 @@ MDX**, nunca en `worlds.data.ts`.
 - **Home en móvil** (09-28) registro «Home en móvil — escenario compartido…» —
   cabecera en una fila, escenario `--home-stage-*` y UNA composición vertical
   (`portrait` de `lib/flat-composition.ts`) para atlas y escena; raíl en panel
-  3 × 2; cuerpos tocables. Escritorio intacto. Valoración visual pendiente.
+  3 × 2; cuerpos tocables. Segundo pase (09-29): naves con más presencia,
+  «Toca para explorar» de una sola vez, raíl más bajo. Escritorio intacto.
 - **Footer** (09-23) `docs/design/footer-observatorio.md` — complemento de la
   navbar: §«Segundo pase» manda en paleta exacta compartida y fugaces más
   visibles; mapa orbital y seis destinos;
