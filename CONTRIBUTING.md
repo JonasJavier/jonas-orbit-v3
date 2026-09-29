@@ -25,7 +25,7 @@ The project uses Node.js 24 and exact dependency versions. Dependency updates be
 
 ## Change workflow
 
-- Create a short, descriptive branch from `main`.
+- Work and commit directly on `main`; do not create feature branches. The only other branch is `production`, which Railway deploys and which moves only by pushing a verified commit to it.
 - Keep commits focused; exclude local screenshots, logs, and builds.
 - Add or update the tests relevant to your change in Appendix A of the [project plan](docs/plans/jonas-orbit-v3-mission-endurance.md).
 - If a product decision changes, record it in [the decision log](docs/registro-de-decisiones.md) and update the index in [AGENTS.md](AGENTS.md).
@@ -33,7 +33,7 @@ The project uses Node.js 24 and exact dependency versions. Dependency updates be
 
 ## Verification
 
-Before opening a pull request:
+Before committing to `main`:
 
 ```bash
 npm run check
@@ -42,9 +42,9 @@ npm run test:e2e
 
 `npm run test:e2e` requires a prior `npm run build`. Do not pipe `npm run check` into `head`, `tail`, or another command: that can hide the actual exit status.
 
-## Pull requests
+## Commit messages
 
-Explain the outcome, scope, risks, and verification. For visible interface changes, include comparable screenshots and identify any owner review still pending. Do not present an unapproved visual decision as approved.
+Explain the outcome, scope, risks, and verification. For visible interface changes, say where the comparable screenshots are (outside Git) and name any owner review still pending. Do not present an unapproved visual decision as approved.
 
 ## Content and assets
 

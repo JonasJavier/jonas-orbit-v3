@@ -17,7 +17,7 @@ npm run preview
 npm run test:worker
 ```
 
-The GitHub CI workflow covers Chromium, Firefox, WebKit, Lighthouse, and links. It has read-only permissions and per-job time limits. Run it manually on the candidate branch before merging when Actions is available.
+The GitHub CI workflow covers Chromium, Firefox, WebKit, Lighthouse, and links. It has read-only permissions and per-job time limits. Run it manually on `main` before publishing to `production` when Actions is available.
 
 As of 2026-09-28, GitHub Actions jobs are blocked by account billing or spending limits. Firefox and WebKit checks were therefore attempted on Linux with the official Playwright image. WebKit on Windows lacks the required `AudioContext` behavior.
 

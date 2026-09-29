@@ -90,6 +90,9 @@ MDX**, nunca en `worlds.data.ts`.
   nunca publica. CSP y cabeceras viven en `next.config.ts`; el límite de tasa
   del contacto, en la app. El preview de Cloudflare conserva su prueba de
   compatibilidad `npm run test:worker`.
+- **Git: todo en `main`** (09-29) registro «Flujo de git…» — sin ramas de
+  feature; la única otra rama es `production` (publicación, no se toca a
+  mano). Worktrees sólo `--detach` y temporales; commits por ruta.
 - **Idiomas** (09-29) registro «Idiomas — el sitio en inglés» — inglés por
   defecto (`/` → `/en`, cookie para quien eligió español); cada página con
   ruta propia en los dos idiomas, todas desde `lib/page-paths.ts`; layout raíz

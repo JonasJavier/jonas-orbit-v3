@@ -19,6 +19,27 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Flujo de git — todo en `main`, sin ramas (2026-09-29)
+
+El dueño vio cinco ramas locales (`dpr-merge`, `dpr-movil`, `movil-compacto`,
+`movil-merge`, `prod-dpr`), todas ya fusionadas en `main`, restos de sesiones
+anteriores, y pidió dejar sólo `main` y trabajar ahí.
+
+- **Se trabaja y se commitea directamente en `main`.** No se crean ramas de
+  feature, ni para cambios grandes: commits pequeños y enfocados, siempre con
+  `npm run check` en verde. Sustituye a «crea una rama desde `main`» de
+  `CONTRIBUTING.md`.
+- **La única otra rama es `production`** (sólo en GitHub): es lo que Railway
+  publica. No se borra ni se trabaja en ella; se mueve con
+  `git push origin <commit>:production` tras los gates y con permiso del
+  dueño (registro «Publicación — rama `production`…»).
+- **Los worktrees no llevan rama.** Si hace falta un entorno aislado (build
+  o e2e con otra sesión viva), va `--detach` en una ruta temporal y se borra
+  al terminar. Si una herramienta crea una rama por su cuenta, se fusiona en
+  `main` y se borra en la misma sesión.
+- Con varias sesiones en el mismo árbol, se commitea por ruta
+  (`git commit -- <rutas>`), nunca `git add -A`.
+
 ## Proyectos en el teléfono — la misma mesa, más pequeña (2026-09-29)
 
 El dueño, con capturas de su teléfono: Proyectos en móvil «bien mal», pidió
