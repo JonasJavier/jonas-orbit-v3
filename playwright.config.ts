@@ -61,7 +61,21 @@ export default defineConfig({
     // entran en `npm run test:e2e`, que se acota a los proyectos Chromium.
     {
       name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
+      use: {
+        ...devices["Desktop Firefox"],
+        // Sin GPU (runners de CI), Firefox headless apaga WebGL y bloquea el
+        // autoplay: el sitio caía, bien, a su perfil plano y las pruebas de la
+        // escena, el océano, la cabina y la banda sonora no probaban nada.
+        // Son preferencias del navegador de prueba, como las que ya trae
+        // Chromium headless; el sitio no sabe que existen.
+        launchOptions: {
+          firefoxUserPrefs: {
+            "webgl.force-enabled": true,
+            "media.autoplay.default": 0,
+            "media.autoplay.blocking_policy": 0,
+          },
+        },
+      },
     },
     {
       name: "webkit",
