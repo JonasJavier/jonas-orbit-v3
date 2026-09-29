@@ -124,8 +124,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!id) return {};
   const copy = COPY[locale];
   const world = getWorld(id, locale);
-  const title = copy.title(world.cosmicName);
-  const description = copy.description(world.cosmicName);
+  const title = world.prose.observatory?.seoTitle ?? copy.title(world.cosmicName);
+  const description = world.prose.observatory?.seoDescription ?? copy.description(world.cosmicName);
   return {
     title,
     description,
@@ -287,7 +287,9 @@ export default async function ObservatoryRoute({ params }: Props) {
               </span>
               {copy.standby}
             </p>
-            <p className="observatory-route__summary">{world.prose.summary}</p>
+            <p className="observatory-route__summary">
+              {observatory?.summary ?? world.prose.summary}
+            </p>
 
             <ul className="observatory-face__bank">
               {bank.map((label) => (

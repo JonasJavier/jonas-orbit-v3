@@ -80,14 +80,14 @@ const worldProse = defineCollection({
            * dentro de seis meses.
            */
           pair: s.string().max(40),
+          /** Texto y metadatos del espécimen, separados de los de la sección. */
+          summary: s.string().max(200).optional(),
+          seoTitle: s.string().max(55).optional(),
+          seoDescription: s.string().min(110).max(160).optional(),
           /*
-            El registro es lo ÚNICO opcional de este bloque, y es lo que separa
-            una muestra montada de una que sólo está catalogada. Los cuatro
-            especímenes que aún no se observan tienen nombre, descriptor y par
-            —son datos del objeto, que existe— y no tienen proceso escrito,
-            porque no lo hay. El instrumento `REGISTRO` simplemente no aparece.
-            Inventarles una intención sería el contenido de relleno que prohíbe
-            la regla 8.
+            El registro recoge el proceso escrito, no los metadatos de búsqueda.
+            Si falta, el instrumento `REGISTRO` simplemente no aparece.
+            Inventar una intención violaría la regla 8.
           */
           registro: s
             .object({
