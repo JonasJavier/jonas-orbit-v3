@@ -133,9 +133,28 @@ la comparación.
   observado y el simulador de Lighthouse lo carga al FCP: ~1,37 s o ~1,88 s
   en la misma build (Experimentos 92 u 80). No es una regresión y no se
   retrasa el prefetch, que es navegación real. Comparar medianas de ≥3.
-- **Abierto (decisión del dueño):** el `OVERSAMPLE` 1,5 de Edmunds hace que un
-  teléfono a DPR ≥ 2 baje la versión de 960 para una obra pintada a 233 px
-  (Creatividad baja ~600 KB de imágenes).
+- **Tercer pase (el dueño: «haz lo que tengas que hacer», meta ~90).**
+  Sobre mí abierto por capítulo (`#mis-raices`…) bajaba 0,75–1,3 MB de fotos:
+  - Escalera de las fotos con un peldaño de **800** (el teléfono pedía ~650–750
+    px y saltaba a 960) y **calidad 80** hasta 960; el tamaño completo del
+    visor sigue a 86. Comparado al 200 % en F44 y F23: sin diferencia visible,
+    −17 %.
+  - Fotos de capítulo a ≥ 2,5 px por punto: `sizes` a 60vw (~2×), no 1113 px
+    (`F44-1600` pesa 1,38 MB).
+  - Los fondos `.about-people` y `.about-slot::before` usan en el teléfono el
+    recorte `-movil`: abrir un capítulo bajaba otros 210 KB del de 1536.
+  - Edmunds: el `OVERSAMPLE` 1,5 sólo por debajo de 1,5 px por punto (donde
+    se midió, DPR 1,25); en pantallas densas la densidad ya reduce el archivo
+    y basta con cubrir lo pintado, sin ampliar nunca.
+  - Medido (imágenes, Moto G simulado): Lo que disfruto 1313 → 725 KB, Mis
+    raíces 756 → 407, Mi camino 1030 → 549, Creatividad 601 → 327.
+- **Trampa: el primer pintado local oscila entre ~170 y ~480 ms** en la misma
+  build y en todas las páginas (con el hilo principal libre); cuando sale
+  tarde, el simulador carga todo el JS descargado al FCP/LCP y la nota cae de
+  ~80 a ~55. No es de la página: comparar peso y TBT, y confirmar en
+  PageSpeed.
+- **Contacto:** el contenedor de Turnstile lleva `role="group"`: un `div` sin
+  rol no admite `aria-label` («Navegación agéntica» 1/2 en PageSpeed).
 - **Lo que queda y por qué.** El LCP simulado está atado al JavaScript de
   cliente del layout, no a la imagen: la imagen llega y el pintado espera
   ~400 ms a la hidratación (el chunk del framework se lleva ~1,9 s de CPU a

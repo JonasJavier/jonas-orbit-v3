@@ -423,6 +423,9 @@ export function ContactForm({
         <div
           className="contact-form__turnstile"
           ref={widgetContainerRef}
+          // Un div sin rol no puede llevar nombre (axe: aria-allowed-attr, en
+          // «Navegación agéntica» de PageSpeed); como grupo, sí y con sentido.
+          role="group"
           aria-label={copy.security}
         >
           {config?.mode === "test" ? (

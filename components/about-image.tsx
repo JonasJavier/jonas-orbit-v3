@@ -12,7 +12,7 @@ export function AboutImage({
   id,
   alt,
   eager = false,
-  sizes = "(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw",
+  sizes = "(max-width: 700px) and (min-resolution: 2.5dppx) 60vw, (max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw",
 }: {
   id: PhotoId;
   alt: string;

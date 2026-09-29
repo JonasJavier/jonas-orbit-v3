@@ -91,34 +91,49 @@ const MAX_TRAVEL = 3;
 const RUNGS = [320, 480, 640, 960, 1280, 1920] as const;
 /** A WebP looked at 1:1 is soft; the same photo shrunk from a bigger file is
  * crisp — that is why the viewer looked fine while the deck and the mosaic did
- * not. Every context asks for 1.5× the pixels it paints. */
+ * not. Every context asks for 1.5× the pixels it paints — on screens under
+ * 1.5 device pixels per point, where it was measured (DPR 1.25). A denser
+ * screen already shrinks the file by its own density: there the file only has
+ * to cover what is painted, never upscaled. On a phone the 1.5× made the deck
+ * fetch a 960 for a work painted 233 points wide (~600 KB, PageSpeed
+ * 2026-09-29). */
 const OVERSAMPLE = 1.5;
+const DENSE = "(min-resolution: 1.5dppx)";
+/** Each band twice: the dense screen first, at 1×; then everyone else. */
+const withDensity = (bands: ReadonlyArray<readonly [media: string, paint: (scale: number) => string]>) =>
+  bands
+    .flatMap(([media, paint]) => [
+      `${media ? `${media} and ` : ""}${DENSE} ${paint(1)}`,
+      media ? `${media} ${paint(OVERSAMPLE)}` : paint(OVERSAMPLE),
+    ])
+    .join(", ");
 const pad = (value: number) => String(value).padStart(2, "0");
 /** What the deck paints for a work of this aspect ratio, per breakpoint,
  * mirroring `--art-height` and `max-width` in the stylesheet. */
 const deckSizes = (ratio: number) => {
   const r = ratio.toFixed(3);
-  const paint = (height: string, max: string) => `calc(${OVERSAMPLE} * min(${r} * ${height}, ${max}))`;
-  return [
-    `(max-width: 700px) ${paint("clamp(180px, 40vh, 380px)", "80vw")}`,
-    `(max-width: 1080px) ${paint("clamp(240px, 46vh, 520px)", "min(760px, 84vw)")}`,
-    `(min-width: 1800px) ${paint("clamp(280px, 58vh, 720px)", "900px")}`,
-    paint("clamp(260px, 56vh, 620px)", "min(760px, 84vw)"),
-  ].join(", ");
+  const paint = (height: string, max: string) => (scale: number) =>
+    scale === 1 ? `min(${r} * ${height}, ${max})` : `calc(${scale} * min(${r} * ${height}, ${max}))`;
+  return withDensity([
+    ["(max-width: 700px)", paint("clamp(180px, 40vh, 380px)", "80vw")],
+    ["(max-width: 1080px)", paint("clamp(240px, 46vh, 520px)", "min(760px, 84vw)")],
+    ["(min-width: 1800px)", paint("clamp(280px, 58vh, 720px)", "900px")],
+    ["", paint("clamp(260px, 56vh, 620px)", "min(760px, 84vw)")],
+  ]);
 };
 /** What the mosaic paints: a justified row is as tall as the width left over
  * divided by the aspect ratios it carries (`lib/mosaic-rows.ts`), and a work is
  * that height times its own ratio. One term per band of widths. */
 const gridSizes = (ratio: number) => {
   const r = ratio.toFixed(3);
-  const row = (width: string, target: number) => `calc(${OVERSAMPLE} * ${r} * (${width}) / ${target})`;
-  return [
-    `(max-width: 480px) ${row("100vw - 55px", 1.25)}`,
-    `(max-width: 700px) ${row("100vw - 80px", 1.7)}`,
-    `(max-width: 1080px) ${row("100vw - 140px", 2.4)}`,
-    `(max-width: 1439px) ${row("100vw - 200px", 3.4)}`,
-    row("min(100vw - 144px, 1560px) - 110px", 4.4),
-  ].join(", ");
+  const row = (width: string, target: number) => (scale: number) => `calc(${scale} * ${r} * (${width}) / ${target})`;
+  return withDensity([
+    ["(max-width: 480px)", row("100vw - 55px", 1.25)],
+    ["(max-width: 700px)", row("100vw - 80px", 1.7)],
+    ["(max-width: 1080px)", row("100vw - 140px", 2.4)],
+    ["(max-width: 1439px)", row("100vw - 200px", 3.4)],
+    ["", row("min(100vw - 144px, 1560px) - 110px", 4.4)],
+  ]);
 };
 
 /** Where every width cuts this sector into rows. The five bands live at once in

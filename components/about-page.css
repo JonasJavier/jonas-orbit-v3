@@ -1723,6 +1723,21 @@ body:has(.about-page dialog[open]) {
     linear-gradient(90deg, #07121be8, #07121bb3 55%, #07121bd4),
     url("/images/sobre-mi/cielo-montanas-1536.webp") center / cover;
 }
+/* En el teléfono, los dos fondos del paisaje usan el mismo recorte que la
+   portada (`cielo-montanas-movil.webp`): con el de 1536, abrir un capítulo
+   bajaba otros 210 KB para un fondo velado al 70-95 % (2026-09-29). */
+@media (max-width: 700px) {
+  .about-page .about-people {
+    background-image:
+      linear-gradient(#060d16b5, #060d1695 50%, #060d16f5),
+      url("/images/sobre-mi/cielo-montanas-movil.webp");
+  }
+  .about-page .about-slot::before {
+    background-image:
+      linear-gradient(90deg, #07121be8, #07121bb3 55%, #07121bd4),
+      url("/images/sobre-mi/cielo-montanas-movil.webp");
+  }
+}
 .about-page .about-enjoy {
   background: transparent;
 }

@@ -46,14 +46,18 @@ for (const id of ids) {
   const metadata = await sharp(source).rotate().metadata();
   const photoWidth = metadata.autoOrient.width;
   const photoHeight = metadata.autoOrient.height;
-  const widths = [...new Set([320, 640, 960, Math.min(1600, photoWidth)])]
+  // 800 is the rung a phone's chapter photo needs (~650-750 device px):
+  // without it the browser jumped from 640 straight to 960.
+  const widths = [...new Set([320, 640, 800, 960, Math.min(1600, photoWidth)])]
     .filter((width) => width <= photoWidth)
     .sort((a, b) => a - b);
   for (const width of widths)
     await sharp(source)
       .rotate()
       .resize({ width })
-      .webp({ quality: 86 })
+      // Page sizes at 80 (2026-09-29, PageSpeed): at 86 a detailed photo
+      // weighed ~480 KB at 960 px. The viewer's full size keeps 86.
+      .webp({ quality: width >= 1600 || width === photoWidth ? 86 : 80 })
       .toFile(path.join(output, `${id}-${width}.webp`));
   manifest[id] = { width: photoWidth, height: photoHeight, widths };
 }

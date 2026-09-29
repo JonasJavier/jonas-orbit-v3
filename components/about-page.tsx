@@ -13,7 +13,10 @@ import { AboutImage, aboutPhotoPath, type PhotoId } from "./about-image";
 import { AboutShelf } from "./about-shelf";
 import "./about-page.css";
 
-const WIDE = "(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw";
+// A partir de ~2,5 px por punto el ojo ya no separa 2× de 3×: ahí el teléfono
+// pide unos 2× (60vw) y no la foto de 1600 (F44 pesa 1,38 MB).
+const PHONE_DENSE = "(max-width: 700px) and (min-resolution: 2.5dppx)";
+const WIDE = `${PHONE_DENSE} 60vw, (max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw`;
 // Lo que la constelación pinta de verdad (medido 2026-09-29): en el teléfono
 // cada nodo mide ~114 px y el retrato ~174 px. Declarar 43vw y 480px hacía
 // bajar la versión de 640 y la de 960 —~700 KB de más en móvil—.
@@ -202,7 +205,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 <PhotoButton
                   id="F23"
                   photo={t.rootsPhoto}
-                  sizes="(max-width: 700px) 92vw, (min-width: 1400px) 780px, 58vw"
+                  sizes={`${PHONE_DENSE} 62vw, (max-width: 700px) 92vw, (min-width: 1400px) 780px, 58vw`}
                 />
               </figure>
             </div>
