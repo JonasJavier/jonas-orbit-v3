@@ -217,6 +217,7 @@ export function drawStarfield({
   parallaxX = 0,
   parallaxY = 0,
   accent,
+  onNebulaReady,
 }: {
   context: CanvasRenderingContext2D;
   width: number;
@@ -226,9 +227,11 @@ export function drawStarfield({
   parallaxX?: number;
   parallaxY?: number;
   accent: string;
+  /** La nebulosa se hornea por franjas: un cielo quieto se repinta al acabar. */
+  onNebulaReady?: () => void;
 }) {
   context.clearRect(0, 0, width, height);
-  drawNebula(context, width, height);
+  drawNebula(context, width, height, onNebulaReady);
   drawHaze(context, width, height, accent);
 
   for (const star of stars) {

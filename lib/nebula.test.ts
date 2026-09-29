@@ -1,7 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { drawNebula } from "./nebula";
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+/** Un reloj que avanza 1 ms por lectura: la primera franja no acaba el horneado. */
+function tickingClock() {
+  let now = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => (now += 1));
+}
 
 function canvasHarness() {
   const images: ImageData[] = [];
@@ -19,8 +28,13 @@ function canvasHarness() {
 
 describe("distant nebula", () => {
   it("keeps empty sky transparent instead of covering the atlas with black", () => {
+    vi.useFakeTimers();
+    tickingClock();
     const { context, images } = canvasHarness();
-    drawNebula(context, 1440, 860);
+    const ready = vi.fn();
+    drawNebula(context, 1440, 860, ready);
+    vi.runAllTimers();
+    expect(ready).toHaveBeenCalledOnce();
     const pixels = images[0].data;
     let transparent = 0;
     let visibleGas = 0;
@@ -48,5 +62,19 @@ describe("distant nebula", () => {
     drawNebula(context, 375, 812);
     expect(images).toHaveLength(2);
     expect(Math.max(images[1].width, images[1].height)).toBeLessThanOrEqual(640);
+  });
+
+  it("bakes in slices without blocking, and paints only once it is whole", () => {
+    vi.useFakeTimers();
+    tickingClock();
+    const { context } = canvasHarness();
+    const ready = vi.fn();
+    drawNebula(context, 1440, 860, ready);
+    // First slice runs now; the rest waits for the next tasks.
+    expect(context.drawImage).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(ready).toHaveBeenCalledOnce();
+    drawNebula(context, 1440, 860);
+    expect(context.drawImage).toHaveBeenCalledOnce();
   });
 });

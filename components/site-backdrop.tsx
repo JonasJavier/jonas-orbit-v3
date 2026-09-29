@@ -163,14 +163,17 @@ export function SiteBackdrop({
       lastDraw = 0;
 
       if (!animated) {
-        drawStarfield({
-          context: ctx,
-          width,
-          height,
-          stars,
-          globalProgress: 0,
-          accent,
-        });
+        const paintStill = (onNebulaReady?: () => void) =>
+          drawStarfield({
+            context: ctx,
+            width,
+            height,
+            stars,
+            globalProgress: 0,
+            accent,
+            onNebulaReady,
+          });
+        paintStill(() => paintStill());
       }
     }
 

@@ -63,6 +63,13 @@ el repositorio protegiéndolo, con autorización para los cambios necesarios.
   headless pero 3 ms en un navegador real con el canal de GPU abierto.
 - **Código muerto:** fuera la colección Velite `designProse` (sin contenido
   ni consumidor).
+- **La sonda de WebGL no corre si no decide nada** (perfil ligero sin
+  petición) ni durante la hidratación de `gargantua-system` (los hooks aún dan
+  valores de servidor). **La nebulosa del cielo 2D se hornea por franjas** de
+  8 ms (`lib/nebula.ts`, mismo resultado píxel a píxel; `onReady` repinta el
+  cielo quieto). Con la CPU a 10×, el bloqueo de `/es?no3d=1` baja de ~1,4 s a
+  ~0,95 s. Probado y DESCARTADO: envolver las islas del layout en `<Suspense>`
+  no midió mejora y retrasaba la hidratación de la bandeja y la travesía.
 - **El formulario valida con `zod/mini`.** Next precarga la ruta de Contacto
   desde la portada y la API clásica de Zod llevaba ~72 KB comprimidos a cada
   visita; el chunk de contacto, formulario incluido, queda en 23,5 KB.
