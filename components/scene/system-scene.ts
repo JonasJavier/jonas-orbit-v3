@@ -240,9 +240,10 @@ const PORTRAIT_ASPECT = 0.8;
  * fuera de la medida el disco es lo único que encuadra, y a 0.78 la cámara se
  * acercaba tanto que el remolino desbordaba los dos bordes y aplastaba a sus
  * vecinos; a 0.9 las puntas del disco siguen tocando el borde y el sistema
- * respira alrededor.
+ * respira alrededor. Tercer pase (2026-09-29, «Gargantúa más compacto y
+ * pequeño»): 1.1, el disco brillante cabe entero y el sistema se agrupa.
  */
-const PORTRAIT_DISK_FRAME = 0.9;
+const PORTRAIT_DISK_FRAME = 1.1;
 /**
  * Proporción más ancha a la que el disco sigue llenando el ancho. Un móvil
  * mide 0.45-0.56; una tablet en vertical, 0.75, y ahí un disco de lado a lado
