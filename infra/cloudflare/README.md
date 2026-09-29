@@ -1,13 +1,10 @@
-# Infraestructura Cloudflare
+# Cloudflare infrastructure
 
-La regla de rate limiting del formulario vive aquí porque Wrangler no administra
-el Ruleset Engine de la zona. Terraform usa el provider
-`cloudflare/cloudflare` fijado en `5.22.0`.
+The form's Cloudflare rate-limit rule lives here because Wrangler does not manage the zone Ruleset Engine. Terraform pins the `cloudflare/cloudflare` provider at `5.22.0`.
 
-## Aplicación
+## Apply the configuration
 
-Requisitos externos: Terraform >= 1.8, un API token en
-`CLOUDFLARE_API_TOKEN` con permiso `Zone WAF Write`, y el Zone ID del dominio.
+Requirements: Terraform 1.8 or later, a `CLOUDFLARE_API_TOKEN` with `Zone WAF Write` permission, and the domain's Zone ID.
 
 ```powershell
 Set-Location infra/cloudflare
@@ -16,20 +13,10 @@ terraform plan -var="cloudflare_zone_id=<ZONE_ID>"
 terraform apply -var="cloudflare_zone_id=<ZONE_ID>"
 ```
 
-Cloudflare admite un solo ruleset de entrada por zona y fase. Cualquier regla
-futura de `http_ratelimit` debe añadirse al recurso `zone_rate_limits`, no crear
-otro recurso paralelo.
+Cloudflare allows one entry ruleset per zone and phase. Add future `http_ratelimit` rules to `zone_rate_limits` rather than creating a parallel resource.
 
-La regla actual cuenta por centro de datos e IP, admite cinco `POST /api/contact`
-en 60 segundos y bloquea durante 600 segundos al superar el límite. El cliente
-debe tratar una respuesta 429 como recuperable y no reintentar automáticamente.
+The current rule counts requests per data center and IP, permits five `POST /api/contact` requests in 60 seconds, and blocks for 600 seconds after the limit is exceeded. Clients should treat a 429 response as recoverable and avoid automatic retries.
 
-## Producción en Railway
+## Railway production
 
-`jonasjavier.dev` apunta directamente a Railway (sin proxy de Cloudflare), así
-que esta regla no protege el origen publicado. El mismo contrato —cinco
-`POST /api/contact` por minuto e IP, bloqueo de 600 segundos y respuesta 429—
-se aplica dentro de la aplicación (`app/api/contact/route.ts`,
-`lib/rate-limit.ts`), con la IP que escribe el borde de Railway en
-`x-real-ip`. Este Terraform sólo vuelve a hacer falta si la zona pasa a
-servirse a través del proxy de Cloudflare.
+`jonasjavier.dev` points directly to Railway, without Cloudflare proxying, so this rule **does not protect the live origin**. The application applies the same contract—five `POST /api/contact` requests per minute per IP, a 600-second block, and a 429 response—in `app/api/contact/route.ts` and `lib/rate-limit.ts`. It uses `x-real-ip` from Railway's edge. This Terraform configuration is needed again only if traffic moves behind Cloudflare's proxy.

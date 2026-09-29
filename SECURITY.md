@@ -1,25 +1,19 @@
-# Política de seguridad
+# Security policy
 
-## Versiones con soporte
+## Supported versions
 
-Mientras el sitio siga en desarrollo, sólo la rama `main` recibe correcciones
-de seguridad. No se mantienen releases históricas.
+While the site is under active development, only the `main` branch receives security fixes. Historical releases are not maintained.
 
-## Reportar una vulnerabilidad
+## Report a vulnerability
 
-No publiques detalles explotables, secretos ni datos personales en un issue.
-Envía el reporte a `jonasjavier.dev@gmail.com` con el asunto
-`[Seguridad · Jonás Orbit]`. Si GitHub habilita el reporte privado para este
-repositorio, también puede usarse **Security → Advisories → Report a
-vulnerability**.
+Do not disclose exploitable details, secrets, or personal data in a public issue. Email `jonasjavier.dev@gmail.com` with the subject `[Security · Jonás Orbit]`. If private vulnerability reporting is enabled for this repository, you may also use **Security → Advisories → Report a vulnerability**.
 
-Incluye de forma privada:
+Please include privately:
 
-- ruta o componente afectado;
-- impacto esperado;
-- pasos mínimos para reproducirlo;
-- versión del navegador o entorno;
-- evidencia sin credenciales ni datos de terceros.
+- the affected route or component;
+- the expected impact;
+- the minimum steps to reproduce;
+- your browser version or environment;
+- evidence without credentials or third-party personal data.
 
-El propietario confirmará la recepción y coordinará la divulgación después de
-tener una corrección verificable.
+The owner will acknowledge receipt and coordinate disclosure after a verifiable fix is available.
