@@ -145,6 +145,10 @@ MDX**, nunca en `worlds.data.ts`.
   de Sobre mí en el teléfono, footer mínimo, certificados en 2-3 columnas,
   Contacto sin manifiesto ni firma, ESTUDIO en una franja. Sólo CSS de
   teléfono; se oculta, no se reescribe copy.
+- **Resolución adaptable en el teléfono** (09-29) registro «Resolución
+  adaptable…» — en táctil y `orbit` la escena prueba 1 → 1,75 px por punto
+  mientras vaya holgada y baja (y se queda) si se atasca
+  (`resolution-governor.ts`); `deep` y software, intactos.
 - **Móvil en todo el sitio** (09-29) registro «Auditoría responsive del sitio
   en móvil» — bandeja que se retira al leer en táctil (`system-tray.tsx`),
   galería sin modo cine en táctil, suelo de lectura ~10 px, observatorio y

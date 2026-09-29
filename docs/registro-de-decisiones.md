@@ -19,6 +19,33 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Resolución adaptable de la escena en el teléfono (2026-09-29)
+
+El dueño preguntó por qué la home se ve «en tan baja resolución» en el móvil y
+pidió subirla. La causa: el nivel `orbit` dibuja a 1 píxel por punto CSS
+(`TIER.orbit.dpr` en `gargantua-render.ts`) sobre pantallas de 2,6-3, así que
+el navegador estiraba la escena casi el triple.
+
+- **Qué hace.** En táctil (`pointer: coarse`), nivel `orbit` y GPU real,
+  `components/scene/resolution-governor.ts` arranca en 1,0 y prueba escalones
+  1,25 → 1,5 → 1,75 (nunca más que `devicePixelRatio`). Sube cuando una
+  ventana de 45 fotogramas tiene el percentil 75 del intervalo de rAF
+  ≤ 18,5 ms; baja si pasa de 26 ms, y **ese techo queda cerrado** el resto de
+  la visita: cada cambio reinicia la acumulación y se vería como grano.
+  Descarta 30 fotogramas tras cada cambio, y no mide travesía, pose congelada,
+  pestaña oculta ni huecos > 250 ms.
+- **Por qué probar y no medir la GPU.** Casi ningún móvil expone
+  `EXT_disjoint_timer_query`; con rAF sólo se sabe que hay margen al llegar a
+  la frecuencia de refresco. En modo ahorro (30 Hz) se queda en 1,0.
+- **Qué no cambia.** `deep` (escritorio) sigue fijo en 1,35; el rasterizador
+  por software sigue a media resolución (`SOFTWARE_RENDER_SCALE`), así que la
+  suite e2e (SwiftShader) no ve el regulador. El Gargantúa del observatorio no
+  lo lleva: converge y deja de dibujar, su coste es otro.
+- **Medido** (Chromium + GPU real, 412 × 915 a 2,625): 1,0 → 1,75 en ~6 s;
+  con 30 ms de trabajo inyectado por fotograma baja 1,75 → 1,0 en ~7 s.
+  `canvas[data-render-dpr]` expone la densidad vigente para las herramientas.
+- **Palancas.** `TOUCH_DPR_STEPS`, `FAST_MS`, `SLOW_MS` en el mismo archivo.
+
 ## Idiomas — el sitio en inglés, idioma por defecto (2026-09-29)
 
 Pedido de Jonás: versión completa en inglés, **inglés por defecto** y el
