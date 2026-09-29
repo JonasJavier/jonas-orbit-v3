@@ -308,3 +308,67 @@ html[data-motion="off"] .miller-page *, html[data-motion="off"] .miller-page *::
   .miller-cv__menu small { font-size: .62rem; }
   .miller-origin__year { width: 40px; height: 40px; font-size: .58rem; }
 }
+
+/* ══ Formación en un teléfono, compacta (tercer pase, 2026-09-29) ═══════════
+   «Más compacto, más pequeño, mejor adaptado… ¿por qué no los certificados en
+   dos o tres columnas? Con una sola hay que hacer scroll y scroll». La
+   bitácora pasa a 2 columnas en el teléfono (3 de 601 a 900 px) con tarjetas
+   de miniatura: vista previa, qué es, título y emisor. Se va lo que en una
+   tarjeta de 170 px sólo ocupa sitio —el registro «M / 01 · CÓDIGO» y la
+   línea de detalle— y «ABRIR PDF» queda como una etiqueta pequeña (la tarjeta
+   entera es el enlace). Los filtros dejan la rejilla 2 × 2 de botones grandes
+   por una fila de cuatro. El resto de secciones baja un escalón de tipo y de
+   aire. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .miller-certificates { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+}
+@media (max-width: 600px) {
+  .miller-philosophy { padding-top: 44px; padding-bottom: 40px; }
+  .miller-section-label { margin-bottom: 18px; }
+  .miller-section-label > span:last-child { font-size: 28px; }
+  .miller-page h2 { font-size: clamp(1.75rem, 7.4vw, 2.4rem); }
+  .miller-philosophy__copy { gap: 16px; }
+  .miller-philosophy__copy > p { font-size: .84rem; line-height: 1.75; }
+  .miller-philosophy .miller-facts { margin-top: 26px; gap: 12px; padding-top: 16px; }
+  .miller-facts > div, .miller-facts > div:first-child { padding-bottom: 12px; }
+  .miller-facts dd { font-size: 1.15rem; }
+
+  .miller-journey, .miller-proof { padding-block: 46px; }
+  .miller-section-heading > .miller-eyebrow, .miller-section-heading > div > .miller-eyebrow { margin-bottom: 14px; }
+  .miller-section-heading > p:last-child:not(.miller-eyebrow) { margin-top: 16px; font-size: .84rem; line-height: 1.7; }
+  .miller-studies { margin-top: 26px; }
+  .miller-study { gap: 12px 16px; padding-block: 22px; }
+  .miller-study__heading h3 { margin-top: 6px; font-size: 1.3rem; }
+  .miller-study__detail > p { font-size: .82rem; line-height: 1.7; }
+  .miller-study__detail > ul { gap: 6px; margin-top: 12px; }
+  .miller-study__detail li { padding: 3px 7px; font-size: .6rem; }
+
+  .miller-now { margin-top: 30px; padding-top: 26px; gap: 18px; }
+  .miller-now__heading h3 { margin-top: 10px; font-size: 1.4rem; }
+  .miller-now__heading > p:last-child { margin-top: 12px; font-size: .82rem; }
+  .miller-now__item { padding: 16px 0; }
+  .miller-now__item h4 { font-size: .95rem; }
+  .miller-origin { padding-block: 16px; }
+  .miller-origin h3 { font-size: .95rem; }
+
+  .miller-archive { margin-top: 22px; padding: 0 10px 12px; }
+  .miller-archive__masthead { min-height: 0; padding-block: 10px; }
+  .miller-archive__toolbar { gap: 8px; padding-block: 12px; }
+  .miller-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .miller-filters > button { justify-content: center; min-height: 40px; padding: 0 4px; font-size: .64rem; line-height: 1.15; text-align: center; }
+  .miller-filter-light { display: none; }
+  .miller-certificates { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .miller-certificate { border-radius: 3px 9px 3px 3px; }
+  .miller-certificate__registry { display: none; }
+  .miller-certificate__preview { margin: 5px 5px 0; padding: 5px; aspect-ratio: 1.32; }
+  .miller-certificate__body { padding: 9px 9px 10px; }
+  .miller-certificate__kind { font-size: .56rem; letter-spacing: .06em; }
+  .miller-certificate h3 { margin-top: 5px; font-size: .86rem; line-height: 1.25; }
+  .miller-certificate__body > p { margin: 3px 0 8px; font-size: .64rem; }
+  .miller-certificate__bottom { justify-content: flex-start; padding-top: 0; border-top: 0; }
+  .miller-certificate__bottom > span:first-child { display: none; }
+  .miller-certificate__bottom > span:last-child { padding: 3px 6px; font-size: .56rem; }
+  .miller-archive-more { margin-top: 14px; }
+  .miller-archive-more > .miller-certificates { margin-top: 14px; }
+  .miller-horizon { padding-block: 52px; }
+}
