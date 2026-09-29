@@ -1,9 +1,23 @@
 import type { MetadataRoute } from "next";
-import { PUBLISHED_LOCALES } from "@/content/site.data";
+import { PUBLISHED_LOCALES, SITE_PROFILE } from "@/content/site.data";
+import { screenSources } from "@/lib/engineering-table";
 import { OBSERVATORY_SLUGS } from "@/lib/observatory-catalog";
 import { getF1AProjects } from "@/lib/projects";
+import { projectOgImagePath } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
-import { getWorlds } from "@/lib/worlds";
+import { getWorlds, type World } from "@/lib/worlds";
+
+/**
+ * Imágenes que cada página quiere en Google Imágenes (sitemap de imágenes).
+ * Jonás también es fotógrafo y diseñador: la galería de Creatividad y su
+ * retrato son contenido que se busca por imagen. De «Sobre mí» sólo va el
+ * retrato: las fotos de su gente se ven en la página, no se empujan al índice.
+ */
+function worldImages(world: World): string[] {
+  if (world.id === "gargantua") return [absoluteUrl(SITE_PROFILE.portrait)];
+  const artworks = world.prose.creativity?.artworks ?? [];
+  return artworks.map((art) => absoluteUrl(`/art/edmunds/${art.id}-1920.webp`));
+}
 
 /**
  * Sitemap.
@@ -35,6 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...getWorlds(locale).map((world) => ({
       url: absoluteUrl(`/${locale}/${world.prose.slug}`),
+      images: worldImages(world),
       changeFrequency: "monthly" as const,
       // Por debajo del home y por encima de los casos: son las páginas de
       // aterrizaje temáticas, la puerta de entrada desde una búsqueda.
@@ -49,6 +64,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...getF1AProjects(locale).map((project) => ({
       url: absoluteUrl(`/${locale}/proyectos/${project.prose.slug}`),
+      images: [
+        absoluteUrl(projectOgImagePath(project.prose.featuredImage.src)),
+        absoluteUrl(
+          screenSources(project.prose.featuredImage.src, project.prose.featuredImage.frame ?? "desktop").src,
+        ),
+      ],
       changeFrequency: "monthly" as const,
       // Los casos son la prueba profesional: por debajo del home, por encima
       // de las páginas legales.
