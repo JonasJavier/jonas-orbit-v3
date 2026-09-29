@@ -76,6 +76,8 @@ Each case explains a real product problem, the design choices, the engineering a
 | [**Network 3.0**](https://jonasjavier.dev/es/proyectos/network-3-0) | Social network with cursor-based feeds and rotating JWTs | Django REST · React · TypeScript |
 | [**Delicaté 4.0**](https://jonasjavier.dev/es/proyectos/delicate-4-0) | Handmade-products store with WhatsApp orders | Django REST · React 19 |
 
+Explore the live products: [Wikiverse](https://wikiverse.jonasjavier.dev) and [Delicaté 4.0](https://delicate.jonasjavier.dev).
+
 ## How it works
 
 **Content comes before the canvas.** Each route includes meaningful HTML without JavaScript. A visitor on a slow connection, a screen reader, and a search crawler can reach the same content and destinations. The canvas is decorative (`aria-hidden`), sits behind the interface, and is not an LCP candidate.
