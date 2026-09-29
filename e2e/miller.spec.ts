@@ -1,10 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
+import { skipWithoutWebGL2 } from "./capability-fixtures";
+
+/**
+ * Seis fotogramas bastan para saber si algo dibuja o está parado, y la espera
+ * es larga: el WebGL de WebKit sin GPU (CI) tarda ~0,4 s por fotograma con
+ * densidad 2, y doce fotogramas agotaban el sondeo antes de la primera lectura.
+ */
+const SLOW_GL = { timeout: 20_000 };
 
 async function oceanDrawsOverFrames(page: Page) {
   return page.evaluate(async () => {
     const state = window as unknown as { oceanDraws: number };
     const before = state.oceanDraws;
-    for (let i = 0; i < 12; i++) await new Promise(requestAnimationFrame);
+    for (let i = 0; i < 6; i++) await new Promise(requestAnimationFrame);
     return state.oceanDraws - before;
   });
 }
@@ -80,6 +88,7 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
 });
 
 test("Miller: el océano pausa, reanuda y deja de dibujar fuera de pantalla o en segundo plano", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   await page.addInitScript(() => {
     const state = window as unknown as { oceanDraws: number };
     state.oceanDraws = 0;
@@ -96,12 +105,12 @@ test("Miller: el océano pausa, reanuda y deja de dibujar fuera de pantalla o en
   const pause = page.getByRole("button", { name: "Desactivar movimiento", exact: true });
   await expect(pause).toBeVisible();
   await expect(page.getByRole("button", { name: /océano/ })).toHaveCount(0);
-  await expect.poll(() => oceanDrawsOverFrames(page)).toBeGreaterThan(0);
+  await expect.poll(() => oceanDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
   await pause.click();
   await expect(page.locator(".miller-ocean canvas")).toHaveCount(0);
   expect(await oceanDrawsOverFrames(page)).toBe(0);
   await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
-  await expect.poll(() => oceanDrawsOverFrames(page)).toBeGreaterThan(0);
+  await expect.poll(() => oceanDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
   await page.evaluate(() => {
     Object.defineProperty(document, "hidden", { configurable: true, value: true });
     document.dispatchEvent(new Event("visibilitychange"));
@@ -111,13 +120,14 @@ test("Miller: el océano pausa, reanuda y deja de dibujar fuera de pantalla o en
     Reflect.deleteProperty(document, "hidden");
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await expect.poll(() => oceanDrawsOverFrames(page)).toBeGreaterThan(0);
+  await expect.poll(() => oceanDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
   await page.getByRole("link", { name: "Ver certificados", exact: true }).click();
   await expect(page.locator(".miller-ocean")).not.toBeInViewport();
-  await expect.poll(() => oceanDrawsOverFrames(page)).toBe(0);
+  await expect.poll(() => oceanDrawsOverFrames(page), SLOW_GL).toBe(0);
 });
 
 test("Miller: con el movimiento apagado conserva la imagen y el contenido sin animación", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   // reduced-motion del sistema ya no apaga nada por sí solo: el defecto es
   // encendido y el icono de la bandeja es el consentimiento, en los dos sentidos.
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -204,7 +214,7 @@ test("Miller: la escena persistente duerme detrás del océano y vuelve al mapa"
   const whileCovered = await page.evaluate(async () => {
     const state = window as unknown as { systemDraws: number };
     const before = state.systemDraws;
-    for (let i = 0; i < 12; i++) await new Promise(requestAnimationFrame);
+    for (let i = 0; i < 6; i++) await new Promise(requestAnimationFrame);
     return state.systemDraws - before;
   });
   expect(whileCovered).toBe(0);

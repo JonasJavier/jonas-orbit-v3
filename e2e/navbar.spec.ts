@@ -1,18 +1,28 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/**
+ * Seis fotogramas bastan para saber si algo dibuja o está parado, y la espera
+ * es larga: el WebGL de WebKit sin GPU (CI) tarda ~0,4 s por fotograma con
+ * densidad 2, y doce fotogramas agotaban el sondeo antes de la primera lectura.
+ */
+const SLOW_GL = { timeout: 20_000 };
+
 async function skyDrawsOverFrames(page: Page) {
   return page.evaluate(async () => {
     const state = window as unknown as { skyDraws: number };
     // Dos cuadros de margen: un cambio de estado dibuja UN fotograma quieto.
     for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame);
     const before = state.skyDraws;
-    for (let i = 0; i < 12; i++) await new Promise(requestAnimationFrame);
+    for (let i = 0; i < 6; i++) await new Promise(requestAnimationFrame);
     return state.skyDraws - before;
   });
 }
 
 for (const width of [375, 1440]) {
   test(`navbar: observatorio vivo, pausa y preferencias a ${width}px`, async ({ page }) => {
+    // Siete lecturas de dibujo seguidas: con el GL lento de WebKit (SLOW_GL)
+    // no caben en los 30 s por defecto.
+    test.setTimeout(90_000);
     await page.addInitScript(() => {
       const state = window as unknown as { skyDraws: number };
       state.skyDraws = 0;
@@ -32,7 +42,7 @@ for (const width of [375, 1440]) {
     const box = await header.boundingBox();
     expect(box!.y).toBe(0);
     expect(box!.height).toBe(width < 1081 ? 63 : 67);
-    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => skyDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
     // Sin control propio: el icono de movimiento de la bandeja lo gobierna.
     await expect(page.getByRole("button", { name: /estrellas/ })).toHaveCount(0);
     await page.getByRole("button", { name: "Desactivar movimiento", exact: true }).click();
@@ -40,7 +50,7 @@ for (const width of [375, 1440]) {
     expect(await skyDrawsOverFrames(page)).toBe(0);
     await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
     await expect(header).toHaveAttribute("data-sky-running", "true");
-    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => skyDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
     await page.evaluate(() => {
       Object.defineProperty(document, "hidden", { configurable: true, value: true });
       document.dispatchEvent(new Event("visibilitychange"));
@@ -51,7 +61,7 @@ for (const width of [375, 1440]) {
       Reflect.deleteProperty(document, "hidden");
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => skyDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     // reduced-motion del sistema ya no apaga nada por sí solo.
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -65,7 +75,7 @@ for (const width of [375, 1440]) {
     expect(await skyDrawsOverFrames(page)).toBe(0);
     await page.getByRole("button", { name: "Activar movimiento", exact: true }).click();
     await expect(header).toHaveAttribute("data-sky-running", "true");
-    await expect.poll(() => skyDrawsOverFrames(page)).toBeGreaterThan(0);
+    await expect.poll(() => skyDrawsOverFrames(page), SLOW_GL).toBeGreaterThan(0);
   });
 }
 

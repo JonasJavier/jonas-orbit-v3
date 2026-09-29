@@ -175,6 +175,9 @@ test("cintas automáticas: avanzan con reduced-motion, pausa al pasar y interrup
     page.locator('.about-shelf[data-group="stories"] .about-marquee'),
   ).toHaveCSS("animation-direction", "reverse");
   await shelf.hover();
+  // La pausa es CSS (`:hover` → `paused`) y se aplica en el siguiente cálculo
+  // de estilo: WebKit avanzaba un fotograma más si se medía en el acto.
+  await expect(marquee).toHaveCSS("animation-play-state", "paused");
   const hovered = await x();
   await settle(1500);
   expect(await x()).toBeCloseTo(hovered, 0);

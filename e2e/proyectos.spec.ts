@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+import { skipWithoutWebGL2 } from "./capability-fixtures";
 
 /**
  * LA MESA DE INGENIERÍA — `/es/proyectos` (docs/design/endurance-proyectos.md
@@ -287,6 +288,7 @@ test("P5 · Producto: el alcance son las tres cifras del MDX, caben en su column
 });
 
 test("P6 · la ruta no crea contexto WebGL y la escena persistente duerme, también en el caso", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   // La escena sube sobre SwiftShader: montarla cuesta más que el presupuesto
   // por defecto, y aquí se monta una vez y se navega dos.
   test.setTimeout(90_000);

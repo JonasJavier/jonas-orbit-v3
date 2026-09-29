@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+import { skipWithoutWebGL2 } from "./capability-fixtures";
 import { isValidElement, type ReactNode } from "react";
 import * as runtime from "react/jsx-runtime";
 import { F1A_PROJECT_IDS, projectsData } from "../content/projects.data";
@@ -272,6 +273,7 @@ for (const id of ["omsta", "wikiverse"]) {
 }
 
 test("C2 · la escena persistente duerme en el caso y vuelve a dibujar en el mapa", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   // La escena sube sobre SwiftShader: montarla cuesta más que el presupuesto
   // por defecto. Ventana pequeña, como Miller, para que dibuje ligera.
   test.setTimeout(90_000);

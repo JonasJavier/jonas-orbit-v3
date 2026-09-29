@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { skipWithoutWebGL2 } from "./capability-fixtures";
 
 const caption = ".edmunds-gallery__caption h2";
 const counter = ".edmunds-gallery__caption > span";
@@ -89,7 +90,7 @@ test("A15: visor modal, flechas, foco atrapado y devuelto con Escape", async ({ 
   expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
 });
 
-test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y carga acotada", async ({ page }) => {
+test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y carga acotada", async ({ page, browserName }) => {
   const loaded = new Set<string>();
   page.on("request", (request) => { if (/\/art\/edmunds\/.+webp/.test(request.url())) loaded.add(request.url()); });
   await page.goto("/es/creatividad");
@@ -149,13 +150,17 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   await expect(page.locator(caption)).toHaveText("Hoy se come");
   expect(await stage.evaluate((node) => node.dataset.dragging)).toBe("false");
   // Release: the ring eases home from where the hand left it, as ONE number.
-  await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: 3000 }).toBeLessThan(0.01);
+  // A 0.95 s CSS transition of the registered `--drag`; WebKit without a GPU
+  // advances it in ~0.4 s frames, so it gets room to land.
+  await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: browserName === "webkit" ? 10_000 : 3000 }).toBeLessThan(0.01);
   // The previous light stays under the new one until the crossfade ends.
   await page.getByRole("button", { name: "Obra siguiente" }).click();
   await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(2);
   await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(1, { timeout: 4000 });
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  await page.getByRole("button", { name: "Ampliar", exact: true }).click();
+  // WebKit without a GPU never reports the footer as "stable" while the
+  // caption and ring settle frame by frame; what matters is that it opens.
+  await page.getByRole("button", { name: "Ampliar", exact: true }).click({ force: browserName === "webkit" });
   await expect(page.getByRole("dialog")).toBeVisible();
 });
 
@@ -179,6 +184,10 @@ test("Cubierta 3D: modo cine atenúa los controles en reposo y los devuelve al m
   await page.goto("/es/creatividad");
   const gallery = page.locator(".edmunds-gallery");
   await gallery.scrollIntoViewIfNeeded();
+  // The countdown runs while the deck is in view, so a slow load may already
+  // have dimmed it: a hand over the deck is what wakes it, here too.
+  const start = (await gallery.boundingBox())!;
+  await page.mouse.move(start.x + 40, start.y + 40);
   await expect(gallery).toHaveAttribute("data-idle", "false");
   await expect(gallery).toHaveAttribute("data-idle", "true", { timeout: 8000 });
   // The fade takes 1.6 s; the attribute flips first.
@@ -202,7 +211,7 @@ test("A14: un 404 en el visor permite reintentar y seguir explorando", async ({ 
   await expect(dialog.locator("figcaption")).toHaveText("Fuego de campamento");
 });
 
-test("Edmunds: con reduced-motion del sistema, las flechas giran el anillo como el arrastre", async ({ page }) => {
+test("Edmunds: con reduced-motion del sistema, las flechas giran el anillo como el arrastre", async ({ page, browserName }) => {
   // El movimiento lo decide UN interruptor, no el sistema operativo. La regla
   // general de `prefers-reduced-motion` de globals.css aplasta con
   // `!important` la duración de toda transición, y la cubierta entera se mueve
@@ -230,7 +239,9 @@ test("Edmunds: con reduced-motion del sistema, las flechas giran el anillo como 
   expect(turn.next).toEqual({ duration: 950, keyframes: ["1", "0"] });
   expect(turn.previous).toEqual({ duration: 950, keyframes: ["-1", "0"] });
   // Y el anillo llega a su sitio: `--drag` vuelve a cero, como al soltar.
-  await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: 3000 }).toBeLessThan(0.01);
+  // A 0.95 s CSS transition of the registered `--drag`; WebKit without a GPU
+  // advances it in ~0.4 s frames, so it gets room to land.
+  await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: browserName === "webkit" ? 10_000 : 3000 }).toBeLessThan(0.01);
   // La misma regla dejaba sin movimiento el resto de la cubierta: el cielo, la
   // obra que entra y el paralaje. Se restauran uno a uno porque no hay forma de
   // decir «vuelve a lo que escribió el autor» por encima de un `!important`.
@@ -344,6 +355,7 @@ test("Edmunds: touch permite pasar una obra sin abrir el visor", async ({ browse
 });
 
 test("Edmunds: el canvas persistente se conserva cubierto y vuelve al mapa", async ({ page }) => {
+  await skipWithoutWebGL2(page);
   await page.setViewportSize({ width: 640, height: 480 });
   // Encendido a propósito: sólo eso monta la escena sobre una GPU por software.
   await page.addInitScript(() => localStorage.setItem("jonas-orbit:reducir-efectos", "false"));

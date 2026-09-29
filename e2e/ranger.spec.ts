@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { withoutWebGL } from "./capability-fixtures";
+import { skipWithoutWebGL2, withoutWebGL } from "./capability-fixtures";
 
 async function flightDrawsOverFrames(page: Page) {
   return page.evaluate(async () => {
@@ -76,6 +76,7 @@ test.describe("Ranger · cabina de mando", () => {
   });
 
   test("el vuelo pausa, reanuda y deja de dibujar en segundo plano o fuera de pantalla", async ({ page }) => {
+    await skipWithoutWebGL2(page);
     await page.addInitScript(() => {
       const state = window as unknown as { flightDraws: number };
       state.flightDraws = 0;
@@ -135,6 +136,7 @@ test.describe("Ranger · cabina de mando", () => {
   });
 
   test("el interruptor único apaga la cabina entera y la vuelve a encender por teclado", async ({ page }) => {
+    await skipWithoutWebGL2(page);
     // reduced-motion del sistema ya no apaga nada: el defecto es encendido.
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/es/contacto?no3d=0");

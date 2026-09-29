@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-test("audio starts by default and survives route navigation with the same media", async ({ page }) => {
+test("audio starts by default and survives route navigation with the same media", async ({ page, browserName }) => {
+  // A GPU-less, soundless Linux runner gives headless Firefox no audio output:
+  // the element never plays there. The same flow runs in every other browser.
+  test.skip(browserName === "firefox" && !!process.env.CI, "Firefox headless has no audio output on the CI runner.");
   const requests: string[] = [];
   page.on("request", (request) => { if (request.url().includes("/audio/")) requests.push(request.url()); });
   // Observe the real media constructor, preserving native decoding/playback.

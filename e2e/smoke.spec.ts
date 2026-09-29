@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { withoutWebGL } from "./capability-fixtures";
+import { skipWithoutWebGL2, withoutWebGL } from "./capability-fixtures";
 
 /**
  * Suite E2E del Sistema Gargantúa.
@@ -734,6 +734,7 @@ test.describe("A28 · prefers-reduced-motion — paridad de contenido", () => {
   test("parte en plano y permite activar y volver a reducir toda la experiencia", async ({
     page,
   }) => {
+    await skipWithoutWebGL2(page);
     /*
       Único test de la suite que monta WebGL a 1280x720 y luego interactúa con
       el HUD. En CI y en local no hay GPU: Chromium rasteriza el raymarch por
