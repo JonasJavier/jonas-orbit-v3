@@ -19,6 +19,49 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Home en móvil — escenario compartido, cabecera en una fila y raíl en panel (2026-09-28)
+
+El dueño: el index en móvil «se ve mal», tanto en 3D como en 2D; lo quiere
+«más profesional, mejor organizado» y adaptable en todos los dispositivos.
+Alcance: SÓLO la home; la auditoría responsive del resto queda para después.
+
+**Diagnóstico (capturas a 320–430 px, tablet y apaisado):** la escena 3D
+componía en vertical con la elipse de escritorio estirada (×0.72 / ×1.05), así
+que los cuerpos salían diminutos y dispersos, Edmunds montado sobre el disco y
+franjas muertas arriba y abajo; el canvas iba atenuado (0.86) como telón de una
+lista que ya no existe; a 320 × 568 la Ranger pisaba el raíl; la bandeja
+(MOVIMIENTO/AUDIO) flotaba bajo la marca o, en apaisado, encima de Edmunds; y
+en táctil tocar un planeta no hacía nada (el campo se apagaba entero).
+
+**Lo que manda ahora:**
+
+- **Tres franjas.** Cabecera (marca a la izquierda, bandeja a la derecha, una
+  fila), escenario (el sistema) y raíl. El escenario lo declaran
+  `--home-stage-top` / `--home-stage-bottom` en `system-map-atlas.css`,
+  registradas con `@property` para que su valor calculado llegue en px con el
+  área segura incluida; fuera de la home (y en escritorio) valen 0.
+- **Una composición vertical para los dos renderizadores.** `portrait` de
+  `lib/flat-composition.ts`: X en % del ancho, Y en % del ESCENARIO. El atlas
+  la aplica con `calc()`; la escena coloca cada cuerpo sobre el rayo que pasa
+  por ese punto (`portraitNdc` en `system-scene.ts`) y la cámara sólo encuadra
+  el disco. Apagar el movimiento ya no mueve los cuerpos de sitio.
+- **Escena 3D en vertical:** umbral 0.75 → 0.8 (una tablet a 0.75 caía en el
+  encuadre apaisado), disco al 0.9 de su radio a lo ancho y atado al alto por
+  encima de 0.52 de proporción (`PORTRAIT_DISK_MAX_ASPECT`, la tablet no se
+  llena de disco), cuerpos ×0.92 (la cámara queda más cerca que en escritorio).
+  En apaisado la pose se encaja dentro del escenario y, sin rótulos anclados,
+  con el margen corto. Escritorio: idéntico (escenario 0 → la pose de siempre).
+- **Canvas a plena luz en la home estrecha.** La legibilidad la da el panel.
+- **Raíl en panel 3 × 2** con filetes de 1 px (una fila en apaisado corto); el
+  nombre cósmico sale al enfocar sin reservar segunda línea.
+- **Los cuerpos se tocan.** En táctil vuelven los blancos del campo; siguen
+  fuera los rótulos anclados.
+
+Medido a 390 × 844 (3D): Miller 33 px de radio de blanco, Edmunds 32,
+Tesseracto 45, Endurance 56, Ranger 28; 40 px de aire entre la Ranger y el
+panel. e2e `atlas`, `smoke`, `scene-overlay`, `soundtrack`, `voyage`, `motion`
+en chromium y mobile-chromium: 126/126. Valoración visual del dueño pendiente.
+
 ## Repositorio público, SEO y arranque de la escena (2026-09-28)
 
 El dueño pidió revisar organización, SEO, peso y rendimiento, y hacer público

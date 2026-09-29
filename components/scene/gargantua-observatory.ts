@@ -13,6 +13,7 @@ import {
 } from "@/lib/gargantua-views";
 import { GARGANTUA_INSTRUMENTS } from "@/lib/observatory";
 import { diagnosticCode, readVisualBench } from "@/lib/visual-bench";
+import { isSoftwareRenderer, rendererName, SOFTWARE_RENDER_SCALE } from "./capability";
 import {
   BASE_EXPOSURE,
   BLOOM,
@@ -126,6 +127,10 @@ export function createGargantuaObservatory(
     powerPreference: "high-performance",
     failIfMajorPerformanceCaveat: false,
   });
+  // Media resolución en un rasterizador por software: ver `SOFTWARE_RENDER_SCALE`.
+  const renderScale = isSoftwareRenderer(rendererName(renderer.getContext()))
+    ? SOFTWARE_RENDER_SCALE
+    : 1;
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = BASE_EXPOSURE;
@@ -353,7 +358,7 @@ export function createGargantuaObservatory(
     if (w === width && h === height) return false;
     width = w;
     height = h;
-    const dpr = Math.min(window.devicePixelRatio || 1, TIER[tier].dpr);
+    const dpr = Math.min(window.devicePixelRatio || 1, TIER[tier].dpr) * renderScale;
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     composer.setPixelRatio(dpr);

@@ -1,8 +1,8 @@
 import type { WorldId } from "@/content/worlds.data";
 
 /**
- * Art-directed atlas coordinates (% of the viewport). Independent of the
- * WebGL camera: a portrait atlas needs its own negative space and safe edges.
+ * Art-directed atlas coordinates. `wide` y `short` van en % del viewport;
+ * `portrait` va en % del ANCHO y del ESCENARIO (ver abajo).
  *
  * ── Por qué hay TRES formatos y no dos ──────────────────────────────────────
  *
@@ -23,16 +23,28 @@ import type { WorldId } from "@/content/worlds.data";
  * unos 260 px entre el HUD y el raíl. Comparte las X de `wide`, porque a lo
  * ancho ese formato sobra; lo único que hace es subir la columna vertical para
  * que los cinco cuerpos y sus blancos de 44 px vivan dentro de la banda.
+ *
+ * ── `portrait` es de los DOS renderizadores (2026-09-28) ────────────────────
+ *
+ * En vertical el atlas plano y la escena 3D componían cada uno a su manera: el
+ * plano con porcentajes del viewport, la escena con la elipse de escritorio
+ * aplastada. Ninguno sabía que abajo hay un raíl de dos filas y arriba una
+ * cabecera, así que la Ranger rozaba el raíl a 320 × 568, la escena dejaba
+ * franjas muertas arriba y abajo, y al apagar el movimiento los cuerpos
+ * saltaban de sitio. Ahora `portrait` es UNA tabla que leen los dos, y su Y no
+ * es del viewport sino del escenario: el alto libre entre `--home-stage-top` y
+ * `--home-stage-bottom` (system-map-atlas.css). Si el raíl crece, el sistema se
+ * recompone dentro de lo que queda en vez de meterse debajo.
  */
 const COMPOSITION = {
-  tesseract: { wide: [59, 23], portrait: [69, 23], short: [59, 26] },
-  miller: { wide: [29, 29], portrait: [25, 28], short: [29, 26] },
-  endurance: { wide: [77, 60], portrait: [72, 62], short: [77, 55] },
-  edmunds: { wide: [18, 66], portrait: [22, 57], short: [18, 62] },
-  gargantua: { wide: [46, 49], portrait: [48, 43], short: [46, 47] },
-  /* 78 → 70 en apaisado corto y 73 → 69 en vertical: es el cuerpo más bajo del
-     atlas y el único que llegaba a tocar el raíl. */
-  ranger: { wide: [43, 78], portrait: [39, 69], short: [43, 70] },
+  tesseract: { wide: [59, 23], portrait: [72, 9], short: [59, 26] },
+  miller: { wide: [29, 29], portrait: [26, 15], short: [29, 26] },
+  endurance: { wide: [77, 60], portrait: [73, 73], short: [77, 55] },
+  edmunds: { wide: [18, 66], portrait: [21, 70], short: [18, 62] },
+  gargantua: { wide: [46, 49], portrait: [50, 42], short: [46, 47] },
+  /* 78 → 70 en apaisado corto: es el cuerpo más bajo del atlas y el único que
+     llegaba a tocar el raíl. */
+  ranger: { wide: [43, 78], portrait: [42, 93], short: [43, 70] },
 } as const satisfies Record<
   WorldId,
   {

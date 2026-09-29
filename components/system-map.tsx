@@ -253,7 +253,9 @@ export function SystemMap({
                     "--atlas-x": `${atlas.wide.x}%`,
                     "--atlas-y": `${atlas.wide.y}%`,
                     "--atlas-portrait-x": `${atlas.portrait.x}%`,
-                    "--atlas-portrait-y": `${atlas.portrait.y}%`,
+                    // Fracción, no porcentaje: se multiplica por el alto del
+                    // escenario (system-map-atlas.css), no por el del viewport.
+                    "--atlas-portrait-y": atlas.portrait.y / 100,
                     "--atlas-short-x": `${atlas.short.x}%`,
                     "--atlas-short-y": `${atlas.short.y}%`,
                     "--map-x": `${point.x.toFixed(2)}%`,

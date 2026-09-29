@@ -79,6 +79,27 @@ export interface CapabilitySignals {
 /** Rasterizadores por software conocidos. */
 const SOFTWARE_RENDERERS = /swiftshader|llvmpipe|softpipe|software|basic render/;
 
+/** El renderer de un contexto ya creado es un rasterizador por software. */
+export function isSoftwareRenderer(renderer: string | null | undefined): boolean {
+  return Boolean(renderer && SOFTWARE_RENDERERS.test(renderer.toLowerCase()));
+}
+
+/**
+ * Resolución a la que pinta una escena cuando alguien la PIDE sobre una GPU
+ * por software (el gate no la monta ahí por su cuenta). A resolución completa
+ * cada fotograma del raymarch tardaba segundos en la CPU y el navegador frenaba
+ * el hilo principal hasta dejar la página sin responder (runners de CI,
+ * 2026-09-28). La mitad de lado es la cuarta parte de los píxeles: la página
+ * sigue respondiendo y el visitante ve la escena que pidió, más blanda.
+ */
+export const SOFTWARE_RENDER_SCALE = 0.5;
+
+/** Lee el nombre del renderer de un contexto, si el navegador lo expone. */
+export function rendererName(gl: WebGLRenderingContext | WebGL2RenderingContext): string | null {
+  const info = gl.getExtension("WEBGL_debug_renderer_info");
+  return info ? ((gl.getParameter(info.UNMASKED_RENDERER_WEBGL) as string | null) ?? null) : null;
+}
+
 /**
  * Por qué el gate decidió lo que decidió.
  *
@@ -154,7 +175,7 @@ export function evaluateCapabilities(
 
 /** Las tres heurísticas de equipo: lo que sólo una petición explícita salta. */
 function weakDevice(signals: CapabilitySignals): CapabilityVerdict | null {
-  if (signals.renderer && SOFTWARE_RENDERERS.test(signals.renderer)) {
+  if (isSoftwareRenderer(signals.renderer)) {
     return { level: "flat", reason: "gpu-por-software", canOverride: true };
   }
   // Red muy mala: el chunk de la escena tardaría más que la paciencia de nadie.

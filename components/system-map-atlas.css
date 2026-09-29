@@ -84,55 +84,236 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   transform: translate(-50%, -50%) rotate(-10deg);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   La home en pantallas estrechas (2026-09-28)
+   ──────────────────────────────────────────────────────────────────────────
+   Tres franjas y ninguna se pisa: cabecera (marca a la izquierda, bandeja a la
+   derecha, en UNA fila), escenario (el sistema) y raíl (un panel de 3 × 2).
+   El escenario no es un porcentaje del viewport sino lo que dejan libre las
+   otras dos, y lo leen los DOS renderizadores: el atlas plano con `calc()` y
+   la escena 3D con `getComputedStyle` (ver `readStage` en system-scene.ts).
+   Por eso son longitudes registradas: así el valor calculado llega en px, con
+   el área segura ya sumada, y la escena no tiene que saber nada de `env()`.
+   ══════════════════════════════════════════════════════════════════════════ */
+@property --home-stage-top {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --home-stage-bottom {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 @media (max-width: 60rem) {
+  :root:has(.system-home) {
+    --home-gutter: max(1rem, env(safe-area-inset-left, 0px));
+    --home-gutter-end: max(1rem, env(safe-area-inset-right, 0px));
+    --home-header-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  }
+
+  /* El mapa, del tamaño del viewport en los dos modos: es el marco en el que
+     mide la escena y el que usa el atlas para repartir el escenario. */
+  .system-map,
+  html[data-scene-live="true"] .system-map {
+    position: fixed;
+    inset: 0;
+  }
+
+  /* Cabecera: la marca a la izquierda, a la altura del centro de la bandeja. */
+  body:has(.system-home) .hud__top {
+    top: calc(var(--home-header-top) + 13px);
+    right: auto;
+    left: var(--home-gutter);
+    justify-content: flex-start;
+  }
+  body:has(.system-home) .hud__system {
+    font-size: 0.66rem;
+    letter-spacing: 0.3em;
+  }
+  html body:has(.system-home) .system-tray {
+    top: var(--home-header-top);
+    right: var(--home-gutter-end);
+    bottom: auto;
+    left: auto;
+    gap: 10px;
+  }
+  html body:has(.system-home) .soundtrack__panel {
+    top: calc(var(--home-header-top) + 56px);
+    right: var(--home-gutter-end);
+    bottom: auto;
+    left: auto;
+  }
+  html body:has(.system-home) .soundtrack__hint {
+    top: calc(100% + 14px);
+    right: 0;
+    bottom: auto;
+    left: auto;
+  }
+  html body:has(.system-home) .soundtrack__hint::after {
+    top: auto;
+    right: 16px;
+    bottom: 100%;
+    left: auto;
+    border-top-color: transparent;
+    border-bottom-color: rgb(127 229 255 / 38%);
+  }
+
+  /* La escena ya no es telón de una lista: vuelve a su luz entera. Lo que
+     protege la legibilidad es el panel del raíl, no apagar el universo. */
+  html[data-scene-live="true"] body:has(.system-home) .system-canvas {
+    opacity: 1;
+  }
+
+  /* Los cuerpos se pueden tocar. Antes, en táctil, el campo entero se
+     apagaba y tocar un planeta no hacía nada: el gesto más natural de la
+     pantalla estaba muerto. Vuelven los blancos; siguen fuera los rótulos. */
+  .system-map__field,
+  html[data-scene-live="true"] .system-map__field {
+    display: block;
+  }
+  .system-map__body,
+  html[data-scene-live="true"] .system-map__body {
+    display: none;
+  }
+
+  /* El raíl: un panel de 3 × 2 con filetes de 1 px. Los seis destinos se
+     leen como un índice ordenado y no como texto suelto sobre la escena. */
   .system-map .nav-rail {
-    bottom: max(0.7rem, env(safe-area-inset-bottom));
-    gap: 0.25rem 0.1rem;
+    --rail-line: rgb(150 190 220 / 13%);
+    right: var(--home-gutter-end);
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    left: var(--home-gutter);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--rail-line);
+    border-radius: 14px;
+    background: rgb(4 8 15 / 72%);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 45%), inset 0 1px rgb(226 253 255 / 5%);
+    backdrop-filter: blur(14px) saturate(120%);
+  }
+  .system-map .nav-rail__item:nth-child(n + 4) {
+    border-top: 1px solid var(--rail-line);
+  }
+  .system-map .nav-rail__item:not(:nth-child(3n + 1)) {
+    border-left: 1px solid var(--rail-line);
   }
   .system-map .nav-rail__link {
-    min-height: 48px;
-    padding-inline: 0.2rem;
+    position: relative;
+    min-height: 52px;
+    height: 100%;
+    padding: 0 0.25rem;
+    grid-template-rows: auto;
     justify-items: center;
+    align-content: center;
     text-align: center;
   }
-  .system-map .nav-rail__name { font-size: 0.72rem; letter-spacing: 0.05em; }
-  .system-map .nav-rail__role { font-size: 0.53rem; }
-  html:not([data-scene-live="true"]) body:has(.system-home) .hud__controls { bottom: 9rem; }
+  .system-map .nav-rail__link:active {
+    background: rgb(127 229 255 / 7%);
+  }
+  .system-map .nav-rail__name {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+  }
+  /* El nombre cósmico aparece al enfocar, debajo del nombre y sin reservar
+     una segunda línea en reposo: la celda no crece ni empuja a sus vecinas. */
+  .system-map .nav-rail__role {
+    position: absolute;
+    right: 0;
+    bottom: 5px;
+    left: 0;
+    font-size: 0.5rem;
+    letter-spacing: 0.16em;
+  }
+  .system-map .nav-rail__active-marker {
+    display: none;
+  }
 }
+
+/* El escenario: lo que dejan la cabecera y el panel del raíl. */
+@media (max-width: 60rem) {
+  :root:has(.system-home) {
+    --home-stage-top: calc(4.5rem + env(safe-area-inset-top, 0px));
+    --home-stage-bottom: calc(8.9rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (max-width: 22.5rem) {
+  /* A 320-360 px «Creatividad» y «Experimentos» se tocaban en sus celdas. */
+  .system-map .nav-rail__name {
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+  }
+}
+/* Una tablet grande en vertical ya tiene el raíl de escritorio, en una fila. */
+@media (min-width: 60.001rem) and (max-aspect-ratio: 4/5) {
+  :root:has(.system-home) {
+    --home-stage-top: 5rem;
+    --home-stage-bottom: 6rem;
+  }
+}
+
 @media (max-aspect-ratio: 1/1) {
+  /* X en % del ancho; Y en fracción del ESCENARIO (lib/flat-composition.ts). */
   html:not([data-scene-live="true"]) .system-map .system-map__slot {
     left: var(--atlas-portrait-x);
-    top: var(--atlas-portrait-y);
-    --atlas-size: clamp(58px, 18vw, 118px);
+    top: calc(
+      var(--home-stage-top) +
+        (100% - var(--home-stage-top) - var(--home-stage-bottom)) *
+        var(--atlas-portrait-y)
+    );
+    --atlas-size: clamp(56px, min(17vw, 9svh), 118px);
   }
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="tesseract"] {
-    --atlas-size: clamp(88px, 27vw, 176px);
+    --atlas-size: clamp(80px, min(24vw, 12.5svh), 176px);
   }
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="ship"] {
-    --atlas-size: clamp(100px, 30vw, 204px);
+    --atlas-size: clamp(92px, min(27vw, 14svh), 204px);
   }
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] {
-    --atlas-size: clamp(68px, 21vw, 142px);
+    --atlas-size: clamp(64px, min(19vw, 10svh), 142px);
   }
+  /* Gargantúa plana cae en el mismo punto del escenario que la de la escena. */
   html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__gargantua {
-    top: 43%;
-    left: 48%;
-    width: 106vw;
+    top: calc(
+      var(--home-stage-top) +
+        (100% - var(--home-stage-top) - var(--home-stage-bottom)) * 0.42
+    );
+    left: 50%;
+    /* Ligada también al alto, como el disco de la escena (ver
+       `PORTRAIT_DISK_MAX_ASPECT`): en una tablet no llena el ancho. */
+    width: min(104vw, 54svh);
   }
   html:not([data-scene-live="true"]) body:has(.system-home) .site-starfield {
-    mask-image: radial-gradient(circle at 48% 43%, transparent 10.8vw, #000 12.3vw);
+    mask-image: radial-gradient(
+      circle at 50%
+        calc(
+          var(--home-stage-top) +
+            (100% - var(--home-stage-top) - var(--home-stage-bottom)) * 0.42
+        ),
+      transparent calc(min(104vw, 54svh) * 0.1),
+      #000 calc(min(104vw, 54svh) * 0.115)
+    );
   }
 }
 /* A short landscape screen needs a single rail row and a compact atlas. */
 @media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  :root:has(.system-home) {
+    --home-stage-top: calc(3.6rem + env(safe-area-inset-top, 0px));
+    --home-stage-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
   .system-map .nav-rail {
     display: flex;
     justify-content: center;
-    left: 1rem;
-    right: 1rem;
-    bottom: max(0.3rem, env(safe-area-inset-bottom));
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
   .system-map .nav-rail__item { flex: 1; }
+  .system-map .nav-rail__item:nth-child(n) { border-top: 0; }
+  .system-map .nav-rail__item:not(:first-child) { border-left: 1px solid var(--rail-line); }
+  .system-map .nav-rail__link { min-height: 46px; }
   .system-map .nav-rail__name { font-size: 0.64rem; }
   html:not([data-scene-live="true"]) .system-map .system-map__slot {
     left: var(--atlas-short-x);
@@ -142,5 +323,4 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="tesseract"] { --atlas-size: 24vh; }
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="ship"] { --atlas-size: 29vh; }
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] { --atlas-size: 20vh; }
-  html:not([data-scene-live="true"]) body:has(.system-home) .hud__controls { bottom: 4.7rem; }
 }

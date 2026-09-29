@@ -119,30 +119,19 @@ html[data-motion="off"] .soundtrack__hint { animation: none; }
 .soundtrack__mute[aria-pressed="true"] { color: #f0c3a4 !important; border-color: rgb(217 160 121 / 34%) !important; background: rgb(217 160 121 / 6%); }
 .soundtrack__mute svg { width: 16px; height: 16px; }
 
-/* Home: los controles ocupan el lugar reservado por el atlas. */
+/* Home: los controles ocupan el lugar reservado por el atlas. En pantallas
+   estrechas los coloca la cabecera de la home (system-map-atlas.css). */
 body:has(.system-home) .system-tray { right: clamp(1rem, 3.4vw, 3.4rem); bottom: 3.65rem; }
 body:not(:has(.system-home)):has(.system-tray) { padding-bottom: 0; }
 
 @media (max-width: 60rem) {
   .system-tray { right: max(.7rem, env(safe-area-inset-right)); bottom: max(.7rem, env(safe-area-inset-bottom)); }
-  body:has(.system-home) .system-tray { right: auto; left: max(.7rem, env(safe-area-inset-left)); bottom: calc(7.25rem + env(safe-area-inset-bottom)); }
-  html:not([data-scene-live="true"]) body:has(.system-home) .system-tray { bottom: 9rem; }
   .soundtrack__panel { position: fixed; left: auto; right: max(.7rem, env(safe-area-inset-right)); bottom: calc(max(.7rem, env(safe-area-inset-bottom)) + 49px); width: min(252px, calc(100vw - 1.4rem)); }
 }
 @media (max-width: 600px) {
   .soundtrack { gap: 5px; }
   .soundtrack__settings > summary { width: 44px; min-width: 44px; height: 44px; }
   .soundtrack svg { width: 18px; height: 18px; }
-}
-@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
-  body:has(.system-home) .system-tray { bottom: 4.7rem; }
-}
-@media (max-width: 60rem) and (max-aspect-ratio: 1/1) {
-  body:has(.system-home) .system-tray,
-  html:not([data-scene-live="true"]) body:has(.system-home) .system-tray { top: 3.3rem; bottom: auto; }
-  body:has(.system-home) .soundtrack__panel { top: calc(3.3rem + 49px); bottom: auto; left: max(.7rem, env(safe-area-inset-left)); right: auto; }
-  body:has(.system-home) .soundtrack__hint { top: calc(100% + 14px); bottom: auto; left: 0; right: auto; }
-  body:has(.system-home) .soundtrack__hint::after { top: auto; bottom: 100%; left: 18px; right: auto; border-top-color: transparent; border-bottom-color: rgb(127 229 255 / 38%); }
 }
 @media (forced-colors: active) {
   .soundtrack__settings > summary, .soundtrack__panel { border: 1px solid ButtonText; background: Canvas; color: CanvasText; }

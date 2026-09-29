@@ -23,6 +23,7 @@ import {
 import { sampleTesseract } from "@/lib/tesseract";
 import { nearestEdge, probeDepth, type ProbeHit } from "@/lib/tesseract-probe";
 import { readVisualBench } from "@/lib/visual-bench";
+import { isSoftwareRenderer, rendererName, SOFTWARE_RENDER_SCALE } from "./capability";
 import { createBody, disposeBody, type SceneBodyInput } from "./bodies";
 import { createGargantuaObservatory } from "./gargantua-observatory";
 import type { QualityTier } from "./gargantua-render";
@@ -380,6 +381,10 @@ export function createObservatoryScene(
     powerPreference: "high-performance",
     failIfMajorPerformanceCaveat: false,
   });
+  // Media resolución en un rasterizador por software: ver `SOFTWARE_RENDER_SCALE`.
+  const renderScale = isSoftwareRenderer(rendererName(renderer.getContext()))
+    ? SOFTWARE_RENDER_SCALE
+    : 1;
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = BASE_EXPOSURE;
@@ -605,7 +610,7 @@ export function createObservatoryScene(
     if (w === width && h === height) return false;
     width = w;
     height = h;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) * renderScale;
     renderer.setPixelRatio(dpr);
     composer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);

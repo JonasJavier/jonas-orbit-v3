@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   detectLevel,
   evaluateCapabilities,
+  isSoftwareRenderer,
   readSignals,
   type CapabilitySignals,
 } from "./capability";
@@ -181,5 +182,14 @@ describe("readSignals — la sonda de WebGL", () => {
     expect(canvases()).toBe(1);
     createElement.mockRestore();
     vi.unstubAllGlobals();
+  });
+});
+
+describe("isSoftwareRenderer — la escena pedida en una CPU pinta a media resolución", () => {
+  it("reconoce los rasterizadores por software, no las GPU", () => {
+    expect(isSoftwareRenderer("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)))")).toBe(true);
+    expect(isSoftwareRenderer("llvmpipe (LLVM 15.0.7, 256 bits)")).toBe(true);
+    expect(isSoftwareRenderer("ANGLE (AMD, AMD Radeon(TM) Graphics Direct3D11)")).toBe(false);
+    expect(isSoftwareRenderer(null)).toBe(false);
   });
 });

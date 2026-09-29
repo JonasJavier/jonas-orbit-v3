@@ -10,6 +10,7 @@ import {
   bodyDepthLayerFor,
   placeBodyOnDepthLayer,
 } from "@/lib/scene-depth";
+import { flatCompositionFor } from "@/lib/flat-composition";
 import type { CameraPose } from "@/lib/scene-poses";
 import { diagnosticCode, readVisualBench } from "@/lib/visual-bench";
 import {
@@ -19,6 +20,7 @@ import {
   type VoyageFlavour,
   type VoyageSample,
 } from "@/lib/voyage";
+import { isSoftwareRenderer, rendererName, SOFTWARE_RENDER_SCALE } from "./capability";
 import {
   DISK_OUTER,
   DISPLAY_FRAGMENT,
@@ -218,14 +220,46 @@ const FRAME_MARGIN = 3;
 const PORTRAIT_FRAME_MARGIN = 1;
 /**
  * En vertical no se escala el sistema de escritorio: se recompone en el plano
- * de cámara. La elipse alta conserva los mismos radios/fases estructurales,
- * pero usa el viewport disponible en lugar de encoger todo a una franja.
+ * de cámara.
+ *
+ * Hasta 2026-09-28 lo hacía con la elipse estructural estirada a lo alto
+ * (×0.72 de ancho, ×1.05 de alto), y eso dejaba el sistema a merced de las
+ * fases: franjas muertas arriba y abajo, Edmunds montado sobre el disco y la
+ * Ranger al borde del raíl. Ahora cada cuerpo cae en el punto de pantalla que
+ * dice la tabla `portrait` de `lib/flat-composition.ts` —la MISMA que usa el
+ * atlas plano—, dentro del escenario libre entre cabecera y raíl. La cámara
+ * sólo encuadra el disco; los cinco cuerpos se colocan después sobre su rayo.
+ *
+ * 0.8 y no 0.75: una tablet en vertical (768 × 1024, 810 × 1080) mide 0.75
+ * exacto y caía en el encuadre apaisado, con el sistema en una franja central
+ * y media pantalla vacía.
  */
-const PORTRAIT_ASPECT = 0.75;
-const PORTRAIT_HORIZONTAL_SCALE = 0.72;
-const PORTRAIT_VERTICAL_SCALE = 1.05;
-const PORTRAIT_DEPTH_SCALE = 0.18;
-const PORTRAIT_DISK_FRAME = 0.78;
+const PORTRAIT_ASPECT = 0.8;
+/**
+ * Qué parte del radio del disco tiene que caber a lo ancho. Con los cuerpos
+ * fuera de la medida el disco es lo único que encuadra, y a 0.78 la cámara se
+ * acercaba tanto que el remolino desbordaba los dos bordes y aplastaba a sus
+ * vecinos; a 0.9 las puntas del disco siguen tocando el borde y el sistema
+ * respira alrededor.
+ */
+const PORTRAIT_DISK_FRAME = 0.9;
+/**
+ * Proporción más ancha a la que el disco sigue llenando el ancho. Un móvil
+ * mide 0.45-0.56; una tablet en vertical, 0.75, y ahí un disco de lado a lado
+ * medía 770 px y arrastraba a los cinco cuerpos al mismo tamaño. Por encima de
+ * esta proporción el disco se ata al ALTO y deja aire a los lados.
+ */
+const PORTRAIT_DISK_MAX_ASPECT = 0.52;
+/**
+ * Tamaño de los cinco cuerpos en vertical, sobre su tamaño de escritorio.
+ *
+ * El encuadre vertical lo manda el ancho del disco y no el sistema, así que la
+ * cámara queda más cerca que en apaisado y los cuerpos saldrían a su escala de
+ * escritorio sobredimensionados: el Tesseracto chocaba con la cabecera y la
+ * Endurance llenaba media columna. La escala es común a los cinco, así que la
+ * jerarquía entre ellos (bodies.test.ts) no cambia.
+ */
+const PORTRAIT_BODY_SCALE = 0.92;
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -259,6 +293,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     ? ((gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string | null) ??
       "GPU desconocida")
     : "GPU oculta por el navegador";
+  // Media resolución en un rasterizador por software: ver `SOFTWARE_RENDER_SCALE`.
+  const renderScale = isSoftwareRenderer(rendererName(gl)) ? SOFTWARE_RENDER_SCALE : 1;
 
   /**
    * Varios Android exponen WebGL2 pero no dejan renderizar a half-float, y ahí
@@ -507,52 +543,90 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   let pixelWidth = 1;
   let pixelHeight = 1;
 
+  /*
+    El escenario de la composición vertical, en píxeles CSS: lo que ocupan la
+    cabecera arriba y el raíl abajo. Lo publica el CSS de la home como dos
+    longitudes registradas (`--home-stage-top` / `--home-stage-bottom`), así
+    que el valor ya llega resuelto a px con el área segura incluida. Fuera de
+    la home —o en un navegador sin `@property`— valen 0 y el escenario es el
+    viewport entero.
+  */
+  let stageTop = 0;
+  let stageBottom = 0;
+
+  function readStage() {
+    const style = getComputedStyle(canvas.ownerDocument.documentElement);
+    const px = (name: string) => {
+      const raw = style.getPropertyValue(name).trim();
+      const value = raw.endsWith("px") ? parseFloat(raw) : 0;
+      return Number.isFinite(value) ? Math.max(0, value) : 0;
+    };
+    stageTop = px("--home-stage-top");
+    stageBottom = px("--home-stage-bottom");
+  }
+
+  /** Dónde cae un destino en vertical, en NDC, según la tabla compartida. */
+  function portraitNdc(id: WorldId): { x: number; y: number } {
+    const { x, y } = flatCompositionFor(id).portrait;
+    // Nunca menos de medio viewport de escenario: si alguien sube el raíl a
+    // tres filas en un móvil apaisado el sistema se aprieta, no se invierte.
+    const span = Math.max(
+      cssHeight * 0.5,
+      cssHeight - stageTop - stageBottom,
+    );
+    const top = Math.min(stageTop, cssHeight - span);
+    return {
+      x: (x / 100) * 2 - 1,
+      y: 1 - ((top + (y / 100) * span) / cssHeight) * 2,
+    };
+  }
+
+  /** Qué fracción del alto es escenario, y dónde cae su centro en NDC. */
+  function stageFrame(): { span: number; centre: number } {
+    const span = Math.max(0.5, 1 - (stageTop + stageBottom) / cssHeight);
+    const top = Math.min(stageTop / cssHeight, 1 - span);
+    return { span, centre: 1 - (top + span / 2) * 2 };
+  }
+
+  /** Corrimiento de la mirada: en vertical lo pone el escenario, no la pose. */
+  function shiftX(aspect: number): number {
+    return aspect < PORTRAIT_ASPECT ? 0 : pose.targetShiftFraction;
+  }
+
+  function shiftY(aspect: number): number {
+    // Mirar por encima del origen lo baja en pantalla: para dejar Gargantúa
+    // en su punto del escenario hay que mirar a su simétrico.
+    if (aspect < PORTRAIT_ASPECT) return -portraitNdc("gargantua").y;
+    // En apaisado la pose manda, pero DENTRO del escenario: sin cabecera ni
+    // raíl declarados (escritorio) esto es exactamente la pose.
+    const stage = stageFrame();
+    return -stage.centre + pose.targetShiftYFraction * stage.span;
+  }
+
+  /** Posiciones compuestas en vertical; las escribe `setCompositionFrame`. */
+  const portraitPositions = new Map<WorldId, THREE.Vector3>();
+  /** Escala de los cuerpos: `PORTRAIT_BODY_SCALE` en vertical, 1 si no. */
+  let bodyScale = 1;
+
   function baseBodyPosition(
     body: SceneBody,
     aspect: number,
-    cameraRight: THREE.Vector3,
-    cameraUp: THREE.Vector3,
-    cameraForward: THREE.Vector3,
     target: THREE.Vector3,
   ): THREE.Vector3 {
-    orbitalPosition(body.placement, 0, target);
-    if (aspect >= PORTRAIT_ASPECT) return target;
-
-    const phase = (body.placement.phase * Math.PI) / 180;
-    const depth = target.dot(cameraForward) * PORTRAIT_DEPTH_SCALE;
-    const horizontal =
-      Math.cos(phase) *
-      body.placement.orbitRadius *
-      PORTRAIT_HORIZONTAL_SCALE;
-    const vertical =
-      -Math.sin(phase) *
-      body.placement.orbitRadius *
-      PORTRAIT_VERTICAL_SCALE;
-
-    return target
-      .copy(cameraRight)
-      .multiplyScalar(horizontal)
-      .addScaledVector(cameraUp, vertical)
-      .addScaledVector(cameraForward, depth);
+    if (aspect < PORTRAIT_ASPECT) {
+      const composed = portraitPositions.get(body.id);
+      if (composed) return target.copy(composed);
+    }
+    return orbitalPosition(body.placement, 0, target);
   }
 
   function composedBodyPosition(
     body: SceneBody,
     aspect: number,
-    cameraRight: THREE.Vector3,
-    cameraUp: THREE.Vector3,
-    cameraForward: THREE.Vector3,
     referenceCameraPosition: THREE.Vector3,
     target: THREE.Vector3,
   ): THREE.Vector3 {
-    baseBodyPosition(
-      body,
-      aspect,
-      cameraRight,
-      cameraUp,
-      cameraForward,
-      target,
-    );
+    baseBodyPosition(body, aspect, target);
     return placeBodyOnDepthLayer(
       target,
       referenceCameraPosition,
@@ -603,12 +677,24 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       y hacía creer al encuadre que tenía MÁS ancho del que le queda, no menos.
       El destino del lado corto se habría salido del cuadro.
     */
+    const portrait = aspect < PORTRAIT_ASPECT;
     const tanHalfWidth =
       tanHalfFov *
-      Math.max(aspect, 0.2) *
-      (1 - Math.abs(pose.targetShiftFraction));
-    const tanHalfHeight = tanHalfFov * (1 - Math.abs(pose.targetShiftYFraction));
-    const frameMargin = aspect < 0.75 ? PORTRAIT_FRAME_MARGIN : FRAME_MARGIN;
+      Math.max(portrait ? Math.min(aspect, PORTRAIT_DISK_MAX_ASPECT) : aspect, 0.2) *
+      (1 - Math.abs(shiftX(aspect)));
+    // En vertical sólo se encuadra el disco, que es plano: basta con no
+    // salirse del cuadro. En apaisado el sistema entero tiene que caber en el
+    // escenario, y el escenario es la parte del alto que no tapan cabecera y
+    // raíl (el 100 % en escritorio).
+    const tanHalfHeight = portrait
+      ? tanHalfFov * (1 - Math.abs(shiftY(aspect)))
+      : tanHalfFov *
+        stageFrame().span *
+        (1 - Math.abs(pose.targetShiftYFraction));
+    // Un escenario declarado es la home estrecha, y ahí no hay rótulos
+    // anclados a los cuerpos: el margen de escritorio sólo encogería el sistema.
+    const compact = portrait || stageTop + stageBottom > 0;
+    const frameMargin = compact ? PORTRAIT_FRAME_MARGIN : FRAME_MARGIN;
 
     /**
      * Distancia mínima a la que ESTE punto cabe, con su cuerpo y su margen.
@@ -667,7 +753,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       tight = Math.max(tight, distanceFor(point, 0));
     }
 
-    for (const body of bodies) {
+    // En vertical los cuerpos no entran en la medida: se colocan DESPUÉS, en su
+    // punto del escenario, y ese punto ya está dentro del cuadro por tabla.
+    for (const body of portrait ? [] : bodies) {
       // Una sola muestra por cuerpo, porque el sistema está QUIETO.
       //
       // Antes se recorrían 48 fases de cada órbita: había que garantizar que
@@ -679,7 +767,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       // Con las posiciones congeladas el encuadre solo tiene que encajar cinco
       // puntos, y eso acerca la cámara de 90 a 73 rs. El disco pasa del 35 % al
       // 42 % del ancho del cuadro sin tocar una sola constante de tamaño.
-      baseBodyPosition(body, aspect, r, u, f, point);
+      baseBodyPosition(body, aspect, point);
       tight = Math.max(tight, distanceFor(point, body.radius));
     }
 
@@ -711,6 +799,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    * esos dos y se orienta sesenta veces por segundo.
    */
   function applyPose(aspect: number) {
+    readStage();
+    bodyScale = aspect < PORTRAIT_ASPECT ? PORTRAIT_BODY_SCALE : 1;
+    for (const body of bodies) body.object.scale.setScalar(bodyScale);
     frameDistance = measureFrameDistance(aspect) * pose.distanceScale;
     setCompositionFrame(aspect);
 
@@ -756,11 +847,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     const halfHeight = frameDistance * tanHalf;
     compositionTarget
       .copy(compositionBaseRight)
-      .multiplyScalar(-halfWidth * pose.targetShiftFraction)
-      .addScaledVector(
-        compositionBaseUp,
-        halfHeight * pose.targetShiftYFraction,
-      );
+      .multiplyScalar(-halfWidth * shiftX(aspect))
+      .addScaledVector(compositionBaseUp, halfHeight * shiftY(aspect));
     compositionForward
       .copy(compositionTarget)
       .sub(compositionCameraPosition)
@@ -791,15 +879,33 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       .multiplyScalar(cos)
       .addScaledVector(compositionBaseRight, -sin);
 
+    /*
+      Vertical: cada cuerpo, sobre el rayo que pasa por su punto del escenario.
+
+      Se coloca en el plano de la mirada —a la distancia del blanco— con la
+      misma base alabeada con la que dibuja la cámara, así que en reposo cae
+      EXACTAMENTE en su píxel. Después la capa de profundidad lo desliza sobre
+      ese mismo rayo, que es lo que ya hacía: cambia su tamaño y su orden en z,
+      nunca su sitio en pantalla.
+    */
+    portraitPositions.clear();
+    if (aspect < PORTRAIT_ASPECT) {
+      const depth = compositionTarget.distanceTo(compositionCameraPosition);
+      for (const body of bodies) {
+        const ndc = portraitNdc(body.id);
+        portraitPositions.set(
+          body.id,
+          new THREE.Vector3()
+            .copy(compositionCameraPosition)
+            .addScaledVector(compositionForward, depth)
+            .addScaledVector(compositionRight, ndc.x * depth * tanHalf * aspect)
+            .addScaledVector(compositionUp, ndc.y * depth * tanHalf),
+        );
+      }
+    }
+
     for (const body of bodies) {
-      baseBodyPosition(
-        body,
-        aspect,
-        compositionRight,
-        compositionUp,
-        compositionForward,
-        compositionBasePosition,
-      );
+      baseBodyPosition(body, aspect, compositionBasePosition);
       placeBodyOnDepthLayer(
         compositionBasePosition,
         compositionCameraPosition,
@@ -879,8 +985,8 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     // y mirar por ENCIMA lo empuja hacia abajo.
     cameraTarget
       .copy(right)
-      .multiplyScalar(-halfWidth * pose.targetShiftFraction)
-      .addScaledVector(up, halfHeight * pose.targetShiftYFraction);
+      .multiplyScalar(-halfWidth * shiftX(aspect))
+      .addScaledVector(up, halfHeight * shiftY(aspect));
 
     /*
       La travesía, encima de la pose y sin tocarla.
@@ -1050,7 +1156,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   function resize() {
     const width = Math.max(1, canvas.clientWidth || canvas.offsetWidth || 0);
     const height = Math.max(1, canvas.clientHeight || canvas.offsetHeight || 0);
-    const dpr = Math.min(window.devicePixelRatio || 1, TIER[tier].dpr);
+    const dpr = Math.min(window.devicePixelRatio || 1, TIER[tier].dpr) * renderScale;
 
     cssWidth = width;
     cssHeight = height;
@@ -1210,9 +1316,6 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       composedBodyPosition(
         body,
         cssWidth / cssHeight,
-        compositionRight,
-        compositionUp,
-        compositionForward,
         compositionCameraPosition,
         position,
       );
@@ -1297,7 +1400,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         project({
           id: body.id,
           position,
-          radius: body.radius,
+          radius: body.radius * bodyScale,
           hitScaleX,
           hitScaleY,
         }),
@@ -1346,7 +1449,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       voyageSample = sampleVoyage((timestamp - voyage.startedAt) / 1000);
       if (voyageTarget) {
         voyageTargetPosition.copy(voyageTarget.object.position);
-        voyageTargetRadius = voyageTarget.radius;
+        voyageTargetRadius = voyageTarget.radius * bodyScale;
       } else {
         voyageTargetPosition.set(0, 0, 0);
         voyageTargetRadius = centreRadii.get(voyage.id) ?? 2.6;
