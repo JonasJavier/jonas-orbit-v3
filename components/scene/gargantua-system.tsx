@@ -78,6 +78,9 @@ function serverReason(): LevelReason {
   return "ok";
 }
 
+const isClient = () => true;
+const isServer = () => false;
+
 interface LabelBinding {
   update(projected: readonly ProjectedBody[]): void;
   /** Vuelve a medir las etiquetas: sus tamaños cambian al redimensionar. */
@@ -124,14 +127,21 @@ export function GargantuaSystem({
   const readVerdict = () =>
     evaluateCapabilities(readSignals({ reducedMotion, lightEffects, forced, explicit }));
 
+  //
+  // Mientras hidrata, los hooks de arriba aún devuelven su valor de servidor
+  // (`lightEffects=false`, `forced=true`) y React comprueba estas instantáneas
+  // con ellos: en el perfil ligero eso sondeaba WebGL —un contexto entero,
+  // ~0,5 s en frío— para un veredicto que el render siguiente descarta. Hasta
+  // que la hidratación termina vale la instantánea de servidor.
+  const hydrated = useSyncExternalStore(subscribeNothing, isClient, isServer);
   const detected = useSyncExternalStore(
     subscribeNothing,
-    () => readVerdict().level,
+    () => (hydrated ? readVerdict().level : serverLevel()),
     serverLevel,
   );
   const reason = useSyncExternalStore(
     subscribeNothing,
-    () => readVerdict().reason,
+    () => (hydrated ? readVerdict().reason : serverReason()),
     serverReason,
   );
   const level: EffectsLevel = failed ? "flat" : detected;

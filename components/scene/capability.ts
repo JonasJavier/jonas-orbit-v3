@@ -190,7 +190,15 @@ export function readSignals({
     connection?: { effectiveType?: string };
   };
 
-  const probe = inspectWebGL();
+  // En el perfil ligero, sin petición, el veredicto es plano con o sin WebGL2:
+  // la sonda —un contexto WebGL entero— no decidiría nada y costaba ~0,8 s de
+  // hidratación en frío (perfil del 2026-09-28; el Lighthouse de CI mide justo
+  // `?no3d=1`). Se supone WebGL2 hasta que alguien pida la escena: con
+  // `forced` se vuelve a llamar y entonces sí se sondea. Lo único que cambia es
+  // el motivo de un equipo sin WebGL2 en perfil ligero, que se lee
+  // `perfil-ligero` hasta que lo intenta y pasa a `sin-webgl2`.
+  const probe =
+    lightEffects && !forced ? (cachedProbe ?? { hasWebGL2: true }) : inspectWebGL();
 
   return {
     hasWebGL2: probe.hasWebGL2,

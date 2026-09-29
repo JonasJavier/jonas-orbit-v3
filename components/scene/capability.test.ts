@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   detectLevel,
   evaluateCapabilities,
+  readSignals,
   type CapabilitySignals,
 } from "./capability";
 
@@ -162,5 +163,23 @@ describe("detectLevel — el gate de capacidad", () => {
     it("pocos núcleos se quedan en orbit", () => {
       expect(detectLevel({ ...capable, cores: 4 })).toBe("orbit");
     });
+  });
+});
+
+describe("readSignals — la sonda de WebGL", () => {
+  it("el perfil ligero no crea un contexto hasta que se pide la escena", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    const createElement = vi.spyOn(document, "createElement");
+    const canvases = () =>
+      createElement.mock.calls.filter(([tag]) => tag === "canvas").length;
+
+    const light = readSignals({ reducedMotion: false, lightEffects: true, forced: false });
+    expect(canvases()).toBe(0);
+    expect(evaluateCapabilities(light)).toMatchObject({ level: "flat", reason: "perfil-ligero" });
+
+    readSignals({ reducedMotion: false, lightEffects: true, forced: true, explicit: true });
+    expect(canvases()).toBe(1);
+    createElement.mockRestore();
+    vi.unstubAllGlobals();
   });
 });
