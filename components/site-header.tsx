@@ -207,7 +207,7 @@ export function SiteHeader({
               escritorio, junto al CV (el CSS enseña uno de los dos). */}
           <LanguageSwitch className="language-switch--bar" languages={languages} />
           <button ref={toggleRef} className="voyage-menu-toggle" type="button" aria-expanded={open} aria-controls="voyage-navigation" onClick={() => setOpen(!open)}>
-            {open ? copy.close : copy.explore}<span className="voyage-menu-icon" aria-hidden="true"><i /><i /></span>
+            <span className="voyage-menu-label">{open ? copy.close : copy.explore}</span><span className="voyage-menu-icon" aria-hidden="true"><i /><i /></span>
           </button>
         </div>
       </div>

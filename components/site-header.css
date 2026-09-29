@@ -118,6 +118,14 @@
   .site-header--voyage .voyage-navigation { padding-inline: 14px; }
   .site-header--voyage .voyage-menu-toggle { gap: 10px; font-size: .72rem; padding: 8px 0 8px 8px; }
 }
+/* Brand, language switch and menu must fit on one row even with a wider
+   fallback font (Linux, some Android): below 380px the menu keeps its icon
+   and its word stays as the button's accessible name. */
+@media (max-width: 380px) {
+  .site-header--voyage .site-header__bar-tools { gap: 8px; }
+  .site-header--voyage .voyage-menu-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .site-header--voyage .voyage-menu-toggle { min-width: 44px; justify-content: center; }
+}
 @media (max-width: 360px) {
   .site-header--voyage .voyage-wordmark { font-size: .76rem; letter-spacing: .23em; }
   .site-header.site-header--voyage .mission-nav a { gap: 7px; padding-inline: 6px; font-size: .8rem; }

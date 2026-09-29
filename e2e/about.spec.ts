@@ -178,6 +178,9 @@ test("cintas automáticas: avanzan con reduced-motion, pausa al pasar y interrup
   // La pausa es CSS (`:hover` → `paused`) y se aplica en el siguiente cálculo
   // de estilo: WebKit avanzaba un fotograma más si se medía en el acto.
   await expect(marquee).toHaveCSS("animation-play-state", "paused");
+  // Y un fotograma más: WebKit aplica la pausa en el siguiente pintado y la
+  // primera lectura aún podía llevar ~0,7 px de avance.
+  await settle(250);
   const hovered = await x();
   await settle(1500);
   expect(await x()).toBeCloseTo(hovered, 0);
