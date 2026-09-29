@@ -38,13 +38,13 @@ import type { WorldId } from "@/content/worlds.data";
  */
 const COMPOSITION = {
   tesseract: { wide: [59, 23], portrait: [70, 18], short: [59, 26] },
-  miller: { wide: [29, 29], portrait: [28, 22], short: [29, 26] },
-  endurance: { wide: [77, 60], portrait: [71, 70], short: [77, 55] },
-  edmunds: { wide: [18, 66], portrait: [26, 68], short: [18, 62] },
+  miller: { wide: [29, 29], portrait: [20, 22], short: [29, 26] },
+  endurance: { wide: [77, 60], portrait: [75, 63], short: [77, 55] },
+  edmunds: { wide: [18, 66], portrait: [18, 67], short: [18, 62] },
   gargantua: { wide: [46, 49], portrait: [50, 46], short: [46, 47] },
   /* 78 → 70 en apaisado corto: es el cuerpo más bajo del atlas y el único que
      llegaba a tocar el raíl. */
-  ranger: { wide: [43, 78], portrait: [48, 88], short: [43, 70] },
+  ranger: { wide: [43, 78], portrait: [50, 81], short: [43, 70] },
 } as const satisfies Record<
   WorldId,
   {
