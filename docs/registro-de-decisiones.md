@@ -72,6 +72,57 @@ Sustituye a la regla del plan «F1A publica sólo ES; `/` → `/es`».
 e2e: `e2e/idioma.spec.ts` (rutas, `hreflang`, selector, cookie, formulario,
 teléfono).
 
+## Móvil compacto — adaptar, no comprimir (2026-09-29)
+
+Segunda valoración del dueño sobre el teléfono: «todo compactado, pequeño,
+minimalista… adaptar no es llevar a móvil todo lo de escritorio; si hay que
+eliminar, se elimina». Todo va en CSS bajo media queries de teléfono (y dos
+constantes de la escena); el escritorio no cambia. Ningún texto se reescribe:
+lo que sobra se oculta, para no chocar con la versión en inglés en curso.
+
+- **Home.** El raíl deja el panel 3 × 2: seis nombres blancos de 10 px en dos
+  filas de tres, sin cuadrícula, fondo, acento ni nombre cósmico
+  (`system-map-atlas.css`). Las celdas siguen midiendo 44 px aunque no se
+  dibujen: es el blanco táctil que exigen `atlas.spec` y `smoke.spec` (a 40
+  fallaban). Gargantúa más pequeño: `PORTRAIT_DISK_FRAME` 0.9 → 1.1 (el
+  disco brillante cabe entero; los cuerpos, que se colocan sobre su rayo, se
+  achican en la misma proporción).
+  La tabla `portrait` se agrupa y baja: Y de 15-90 % del escenario a 18-88 %,
+  X hacia el centro; Gargantúa a 0.46 (el CSS del atlas lleva el mismo 0.46 en
+  dos `calc`).
+- **Sobre mí.** La rejilla de dos columnas se sustituye por la constelación del
+  escritorio en pequeño: retrato de 96-124 px en el centro y seis fotos de
+  98-128 px alrededor, colocadas en el % donde termina cada línea del SVG (se
+  estira con `preserveAspectRatio="none"`). Fuera las elipses, las frases de
+  cada nodo y «BONAO · REPÚBLICA DOMINICANA» (220 px que chocaban con los nodos
+  laterales). El retrato se descentraba porque el anillo, de ancho fijo, no
+  tenía `margin-inline: auto`.
+- **Footer.** Se queda la invitación con su botón, los seis destinos como
+  índice de texto en 3 × 2, la marca con GitHub/LinkedIn/Email y la línea
+  legal. Se van el mapa estelar, la frase de apoyo, números, nombres cósmicos,
+  flechas, cargo, ciudad y posición. ~1100 → 504 px (con el hueco de la
+  bandeja).
+- **Formación.** Certificados en 2 columnas en el teléfono y 3 de 601 a 900 px,
+  con tarjeta de miniatura (vista previa, tipo, título, emisor y «ABRIR PDF»
+  pequeño; fuera «M / 01 · CÓDIGO» y la línea de detalle). Filtros en una fila
+  de cuatro. El resto baja un escalón de tipo y de aire. 9187 → 5327 px.
+- **Contacto.** Fuera en el teléfono el manifiesto («Aplicaciones y sitios
+  web · Producto…»), la firma «J.» y el rótulo «Fin de la exploración».
+  Formulario y panel de frecuencias intactos (le gustan). 5079 → 3810 px.
+- **Observatorio, ESTUDIO.** La consola pasa de ~410 px a ~140-180: fuera la
+  frase de la vista, la lectura de cámara (sigue en DATOS) y los rótulos de
+  grupo; los instrumentos en una fila (sin los corchetes, que ocupaban dos
+  caracteres por mando apagado), dos diales por fila y las vistas en una
+  línea. Todos los mandos siguen a la vista y con 44 px (O10 / O10 bis). El
+  hueco de la bandeja pasa de toda la barra a la pista, la última fila.
+
+Pregunta del dueño, contestada sin cambiar nada: la escena se ve de baja
+resolución en el teléfono porque el nivel `orbit` (todo lo que no es clase
+escritorio) dibuja a DPR 1.0 (`TIER` en `gargantua-render.ts`) sobre pantallas
+de DPR 2.6-3: el raymarch de Gargantúa cuesta por píxel, y a DPR completo serían
+~9 veces más píxeles. Palanca si se decide subirlo: un DPR propio para `orbit`
+en táctil (1.5) o adaptativo por tiempo de fotograma.
+
 ## Auditoría responsive del sitio en móvil (2026-09-29)
 
 El dueño pidió, tras la home, auditar y mejorar TODAS las páginas en móvil

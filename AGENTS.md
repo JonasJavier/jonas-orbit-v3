@@ -140,6 +140,11 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Por página
 
+- **Móvil compacto** (09-29) registro «Móvil compacto — adaptar, no
+  comprimir» — raíl de la home sólo texto, Gargantúa más pequeño, constelación
+  de Sobre mí en el teléfono, footer mínimo, certificados en 2-3 columnas,
+  Contacto sin manifiesto ni firma, ESTUDIO en una franja. Sólo CSS de
+  teléfono; se oculta, no se reescribe copy.
 - **Móvil en todo el sitio** (09-29) registro «Auditoría responsive del sitio
   en móvil» — bandeja que se retira al leer en táctil (`system-tray.tsx`),
   galería sin modo cine en táctil, suelo de lectura ~10 px, observatorio y

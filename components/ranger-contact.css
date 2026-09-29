@@ -287,3 +287,23 @@ html[data-motion="off"] .ranger-page *, html[data-motion="off"] .ranger-page *::
   .ranger-neighbours small,
   .ranger-neighbours > .ranger-kicker { font-size: .62rem; }
 }
+
+/* ── Contacto en un teléfono, sin lo que sobra (tercer pase, 2026-09-29) ─────
+   El dueño: el bloque «Aplicaciones y sitios web · Producto…» y la firma
+   «J. Jonás Javier Encarnación» están de más en el teléfono. Se quedan el
+   formulario y el panel de frecuencias, que le gustan tal cual. El cierre
+   también se aprieta: la despedida a tamaño de lectura y sin el rótulo «Fin de
+   la exploración / Inicio de algo más». */
+@media (max-width: 760px) {
+  .ranger-manifest,
+  .ranger-signature,
+  .ranger-neighbours > .ranger-kicker { display: none; }
+  .ranger-transmission { padding-top: 52px; padding-bottom: 40px; }
+  .ranger-transmission h2 { font-size: clamp(1.9rem, 7.4vw, 2.5rem); }
+  .ranger-transmission__intro > p:not(.ranger-kicker) { margin-top: 16px; font-size: .86rem; line-height: 1.7; }
+  .ranger-console { margin-top: 24px; }
+  .ranger-farewell { padding-block: 40px 30px; }
+  .ranger-farewell > span { font-size: 1.4rem; }
+  .ranger-farewell > p { margin-top: 12px; font-size: 1.15rem; }
+  .ranger-neighbours { padding-block: 12px; }
+}

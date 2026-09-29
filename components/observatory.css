@@ -2572,3 +2572,76 @@ html[data-motion="off"] .observatory-face *::after {
     left: 0;
   }
 }
+
+/* ── ESTUDIO en un teléfono: una franja, no media pantalla (2026-09-29) ──────
+   El dueño: «el modo estudio me ocupa toda la pantalla; que ocupe una pequeña
+   parte». Se va lo que a 375 px sólo cuesta alto: la frase de la vista (su
+   nombre ya dice qué estudia), la lectura de cámara (sus tres valores viven
+   quietos en DATOS) y los rótulos de grupo (cada fila se explica por sus
+   mandos). Los mandos siguen todos a la vista y con sus 44 px —O10 y O10 bis
+   lo miden—; sólo se aprietan en una fila por grupo. De ~410 px a ~230. */
+@media (max-width: 40rem) {
+  .observatory__row > .observatory__legend,
+  .observatory__study,
+  .observatory__row:has(> .observatory__readout) {
+    display: none;
+  }
+  .observatory__console {
+    padding-top: 0.5rem;
+  }
+  .observatory__row {
+    padding-bottom: 0;
+  }
+  .observatory__slots {
+    padding: 0;
+  }
+  .observatory__bank {
+    justify-content: space-between;
+  }
+  .observatory__toggle {
+    min-width: 0;
+    padding: 0 0.4rem;
+  }
+  /* Los corchetes del activo ocupan dos caracteres por mando aunque estén
+     apagados: en un teléfono el activo se lee por el ámbar, el peso y la regla. */
+  .observatory__bank .observatory__bracket {
+    display: none;
+  }
+  .observatory__bank .observatory__ink,
+  .observatory__bank .observatory__toggle[aria-pressed="true"] .observatory__ink {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+  }
+  /* Dos diales por fila y vistas en una línea, también a 360 px. */
+  .observatory__dials {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 0.9rem;
+  }
+  .observatory__dial .observatory__code {
+    min-width: 0;
+  }
+  .observatory__views {
+    gap: 0 0.2rem;
+  }
+  .observatory__view {
+    gap: 0.4em;
+    padding: 0 0.3rem 0 0;
+  }
+  .observatory__views .observatory__ink {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+  .observatory__mode {
+    padding: 0 0.55rem;
+  }
+  /* La bandeja de MOVIMIENTO/AUDIO cae a la altura de la pista, que es la
+     última fila: el hueco se reserva ahí y no en toda la barra, así modos y
+     `Reajustar` caben en una sola fila desde 360 px. */
+  body:has(.observatory) .observatory__controls {
+    padding-right: 0;
+  }
+  body:has(.observatory) .observatory__hint {
+    padding-right: 100px;
+  }
+}

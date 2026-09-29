@@ -2218,3 +2218,114 @@ body:has(.about-page dialog[open]) {
     }
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Sobre mí en un teléfono: la constelación, no una rejilla (2026-09-29)
+   ──────────────────────────────────────────────────────────────────────────
+   El dueño: «la foto principal está descentrada y no tenemos la constelación».
+   Es la MISMA constelación del escritorio, en pequeño: el retrato en el centro
+   y las seis fotos alrededor, cada una sobre el extremo de su línea. El SVG se
+   estira con preserveAspectRatio="none", así que sus extremos caen en el mismo
+   % a cualquier tamaño y los nodos se colocan en esos % (±4, dentro de la
+   foto). Sin la frase de cada nodo ni las elipses: foto, título y líneas.
+   El retrato se descentraba porque el anillo es un bloque de ancho fijo dentro
+   de una columna tan ancha como «BONAO · REPÚBLICA DOMINICANA».
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) and (orientation: portrait) {
+  .about-page .about-intro {
+    padding-top: 30px;
+  }
+  .about-page .about-intro h1 {
+    font-size: clamp(32px, 8.6vw, 42px);
+  }
+  .about-page .about-intro .about-intro-note {
+    margin-top: 12px;
+    font-size: 15px;
+  }
+  .about-page .about-constellation {
+    display: block;
+    position: relative;
+    height: clamp(460px, 126vw, 560px);
+    margin-top: 14px;
+    padding: 0;
+  }
+  .about-page .about-connections {
+    display: block;
+  }
+  .about-page .about-connections ellipse,
+  .about-page .about-connections circle {
+    display: none;
+  }
+  .about-page .about-portrait {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: max-content;
+    margin: 0;
+    transform: translate(-50%, -50%);
+  }
+  .about-page .about-portrait-ring {
+    width: clamp(96px, 28vw, 124px);
+    height: clamp(96px, 28vw, 124px);
+    margin-inline: auto;
+    padding: 4px;
+  }
+  .about-page .about-portrait-ring:before {
+    inset: -9px;
+  }
+  .about-page .about-portrait h2 {
+    margin-top: 12px;
+    font-size: 21px;
+  }
+  /* «BONAO · REPÚBLICA DOMINICANA» mide 220 px y chocaba con los dos nodos
+     laterales: en un teléfono queda el nombre. */
+  .about-page .about-portrait small {
+    display: none;
+  }
+  .about-page .about-node {
+    position: absolute;
+    width: clamp(98px, 29vw, 128px);
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .about-page .about-node::before,
+  .about-page .about-node p {
+    display: none;
+  }
+  .about-page .about-node-image {
+    height: clamp(58px, 17vw, 76px);
+    padding: 2px;
+  }
+  .about-page .about-node h3 {
+    margin-top: 6px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .about-page .about-node-roots {
+    left: 24%;
+    top: 16%;
+  }
+  .about-page .about-node-people {
+    left: 76%;
+    top: 16%;
+  }
+  .about-page .about-node-self {
+    left: 16%;
+    top: 50%;
+  }
+  .about-page .about-node-enjoy {
+    left: 84%;
+    top: 50%;
+  }
+  .about-page .about-node-path {
+    left: 28%;
+    top: 83%;
+  }
+  .about-page .about-node-dream {
+    left: 72%;
+    top: 83%;
+  }
+  .about-page .about-hero-bottom {
+    padding: 4px 0 28px;
+  }
+}
