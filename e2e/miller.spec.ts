@@ -82,8 +82,18 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const neighbours = page.getByRole("navigation", { name: "Destinos contiguos" });
   await expect(neighbours.locator("a").first()).toHaveAttribute("href", "/es/sobre-mi");
-  await neighbours.locator("a").last().click();
-  await expect(page).toHaveURL(/\/es\/proyectos$/);
+  /*
+    En WebKit de CI (GPU por software) este clic fallaba a ratos de dos
+    maneras: el desplazamiento de Playwright no terminaba nunca —el documento
+    desplaza con `scroll-behavior: smooth`— o el clic entraba y la travesía,
+    que navega por temporizador, no llegaba en los 5 s por defecto. El enlace
+    se trae a la vista al instante y la llegada tiene el margen de la
+    travesía en un runner lento.
+  */
+  const next = neighbours.locator("a").last();
+  await next.evaluate((link) => link.scrollIntoView({ block: "center", behavior: "instant" }));
+  await next.click();
+  await expect(page).toHaveURL(/\/es\/proyectos$/, { timeout: 15_000 });
   expect(errors).toEqual([]);
 });
 
