@@ -23,7 +23,7 @@ body:has(.miller-route) .scene-toggle { display: none; }
 .miller-eyebrow { color: var(--miller-water); }
 .miller-hero { min-height: calc(min(820px, calc(100svh - 110px)) + var(--miller-nav-clearance)); position: relative; display: flex; flex-direction: column; justify-content: center; padding: calc(92px + var(--miller-nav-clearance)) max(var(--page-gutter), calc((100vw - 1280px) / 2)) 110px; isolation: isolate; }
 .miller-ocean { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #132a36; }
-.miller-ocean > img { object-fit: cover; }
+.miller-ocean img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .miller-ocean > canvas { position: absolute; width: 100%; height: 100%; inset: 0; }
 .miller-ocean__shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(3 16 26 / 78%) 0%, rgb(3 16 26 / 38%) 44%, rgb(3 16 26 / 5%) 80%), linear-gradient(0deg, #06131c 0%, transparent 35%, rgb(5 18 28 / 14%)); }
 .miller-hero__content { max-width: 780px; }
@@ -196,6 +196,11 @@ html[data-motion="off"] .miller-page *, html[data-motion="off"] .miller-page *::
 .miller-currents__light { stroke: #c5fbff; stroke-width: 1.5; stroke-dasharray: 4 65 100 831; animation: miller-current 18s linear infinite; animation-play-state: paused; }
 .miller-currents__light path:nth-child(2n) { stroke-dasharray: 60 340 12 588; }
 .miller-proof::before { content: ""; position: absolute; inset: 0 0 auto; height: 1000px; z-index: -1; background: linear-gradient(#07223250, #071622), url("/images/miller/ocean.webp") center 75% / cover; opacity: .22; mask-image: linear-gradient(#000, transparent); pointer-events: none; }
+@media (max-width: 600px) {
+  /* La misma franja central que la portada (miller-ocean.tsx): sin ella el
+     teléfono bajaba también el paisaje entero para este fondo. */
+  .miller-proof::before { background-image: linear-gradient(#07223250, #071622), url("/images/miller/ocean-movil.webp"); }
+}
 .miller-archive-tide { position: absolute; inset: 0 0 auto; height: 450px; overflow: hidden; pointer-events: none; z-index: -1; mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
 .miller-archive-tide .miller-currents { opacity: .18; }
 .miller-archive-more { margin-top: 24px; }

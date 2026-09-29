@@ -78,6 +78,27 @@ function serverReason(): LevelReason {
   return "ok";
 }
 
+/*
+  El tope de 2 s evita que una página que nunca queda ociosa se quede sin
+  escena para la travesía. Safari no tiene `requestIdleCallback` y no hay
+  otra forma honesta de saber cuándo está ocioso: ahí arranca justo tras el
+  `load`, que ya deja fuera la imagen principal y la hidratación. Un retraso
+  fijo la hacía coincidir con la primera interacción (e2e de Edmunds en
+  WebKit, 2026-09-29).
+*/
+function requestIdle(callback: () => void): number {
+  if (typeof window.requestIdleCallback === "function") {
+    return window.requestIdleCallback(callback, { timeout: 2000 });
+  }
+  return window.setTimeout(callback, 0);
+}
+
+function cancelIdle(id: number) {
+  if (!id) return;
+  if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(id);
+  else window.clearTimeout(id);
+}
+
 const isClient = () => true;
 const isServer = () => false;
 
@@ -98,6 +119,8 @@ export function GargantuaSystem({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<SceneHandle | null>(null);
   const labelsRef = useRef<LabelBinding | null>(null);
+  /** Arranca ya una escena que esperaba al ocio (ruta cubierta). */
+  const wakeRef = useRef<(() => void) | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const lightEffects = useLightEffectsMode();
   const pathname = usePathname();
@@ -201,44 +224,78 @@ export function GargantuaSystem({
     if (!canvas || level === "flat" || observatory) return;
 
     let cancelled = false;
+    let started = false;
     let handle: SceneHandle | null = null;
+    let idle = 0;
 
     /**
      * La escena se carga bajo demanda. three.js entero jamás entra en la carga
      * inicial de ninguna ruta: es el presupuesto de §8 y el motivo por el que el
      * nivel `flat` no descarga ni un byte de 3D.
      */
-    void import("./system-scene")
-      .then(({ createSystemScene }) => {
-        if (cancelled) return;
-        handle = createSystemScene({
-          canvas,
-          tier: level === "deep" ? "deep" : "orbit",
-          pose: cameraPoseForRoute(worldIdRef.current),
-          bodies,
-          onProject: (projected) => labelsRef.current?.update(projected),
-          onFailure: () => {
-            // Degradación real: se libera todo y se vuelve al nivel `flat`, que
-            // ya está construido y probado. Nunca se deja una escena rota.
-            handle?.dispose();
-            handle = null;
-            handleRef.current = null;
-            setFailed(true);
-          },
+    const load = () =>
+      import("./system-scene")
+        .then(({ createSystemScene }) => {
+          if (cancelled) return;
+          handle = createSystemScene({
+            canvas,
+            tier: level === "deep" ? "deep" : "orbit",
+            pose: cameraPoseForRoute(worldIdRef.current),
+            bodies,
+            onProject: (projected) => labelsRef.current?.update(projected),
+            onFailure: () => {
+              // Degradación real: se libera todo y se vuelve al nivel `flat`, que
+              // ya está construido y probado. Nunca se deja una escena rota.
+              handle?.dispose();
+              handle = null;
+              handleRef.current = null;
+              setFailed(true);
+            },
+          });
+          handleRef.current = handle;
+          handle.setCovered(coveredRef.current);
+          const current = departureRef.current;
+          if (current) {
+            handle.setVoyage({ id: current.id, startedAt: current.startedAt });
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setFailed(true);
         });
-        handleRef.current = handle;
-        handle.setCovered(coveredRef.current);
-        const current = departureRef.current;
-        if (current) {
-          handle.setVoyage({ id: current.id, startedAt: current.startedAt });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
+
+    const start = () => {
+      if (started || cancelled) return;
+      started = true;
+      wakeRef.current = null;
+      window.removeEventListener("load", whenIdle);
+      cancelIdle(idle);
+      void load();
+    };
+    const whenIdle = () => {
+      idle = requestIdle(start);
+    };
+
+    /*
+      En una ruta cubierta la escena no dibuja nada: sólo tiene que estar lista
+      para la travesía de vuelta. Construirla al montar —bajar three.js, subir
+      la geometría, compilar shaders— competía con la hidratación y la imagen
+      principal de la página que sí se ve (medido 2026-09-29 en Sobre mí y
+      Formación: ~0,4 s de CPU del chunk de three.js en plena carga). Ahí
+      espera a que la página termine de cargar y el navegador quede ocioso;
+      una travesía o salir de la cobertura la despiertan antes (`wakeRef`).
+    */
+    if (!coveredRef.current || departureRef.current) start();
+    else {
+      wakeRef.current = start;
+      if (document.readyState === "complete") whenIdle();
+      else window.addEventListener("load", whenIdle, { once: true });
+    }
 
     return () => {
       cancelled = true;
+      if (wakeRef.current === start) wakeRef.current = null;
+      window.removeEventListener("load", whenIdle);
+      cancelIdle(idle);
       handle?.dispose();
       handleRef.current = null;
     };
@@ -286,6 +343,7 @@ export function GargantuaSystem({
   useEffect(() => {
     coveredRef.current = covered;
     handleRef.current?.setCovered(covered);
+    if (!covered) wakeRef.current?.();
   }, [covered]);
 
   // El despegue va a la escena tal cual llega: un objeto con id e instante, o
@@ -293,6 +351,7 @@ export function GargantuaSystem({
   // el efecto de arriba y también termina el viaje por su cuenta.
   useEffect(() => {
     departureRef.current = departure;
+    if (departure) wakeRef.current?.();
     handleRef.current?.setVoyage(
       departure ? { id: departure.id, startedAt: departure.startedAt } : null,
     );

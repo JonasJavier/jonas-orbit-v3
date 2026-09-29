@@ -1,5 +1,6 @@
 /* The photographs are responsive files prepared by tools/prepare-about.mjs. */
 import Link from "next/link";
+import { preload } from "react-dom";
 import type { Locale } from "@/content/site.data";
 import { homePath, worldPath } from "@/lib/page-paths";
 import { WORLD_COPY } from "@/lib/world-copy";
@@ -13,7 +14,11 @@ import { AboutShelf } from "./about-shelf";
 import "./about-page.css";
 
 const WIDE = "(max-width: 700px) 90vw, (min-width: 1400px) 700px, 50vw";
-const NODE = "(max-width: 700px) 43vw, 240px";
+// Lo que la constelación pinta de verdad (medido 2026-09-29): en el teléfono
+// cada nodo mide ~114 px y el retrato ~174 px. Declarar 43vw y 480px hacía
+// bajar la versión de 640 y la de 960 —~700 KB de más en móvil—.
+const NODE = "(max-width: 700px) 120px, 240px";
+const PORTRAIT = "(max-width: 700px) 180px, 480px";
 
 /** Una foto que se amplía en el visor de la página (`about-experience.tsx`). */
 function PhotoButton({
@@ -44,6 +49,9 @@ function PhotoButton({
 export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
   const t = ABOUT_COPY[locale];
   const next = getWorld("miller", locale);
+  // El paisaje es el LCP: se pide desde el <head>, una precarga por versión.
+  preload("/images/sobre-mi/cielo-montanas-movil.webp", { as: "image", fetchPriority: "high", media: "(max-width: 700px)" });
+  preload("/images/sobre-mi/cielo-montanas-1536.webp", { as: "image", fetchPriority: "high", media: "(min-width: 701px)" });
   return (
     <AboutExperience>
       <StructuredData
@@ -54,7 +62,9 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
         <picture className="about-landscape">
           <source
             media="(max-width: 700px)"
-            srcSet="/images/sobre-mi/cielo-montanas-1536.webp"
+            srcSet="/images/sobre-mi/cielo-montanas-movil.webp"
+            width={720}
+            height={1024}
           />
           <img
             src="/images/sobre-mi/cielo-montanas-1536.webp"
@@ -113,7 +123,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
             <div className="about-portrait">
               <div className="about-portrait-ring">
                 <div className="about-portrait-crop">
-                  <AboutImage id="F40" alt={t.portraitAlt} sizes="480px" eager />
+                  <AboutImage id="F40" alt={t.portraitAlt} sizes={PORTRAIT} eager />
                 </div>
               </div>
               <h2>Jonás</h2>

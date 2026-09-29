@@ -19,6 +19,49 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Rendimiento móvil — PageSpeed de Sobre mí y Formación (2026-09-29)
+
+El dueño pasó PageSpeed (móvil) por las páginas: Sobre mí 86 y Formación 81,
+con accesibilidad, prácticas y SEO a 100. La API de PageSpeed sin clave tiene
+cuota 0: se mide con Lighthouse 13.5.0 local (el mismo que usa PageSpeed)
+contra `next start`, tres pasadas y mediana, A/B contra `main` en la misma
+máquina. **Las cifras absolutas locales no son las de PageSpeed**; sólo vale
+la comparación.
+
+- **Las imágenes se piden al tamaño que se pintan.** En el teléfono los nodos
+  de la constelación miden ~114 px y el retrato ~174 px, pero `sizes` decía
+  `43vw` y `480px`: a DPR 2 bajaban las versiones de 640 y 960 (~700 KB).
+  Ahora `(max-width: 700px) 120px` y `180px`. **La calidad de las fotos no se
+  toca.**
+- **Cabeceras con recorte para el teléfono.** El móvil ve de los paisajes
+  apaisados sólo una franja (`cover`). `cielo-montanas-movil.webp` (720 ×
+  1024, 92 KB frente a 214) lo genera `tools/prepare-about.mjs` empezando en
+  el 58 % del sobrante, así que el encuadre es idéntico al anterior;
+  `ocean-movil.webp` (franja central de 640, 53 KB frente a 195) se recortó
+  una vez desde `ocean.webp`, que no tiene original fuera del repo. Cada
+  cabecera se precarga desde el `<head>` con `fetchPriority: "high"` y una
+  precarga por versión con su `media`. El shader de Miller calcula su `cover`
+  con `naturalWidth`, así que la franja da el mismo agua.
+- **La escena persistente espera al ocio en las rutas cubiertas.** Todas las
+  páginas de mundo cubren la escena y aun así se bajaba three.js y se
+  compilaba al montar, en plena carga. Ahora, en ruta cubierta,
+  `gargantua-system.tsx` espera al `load` y a `requestIdleCallback` (tope de
+  2 s; Safari, sin esa API, arranca justo tras el `load`); una travesía o salir de la cobertura la despiertan
+  al momento. En la home no cambia nada.
+- **Medido (A/B local, móvil simulado):** Sobre mí 61 → 70, LCP 5,25 → 4,54 s,
+  TBT 765 → 537 ms, peso 1086 → 907 KB (imágenes 465 → 285 KB). Formación
+  65 → 67, TBT 1096 → 808 ms, imágenes 193 → 54 KB; su LCP no se mueve
+  (3,65 ↔ 3,83 s).
+- **Lo que queda y por qué.** El LCP simulado está atado al JavaScript de
+  cliente del layout, no a la imagen: la imagen llega y el pintado espera
+  ~400 ms a la hidratación (el chunk del framework se lleva ~1,9 s de CPU a
+  4×). Bajarlo pide reducir las islas de cliente del layout: es un proyecto
+  aparte. **Descartado:** `experimental.inlineCss` (global, experimental, y
+  con ~63 KB comprimidos de CSS por página duplicados en el payload RSC); el
+  aviso de «JavaScript antiguo» (13 KB) son los polyfills internos de Next.
+  El TTFB de Railway (~300–600 ms sin CDN, páginas ya prerenderizadas y en
+  caché) sólo baja con una CDN delante.
+
 ## Resolución adaptable de la escena en el teléfono (2026-09-29)
 
 El dueño preguntó por qué la home se ve «en tan baja resolución» en el móvil y

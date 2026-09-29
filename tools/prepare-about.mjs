@@ -72,15 +72,24 @@ if (process.argv[2])
     backgroundSource,
     path.join(archive, "_curaduria/fondo-generado-v1.png"),
   );
-for (const width of [768, 1536])
-  await sharp(backgroundSource)
-    .resize({ width })
-    .webp({ quality: 88 })
-    .toFile(path.join(output, `cielo-montanas-${width}.webp`));
+await sharp(backgroundSource)
+  .resize({ width: 1536 })
+  .webp({ quality: 88 })
+  .toFile(path.join(output, "cielo-montanas-1536.webp"));
+// Phones show the hero as a tall strip of the landscape (`cover`, anchored at
+// 58 % in about-page.css). This crop keeps exactly that strip at the same
+// pixel density: starting it at 58 % of the spare width leaves the framing
+// identical for every phone whose hero is taller than the crop is wide.
+const MOBILE_CROP = 720;
+const mobileLeft = Math.round(0.58 * (1536 - MOBILE_CROP));
+await sharp(await sharp(backgroundSource).resize({ width: 1536 }).toBuffer())
+  .extract({ left: mobileLeft, top: 0, width: MOBILE_CROP, height: 1024 })
+  .webp({ quality: 82 })
+  .toFile(path.join(output, "cielo-montanas-movil.webp"));
 await writeFile(
   path.join(root, "content/about-photos.data.json"),
   JSON.stringify(manifest, null, 2) + "\n",
 );
 console.log(
-  `Prepared ${Object.keys(manifest).length} photographs and two background sizes.`,
+  `Prepared ${Object.keys(manifest).length} photographs and the background and its phone crop.`,
 );

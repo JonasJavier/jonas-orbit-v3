@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
 import { releaseWhenDetached } from "@/lib/webgl-release";
 import { useMillerWater } from "./miller-water";
 
@@ -254,9 +254,35 @@ export function MillerOcean() {
   }, [ready, running, supported]);
 
   const flowing = running && ready && supported;
+  // El LCP se pide desde el <head>, antes que los CSS: una precarga por cada
+  // versión del <picture>, con su media, para que ningún equipo baje las dos.
+  preload("/images/miller/ocean-movil.webp", { as: "image", fetchPriority: "high", media: "(max-width: 600px)" });
+  preload("/images/miller/ocean.webp", { as: "image", fetchPriority: "high", media: "(min-width: 601px)" });
   return (
     <div className="miller-ocean" ref={surfaceRef} data-motion={flowing ? "flowing" : "still"}>
-      <Image src="/images/miller/ocean.webp" alt="" fill sizes="100vw" preload unoptimized onLoad={() => setReady(true)} />
+      {/*
+        Es el LCP de Formación. El teléfono sólo ve una franja central del
+        paisaje (`cover`), así que recibe esa franja recortada —53 KB en vez
+        de 195— con el mismo encuadre; el shader calcula su propio `cover`
+        centrado con `naturalWidth`, y la franja le da el mismo resultado.
+        La imagen está en el HTML servido: si carga antes de hidratar,
+        `onLoad` ya pasó y el ref la da por lista.
+      */}
+      <picture>
+        <source media="(max-width: 600px)" srcSet="/images/miller/ocean-movil.webp" width={640} height={941} />
+        <img
+          src="/images/miller/ocean.webp"
+          alt=""
+          width={1672}
+          height={941}
+          fetchPriority="high"
+          decoding="async"
+          ref={(img) => {
+            if (img?.complete && img.naturalWidth) setReady(true);
+          }}
+          onLoad={() => setReady(true)}
+        />
+      </picture>
       {running && ready && supported ? <canvas aria-hidden="true" ref={canvasRef} /> : null}
       <div className="miller-ocean__shade" aria-hidden="true" />
     </div>

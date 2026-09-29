@@ -140,6 +140,10 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Por página
 
+- **Rendimiento móvil** (09-29) registro «Rendimiento móvil — PageSpeed…» —
+  `sizes` a lo que se pinta, recortes `-movil` de las cabeceras con precarga
+  por `media`, escena persistente al ocio en rutas cubiertas. Se mide con
+  Lighthouse local en A/B, nunca contra cifras de PageSpeed.
 - **Móvil compacto** (09-29) registro «Móvil compacto — adaptar, no
   comprimir» — raíl de la home sólo texto, Gargantúa más pequeño, constelación
   de Sobre mí en el teléfono, footer mínimo, certificados en 2-3 columnas,
