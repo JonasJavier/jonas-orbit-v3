@@ -690,8 +690,12 @@ test.describe("A27 · ?no3d=1 fuerza el perfil ligero", () => {
     );
 
     await page.goto("/es?no3d=0");
+    // Con los efectos de vuelta la escena compila sus shaders en el hilo
+    // principal, y el cielo 2D se monta en el primer hueco libre: en un
+    // runner de CI con GPU por software eso pasaba de 3 s (fallo intermitente
+    // desde el 2026-09-29). Se comprueba que vuelva, no cuánto tarda.
     await expect(page.getByTestId("starfield-2d")).toHaveCount(1, {
-      timeout: 3_000,
+      timeout: 15_000,
     });
   });
 });
