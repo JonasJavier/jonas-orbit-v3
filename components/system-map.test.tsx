@@ -484,4 +484,29 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
       /Target locked/i,
     );
   });
+  it("«toca para explorar» sale una vez y se retira con el primer destino", () => {
+    /*
+      Primera valoración del dueño (2026-09-29): en un móvil no es evidente
+      que los cuerpos se puedan tocar. La indicación es visual (aria-hidden:
+      el raíl ya es el índice accesible), se va al apuntar cualquier destino y
+      no vuelve en la siguiente visita.
+    */
+    localStorage.removeItem("jonas-orbit:explorar-visto");
+    const first = render(<SystemMap worlds={worlds} />);
+    const hint = first.container.querySelector(".system-map__explore");
+    expect(hint).toHaveAttribute("aria-hidden", "true");
+    expect(hint).toHaveTextContent(/Toca para explorar/i);
+    expect(
+      screen.getByRole("navigation", { name: MAP_LABEL }),
+    ).toHaveAttribute("data-explore-hint", "true");
+
+    fireEvent.focus(first.container.querySelector('[data-rail-world="miller"]')!);
+    expect(first.container.querySelector(".system-map__explore")).toBeNull();
+    expect(localStorage.getItem("jonas-orbit:explorar-visto")).toBe("1");
+    first.unmount();
+
+    const again = render(<SystemMap worlds={worlds} />);
+    expect(again.container.querySelector(".system-map__explore")).toBeNull();
+    localStorage.removeItem("jonas-orbit:explorar-visto");
+  });
 });

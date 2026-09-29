@@ -111,6 +111,11 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
     --home-gutter: max(1rem, env(safe-area-inset-left, 0px));
     --home-gutter-end: max(1rem, env(safe-area-inset-right, 0px));
     --home-header-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    /* El panel del raíl: dos filas de celdas de 46 px más sus tres filetes,
+       y un respiro claro con el borde inferior (y con la barra de gestos). */
+    --home-rail-cell: 46px;
+    --home-rail-bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.6rem));
+    --home-rail-height: calc(var(--home-rail-cell) * 2 + 3px);
   }
 
   /* El mapa, del tamaño del viewport en los dos modos: es el marco en el que
@@ -183,7 +188,7 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   .system-map .nav-rail {
     --rail-line: rgb(150 190 220 / 13%);
     right: var(--home-gutter-end);
-    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    bottom: var(--home-rail-bottom);
     left: var(--home-gutter);
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -204,7 +209,7 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   }
   .system-map .nav-rail__link {
     position: relative;
-    min-height: 52px;
+    min-height: var(--home-rail-cell);
     height: 100%;
     padding: 0 0.25rem;
     grid-template-rows: auto;
@@ -234,11 +239,100 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   }
 }
 
+/* ── «Toca para explorar» (2026-09-29) ──────────────────────────────────────
+   Una etiqueta sobre el borde del panel —entre los cuerpos y los destinos,
+   que son las dos cosas que se tocan— y un aro que late tres veces en cada
+   cuerpo, uno detrás de otro en orden narrativo. Se va con el primer destino
+   apuntado (system-map.tsx). Sólo en táctil: con ratón, el hover ya lo dice. */
+.system-map__explore {
+  display: none;
+}
+@media (max-width: 60rem) and (hover: none) and (pointer: coarse) {
+  .system-map__explore {
+    position: fixed;
+    bottom: calc(var(--home-rail-bottom) + var(--home-rail-height) + 0.7rem);
+    left: 50%;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.36rem 0.8rem 0.36rem 0.65rem;
+    border: 1px solid rgb(127 229 255 / 30%);
+    border-radius: 999px;
+    background: rgb(5 14 22 / 82%);
+    box-shadow: 0 0 18px rgb(127 229 255 / 12%);
+    color: #d8f8ff;
+    font: 600 0.58rem/1.2 var(--font-mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    backdrop-filter: blur(10px);
+    animation: explore-hint-in 0.6s ease-out 1.4s both;
+  }
+  .system-map__explore::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan, #7fe5ff);
+    box-shadow: 0 0 8px var(--cyan, #7fe5ff);
+  }
+  html:not([data-motion="off"]) .system-map__explore::before {
+    animation: explore-dot 1.6s ease-in-out 2s infinite;
+  }
+
+  html:not([data-motion="off"])
+    .system-map[data-explore-hint="true"]
+    .system-map__slot:not([data-centre="true"])
+    .system-map__hit-target::after {
+    content: "";
+    position: absolute;
+    inset: 6%;
+    border: 1px solid rgb(127 229 255 / 70%);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    animation: explore-ping 2.2s ease-out calc(2s + var(--order, 1) * 0.35s) 3;
+  }
+
+  /* Es parte del movimiento ENCENDIDO, así que con reduced-motion del sistema
+     también corre (movimiento-unificado.md §«Tres lecturas»). */
+  @media (prefers-reduced-motion: reduce) {
+    .system-map__explore {
+      animation-duration: 0.6s !important;
+    }
+    html:not([data-motion="off"]) .system-map__explore::before {
+      animation-duration: 1.6s !important;
+      animation-iteration-count: infinite !important;
+    }
+    html:not([data-motion="off"])
+      .system-map[data-explore-hint="true"]
+      .system-map__slot:not([data-centre="true"])
+      .system-map__hit-target::after {
+      animation-duration: 2.2s !important;
+      animation-iteration-count: 3 !important;
+    }
+  }
+}
+@keyframes explore-hint-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+}
+@keyframes explore-dot {
+  50% { opacity: 0.35; box-shadow: 0 0 2px var(--cyan, #7fe5ff); }
+}
+@keyframes explore-ping {
+  0% { opacity: 0; transform: scale(0.9); }
+  25% { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
 /* El escenario: lo que dejan la cabecera y el panel del raíl. */
 @media (max-width: 60rem) {
   :root:has(.system-home) {
     --home-stage-top: calc(4.5rem + env(safe-area-inset-top, 0px));
-    --home-stage-bottom: calc(8.9rem + env(safe-area-inset-bottom, 0px));
+    --home-stage-bottom: calc(var(--home-rail-bottom) + var(--home-rail-height) + 2.4rem);
   }
 }
 @media (max-width: 22.5rem) {
@@ -274,7 +368,7 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
     --atlas-size: clamp(92px, min(27vw, 14svh), 204px);
   }
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] {
-    --atlas-size: clamp(64px, min(19vw, 10svh), 142px);
+    --atlas-size: clamp(72px, min(23vw, 12svh), 160px);
   }
   /* Gargantúa plana cae en el mismo punto del escenario que la de la escena. */
   html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__gargantua {
@@ -304,6 +398,11 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   :root:has(.system-home) {
     --home-stage-top: calc(3.6rem + env(safe-area-inset-top, 0px));
     --home-stage-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+  /* En apaisado no cabe una etiqueta más entre el sistema y el raíl: aquí la
+     indicación son sólo los aros. */
+  .system-map__explore {
+    display: none;
   }
   .system-map .nav-rail {
     display: flex;

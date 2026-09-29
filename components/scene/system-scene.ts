@@ -260,6 +260,19 @@ const PORTRAIT_DISK_MAX_ASPECT = 0.52;
  * jerarquía entre ellos (bodies.test.ts) no cambia.
  */
 const PORTRAIT_BODY_SCALE = 0.92;
+/**
+ * Refuerzo de las dos naves en vertical, sobre `PORTRAIT_BODY_SCALE`.
+ *
+ * Primera valoración del dueño (2026-09-29): «Endurance y Ranger pierden
+ * protagonismo; la Ranger aparece pequeña y aislada». En escritorio su tamaño
+ * lo sostienen la órbita y el rótulo; en un móvil no hay ni lo uno ni lo otro,
+ * y una lanzadera de perfil mide una fracción de un planeta del mismo radio
+ * envolvente. Sólo en vertical: la jerarquía de escritorio no se toca.
+ */
+const PORTRAIT_EMPHASIS: Partial<Record<WorldId, number>> = {
+  ranger: 1.5,
+  endurance: 1.1,
+};
 
 /** Cuando la escena está congelada (páginas de mundo) basta con refrescar de
  *  vez en cuando: no se puede dejar de dibujar del todo porque el navegador
@@ -605,8 +618,9 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
 
   /** Posiciones compuestas en vertical; las escribe `setCompositionFrame`. */
   const portraitPositions = new Map<WorldId, THREE.Vector3>();
-  /** Escala de los cuerpos: `PORTRAIT_BODY_SCALE` en vertical, 1 si no. */
-  let bodyScale = 1;
+  /** Escala de cada cuerpo: la de vertical con su refuerzo, o 1. */
+  const bodyScales = new Map<WorldId, number>();
+  const scaleOf = (id: WorldId) => bodyScales.get(id) ?? 1;
 
   function baseBodyPosition(
     body: SceneBody,
@@ -800,8 +814,14 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
    */
   function applyPose(aspect: number) {
     readStage();
-    bodyScale = aspect < PORTRAIT_ASPECT ? PORTRAIT_BODY_SCALE : 1;
-    for (const body of bodies) body.object.scale.setScalar(bodyScale);
+    const portrait = aspect < PORTRAIT_ASPECT;
+    for (const body of bodies) {
+      const scale = portrait
+        ? PORTRAIT_BODY_SCALE * (PORTRAIT_EMPHASIS[body.id] ?? 1)
+        : 1;
+      bodyScales.set(body.id, scale);
+      body.object.scale.setScalar(scale);
+    }
     frameDistance = measureFrameDistance(aspect) * pose.distanceScale;
     setCompositionFrame(aspect);
 
@@ -1400,7 +1420,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
         project({
           id: body.id,
           position,
-          radius: body.radius * bodyScale,
+          radius: body.radius * scaleOf(body.id),
           hitScaleX,
           hitScaleY,
         }),
@@ -1449,7 +1469,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       voyageSample = sampleVoyage((timestamp - voyage.startedAt) / 1000);
       if (voyageTarget) {
         voyageTargetPosition.copy(voyageTarget.object.position);
-        voyageTargetRadius = voyageTarget.radius * bodyScale;
+        voyageTargetRadius = voyageTarget.radius * scaleOf(voyageTarget.id);
       } else {
         voyageTargetPosition.set(0, 0, 0);
         voyageTargetRadius = centreRadii.get(voyage.id) ?? 2.6;
