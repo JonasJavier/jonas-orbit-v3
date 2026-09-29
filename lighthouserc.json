@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "//": "Perfil LIGERO del plan: ?no3d=1 es un override explícito del producto, el mismo mecanismo del botón 'Reducir efectos'. No hay detección del auditor.",
-      "url": ["http://localhost:3000/es?no3d=1"],
+      "url": ["http://localhost:3000/en?no3d=1", "http://localhost:3000/es?no3d=1"],
       "numberOfRuns": 3,
       "startServerCommand": "npm run start",
       "startServerReadyPattern": "Ready in",

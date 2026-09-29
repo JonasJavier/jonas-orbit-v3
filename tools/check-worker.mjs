@@ -28,12 +28,20 @@ for (let attempt = 0; attempt < 60; attempt++) {
 }
 assert.ok(ready, `OpenNext preview did not become ready at ${origin.origin}`);
 
+// The six destinations in each published language (English is the default).
+const DESTINATIONS = {
+  en: ["about", "education", "projects", "creativity", "experiments", "contact"],
+  es: ["sobre-mi", "formacion", "proyectos", "creatividad", "experimentos", "contacto"],
+};
+
 const manifest = JSON.parse(await readFile(".next/prerender-manifest.json", "utf8"));
-const routes = new Set(["/es", ...Object.entries(manifest.routes)
-  .filter(([path, entry]) => path.startsWith("/es/") && entry.routeType === "page")
+const routes = new Set(["/en", "/es", ...Object.entries(manifest.routes)
+  .filter(([path, entry]) => /^\/(en|es)\//.test(path) && entry.routeType === "page")
   .map(([path]) => path)]);
-for (const path of ["sobre-mi", "formacion", "proyectos", "creatividad", "experimentos", "contacto"]) {
-  assert.ok(routes.has(`/es/${path}`), `Published destination is missing from the build: ${path}`);
+for (const [locale, paths] of Object.entries(DESTINATIONS)) {
+  for (const path of paths) {
+    assert.ok(routes.has(`/${locale}/${path}`), `Published destination is missing from the build: /${locale}/${path}`);
+  }
 }
 
 for (const path of routes) {
@@ -46,10 +54,14 @@ for (const path of routes) {
   console.log(`PASS ${path}`);
 }
 
-const home = await request("/es");
-const homeHtml = await home.text();
-for (const destination of ["sobre-mi", "formacion", "proyectos", "creatividad", "experimentos", "contacto"]) {
-  assert.ok(homeHtml.includes(`href="/es/${destination}"`), `Home is missing ${destination}`);
+let homeHtml = "";
+for (const [locale, paths] of Object.entries(DESTINATIONS)) {
+  const html = await (await request(`/${locale}`)).text();
+  assert.match(html, new RegExp(`<html lang="${locale}"`), `/${locale}: wrong document language`);
+  for (const destination of paths) {
+    assert.ok(html.includes(`href="/${locale}/${destination}"`), `/${locale} home is missing ${destination}`);
+  }
+  homeHtml ||= html;
 }
 const firstScript = /<script[^>]+src="([^"]*\/_next\/static\/[^\"]+\.js)"/.exec(homeHtml)?.[1];
 assert.ok(firstScript, "Home does not reference a versioned JavaScript chunk");
@@ -62,14 +74,14 @@ assert.equal(cv.status, 200, "Published Spanish CV is missing");
 assert.match(cv.headers.get("content-type") ?? "", /application\/pdf/);
 await cv.body?.cancel();
 
-for (const path of ["/es/no-existe", "/es/desarrollo", "/es/laboratorio", "/es/proyectos/no-existe"]) {
+for (const path of ["/es/no-existe", "/es/desarrollo", "/es/laboratorio", "/es/proyectos/no-existe", "/en/proyectos", "/es/privacy"]) {
   const response = await request(path);
   assert.equal(response.status, 404, `${path}: retired/unknown route must stay 404`);
   await response.body?.cancel();
 }
 const root = await request("/");
 assert.ok([307, 308].includes(root.status), "root must redirect without rendering another page");
-assert.equal(new URL(root.headers.get("location"), origin).pathname, "/es");
+assert.equal(new URL(root.headers.get("location"), origin).pathname, "/en");
 await root.body?.cancel();
 
 const contactConfig = await request("/api/contact");
@@ -87,4 +99,4 @@ const invalid = await request("/api/contact", {
 });
 assert.equal(invalid.status, 400);
 assert.equal((await invalid.json()).code, "validation");
-console.log(`Worker smoke passed: ${routes.size} HTML routes, redirect, four 404s, dynamic contact config and invalid input.`);
+console.log(`Worker smoke passed: ${routes.size} HTML routes in two languages, redirect, six 404s, dynamic contact config and invalid input.`);
