@@ -54,6 +54,17 @@ Referencias de los mantenedores:
 - La actualización no cierra por sí misma los fallos de compatibilidad de la
   línea base ni las condiciones externas de publicación.
 
+**2026-09-29 — Wrangler 4.141.0 → 4.143.1.** La auditoría de CI empezó a
+fallar con diez avisos de undici 7.0–7.29 (uno alto, GHSA-3wwx-pv8p-q78v),
+que llegaba sólo por la herramienta de desarrollo: wrangler → miniflare →
+undici. 4.143.1 trae miniflare 5.20260926.1 y undici 7.29.1, fuera del rango
+vulnerable; es el arreglo que propone `npm audit`. Versión fijada, sin
+`--force`, sólo `package.json` y el lockfile. `npm audit`: cero avisos;
+`npm run check`: PASS (599 tests y build). El preview de Cloudflare
+(`test:worker`) lo verifica la CI: en el equipo del dueño workerd no arranca.
+Los overrides de PostCSS y Sharp no se revisan aquí: dependen de Next, que no
+cambia.
+
 ## Hallazgos de compatibilidad
 
 - Firefox informa `cancelAndHoldAtTime is not a function` en la banda sonora.
