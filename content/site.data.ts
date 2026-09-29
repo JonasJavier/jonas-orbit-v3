@@ -18,6 +18,13 @@ export const PUBLISHED_LOCALES: readonly Locale[] = ["es"];
  */
 export const SITE_PROFILE = {
   name: "Jonás Javier Encarnación",
+  /**
+   * Cómo se le busca de verdad: sin tildes, sin el apellido o con él solo.
+   * Van a `alternateName` en JSON-LD para que el buscador una las variantes.
+   */
+  alternateNames: ["Jonás Javier", "Jonas Javier Encarnacion", "Jonas Javier", "Jonás Encarnación"],
+  /** Retrato publicado en «Sobre mí» (F40), para `image` en JSON-LD. */
+  portrait: "/images/sobre-mi/F40-960.webp",
   jobTitle: "Desarrollador full-stack y diseñador UX/UI",
   email: "jonasjavier.dev@gmail.com",
   phone: "+18498625049",
@@ -27,6 +34,8 @@ export const SITE_PROFILE = {
   locality: "Santo Domingo",
   country: "DO",
   /** Para `knowsAbout` en JSON-LD: sólo lo que un caso o experimento publicado prueba. */
+  /** Idiomas que el sitio acredita (Formación: inglés avanzado en curso). */
+  languages: ["es", "en"],
   knowsAbout: [
     "Desarrollo full-stack",
     "Django",
