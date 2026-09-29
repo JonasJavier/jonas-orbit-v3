@@ -99,6 +99,14 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const [viewer, setViewer] = useState<number | null>(null);
   const [finePointer, setFinePointer] = useState(false);
   const [idle, setIdle] = useState(false);
+  /**
+   * El modo cine sólo cuenta mientras la galería está a la vista. Antes la
+   * cuenta atrás empezaba al montar la página: quien bajaba hasta la galería
+   * pasados 3,5 s la encontraba con los controles ya apagados, antes de haberla
+   * visto. Sin IntersectionObserver (jsdom) se da por vista, como antes.
+   */
+  const [inView, setInView] = useState(() => typeof IntersectionObserver === "undefined");
+  const galleryRef = useRef<HTMLElement>(null);
   /** The ambient light and the one before it: the newer fades in over the
    * older, which leaves once the fade has ended. Derived during render (the
    * documented "information from previous renders" pattern), not in an effect. */
@@ -166,15 +174,27 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   /** Restart the quiet countdown; the state only flips inside the timer. */
   const arm = useCallback(() => {
     window.clearTimeout(idleTimer.current);
-    if (!cinema) return;
+    if (!cinema || !inView) return;
     idleTimer.current = window.setTimeout(() => setIdle(true), CINEMA_DELAY);
-  }, [cinema]);
+  }, [cinema, inView]);
   /** Any input wakes the controls; moving between works re-arms the countdown. */
   const wake = () => { setIdle(false); arm(); };
   useEffect(() => {
     arm();
     return () => window.clearTimeout(idleTimer.current);
   }, [arm, active, collection]);
+  useEffect(() => {
+    const gallery = galleryRef.current;
+    if (!gallery || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setInView(entry.isIntersecting);
+      // Al salir de la vista se despierta: al volver, los controles se ven y
+      // la cuenta atrás empieza de nuevo.
+      if (!entry.isIntersecting) setIdle(false);
+    }, { threshold: 0.35 });
+    observer.observe(gallery);
+    return () => observer.disconnect();
+  }, []);
 
   /** One style write per frame; no state, no re-render. */
   const write = (values: Record<string, string>) => {
@@ -292,7 +312,7 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   };
 
   return (
-    <section className="edmunds-gallery" id="galeria" aria-label="Archivo visual" data-view={mode} data-reduced={still} data-idle={idle && cinema}
+    <section ref={galleryRef} className="edmunds-gallery" id="galeria" aria-label="Archivo visual" data-view={mode} data-reduced={still} data-idle={idle && cinema}
       onPointerMove={wake} onPointerDown={wake} onKeyDown={wake} onFocus={wake} onTouchStart={wake}>
       <noscript><style>{`.edmunds-gallery .edmunds-controls, .edmunds-gallery .edmunds-gallery__foot, .edmunds-gallery .edmunds-deck__sky, .edmunds-gallery .edmunds-stage__floor { display: none; } .edmunds-gallery[data-view="space"] { height: auto; min-height: 0; overflow: visible; } .edmunds-gallery .edmunds-stage { position: static; inset: auto; display: block; height: auto; min-height: 0; padding: 24px var(--page-gutter) 40px; overflow: visible; } .edmunds-gallery .edmunds-stage__space, .edmunds-gallery .edmunds-deck { position: static; inset: auto; perspective: none; transform: none; } .edmunds-gallery .edmunds-artworks { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 32px; height: auto; perspective: none; transform: none; } .edmunds-gallery .edmunds-artwork { display: block; position: static; width: auto; max-width: none; transform: none; opacity: 1; filter: none; visibility: visible; pointer-events: auto; } .edmunds-gallery .edmunds-artwork figcaption { display: block; }`}</style></noscript>
       {mode === "space" && current && <div className="edmunds-deck__sky" aria-hidden="true">
