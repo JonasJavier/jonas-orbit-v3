@@ -167,7 +167,7 @@ test("Miller: las corrientes comparten pausa con el océano y duermen fuera de v
 });
 
 test("Miller: formación y certificados funcionan sin JavaScript", async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false, reducedMotion: "reduce", viewport: { width: 375, height: 812 } });
   const page = await context.newPage();
   await page.goto("/es/formacion");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Formación");

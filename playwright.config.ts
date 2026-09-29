@@ -31,8 +31,11 @@ export default defineConfig({
   // Varias pruebas mantienen contextos WebGL y transiciones persistentes. Con
   // el paralelismo implícito de una máquina con muchos núcleos, el hilo se
   // satura y aparecen timeouts que no se reproducen aislados. Cuatro workers
-  // conservan concurrencia local; CI usa dos para priorizar estabilidad.
-  workers: process.env.CI ? 2 : 4,
+  // conservan concurrencia local. En CI, un worker por trozo: con dos, un
+  // runner de 2 núcleos con GPU por software se saturaba hasta que la página
+  // dejaba de responder (clics sin resolver, 2026-09-28); el paralelismo lo
+  // pone la matriz de trozos del workflow.
+  workers: process.env.CI ? 1 : 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   // En CI generamos también el reporte HTML: el job de e2e sube

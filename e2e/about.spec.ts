@@ -292,6 +292,9 @@ test("sin JavaScript: selector, un solo capítulo, hashes y fotos reales", async
 }) => {
   const context = await browser.newContext({
     javaScriptEnabled: false,
+    // Sin JavaScript se prueba el HTML, no el desplazamiento suave hacia el
+    // ancla: en Linux seguía animando mientras Playwright intentaba pulsar.
+    reducedMotion: "reduce",
     viewport: { width: 390, height: 844 },
   });
   const page = await context.newPage();
