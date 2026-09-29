@@ -1,23 +1,23 @@
-## Resultado
+## Outcome
 
-<!-- Qué cambia para una persona usuaria o para el mantenimiento del proyecto. -->
+<!-- What changes for a visitor or for project maintenance? -->
 
-## Alcance
+## Scope
 
-<!-- Qué incluye y qué queda explícitamente fuera. -->
+<!-- What is included, and what is explicitly outside this change? -->
 
-## Verificación
+## Verification
 
 - [ ] `npm run check`
-- [ ] `npm run test:e2e` si afecta rutas, navegación o interacción
-- [ ] HTML/navegación sin JavaScript si afecta contenido esencial
-- [ ] Desktop y 375 px si afecta interfaz
-- [ ] Movimiento ON/OFF y audio ON/OFF si aplica
+- [ ] `npm run test:e2e` if routes, navigation, or interaction change
+- [ ] HTML and navigation without JavaScript if essential content changes
+- [ ] Desktop and 375 px checks if the interface changes
+- [ ] Motion ON/OFF and audio ON/OFF checks if applicable
 
-## Evidencia visual
+## Visual evidence
 
-<!-- Antes/después, mismo viewport y mismo estado. Indica si la valoración del propietario sigue pendiente. -->
+<!-- Before and after, at the same viewport and state. Note whether owner review is still pending. -->
 
-## Riesgos y decisiones
+## Risks and decisions
 
-<!-- Rendimiento, accesibilidad, contenido, licencias, migraciones o decisiones actualizadas. -->
+<!-- Performance, accessibility, content, licensing, migrations, or updated decisions. -->

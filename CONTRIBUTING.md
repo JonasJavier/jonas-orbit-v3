@@ -1,21 +1,17 @@
-# Contribuir a Jonás Orbit v3
+# Contributing to Jonás Orbit v3
 
-Jonás Orbit es un portafolio personal y su código no es abierto (ver
-[`LICENSE`](LICENSE)). **No se aceptan pull requests de terceros.** Si
-encuentras un error, un problema de accesibilidad o una vulnerabilidad, abre un
-issue —o sigue [`SECURITY.md`](SECURITY.md) si es de seguridad— y lo reviso.
+Jonás Orbit is a personal portfolio, and its code is **not open source** (see [LICENSE](LICENSE)). **Third-party pull requests are not accepted.** If you find a bug, accessibility issue, or vulnerability, open an issue—or follow [SECURITY.md](SECURITY.md) for sensitive reports—and I will review it.
 
-El resto de esta guía es el flujo de trabajo interno del proyecto: lo que se
-exige a cada cambio que entra en `main`.
+The rest of this guide describes the project's internal workflow and the standards for changes entering `main`.
 
-## Antes de empezar
+## Before you start
 
-1. Lee [`AGENTS.md`](AGENTS.md) y el índice de [`docs/README.md`](docs/README.md).
-2. Consulta el plan y la decisión vigente del dominio que vas a tocar.
-3. Para cambios amplios, abre primero una propuesta que describa el problema.
-4. No inventes contenido, métricas, enlaces de producción ni licencias.
+1. Read [AGENTS.md](AGENTS.md) and the [documentation index](docs/README.md).
+2. Check the current plan and the latest decision for the area you will change.
+3. For a broad change, first describe the problem and proposed approach.
+4. Do not invent content, metrics, production links, or licensing terms.
 
-## Preparar el entorno
+## Set up the environment
 
 ```bash
 npm ci
@@ -23,43 +19,35 @@ cp .env.example .env.local
 npm run dev
 ```
 
-El proyecto usa Node 24 y versiones exactas. Las dependencias sólo se actualizan
-en cambios dedicados y después de revisar los avisos de seguridad y migración.
+On Windows PowerShell, use `Copy-Item .env.example .env.local`.
 
-## Flujo de cambios
+The project uses Node.js 24 and exact dependency versions. Dependency updates belong in dedicated changes after reviewing security advisories and migration notes.
 
-- Crea una rama corta y descriptiva desde `main`.
-- Mantén los commits enfocados; no incluyas capturas, logs o builds locales.
-- Añade o actualiza los tests del Appendix A que correspondan al cambio.
-- Si cambia una decisión del producto, registra primero la decisión en
-  `docs/registro-de-decisiones.md` y actualiza el índice de `AGENTS.md`.
-- Para cambios visuales, adjunta evidencia desktop y móvil e indica el estado
-  de movimiento y audio. Las capturas de trabajo viven fuera de Git.
+## Change workflow
 
-## Verificación
+- Create a short, descriptive branch from `main`.
+- Keep commits focused; exclude local screenshots, logs, and builds.
+- Add or update the tests relevant to your change in Appendix A of the [project plan](docs/plans/jonas-orbit-v3-mission-endurance.md).
+- If a product decision changes, record it in [the decision log](docs/registro-de-decisiones.md) and update the index in [AGENTS.md](AGENTS.md).
+- For visual changes, attach comparable desktop and mobile evidence and state whether motion and audio were enabled. Keep working screenshots outside Git.
 
-Antes de abrir un pull request:
+## Verification
+
+Before opening a pull request:
 
 ```bash
 npm run check
 npm run test:e2e
 ```
 
-`npm run test:e2e` requiere un `npm run build` previo. No canalices
-`npm run check` mediante `head`, `tail` u otra tubería: se perdería su código de
-salida real.
+`npm run test:e2e` requires a prior `npm run build`. Do not pipe `npm run check` into `head`, `tail`, or another command: that can hide the actual exit status.
 
 ## Pull requests
 
-Un PR debe explicar el resultado, el alcance, los riesgos y cómo se verificó.
-Cuando haya interfaz visible, incluye capturas comparables y señala cualquier
-valoración del propietario que siga pendiente. No presentes una decisión visual
-pendiente como aprobada.
+Explain the outcome, scope, risks, and verification. For visible interface changes, include comparable screenshots and identify any owner review still pending. Do not present an unapproved visual decision as approved.
 
-## Contenido y recursos
+## Content and assets
 
-- La prosa visible vive en MDX, no en `content/worlds.data.ts`.
-- Fotografías, audio, tipografías y referencias externas necesitan procedencia
-  y licencia documentadas.
-- Nunca incluyas secretos, datos personales innecesarios ni credenciales de
-  sesiones de captura.
+- Visitor-facing prose belongs in MDX, not in `content/worlds.data.ts`.
+- Photographs, audio, fonts, and external references need documented provenance and licensing.
+- Never commit secrets, unnecessary personal data, or credentials from capture sessions.

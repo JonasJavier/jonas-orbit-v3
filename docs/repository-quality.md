@@ -1,58 +1,38 @@
-# Calidad del repositorio
+# Repository quality
 
-Este documento define cómo se presenta y mantiene Jonás Orbit v3 como proyecto
-de ingeniería mientras el producto continúa en desarrollo.
+This document defines how Jonás Orbit v3 is presented and maintained as an engineering project while the product continues to evolve.
 
-## Regla de publicación
+## Publication standard
 
-El repositorio debe ser profesional sin aparentar un grado de finalización que
-todavía no existe:
+Present the repository professionally without implying that unfinished work is complete:
 
-- el README separa lo implementado de lo pendiente;
-- las capturas llevan estado, fecha y perfil reproducible;
-- las métricas se publican sólo con comando y resultado verificables;
-- las decisiones visuales pendientes se nombran como pendientes;
-- no se inventan dominio, cifras, clientes ni licencias.
+- Separate implemented features from pending work in the README.
+- Record the state, date, and reproducible capture profile of screenshots.
+- Publish metrics only with a verifiable command and result.
+- Identify visual decisions awaiting owner review.
+- Do not invent domains, measurements, clients, or license terms.
 
-## Archivos fuente y generados
+## Source and generated files
 
-- `public/` contiene sólo recursos que sirve la aplicación: las PNG maestras
-  de las capturas NO (el navegador sólo recibe sus peldaños WebP).
-- `assets/`, `Fotos/`, `Disenos/` y `portfolio-content/` conservan fuentes y
-  evidencia en disco, **fuera de Git** desde 2026-09-28 (repositorio público);
-  su historial vive en el privado `JonasJavier/jonas-orbit-v3-archivo`.
-- `.next/`, `.open-next/`, `.velite/`, `output/`, `mesa-shots/`, `.shots/`,
-  reportes, logs y comparativas temporales permanecen fuera de Git.
-- Un artefacto estable de documentación debe vivir bajo `docs/media/` y explicar
-  cómo se obtuvo.
+- `public/` contains only resources served by the application. Master PNG screenshots stay outside it; browsers receive optimized WebP variants.
+- `assets/`, `Fotos/`, `Disenos/`, and `portfolio-content/` hold source files and evidence outside the public Git history as of 2026-09-28. Their earlier history is preserved in the private `JonasJavier/jonas-orbit-v3-archivo` repository.
+- Keep `.next/`, `.open-next/`, `.velite/`, `output/`, `mesa-shots/`, `.shots/`, reports, logs, and temporary comparisons out of Git.
+- A lasting documentation artifact belongs under `docs/media/` with a description of how it was produced.
 
-## Capturas
+## Screenshots
 
-Una captura publicable debe indicar:
+A publishable screenshot records its route and viewport, build, motion state, capture date, and owner review status. Working screenshots remain in ignored directories; the tools under `tools/` default to `.shots/`.
 
-- ruta y viewport;
-- build utilizado;
-- movimiento encendido o apagado;
-- fecha de captura;
-- estado de la valoración visual del propietario.
+## Metrics
 
-Las capturas de trabajo permanecen en directorios ignorados. Las herramientas
-de `tools/` usan `.shots/` por defecto.
+`lighthouserc.json` and Appendix A of the project plan define canonical thresholds. Add a number to the README only when a deliberate change moves the measurement in the expected direction and reproducible evidence is retained.
 
-## Métricas
+Measure the lightweight profile with `?no3d=1`. Review the full scene separately because SwiftShader does not represent a real GPU.
 
-La fuente canónica de umbrales es `lighthouserc.json` y el Appendix A del plan.
-Un número sólo entra al README cuando una modificación deliberada mueve la
-medida en la dirección esperada y se conserva evidencia reproducible.
+## Hygiene
 
-El perfil ligero se mide con `?no3d=1`. La escena completa se revisa por
-separado porque SwiftShader no representa una GPU real.
-
-## Higiene
-
-- No se versionan secretos, builds, logs, trazas ni capturas de trabajo.
-- Las dependencias permanecen fijadas y se actualizan en PRs dedicados.
-- Knip debe permanecer en verde: no se conservan componentes o exports huérfanos.
-- Los binarios grandes requieren una auditoría específica antes de migrar el
-  historial o adoptar Git LFS.
-- Todo cambio de interfaz conserva accesibilidad, HTML sin JavaScript y 375 px.
+- Do not commit secrets, builds, logs, traces, or working screenshots.
+- Keep dependencies pinned and update them in dedicated pull requests.
+- Keep Knip green; remove orphaned components and exports.
+- Audit large binaries before considering a history migration or Git LFS.
+- Preserve accessibility, meaningful HTML without JavaScript, and a usable 375 px layout with every interface change.
