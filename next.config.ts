@@ -55,13 +55,31 @@ const SECURITY_HEADERS = [
   },
 ];
 
+/*
+  Next sirve `public/` con `max-age=0`: en cada visita el navegador volvía a
+  preguntar por cada foto, y en el teléfono cada pregunta es un viaje de
+  ~200 ms (medido 2026-09-29). Los nombres no llevan hash —una foto
+  recomprimida conserva el suyo—, así que no se marcan `immutable`: valen un
+  día y, pasado, se sirven mientras se revalidan en segundo plano.
+*/
+const PUBLIC_ASSET_DIRS = ["art", "audio", "brand", "cv", "education", "images", "media"];
+const PUBLIC_ASSET_CACHE = [
+  { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // El layout raíz vive bajo `app/[locale]`: una URL fuera de los idiomas
   // publicados no tiene layout que componga su 404 (`app/global-not-found.tsx`).
   experimental: { globalNotFound: true },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      ...PUBLIC_ASSET_DIRS.map((dir) => ({
+        source: `/${dir}/:path*`,
+        headers: PUBLIC_ASSET_CACHE,
+      })),
+    ];
   },
   // Sin proxy/middleware: un redirect estático cubre todo el tráfico. `/` va
   // al inglés, el idioma por defecto (decisión de Jonás, 2026-09-29), y no

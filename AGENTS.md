@@ -158,8 +158,9 @@ MDX**, nunca en `worlds.data.ts`.
   Contacto sin manifiesto ni firma, ESTUDIO en una franja. Sólo CSS de
   teléfono; se oculta, no se reescribe copy.
 - **Resolución adaptable en el teléfono** (09-29) registro «Resolución
-  adaptable…» — en táctil y `orbit` la escena prueba 1 → 1,75 px por punto
-  mientras vaya holgada y baja (y se queda) si se atasca
+  adaptable…» — en táctil y `orbit` la escena prueba 1 → 1,5 px por punto
+  mientras sostenga su propio mejor ritmo (no 60 fps fijos: 90-120 Hz) y
+  deshace (y cierra) el escalón que no lo sostiene
   (`resolution-governor.ts`); `deep` y software, intactos.
 - **Móvil en todo el sitio** (09-29) registro «Auditoría responsive del sitio
   en móvil» — bandeja que se retira al leer en táctil (`system-tray.tsx`),

@@ -244,6 +244,22 @@ el navegador estiraba la escena casi el triple.
   con 30 ms de trabajo inyectado por fotograma baja 1,75 → 1,0 en ~7 s.
   `canvas[data-render-dpr]` expone la densidad vigente para las herramientas.
 - **Palancas.** `TOUCH_DPR_STEPS`, `FAST_MS`, `SLOW_MS` en el mismo archivo.
+- **Corrección — vara relativa y techo 1,5 (2026-09-29, noche).** Tras
+  publicarlo, Jonás notó en su teléfono que tocar un cuerpo tardaba en
+  entrar. La vara fija de 18,5 ms trataba 60 fps como holgado también en
+  pantallas de 90-120 Hz, donde es ir a la mitad: el regulador subía hasta
+  1,75 (≈3× los píxeles de antes) con la GPU al límite. Ahora la vara es el
+  ritmo más rápido sostenido en la visita (`pace`): un escalón cuyo p75 pasa
+  de `pace × 1,15` (`PACE_TOLERANCE`) se deshace y queda cerrado, y los
+  escalones son 1 → 1,25 → 1,5. `FAST_MS`/`SLOW_MS` siguen como topes
+  absolutos (a 30 Hz no sube). Sin teléfono de 120 Hz a mano, lo prueban los
+  tests del regulador; el veredicto es el del dueño en su equipo.
+- **Caché de `public/` (misma noche).** Next sirve `public/` con
+  `max-age=0` y en Railway cada foto se revalidaba en cada visita (~200 ms
+  por foto en el teléfono). `next.config.ts` da a `art`, `audio`, `brand`,
+  `cv`, `education`, `images` y `media` un día de caché con
+  `stale-while-revalidate` de una semana; no `immutable`, porque los nombres
+  no llevan hash y una foto recomprimida conserva el suyo.
 
 ## Idiomas — el sitio en inglés, idioma por defecto (2026-09-29)
 

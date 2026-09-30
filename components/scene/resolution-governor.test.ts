@@ -33,14 +33,38 @@ describe("resolución adaptable en táctil", () => {
       t = run(governor, 1000 / 60, t).end;
       seen.push(governor.dpr);
     }
-    expect(seen).toEqual([1.25, 1.5, 1.75, 1.75, 1.75]);
+    expect(seen).toEqual([1.25, 1.5, 1.5, 1.5, 1.5]);
   });
 
   it("nunca pasa de la densidad real de la pantalla", () => {
-    const governor = createResolutionGovernor(1.5);
+    const governor = createResolutionGovernor(1.25);
     let t = 0;
     for (let i = 0; i < 5; i += 1) t = run(governor, 1000 / 60, t).end;
-    expect(governor.dpr).toBe(1.5);
+    expect(governor.dpr).toBe(1.25);
+  });
+
+  it("a 120 Hz, bajar a 60 fps no es ir holgado: deshace el escalón", () => {
+    const governor = createResolutionGovernor(3);
+    let t = run(governor, 1000 / 120).end;
+    expect(governor.dpr).toBe(1.25);
+
+    // 16,7 ms entra en la vara fija de 18,5, pero es la mitad de la pantalla.
+    t = run(governor, 1000 / 60, t).end;
+    expect(governor.dpr).toBe(1);
+
+    for (let i = 0; i < 4; i += 1) t = run(governor, 1000 / 120, t).end;
+    expect(governor.dpr).toBe(1);
+  });
+
+  it("un teléfono que ya iba justo en 1 prueba una vez y vuelve", () => {
+    // 120 Hz con la GPU ya al límite a 60 fps: no puede saberse sin probar.
+    const governor = createResolutionGovernor(3);
+    let t = run(governor, 1000 / 60).end;
+    expect(governor.dpr).toBe(1.25);
+    t = run(governor, 26, t).end;
+    expect(governor.dpr).toBe(1);
+    for (let i = 0; i < 4; i += 1) t = run(governor, 1000 / 60, t).end;
+    expect(governor.dpr).toBe(1);
   });
 
   it("una pantalla de densidad 1 se queda en 1", () => {

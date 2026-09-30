@@ -17,10 +17,17 @@
  * temporizador de GPU (casi ningún móvil expone `EXT_disjoint_timer_query`).
  * Por eso sólo se sabe que hay margen cuando se llega a la frecuencia de
  * refresco; por encima de ella la única forma de saberlo es probar.
+ *
+ * «Holgada» es relativo al propio teléfono, no a 60 fps: la vara es el ritmo
+ * más rápido que ha sostenido en la visita (`pace`). Con una vara fija de
+ * 18,5 ms, un teléfono de 90-120 Hz que ya iba a la mitad de su pantalla
+ * contaba como holgado y subía hasta 1,75 con la GPU al límite: los toques
+ * tardaban en entrar (Jonás, 2026-09-29). Ahora un escalón que no sostiene
+ * ese ritmo se deshace y queda cerrado, y el techo es 1,5.
  */
 
 /** Escalones de densidad que se prueban, del conocido al más fino. */
-const TOUCH_DPR_STEPS = [1, 1.25, 1.5, 1.75] as const;
+const TOUCH_DPR_STEPS = [1, 1.25, 1.5] as const;
 
 /** Fotogramas por ventana de medida: ~0,75 s a 60 Hz. */
 export const WINDOW_FRAMES = 45;
@@ -30,6 +37,9 @@ export const SETTLE_FRAMES = 30;
 const FAST_MS = 18.5;
 /** Percentil 75 por encima del cual va lenta (≤ ~38 fps). */
 const SLOW_MS = 26;
+/** Cuánto puede alejarse una ventana del mejor ritmo y seguir contando como
+ * sostenido: a 120 Hz, 8,3 → 9,6 ms; a 60 Hz, 16,7 → 19,2 ms. */
+const PACE_TOLERANCE = 1.15;
 /** Un hueco así no es un fotograma lento: es una pestaña en pausa o un GC. */
 const GAP_MS = 250;
 
@@ -56,6 +66,8 @@ export function createResolutionGovernor(deviceRatio: number): ResolutionGoverno
   let index = 0;
   let ceiling = steps.length - 1;
   let settle = SETTLE_FRAMES;
+  /** El ritmo más rápido sostenido en la visita: la vara de «holgada». */
+  let pace = Number.POSITIVE_INFINITY;
   let last: number | null = null;
   const intervals: number[] = [];
 
@@ -90,14 +102,16 @@ export function createResolutionGovernor(deviceRatio: number): ResolutionGoverno
       const sorted = [...intervals].sort((a, b) => a - b);
       const p75 = sorted[Math.floor(sorted.length * 0.75)];
       intervals.length = 0;
+      pace = Math.min(pace, p75);
+      const held = p75 <= pace * PACE_TOLERANCE;
 
-      if (p75 >= SLOW_MS && index > 0) {
+      if (index > 0 && (p75 >= SLOW_MS || !held)) {
         index -= 1;
         ceiling = index;
         restart();
         return true;
       }
-      if (p75 <= FAST_MS && index < ceiling) {
+      if (held && p75 <= FAST_MS && index < ceiling) {
         index += 1;
         restart();
         return true;
