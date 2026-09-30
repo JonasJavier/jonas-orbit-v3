@@ -256,7 +256,10 @@ test("P5 · Producto: el alcance son las tres cifras del MDX, caben en su column
     for (const id of ["omsta", "wikiverse"]) {
       const where = `${viewport.width}/${id}`;
       if (id !== "omsta") {
-        await page.getByRole("navigation", { name: "Proyectos" }).getByRole("link", { name: new RegExp(nameOf(mdx(id))) }).click();
+        const dock = page.getByRole("navigation", { name: "Proyectos" });
+        // En el teléfono el muelle va plegado en su contador: se abre y se elige.
+        if (viewport.width < 768) await dock.getByRole("button", { name: /^Cambiar proyecto/ }).click();
+        await dock.getByRole("link", { name: new RegExp(nameOf(mdx(id))) }).click();
         await expectActive(page, id);
       }
       const expected = mdx(id).scope ?? [];

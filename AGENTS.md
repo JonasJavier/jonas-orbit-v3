@@ -191,6 +191,8 @@ MDX**, nunca en `worlds.data.ts`.
   (09-29) registro «Proyectos en el teléfono»: la mesa no se aplana (sala,
   holograma con perspectiva por pantalla y `z-index`, cristal en trapecio);
   el caso compacto (carrusel de decisiones, lectura plegada con `CaseFold`).
+  Segundo pase: el proyecto primero —muelle plegado en `‹ 01 / 05 ›`, sólo
+  la decisión en Diseño, salidas pequeñas al final—.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

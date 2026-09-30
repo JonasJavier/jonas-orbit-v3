@@ -77,6 +77,7 @@ const COPY = defineCopy({
     projects: "Proyectos",
     previousProject: "Proyecto anterior",
     nextProject: "Proyecto siguiente",
+    changeProject: (name: string, index: number, total: number) => `Cambiar proyecto: ${name}, ${index} de ${total}`,
     depth: "Profundidad de lectura",
     technologies: "Tecnologías",
     explore: "Explorar proyecto",
@@ -99,6 +100,7 @@ const COPY = defineCopy({
     projects: "Projects",
     previousProject: "Previous project",
     nextProject: "Next project",
+    changeProject: (name: string, index: number, total: number) => `Change project: ${name}, ${index} of ${total}`,
     depth: "Reading depth",
     technologies: "Technologies",
     explore: "Explore project",
@@ -459,6 +461,9 @@ export function EngineeringTable({
   // El proyecto que se apunta en el muelle: su vista previa. Se recuerda el
   // último para que la vista previa se apague con su contenido, no vacía.
   const [peek, setPeek] = useState<{ id: string; open: boolean } | null>(null);
+  // En el teléfono el muelle se pliega en «01 / 05»: la lista se abre a pedido.
+  const [listOpen, setListOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   // La región viva calla hasta el primer cambio real: hidratar no es un
   // cambio. Y si el paso vino de las flechas, el foco ya lleva la nota
   // (`aria-describedby`): anunciarla otra vez la leería dos veces.
@@ -560,8 +565,32 @@ export function EngineeringTable({
     return () => dock.removeEventListener("wheel", onWheel);
   }, [enhanced, stepProject]);
 
-  /* En móvil el muelle es una fila que se desplaza: el proyecto elegido se
-     trae al centro de la fila (su imán también es el centro), sin mover la
+  /*
+    La lista plegada del teléfono: al abrirse, el foco va al proyecto a la
+    vista; Escape la cierra y devuelve el foco al contador, y tocar fuera la
+    cierra sin más.
+  */
+  useEffect(() => {
+    if (!listOpen) return;
+    listRef.current?.querySelector<HTMLElement>('[aria-current="true"]')?.focus();
+    function onKey(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setListOpen(false);
+      toggleRef.current?.focus();
+    }
+    function onDown(event: globalThis.PointerEvent) {
+      if (!dockRef.current?.contains(event.target as Node)) setListOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [listOpen]);
+
+  /* Si la fila del muelle no cabe y se desplaza, el proyecto elegido se trae
+     al centro de la fila (su imán también es el centro), sin mover la
      página. */
   useEffect(() => {
     const list = listRef.current;
@@ -627,8 +656,9 @@ export function EngineeringTable({
   */
   function onDockKey(event: KeyboardEvent<HTMLUListElement>) {
     let target: TableProject | null = null;
-    if (event.key === "ArrowRight") target = neighbour(1);
-    if (event.key === "ArrowLeft") target = neighbour(-1);
+    // Plegado en el teléfono, la lista es vertical: ↑ ↓ también.
+    if (event.key === "ArrowRight" || (listOpen && event.key === "ArrowDown")) target = neighbour(1);
+    if (event.key === "ArrowLeft" || (listOpen && event.key === "ArrowUp")) target = neighbour(-1);
     if (event.key === "Home") target = projects[0];
     if (event.key === "End") target = projects[projects.length - 1];
     if (!target) return;
@@ -757,6 +787,7 @@ export function EngineeringTable({
         ref={dockRef}
         aria-label={t.projects}
         className="table-dock"
+        data-open={listOpen ? "true" : undefined}
         style={{ "--n": projects.length, "--active": currentIndex } as CSSProperties}
       >
         <button
@@ -768,8 +799,22 @@ export function EngineeringTable({
         >
           <Chevron direction="left" />
         </button>
+        {/* Sólo en el teléfono: el muelle plegado en su posición. */}
+        <button
+          ref={toggleRef}
+          aria-controls="table-dock-list"
+          aria-expanded={listOpen}
+          aria-label={t.changeProject(current.name, currentIndex + 1, projects.length)}
+          className="table-dock__toggle"
+          onClick={() => setListOpen((open) => !open)}
+          type="button"
+        >
+          <span aria-hidden="true">
+            {pad(currentIndex + 1)} <span className="table-dock__toggle-of">/ {pad(projects.length)}</span>
+          </span>
+        </button>
         <div className="table-dock__rail">
-          <ul ref={listRef} className="table-dock__list" onKeyDown={onDockKey}>
+          <ul ref={listRef} className="table-dock__list" id="table-dock-list" onKeyDown={onDockKey}>
             {projects.map((entry, index) => (
               <li
                 key={entry.id}
@@ -783,6 +828,10 @@ export function EngineeringTable({
                   onClick={(event) => {
                     event.preventDefault();
                     switchProject(entry.id);
+                    if (listOpen) {
+                      setListOpen(false);
+                      toggleRef.current?.focus();
+                    }
                   }}
                   onFocus={(event: FocusEvent<HTMLAnchorElement>) => {
                     prefetch(entry);

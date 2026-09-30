@@ -76,6 +76,22 @@ que toque a la mesa y al caso en teléfono).
   plegada tras sus primeros párrafos con «Seguir leyendo» (`CaseFold` en
   `project-case-nav.tsx`; se abre sola con un capítulo en el hash o el foco
   dentro; sin JavaScript y en escritorio no existe). Nada se quita del HTML.
+- **Segundo pase (mismo día): el proyecto primero.** El dueño, con captura
+  de OMSTA: «una cabina de avión» —destino, chips, estado, nombre, CTA,
+  pestañas, mockup, flechas, problema y decisión a la vez—. Con guion y
+  ≤ 767 px (`(scripting: enabled)`, así nada salta al hidratar): una línea
+  arriba, `PROYECTOS` y el muelle plegado en `‹ 01 / 05 ›`, cuyo contador
+  abre la lista (`.table-dock__toggle`, `aria-expanded`; ↑ ↓, Escape y tocar
+  fuera la cierran, el foco vuelve); el kicker y los chips se van. Estado
+  pegado al nombre; pestañas en fila con subrayado, sin caja de cristal; en
+  Diseño `← 01 / 08 →` centrado con flechas sin aro y SOLO la decisión (el
+  problema sigue en escritorio, en el caso y en `aria-describedby`); las
+  salidas bajan al final (`.table-read` en `display: contents`) y encogen:
+  el sitio contorneado en ámbar y GitHub sólo con su marca, blanco de 44.
+  Del pie se ocultan la frase y el párrafo (llegaban tarde); quedan las tres
+  cifras. Sin guion, la fila de chips de antes. OMSTA no lleva botón de
+  código porque su repositorio es privado (el caso lo dice). El descriptor
+  no se recorta: es copy del MDX.
 - Pendiente: veredicto visual del dueño en su teléfono.
 
 ## Rendimiento móvil — PageSpeed de las siete páginas (2026-09-29)

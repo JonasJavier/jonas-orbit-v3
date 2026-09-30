@@ -1148,6 +1148,8 @@
 /* El foco, dentro de la barra: por fuera se montaba sobre su canto. */
 .projects-page :is(.table-dock__step, .table-dock__item):focus-visible { outline-offset: -3px; border-radius: 9px; }
 .table-dock__chevron { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+/* El muelle plegado («01 / 05»): sólo existe en el teléfono con guion. */
+.table-dock__toggle { display: none; }
 .table-dock__rail { position: relative; }
 /* La pista fina bajo todos los proyectos. */
 .table-dock__rail::after {
@@ -1674,24 +1676,27 @@ html[data-motion="off"] .projects-page *::after {
   .table-read__actions { flex-direction: row; align-items: center; gap: 6px 18px; margin-top: 14px; }
   .table-cta { gap: 14px; min-height: 44px; padding: 0 16px; font-size: 0.84rem; }
 
-  /* El selector de capa: una sola pieza de cristal, pegada bajo la cabecera. */
+  /*
+    El selector de capa: una fila de pestañas con su subrayado, pegada bajo la
+    cabecera. Sin caja de cristal: era otra pieza pesada más entre el nombre y
+    las pantallas.
+  */
   .table-tabs {
     order: 0;
     position: sticky;
-    top: calc(var(--pj-header) + 8px);
+    top: var(--pj-header);
     z-index: 8;
-    gap: 2px;
-    margin-top: 18px;
-    padding: 3px;
-    border: 1px solid rgb(160 200 235 / 14%);
-    border-radius: 12px;
-    background: linear-gradient(180deg, rgb(16 23 33 / 84%), rgb(6 9 14 / 92%));
-    -webkit-backdrop-filter: blur(14px) saturate(1.3);
-    backdrop-filter: blur(14px) saturate(1.3);
-    box-shadow: inset 0 1px 0 rgb(220 240 255 / 7%), 0 14px 30px -16px rgb(0 0 0 / 85%);
+    gap: 0;
+    margin: 14px calc(-1 * var(--pj-gutter)) 0;
+    padding: 0 var(--pj-gutter);
+    border-bottom: 1px solid rgb(160 200 235 / 12%);
+    background: linear-gradient(180deg, rgb(3 5 8 / 78%), rgb(3 5 8 / 58%));
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
   }
-  .table-tab { flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 0.82rem; }
-  .table-tab::before { inset: 0; border-color: transparent; border-radius: 9px; background: none; }
+  .table-tab { flex: 1 1 0; min-width: 0; padding: 0 4px; color: #93a2b8; font-size: 0.8rem; letter-spacing: 0.02em; }
+  .table-tab::before { inset: auto 22% -1px; height: 2px; border: 0; border-radius: 2px; background: transparent; }
+  .table-tab[aria-selected="true"]::before { background: var(--pj-cyan); box-shadow: 0 0 10px rgb(127 229 255 / 55%); }
 
   /*
     El escenario, a sangre: el holograma arriba y, debajo, el cristal de la
@@ -1814,28 +1819,32 @@ html[data-motion="off"] .projects-page *::after {
   .holo-scope dd { font-size: clamp(1.1rem, (var(--scope-w) / 3 - var(--cell-pad)) * 1.7 / var(--vlen, 3), 1.8rem); }
   .holo-scope dt { font-size: 0.72rem; }
 
-  /* Diseño: la decisión, con sus flechas a los lados del índice. */
+  /*
+    Diseño: «← 01 / 08 →» en una línea corta y centrada, y debajo UNA idea: la
+    decisión. El problema lo cuenta ya la pantalla, y sigue entero en el caso
+    (y para el lector de pantalla, en la pantalla elegida). Las flechas son
+    blancos de 44 sin aro: a los cantos y en círculo pesaban más que la nota.
+  */
   .holo-note {
     display: none;
-    grid-template-columns: 44px 1fr 44px;
-    grid-template-areas: "prev index next" "text text text";
+    grid-template-columns: 1fr 44px auto 44px 1fr;
+    grid-template-areas: ". prev index next ." "text text text text text";
     align-items: center;
-    gap: 6px 0;
+    gap: 0 2px;
   }
   .table[data-layer="diseno"] .holo-note { display: grid; }
   .holo-note__step:first-child { grid-area: prev; }
   .holo-note__step:last-child { grid-area: next; }
   .holo-note__text { display: contents; }
-  .holo-note__index { grid-area: index; justify-self: center; padding: 0; }
-  /* Cada línea, su rótulo encima: a dos columnas el rótulo se comía un
-     tercio del ancho. */
-  .holo-note__line { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 8px; }
-  .holo-note__line[data-part="caption"] { text-align: center; }
+  .holo-note__index { grid-area: index; align-self: center; justify-self: center; min-width: 5.5em; padding: 0; text-align: center; }
+  .holo-note__line { grid-column: 1 / -1; display: grid; justify-items: center; gap: 5px; margin-top: 4px; text-align: center; }
+  .holo-note__line[data-part="problem"] { display: none; }
   .holo-note__label { font-size: 0.58rem; }
-  .holo-note__problem { font-size: 0.84rem; text-wrap: pretty; }
-  .holo-note__decision { font-size: 0.92rem; text-wrap: pretty; }
+  .holo-note__decision { font-size: 0.95rem; text-wrap: balance; }
   .holo-note__caption { font-size: 0.9rem; }
-  .holo-note__step { width: 44px; height: 44px; }
+  .holo-note__step,
+  .holo-note__step:hover { width: 44px; height: 44px; border: 0; background: none; color: #a9c4d6; font-size: 1.05rem; }
+  .holo-note__step:active { color: #fff; }
 
   /*
     Ingeniería: el sistema en su panel, sin holograma encima. Cada carril es
@@ -1891,15 +1900,125 @@ html[data-motion="off"] .projects-page *::after {
       radial-gradient(120% 80% at 50% 50%, transparent 55%, rgb(0 0 0 / 50%) 100%);
   }
 
-  /* El pie: una frase, el párrafo y tres cifras en una fila. */
-  .projects-page__foot { padding: 44px var(--pj-gutter) 0; }
-  .projects-page__closing { font-size: 1.3rem; }
-  .projects-page__intro { margin-top: 12px; font-size: 0.92rem; line-height: 1.55; }
-  .projects-page__facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; padding-top: 18px; }
+  /* El pie: sólo las tres cifras en una fila. La frase y el párrafo de
+     presentación llegaban tarde, después del proyecto: en el teléfono se
+     ocultan (siguen en el HTML). */
+  .projects-page__foot { padding: 36px var(--pj-gutter) 0; }
+  .projects-page__closing, .projects-page__intro { display: none; }
+  .projects-page__facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 0; padding-top: 18px; }
   .projects-page__facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 6px; }
   .projects-page__facts dt { font-size: 0.56rem; letter-spacing: 0.12em; }
   .projects-page__facts dd { margin: 0; font-size: 1.6rem; }
   .projects-neighbours { gap: 12px; padding: 22px var(--pj-gutter) 48px; }
   .projects-neighbours small { font-size: 0.54rem; letter-spacing: 0.14em; }
   .projects-neighbours a > span:not([aria-hidden]) { font-size: 0.74rem; letter-spacing: 0.12em; }
+}
+
+/*
+  EL TELÉFONO CON GUION: el proyecto primero, lo demás a pedido.
+  Una línea arriba —«PROYECTOS» y el muelle plegado en «‹ 01 / 05 ›», cuya
+  lista se abre al tocar el contador—; después estado, nombre y qué es; las
+  capas; las pantallas; y al final las salidas, pequeñas: el caso, el sitio
+  y el código. Sin guion sigue la fila de proyectos de arriba (y con él
+  también desde el primer pintado: nada salta al hidratar).
+*/
+@media (scripting: enabled) and (max-width: 767px) {
+  .table-head { order: -6; display: flex; align-items: center; min-height: 44px; padding-right: 150px; }
+  .table-kicker { display: none; }
+  .table-head__title {
+    margin: 0;
+    font: 500 0.74rem/1 var(--font-mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgb(160 222 246 / 85%);
+    text-shadow: none;
+  }
+
+  .table-dock {
+    position: absolute;
+    top: calc(var(--pj-header) + 16px);
+    right: calc(var(--pj-gutter) - 12px);
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+  .table-dock__step { display: grid; color: #a9b8cc; }
+  .table-dock__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 6px;
+    border: 0;
+    background: none;
+    color: #fff;
+    font: 500 0.78rem/1 var(--font-mono);
+    letter-spacing: 0.08em;
+  }
+  .table-dock__toggle-of { color: var(--pj-muted); }
+  /* El pico que dice que se despliega. */
+  .table-dock__toggle::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    margin-top: -3px;
+    border-right: 1.5px solid var(--pj-cyan);
+    border-bottom: 1.5px solid var(--pj-cyan);
+    rotate: 45deg;
+    transition: rotate 0.25s, margin 0.25s;
+  }
+  .table-dock__toggle[aria-expanded="true"]::after { margin-top: 3px; rotate: 225deg; }
+  .projects-page .table-dock__toggle:focus-visible { outline-offset: -3px; border-radius: 9px; }
+
+  /* La lista, a pedido: un panel de cristal bajo el contador. */
+  .table-dock__rail {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 12px;
+    display: none;
+    width: min(260px, calc(100vw - 2 * var(--pj-gutter)));
+    padding: 6px;
+    border: 1px solid rgb(160 200 235 / 16%);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgb(16 23 33 / 94%), rgb(6 9 14 / 97%));
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: inset 0 1px 0 rgb(220 240 255 / 8%), 0 24px 48px -16px rgb(0 0 0 / 90%);
+  }
+  .table-dock[data-open] .table-dock__rail { display: block; }
+  .table-dock__list {
+    flex-direction: column;
+    gap: 2px;
+    padding: 0;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .table-dock__item { justify-content: flex-start; gap: 12px; padding: 0 12px; }
+  .table-dock__item::before { inset: 0; border-color: transparent; border-radius: 8px; background: none; }
+  .table-dock__item[aria-current="true"]::before { border-color: rgb(127 229 255 / 40%); box-shadow: none; }
+  .table-dock__name { font-size: 0.9rem; }
+
+  /* La lectura se deshace en la columna: así las salidas bajan al final. */
+  .table-read { display: contents; }
+  .table-read__status { order: -5; margin: 18px 0 6px; }
+  .table-read__title { order: -4; }
+  .table-read__descriptor { order: -3; }
+  .table-read__actions { order: 2; justify-content: flex-start; gap: 8px; margin-top: 2px; }
+  .table-cta { gap: 10px; min-height: 44px; padding: 0 14px; font-size: 0.8rem; }
+  /* El sitio en vivo, contorneado en ámbar: relleno competía con el caso. */
+  .table-cta--site { background: transparent; color: var(--pj-amber); border-color: rgb(242 200 121 / 65%); }
+  .table-cta--site > span { color: var(--pj-amber); }
+  /* El código, sólo su marca: un blanco de 44 con nombre accesible. */
+  .table-read__code { position: relative; justify-content: center; width: 44px; border: 1px solid rgb(220 238 255 / 30%); border-radius: 2px; }
+  .table-read__code-mark { width: 19px; height: 19px; }
+  .table-read__code :is(.table-read__code-label, .table-read__code-out) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }

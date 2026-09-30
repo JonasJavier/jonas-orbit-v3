@@ -492,6 +492,45 @@ describe("EngineeringTable · proyectos y muelle", () => {
   });
 
   /*
+    Garantiza el muelle plegado del teléfono: el contador dice qué proyecto y
+    de cuántos, abre la lista con el foco en el activo, ↑ ↓ la recorren,
+    elegir la cierra y devuelve el foco al contador, y Escape o tocar fuera
+    la cierran. Evita una lista que se queda abierta tapando la lectura o un
+    selector que en el teléfono no se opera con teclado.
+  */
+  it("el contador del muelle abre la lista, elegir o Escape la cierran y el foco vuelve", () => {
+    renderTable(table());
+    const toggle = within(dock()).getByRole("button", { name: "Cambiar proyecto: OMSTA, 1 de 5" });
+    expect(toggle).toHaveTextContent("01 / 05");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveAttribute("aria-controls", dock().querySelector("ul")?.id);
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(dock()).toHaveAttribute("data-open", "true");
+    expect(dockLink("omsta")).toHaveFocus();
+    fireEvent.keyDown(dockLink("omsta"), { key: "ArrowDown" });
+    expect(dockLink("izaks-photos")).toHaveFocus();
+    fireEvent.keyDown(dockLink("izaks-photos"), { key: "ArrowUp" });
+    expect(dockLink("omsta")).toHaveFocus();
+
+    fireEvent.click(dockLink("wikiverse"));
+    expect(section("wikiverse")).toHaveAttribute("data-state", "active");
+    expect(dock()).not.toHaveAttribute("data-open");
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAccessibleName("Cambiar proyecto: Wikiverse, 3 de 5");
+
+    fireEvent.click(toggle);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(dock()).not.toHaveAttribute("data-open");
+    expect(toggle).toHaveFocus();
+
+    fireEvent.click(toggle);
+    fireEvent.pointerDown(document.body);
+    expect(dock()).not.toHaveAttribute("data-open");
+  });
+
+  /*
     Garantiza las flechas GLOBALES: con el foco en `body`, ← → pasan de
     proyecto; con el foco en el selector de capa (que ya usa flechas), no; y
     con un modificador, tampoco. Evita secuestrar las flechas de un mando o un
