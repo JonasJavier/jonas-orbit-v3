@@ -22,8 +22,6 @@ const ids = [
   "F11",
   "F02",
   "F16",
-  "F34",
-  "F15",
   "F20",
   "F07",
   "F36",
@@ -37,6 +35,12 @@ for (const width of [320, 640, 960, 1600]) {
     if (error.code !== "ENOENT") throw error;
   });
 }
+// «Amigos, casi familia» left the page (2026-09-29): its two photos go too.
+for (const id of ["F34", "F15"])
+  for (const width of [320, 640, 800, 960, 1600])
+    await unlink(path.join(output, `${id}-${width}.webp`)).catch((error) => {
+      if (error.code !== "ENOENT") throw error;
+    });
 for (const id of ids) {
   const entry = inventory.find((photo) => photo.id === id);
   const source = path.join(

@@ -1442,28 +1442,17 @@ body:has(.about-page dialog[open]) {
   font-size: 12px;
   letter-spacing: 0.08em;
 }
-.about-page .about-chosen-family,
 .about-page .about-adventures {
   margin-top: 64px;
   padding-top: 40px;
   border-top: 1px solid var(--line);
 }
-.about-page .about-friends-album,
 .about-page .about-adventure-photos {
   margin-top: 32px;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   align-items: center;
   gap: 48px;
-}
-.about-page .about-friends-album .about-paper:first-child {
-  transform: rotate(-1.5deg);
-}
-.about-page .about-collage .about-photo-button {
-  aspect-ratio: 16/9;
-}
-.about-page .about-collage img {
-  object-fit: contain;
 }
 .about-page .about-adventure-photos {
   grid-template-columns: 1.4fr 1fr;
@@ -1667,7 +1656,6 @@ body:has(.about-page dialog[open]) {
   .about-page .about-chapter {
     scroll-margin-top: 0;
   }
-  .about-page .about-friends-album,
   .about-page .about-adventure-photos,
   .about-page .about-preaching-photos,
   .about-page .about-path-photos {
@@ -1678,13 +1666,9 @@ body:has(.about-page dialog[open]) {
     width: 75%;
     justify-self: end;
   }
-  .about-page .about-friends-album .about-collage {
-    margin-top: 14px;
-  }
   .about-page .about-adventure-photos figure:last-child {
     width: 78%;
   }
-  .about-page .about-chosen-family,
   .about-page .about-adventures {
     margin-top: 44px;
   }
@@ -2049,6 +2033,106 @@ body:has(.about-page dialog[open]) {
   color: var(--gold);
   font-size: 11px;
   vertical-align: 0.3em;
+}
+/* Time alone reads as an aside; the faith line closes the chapter. */
+.about-page .about-self-copy .about-self-alone {
+  margin-top: 18px;
+  padding-left: 18px;
+  border-left: 1px solid var(--gold);
+  font:
+    italic 18px/1.6 Georgia,
+    serif;
+  color: #d8d2c6;
+}
+.about-page .about-self-copy .about-faith {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid var(--line);
+  font:
+    20px/1.5 Georgia,
+    serif;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+/* Mi camino: the three verbs are the chapter's headline band. */
+.about-page .about-path-motto {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: none;
+  margin-top: 40px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.about-page .about-path-motto span {
+  padding: 22px 0 30px 32px;
+  font:
+    clamp(40px, 4.7vw, 68px) / 1 Georgia,
+    serif;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.about-page .about-path-motto span:first-child {
+  padding-left: 0;
+}
+.about-page .about-path-motto span + span {
+  border-left: 1px solid var(--line);
+}
+.about-page .about-path-motto span:last-child {
+  font-style: italic;
+  color: var(--gold);
+}
+/* The band's lower rule already opens the first story. */
+.about-page .about-path-head + .about-service-story {
+  margin-top: 0;
+  border-top: 0;
+}
+.about-page .about-path-motto span::before {
+  content: attr(data-step);
+  display: block;
+  margin-bottom: 26px;
+  font:
+    11px/1 "Segoe UI",
+    sans-serif;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+}
+@media (max-width: 700px), (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  .about-page .about-self-copy .about-self-alone {
+    font-size: 17px;
+  }
+  .about-page .about-self-copy .about-faith {
+    font-size: 18px;
+  }
+  /* Stacked, each verb steps in a little further: a path, not a list. */
+  .about-page .about-path-head {
+    margin-bottom: 24px;
+  }
+  .about-page .about-path-motto {
+    grid-template-columns: 1fr;
+    margin-top: 28px;
+    border-bottom: 0;
+  }
+  .about-page .about-path-motto span {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: clamp(38px, 11vw, 48px);
+  }
+  .about-page .about-path-motto span + span {
+    border-left: 0;
+  }
+  .about-page .about-path-motto span:nth-child(2) {
+    padding-left: 12%;
+  }
+  .about-page .about-path-motto span:nth-child(3) {
+    padding-left: 24%;
+  }
+  .about-page .about-path-motto span::before {
+    margin: 0;
+  }
 }
 
 /* Tastes: an automatic drift, no controls. Two copies of the list make the

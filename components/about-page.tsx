@@ -262,22 +262,6 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                   </div>
                 </article>
               </div>
-              <div className="about-chosen-family">
-                <div>
-                  <span className="about-eyebrow">{t.chosenEyebrow}</span>
-                  <h3>{t.chosenTitle}</h3>
-                </div>
-                <div className="about-friends-album">
-                  <figure className="about-paper">
-                    <PhotoButton id="F34" photo={t.friendsPhoto} />
-                    <figcaption className="about-caption">{t.friendsPhoto.caption}</figcaption>
-                  </figure>
-                  <figure className="about-paper about-collage">
-                    <PhotoButton id="F15" photo={t.callsPhoto} />
-                    <figcaption className="about-caption">{t.callsPhoto.caption}</figcaption>
-                  </figure>
-                </div>
-              </div>
               <a className="about-section-end" href="#como-soy">
                 {t.peopleNext}
               </a>
@@ -299,6 +283,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 </h2>
                 <p className="about-section-lead">{t.selfLead}</p>
                 <p>{t.selfStory}</p>
+                <p className="about-self-alone">{t.selfAlone}</p>
                 <div className="about-traits">
                   <span className="about-eyebrow">{t.traitsEyebrow}</span>
                   <ul>
@@ -307,8 +292,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                     ))}
                   </ul>
                 </div>
-                <p>{t.faith}</p>
-                <p className="about-script">{t.selfScript}</p>
+                <p className="about-faith">{t.faith}</p>
               </div>
             </div>
             <a className="about-section-end" href="#lo-que-disfruto">
@@ -399,8 +383,16 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 <h2 tabIndex={-1} id="path-title">
                   {t.pathTitle}
                 </h2>
-                <p className="about-section-lead">{t.pathLead}</p>
               </div>
+              {/* The chapter's three verbs, set as its headline band. The
+                  spaces keep them three words for a screen reader. */}
+              <p className="about-path-motto">
+                {t.pathMotto.map((word, index) => (
+                  <span key={word} data-step={`0${index + 1}`}>
+                    {word}{" "}
+                  </span>
+                ))}
+              </p>
             </div>
             <article className="about-service-story">
               <div className="about-service-copy">
@@ -419,14 +411,13 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
                 </figure>
               </div>
             </article>
-            <article className="about-service-story about-betel-story">
+            <article className="about-service-story about-volunteer-story">
               <div className="about-service-copy">
-                <span className="about-eyebrow">{t.bethelEyebrow}</span>
-                <h3>{t.bethelTitle}</h3>
-                <p>{t.bethelBody}</p>
+                <span className="about-eyebrow">{t.volunteerEyebrow}</span>
+                <h3>{t.volunteerTitle}</h3>
+                <p>{t.volunteerBody}</p>
               </div>
               <div className="about-volunteer-album">
-                <span className="about-eyebrow">{t.volunteerEyebrow}</span>
                 <div className="about-path-photos">
                   <figure className="">
                     <PhotoButton id="F11" photo={t.volunteerPhoto} />

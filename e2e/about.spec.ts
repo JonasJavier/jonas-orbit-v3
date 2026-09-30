@@ -280,14 +280,15 @@ test("fotos inactivas diferidas y foto del equipo retirada", async ({
     .locator(".about-node img")
     .last()
     .evaluate((img: HTMLImageElement) => img.decode());
-  expect(images.some((url) => /F04-|F15-|F20-|gustos\//.test(url))).toBe(false);
+  expect(images.some((url) => /F04-|F36-|F20-|gustos\//.test(url))).toBe(false);
   expect((await request.get("/images/sobre-mi/F13-1600.webp")).status()).toBe(
     404,
   );
   const response = await request.get("/es/sobre-mi");
   const html = await response.text();
   for (const id of chapters) expect(html).toContain(`id="${id}"`);
-  expect(html).toContain("Predicar desde joven");
+  expect(html).toContain("Compartir la Biblia con otras personas");
+  expect(html).not.toContain("Amigos, casi familia");
   await page.locator('.about-node[href="#mi-gente"]').click();
   await page.locator('a[data-photo="F04"]').scrollIntoViewIfNeeded();
   await expect.poll(() => images.some((url) => /F04-/.test(url))).toBe(true);
@@ -311,7 +312,7 @@ test("sin JavaScript: selector, un solo capítulo, hashes y fotos reales", async
   await page.locator('.about-node[href="#como-soy"]').click();
   await expect(current(page)).toHaveCount(1);
   await expect(
-    page.getByText(/Mi fe ocupa un lugar importante/),
+    page.getByText(/Mi fe es una parte importante de quien soy/),
   ).toBeVisible();
   await navLink(page, "lo-que-disfruto").click();
   await expect(current(page)).toHaveAttribute("id", "lo-que-disfruto");

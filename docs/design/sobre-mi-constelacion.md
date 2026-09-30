@@ -6,7 +6,27 @@ fondo semejante a la referencia de cielo y montañas, pulir y conservar la navba
 Este documento manda sobre las propuestas previas de Sobre mí en composición
 y contenido personal. No altera la arquitectura de rutas ni la cámara.
 
-## Pase de pulido · 2026-09-22 (vigente)
+## Textos nuevos de Cómo soy y Mi camino · 2026-09-29 (vigente)
+
+Texto del dueño, traducido al inglés. Manda sobre el pase de pulido en Cómo
+soy, Mi gente (cierre) y Mi camino.
+
+- **Cómo soy.** Título «Un poco de mí.» (el nodo sigue «Cómo soy»); frase
+  «Curioso por naturaleza.»; dos párrafos, el del tiempo a solas como aparte
+  en cursiva con filete dorado; rasgos igual; la fe cierra el capítulo en
+  serif con filete superior. Fuera la línea «Le doy demasiadas vueltas…».
+- **Mi gente.** Retirado «Amigos, casi familia» con sus dos fotos (F34, F15):
+  fuera de la página, del manifiesto y de `public/` (14 fotos ampliables).
+- **Mi camino.** «Servir. Aprender. Compartir.» pasa a ser la franja titular
+  del capítulo: tres verbos grandes con índice 01–03, «Compartir» en cursiva
+  dorada; en el teléfono, apilados y escalonados. Las dos historias se atan a
+  la franja: «COMPARTIR · LA PREDICACIÓN» (Conectar con las personas; pies
+  «Compartiendo con otros.» / «Predicando desde niño.») y «SERVIR · EL
+  VOLUNTARIADO» (Hombro con hombro). Las fotos F11/F36 no son de Betel: sale
+  toda mención a Betel de ese bloque; pies «Servir nos hace felices.» / «Un
+  esfuerzo que se disfruta.».
+
+## Pase de pulido · 2026-09-22
 
 Petición del dueño: «esta tiene que ser de las mejores páginas del sitio». Manda
 sobre los apartados inferiores en Raíces, copy de Mi gente, abuelos y Cómo soy,

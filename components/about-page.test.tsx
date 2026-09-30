@@ -55,9 +55,9 @@ describe("Sobre mí · constelación personal", () => {
       within(index).getByRole("img", { name: "Jonás junto al mar" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Mi fe ocupa un lugar importante/),
+      screen.getByText(/Mi fe es una parte importante de quien soy/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Predicar desde joven/)).toBeInTheDocument();
+    expect(screen.getByText(/Compartir la Biblia con otras personas/)).toBeInTheDocument();
     expect(
       screen.getByText(/cumpliendo metas y sueños juntos/),
     ).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe("Sobre mí · constelación personal", () => {
     );
     const links =
       container.querySelectorAll<HTMLAnchorElement>("a[data-photo]");
-    expect(links).toHaveLength(16);
+    expect(links).toHaveLength(14);
     expect(
       container.querySelector(
         'img[src*="F13-"], img[src*="E03-"], img[src*="F42-"]',
@@ -87,7 +87,7 @@ describe("Sobre mí · constelación personal", () => {
       "src",
       expect.stringContaining("F23-"),
     );
-    for (const id of ["F02", "F16", "F11", "F34", "F15", "F20", "F07"]) {
+    for (const id of ["F02", "F16", "F11", "F36", "F20", "F07"]) {
       expect(
         container.querySelector(`a[data-photo="${id}"]`),
       ).toBeInTheDocument();
