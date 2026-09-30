@@ -11,14 +11,14 @@ import { getWorldNavItems } from "@/lib/worlds";
 
 const COPY = defineCopy({
   es: {
-    title: "Jonás Javier Encarnación — Desarrollador full-stack y diseñador UX/UI",
+    title: "Jonás Javier Encarnación — Desarrollador full-stack · Portafolio 3D",
     description:
-      "Portafolio de Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana: proyectos, formación, fotografía y experimentos 3D.",
+      "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana. Un portafolio 3D interactivo inspirado en Interstellar.",
   },
   en: {
-    title: "Jonás Javier Encarnación — Full-Stack Developer & UX/UI Designer",
+    title: "Jonás Javier Encarnación — Full-Stack Developer · 3D Portfolio",
     description:
-      "Portfolio of Jonás Javier Encarnación, a full-stack developer and UX/UI designer in the Dominican Republic: web and mobile apps, photography and 3D experiments.",
+      "Jonás Javier Encarnación, a full-stack developer and UX/UI designer in the Dominican Republic. An interactive 3D portfolio inspired by Interstellar.",
   },
 });
 

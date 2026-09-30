@@ -19,6 +19,37 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — nombre, nicho 3D y freelance (2026-09-29)
+
+El dueño pidió posicionar el sitio en tres frentes: su nombre, el nicho 3D
+(portafolio 3D, Gargantúa, planetas y naves de Interstellar) y el desarrollo
+full-stack freelance. Sólo metadatos y JSON-LD: nada visible cambia.
+
+- **Nombre.** «Jonás Javier Encarnación» es el nombre completo (títulos, H1,
+  `Person.name`); «Jonás Javier» es el corto (plantilla `%s · Jonás Javier`,
+  `alternateName`). El completo es único y se gana primero; el corto lo
+  hereda cuando el buscador ya los asocia.
+- **Portada:** el título dice `Portafolio 3D` / `3D Portfolio` en lugar
+  de «diseñador UX/UI» (que pasa a la descripción) y la descripción nombra
+  Interstellar como inspiración.
+- **Interstellar se nombra como homenaje, nunca como palabra principal.** Va
+  en descripciones («inspirado en Interstellar»), no en títulos: la búsqueda
+  «Interstellar» a secas es de la película (Wikipedia, IMDb) y quien la hace
+  no contrata; en los títulos van los cuerpos y la técnica.
+- **Los seis especímenes tienen `seoTitle`/`seoDescription` propios**
+  (antes sólo Gargantúa): «Planeta Miller en 3D», «Nave Endurance en 3D»,
+  «Tesseracto — Hipercubo 4D»… Son las páginas que pueden ganar las
+  búsquedas largas del nicho. La descripción entra también en su
+  `CreativeWork`.
+- **Contacto** dice «contratar» y «freelance»; **Experimentos**, «3D».
+- **JSON-LD:** `ProfilePage` (`mainEntity` = la Person) en «Sobre mí», y
+  `description` en Person y WebSite.
+- **Pendiente:** página de servicios (dónde vive en la arquitectura de seis
+  mundos es decisión del dueño), `sameAs` si abre más perfiles, enlaces
+  entrantes (Awwwards, foro de Three.js) y el artículo técnico del agujero
+  negro. Se valora con las consultas reales de Search Console a las 3–4
+  semanas, no con suposiciones.
+
 ## Flujo de git — todo en `main`, sin ramas (2026-09-29)
 
 El dueño vio cinco ramas locales (`dpr-merge`, `dpr-movil`, `movil-compacto`,

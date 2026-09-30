@@ -60,6 +60,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
       <StructuredData
         locale={locale}
         breadcrumb={[{ path: getWorldPath(world, locale), name: world.prose.title }]}
+        profile={getWorldPath(world, locale)}
       />
       <header className="about-hero" id="constelacion" data-about-sky="">
         <picture className="about-landscape">

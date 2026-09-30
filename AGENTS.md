@@ -99,6 +99,10 @@ MDX**, nunca en `worlds.data.ts`.
   en `app/[locale]`; texto de interfaz en `defineCopy({ es, en })` junto a su
   componente; contenido en `content/{es,en}`. Nada de texto visible nuevo en
   un solo idioma.
+- **SEO — nombre, nicho 3D y freelance** (09-29) registro de igual nombre —
+  nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
+  descripciones, nunca en títulos; `seoTitle` en los seis especímenes;
+  `ProfilePage` en Sobre mí.
 - **Repositorio público, SEO y arranque** (09-28) — licencia de sólo lectura
   (`LICENSE`); fuentes (`Fotos/`, `Disenos/`, `portfolio-content/`,
   `assets/`) fuera del repo y del historial, archivadas en el privado

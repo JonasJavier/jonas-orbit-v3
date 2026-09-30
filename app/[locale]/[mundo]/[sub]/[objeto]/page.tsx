@@ -211,6 +211,7 @@ export default async function ObservatoryRoute({ params }: Props) {
           "@id": `${absoluteUrl(path)}#especimen`,
           name: copy.workName(world.cosmicName),
           genre: copy.genre,
+          description: observatory?.seoDescription ?? copy.description(world.cosmicName),
           url: absoluteUrl(path),
         }}
       />
