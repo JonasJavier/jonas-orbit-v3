@@ -1,0 +1,310 @@
+---
+id: webgl-seo-performance
+slug: portafolio-3d-webgl-seo-y-rendimiento
+title: Un portafolio 3D que Google puede leer y un teléfono puede mover
+summary: >-
+  Un sitio con un agujero negro trazado en tiempo real suele ser invisible para
+  los buscadores y pesado en un móvil. Las reglas, los niveles de efectos y las
+  mediciones con las que este no lo es.
+coverAlt: >-
+  La portada del sitio partida en dos: a la izquierda la escena WebGL con
+  Gargantúa trazado en tiempo real, a la derecha la versión plana dibujada con
+  SVG y CSS.
+seoTitle: "Portafolio 3D con WebGL: SEO y rendimiento en Next.js"
+seoDescription: >-
+  Cómo un portafolio 3D con Three.js y Next.js sigue siendo legible para Google
+  y rápido en el teléfono: HTML primero, niveles de efectos y mediciones.
+---
+
+Los portafolios 3D tienen mala fama por dos motivos, y los dos son justos.
+Para un buscador suelen ser un `<canvas>` vacío: todo el texto está dentro de
+la escena y no hay nada que indexar. Y en un teléfono suelen ser una pantalla
+negra que tarda en arrancar, se calienta y gasta batería.
+
+Este sitio tiene un agujero negro trazado píxel a píxel en un shader y seis
+cuerpos alrededor. Esta entrada cuenta las reglas y las piezas que lo mantienen
+legible para Google y usable en un teléfono, con las cifras medidas y también
+con lo que todavía no está resuelto.
+
+## La regla: la escena nunca es el contenido
+
+Antes de escribir una línea de Three.js quedó escrita una regla que no se
+negocia: **el HTML servido de cada página contiene el texto real, sin
+JavaScript**. La escena va detrás, decora y orienta, pero no es dónde vive el
+significado.
+
+En la práctica eso se traduce en cuatro cosas:
+
+- El `<canvas>` lleva `aria-hidden`, está fijo detrás de la página
+  (`position: fixed; z-index: -1; pointer-events: none`) y no contiene ni una
+  palabra.
+- En la portada, el nombre y el rol están en un `<h1>` real, y los seis
+  destinos son seis enlaces `<a href>` de verdad, con un área táctil mínima de
+  44 px. Los «cuerpos» que se pueden pulsar sobre la escena son copias
+  invisibles para el lector de pantalla (`aria-hidden`, fuera del orden de
+  tabulación): el enlace que cuenta es el del texto.
+- En el servidor, el nivel de efectos es siempre el plano. Next.js renderiza el
+  HTML sin saber si el visitante tiene GPU, así que ese HTML nunca depende de
+  WebGL.
+- El canvas no debe ser el elemento de mayor pintura (LCP): por diseño, lo que
+  se pinta primero es HTML y CSS ligeros.
+
+## Lo que ve quien no ejecuta JavaScript
+
+La prueba más directa es desactivar JavaScript y cargar la portada. Esto es lo
+que se ve:
+
+<Figure
+  name="portafolio-3d-sin-js"
+  alt="La portada del sitio con JavaScript desactivado: Gargantúa, los planetas y las naves dibujados en SVG, y los seis destinos en texto en la parte inferior."
+  caption="La portada con JavaScript desactivado. El sistema se dibuja con SVG y CSS, y los seis destinos son enlaces de texto que un buscador puede seguir."
+/>
+
+No es una pantalla de «activa JavaScript»: es el sitio. Los enlaces funcionan,
+el texto está ahí y la composición es la misma. Es también, casi píxel a píxel,
+lo que ve un visitante sin WebGL2 o con los efectos apagados.
+
+## Tres niveles: plano, órbita y profundo
+
+Que un navegador tenga WebGL no significa que deba ejecutar la escena. Un
+equipo con GPU por software tarda segundos en dibujar un solo fotograma del
+raymarch: medido en SwiftShader, un fotograma bloquea el hilo principal unos 6
+segundos. Así que el sitio decide entre tres niveles —`flat`, `orbit` y
+`deep`— con una función pura que recibe señales y devuelve un veredicto:
+
+```ts
+if (!signals.hasWebGL2) {
+  return { level: "flat", reason: "sin-webgl2", canOverride: false };
+}
+// …
+function weakDevice(signals: CapabilitySignals): CapabilityVerdict | null {
+  if (isSoftwareRenderer(signals.renderer)) {
+    return { level: "flat", reason: "gpu-por-software", canOverride: true };
+  }
+  if (signals.effectiveType === "slow-2g" || signals.effectiveType === "2g") {
+    return { level: "flat", reason: "red-lenta", canOverride: true };
+  }
+  if (signals.deviceMemory !== undefined && signals.deviceMemory <= 2) {
+    return { level: "flat", reason: "memoria-corta", canOverride: true };
+  }
+  return null;
+}
+```
+
+Algunos detalles que importan:
+
+- **La GPU por software se detecta, no se adivina.** Un canvas de prueba lee el
+  nombre del renderizador con `WEBGL_debug_renderer_info` y lo compara con
+  `swiftshader`, `llvmpipe`, `softpipe`, etc. Después libera ese contexto con
+  `WEBGL_lose_context` y guarda la respuesta para toda la sesión.
+- **Una señal que falta no cuenta en contra.** Safari no expone
+  `deviceMemory` ni el tipo de conexión; tratar esa ausencia como «equipo
+  débil» dejaría sin escena a todos los iPhone.
+- **El visitante manda.** El botón de movimiento, abajo a la derecha, apaga
+  todo; y quien lo enciende a propósito obtiene la escena aunque el equipo
+  parezca débil. El código reserva el nivel más alto, `deep` (más pasos por
+  píxel en el agujero negro), para escritorios con señales verdes: pantalla de
+  al menos 1100 px, puntero fino y ocho núcleos u ocho gigas, o sin datos.
+
+## El nivel plano no es un castigo
+
+El nivel plano no es una página de error con disculpas. Es un atlas dibujado
+con SVG y CSS con la misma composición que la escena: Gargantúa con su disco,
+los planetas, las naves y el teseracto, este último calculado con la misma
+función que la versión 3D. Las coordenadas de cada cuerpo están dirigidas a
+mano para tres formatos de pantalla (ancho, vertical y bajo).
+
+Y descarga **cero bytes de 3D**: three.js y la escena sólo se piden cuando el
+nivel es `orbit` o `deep`. Si en mitad de la visita el navegador pierde el
+contexto WebGL o falla la carga, la escena cae al nivel plano y no lo vuelve a
+intentar durante esa visita: es mejor un sitio plano que uno que parpadea.
+
+<Figure
+  name="portafolio-3d-webgl"
+  alt="La portada con la escena WebGL: Gargantúa trazado en tiempo real con su disco cobrizo, Miller, Edmunds, la Endurance y la Ranger alrededor."
+  caption="La misma portada en el nivel órbita: el agujero negro se traza en un shader en cada fotograma. Encima, el mismo HTML que en la versión plana."
+/>
+
+## Cargar lo 3D cuando ya no estorba
+
+En la portada la escena es el protagonista y se carga en cuanto la página está
+lista. En el resto de páginas —donde la escena queda tapada por el contenido—
+no tiene sentido que compita con la imagen principal y con la hidratación. Ahí
+espera a que la página termine de cargar y el navegador quede ocioso:
+
+```ts
+function whenIdle() {
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(settle, { timeout: 2000 });
+  } else {
+    window.setTimeout(settle, 0);
+  }
+}
+// …
+if (document.readyState === "complete") whenIdle();
+else window.addEventListener("load", whenIdle, { once: true });
+```
+
+Safari no tiene `requestIdleCallback`; ahí se dispara justo después de `load`.
+Un retraso fijo en su lugar coincidía con la primera interacción del usuario.
+Una vez alcanzado, el estado vale para toda la visita: navegar no vuelve a
+esperar.
+
+Hasta la decisión de nivel espera. Esa sonda de WebGL cuesta unos 250 ms en un
+Chrome sin GPU —el que usa PageSpeed—, y Lighthouse multiplica la CPU por
+cuatro, así que era una tarea de casi un segundo en cada página. three.js entra
+con un `import()` dinámico y nunca en la carga inicial.
+
+## Compilar shaders sin congelar la página
+
+El shader del agujero negro ocupa unos 140 KB de GLSL. Compilarlo de golpe
+bloqueaba la página entre 2,4 y 2,7 segundos al llegar a la portada. La
+solución fue `compileAsync`, que aprovecha la extensión
+`KHR_parallel_shader_compile` para compilar en paralelo antes del primer
+fotograma:
+
+```ts
+if (renderer.extensions.has("KHR_parallel_shader_compile")) {
+  const compiled = Promise.all([
+    renderer.compileAsync(marchScene, quadCamera),
+    renderer.compileAsync(bodyScene, bodyCamera),
+    canAccumulate ? renderer.compileAsync(displayScene, quadCamera) : null,
+  ]);
+  void compiled.catch(() => undefined).then(startLoop);
+} else {
+  startLoop();
+}
+```
+
+Medido con Lighthouse móvil en un equipo con GPU integrada real: el Total
+Blocking Time pasó de **7,95 s a unos 2,0 s**, el Time to Interactive de 12,0 a
+7,5 s y el Speed Index de 7,1 a 4,1 s. Firefox no tiene la extensión y sigue el
+camino anterior.
+
+## Imágenes: lo que se pinta, no lo que cabe
+
+La mitad de las mejoras de rendimiento del sitio no tuvieron nada que ver con
+3D. Una revisión página por página con Lighthouse encontró tres problemas
+clásicos:
+
+- **`sizes` mentiroso.** Las fotos de la constelación de «Sobre mí», que en
+  el teléfono se pintan a unos 114 px (el retrato, a 174), declaraban un tamaño
+  mucho mayor, y el móvil descargaba las versiones de 640 y 960 px: unos 700 KB
+  para unas miniaturas. Con `sizes` ajustado a lo que de verdad se pinta (120 y
+  180 px) se acabó.
+- **Recortes para el teléfono.** Las imágenes de cabecera tienen un recorte
+  vertical propio: 92 KB en lugar de 214 KB, y 53 KB en lugar de 195 KB. Cada
+  uno se precarga con `fetchPriority: "high"` y su propia `media`, así el
+  teléfono no descarga la versión de escritorio.
+- **Escalones y calidad.** Un escalón de 800 px y calidad 80 en WebP redujeron
+  el peso de imagen de cuatro páginas a casi la mitad: de 1313 a 725 KB, de
+  1030 a 549, de 756 a 407 y de 601 a 327.
+
+## Un teléfono no es un escritorio pequeño
+
+En un teléfono la escena arranca a un píxel de render por punto de pantalla. A
+partir de ahí, un pequeño gobernador mide el ritmo real de fotogramas y sube la
+resolución a 1,25 y a 1,5 sólo si el equipo lo sostiene:
+
+| Constante | Valor | Para qué |
+| --- | --- | --- |
+| Escalones | 1 → 1,25 → 1,5 px por punto | Nunca por encima del `devicePixelRatio` |
+| Ventana | 45 fotogramas | ~0,75 s a 60 Hz |
+| Asentamiento | 30 fotogramas | Se descartan tras cada cambio |
+| Rápido | p75 ≤ 18,5 ms | Sube un escalón |
+| Lento | p75 ≥ 26 ms | Baja y cierra el techo |
+| Tolerancia | ×1,15 sobre su mejor ritmo | Pantallas de 90 y 120 Hz |
+
+```ts
+const p75 = sorted[Math.floor(sorted.length * 0.75)];
+pace = Math.min(pace, p75);
+const held = p75 <= pace * PACE_TOLERANCE;
+if (index > 0 && (p75 >= SLOW_MS || !held)) {
+  index -= 1; ceiling = index; restart(); return true; // deshace y cierra el techo
+}
+if (held && p75 <= FAST_MS && index < ceiling) {
+  index += 1; restart(); return true;
+}
+```
+
+La primera versión comparaba contra 60 fps fijos y se equivocaba en las
+pantallas de 90 y 120 Hz: 60 fps contaba como «margen» cuando el teléfono iba
+perdiendo fotogramas. Ahora cada equipo se compara con **su propio mejor
+ritmo**. Y un escalón que no se sostiene no se vuelve a intentar: el teléfono
+no oscila entre dos resoluciones. El gobernador se pausa durante las
+transiciones, con la pestaña oculta y cuando la escena está tapada, para no
+medir lo que no es.
+
+## Nunca dos contextos dibujando
+
+Varias páginas tienen su propio WebGL: el océano de Miller, el agujero de
+gusano de Contacto, el Observatorio. Si la escena de fondo siguiera dibujando
+detrás, el teléfono pintaría dos escenas a la vez y sólo se vería una.
+
+En las páginas que la tapan, la escena deja de pedir fotogramas. El
+Observatorio va más lejos: su canvas ocupa toda la pantalla durante toda la
+visita, así que ahí la escena persistente **libera** su contexto WebGL y su
+memoria de vídeo, y lo vuelve a crear al salir. Pausar el bucle no bastaba: el
+contexto seguía vivo.
+
+## Medir sin hacer trampa
+
+Una regla más del proyecto: está prohibido el código cuya única función sea
+cambiar el resultado de una auditoría. Nada de detectar Lighthouse por su
+user-agent para servirle una página más ligera.
+
+Lighthouse se audita con `?no3d=1`, que es exactamente lo mismo que pulsar el
+botón de movimiento: cualquier visitante puede escribirlo. La integración
+continua corre Lighthouse tres veces sobre la portada en cada idioma y toma la
+mediana, con umbrales que rompen el build:
+
+- todas las categorías ≥ 0,9;
+- CLS ≤ 0,1;
+- Total Blocking Time ≤ 300 ms.
+
+Para las mejoras se midió con Lighthouse local contra `next start`, tres
+pasadas, mediana, y siempre en A/B contra la versión anterior. Las cifras
+absolutas de una máquina local no son las de PageSpeed, pero la diferencia
+entre A y B sí es fiable. Algunos resultados de ese trabajo:
+
+| Página | Antes | Después |
+| --- | --- | --- |
+| Proyectos | 66 | 79–82 (TBT 762 → ~250 ms) |
+| Creatividad | 72 | 84 |
+| Experimentos | 74 | 81–92 |
+| Formación | 68 | 81 |
+
+La última medición completa de la portada sin escena (`?no3d=1`, en local,
+tres pasadas) dio 98 en rendimiento y 100 en accesibilidad, buenas prácticas y
+SEO, con un LCP mediano de 2,32 s y un TBT de 66,5 ms.
+
+## Lo que todavía no está resuelto
+
+Sería deshonesto terminar aquí. Dos cosas siguen pesando:
+
+- **El JavaScript del framework.** La base de Next.js 16 con React 19 ya ronda
+  los 146 KB comprimidos antes de escribir una línea, y en un teléfono
+  simulado ese código ocupa casi dos segundos de CPU. El LCP está atado a él.
+- **El servidor.** Sin CDN delante, el tiempo hasta el primer byte está entre
+  300 y 600 ms.
+
+Ninguna de las dos se arregla con más trucos en la escena.
+
+## El resto del SEO, en corto
+
+Lo de arriba es lo que hace que la página **se pueda** leer. Lo que ayuda a que
+se entienda es lo de siempre, bien hecho: datos estructurados con la persona,
+el sitio y cada obra; un sitemap con imágenes y con la relación entre idiomas;
+y una canónica y un `hreflang` en cada página. Lo de los idiomas tiene
+[su propia entrada](/es/blog/sitio-bilingue-en-next-js-sin-middleware).
+
+## Pruébalo
+
+Abre la [portada](/es) y pulsa el botón de movimiento, abajo a la derecha: la
+escena se apaga y queda el atlas plano, con el mismo contenido. Si quieres ver
+el agujero negro de cerca, está en el
+[Observatorio](/es/experimentos/observatorio/gargantua), y aquí cuento
+[cómo está hecho](/es/blog/como-hice-un-agujero-negro-en-webgl).
+
+Si tienes un producto que necesita verse bien y cargar rápido a la vez, aquí
+está [cómo trabajo](/es/contacto/servicios).

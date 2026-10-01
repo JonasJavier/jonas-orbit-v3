@@ -6,7 +6,7 @@ import type { Locale } from "@/content/site.data";
 import { getArticles } from "@/lib/articles";
 import { defineCopy } from "@/lib/i18n";
 import { observatoryCatalog } from "@/lib/observatory-catalog";
-import { articlePath } from "@/lib/page-paths";
+import { articlePath, blogPath } from "@/lib/page-paths";
 import { WORLD_COPY } from "@/lib/world-copy";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { ExperimentsIndex } from "./experiments-index";
@@ -86,8 +86,8 @@ function ExperimentsHall() {
 }
 
 const COPY = defineCopy({
-  es: { edge: "Algunas cosas merecen una mirada más larga", state: "Observatorio experimental", mounted: "montados", notes: "Notas de taller" },
-  en: { edge: "Some things deserve a longer look", state: "Experimental observatory", mounted: "mounted", notes: "Workshop notes" },
+  es: { edge: "Algunas cosas merecen una mirada más larga", state: "Observatorio experimental", mounted: "montados", notes: "Del blog", blog: "Todas las entradas del blog" },
+  en: { edge: "Some things deserve a longer look", state: "Experimental observatory", mounted: "mounted", notes: "From the blog", blog: "Every post on the blog" },
 });
 
 export function ExperimentsPage({
@@ -177,9 +177,10 @@ export function ExperimentsPage({
         <div className="experiments-page__foot">
           <p className="experiments-page__closing">{prose.closing}</p>
           <p className="experiments-page__intro">{prose.introduction}</p>
-          {/* Cómo se hizo cada pieza: una línea por nota, nada más. */}
+          {/* Cómo se hizo cada pieza: una línea por entrada de WebGL del
+              blog, y la salida al blog entero. */}
           <ul className="experiments-page__notes" aria-label={copy.notes}>
-            {getArticles(locale).map((article) => (
+            {getArticles(locale).filter((article) => article.topic === "webgl").map((article) => (
               <li key={article.id}>
                 <span aria-hidden="true">{copy.notes}</span>
                 <Link href={articlePath(article.id, locale)}>
@@ -187,6 +188,11 @@ export function ExperimentsPage({
                 </Link>
               </li>
             ))}
+            <li>
+              <Link className="experiments-page__blog" href={blogPath(locale)}>
+                {copy.blog} <span aria-hidden="true">→</span>
+              </Link>
+            </li>
           </ul>
         </div>
 

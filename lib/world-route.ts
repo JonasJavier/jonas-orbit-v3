@@ -73,3 +73,14 @@ const OBSERVATORY_SEGMENTS: readonly string[] = Object.values(PATH_SEGMENTS.obse
 export function isObservatoryPath(pathname: string): boolean {
   return pathname.split("/").some((segment) => OBSERVATORY_SEGMENTS.includes(segment));
 }
+
+const BLOG_SEGMENTS: readonly string[] = Object.values(PATH_SEGMENTS.blog);
+
+/**
+ * El blog (`/es/blog`, `/en/blog/…`) no es un mundo, pero tapa la escena con
+ * su propio cielo opaco (`blog-sky.tsx`): ahí la escena duerme como en las
+ * rutas cubiertas. Se casa sólo el segmento justo detrás del idioma.
+ */
+export function isBlogPath(pathname: string): boolean {
+  return BLOG_SEGMENTS.includes(pathname.split("/")[2] ?? "");
+}

@@ -1,6 +1,6 @@
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
-import { pageAlternates, type PageRef } from "@/lib/page-paths";
+import { blogPath, pageAlternates, type PageRef } from "@/lib/page-paths";
 import { getWorldNavItems } from "@/lib/worlds";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
@@ -41,6 +41,7 @@ export function SiteShell({
         worlds={getWorldNavItems(locale)}
         activeWorldId={activeWorldId}
         languages={pageAlternates(page)}
+        blog={{ href: blogPath(locale), active: page.kind === "blog" || page.kind === "article" }}
       />
 
       <main id="main-content" className={mainClassName}>

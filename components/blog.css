@@ -1,0 +1,395 @@
+/*
+ * Blog — lo que comparten el índice y cada entrada: el cielo propio, las
+ * etiquetas, los botones y las tarjetas. La escena persistente duerme detrás
+ * (`isBlogPath`); este cielo la tapa entera, así que nunca hay un Gargantúa
+ * congelado detrás de un texto.
+ */
+.blog-route {
+  --blog-accent: #8fd3ff;
+  --blog-warm: #f2c879;
+  --blog-ink: #eef3fb;
+  --blog-soft: #bcc6d8;
+  --blog-muted: #8794aa;
+  --blog-line: rgb(160 190 230 / 14%);
+  --blog-panel: rgb(9 13 25 / 78%);
+  --blog-radius: 14px;
+  position: relative;
+  /* El cielo (`z-index: -1`) queda dentro de este contexto: por encima de la
+     escena del layout y por debajo del texto. */
+  isolation: isolate;
+  min-height: 100svh;
+  color: var(--blog-ink);
+}
+
+/* ── El cielo ───────────────────────────────────────────────────────────── */
+
+.blog-sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 50% -12%, #0e1832 0%, transparent 62%),
+    linear-gradient(180deg, #050915 0%, #03050c 100%);
+}
+
+.blog-sky > * {
+  position: absolute;
+}
+
+/* Nebulosas lejanas: tres manchas de color muy veladas, nunca un velo. */
+.blog-sky__nebula {
+  inset: -12%;
+  background:
+    radial-gradient(34% 26% at 80% 16%, rgb(104 82 210 / 20%), transparent 72%),
+    radial-gradient(30% 24% at 10% 58%, rgb(38 122 176 / 15%), transparent 72%),
+    radial-gradient(26% 20% at 70% 92%, rgb(206 138 74 / 8%), transparent 72%);
+  filter: blur(24px);
+}
+
+/* El campo estelar de Edmunds (`tools/prepare-edmunds-sky.mjs`) a dos escalas:
+   la lejana no llega a repetirse en ningún ancho habitual. */
+.blog-sky__stars {
+  inset: -40px;
+  background: url("/brand/edmunds-night-stars.svg") center / 1200px 750px repeat;
+  /* Más tenue donde se lee: las estrellas con púas no deben caer sobre una línea. */
+  mask-image: linear-gradient(90deg, #000 0%, rgb(0 0 0 / 38%) 30%, rgb(0 0 0 / 38%) 84%, #000 100%);
+}
+
+.blog-sky__stars--far {
+  background-size: 1900px 1188px;
+  background-position: 37% 61%;
+  opacity: 0.4;
+}
+
+.blog-sky__stars--near {
+  opacity: 0.75;
+}
+
+/* Una órbita, la firma del sitio, entrando por arriba a la derecha. */
+.blog-sky__orbit {
+  top: -16vh;
+  right: -22vw;
+  width: max(62rem, 78vw);
+  height: auto;
+  stroke: rgb(150 196 255 / 12%);
+  stroke-width: 1.1;
+}
+
+.blog-sky__orbit ellipse {
+  vector-effect: non-scaling-stroke;
+}
+
+.blog-sky__orbit circle {
+  fill: #d6ebff;
+  stroke: none;
+  filter: drop-shadow(0 0 6px #8fd3ff);
+}
+
+html[data-motion="on"] .blog-sky__stars--near {
+  animation: blog-sky-drift 180s linear infinite alternate !important;
+}
+
+@keyframes blog-sky-drift {
+  to {
+    transform: translate3d(-36px, 18px, 0);
+  }
+}
+
+/* ── Piezas comunes ─────────────────────────────────────────────────────── */
+
+.blog-label {
+  margin: 0;
+  color: var(--blog-accent);
+  font: 600 0.68rem/1.4 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.blog-label--muted {
+  color: var(--blog-muted);
+}
+
+.blog-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 46px;
+  padding: 0 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--blog-accent) 55%, transparent);
+  border-radius: 4px;
+  background: rgb(143 211 255 / 9%);
+  color: var(--blog-ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.blog-button:hover {
+  border-color: var(--blog-accent);
+  background: rgb(143 211 255 / 16%);
+}
+
+.blog-button--ghost {
+  border-color: var(--blog-line);
+  background: transparent;
+}
+
+.blog-button--ghost:hover {
+  border-color: color-mix(in srgb, var(--blog-ink) 40%, transparent);
+  background: rgb(255 255 255 / 4%);
+}
+
+/* El retrato de «Sobre mí» recortado a la cara (F40: la cara en ~54 % / 33 %). */
+.blog-avatar {
+  display: block;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid var(--blog-line);
+  border-radius: 50%;
+  background: #0b1020;
+}
+
+.blog-avatar img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: scale(2.3);
+  transform-origin: 54% 31%;
+}
+
+.blog-avatar--large {
+  width: 6.5rem;
+  height: 6.5rem;
+}
+
+.blog-avatar--large img {
+  transform: scale(1.75);
+}
+
+/* ── Tarjetas ───────────────────────────────────────────────────────────── */
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blog-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--blog-line);
+  border-radius: var(--blog-radius);
+  background: var(--blog-panel);
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.blog-card:hover {
+  border-color: color-mix(in srgb, var(--blog-accent) 45%, transparent);
+  transform: translateY(-2px);
+}
+
+.blog-card:has(a:focus-visible) {
+  outline: 2px solid var(--blog-accent);
+  outline-offset: 3px;
+}
+
+.blog-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-bottom: 1px solid var(--blog-line);
+  background: #000;
+}
+
+.blog-card__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.2rem 1.3rem 1.35rem;
+}
+
+.blog-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+  margin: 0;
+  color: var(--blog-accent);
+  font: 600 0.64rem/1.5 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.blog-card__meta span + span + span {
+  color: var(--blog-muted);
+}
+
+.blog-card h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.blog-card h3 a {
+  color: var(--blog-ink);
+}
+
+.blog-card h3 a:focus-visible {
+  outline: none;
+}
+
+/* La tarjeta entera es el enlace, sin anidar el texto dentro de un <a>. */
+.blog-card h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.blog-card__summary {
+  margin: 0;
+  color: var(--blog-soft);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.blog-card__date {
+  margin-top: auto;
+  padding-top: 0.3rem;
+  color: var(--blog-muted);
+  font: 0.7rem var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.blog-card--featured {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.blog-card--featured img {
+  height: 100%;
+  aspect-ratio: auto;
+  min-height: 20rem;
+  border-right: 1px solid var(--blog-line);
+  border-bottom: 0;
+}
+
+.blog-card--featured .blog-card__text {
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 2.6rem);
+}
+
+.blog-card--featured h3 {
+  font-size: clamp(1.6rem, 2.3vw, 2.05rem);
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.blog-card--featured .blog-card__summary {
+  font-size: 1rem;
+}
+
+.blog-card--featured .blog-card__date {
+  margin-top: 0.4rem;
+}
+
+@media (max-width: 60rem) {
+  .blog-card--featured {
+    display: flex;
+  }
+
+  .blog-card--featured img {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+    border-right: 0;
+    border-bottom: 1px solid var(--blog-line);
+  }
+}
+
+/* ── El índice ──────────────────────────────────────────────────────────── */
+
+.blog {
+  width: min(100%, 76rem);
+  margin-inline: auto;
+  padding: clamp(7rem, 12vw, 10rem) var(--page-gutter) clamp(4rem, 8vw, 7rem);
+}
+
+.blog__hero h1 {
+  max-width: 13ch;
+  margin: 0.9rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 7vw, 5.6rem);
+  font-weight: 630;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.blog__lead {
+  max-width: 41rem;
+  margin: 1.4rem 0 0;
+  color: var(--blog-soft);
+  font-size: clamp(1.02rem, 1.5vw, 1.2rem);
+  line-height: 1.6;
+}
+
+.blog__latest,
+.blog__list {
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+}
+
+.blog__list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--blog-line);
+}
+
+.blog__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 3rem;
+  margin-top: clamp(3.5rem, 7vw, 5.5rem);
+  padding: clamp(1.5rem, 3vw, 2.4rem);
+  border: 1px solid var(--blog-line);
+  border-radius: var(--blog-radius);
+  background:
+    linear-gradient(120deg, rgb(143 211 255 / 7%), rgb(242 200 121 / 5%)),
+    var(--blog-panel);
+}
+
+.blog__cta-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  font-weight: 620;
+  letter-spacing: -0.03em;
+}
+
+.blog__cta p:not(.blog__cta-title) {
+  margin: 0.5rem 0 0;
+  color: var(--blog-soft);
+}

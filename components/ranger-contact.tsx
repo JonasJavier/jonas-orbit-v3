@@ -80,6 +80,8 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
             <p className="ranger-hud__line">{prose.eyebrow}</p>
             <div className="ranger-hud__actions">
               <a className="ranger-cta" href="#transmision">{copy.write} <span aria-hidden="true">↓</span></a>
+              {/* Quien llega a contratar ve primero qué se puede contratar. */}
+              <Link className="ranger-cta ranger-cta--ghost" href={servicesPath(locale)}>{copy.services} <span aria-hidden="true">→</span></Link>
               <a className="ranger-hud__link" href={`mailto:${SITE_PROFILE.email}`}>{copy.orEmail} <span aria-hidden="true">↗</span></a>
             </div>
           </header>

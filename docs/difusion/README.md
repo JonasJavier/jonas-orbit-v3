@@ -4,8 +4,8 @@ Todo lo que hay que publicar FUERA del sitio para que Google lo tome en serio,
 con los textos listos para pegar. Lo que está dentro del sitio ya está hecho:
 
 - Servicios: `/es/contacto/servicios` · `/en/contact/services`
-- Artículo: `/es/experimentos/como-hice-un-agujero-negro-en-webgl` ·
-  `/en/experiments/how-i-built-a-black-hole-in-webgl`
+- Artículo: `/es/blog/como-hice-un-agujero-negro-en-webgl` ·
+  `/en/blog/how-i-built-a-black-hole-in-webgl`
 - Simulador: `/en/experiments/observatory/gargantua`
 
 **Regla de oro:** un sitio por día, no todos de golpe. Las comunidades huelen
@@ -108,7 +108,7 @@ te da el enlace y el tráfico, y el posicionamiento se queda en tu dominio.
 > (switch to **Study** to change views and toggle Doppler / Secondary images /
 > Lens one by one)
 >
-> Write-up with the shader code: https://jonasjavier.dev/en/experiments/how-i-built-a-black-hole-in-webgl
+> Write-up with the shader code: https://jonasjavier.dev/en/blog/how-i-built-a-black-hole-in-webgl
 >
 > Feedback very welcome, especially on performance on phones.
 
@@ -123,7 +123,7 @@ Adjunta `gargantua-cinematografica-1600.webp` y `gargantua-lente-1600.webp`
 - **Primer comentario (tuyo, nada más publicar):**
 
   > Live demo: https://jonasjavier.dev/en/experiments/observatory/gargantua —
-  > write-up with the GLSL: https://jonasjavier.dev/en/experiments/how-i-built-a-black-hole-in-webgl.
+  > write-up with the GLSL: https://jonasjavier.dev/en/blog/how-i-built-a-black-hole-in-webgl.
   > Happy to answer questions about the integrator or the bloom/shadow fix.
 
 **r/webdev** — SÓLO un sábado, con el título empezando por `[Showoff Saturday]`:
@@ -151,7 +151,7 @@ probar: enlaza el SIMULADOR, no el artículo (los artículos no son Show HN).
   > secondary images and lensing to see what each one contributes.
   >
   > How it's built, with the shader code:
-  > https://jonasjavier.dev/en/experiments/how-i-built-a-black-hole-in-webgl
+  > https://jonasjavier.dev/en/blog/how-i-built-a-black-hole-in-webgl
   >
   > Without WebGL2 or on a software GPU it falls back to a flat 2D version.
 
@@ -199,3 +199,18 @@ Datos comunes para los formularios:
 - **Search Console → Rendimiento → Consultas:** qué búsquedas te traen. Con
   esas palabras se ajustan los títulos y, si hace falta, se escribe la
   siguiente nota de taller.
+
+## 8. Las demás entradas del blog (2026-10-01)
+
+El blog está en <https://jonasjavier.dev/en/blog> (y `/es/blog`). Cada entrada
+nueva sirve para un público distinto; publícalas con la misma regla de un sitio
+por día y, en dev.to, siempre con `canonical_url` a la versión inglesa:
+
+| Entrada | Dónde encaja |
+| --- | --- |
+| [4D tesseract in Three.js](https://jonasjavier.dev/en/blog/4d-tesseract-in-three-js) | Foro de Three.js (Showcase), r/threejs, dev.to |
+| [Bilingual Next.js site without middleware](https://jonasjavier.dev/en/blog/bilingual-next-js-site-without-middleware) | dev.to (tags `nextjs, i18n, seo, react`), r/nextjs |
+| [3D portfolio: WebGL, SEO and performance](https://jonasjavier.dev/en/blog/3d-portfolio-webgl-seo-and-performance) | dev.to (tags `webgl, performance, seo, nextjs`), r/webdev un sábado |
+
+Antes de publicarlas, léelas: son tus palabras las que firman. Los datos salen
+del código; la voz es tuya.

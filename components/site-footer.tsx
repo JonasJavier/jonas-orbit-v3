@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import { defineCopy } from "@/lib/i18n";
-import { privacyPath } from "@/lib/page-paths";
+import { blogPath, privacyPath, servicesPath } from "@/lib/page-paths";
 import { getWorldNavItems } from "@/lib/worlds";
 import { FooterSky } from "./footer-sky";
 import "./site-footer.css";
@@ -36,6 +36,8 @@ const COPY = defineCopy({
     country: "República Dominicana",
     profiles: "Perfiles profesionales",
     privacy: "Privacidad",
+    services: "Servicios",
+    extras: "Más del sitio",
   },
   en: {
     journey: "The journey continues",
@@ -56,6 +58,8 @@ const COPY = defineCopy({
     country: "Dominican Republic",
     profiles: "Professional profiles",
     privacy: "Privacy",
+    services: "Services",
+    extras: "More from the site",
   },
 });
 
@@ -143,7 +147,11 @@ export function SiteFooter({ locale, activeWorldId, label }: {
         <div className="site-footer__bottom">
           <small>© {new Date().getFullYear()} Jonás Javier</small>
           <span className="site-footer__position">{label}</span>
-          <Link href={privacyPath(locale)} prefetch={false}>{copy.privacy}</Link>
+          <nav className="site-footer__extras" aria-label={copy.extras}>
+            <Link href={blogPath(locale)} prefetch={false}>Blog</Link>
+            <Link href={servicesPath(locale)} prefetch={false}>{copy.services}</Link>
+            <Link href={privacyPath(locale)} prefetch={false}>{copy.privacy}</Link>
+          </nav>
         </div>
       </div>
     </footer>

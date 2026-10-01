@@ -27,6 +27,7 @@ export type PageRef =
   | { kind: "thanks" }
   | { kind: "services" }
   | { kind: "observatory"; id: WorldId }
+  | { kind: "blog" }
   | { kind: "article"; id: ArticleId }
   | { kind: "privacy" };
 
@@ -55,9 +56,16 @@ export function observatoryPath(id: WorldId, locale: Locale): string {
   return `${worldPath("tesseract", locale)}/${PATH_SEGMENTS.observatory[locale]}/${observatorySlug(id, locale)}`;
 }
 
-/** Las notas de taller cuelgan de Experimentos, junto al Observatorio. */
+/**
+ * El blog no es un mundo: es una sección propia (`/es/blog`), fuera de los seis
+ * destinos, para que sus entradas puedan hablar de cualquier tema.
+ */
+export function blogPath(locale: Locale): string {
+  return `/${locale}/${PATH_SEGMENTS.blog[locale]}`;
+}
+
 export function articlePath(id: ArticleId, locale: Locale): string {
-  return `${worldPath("tesseract", locale)}/${getArticle(id, locale).prose.slug}`;
+  return `${blogPath(locale)}/${getArticle(id, locale).prose.slug}`;
 }
 
 export function privacyPath(locale: Locale): string {
@@ -78,6 +86,8 @@ function pagePath(page: PageRef, locale: Locale): string {
       return servicesPath(locale);
     case "observatory":
       return observatoryPath(page.id, locale);
+    case "blog":
+      return blogPath(locale);
     case "article":
       return articlePath(page.id, locale);
     case "privacy":

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findWorldRoute, type WorldRoute } from "./world-route";
+import { findWorldRoute, isBlogPath, type WorldRoute } from "./world-route";
 
 const routes: WorldRoute[] = [
   { href: "/es/sobre-mi", id: "gargantua", accent: "#ffb45c" },
@@ -36,5 +36,18 @@ describe("findWorldRoute (base del contrato de cámara)", () => {
     const first = findWorldRoute("/es/sobre-mi", routes);
     findWorldRoute("/es/contacto/gracias", routes);
     expect(findWorldRoute("/es/sobre-mi", routes)).toEqual(first);
+  });
+});
+
+describe("isBlogPath (la escena duerme bajo el cielo del blog)", () => {
+  it("casa el índice y las entradas en los dos idiomas", () => {
+    expect(isBlogPath("/es/blog")).toBe(true);
+    expect(isBlogPath("/en/blog/how-i-built-a-black-hole-in-webgl")).toBe(true);
+  });
+
+  it("no casa un mundo ni un slug que sólo contenga la palabra", () => {
+    expect(isBlogPath("/es")).toBe(false);
+    expect(isBlogPath("/es/experimentos")).toBe(false);
+    expect(isBlogPath("/es/experimentos/blog")).toBe(false);
   });
 });

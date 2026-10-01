@@ -63,6 +63,10 @@
 .site-header--voyage .voyage-cv__menu > a:hover { color: #fff; background: var(--voyage-hover); }
 .site-header--voyage .voyage-map-link { min-width: 44px; display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 0 2px 0 9px; color: var(--voyage-tool); font-size: .76rem; white-space: nowrap; transition: color .2s; }
 .site-header--voyage .voyage-map-link:hover { color: #efffff; }
+/* Blog: no es un destino, así que va con las herramientas; su marca es la línea fina de la señal. */
+.site-header--voyage .voyage-blog-link { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 11px; color: var(--voyage-tool); font-size: .76rem; white-space: nowrap; transition: color .2s; }
+.site-header--voyage .voyage-blog-link:hover, .site-header--voyage .voyage-blog-link[aria-current="page"] { color: #efffff; }
+.site-header--voyage .voyage-blog-link[aria-current="page"]::after { content: ""; position: absolute; inset: auto 11px 2px; height: 2px; background: var(--voyage-signal); box-shadow: 0 0 8px var(--voyage-signal); }
 /* Language: next to the CV on desktop, in the bar on touch layouts. */
 .site-header--voyage .site-header__bar-tools { display: flex; align-items: center; gap: 12px; }
 .site-header--voyage .language-switch--bar { display: none; }
@@ -86,6 +90,8 @@
   .site-header--voyage .voyage-navigation { gap: 16px; }
   .site-header--voyage .voyage-return { padding-left: 6px; }
   .site-header--voyage .voyage-cv__summary { padding: 0 8px; }
+  .site-header--voyage .voyage-blog-link { padding: 0 8px; }
+  .site-header--voyage .voyage-blog-link[aria-current="page"]::after { inset-inline: 8px; }
   .site-header--voyage .voyage-cv__summary > span { display: none; }
   .site-header--voyage .voyage-map-link > span:first-child { display: none; }
   .site-header.site-header--voyage .mission-nav a { --voyage-link-inset: 10px; font-size: .84rem; }
@@ -109,6 +115,7 @@
   .site-header--voyage .voyage-destinations[data-marker] .mission-nav a[aria-current="page"]::after { opacity: 1; }
   .site-header--voyage .voyage-return { justify-content: space-between; gap: 8px; margin-top: 12px; padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--voyage-edge); }
   .site-header--voyage .voyage-cv__summary { padding: 0 8px; min-height: 48px; }
+  .site-header--voyage .voyage-blog-link { min-height: 48px; }
   .site-header--voyage .voyage-cv__menu { left: 0; right: auto; }
   .site-header--voyage .voyage-map-link { padding: 12px; min-height: 48px; }
 }

@@ -12,4 +12,6 @@ export const PATH_SEGMENTS = {
   thanks: { es: "gracias", en: "thanks" },
   services: { es: "servicios", en: "services" },
   privacy: { es: "privacidad", en: "privacy" },
+  // La misma palabra en los dos idiomas: «blog» es como se busca también en español.
+  blog: { es: "blog", en: "blog" },
 } as const satisfies Record<string, Record<Locale, string>>;

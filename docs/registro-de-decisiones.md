@@ -19,6 +19,51 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Blog — sección propia, cielo propio y tres entradas nuevas (2026-10-01)
+
+Pedido del dueño: «otro fondo» para las notas (se veían dos agujeros negros:
+la escena congelada detrás y la portada delante, y el título no se leía), más
+prominencia —«una sección o blog»— y más artículos «de buen material y
+completos»; además, un acceso a Servicios desde el hero de Contacto. Sustituye
+la parte «Notas de taller» de la entrada de 09-30.
+
+- **Rutas:** `/es/blog` y `/en/blog` (el segmento es el mismo en los dos
+  idiomas, `PATH_SEGMENTS.blog`), entradas en `/{locale}/blog/<slug>`
+  (`app/[locale]/blog`). No es un séptimo mundo: enlace «Blog» con las
+  herramientas de la cabecera (junto al CV, con su línea al estar dentro), y
+  en el pie junto a Servicios y Privacidad. Las dos URL viejas de la primera
+  nota (`/es/experimentos/como-hice-…`, `/en/experiments/how-i-built-…`)
+  redirigen con 308 (`next.config.ts`). Experimentos lista sólo las entradas
+  de WebGL («Del blog») y enlaza al blog entero.
+- **Fondo:** `components/blog-sky.tsx`, fijo y opaco bajo `.blog-route`
+  (`isolation: isolate`): campo estelar de Edmunds a dos escalas, tres
+  nebulosas muy veladas, una órbita y las estrellas atenuadas donde se lee.
+  La escena persistente DUERME en el blog (`isBlogPath` en
+  `lib/world-route.ts` → `covered` en `gargantua-system.tsx`).
+- **Entrada:** cabecera sobre el cielo (migas, título, entradilla, autor con
+  fecha y minutos de lectura), portada DEBAJO, rejilla de dos columnas
+  (índice lateral fijo 14 rem + lectura 46 rem), barra de lectura por
+  `animation-timeline: scroll()` (sin JS; `!important` contra la regla de
+  reduced-motion), tarjeta «Abrir el simulador» si la entrada tiene
+  espécimen, «Quién escribe» con Servicios/Escribirme y «Sigue leyendo».
+  Índice y minutos salen de Velite: `content/article-outline.ts` (un plugin
+  de rehype pone el id de cada `<h2>` con el MISMO slug que el índice).
+  JSON-LD `BlogPosting` (+ `Blog` en el índice).
+- **Datos:** `content/articles.data.ts` añade `topic` (webgl / nextjs /
+  performance, nombre visible en `components/blog-copy.ts`), carpeta de
+  imágenes y `specimen` opcional. El blog ordena por fecha.
+- **Entradas nuevas** (ES/EN, datos sacados del código y del registro, con
+  cifras medidas; BORRADOR en voz del dueño): «Cómo dibujé un teseracto 4D en
+  Three.js», «Un sitio bilingüe en Next.js sin middleware» y «Un portafolio 3D
+  que Google puede leer y un teléfono puede mover». Figuras con GPU real
+  desde el Observatorio y la portada (con y sin JavaScript), en
+  `public/images/articulos/{teseracto,sitio-bilingue,portafolio-3d}/`.
+- **De paso:** la lectura de la sonda del Observatorio salía en español en
+  `/en` («Arista… eje…»): ahora `Edge… axis…`. La descripción SEO del
+  Tesseracto decía «cuatro planos»: gira en tres (XW, YW, ZW).
+- **Contacto:** «Ver servicios →» en el hero, botón secundario junto a
+  «Escribir un mensaje».
+
 ## Home — placa del operador bajo JONAS ORBIT (2026-09-30)
 
 Sustituye en parte a `hero-gargantua-direction.md` §1/§7 («sin bloque

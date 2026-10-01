@@ -7,6 +7,7 @@ import {
   PROJECT_IDS,
   projectsData,
 } from "./content/projects.data";
+import { articleHeadings, readingMinutes, rehypeHeadingIds } from "./content/article-outline";
 import { ARTICLE_IDS } from "./content/articles.data";
 import projectsMedia from "./content/projects-media.json";
 import { WORLD_IDS, worldsData } from "./content/worlds.data";
@@ -159,10 +160,17 @@ const worldProse = defineCollection({
           }),
         )
         .min(1),
-      body: s.mdx(),
+      // Cada `##` lleva su id para el índice lateral (`content/article-outline.ts`).
+      body: s.mdx({ rehypePlugins: [rehypeHeadingIds] }),
+      raw: s.raw(),
       path: s.path(),
     })
-    .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
+    .transform(({ raw, ...data }) => ({
+      ...data,
+      locale: data.path.split("/")[0],
+      headings: articleHeadings(raw),
+      readingMinutes: readingMinutes(raw),
+    })),
 });
 
 /**
@@ -295,10 +303,17 @@ const projectProse = defineCollection({
         .optional(),
       seoTitle: s.string().max(60),
       seoDescription: s.string().min(110).max(160),
-      body: s.mdx(),
+      // Cada `##` lleva su id para el índice lateral (`content/article-outline.ts`).
+      body: s.mdx({ rehypePlugins: [rehypeHeadingIds] }),
+      raw: s.raw(),
       path: s.path(),
     })
-    .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
+    .transform(({ raw, ...data }) => ({
+      ...data,
+      locale: data.path.split("/")[0],
+      headings: articleHeadings(raw),
+      readingMinutes: readingMinutes(raw),
+    })),
 });
 
 /**
@@ -317,10 +332,17 @@ const articleProse = defineCollection({
       coverAlt: s.string(),
       seoTitle: s.string().max(60),
       seoDescription: s.string().min(110).max(160),
-      body: s.mdx(),
+      // Cada `##` lleva su id para el índice lateral (`content/article-outline.ts`).
+      body: s.mdx({ rehypePlugins: [rehypeHeadingIds] }),
+      raw: s.raw(),
       path: s.path(),
     })
-    .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
+    .transform(({ raw, ...data }) => ({
+      ...data,
+      locale: data.path.split("/")[0],
+      headings: articleHeadings(raw),
+      readingMinutes: readingMinutes(raw),
+    })),
 });
 
 export default defineConfig({

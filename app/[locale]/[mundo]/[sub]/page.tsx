@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArticlePage, articleMetadata } from "@/components/article-page";
 import { ContactThanks } from "@/components/contact-thanks";
 import { ProjectCase } from "@/components/project-case";
 import { ServicesPage, servicesMetadata } from "@/components/services-page";
 import { SiteShell } from "@/components/site-shell";
 import { StructuredData } from "@/components/structured-data";
 import { PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
-import type { ArticleId } from "@/content/articles.data";
 import type { ProjectId } from "@/content/projects.data";
-import { getArticle, getArticleBySlug, getArticles } from "@/lib/articles";
 import { missionFileLabel, transmissionLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";
 import { pageAlternatesMetadata, projectPath, worldPath } from "@/lib/page-paths";
@@ -23,8 +20,8 @@ import { getWorld, getWorldBySlug } from "@/lib/worlds";
  * Los hijos de un mundo: un caso de estudio bajo Endurance (`/es/proyectos/omsta`,
  * `/en/projects/omsta`) y, bajo Ranger, los servicios
  * (`/es/contacto/servicios`, `/en/contact/services`) y la confirmación del
- * contacto (`/es/contacto/gracias`, `/en/contact/thanks`); bajo Experimentos,
- * las notas de taller (`/es/experimentos/como-hice-un-agujero-negro-en-webgl`).
+ * contacto (`/es/contacto/gracias`, `/en/contact/thanks`). Las entradas del
+ * blog vivieron un día bajo Experimentos; ahora están en `app/[locale]/blog`.
  *
  * Comparten carpeta porque el segmento del padre es el slug localizado del
  * mundo; el Observatorio, el tercer hijo, tiene un nivel más y vive en
@@ -43,9 +40,7 @@ export function generateStaticParams() {
   return PUBLISHED_LOCALES.flatMap((locale) => {
     const projects = getWorld("endurance", locale).prose.slug;
     const contact = getWorld("ranger", locale).prose.slug;
-    const experiments = getWorld("tesseract", locale).prose.slug;
     return [
-      ...getArticles(locale).map((article) => ({ locale, mundo: experiments, sub: article.prose.slug })),
       ...getF1AProjects(locale).map((project) => ({ locale, mundo: projects, sub: project.prose.slug })),
       { locale, mundo: contact, sub: PATH_SEGMENTS.services[locale] },
       { locale, mundo: contact, sub: PATH_SEGMENTS.thanks[locale] },
@@ -55,7 +50,6 @@ export function generateStaticParams() {
 
 type Child =
   | { kind: "project"; id: ProjectId }
-  | { kind: "article"; id: ArticleId }
   | { kind: "services" }
   | { kind: "thanks" };
 
@@ -65,10 +59,6 @@ function resolveChild(locale: Locale, mundo: string, sub: string): Child | null 
   if (world?.id === "endurance") {
     const project = getF1AProjectBySlug(sub, locale);
     return project ? { kind: "project", id: project.id } : null;
-  }
-  if (world?.id === "tesseract") {
-    const article = getArticleBySlug(sub, locale);
-    return article ? { kind: "article", id: article.id } : null;
   }
   if (world?.id === "ranger" && sub === PATH_SEGMENTS.services[locale]) return { kind: "services" };
   if (world?.id === "ranger" && sub === PATH_SEGMENTS.thanks[locale]) return { kind: "thanks" };
@@ -93,7 +83,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!child) return {};
 
   if (child.kind === "services") return servicesMetadata(locale);
-  if (child.kind === "article") return articleMetadata(getArticle(child.id, locale), locale);
 
   if (child.kind === "thanks") {
     return {
@@ -133,7 +122,6 @@ export default async function WorldChildPage({ params }: Props) {
   if (!child) notFound();
 
   if (child.kind === "services") return <ServicesPage locale={locale} />;
-  if (child.kind === "article") return <ArticlePage article={getArticle(child.id, locale)} locale={locale} />;
 
   if (child.kind === "thanks") {
     return (

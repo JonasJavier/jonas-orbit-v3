@@ -11,6 +11,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { readVoyageDeparture, subscribeVoyage } from "@/lib/voyage-controller";
 import {
   findWorldRoute,
+  isBlogPath,
   isObservatoryPath,
   type WorldRoute,
 } from "@/lib/world-route";
@@ -134,7 +135,7 @@ export function GargantuaSystem({
   const worldRoute = findWorldRoute(pathname, routes);
   const worldId = worldRoute?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
-  const covered = isCoveredRoute(worldRoute);
+  const covered = isCoveredRoute(worldRoute) || isBlogPath(pathname);
   const coveredRef = useRef(covered);
 
   /**

@@ -100,6 +100,12 @@ const nextConfig: NextConfig = {
       : [];
     return [
       ...legacy,
+      // La primera entrada del blog se publicó bajo Experimentos (2026-09-30)
+      // y Google ya la tenía pedida: la dirección vieja pasa a la nueva.
+      ...[
+        ["/es/experimentos/como-hice-un-agujero-negro-en-webgl", "/es/blog/como-hice-un-agujero-negro-en-webgl"],
+        ["/en/experiments/how-i-built-a-black-hole-in-webgl", "/en/blog/how-i-built-a-black-hole-in-webgl"],
+      ].map(([source, destination]) => ({ source, destination, permanent: true })),
       // Quien eligió español en el selector vuelve a entrar en español.
       {
         source: "/",

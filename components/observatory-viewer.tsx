@@ -44,6 +44,7 @@ const COPY = defineCopy({
     noBloom: "sin bloom",
     noEmission: "sin emisión",
     probeHint: "Señala una arista del hipercubo",
+    probeEdge: (edge: string, axis: string) => `Arista ${edge} · eje ${axis}`,
     studyHint: "Mantén un mando para comparar",
     orbit: "Arrastra para orbitar",
     zoom: "rueda para acercar",
@@ -78,6 +79,7 @@ const COPY = defineCopy({
     noBloom: "no bloom",
     noEmission: "no emission",
     probeHint: "Point at an edge of the hypercube",
+    probeEdge: (edge: string, axis: string) => `Edge ${edge} · axis ${axis}`,
     studyHint: "Hold a control to compare",
     orbit: "Drag to orbit",
     zoom: "scroll to zoom",
@@ -466,6 +468,8 @@ export function ObservatoryViewer({
 }) {
   const locale = useLocale();
   const t = COPY[locale];
+  // La sonda escribe desde el bucle de la escena, fuera de React: lee el texto de un ref.
+  const probeEdge = useRef(t.probeEdge);
   const labels = OBSERVATORY_LABELS[locale];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<ObservatoryHandle | null>(null);
@@ -1047,7 +1051,7 @@ export function ObservatoryViewer({
     }
     if (!line) return;
     line.textContent = reading
-      ? `Arista ${pad(reading.edge + 1)} · eje ${AXIS_LABELS[reading.axis] ?? "?"} · W ${fixed(reading.depth, 2)} · ${fixed(reading.range, 2)} r`
+      ? `${probeEdge.current(pad(reading.edge + 1), AXIS_LABELS[reading.axis] ?? "?")} · W ${fixed(reading.depth, 2)} · ${fixed(reading.range, 2)} r`
       : "";
   }
 

@@ -58,12 +58,15 @@ export function SiteHeader({
   worlds,
   activeWorldId,
   languages,
+  blog,
 }: {
   locale: Locale;
   worlds: readonly WorldNavItem[];
   activeWorldId?: WorldId;
   /** La página actual en cada idioma, para el selector. */
   languages: Record<Locale, string>;
+  /** El blog no es un mundo: va con las herramientas, junto al CV. */
+  blog: { href: string; active: boolean };
 }) {
   const copy = COPY[locale];
   const cvs = [...CV].sort((a, b) => Number(b.locale === locale) - Number(a.locale === locale));
@@ -219,6 +222,7 @@ export function SiteHeader({
         </div>
         <div className="voyage-return">
           <LanguageSwitch className="language-switch--tools" languages={languages} />
+          <Link className="voyage-blog-link" href={blog.href} aria-current={blog.active ? "page" : undefined}>Blog</Link>
           <details
             className="voyage-cv"
             ref={cvRef}

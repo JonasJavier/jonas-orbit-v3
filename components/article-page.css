@@ -1,172 +1,492 @@
 /*
- * Nota de taller. Una columna de lectura (48rem) con la portada un poco más
- * ancha. Fondo opaco detrás del texto: un artículo largo se lee sobre negro,
- * no sobre la escena.
+ * Una entrada del blog. Dos columnas que comparten rejilla de arriba abajo:
+ * el índice (14 rem) y la columna de lectura (46 rem, ~70 caracteres). La
+ * cabecera y el cuerpo empiezan en la misma línea; la portada abarca las dos.
+ * El texto va sobre el cielo, sin panel: el cielo es casi negro y quieto.
  */
-.article-page {
-  position: relative;
-  width: min(100%, 72rem);
+.post {
+  --post-aside: 14rem;
+  --post-column: 46rem;
+  --post-gap: clamp(2.5rem, 5vw, 4.5rem);
+  --post-width: calc(var(--post-aside) + var(--post-gap) + var(--post-column));
+  width: min(100%, calc(var(--post-width) + 2 * var(--page-gutter)));
   margin-inline: auto;
-  padding: clamp(5rem, 10vw, 8rem) var(--page-gutter) clamp(4rem, 8vw, 6rem);
+  padding: clamp(7rem, 11vw, 9.5rem) var(--page-gutter) clamp(4rem, 8vw, 6rem);
 }
 
-.article-page__header,
-.article-page__body,
-.article-page__links {
-  max-width: 48rem;
-  margin-inline: auto;
+/* Barra de lectura: la mueve el scroll del documento, sin JavaScript. */
+.post__progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 70;
+  height: 2px;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--blog-accent), var(--blog-warm));
+  pointer-events: none;
 }
 
-.article-page h1 {
-  margin: 0.65rem 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(2.6rem, 6vw, 4.8rem);
-  font-weight: 630;
-  letter-spacing: -0.05em;
-  line-height: 0.95;
-  text-wrap: balance;
+@supports (animation-timeline: scroll()) {
+  .post__progress {
+    /* `!important` y una clase: la regla de reduced-motion de `globals.css`
+       pone 0,01 ms a todo con `*`, y esto no es movimiento, es una medida. */
+    animation: post-progress linear both !important;
+    animation-duration: auto !important;
+    animation-timeline: scroll(root);
+  }
 }
 
-.article-page__lead {
-  margin: 1.5rem 0 0;
-  color: var(--ink-soft);
-  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+@keyframes post-progress {
+  to {
+    transform: scaleX(1);
+  }
 }
 
-.article-page__meta {
+.post__hero,
+.post__layout {
+  display: grid;
+  grid-template-columns: var(--post-aside) minmax(0, var(--post-column));
+  column-gap: var(--post-gap);
+  justify-content: center;
+}
+
+.post__hero > * {
+  grid-column: 2;
+}
+
+.post__crumbs {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 0.8rem;
-  margin: 1.4rem 0 0;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  gap: 0.2rem 0.6rem;
+  color: var(--blog-muted);
+  font: 600 0.68rem/1.4 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
-.article-page__meta a,
-.article-page__links a {
+.post__crumbs a {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 44px;
-  color: var(--world-accent, var(--cyan));
+  min-height: 32px;
+  color: var(--blog-accent);
 }
 
-.article-page__cover {
-  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+.post__crumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
 }
 
-.article-page__cover img,
-.article-page__figure img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--space-line);
-  border-radius: var(--radius-md, 0.8rem);
-  background: #000;
-}
-
-.article-page__body {
-  margin-top: clamp(2.5rem, 5vw, 4rem);
-  padding: clamp(1.4rem, 4vw, 3rem);
-  border: 1px solid var(--space-line);
-  border-radius: var(--radius-lg);
-  background: rgba(5, 7, 14, 0.94);
-  color: var(--ink-soft);
-  font-size: 1.04rem;
-  line-height: 1.75;
-}
-
-.article-page__body > :first-child {
-  margin-top: 0;
-}
-
-.article-page__body p,
-.article-page__body ul {
-  margin: 1.1rem 0 0;
-}
-
-.article-page__body ul {
-  padding-left: 1.2rem;
-}
-
-.article-page__body li + li {
-  margin-top: 0.6rem;
-}
-
-.article-page__body h2 {
-  margin: 3rem 0 0;
-  color: var(--ink);
+.post h1 {
+  margin: 0.8rem 0 0;
   font-family: var(--font-display);
-  font-size: clamp(1.45rem, 2.6vw, 1.9rem);
+  font-size: clamp(2.5rem, 5.6vw, 4.4rem);
   font-weight: 630;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  text-wrap: balance;
 }
 
-.article-page__body strong {
-  color: var(--ink);
+.post__lead {
+  margin: 1.4rem 0 0;
+  color: var(--blog-soft);
+  font-size: clamp(1.06rem, 1.6vw, 1.24rem);
+  line-height: 1.6;
+}
+
+.post__byline {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1.8rem;
+}
+
+.post__byline p {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.post__byline strong {
+  color: var(--blog-ink);
+  font-size: 0.92rem;
   font-weight: 620;
 }
 
-.article-page__body a {
-  color: var(--ink);
+.post__byline p > span {
+  color: var(--blog-muted);
+  font: 0.72rem var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+.post__cover {
+  width: min(100%, var(--post-width));
+  margin: clamp(2.5rem, 5vw, 3.5rem) auto 0;
+}
+
+.post__cover img,
+.post__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--blog-line);
+  border-radius: var(--blog-radius);
+  background: #000;
+}
+
+.post__layout {
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+/* ── El índice lateral ──────────────────────────────────────────────────── */
+
+.post__aside {
+  position: sticky;
+  top: 6.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-self: start;
+  max-height: calc(100svh - 8rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.post__toc ol {
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid var(--blog-line);
+}
+
+.post__toc a {
+  display: block;
+  margin-left: -1px;
+  padding: 0.42rem 0 0.42rem 0.9rem;
+  border-left: 1px solid transparent;
+  color: var(--blog-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.post__toc a:hover {
+  border-left-color: var(--blog-accent);
+  color: var(--blog-ink);
+}
+
+.post__live {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1rem 2.2rem 1.05rem 1.05rem;
+  border: 1px solid color-mix(in srgb, var(--blog-warm) 34%, transparent);
+  border-radius: 10px;
+  background: rgb(242 200 121 / 5%);
+  color: var(--blog-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.post__live:hover {
+  border-color: var(--blog-warm);
+  background: rgb(242 200 121 / 9%);
+}
+
+.post__live .blog-label {
+  color: var(--blog-warm);
+}
+
+.post__live-arrow {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  color: var(--blog-warm);
+}
+
+/* ── El cuerpo ──────────────────────────────────────────────────────────── */
+
+.post__body {
+  min-width: 0;
+  color: var(--blog-soft);
+  font-size: 1.075rem;
+  line-height: 1.78;
+}
+
+.post__body > :first-child {
+  margin-top: 0;
+}
+
+.post__body :is(p, ul, ol, table) {
+  margin: 1.15rem 0 0;
+}
+
+.post__body :is(ul, ol) {
+  padding-left: 1.25rem;
+}
+
+/* El reset de Tailwind quita las viñetas: en un texto largo hacen falta. */
+.post__body ul {
+  list-style: disc;
+}
+
+.post__body ol {
+  list-style: decimal;
+}
+
+.post__body li + li {
+  margin-top: 0.55rem;
+}
+
+.post__body li::marker {
+  color: var(--blog-accent);
+}
+
+.post__body h2 {
+  margin: 3.4rem 0 0;
+  scroll-margin-top: 6.5rem;
+  color: var(--blog-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 1.95rem);
+  font-weight: 630;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.post__body h2::before {
+  content: "";
+  display: block;
+  width: 2.2rem;
+  height: 2px;
+  margin-bottom: 1.1rem;
+  background: var(--blog-accent);
+  opacity: 0.7;
+}
+
+.post__body h3 {
+  margin: 2.2rem 0 0;
+  color: var(--blog-ink);
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.post__body strong {
+  color: var(--blog-ink);
+  font-weight: 620;
+}
+
+.post__body a {
+  color: var(--blog-ink);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--world-accent, var(--cyan)) 70%, transparent);
+  text-decoration-color: color-mix(in srgb, var(--blog-accent) 70%, transparent);
   text-underline-offset: 0.2em;
 }
 
-.article-page__body code {
+.post__body a:hover {
+  text-decoration-color: var(--blog-accent);
+}
+
+.post__body code {
   padding: 0.08em 0.35em;
   border-radius: 0.3rem;
-  background: rgba(127, 229, 255, 0.07);
-  color: #dfe9fb;
+  background: rgb(143 211 255 / 8%);
+  color: #e1ebfb;
   font-family: var(--font-mono);
   font-size: 0.86em;
 }
 
-.article-page__body pre {
-  margin: 1.4rem 0 0;
-  padding: 1.1rem 1.2rem;
+.post__body pre {
+  margin: 1.5rem 0 0;
+  padding: 1.1rem 1.25rem;
   overflow-x: auto;
-  border: 1px solid var(--space-line);
-  border-radius: var(--radius-sm, 0.5rem);
-  background: #04060c;
-  line-height: 1.6;
+  border: 1px solid var(--blog-line);
+  border-radius: 10px;
+  background: rgb(3 6 14 / 94%);
+  line-height: 1.65;
+  scrollbar-width: thin;
 }
 
-.article-page__body pre code {
+.post__body pre code {
   padding: 0;
   background: none;
   font-size: 0.8rem;
 }
 
-.article-page__figure {
+.post__body blockquote {
+  margin: 1.6rem 0 0;
+  padding: 0.15rem 0 0.15rem 1.2rem;
+  border-left: 2px solid var(--blog-warm);
+  color: var(--blog-ink);
+}
+
+.post__body blockquote > :first-child {
+  margin-top: 0;
+}
+
+.post__body table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.post__body :is(th, td) {
+  padding: 0.6rem 0.9rem 0.6rem 0;
+  border-bottom: 1px solid var(--blog-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.post__body th {
+  color: var(--blog-ink);
+  font-weight: 620;
+}
+
+.post__figure {
   margin: 2rem 0 0;
 }
 
-.article-page__figure figcaption {
+.post__figure figcaption {
   margin-top: 0.7rem;
-  color: var(--ink-muted);
+  color: var(--blog-muted);
   font-size: 0.85rem;
   line-height: 1.55;
 }
 
-.article-page__links {
+/* ── El final ───────────────────────────────────────────────────────────── */
+
+.post__end {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 5vw, 3.5rem);
+  width: min(100%, var(--post-width));
+  margin: clamp(3.5rem, 7vw, 5rem) auto 0;
+}
+
+.post__author {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.6rem;
+  align-items: center;
+  padding: clamp(1.3rem, 3vw, 2rem);
+  border: 1px solid var(--blog-line);
+  border-radius: var(--blog-radius);
+  background:
+    linear-gradient(120deg, rgb(143 211 255 / 6%), transparent 60%),
+    var(--blog-panel);
+}
+
+.post__author p {
+  margin: 0;
+}
+
+.post__author-name {
+  margin-top: 0.35rem !important;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+
+.post__author-name a {
+  color: var(--blog-ink);
+}
+
+.post__author-name + p {
+  max-width: 40rem;
+  margin-top: 0.45rem !important;
+  color: var(--blog-soft);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.post__author-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.5rem 1.5rem;
-  margin-top: 2rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  gap: 0.7rem;
+  margin-top: 1.1rem;
+}
+
+.post__more h2 {
+  margin-bottom: 1.2rem;
+}
+
+.post__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+  min-height: 44px;
+  color: var(--blog-accent);
+  font: 0.78rem var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ── Una sola columna ───────────────────────────────────────────────────── */
+
+@media (max-width: 66rem) {
+  .post__hero,
+  .post__layout {
+    grid-template-columns: minmax(0, var(--post-column));
+  }
+
+  .post__hero > * {
+    grid-column: 1;
+  }
+
+  .post__aside {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    margin-bottom: 2.5rem;
+  }
+
+  .post__toc {
+    padding: 1.1rem 1.2rem 0.6rem;
+    border: 1px solid var(--blog-line);
+    border-radius: 10px;
+    background: var(--blog-panel);
+  }
+
+  .post__toc ol {
+    border-left: 0;
+  }
+
+  .post__toc a {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
 }
 
 @media (max-width: 40rem) {
-  .article-page__body {
-    padding: 1.2rem 1rem;
+  .post__body {
     font-size: 1rem;
+    line-height: 1.72;
+  }
+
+  .post__body pre {
+    margin-inline: calc(-1 * var(--page-gutter));
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .post__author {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .post__author .blog-avatar--large {
+    width: 4.5rem;
+    height: 4.5rem;
   }
 }

@@ -125,7 +125,9 @@
 .site-footer__bottom { border-top: 1px solid var(--footer-edge); padding-top: 12px; color: var(--voyage-muted); font-size: .67rem; }
 .site-footer__bottom small { font-size: inherit; }
 .site-footer__position { font: .55rem/1.7 var(--font-mono); letter-spacing: .075em; text-align: center; }
-.site-footer__bottom > a { display: inline-flex; align-items: center; min-height: 44px; color: var(--voyage-tool); }
+.site-footer__extras { display: flex; flex-wrap: wrap; justify-content: flex-end; column-gap: 20px; }
+.site-footer__extras > a { display: inline-flex; align-items: center; min-height: 44px; color: var(--voyage-tool); transition: color .2s; }
+.site-footer__extras > a:hover { color: #efffff; }
 /* La bandeja de MOVIMIENTO/AUDIO vuelve al final de la página (system-tray.tsx):
    la última fila le deja su hueco para no quedar debajo de los dos círculos. */
 @media (max-width: 60rem) {

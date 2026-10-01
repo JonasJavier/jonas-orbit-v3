@@ -660,3 +660,14 @@ html[data-motion="off"] .experiments-page *::after {
   color: var(--world-accent, var(--amber));
   font-size: 0.92rem;
 }
+
+.experiments-page__notes a.experiments-page__blog {
+  color: rgba(201, 210, 229, 0.72);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.experiments-page__notes a.experiments-page__blog:hover {
+  color: var(--world-accent, var(--amber));
+}

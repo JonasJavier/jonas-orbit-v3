@@ -99,10 +99,13 @@ MDX**, nunca en `worlds.data.ts`.
   en `app/[locale]`; texto de interfaz en `defineCopy({ es, en })` junto a su
   componente; contenido en `content/{es,en}`. Nada de texto visible nuevo en
   un solo idioma.
-- **Servicios y notas de taller** (09-30) registro de igual nombre —
-  servicios como hijo de Contacto, cada uno con su caso de prueba; notas de
-  taller (Velite `articleProse`) bajo Experimentos; difusión en
-  `docs/difusion/`.
+- **Blog** (10-01) registro «Blog — sección propia…» — `/es/blog`,
+  `/en/blog`, fuera de los seis mundos (enlace con las herramientas de la
+  cabecera y en el pie); fondo propio (`blog-sky.tsx`) con la escena dormida;
+  entradas largas en Velite `articleProse` con índice y minutos calculados.
+- **Servicios** (09-30) registro «Servicios y notas de taller» — servicios
+  como hijo de Contacto, cada uno con su caso de prueba, y «Ver servicios»
+  en el hero de Contacto; difusión en `docs/difusion/`.
 - **SEO — nombre, nicho 3D y freelance** (09-29) registro de igual nombre —
   nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
   descripciones, nunca en títulos; `seoTitle` en los seis especímenes;

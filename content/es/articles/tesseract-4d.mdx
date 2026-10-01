@@ -1,0 +1,311 @@
+---
+id: tesseract-4d
+slug: teseracto-4d-en-three-js
+title: Cómo dibujé un teseracto 4D en Three.js
+summary: >-
+  Un cubo de cuatro dimensiones que gira en planos que no existen en nuestro
+  espacio, dibujado con un solo trazo de luz. Los 16 vértices, la rotación en W,
+  la perspectiva y lo que hizo falta para que no pareciera una jaula.
+coverAlt: >-
+  El teseracto del Observatorio en una de sus poses legibles: un cubo dentro de
+  otro, unidos por ocho aristas, con la punta de luz recorriendo una de ellas.
+seoTitle: "Teseracto 4D en Three.js: cómo dibujar un hipercubo"
+seoDescription: >-
+  Cómo dibujar un teseracto (hipercubo 4D) en Three.js: vértices por bits,
+  rotación en los planos XW, YW y ZW, perspectiva desde W y un trazo continuo.
+---
+
+El Tesseracto es el mundo de Experimentos en este sitio: un hipercubo de
+cristal que flota junto a Gargantúa y que en el
+[Observatorio](/es/experimentos/observatorio/tesseracto) puedes mirar a
+pantalla completa. No es un modelo 3D animado. Es un objeto de cuatro
+dimensiones que gira en cuatro dimensiones y se proyecta, en cada fotograma, a
+las tres que la pantalla puede enseñar. Esta entrada cuenta cómo está hecho,
+desde los dieciséis vértices hasta el trazo de luz que lo recorre.
+
+## Qué es un teseracto
+
+Un cuadrado es un segmento arrastrado en una dirección nueva. Un cubo es un
+cuadrado arrastrado en una dirección perpendicular a las dos que ya tiene. Un
+teseracto es lo mismo un paso más allá: un cubo arrastrado en una cuarta
+dirección, perpendicular a las tres de nuestro espacio, que aquí llamo **W**.
+
+Contarlo es fácil aunque imaginarlo no lo sea. Cada vez que se arrastra una
+figura, sus vértices se duplican y aparece una arista nueva por cada vértice
+original. El cuadrado tiene 4 vértices y 4 aristas; el cubo, 8 y 12; el
+teseracto, **16 vértices y 32 aristas**, con 24 caras cuadradas y 8 celdas
+cúbicas. Lo que se ve en pantalla —un cubo dentro de otro cubo, unidos por las
+esquinas— es la sombra de ese objeto en tres dimensiones, igual que el dibujo
+de un cubo en un papel es su sombra en dos.
+
+## Dieciséis vértices a partir de cuatro bits
+
+La forma más limpia de generar el teseracto es no pensar en coordenadas sino en
+bits. Cada vértice es un número del 0 al 15, y cada uno de sus cuatro bits dice
+si está en el lado negativo o positivo de un eje: el bit 0 es X, el 1 es Y, el
+2 es Z y el 3 es W. Las coordenadas son ±0,5.
+
+Con esa numeración, dos vértices comparten arista exactamente cuando sus
+números difieren en un solo bit. El XOR lo encuentra sin buscar nada:
+
+```ts
+const edges: [number, number][] = [];
+for (let vertex = 0; vertex < 16; vertex++) {
+  for (let axis = 0; axis < 4; axis++) {
+    const other = vertex ^ (1 << axis);
+    if (vertex < other) edges.push([vertex, other]);
+  }
+}
+```
+
+Salen las 32 aristas, ocho por cada eje. Las ocho del eje W son las que unen el
+cubo de dentro con el de fuera, y son las más interesantes de mirar, porque
+recorren una dirección que no existe en la habitación en la que estás.
+
+## Un solo trazo: el circuito euleriano
+
+En el sitio el teseracto no aparece entero de golpe: una punta de luz lo va
+dibujando arista por arista, como un lápiz. Para que ese lápiz no tenga que
+levantarse ni saltar de un vértice a otro, el recorrido tiene que pasar por las
+32 aristas una sola vez y volver al punto de partida. Eso es un **circuito
+euleriano**, y la teoría de grafos dice cuándo existe: cuando todos los
+vértices tienen grado par.
+
+En el teseracto cada vértice toca cuatro aristas, una por eje. Cuatro es par,
+así que el circuito existe, y el algoritmo de Hierholzer lo construye con una
+pila en una docena de líneas:
+
+```ts
+const remaining = edges.map(() => true);
+const stack = [0];
+const circuit: number[] = [];
+while (stack.length) {
+  const vertex = stack[stack.length - 1];
+  const index = edges.findIndex(([a, b], i) => remaining[i] && (a === vertex || b === vertex));
+  if (index < 0) circuit.push(stack.pop()!);
+  else {
+    remaining[index] = false;
+    stack.push(edges[index][0] === vertex ? edges[index][1] : edges[index][0]);
+  }
+}
+circuit.reverse();
+```
+
+Se calcula una vez al cargar el módulo y hay un test que comprueba las tres
+cosas que importan: el trazo es continuo, no repite arista y cada vértice
+conserva grado cuatro. La punta recorre las 32 aristas cada 18 segundos y deja
+una estela que se apaga a lo largo de unas trece.
+
+## Girar en cuatro dimensiones
+
+En tres dimensiones se dice que algo gira «alrededor de un eje». En cuatro esa
+frase deja de funcionar: lo que tiene sentido es girar **en un plano**. Una
+rotación en el plano XY mueve X e Y y deja quietos Z y W. Hay seis planos
+posibles (XY, XZ, XW, YZ, YW, ZW), y los tres que no tocan W son las rotaciones
+de siempre: no enseñan nada nuevo.
+
+Por eso el teseracto del sitio gira sólo en los tres planos que mezclan un eje
+de nuestro espacio con W: **XW, YW y ZW**. Son las rotaciones que hacen que el
+cubo de dentro crezca, atraviese al de fuera y salga por el otro lado. Cada una
+es una rotación de dos coordenadas, aplicada en secuencia:
+
+```ts
+const t = rhythm(seconds);
+const angles = [t * 0.19 + 0.35, t * 0.137 + 0.48, t * 0.083 + 0.16];
+// …
+for (let axis = 0; axis < 3; axis++) {
+  const a = p[axis], w = p[3];
+  p[axis] = a * cos[axis] - w * sin[axis];
+  p[3] = a * sin[axis] + w * cos[axis];
+}
+```
+
+Las tres velocidades (0,19, 0,137 y 0,083 radianes por unidad de tiempo) no
+guardan una proporción sencilla entre sí, así que la figura no repite la misma
+secuencia de poses cada pocos segundos.
+
+<Figure
+  name="teseracto-instantes"
+  alt="Seis fotogramas del mismo teseracto en momentos distintos de su rotación: a veces un cubo dentro de otro, a veces una forma aplanada."
+  caption="Seis instantes de la misma rotación. Nada se deforma en cuatro dimensiones: lo que cambia es la sombra que el objeto proyecta en tres."
+/>
+
+Dos decisiones de esa función no son evidentes y las dos importan.
+
+**El tiempo es absoluto.** La pose se calcula a partir de los segundos
+transcurridos, no sumando un incremento por fotograma. Si se sumara, una
+pantalla de 120 Hz haría girar la figura al doble de velocidad que una de 60.
+Con el tiempo absoluto, la misma hora da la misma pose en cualquier equipo, y
+hay un test que lo comprueba hasta las seis horas de reloj.
+
+**El reloj tiene ritmo.** Con una velocidad constante, a los pocos segundos el
+cerebro concluye «vale, está girando» y deja de mirar la forma. Y el recorrido
+no es parejo: hay poses que se entienden enseguida —el cubo dentro del cubo— y
+tramos donde la proyección se aplana y se vuelve confusa. Así que el tiempo se
+deforma con dos armónicos:
+
+```ts
+function rhythm(seconds: number): number {
+  return seconds
+    + 0.3151 * Math.sin((2 * Math.PI * (seconds - 7.5)) / 18)
+    + 0.2722 * Math.sin((2 * Math.PI * (seconds - 3.5)) / 9);
+}
+```
+
+El resultado medido: la figura va a 0,71 de su velocidad media en las poses
+legibles, a 1,21 en las confusas y nunca baja de 0,7. Como la velocidad nunca
+llega a cero, el reloj nunca retrocede: una animación que rebobina medio
+segundo se lee como un fallo, no como ritmo. Con un solo armónico los máximos y
+mínimos caían a nueve segundos de distancia y no coincidían con las poses que
+había que frenar; el segundo, a mitad de periodo, los mueve a su sitio.
+
+## De cuatro dimensiones a tres: perspectiva desde W
+
+Después de girar, cada vértice sigue teniendo cuatro coordenadas. Para verlo
+hay que proyectarlo, y la proyección es la misma idea que la perspectiva de una
+cámara normal, una dimensión más arriba: una cámara situada en W = 1,65 que
+mira hacia el origen. Lo que está más cerca de ella en W se ve más grande.
+
+```ts
+const perspective = 1.65 / (1.65 - p[3]);
+const x = p[0] * perspective, y = p[1] * perspective, z = p[2] * perspective;
+```
+
+Ése es todo el secreto del «cubo dentro del cubo»: no hay dos cubos de tamaños
+distintos, hay dos celdas iguales a distancias distintas de la cámara en la
+cuarta dimensión. Después, una pose fija lo presenta en diagonal en 3D (0,6,
+0,45 y 0,28 radianes), y cada muestra se recentra y se escala para que el
+vértice más lejano quede siempre a 1,5 unidades del centro. Sin esa
+normalización la figura «respira» al girar, y con ella se moverían el área de
+clic y los corchetes que la señalan en el mapa.
+
+## Que no parezca una jaula
+
+La primera versión con todo esto funcionando era ilegible. Treinta y dos
+aristas del mismo grosor y el mismo brillo no se leen como un objeto de cuatro
+dimensiones: se leen como una jaula de alambre. Subir la exposición no
+ayudaba; sólo hacía más brillante la jaula.
+
+Lo que lo arregló fue **jerarquía**. La misma perspectiva que calcula el tamaño
+también dice qué tan cerca está cada vértice en W, y ese dato, normalizado de 0
+a 1 en cada fotograma, gobierna el grosor y la luz de cada arista:
+
+- El radio de cada tubo va de 0,58 a 1,42 veces el base según su profundidad
+  en W, así que la celda cercana es gruesa y la lejana fina.
+- En el shader, el brillo sigue la misma escala:
+  `0.26 + 0.52 · celda + 0.22 · cercanía`.
+
+<Figure
+  name="teseracto-jerarquia"
+  alt="El teseracto con la celda cercana en W dibujada con aristas gruesas y claras y la lejana con aristas finas y oscuras."
+  caption="La profundidad en W como jerarquía: la celda cercana, gruesa y clara; la lejana, fina y apagada. Es lo que separa los dos cubos."
+/>
+
+Se normaliza en cada fotograma y no contra un rango fijo por una razón
+concreta: el recorrido en W cambia con la rotación, y con una escala fija la
+jerarquía desaparecía justo en las poses en que el cubo se ve más de frente.
+
+## Cuatro mallas y un solo shader
+
+El teseracto se dibuja con cuatro mallas de Three.js que comparten el mismo
+GLSL y se distinguen por un uniforme, `uLayer`:
+
+| Capa | Qué es | Cómo se mezcla |
+| --- | --- | --- |
+| Aristas de cristal | Tubos de seis lados, cuerpo casi negro con brillo de Fresnel | Opaca, escribe profundidad |
+| Luz del trazo | La punta y su estela | Aditiva, sin prueba de profundidad |
+| Láminas de vidrio | Seis de las 24 caras | Transparente, por las dos caras |
+| Oclusor | Una cinta que sólo escribe profundidad | Sin color |
+
+Algunos detalles que costaron más de lo que parece:
+
+- **Sólo seis caras de vidrio.** Con las 24 la figura se llenaba y dejaba de
+  leerse por el canto. El vacío tiene que seguir siendo la superficie
+  dominante.
+- **Normales por esquina, no por cara.** Con normales planas los tubos de seis
+  lados se ven facetados; con la normal radial de cada esquina se sombrean
+  redondos sin añadir un solo triángulo.
+- **El oclusor es una cinta, no un tubo.** Hacía falta que las aristas de
+  delante taparan la estela de las de detrás. Un tubo completo habría subido la
+  escena de 19 500 a 20 001 vértices y roto el presupuesto que un test vigila;
+  una cinta de cuatro vértices por arista, orientada a la cámara en el vertex
+  shader, cuesta 128.
+
+## Reconstruir la geometría en cada fotograma
+
+Como la figura cambia de forma —no sólo de posición—, sus vértices se
+reescriben en cada fotograma: los dos tubos (768 vértices cada uno), la cinta
+oclusora y las láminas, unos 1 700 vértices en total. Suena caro y no lo es,
+con tres cuidados:
+
+- Todos los búferes que cambian se crean con `DynamicDrawUsage`, que le dice a
+  WebGL que se van a reescribir a menudo. Las UV y los índices no cambian y no
+  se tocan.
+- Los vectores temporales se reservan una vez fuera del bucle: el bucle no
+  crea objetos y el recolector de basura no tiene nada que hacer.
+- Las esferas envolventes se fijan en un radio de 1,56 en lugar de
+  recalcularse: como la figura ya está normalizada, ese radio nunca cambia.
+
+## Sin WebGL: el mismo teseracto en SVG
+
+No todo el mundo ve la escena en 3D. Sin WebGL2, con una GPU por software o con
+los efectos apagados, el sitio muestra un atlas plano dibujado con SVG. El
+teseracto de ese atlas no es un dibujo aparte: llama a la misma función con
+`seconds = 0`, usa la misma topología —las mismas seis caras y el mismo
+circuito de 32 aristas— y proyecta los vértices a un `viewBox` de 140 × 140.
+El grosor y la opacidad de cada línea salen de la misma profundidad en W.
+
+<Figure
+  name="teseracto-webgl-svg"
+  alt="A la izquierda, el teseracto en WebGL con tubos de cristal; a la derecha, el mismo teseracto dibujado en SVG con líneas de color."
+  caption="El mismo objeto con y sin WebGL. El SVG no se anima ni ejecuta JavaScript, pero comparte topología y jerarquía con la escena."
+/>
+
+Que los dos perfiles cuenten lo mismo era un requisito, no un detalle: si el
+destino «Experimentos» fuera un cubo animado en un equipo y otra cosa en otro,
+el sitio estaría diciendo dos cosas distintas según quién lo mire.
+
+## Señalar la cuarta dimensión
+
+En el Observatorio, en modo Estudio, hay un instrumento que sólo tiene el
+teseracto: **la sonda**. Al pasar el puntero cerca de una arista, la señala y
+dice cuál es, en qué eje va, a qué profundidad en W está y a qué distancia se
+encuentra. Es el único sitio de la página donde se puede apuntar literalmente a
+la cuarta dimensión.
+
+<Figure
+  name="teseracto-sonda"
+  alt="El Observatorio en modo Estudio con la sonda activa: una retícula sobre una arista y la lectura «Arista 16 · eje W · W 0.57 · 3.57 r»."
+  caption="La sonda sobre una de las ocho aristas del eje W. La lectura va pegada a la retícula, no en una esquina de la pantalla."
+/>
+
+No usa el `Raycaster` de Three.js. Vuelve a muestrear la figura en el mismo
+instante, proyecta los 16 vértices a píxeles de la pantalla y mide la distancia
+del puntero a cada uno de los 32 segmentos. Son 32 cuentas de punto a segmento:
+más barato que lanzar rayos contra tubos y exacto para lo que se pregunta. En
+la primera versión la lectura salía arriba a la izquierda, lejos de la arista,
+y se entendía como un mensaje y no como una medida. Ahora va junto a la
+retícula y se voltea al acercarse al borde.
+
+## Lo que descarté
+
+- **Un pasillo de marcos.** La primera idea era arquitectónica: un corredor de
+  marcos que se repetían hacia dentro. Se quedó en un hipercubo de aristas de
+  cristal que una línea de luz va dibujando, que es más honesto con lo que es
+  un teseracto.
+- **Partículas, rayos y halos.** Cualquier cosa añadida alrededor competía con
+  la forma. Se quedaron fuera.
+- **Una persistencia «fantasma» de las poses anteriores.** Se planteó como
+  prueba A/B con una condición: si parecía un efecto de After Effects, no
+  entraba. No entró.
+
+## Pruébalo
+
+El teseracto está en el [Observatorio](/es/experimentos/observatorio/tesseracto):
+cambia a Estudio, prueba las tres vistas y activa la sonda sobre las aristas
+que unen los dos cubos. Si te interesa cómo está hecho el resto, el agujero
+negro tiene [su propia entrada](/es/blog/como-hice-un-agujero-negro-en-webgl).
+
+Y si estás pensando en algo así para tu producto —una visualización 3D, una
+pieza interactiva o una web que se recuerde—, aquí cuento
+[cómo trabajo y qué hago](/es/contacto/servicios).
