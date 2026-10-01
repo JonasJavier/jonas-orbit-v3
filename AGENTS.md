@@ -109,7 +109,8 @@ MDX**, nunca en `worlds.data.ts`.
   entradas largas en Velite `articleProse` con índice y minutos calculados.
 - **Servicios** (09-30) registro «Servicios y notas de taller» — servicios
   como hijo de Contacto, cada uno con su caso de prueba, y «Ver servicios»
-  en el hero de Contacto; difusión en `docs/difusion/`.
+  en el hero de Contacto; difusión en `docs/difusion/`. Segundo pase
+  (10-01): fondo propio con horizonte, capturas reales, proceso y preguntas.
 - **SEO — nombre, nicho 3D y freelance** (09-29) registro de igual nombre —
   nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
   descripciones, nunca en títulos; `seoTitle` en los seis especímenes;

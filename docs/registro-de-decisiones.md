@@ -19,6 +19,28 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Servicios — segundo pase y cabecera centrada del blog (2026-10-01)
+
+Pedido del dueño: la página de servicios «más profesional, más bonita», con
+otro fondo y mejor organización; y la cabecera de las entradas del blog, que
+se veía descentrada respecto de la portada.
+
+- **Fondo propio** (`.services-sky` en `components/services-page.css`): cielo
+  fijo y opaco con el violeta y el cian de Ranger y el campo estelar de
+  Edmunds; el hero termina en el horizonte iluminado de un planeta
+  (`.svc-horizon`, recortado y fundido para que su borde inferior no asome
+  detrás de otra sección). La escena persistente sigue dormida (Ranger).
+- **Orden:** hero a dos columnas (titular, entradilla y dos llamadas · ficha
+  de trabajo con modalidad, idiomas y herramientas de `knowsAbout`) → cuatro
+  tarjetas con una CAPTURA REAL del caso que las prueba (OMSTA web y app,
+  Delicaté, Gargantúa), qué incluye y «Hecho en» → proceso en línea de
+  tiempo → preguntas frecuentes (`<details>`, respuestas sacadas de lo ya
+  publicado en «Cómo trabajo») → cierre con formulario, WhatsApp y el blog.
+- **Blog:** la cabecera de la entrada va centrada sobre la portada (a la
+  izquierda en el teléfono).
+- e2e: O10 del Observatorio falla a veces por redondeo (43,9999 px frente a
+  44); no es de este cambio.
+
 ## Blog — sección propia, cielo propio y tres entradas nuevas (2026-10-01)
 
 Pedido del dueño: «otro fondo» para las notas (se veían dos agujeros negros:

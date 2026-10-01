@@ -42,7 +42,14 @@
   }
 }
 
-.post__hero,
+/* La cabecera va centrada sobre la portada, en su mismo eje: alineada con la
+   columna de lectura quedaba desplazada a la derecha de la imagen. */
+.post__hero {
+  max-width: 54rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
 .post__layout {
   display: grid;
   grid-template-columns: var(--post-aside) minmax(0, var(--post-column));
@@ -50,13 +57,10 @@
   justify-content: center;
 }
 
-.post__hero > * {
-  grid-column: 2;
-}
-
 .post__crumbs {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 0.2rem 0.6rem;
   color: var(--blog-muted);
@@ -88,7 +92,8 @@
 }
 
 .post__lead {
-  margin: 1.4rem 0 0;
+  max-width: 46rem;
+  margin: 1.4rem auto 0;
   color: var(--blog-soft);
   font-size: clamp(1.06rem, 1.6vw, 1.24rem);
   line-height: 1.6;
@@ -96,6 +101,7 @@
 
 .post__byline {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 0.85rem;
   margin-top: 1.8rem;
@@ -104,6 +110,7 @@
 .post__byline p {
   display: flex;
   flex-direction: column;
+  text-align: left;
   gap: 0.15rem;
   margin: 0;
 }
@@ -434,13 +441,8 @@
 /* ── Una sola columna ───────────────────────────────────────────────────── */
 
 @media (max-width: 66rem) {
-  .post__hero,
   .post__layout {
     grid-template-columns: minmax(0, var(--post-column));
-  }
-
-  .post__hero > * {
-    grid-column: 1;
   }
 
   .post__aside {
@@ -469,6 +471,16 @@
 }
 
 @media (max-width: 40rem) {
+  /* En el teléfono un párrafo centrado se lee mal: la cabecera vuelve a la izquierda. */
+  .post__hero {
+    text-align: left;
+  }
+
+  .post__crumbs,
+  .post__byline {
+    justify-content: flex-start;
+  }
+
   .post__body {
     font-size: 1rem;
     line-height: 1.72;
