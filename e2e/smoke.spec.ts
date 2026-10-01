@@ -498,7 +498,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
       /\/media\/projects\/omsta\/w02-dashboard-og\.jpg$/,
     );
     await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
-    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "Jonás Orbit");
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "Jonás Javier");
     const card = await page.request.get("/media/projects/omsta/w02-dashboard-og.jpg");
     expect(card.status()).toBe(200);
     expect((await card.body()).byteLength).toBeLessThan(300_000);
@@ -511,6 +511,46 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
         name: "Esta misión salió de la órbita.",
       }),
     ).toBeVisible();
+  });
+
+  test("la portada se comparte con tarjeta: og:* en el HTML servido e imagen PNG", async ({
+    request,
+  }) => {
+    // Como un crawler: sin JavaScript, con el user agent de Discord.
+    const response = await request.get("/es", {
+      headers: { "user-agent": "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)" },
+    });
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("text/html");
+    expect(response.headers()["x-robots-tag"]).toBeUndefined();
+    const html = await response.text();
+    const head = html.slice(0, html.indexOf("<body"));
+    const meta = (key: string) =>
+      head.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)"`))?.[1];
+
+    expect(meta("og:title")).toBe("Jonás Javier — Full-Stack Developer");
+    expect(meta("og:description")).toMatch(/^Desarrollador Full-Stack especializado/);
+    expect(meta("og:type")).toBe("website");
+    expect(meta("og:site_name")).toBe("Jonás Javier");
+    expect(meta("og:locale")).toBe("es_DO");
+    expect(meta("og:url")).toMatch(/^https?:\/\/[^/]+\/es$/);
+    expect(meta("twitter:card")).toBe("summary_large_image");
+    expect(meta("twitter:title")).toBe(meta("og:title"));
+    expect(meta("og:image:alt")).toBeTruthy();
+    const image = meta("og:image");
+    expect(image).toMatch(/^https?:\/\/[^/]+\/es\/opengraph-image\?v=\d+$/);
+    expect(meta("twitter:image")).toBe(image);
+
+    const url = new URL(image!);
+    const card = await request.get(url.pathname + url.search, {
+      headers: { "user-agent": "facebookexternalhit/1.1" },
+    });
+    expect(card.status()).toBe(200);
+    expect(card.headers()["content-type"]).toBe("image/png");
+    const bytes = await card.body();
+    // Ancho y alto del PNG (cabecera IHDR) y un peso que cualquier red aguanta.
+    expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1200, 630]);
+    expect(bytes.byteLength).toBeLessThan(300_000);
   });
 
   test("A32 · ninguna de las 7 rutas desborda en 375px", async ({ page }) => {

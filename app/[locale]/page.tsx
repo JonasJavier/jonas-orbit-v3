@@ -14,11 +14,17 @@ const COPY = defineCopy({
     title: "Jonás Javier Encarnación — Desarrollador full-stack · Portafolio 3D",
     description:
       "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana. Un portafolio 3D interactivo inspirado en Interstellar.",
+    shareTitle: "Jonás Javier — Full-Stack Developer",
+    shareDescription:
+      "Desarrollador Full-Stack especializado en aplicaciones web, sistemas empresariales y experiencias digitales con Django, React y TypeScript.",
   },
   en: {
     title: "Jonás Javier Encarnación — Full-Stack Developer · 3D Portfolio",
     description:
       "Jonás Javier Encarnación, a full-stack developer and UX/UI designer in the Dominican Republic. An interactive 3D portfolio inspired by Interstellar.",
+    shareTitle: "Jonás Javier — Full-Stack Developer",
+    shareDescription:
+      "Full-stack developer specializing in web applications, business systems and digital experiences with Django, React and TypeScript.",
   },
 });
 
@@ -40,10 +46,14 @@ export async function generateMetadata({
     title: { absolute: copy.title },
     description: copy.description,
     alternates: pageAlternatesMetadata({ kind: "home" }, locale),
+    // La tarjeta social habla distinto que el buscador, a propósito: el
+    // <title> lleva el nombre completo y el nicho 3D para Google (registro «SEO
+    // — nombre, nicho 3D y freelance»); quien ve el enlace en Discord o
+    // LinkedIn lee el corto y el oficio. Next copia este og:* a twitter:*.
     openGraph: {
       ...siteOpenGraph(locale),
-      title: copy.title,
-      description: copy.description,
+      title: copy.shareTitle,
+      description: copy.shareDescription,
       url: `/${locale}`,
       images: [defaultOgImage(locale)],
     },

@@ -19,6 +19,39 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Tarjeta para compartir la portada — Discord, LinkedIn, WhatsApp, X (2026-10-01)
+
+El dueño: al compartir `https://jonasjavier.dev/es` en Discord no salía la
+tarjeta. Pidió diagnosticarlo y una tarjeta 1200 × 630 con «Software real.
+Sistemas que llegan a producción.» y Django · React · TypeScript.
+
+- **Diagnóstico.** Producción (Railway, sin proxy de Cloudflare: `Server:
+  railway-hikari`) ya respondía 200 `text/html` a Discordbot,
+  facebookexternalhit, Twitterbot, LinkedInBot y WhatsApp, con `og:*` y
+  `twitter:*` completos en el `<head>` servido (prerender, sin JavaScript),
+  imagen PNG 1200 × 630 accesible, sin `X-Robots-Tag`, robots.txt abierto,
+  sin redirecciones en `/es`, TLS válido y sin AAAA. Un verificador externo
+  (opengraph.xyz) pintaba la tarjeta. La causa probable está del lado de
+  Discord: guarda la vista previa por URL (incluida una fallida, p. ej. de
+  antes del dominio del 09-28), o el canal no tiene «Insertar enlaces» o el
+  usuario tiene las vistas previas apagadas.
+- **La tarjeta habla distinto que el buscador, a propósito.** `og:title` /
+  `og:description` de la portada: «Jonás Javier — Full-Stack Developer» y
+  el oficio (Django, React, TypeScript). El `<title>` y la meta description
+  siguen como manda «SEO — nombre, nicho 3D y freelance». Next copia `og:*`
+  a `twitter:*`.
+- **`og:site_name` = «Jonás Javier»** en todo el sitio (el rótulo sobre la
+  tarjeta); «Jonás Orbit» sigue en la imagen, `applicationName` y JSON-LD.
+- **Imagen** (`app/[locale]/opengraph-image.tsx`, ImageResponse en build):
+  nombre corto en grande, rol en ámbar, las dos frases, el stack y
+  Gargantúa a la derecha. Estática: Railway la sirve del prerender y el
+  preview de Cloudflare de su caché de assets.
+- **`?v=N` en la URL de la imagen** (`DEFAULT_OG_VERSION` en
+  `lib/site-metadata.ts`): las redes guardan la imagen por URL; al cambiar
+  el diseño se sube el número. La ruta lo ignora.
+- Test e2e en `smoke.spec.ts`: el HTML servido a Discordbot lleva las
+  etiquetas en el `<head>` y la imagen es PNG 1200 × 630 de < 300 KB.
+
 ## Servicios — segundo pase y cabecera centrada del blog (2026-10-01)
 
 Pedido del dueño: la página de servicios «más profesional, más bonita», con

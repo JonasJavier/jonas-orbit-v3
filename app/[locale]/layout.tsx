@@ -43,7 +43,7 @@ export async function generateMetadata({
     title: {
       default: copy.title,
       // El nombre, no la marca: a Jonás se le busca por «Jonás Javier», y
-      // «Jonás Orbit» ya va en og:site_name y en el WebSite de JSON-LD.
+      // «Jonás Orbit» ya va en `applicationName` y en el WebSite de JSON-LD.
       template: "%s · Jonás Javier",
     },
     description: copy.description,

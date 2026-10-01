@@ -115,6 +115,9 @@ MDX**, nunca en `worlds.data.ts`.
   nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
   descripciones, nunca en títulos; `seoTitle` en los seis especímenes;
   `ProfilePage` en Sobre mí.
+- **Tarjeta para compartir** (10-01) registro de igual nombre — portada con
+  `og:title` corto («Jonás Javier — Full-Stack Developer») distinto del
+  `<title>` SEO; `og:site_name` «Jonás Javier»; imagen versionada `?v=N`.
 - **Repositorio público, SEO y arranque** (09-28) — licencia de sólo lectura
   (`LICENSE`); fuentes (`Fotos/`, `Disenos/`, `portfolio-content/`,
   `assets/`) fuera del repo y del historial, archivadas en el privado
