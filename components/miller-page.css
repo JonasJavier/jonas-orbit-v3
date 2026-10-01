@@ -267,6 +267,13 @@ html[data-motion="off"] .miller-page *, html[data-motion="off"] .miller-page *::
 .miller-now__area { color: #81aeb8; font: .57rem var(--font-mono); letter-spacing: .13em; }
 .miller-now__item h4 { font-family: var(--font-display); font-weight: 400; font-size: 1.16rem; line-height: 1.28; letter-spacing: -.02em; margin: 7px 0 0; text-wrap: balance; }
 .miller-now__issuer { color: #91c6ce; font-size: .68rem; margin-top: 6px; }
+
+/* Logo de la institución, como en el CV: baldosa blanca junto al nombre. */
+.miller-certificate__issuer,
+.miller-now__issuer { display: flex; align-items: center; gap: 10px; }
+.miller-issuer-logo { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; padding: 3px; border: 1px solid rgb(255 255 255 / .6); border-radius: 7px; background: #fff; box-shadow: 0 2px 8px rgb(0 0 0 / .35); }
+.miller-issuer-logo img { width: 100%; height: 100%; object-fit: contain; }
+.miller-now__issuer .miller-issuer-logo { width: 26px; height: 26px; border-radius: 6px; }
 .miller-now__detail { color: #9fb4c0; font-size: .78rem; line-height: 1.72; }
 .miller-now__badge { display: inline-flex; align-items: center; gap: 7px; justify-self: end; white-space: nowrap; color: #bcebee; font: .57rem var(--font-mono); letter-spacing: .09em; text-transform: uppercase; }
 .miller-now__badge i { width: 6px; height: 6px; border-radius: 50%; background: #b1e3e7; box-shadow: 0 0 10px #83d4da; }
@@ -370,6 +377,8 @@ html[data-motion="off"] .miller-page *, html[data-motion="off"] .miller-page *::
   .miller-certificate__kind { font-size: .56rem; letter-spacing: .06em; }
   .miller-certificate h3 { margin-top: 5px; font-size: .86rem; line-height: 1.25; }
   .miller-certificate__body > p { margin: 3px 0 8px; font-size: .64rem; }
+  .miller-certificate__issuer { gap: 7px; }
+  .miller-issuer-logo { width: 24px; height: 24px; padding: 2px; border-radius: 5px; }
   .miller-certificate__bottom { justify-content: flex-start; padding-top: 0; border-top: 0; }
   .miller-certificate__bottom > span:first-child { display: none; }
   .miller-certificate__bottom > span:last-child { padding: 3px 6px; font-size: .56rem; }

@@ -6,6 +6,7 @@ import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { StructuredData } from "./structured-data";
 import { MillerCertificates } from "./miller-certificates";
 import { MillerCvDownload } from "./miller-cv-download";
+import { IssuerLogo } from "./miller-issuer-logo";
 import { MillerOcean } from "./miller-ocean";
 import { MillerWater } from "./miller-water";
 import "./miller-page.css";
@@ -142,7 +143,7 @@ export function MillerPage({ world, locale }: { world: World; locale: Locale }) 
                   <div className="miller-now__course">
                     <span className="miller-now__area">{course.area === "code" ? copy.code : copy.languages}</span>
                     <h4>{course.title}</h4>
-                    {course.issuer ? <p className="miller-now__issuer">{course.issuer}</p> : null}
+                    {course.issuer ? <p className="miller-now__issuer"><IssuerLogo issuer={course.issuer} /><span>{course.issuer}</span></p> : null}
                   </div>
                   <p className="miller-now__detail">{course.detail}</p>
                   <span className="miller-now__badge"><i aria-hidden="true" />{copy.inProgress}</span>

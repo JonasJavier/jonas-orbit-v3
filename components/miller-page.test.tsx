@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getWorld } from "@/lib/worlds";
 import { MillerCertificates } from "./miller-certificates";
+import { issuerLogo } from "./miller-issuer-logo";
 import { MillerPage } from "./miller-page";
 import { MillerWater } from "./miller-water";
 
@@ -59,6 +60,20 @@ describe("Miller · formación documentada", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(details.open).toBe(false);
     expect(summary).toHaveFocus();
+  });
+
+  it("muestra el logo de Harvard y de EducaciónIT junto a su nombre, y el archivo existe", () => {
+    const issuers = [...certificates.map((c) => c.issuer), ...(world.prose.education!.inProgress ?? []).flatMap((c) => c.issuer ?? [])];
+    for (const issuer of issuers.filter((name) => /Harvard|EducaciónIT/.test(name))) {
+      const src = issuerLogo(issuer);
+      expect(src, issuer).toBeDefined();
+      expect(existsSync(join(process.cwd(), "public", src!)), src).toBe(true);
+    }
+    expect(issuerLogo("Conquer Languages")).toBeUndefined();
+    const { container } = render(<MillerCertificates certificates={certificates} />);
+    const cs50 = screen.getByRole("link", { name: /CS50x/ });
+    expect(cs50.querySelector(".miller-issuer-logo img")).toHaveAttribute("src", "/education/logos/harvard.webp");
+    expect(container.querySelectorAll(".miller-issuer-logo").length).toBe(certificates.length);
   });
 
   it("publica 23 documentos únicos y sus recursos existen", () => {

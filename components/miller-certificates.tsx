@@ -6,6 +6,7 @@ import { defineCopy } from "@/lib/i18n";
 import { playSfx } from "@/lib/sfx";
 import type { World } from "@/lib/worlds";
 import { useLocale } from "./locale-provider";
+import { IssuerLogo } from "./miller-issuer-logo";
 
 type Certificate = NonNullable<World["prose"]["education"]>["certificates"][number];
 
@@ -98,7 +99,7 @@ function CertificateCard({ certificate, index }: { certificate: Certificate; ind
               <div className="miller-certificate__body">
                 <span className="miller-certificate__kind">{copy.kind[certificate.kind]}{certificate.date ? ` / ${certificate.date}` : ""}</span>
                 <h3>{certificate.title}</h3>
-                <p>{certificate.issuer}</p>
+                <p className="miller-certificate__issuer"><IssuerLogo issuer={certificate.issuer} /><span>{certificate.issuer}</span></p>
                 <div className="miller-certificate__bottom"><span>{certificate.detail}</span><span aria-hidden="true">{copy.openPdf}</span></div>
               </div>
             </a>
