@@ -67,8 +67,17 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
   expect(links).toHaveLength(23);
   const previews = page.locator(".miller-certificate__preview img");
   await expect(previews).toHaveCount(23);
+  /*
+    Cada vista previa se trae a la vista dentro de la página y no con
+    `scrollIntoViewIfNeeded`, que espera a que el elemento esté «estable» (dos
+    fotogramas quietos). En WebKit de CI, sin GPU, cada fotograma tras un
+    desplazamiento cuesta 0,5–1,5 s en TODO el sitio, y veintitrés esperas así
+    se comían ≈22 de los 30 s del test: el tiempo se acababa en el clic final
+    (run 36890964603, traza), con el enlace quieto. Lo que se comprueba no
+    cambia: cada imagen diferida carga de verdad.
+  */
   for (const preview of await previews.all()) {
-    await preview.scrollIntoViewIfNeeded();
+    await preview.evaluate((image) => image.scrollIntoView({ block: "center", behavior: "instant" }));
     await expect.poll(() => preview.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   }
   for (const href of links) {
@@ -83,12 +92,12 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
   const neighbours = page.getByRole("navigation", { name: "Destinos contiguos" });
   await expect(neighbours.locator("a").first()).toHaveAttribute("href", "/es/sobre-mi");
   /*
-    En WebKit de CI (GPU por software) este clic fallaba a ratos de dos
-    maneras: el desplazamiento de Playwright no terminaba nunca —el documento
-    desplaza con `scroll-behavior: smooth`— o el clic entraba y la travesía,
-    que navega por temporizador, no llegaba en los 5 s por defecto. El enlace
-    se trae a la vista al instante y la llegada tiene el margen de la
-    travesía en un runner lento.
+    En WebKit de CI (GPU por software) aquí se agotaban los 30 s del test:
+    el clic espera dos fotogramas quietos (1–3 s en ese runner) y la travesía
+    navega por temporizador. El enlace nunca se movía; el tiempo se lo habían
+    llevado las vistas previas de arriba. El enlace se trae a la vista al
+    instante —el documento desplaza con `scroll-behavior: smooth`— y la
+    llegada tiene el margen de la travesía en un runner lento.
   */
   const next = neighbours.locator("a").last();
   await next.evaluate((link) => link.scrollIntoView({ block: "center", behavior: "instant" }));
