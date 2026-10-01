@@ -133,12 +133,14 @@ test.describe("idiomas en el teléfono", () => {
     expect(overlaps).toBe(false);
   });
 
-  // La placa del operador (nombre y rol bajo JONAS ORBIT) se apila en el
-  // teléfono: no puede pisar el selector que baja bajo ella, ni la bandeja.
+  // La placa del operador bajo JONAS ORBIT: en el teléfono sólo el rol, en una
+  // línea. No puede pisar el selector que baja bajo ella, ni la bandeja.
   test("en la portada la placa del operador no pisa el selector ni la bandeja", async ({ page }) => {
     await page.goto("/es");
     const plate = page.locator(".hud__operator");
     await expect(plate).toBeVisible();
+    await expect(plate).toContainText("Diseño de producto");
+    await expect(page.locator(".hud__operator-name")).toBeHidden();
     const box = await plate.boundingBox();
     expect(box).toBeTruthy();
     for (const selector of [".language-switch--home", ".system-tray"]) {

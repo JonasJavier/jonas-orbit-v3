@@ -41,6 +41,13 @@ ni foto, ni CTA nuevos. Se añade una **placa del operador** dentro del HUD.
   español chocaba con el aviso «Haz clic / Toca para escuchar», que se abre bajo
   la bandeja justo en los primeros segundos; apilada aguanta hasta 320 px. El
   selector de idioma de la portada baja de `+46px` a `+96px` para dejarle sitio.
+- **Segundo pase en el teléfono (2026-10-01):** el dueño sintió la columna
+  apilada «muy cargada» (marca, nombre, dos líneas de rol y selector) y eligió
+  **sólo el rol, en una línea**: `FULL-STACK · DISEÑO DE PRODUCTO`. Quien llega
+  desde LinkedIn ya sabe el nombre; le falta a qué se dedica. Puesto en la
+  primera línea bajo la marca queda POR ENCIMA del aviso de la banda sonora, así
+  que ya no choca. El selector sube a `+64px`. A ≤360 px el tracking baja a
+  0,08em para no tocar la bandeja a 320 px. Sustituye al apilado de abajo.
 - **Accesibilidad:** `aria-hidden` como todo el HUD — el `<h1>` del respaldo
   semántico (`hero.tsx`) ya dice nombre completo y rol; anunciarlo dos veces
   sería ruido.

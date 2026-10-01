@@ -144,8 +144,8 @@ MDX**, nunca en `worlds.data.ts`.
   marco del overlay (`fixed`) y condiciones del puntero.
 - **Placa del operador** (09-30) registro «Home — placa del operador…» y
   `hero-gargantua-direction.md` §7 ter — bajo `JONAS ORBIT`, nombre corto y
-  rol (ES/EN) en tipografía de HUD; en el teléfono, apilada a la izquierda con
-  el selector de idioma debajo. `aria-hidden`: el `<h1>` oculto ya lo dice.
+  rol (ES/EN) en tipografía de HUD; en el teléfono (10-01) sólo el rol, en una
+  línea a la izquierda, con el selector de idioma debajo. `aria-hidden`: el `<h1>` oculto ya lo dice.
 - **HUD de Gargantúa** (09-23)
   `docs/design/hero-gargantua-direction.md` §7 bis — sin retículo fijo en el
   centro; marco, TARGET y retículo móvil del puntero se conservan.

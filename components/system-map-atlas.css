@@ -137,24 +137,19 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
     font-size: 0.66rem;
     letter-spacing: 0.3em;
   }
-  /* La placa del operador sigue a la marca a la izquierda y se apila: nombre
-     y una disciplina por línea. En una o dos líneas el rol chocaba con el
-     aviso de la banda sonora, que se abre bajo la bandeja justo en los
-     primeros segundos. El selector de idioma baja lo que ella ocupa
-     (language-switch.css). */
-  body:has(.system-home) :is(.hud__operator, .hud__operator-role) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.34rem;
-  }
+  /* La placa del operador en el teléfono: sólo el rol, en una línea bajo la
+     marca (segundo pase, 2026-10-01). Apilada en tres líneas —nombre y dos
+     disciplinas— la columna izquierda se sentía cargada; quien llega desde
+     LinkedIn ya sabe el nombre, lo que le falta es a qué se dedica. El nombre
+     se oculta a la vista (todo el HUD es `aria-hidden`; el `<h1>` lo dice). */
   body:has(.system-home) .hud__operator {
     top: calc(100% + 0.5rem);
     left: 0;
     font-size: 0.56rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.18em;
     transform: none;
   }
-  body:has(.system-home) :is(.hud__operator-sep, .hud__operator-dot) {
+  body:has(.system-home) :is(.hud__operator-name, .hud__operator-sep) {
     display: none;
   }
   html body:has(.system-home) .system-tray {
@@ -360,6 +355,11 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   :root:has(.system-home) {
     --home-rail-font: 0.58rem;
     --home-rail-track: 0.08em;
+  }
+  /* …y el rol en español («Diseño de producto») llegaba a la bandeja. */
+  body:has(.system-home) .hud__operator {
+    gap: 0.45em;
+    letter-spacing: 0.08em;
   }
 }
 /* Una tablet grande en vertical ya tiene el raíl de escritorio, en una fila. */

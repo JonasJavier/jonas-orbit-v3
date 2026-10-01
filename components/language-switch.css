@@ -64,9 +64,9 @@ html[data-motion="off"] .language-switch * { transition: none !important; }
 
 /* Home: no header there, so the switch rides the HUD's top-right corner on
    desktop. On phones that corner belongs to the motion and audio tray, so
-   the switch drops under the wordmark and its two-line operator plate
+   the switch drops under the wordmark and its one-line operator plate
    (system-map-atlas.css), on the brand's side. */
 .language-switch--home { position: fixed; z-index: 6; top: 3.2rem; right: 3.4rem; }
 @media (max-width: 60rem) {
-  .language-switch--home { top: calc(var(--home-header-top, .75rem) + 96px); right: auto; left: var(--home-gutter, 1rem); }
+  .language-switch--home { top: calc(var(--home-header-top, .75rem) + 64px); right: auto; left: var(--home-gutter, 1rem); }
 }

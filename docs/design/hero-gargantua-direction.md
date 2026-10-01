@@ -223,7 +223,8 @@ Sustituye §7 sólo en la franja superior: bajo `JONAS ORBIT` cuelga una línea
 en SECONDARY, rol en TERTIARY, separadores en GHOST—, para que quien llega desde
 LinkedIn sepa en tres segundos quién mira por este cristal y a qué se dedica.
 No es un bloque personal: es tipografía de instrumento dentro del HUD. En el
-teléfono se apila en tres líneas a la izquierda. Detalle y medidas: registro de
+teléfono (2026-10-01) queda sólo el rol, en una línea a la izquierda bajo la
+marca. Detalle y medidas: registro de
 decisiones, «Home — placa del operador bajo JONAS ORBIT».
 
 ## 8. TARGET, brackets y trayectorias
