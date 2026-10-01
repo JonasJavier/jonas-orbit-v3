@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { defineCopy } from "@/lib/i18n";
-import { privacyPath, thanksPath } from "@/lib/page-paths";
+import { privacyPath, servicesPath, thanksPath } from "@/lib/page-paths";
 import { WORLD_COPY } from "@/lib/world-copy";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { ContactChannels } from "./contact-channels";
@@ -22,6 +22,7 @@ const COPY = defineCopy({
     title: ["Solo hace falta", "una primera señal."],
     lead: "Cuéntame qué tienes en mente. Yo pongo el diseño, el código y las ganas de hacerlo realidad.",
     manifest: "Qué puedo llevar a bordo",
+    services: "Ver servicios",
     signature: "Diseño & desarrollo",
     relay: "Canales directos y registro de a bordo",
     log: "Registro de a bordo",
@@ -39,6 +40,7 @@ const COPY = defineCopy({
     title: ["All it takes is", "a first signal."],
     lead: "Tell me what you have in mind. I’ll bring the design, the code and the drive to make it real.",
     manifest: "What I can bring on board",
+    services: "See services",
     signature: "Design & development",
     relay: "Direct channels and ship’s log",
     log: "Ship’s log",
@@ -93,6 +95,7 @@ export function RangerContact({ world, locale }: { world: World; locale: Locale 
           <dl className="ranger-manifest" aria-label={copy.manifest}>
             {prose.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
           </dl>
+          <Link className="ranger-hud__link ranger-services-link" href={servicesPath(locale)}>{copy.services} <span aria-hidden="true">→</span></Link>
           <div className="ranger-signature"><span className="ranger-signature__mark" aria-hidden="true">J.</span><div><strong>{SITE_PROFILE.name}</strong><span>{copy.signature} · {SITE_PROFILE.locality}</span></div></div>
         </div>
         <RangerConsole thanksHref={thanksPath(locale)} privacyHref={privacyPath(locale)} />

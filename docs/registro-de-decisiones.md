@@ -19,6 +19,37 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Servicios y notas de taller (2026-09-30)
+
+El dueño eligió: servicios DENTRO de Contacto, los cuatro servicios, remoto +
+presencial en Santo Domingo, y el artículo en el sitio con copia en dev.to.
+
+- **Servicios** (`/es/contacto/servicios`, `/en/contact/services`,
+  `components/services-page.tsx`): hijo de Ranger, no un séptimo mundo. Cuatro
+  tarjetas —web a medida, tiendas, apps móviles, UX/UI y 3D— y cada una
+  enlaza a los casos publicados que la prueban (nada de precios, clientes ni
+  cifras). «Cómo trabajo» en cuatro pasos y dos llamadas al formulario
+  (`#transmision`). JSON-LD: un `Service` por tarjeta con la Person como
+  proveedor y Santo Domingo como zona. Contacto enlaza con «Ver servicios»
+  bajo «Qué puedo llevar a bordo». Título: «Desarrollador web freelance en
+  Santo Domingo — Servicios».
+- **Notas de taller** (colección Velite `articleProse`,
+  `content/{es,en}/articles`, identidad en `content/articles.data.ts`):
+  artículos largos bajo Experimentos (`/es/experimentos/<slug>`). La
+  primera, «Cómo hice un agujero negro en WebGL», sale de los datos del código
+  (`gargantua-shaders.ts`, `gargantua-render.ts`, hero-gargantua-direction
+  §14) y es BORRADOR en voz del dueño: él la revisa. `TechArticle` en
+  JSON-LD; `<Figure>` en el MDX con copias WebP 800/1600 en
+  `public/images/articulos/agujero-negro/`, capturadas con GPU real (ANGLE
+  D3D11, no SwiftShader) desde el Observatorio en modo Estudio, HUD oculto.
+  La recepción de Experimentos lista las notas en una línea («Notas de
+  taller»).
+- **Fuera del sitio:** `docs/difusion/` —textos para Google Business
+  Profile, dev.to (con `canonical_url` al original), foro de Three.js,
+  Reddit, Show HN y premios—. Publicarlos es del dueño.
+- **Pendiente del dueño:** revisar la voz del artículo y los pasos de «Cómo
+  trabajo».
+
 ## SEO — nombre, nicho 3D y freelance (2026-09-29)
 
 El dueño pidió posicionar el sitio en tres frentes: su nombre, el nicho 3D

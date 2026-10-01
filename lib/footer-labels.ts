@@ -13,12 +13,16 @@ const COPY = defineCopy({
     missionFile: "ARCHIVO DE MISIÓN",
     transmission: "TRANSMISIÓN CONFIRMADA",
     privacy: "PROTOCOLO RANGER / PRIVACIDAD",
+    services: "RANGER / SERVICIOS",
+    article: "TESSERACTO / NOTAS DE TALLER",
   },
   en: {
     destination: "DESTINATION",
     missionFile: "MISSION FILE",
     transmission: "TRANSMISSION CONFIRMED",
     privacy: "RANGER PROTOCOL / PRIVACY",
+    services: "RANGER / SERVICES",
+    article: "TESSERACT / WORKSHOP NOTES",
   },
 });
 
@@ -38,4 +42,12 @@ export function transmissionLabel(locale: Locale): string {
 
 export function privacyLabel(locale: Locale): string {
   return `JONÁS ORBIT · ${COPY[locale].privacy}`;
+}
+
+export function servicesLabel(locale: Locale): string {
+  return `JONÁS ORBIT · ${COPY[locale].services}`;
+}
+
+export function articleLabel(locale: Locale): string {
+  return `JONÁS ORBIT · ${COPY[locale].article}`;
 }

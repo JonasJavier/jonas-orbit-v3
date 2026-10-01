@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import type { ArticleId } from "@/content/articles.data";
 import { DEFAULT_LOCALE, PUBLISHED_LOCALES, type Locale } from "@/content/site.data";
 import type { ProjectId } from "@/content/projects.data";
 import type { WorldId } from "@/content/worlds.data";
 import { observatorySlug } from "./observatory-slugs";
 import { PATH_SEGMENTS } from "./path-segments";
+import { getArticle } from "./articles";
 import { getProject } from "./projects";
 import { getWorld, getWorldPath } from "./worlds";
 
@@ -23,7 +25,9 @@ export type PageRef =
   | { kind: "world"; id: WorldId }
   | { kind: "project"; id: ProjectId }
   | { kind: "thanks" }
+  | { kind: "services" }
   | { kind: "observatory"; id: WorldId }
+  | { kind: "article"; id: ArticleId }
   | { kind: "privacy" };
 
 export function homePath(locale: Locale): string {
@@ -42,8 +46,18 @@ export function thanksPath(locale: Locale): string {
   return `${worldPath("ranger", locale)}/${PATH_SEGMENTS.thanks[locale]}`;
 }
 
+/** Los servicios cuelgan de Contacto: quien busca contratar llega donde está el formulario. */
+export function servicesPath(locale: Locale): string {
+  return `${worldPath("ranger", locale)}/${PATH_SEGMENTS.services[locale]}`;
+}
+
 export function observatoryPath(id: WorldId, locale: Locale): string {
   return `${worldPath("tesseract", locale)}/${PATH_SEGMENTS.observatory[locale]}/${observatorySlug(id, locale)}`;
+}
+
+/** Las notas de taller cuelgan de Experimentos, junto al Observatorio. */
+export function articlePath(id: ArticleId, locale: Locale): string {
+  return `${worldPath("tesseract", locale)}/${getArticle(id, locale).prose.slug}`;
 }
 
 export function privacyPath(locale: Locale): string {
@@ -60,8 +74,12 @@ function pagePath(page: PageRef, locale: Locale): string {
       return projectPath(page.id, locale);
     case "thanks":
       return thanksPath(locale);
+    case "services":
+      return servicesPath(locale);
     case "observatory":
       return observatoryPath(page.id, locale);
+    case "article":
+      return articlePath(page.id, locale);
     case "privacy":
       return privacyPath(locale);
   }

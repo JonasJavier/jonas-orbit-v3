@@ -1,0 +1,172 @@
+/*
+ * Nota de taller. Una columna de lectura (48rem) con la portada un poco más
+ * ancha. Fondo opaco detrás del texto: un artículo largo se lee sobre negro,
+ * no sobre la escena.
+ */
+.article-page {
+  position: relative;
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  padding: clamp(5rem, 10vw, 8rem) var(--page-gutter) clamp(4rem, 8vw, 6rem);
+}
+
+.article-page__header,
+.article-page__body,
+.article-page__links {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.article-page h1 {
+  margin: 0.65rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
+  font-weight: 630;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.article-page__lead {
+  margin: 1.5rem 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+}
+
+.article-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin: 1.4rem 0 0;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.article-page__meta a,
+.article-page__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  color: var(--world-accent, var(--cyan));
+}
+
+.article-page__cover {
+  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+}
+
+.article-page__cover img,
+.article-page__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--space-line);
+  border-radius: var(--radius-md, 0.8rem);
+  background: #000;
+}
+
+.article-page__body {
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding: clamp(1.4rem, 4vw, 3rem);
+  border: 1px solid var(--space-line);
+  border-radius: var(--radius-lg);
+  background: rgba(5, 7, 14, 0.94);
+  color: var(--ink-soft);
+  font-size: 1.04rem;
+  line-height: 1.75;
+}
+
+.article-page__body > :first-child {
+  margin-top: 0;
+}
+
+.article-page__body p,
+.article-page__body ul {
+  margin: 1.1rem 0 0;
+}
+
+.article-page__body ul {
+  padding-left: 1.2rem;
+}
+
+.article-page__body li + li {
+  margin-top: 0.6rem;
+}
+
+.article-page__body h2 {
+  margin: 3rem 0 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2.6vw, 1.9rem);
+  font-weight: 630;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.article-page__body strong {
+  color: var(--ink);
+  font-weight: 620;
+}
+
+.article-page__body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--world-accent, var(--cyan)) 70%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.article-page__body code {
+  padding: 0.08em 0.35em;
+  border-radius: 0.3rem;
+  background: rgba(127, 229, 255, 0.07);
+  color: #dfe9fb;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+.article-page__body pre {
+  margin: 1.4rem 0 0;
+  padding: 1.1rem 1.2rem;
+  overflow-x: auto;
+  border: 1px solid var(--space-line);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: #04060c;
+  line-height: 1.6;
+}
+
+.article-page__body pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.8rem;
+}
+
+.article-page__figure {
+  margin: 2rem 0 0;
+}
+
+.article-page__figure figcaption {
+  margin-top: 0.7rem;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.article-page__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-top: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 40rem) {
+  .article-page__body {
+    padding: 1.2rem 1rem;
+    font-size: 1rem;
+  }
+}

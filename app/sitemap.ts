@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { DEFAULT_LOCALE, PUBLISHED_LOCALES, SITE_PROFILE, type Locale } from "@/content/site.data";
+import { ARTICLE_IDS } from "@/content/articles.data";
 import { WORLD_IDS } from "@/content/worlds.data";
+import { getArticle } from "@/lib/articles";
 import { screenSources } from "@/lib/engineering-table";
 import { OBSERVATORY_IDS } from "@/lib/observatory-slugs";
 import { pageAlternates, type PageRef } from "@/lib/page-paths";
@@ -30,6 +32,9 @@ function pageImages(page: PageRef, locale: Locale): string[] | undefined {
       absoluteUrl(screenSources(image.src, image.frame ?? "desktop").src),
     ];
   }
+  if (page.kind === "article") {
+    return [absoluteUrl(`${getArticle(page.id, locale).cover}-1600.webp`)];
+  }
   return undefined;
 }
 
@@ -54,6 +59,11 @@ const PAGES: readonly { page: PageRef; priority: number; changeFrequency: "weekl
     priority: 0.8,
     changeFrequency: "monthly" as const,
   })),
+  // La página de quien busca contratar: a la altura de los mundos, que es
+  // donde compite («desarrollador web freelance Santo Domingo»).
+  { page: { kind: "services" }, priority: 0.9, changeFrequency: "monthly" },
+  // Las notas de taller: el texto que el buscador puede leer sobre el canvas.
+  ...ARTICLE_IDS.map((id) => ({ page: { kind: "article", id } as const, priority: 0.8, changeFrequency: "monthly" as const })),
   ...OBSERVATORY_IDS.map((id) => ({ page: { kind: "observatory", id } as const, priority: 0.8, changeFrequency: "monthly" as const })),
   { page: { kind: "privacy" }, priority: 0.3, changeFrequency: "yearly" },
 ];

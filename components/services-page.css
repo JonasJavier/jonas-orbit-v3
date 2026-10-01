@@ -1,0 +1,220 @@
+/*
+ * Servicios (`/es/contacto/servicios`). Misma familia que privacidad y la
+ * confirmación del contacto —titular grande, cristal oscuro, rejilla de un
+ * píxel— con el acento de Ranger que pone la cabecera (`--world-accent`).
+ * Poco texto a la vista: cada servicio es un nombre, una línea y su prueba.
+ */
+.services-page {
+  position: relative;
+  width: min(100%, var(--content-max));
+  margin-inline: auto;
+  padding: clamp(5rem, 10vw, 9rem) var(--page-gutter) clamp(4rem, 8vw, 7rem);
+}
+
+.services-page h1 {
+  max-width: 14ch;
+  margin: 0.65rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 6.6rem);
+  font-weight: 630;
+  letter-spacing: -0.06em;
+  line-height: 0.92;
+  text-wrap: balance;
+}
+
+.services-page__lead {
+  max-width: 44rem;
+  margin: 1.8rem 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+}
+
+.services-page__terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 2.4rem;
+  margin: 2rem 0 0;
+}
+
+.services-page__terms div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.services-page__terms dt {
+  color: var(--world-accent, var(--cyan));
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.services-page__terms dd {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.services-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 2.2rem;
+}
+
+.services-page__offer,
+.services-page__process {
+  margin-top: clamp(4rem, 8vw, 6.5rem);
+}
+
+.services-page__offer > h2,
+.services-page__process > h2 {
+  margin: 0;
+}
+
+.services-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin-top: 1.2rem;
+  padding: 1px;
+  background: var(--space-line);
+}
+
+.services-page__grid article {
+  display: flex;
+  min-height: 15rem;
+  flex-direction: column;
+  padding: clamp(1.4rem, 3vw, 2.5rem);
+  background: rgba(7, 10, 19, 0.94);
+  scroll-margin-top: 6rem;
+}
+
+.services-page__grid article > span,
+.services-page__process li > span {
+  color: var(--world-accent, var(--cyan));
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+.services-page__grid h3 {
+  margin: 1.6rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2vw, 1.65rem);
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.services-page__grid p {
+  max-width: 34rem;
+  margin: 0.7rem 0 0;
+  color: var(--ink-muted);
+}
+
+/* La prueba va abajo del todo: la tarjeta se lee nombre → línea → dónde se hizo. */
+.services-page__grid .services-page__proof {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.1rem;
+  margin-top: auto;
+  padding-top: 1.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.services-page__proof span {
+  color: var(--ink-muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.services-page__proof a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--world-accent, var(--cyan)) 60%, transparent);
+  text-underline-offset: 0.25em;
+  transition: color 180ms ease;
+}
+
+.services-page__proof a:hover {
+  color: var(--world-accent, var(--cyan));
+}
+
+.services-page__process ol {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(1.2rem, 3vw, 2.5rem);
+  margin: 1.2rem 0 0;
+  padding: 1.6rem 0 0;
+  border-top: 1px solid var(--space-line);
+  list-style: none;
+}
+
+.services-page__process h3 {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 620;
+  line-height: 1.2;
+}
+
+.services-page__process p {
+  margin: 0.5rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+}
+
+.services-page__closing {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+  margin-top: clamp(4rem, 8vw, 6.5rem);
+  padding: clamp(1.6rem, 4vw, 3rem);
+  border: 1px solid color-mix(in srgb, var(--world-accent, var(--cyan)) 30%, var(--space-line));
+  border-radius: var(--radius-lg);
+  background: rgba(7, 10, 19, 0.82);
+}
+
+.services-page__closing h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+  font-weight: 630;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.services-page__closing p {
+  max-width: 36rem;
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 60rem) {
+  .services-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .services-page__grid article {
+    min-height: 0;
+  }
+
+  .services-page__process ol {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Los enlaces de prueba pasan a blancos de 44 px en táctil. */
+  .services-page__proof a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 30rem) {
+  .services-page__process ol {
+    grid-template-columns: 1fr;
+  }
+}

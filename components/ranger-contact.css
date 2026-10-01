@@ -149,6 +149,7 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-manifest > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--rg-line); }
 .ranger-manifest dt { font: .56rem var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: #a98d63; }
 .ranger-manifest dd { font-size: .9rem; color: #dfe6f4; }
+.ranger-services-link { margin-top: 22px; }
 .ranger-signature { display: flex; align-items: center; gap: 18px; margin-top: 44px; }
 .ranger-signature__mark { font: italic 3.3rem Georgia, serif; color: #d9c4ff; }
 .ranger-signature > div { display: grid; gap: 6px; }

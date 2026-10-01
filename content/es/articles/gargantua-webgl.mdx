@@ -1,0 +1,195 @@
+---
+id: gargantua-webgl
+slug: como-hice-un-agujero-negro-en-webgl
+title: Cómo hice un agujero negro en WebGL
+summary: >-
+  Gargantúa, el centro de este portafolio, no está dibujado: un shader sigue la
+  luz rayo a rayo alrededor del agujero negro. La física, el disco, el Doppler y
+  lo que costó que corriera en cualquier equipo.
+coverAlt: >-
+  Gargantúa en la vista Cinematográfica: la sombra negra, el disco de acreción
+  cobrizo y el arco del lado lejano que la lente gravitacional levanta por
+  encima.
+seoTitle: "Cómo hice un agujero negro en WebGL con Three.js"
+seoDescription: >-
+  Gargantúa, el agujero negro de este portafolio inspirado en Interstellar,
+  trazado rayo a rayo en un shader: geodésicas, disco, Doppler y rendimiento.
+---
+
+Gargantúa es el centro de este sitio: el agujero negro alrededor del que se
+ordenan las seis secciones, inspirado en el de *Interstellar*. En el
+[Observatorio](/es/experimentos/observatorio/gargantua) puedes verlo a pantalla
+completa, cambiar entre cuatro vistas y apagar sus efectos uno por uno. Esta
+nota cuenta cómo está hecho y qué me costó cada parte.
+
+## No dibujar el agujero: seguir la luz
+
+La primera versión era un truco de cinco capas: un disco, un halo y hasta un
+anillo de Einstein horneado en un plano. Se notaba la costura entre el anillo y
+el disco, y una costura es justo lo que delata que algo está dibujado.
+
+La versión actual hace lo contrario. Por cada píxel, un shader lanza un rayo
+desde la cámara y lo deja caer hacia el agujero negro siguiendo la ecuación de
+la luz alrededor de una masa. Si el rayo cae dentro, el píxel es negro. Si
+escapa, mira las estrellas en la dirección en la que salió. Si cruza el disco,
+recoge su luz.
+
+La ecuación de la órbita de un fotón, `d²u/dφ² = −u + 1,5·rs·u²`, se puede
+reescribir como una fuerza central en coordenadas cartesianas,
+`a = −1,5·rs·h²·r / |r|⁵`, donde `h² = |r × v|²` se calcula una sola vez por
+rayo. Con eso, cada paso es un integrador de Verlet de dos líneas:
+
+```glsl
+vec3 acc = -1.5 * uRs * h2 * pos / (r2 * r2 * r);
+vec3 nextPos = pos + dir * dt + 0.5 * acc * (dt * dt);
+float n2 = dot(nextPos, nextPos);
+vec3 nextAcc = -1.5 * uRs * h2 * nextPos / (n2 * n2 * sqrt(n2));
+vec3 nextDir = dir + 0.5 * (acc + nextAcc) * dt;
+```
+
+Lo bonito es lo que sale gratis: el anillo de fotones, el arco del lado lejano
+del disco que pasa por encima de la sombra, la imagen secundaria por debajo, el
+tamaño correcto de la sombra (un radio de √27/2 · rs, unas 2,6 veces el
+horizonte) y el anillo de Einstein de las estrellas del fondo. Nada de eso está
+pintado: es lo que hace la luz.
+
+Una aclaración honesta: el Gargantúa de la película gira (es un agujero negro
+de Kerr). Aquí el espacio-tiempo es el de uno que no rota, el de Schwarzschild,
+porque trazar Kerr píxel a píxel en tiempo real era demasiado caro para un
+navegador. Lo que sí gira es el disco.
+
+<Figure
+  name="gargantua-lente"
+  alt="Vista Lente: la sombra grande en el centro, el disco cruzándola y su imagen duplicada encima y debajo."
+  caption="Vista Lente. Los rayos que rodean el agujero vuelven a cruzar el plano del disco y traen su cara oculta por encima y por debajo de la sombra."
+/>
+
+## Pasos que se adaptan a la curva
+
+Un rayo no avanza a pasos fijos. Cada paso cubre un ángulo constante alrededor
+del agujero (`dt = escala · r² / h`), con un tope cerca del horizonte, y se
+relaja hasta 2,4 veces a medida que el rayo gasta su presupuesto. Eso duplica
+las vueltas que puede dar un rayo sin coste extra.
+
+La regla anterior hacía los pasos proporcionales a la distancia al horizonte.
+Parecía razonable y dibujaba un anillo oscuro que no existe: cerca de la esfera
+de fotones, donde la luz da varias vueltas, los rayos se quedaban sin pasos
+antes de salir. El presupuesto es de 190 pasos por píxel en el nivel normal y
+340 en el profundo, y un rayo se detiene antes si ya es seguro que cae (dentro
+de 1,5 veces el horizonte y yendo hacia dentro, unas 40 iteraciones menos) o si
+lo que tiene delante ya no puede verse.
+
+## El disco: ruido que gira como Kepler
+
+El disco va de 1,58 a 17 veces el radio del horizonte. Su textura es ruido
+fractal, evaluado sólo en los dos o tres puntos donde cada rayo cruza el plano,
+no en cada paso, y escrito en coordenadas de radio logarítmico que giran con
+el material.
+
+La rotación es kepleriana: el borde interior gira unas 35 veces más rápido que
+el exterior. Eso tiene un problema: con el tiempo, el giro diferencial enrolla
+el ruido sin fin, y en unos minutos el disco se convertía en anillos
+concéntricos más finos que un píxel. La solución son dos copias del disco
+desfasadas medio ciclo que se funden una en otra cada 20 segundos: el
+enrollado nunca pasa de un límite y el relevo no se ve.
+
+## Doppler: por qué un lado brilla más
+
+El gas del lado que viene hacia ti brilla más que el que se aleja. Es el
+efecto Doppler relativista, sumado al corrimiento al rojo gravitacional:
+
+```glsl
+float v = min(sqrt(0.5 * uRs / max(r - uRs, 0.30 * uRs)), 0.80);
+float gamma = inversesqrt(max(1.0 - v * v, 1e-3));
+float beaming = 1.0 / max(gamma * (1.0 - v * mu), 1e-3);
+float gravity = sqrt(max(1.0 - uRs / r, 0.0));
+float g = gravity * mix(1.0, beaming, uDoppler);
+float boost = clamp(pow(g, 3.3), 0.24, 6.6);
+```
+
+En la imagen final, el lado que se acerca brilla algo más del doble que el que
+se aleja, y además vira hacia crema mientras el otro se va al cobre. En el
+Observatorio el mando **Doppler** lo apaga, y es el mando que más cambia la
+imagen de los tres.
+
+<Figure
+  name="gargantua-doppler-on"
+  alt="Gargantúa con el efecto Doppler: el lado izquierdo del disco, que se acerca, es mucho más brillante que el derecho."
+  caption="Con Doppler: el lado que se acerca (izquierda) brilla más del doble que el que se aleja."
+/>
+
+<Figure
+  name="gargantua-doppler-off"
+  alt="El mismo fotograma sin el efecto Doppler: el disco se ve casi simétrico."
+  caption="El mismo fotograma sin Doppler: los dos lados del disco se igualan."
+/>
+
+## La sombra que encendía el bloom
+
+El bloom, el halo que hace que lo brillante se sienta brillante, tenía un
+defecto: derramaba la luz del disco dentro de la sombra, y la sombra dejaba de
+ser negra. Oscurecer un círculo a mano no servía, porque borraría arcos
+lentes reales: el negro verdadero mide 118 × 73 píxeles dentro de una sombra de
+142.
+
+La solución fue guardar la imagen antes del bloom y devolverla sólo donde la
+escena ya era oscura y está dentro de la sombra:
+
+```glsl
+vec2 offset = (vUv - uCentre) / max(uRadius, vec2(1e-4));
+float inside = 1.0 - smoothstep(uInner, 1.0, length(offset));
+float lum = dot(clean, vec3(0.2126, 0.7152, 0.0722));
+float dark = 1.0 - smoothstep(uDarkGate.x, uDarkGate.y, lum);
+gl_FragColor = vec4(mix(bloomed, clean, inside * dark * uAmount), 1.0);
+```
+
+El brillo del centro de la sombra bajó de 106,8 a 18,2, y fuera de ella no
+cambió nada.
+
+<Figure
+  name="gargantua-sombra"
+  alt="Vista Sombra: el borde de la sombra de cerca, negro puro contra el disco brillante."
+  caption="Vista Sombra. El negro tiene que ser negro: el borde es lo que dice que ahí hay un agujero y no una lámpara."
+/>
+
+## Lo que quité
+
+- **Un anillo de fotones dibujado.** Hubo un círculo de un píxel en el radio
+  crítico. Un círculo exacto de un píxel es un círculo pintado encima; ahora el
+  borde sale de las imágenes de orden superior que se apilan solas.
+- **Una mancha de foco.** El punto donde los brillos empiezan a comprimirse bajó
+  de 9,6 a 4,2, y los píxeles en blanco puro pasaron de 2177 a 1268.
+- **Un borde torcido.** El disco se veía cargado a un lado. No era la forma: era
+  el sentido de la espiral, y se demostró invirtiéndola. El enrollado bajó de
+  1,15 a 0,60.
+
+## Que corra en cualquier equipo
+
+Todo esto es una sola llamada de dibujo: un rectángulo de cuatro vértices y un
+material. Para suavizar los bordes, la imagen se acumula durante ocho fotogramas
+con pequeños desplazamientos, y cuando nada se mueve el Observatorio deja de
+dibujar.
+
+Hay tres niveles. El normal usa 190 pasos. El profundo usa 340 y más
+resolución, y sólo se activa con ratón, pantalla ancha, ocho núcleos y ocho
+gigas de memoria. Sin WebGL2, con GPU por software, en 2G o con poca memoria,
+el sitio sirve una versión plana en 2D con el mismo texto y las mismas rutas.
+
+Y dos cosas fuera del shader:
+
+- **Compilar en paralelo.** Con `compileAsync` y `KHR_parallel_shader_compile`,
+  la tarea de 2,4 a 2,7 segundos que congelaba la página al llegar desapareció.
+  En Lighthouse móvil, el tiempo de bloqueo bajó de 7,95 s a unos 2 s.
+- **Resolución que se adapta en el teléfono.** La escena empieza a un píxel por
+  punto y sube a 1,25 y 1,5 sólo mientras el teléfono sostiene su propio ritmo;
+  si se atasca, baja y se queda ahí.
+
+## Pruébalo
+
+Abre el [Observatorio de Gargantúa](/es/experimentos/observatorio/gargantua),
+pasa a **Estudio** y recorre las cuatro vistas: Cinematográfica, Lente, Disco y
+Sombra. Después apaga **Doppler**, **Secundarias** y **Lente** uno por uno y
+mira qué parte de la imagen era física y qué parte no.
+
+Si quieres una experiencia 3D así para tu producto o tu marca, aquí cuento
+[cómo trabajo](/es/contacto/servicios).

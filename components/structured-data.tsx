@@ -3,6 +3,7 @@ import { defineCopy } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/site-url";
 
 type Crumb = { path: string; name: string };
+type ServiceNode = { id: string; name: string; description: string };
 
 /**
  * Qué es el sitio y quién es su autor, dicho a un buscador. Lo mismo que la
@@ -27,8 +28,9 @@ const COPY = defineCopy({
 /**
  * Datos estructurados: Person + WebSite en todas las páginas, BreadcrumbList
  * fuera de la home, ProfilePage en «Sobre mí» (la página que Google debe
- * asociar a la persona cuando la buscan por su nombre) y, en una página que ES
- * una obra (un caso, un espécimen), el nodo de esa obra.
+ * asociar a la persona cuando la buscan por su nombre), un Service por cada
+ * servicio en la página de servicios y, en una página que ES una obra (un
+ * caso, un espécimen), el nodo de esa obra.
  *
  * Regla de contenido honesto del plan: aquí solo entran hechos verificables y
  * ya publicados en el propio sitio. Nada de premios, valoraciones, número de
@@ -38,6 +40,7 @@ export function StructuredData({
   locale,
   breadcrumb,
   profile,
+  services,
   work,
 }: {
   locale: Locale;
@@ -49,6 +52,12 @@ export function StructuredData({
   breadcrumb?: readonly Crumb[];
   /** Ruta de la página que presenta a la persona, si ésta lo es. */
   profile?: string;
+  /**
+   * Los servicios que la página ofrece. El proveedor es la misma Person y la
+   * zona, la ciudad desde la que trabaja: sin precios ni valoraciones, que
+   * aquí no se publican.
+   */
+  services?: { path: string; items: readonly ServiceNode[] };
   /**
    * El nodo de la obra que la página presenta. Se completa aquí con `author`
    * para que apunte a la misma Person del grafo.
@@ -118,6 +127,27 @@ export function StructuredData({
       isPartOf: { "@id": `${home}#website` },
       inLanguage: locale,
     });
+  }
+
+  if (services) {
+    const page = absoluteUrl(services.path);
+    for (const service of services.items) {
+      graph.push({
+        "@type": "Service",
+        "@id": `${page}#${service.id}`,
+        name: service.name,
+        serviceType: service.name,
+        description: service.description,
+        url: `${page}#${service.id}`,
+        provider: { "@id": person },
+        areaServed: [
+          { "@type": "City", name: SITE_PROFILE.locality },
+          { "@type": "Country", name: SITE_PROFILE.countryName[locale] },
+        ],
+        availableLanguage: SITE_PROFILE.languages,
+        inLanguage: locale,
+      });
+    }
   }
 
   if (work) {

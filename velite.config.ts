@@ -7,6 +7,7 @@ import {
   PROJECT_IDS,
   projectsData,
 } from "./content/projects.data";
+import { ARTICLE_IDS } from "./content/articles.data";
 import projectsMedia from "./content/projects-media.json";
 import { WORLD_IDS, worldsData } from "./content/worlds.data";
 import { PUBLISHED_LOCALES } from "./content/site.data";
@@ -300,10 +301,44 @@ const projectProse = defineCollection({
     .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
 });
 
+/**
+ * Notas de taller: artículos largos sobre cómo se hizo una pieza del sitio.
+ * Viven bajo Experimentos; su identidad está en `content/articles.data.ts`.
+ */
+const articleProse = defineCollection({
+  name: "ArticleProse",
+  pattern: "{es,en}/articles/*.mdx",
+  schema: s
+    .object({
+      id: s.enum(ARTICLE_IDS),
+      slug: s.string().regex(/^[a-z0-9-]+$/),
+      title: s.string(),
+      summary: s.string().max(220),
+      coverAlt: s.string(),
+      seoTitle: s.string().max(60),
+      seoDescription: s.string().min(110).max(160),
+      body: s.mdx(),
+      path: s.path(),
+    })
+    .transform((data) => ({ ...data, locale: data.path.split("/")[0] })),
+});
+
 export default defineConfig({
   root: "content",
-  collections: { worldProse, projectProse },
-  prepare: ({ worldProse, projectProse }) => {
+  collections: { worldProse, projectProse, articleProse },
+  prepare: ({ worldProse, projectProse, articleProse }) => {
+    // Cada nota en cada idioma publicado, una sola vez, y sin dos slugs
+    // iguales en el mismo idioma (compartirían URL).
+    for (const locale of PUBLISHED_LOCALES) {
+      const inLocale = articleProse.filter((article) => article.locale === locale);
+      for (const id of ARTICLE_IDS) {
+        const count = inLocale.filter((article) => article.id === id).length;
+        if (count !== 1) throw new Error(`Nota «${id}» en «${locale}»: ${count} archivos, se espera 1.`);
+      }
+      const slugs = new Set(inLocale.map((article) => article.slug));
+      if (slugs.size !== inLocale.length) throw new Error(`Dos notas comparten slug en «${locale}».`);
+    }
+
     // Todas las validaciones que rompen el build viven en una función pura
     // (content/validate-worlds.ts) para poder cubrirlas con fixtures.
     validateWorldProse(worldProse, PUBLISHED_LOCALES, WORLD_IDS, worldsData);
