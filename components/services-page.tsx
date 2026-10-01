@@ -70,6 +70,8 @@ const COPY = defineCopy({
     offerTitle: "Lo que puedo construir para ti.",
     offerLead: "Cuatro tipos de proyecto, cada uno con un caso publicado que puedes abrir y revisar.",
     includes: "Incluye",
+    allProjects: "Ver todos los proyectos",
+    projectCount: (n: number) => `${n} casos completos, con su diseño y su ingeniería.`,
     proof: "Hecho en",
     experiments: "Experimentos 3D",
     services: {
@@ -156,6 +158,8 @@ const COPY = defineCopy({
     offerTitle: "What I can build for you.",
     offerLead: "Four kinds of project, each with a published case you can open and review.",
     includes: "Includes",
+    allProjects: "See all projects",
+    projectCount: (n: number) => `${n} full case studies, design and engineering included.`,
     proof: "Built in",
     experiments: "3D Experiments",
     services: {
@@ -421,6 +425,13 @@ export function ServicesPage({ locale }: { locale: Locale }) {
               );
             })}
           </div>
+          {/* Después de las pruebas, todas las demás: quien llegó hasta aquí quiere ver más. */}
+          <div className="svc-more">
+            <p>{copy.projectCount(projects.size)}</p>
+            <Link className="button button--ghost" href={worldPath("endurance", locale)}>
+              {copy.allProjects} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </section>
 
         <section className="svc-section" aria-labelledby="svc-process">
@@ -472,7 +483,7 @@ export function ServicesPage({ locale }: { locale: Locale }) {
             </a>
           </div>
           <Link className="svc-closing__blog" href={blogPath(locale)}>
-            {copy.blog} <span aria-hidden="true">→</span>
+            {copy.blog}&nbsp;<span aria-hidden="true">→</span>
           </Link>
         </section>
       </div>
