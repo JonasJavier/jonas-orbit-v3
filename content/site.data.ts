@@ -40,7 +40,7 @@ export const SITE_PROFILE = {
   email: "jonasjavier.dev@gmail.com",
   phone: "+18498625049",
   whatsapp: "18498625049",
-  linkedin: "https://www.linkedin.com/in/jonas-javier-247b50425",
+  linkedin: "https://www.linkedin.com/in/jonas-javier-encarnacion/",
   github: "https://github.com/JonasJavier",
   locality: "Santo Domingo",
   country: "DO",

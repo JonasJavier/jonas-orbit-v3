@@ -9,7 +9,7 @@ A navigable star system where each destination tells a different part of my stor
 [**🌐 Explore the live site**](https://jonasjavier.dev) ·
 [Projects](https://jonasjavier.dev/en/projects) ·
 [Contact](https://jonasjavier.dev/en/contact) ·
-[LinkedIn](https://www.linkedin.com/in/jonas-javier-247b50425/)
+[LinkedIn](https://www.linkedin.com/in/jonas-javier-encarnacion/)
 
 [![CI](https://github.com/JonasJavier/jonas-orbit-v3/actions/workflows/ci.yml/badge.svg)](https://github.com/JonasJavier/jonas-orbit-v3/actions/workflows/ci.yml)
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
@@ -182,6 +182,6 @@ Start with the [documentation index](docs/README.md). The [contribution guide](C
 
 **Jonás Javier Encarnación** — full-stack developer and UX/UI designer based in the Dominican Republic. Also searchable as Jonas Javier Encarnacion.
 
-[Portfolio](https://jonasjavier.dev) · [LinkedIn](https://www.linkedin.com/in/jonas-javier-247b50425/) · [Email](mailto:jonasjavier.dev@gmail.com) · CV in [Spanish](https://jonasjavier.dev/cv/jonas-javier-cv-es.pdf) and [English](https://jonasjavier.dev/cv/jonas-javier-cv-en-ats.pdf)
+[Portfolio](https://jonasjavier.dev) · [LinkedIn](https://www.linkedin.com/in/jonas-javier-encarnacion/) · [Email](mailto:jonasjavier.dev@gmail.com) · CV in [Spanish](https://jonasjavier.dev/cv/jonas-javier-cv-es.pdf) and [English](https://jonasjavier.dev/cv/jonas-javier-cv-en-ats.pdf)
 
 **All rights reserved.** The repository is public so the code and process can be inspected, but it is **not open source**. Copying, modifying, reusing, or deploying its code, design, or content requires written permission. See [LICENSE](LICENSE) for the full Spanish and English terms. Third-party dependencies retain their own licenses.

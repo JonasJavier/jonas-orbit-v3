@@ -64,6 +64,27 @@ la parte «Notas de taller» de la entrada de 09-30.
 - **Contacto:** «Ver servicios →» en el hero, botón secundario junto a
   «Escribir un mensaje».
 
+## Identidad pública y CV — enlaces canónicos y formación confirmada (2026-10-01)
+
+El dueño confirmó ocho meses de estudios de Multimedia en ITLA, sin titulación,
+y bachillerato cursado entre 2018 y 2022, completado en 2022. Sustituye las
+referencias del CV a aproximadamente un año de Multimedia y bachillerato en 2024.
+Miller, en ambos idiomas, expresa el período completo de secundaria.
+
+El perfil de LinkedIn se renombró y verificó en el navegador:
+`https://www.linkedin.com/in/jonas-javier-encarnacion/`. Es el único enlace
+canónico para el sitio, sus datos estructurados, README, CV y perfil de GitHub.
+El perfil de GitHub es `https://github.com/JonasJavier`, verificado con la sesión
+del dueño. Los enlaces a repositorios concretos conservan su destino propio.
+Los PDF activos son `public/cv/jonas-javier-cv-es.pdf` y
+`public/cv/jonas-javier-cv-en-ats.pdf`; sus fuentes HTML están en el archivo
+local privado `portfolio-content/cv/`, fuera del repositorio público.
+El dueño eligió `cv-jonas-es-noche-v2.pdf` como diseño canónico: las versiones
+ES y EN comparten esa composición espacial nocturna, también en LinkedIn y
+en los enlaces de GitHub. El nombre histórico `cv-en-ats.pdf` se conserva en la
+URL para mantener los enlaces existentes; su contenido es ahora el CV nocturno
+en inglés y no se presenta como una plantilla ATS.
+
 ## Home — placa del operador bajo JONAS ORBIT (2026-09-30)
 
 Sustituye en parte a `hero-gargantua-direction.md` §1/§7 («sin bloque

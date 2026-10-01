@@ -83,6 +83,10 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
+- **Identidad pública y CV** (10-01) registro de igual nombre — LinkedIn
+  `https://www.linkedin.com/in/jonas-javier-encarnacion/`, GitHub
+  `https://github.com/JonasJavier`; Multimedia ITLA: ocho meses sin titulación;
+  bachillerato: 2018–2022, completado en 2022. Sitio y CV ES/EN coherentes.
 - **Publicación en Railway** (09-28) `docs/production-readiness.md` —
   `jonasjavier.dev` es el dominio canónico; Railway construye la rama
   `production` desde GitHub (`npm run check` + healthcheck): **publicar es

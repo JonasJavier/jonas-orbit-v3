@@ -23,7 +23,7 @@ describe("Miller · formación documentada", () => {
     render(<MillerPage world={world} locale="es" />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Formación");
     expect(screen.getByText(/Cursé ocho meses/)).toHaveTextContent("sin titulación ni certificación");
-    expect(screen.getByText(/Educación secundaria completada/)).toHaveTextContent("2021–2022");
+    expect(screen.getByText(/Educación secundaria completada/)).toHaveTextContent("2018–2022");
     expect(screen.getByRole("navigation", { name: "Destinos contiguos" })).toHaveTextContent("Sobre mí");
     expect(certificates.some((certificate) => /ITLA|MINERD/.test(certificate.issuer))).toBe(false);
   });
