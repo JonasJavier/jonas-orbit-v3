@@ -19,6 +19,36 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Home — placa del operador bajo JONAS ORBIT (2026-09-30)
+
+Sustituye en parte a `hero-gargantua-direction.md` §1/§7 («sin bloque
+personal»): el dueño aceptó la crítica de que la home escondía a la vista
+quién es y a qué se dedica —estaba sólo en el `<h1>` oculto— y quien llega
+desde LinkedIn tiene que poder contestarlo en 3–5 segundos sin «completar una
+misión de la NASA». No se convierte en portafolio tradicional: no hay bloque,
+ni foto, ni CTA nuevos. Se añade una **placa del operador** dentro del HUD.
+
+- **Qué dice:** `JONÁS JAVIER // FULL-STACK · PRODUCT DESIGN` (ES: `DISEÑO DE
+  PRODUCTO`). Nombre corto, como manda la entrada de SEO; la marca sigue siendo
+  `JONAS ORBIT`. El rol se traduce (`defineCopy` en `system-hud.tsx`); el resto
+  del HUD sigue en inglés de instrumento.
+- **Dónde:** colgada de `.hud__system` en posición absoluta, así comparte su
+  visibilidad en cada ancho y la franja superior sigue siendo de una línea.
+  Escritorio: una línea centrada bajo la marca, nombre en `--hud-secondary`, rol
+  en `--hud-tertiary`, separadores en `--hud-ghost`, 0,56rem.
+- **Teléfono (≤60rem):** a la izquierda bajo la marca y apilada en tres líneas
+  (nombre / Full-stack / Diseño de producto). En una o dos líneas el rol en
+  español chocaba con el aviso «Haz clic / Toca para escuchar», que se abre bajo
+  la bandeja justo en los primeros segundos; apilada aguanta hasta 320 px. El
+  selector de idioma de la portada baja de `+46px` a `+96px` para dejarle sitio.
+- **Accesibilidad:** `aria-hidden` como todo el HUD — el `<h1>` del respaldo
+  semántico (`hero.tsx`) ya dice nombre completo y rol; anunciarlo dos veces
+  sería ruido.
+- **Verificado** con `tools/shot.mjs` en 1440×860 (escena y `--flat`), 375×812
+  EN/ES, 320×640 y 812×375 horizontal. Test unitario en `system-hud.test.tsx` y
+  e2e de no-solape (placa ↔ selector ↔ bandeja) en `e2e/idioma.spec.ts`.
+- Valoración visual del dueño pendiente.
+
 ## Servicios y notas de taller (2026-09-30)
 
 El dueño eligió: servicios DENTRO de Contacto, los cuatro servicios, remoto +

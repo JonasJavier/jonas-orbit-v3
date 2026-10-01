@@ -132,4 +132,25 @@ test.describe("idiomas en el teléfono", () => {
       switcher!.y + switcher!.height > tray!.y;
     expect(overlaps).toBe(false);
   });
+
+  // La placa del operador (nombre y rol bajo JONAS ORBIT) se apila en el
+  // teléfono: no puede pisar el selector que baja bajo ella, ni la bandeja.
+  test("en la portada la placa del operador no pisa el selector ni la bandeja", async ({ page }) => {
+    await page.goto("/es");
+    const plate = page.locator(".hud__operator");
+    await expect(plate).toBeVisible();
+    const box = await plate.boundingBox();
+    expect(box).toBeTruthy();
+    for (const selector of [".language-switch--home", ".system-tray"]) {
+      const other = await page.locator(selector).boundingBox();
+      expect(other, selector).toBeTruthy();
+      if (!box || !other) continue;
+      const overlaps =
+        box.x < other.x + other.width &&
+        box.x + box.width > other.x &&
+        box.y < other.y + other.height &&
+        box.y + box.height > other.y;
+      expect(overlaps, selector).toBe(false);
+    }
+  });
 });

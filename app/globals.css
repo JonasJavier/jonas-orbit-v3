@@ -3455,6 +3455,47 @@ html[data-scene-live="true"] .system-map__body {
   text-shadow: 0 0 1.35rem rgba(127, 229, 255, 0.22);
 }
 
+/* Placa del operador (2026-09-30): quien llega de LinkedIn tiene que saber en
+   tres segundos quién es y a qué se dedica sin salir del lenguaje del cristal.
+   Cuelga bajo la marca en posición absoluta para no engordar la franja, que
+   sigue siendo de una línea. El nombre en secundario —un nombre propio se lee
+   sin buscarlo— y el rol un escalón por debajo. */
+.hud__system {
+  position: relative;
+}
+
+.hud__operator {
+  position: absolute;
+  top: calc(100% + 0.62rem);
+  left: 50%;
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  font-size: 0.56rem;
+  font-weight: 560;
+  letter-spacing: 0.22em;
+  text-shadow: 0 0 0.9rem rgba(4, 6, 13, 0.9);
+  white-space: nowrap;
+  /* Las dos líneas arrastran su tracking tras la última letra (0,115rem de
+     media marca, 0,06rem de media placa): se centran a la vista, no por caja. */
+  transform: translateX(calc(-50% - 0.055rem));
+}
+
+.hud__operator-name {
+  color: var(--hud-secondary);
+}
+
+.hud__operator-role {
+  display: flex;
+  gap: inherit;
+  color: var(--hud-tertiary);
+}
+
+.hud__operator-sep,
+.hud__operator-dot {
+  color: var(--hud-ghost);
+}
+
 .hud__state {
   color: var(--hud-secondary);
 }

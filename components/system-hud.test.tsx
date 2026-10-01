@@ -49,6 +49,17 @@ describe("SystemHud — lecturas sin control propio", () => {
     expect(container.querySelectorAll(".hud__bracket")).toHaveLength(4);
   });
 
+  it("lleva la placa del operador bajo la marca, fuera del árbol accesible", () => {
+    const { container } = renderHud();
+
+    const plate = container.querySelector(".hud__system .hud__operator");
+    expect(plate).toHaveTextContent(/Jonás Javier/);
+    expect(plate).toHaveTextContent(/Full-stack/);
+    expect(plate).toHaveTextContent(/Diseño de producto/);
+    // El `<h1>` del respaldo semántico ya lo dice: no se anuncia dos veces.
+    expect(plate?.closest("[aria-hidden='true']")).not.toBeNull();
+  });
+
   it("lee el nivel real de la escena desde el documento", async () => {
     setScene("orbit");
     renderHud();

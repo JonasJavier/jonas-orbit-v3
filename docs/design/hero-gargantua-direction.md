@@ -216,6 +216,16 @@ laterales y los dos verticales del mismo glifo—, sin reemplazarlo por otra mar
 El marco, los cuatro brackets del cristal, la franja superior, TARGET y el
 retículo móvil del puntero permanecen intactos.
 
+### 7 ter. Placa del operador bajo la marca (2026-09-30)
+
+Sustituye §7 sólo en la franja superior: bajo `JONAS ORBIT` cuelga una línea
+`JONÁS JAVIER // FULL-STACK · PRODUCT DESIGN` (ES: `DISEÑO DE PRODUCTO`) —nombre
+en SECONDARY, rol en TERTIARY, separadores en GHOST—, para que quien llega desde
+LinkedIn sepa en tres segundos quién mira por este cristal y a qué se dedica.
+No es un bloque personal: es tipografía de instrumento dentro del HUD. En el
+teléfono se apila en tres líneas a la izquierda. Detalle y medidas: registro de
+decisiones, «Home — placa del operador bajo JONAS ORBIT».
+
 ## 8. TARGET, brackets y trayectorias
 
 TARGET se compone con texto, regla, micro marcadores y espacio negativo; nunca

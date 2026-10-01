@@ -26,7 +26,8 @@ const COPY = defineCopy({
  * sistema, navegación y exploración. Este encabezado permanece en el HTML
  * servido para que la identidad, el rol y los accesos principales no dependan
  * de JavaScript ni del canvas, pero se retira del plano visual. La marca visible
- * mínima vive en el HUD como `JONAS ORBIT`.
+ * mínima vive en el HUD como `JONAS ORBIT`, con la placa del operador —nombre
+ * corto y rol— colgada debajo (`system-hud.tsx`).
  */
 export function Hero({
   locale,

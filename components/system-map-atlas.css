@@ -137,6 +137,26 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
     font-size: 0.66rem;
     letter-spacing: 0.3em;
   }
+  /* La placa del operador sigue a la marca a la izquierda y se apila: nombre
+     y una disciplina por línea. En una o dos líneas el rol chocaba con el
+     aviso de la banda sonora, que se abre bajo la bandeja justo en los
+     primeros segundos. El selector de idioma baja lo que ella ocupa
+     (language-switch.css). */
+  body:has(.system-home) :is(.hud__operator, .hud__operator-role) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.34rem;
+  }
+  body:has(.system-home) .hud__operator {
+    top: calc(100% + 0.5rem);
+    left: 0;
+    font-size: 0.56rem;
+    letter-spacing: 0.2em;
+    transform: none;
+  }
+  body:has(.system-home) :is(.hud__operator-sep, .hud__operator-dot) {
+    display: none;
+  }
   html body:has(.system-home) .system-tray {
     top: var(--home-header-top);
     right: var(--home-gutter-end);
