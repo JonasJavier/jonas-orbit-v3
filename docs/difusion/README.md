@@ -159,7 +159,8 @@ que salga como tarjeta, y los mandos nombrados en prosa. Pendiente: cuando lo
 aprueben, fijarlo como «Featured Topic» del perfil (Preferences → Profile).
 Mientras la cuenta sea nivel 0, el foro oculta bio, web y cabecera a quien no
 ha iniciado sesión: se pasa a nivel 1 leyendo de verdad (5 temas, 30
-mensajes, 10 minutos), y a partir de ahí el perfil es público. Los enlaces del
+mensajes, 10 minutos), y a partir de ahí el perfil es público. **Nivel 1
+alcanzado el 2026-10-02** y GitHub conectado a la cuenta. Los enlaces del
 foro llevan `nofollow ugc`: lo que dan es tráfico del nicho, no autoridad.
 
 **Título:** `Gargantua — a ray-traced black hole in a portfolio (WebGL, one draw call)`
