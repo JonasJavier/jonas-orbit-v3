@@ -213,6 +213,14 @@ siga subiendo.
 <https://news.ycombinator.com/submit>. Show HN es para cosas que la gente puede
 probar: enlaza el SIMULADOR, no el artículo (los artículos no son Show HN).
 
+**Preparado (2026-10-02):** cuenta `JonasJavier` creada y su «about» con rol,
+portafolio, blog y GitHub (falta el correo de recuperación, que pone Jonás).
+Los datos del primer comentario (Schwarzschild en vez de Kerr, versión plana
+sin WebGL2) están comprobados contra el artículo. **No se envió el viernes por
+la noche a propósito:** se publica el **martes 2026-10-06 entre las 8 y las
+10 a. m. de Nueva York** (misma hora en RD), y el primer comentario va justo
+después de enviarlo.
+
 - **Título:** `Show HN: A ray-traced black hole you can toggle the physics of (WebGL)`
 - **URL:** `https://jonasjavier.dev/en/experiments/observatory/gargantua`
 - **Primer comentario (justo después de enviarlo):**
