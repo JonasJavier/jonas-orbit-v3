@@ -1,10 +1,11 @@
 ---
 title: How I built a black hole in WebGL
-published: false
-description: "Gargantua isn't drawn: a shader follows the light ray by ray around the black hole. The physics, the disk, the Doppler effect and what it took to run on any device."
+published: true
+description: "Gargantua, the centre of this portfolio, isn't drawn: a shader follows the light ray by ray around the black hole. The physics, the disk, the Doppler effect and what it took to run on any device."
 tags: webgl, threejs, glsl, graphics
 cover_image: https://jonasjavier.dev/images/articulos/agujero-negro/gargantua-cinematografica-1600.webp
 canonical_url: https://jonasjavier.dev/en/blog/how-i-built-a-black-hole-in-webgl
+series: Building Jonás Orbit, a 3D portfolio
 ---
 
 Gargantua is the centre of this site: the black hole the six sections are
@@ -176,4 +177,4 @@ If you'd like a 3D experience like this for your product or brand, here's
 
 ---
 
-*Originally published on [my portfolio](https://jonasjavier.dev/en/blog/how-i-built-a-black-hole-in-webgl), where the black hole runs live in the [Observatory](https://jonasjavier.dev/en/experiments/observatory/gargantua).*
+*Originally published on [my portfolio](https://jonasjavier.dev/en/blog/how-i-built-a-black-hole-in-webgl), next to the [Observatory](https://jonasjavier.dev/en/experiments/observatory/gargantua). I'm Jonás Javier Encarnación, a full-stack developer and UX/UI designer in Santo Domingo, Dominican Republic: [how I work](https://jonasjavier.dev/en/contact/services).*

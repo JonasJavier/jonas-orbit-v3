@@ -84,7 +84,16 @@ Lo que se vio y lo que se cambió:
   de Servicios y casos publicados (OMSTA, Delicaté). Las cuatro entradas
   anteriores se revisaron y no necesitaban cambios de redacción. El e2e del
   blog cuenta 6. Kit de difusión §8 ampliado.
-- **Pendiente del dueño:** Google Business Profile;
+- **Difusión, el mismo día:** el dueño creó el Google Business Profile (en
+  verificación) y pidió el perfil de dev.to: <https://dev.to/jonasjavier>
+  completado (retrato, bio, habilidades, disponibilidad, formación) y las seis
+  entradas publicadas en inglés con `canonical_url` al original, en la serie
+  «Building Jonás Orbit, a 3D portfolio» (la guía freelance fuera de ella).
+  `tools/prepare-devto.mjs` genera las copias en `docs/difusion/devto/`; el
+  editor de la cuenta quedó en «basic markdown» (acepta front matter). dev.to
+  limita las publicaciones seguidas de una cuenta nueva (429 «try again in
+  300 seconds»; el editor se lo traga sin avisar): una entrada cada ~5 min.
+- **Pendiente del dueño:**
   publicar el kit; Bing Webmaster Tools (importa la propiedad de Search
   Console en un clic); revisar la voz de las dos entradas nuevas.
 

@@ -35,6 +35,10 @@ copiadas.
 
 ## 1. Google Business Profile (perfil de empresa)
 
+**Hecho (2026-10-02): el perfil está creado y en verificación.** Cuando Google
+lo apruebe, quedan las fotos, los servicios y las reseñas de clientes reales
+(abajo). Lo demás de esta sección es la guía que se siguió.
+
 Entra en <https://business.google.com> con tu cuenta y pulsa **Añadir
 empresa**.
 
@@ -75,16 +79,23 @@ empresa**.
 
 ## 2. dev.to (copia del artículo con canonical)
 
-El texto está listo en [`devto-black-hole-webgl.md`](devto-black-hole-webgl.md).
-La línea `canonical_url` le dice a Google que el original es tu sitio: dev.to
-te da el enlace y el tráfico, y el posicionamiento se queda en tu dominio.
+**Hecho (2026-10-02):** perfil <https://dev.to/jonasjavier> completado (retrato,
+sitio web, ubicación, bio, habilidades, disponibilidad, formación, color de
+marca) y las entradas publicadas en inglés con `canonical_url` al original,
+dentro de la serie «Building Jonás Orbit, a 3D portfolio» (la guía freelance
+va fuera de la serie). El editor de la cuenta quedó en «basic markdown»
+(Settings → Customization), que es el que acepta el front matter.
 
-1. Crea la cuenta en <https://dev.to> (con GitHub es un clic) y en el perfil
-   pon `https://jonasjavier.dev` como sitio web.
-2. **Create Post** → cambia el editor a Markdown si te lo pregunta → pega el
-   archivo ENTERO, incluido el bloque `---` de arriba.
-3. Previsualiza (imágenes y enlaces), cambia `published: false` a `true` y
-   publica.
+Las copias salen de `node --experimental-strip-types tools/prepare-devto.mjs`
+→ `docs/difusion/devto/<id>.md` (figuras con URL absoluta, enlaces absolutos
+y cierre con el enlace al original). La línea `canonical_url` le dice a Google
+que el original es tu sitio: dev.to te da el enlace y el tráfico, y el
+posicionamiento se queda en tu dominio.
+
+Para una entrada nueva: **Create Post** → pega el archivo ENTERO, incluido el
+bloque `---` de arriba → Preview → **Save changes**. dev.to limita cuántas
+entradas puede publicar seguidas una cuenta nueva: si al guardar vuelve al
+editor sin error, espera unos minutos y repite.
 
 ## 3. Foro de Three.js — Showcase
 
