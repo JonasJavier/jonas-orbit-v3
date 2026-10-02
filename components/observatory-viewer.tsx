@@ -69,6 +69,7 @@ const COPY = defineCopy({
     camera: "Cámara",
     inspect: "Inspeccionar",
     probe: "Sonda",
+    physics: { doppler: "Doppler", secundarias: "Secundarias", lente: "Lente" },
     mode: "Modo del instrumento",
     observe: "Observar",
     study: "Estudio",
@@ -105,6 +106,7 @@ const COPY = defineCopy({
     camera: "Camera",
     inspect: "Inspect",
     probe: "Probe",
+    physics: { doppler: "Doppler", secundarias: "Secondary", lente: "Lens" },
     mode: "Instrument mode",
     observe: "Observe",
     study: "Study",
@@ -187,11 +189,7 @@ function stamp(event: { timeStamp: number }): number {
  * dentro del render la recrearía en cada pase y cambiaría la identidad de cada
  * `Fragment` con ella.
  */
-const PHYSICS = [
-  ["doppler", "Doppler"],
-  ["secundarias", "Secundarias"],
-  ["lente", "Lente"],
-] as const;
+const PHYSICS = ["doppler", "secundarias", "lente"] as const;
 
 /** Dos dígitos. Es tipografía de instrumento: mantiene la columna del raíl
  *  alineada y hace que `01` y `06` ocupen lo mismo. */
@@ -1971,12 +1969,12 @@ export function ObservatoryViewer({
                     comparación por pulsación se queda donde nació, en los dos
                     mandos cuyo efecto se lee de un golpe.
                   */}
-                  {PHYSICS.filter(([key]) => instruments.includes(key)).map(
-                    ([key, label]) => (
+                  {PHYSICS.filter((key) => instruments.includes(key)).map(
+                    (key) => (
                       <Fragment key={key}>
                         <span aria-hidden="true" className="observatory__div" />
                         <Instrument
-                          label={label}
+                          label={t.physics[key]}
                           pressed={!physics[key]}
                           onToggle={() =>
                             setPhysics((on) => ({ ...on, [key]: !on[key] }))
