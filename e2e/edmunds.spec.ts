@@ -132,7 +132,10 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   await expect(page.locator(caption)).toHaveText("Entre montañas");
   await page.keyboard.press("Home");
   await expect(page.locator(caption)).toHaveText("Fantasía");
-  await stage.scrollIntoViewIfNeeded();
+  // No `scrollIntoViewIfNeeded` here: the anchor already left the deck under
+  // the navigation bar (asserted above), and that call waits for two still
+  // frames, which on WebKit without a GPU took 4.4 of the test's 30 s in CI
+  // (run 36899500718, trace).
   const box = (await stage.boundingBox())!;
   await page.mouse.move(box.x + box.width * .7, box.y + box.height * .5);
   await page.mouse.down();
@@ -154,9 +157,17 @@ test("Cubierta 3D: pantalla completa propia, perspectiva, avance, arrastre y car
   // advances it in ~0.4 s frames, so it gets room to land.
   await expect.poll(() => stage.evaluate((node) => Math.abs(parseFloat(getComputedStyle(node).getPropertyValue("--drag")))), { timeout: browserName === "webkit" ? 10_000 : 3000 }).toBeLessThan(0.01);
   // The previous light stays under the new one until the crossfade ends.
-  await page.getByRole("button", { name: "Obra siguiente" }).click();
+  // The 1.3 s fade is decorative and its end is counted in frames: the
+  // animation stays pending until the next frame and `animationend` is sent at
+  // the first frame after it finishes. WebKit without a GPU paints this deck
+  // at ~1 fps locally and slower in CI, where the old light left 4.1 s after
+  // the click (run 36899500718, trace) — slow, never stuck. The turn comes
+  // from the keyboard: clicking the arrow (clicked for real in the motion-off
+  // test) waited 4-7 s for "stable" there although it never moves, measured
+  // frame by frame.
+  await stage.press("ArrowRight");
   await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(2);
-  await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(1, { timeout: 4000 });
+  await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(1, { timeout: browserName === "webkit" ? 8000 : 4000 });
   await expect(page.getByRole("dialog")).not.toBeVisible();
   // WebKit without a GPU never reports the footer as "stable" while the
   // caption and ring settle frame by frame; what matters is that it opens.
@@ -285,6 +296,9 @@ test("Edmunds: con el movimiento apagado conserva el archivo, evita transiciones
   expect(await page.locator(".edmunds-deck__aurora").first().evaluate((aurora) => getComputedStyle(aurora).animationName)).toBe("none");
   await page.getByRole("button", { name: "Obra siguiente" }).click();
   await expect(page.locator(caption)).toHaveText("Hoy se come");
+  // Without motion there is no crossfade, so no `animationend` to retire the
+  // previous light: only the active work's light is on the deck.
+  await expect(page.locator(".edmunds-deck__ambient")).toHaveCount(1);
   await page.waitForTimeout(4200);
   await expect(page.locator(".edmunds-gallery")).toHaveAttribute("data-idle", "false");
 });

@@ -210,7 +210,12 @@ export function EdmundsGallery({ artworks, collections }: GalleryProps) {
   const open = viewer !== null;
   const parallax = mode === "space" && finePointer && !still;
   const cinema = mode === "space" && !still && !open;
-  if (mode === "space" && current && ambient.current?.id !== current.id) setAmbient({ previous: ambient.current, current });
+  // Con el movimiento apagado no hay fundido: el CSS deja la luz nueva sin
+  // animación, `animationend` no llega nunca y la anterior se quedaba debajo
+  // para siempre, dos capas en `screen` que sumaban su brillo. Quieta, sólo
+  // luce la de la obra activa (también si se apaga a mitad de un fundido).
+  if (mode === "space" && current && ambient.current?.id !== current.id) setAmbient({ previous: still ? null : ambient.current, current });
+  else if (still && ambient.previous) setAmbient({ previous: null, current: ambient.current });
   const lights = mode === "space" ? [ambient.previous, ambient.current].filter((art): art is Artwork => art !== null) : [];
   const label = (id: string) => collections.find((item) => item.id === id)?.label ?? id;
   const sector = (id: string) => Math.max(0, collections.findIndex((item) => item.id === id));
