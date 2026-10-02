@@ -22,7 +22,7 @@ texto de cada canal y las guías paso a paso siguen en
 | **Instagram / YouTube Shorts / TikTok** | Vídeo corto de Gargantúa y el Observatorio; une su fotografía con el 3D. Mucho alcance, nada de SEO directo. | Pendiente | Jonás |
 | **CodePen** | Demos pequeñas de shaders: el nicho 3D las comparte y enlaza. | Pendiente | Jonás (una demo al mes basta) |
 | **Behance / Dribbble** | El lado de diseño UX/UI: pantallas de los casos para clientes que buscan diseñador. | Pendiente | Jonás |
-| **Foro de Three.js (Showcase)** | El público exacto del nicho 3D. | Pendiente | Jonás (kit §3) |
+| **Foro de Three.js (Showcase / Resources)** | El público exacto del nicho 3D; el que más enlaza y comenta técnica. | Pendiente; la rutina deja el borrador las semanas de 3D | Jonás publica (kit §3) |
 | **Reddit** r/threejs, r/webdev (sábados), r/nextjs | Volumen; sólo con la entrada que encaje en cada sub. | Pendiente | Jonás (kit §4) |
 | **Show HN** | Mucho tráfico si sube; se intenta una vez. | Pendiente | Jonás (kit §5) |
 | **Awwwards / CSS Design Awards / The FWA** | Enlaces de autoridad; tardan semanas. | Pendiente | Jonás (kit §6) |
@@ -36,7 +36,7 @@ texto de cada canal y las guías paso a paso siguen en
 | Martes | **Post 1 en LinkedIn** (calendario en `docs/linkedin-audit/calendario-publicaciones.md`). | 09:00 | Jonás |
 | Miércoles | La entrada revisada entra al sitio y a dev.to. | tarde | Claude (sesión local) + Jonás |
 | Jueves | **Post 2 en LinkedIn**. Novedad en Google Business Profile (la misma pieza, en 2–3 frases, imagen 4:3 y botón «Más información» a la entrada). | 09:00 | Jonás |
-| Viernes | Un clip o captura del Observatorio en X / Instagram, enlazando la entrada. | 12:00 | Jonás |
+| Viernes | Un clip o captura del Observatorio en X / Instagram, enlazando la entrada. Si la entrada de la semana es de 3D, la publicación en el foro de Three.js con el borrador `foro-threejs.md` de la rutina (Showcase o Resources, nunca servicios). | 12:00 | Jonás |
 | Sábado | r/webdev («Showoff Saturday») sólo si la entrada de la semana encaja. | mañana | Jonás |
 | Día 27 de cada mes | Search Console, estadísticas de dev.to y LinkedIn; reordenar la cola. | — | Claude + Jonás |
 
@@ -84,14 +84,22 @@ programar cuenta para ese límite.
 
 ## 4. La rutina semanal de Claude
 
-Rutina en la nube **«Borrador semanal del blog (jonasjavier.dev)»**
+Rutina en la nube **«Borrador semanal del blog y del foro de Three.js
+(jonasjavier.dev)»**
 (`trig_01S7Qc3xTXMzBZsDq4c3UGBD`, <https://claude.ai/code/routines>), los
 lunes a las 08:00 de Santo Domingo (12:00 UTC), con Opus y sin conectores. Trabaja sobre una copia
 del repo en GitHub, sin acceso a esta máquina ni a dev.to, y hace sólo el
 paso 2: elige el primer tema «pendiente» de la cola, lee sus fuentes en el
 repo, escribe `es.mdx`, `en.mdx` y `notas.md` en
-`docs/difusion/borradores/<id>/`, marca la fila como «borrador» y hace un
-commit en `main` (sólo documentación: no toca `content/`, `app/`, `lib/`,
+`docs/difusion/borradores/<id>/` y, **si el tema es de 3D**, también
+`foro-threejs.md`: la versión para discourse.threejs.org en inglés (categoría
+propuesta, título sin reclamo, 150–350 palabras con las cifras de las
+fuentes, lo que no está resuelto, una pregunta abierta, el enlace al
+write-up del blog y qué adjuntar). Las semanas sin 3D no hay borrador de
+foro: publicar allí cada semana sobre el mismo proyecto se modera como
+autopromoción; con la cola alternando sale uno cada dos semanas, que es lo
+que el foro tolera bien. Marca la fila como «borrador» y hace un commit en
+`main` (sólo documentación: no toca `content/`, `app/`, `lib/`,
 `components/` ni `public/`). No publica nada: lo que la gente ve sigue
 pasando por la revisión de Jonás y por los gates del repo.
 

@@ -138,6 +138,12 @@ editor sin error, espera unos minutos y repite.
 
 ## 3. Foro de Three.js — Showcase
 
+**Desde el 2026-10-02** la rutina semanal deja el borrador listo en
+`docs/difusion/borradores/<id>/foro-threejs.md` las semanas en que la entrada
+es de 3D (categoría, título, cuerpo, pregunta abierta y qué adjuntar). Publica
+como mucho una cada dos semanas y responde a todos los comentarios: en este
+foro lo que trae enlaces es la conversación técnica, no el anuncio.
+
 <https://discourse.threejs.org> → categoría **Showcase** → nuevo tema.
 
 **Hecho (2026-10-02):** perfil `jonas_javier` completado (retrato de fondo
