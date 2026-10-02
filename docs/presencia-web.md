@@ -14,7 +14,7 @@ texto de cada canal y las guías paso a paso siguen en
 | --- | --- | --- | --- |
 | **Sitio** `jonasjavier.dev` | Casa de todo: casos, blog, servicios, Observatorio. Donde se gana el posicionamiento. | Publicado; blog con 6 entradas ES/EN | Repo (Claude + Jonás) |
 | **Google Search Console** | Dice si Google indexa y por qué consultas llega la gente. | Dominio verificado; datos desde 09-29 | Jonás revisa; Claude audita |
-| **Google Business Profile** | Búsquedas locales («desarrollador web Santo Domingo»); mapa y reseñas. | Creado, en verificación | Jonás (fotos, servicios, reseñas reales) |
+| **Google Business Profile** | Búsquedas locales («desarrollador web Santo Domingo»); mapa y reseñas. | Verificado y configurado el 02-10 (kit §1 «Estado»); 0 reseñas | Jonás (reseñas reales); Claude (novedades) |
 | **dev.to** `dev.to/jonasjavier` | Lectores técnicos el mismo día y un enlace fuerte al original (`canonical_url`). | Perfil completo; 6 entradas en la serie «Building Jonás Orbit» | Claude publica; Jonás responde comentarios |
 | **LinkedIn** | Reclutadores y clientes; el perfil es la ficha que más leen. | Auditado; calendario de dos posts por semana en `docs/linkedin-audit/calendario-publicaciones.md` (#0 publicado el 02-10) | Jonás publica; Claude redacta |
 | **GitHub** `github.com/JonasJavier` | Donde un reclutador técnico comprueba que el código existe; cada commit cuenta como actividad. | Repo público; README del perfil pendiente | Jonás (README del perfil, repos fijados) |
@@ -35,7 +35,7 @@ texto de cada canal y las guías paso a paso siguen en
 | Lunes | La rutina deja el borrador de la entrada (§4). Revisión de comentarios de dev.to. | 08:00 | Claude → Jonás |
 | Martes | **Post 1 en LinkedIn** (calendario en `docs/linkedin-audit/calendario-publicaciones.md`). | 09:00 | Jonás |
 | Miércoles | La entrada revisada entra al sitio y a dev.to. | tarde | Claude (sesión local) + Jonás |
-| Jueves | **Post 2 en LinkedIn**. Actualización en Google Business Profile cuando esté verificado (la misma pieza, en 2–3 frases y con enlace). | 09:00 | Jonás |
+| Jueves | **Post 2 en LinkedIn**. Novedad en Google Business Profile (la misma pieza, en 2–3 frases, imagen 4:3 y botón «Más información» a la entrada). | 09:00 | Jonás |
 | Viernes | Un clip o captura del Observatorio en X / Instagram, enlazando la entrada. | 12:00 | Jonás |
 | Sábado | r/webdev («Showoff Saturday») sólo si la entrada de la semana encaja. | mañana | Jonás |
 | Día 27 de cada mes | Search Console, estadísticas de dev.to y LinkedIn; reordenar la cola. | — | Claude + Jonás |

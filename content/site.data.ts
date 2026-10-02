@@ -51,6 +51,11 @@ export const SITE_PROFILE = {
   whatsapp: "18498625049",
   linkedin: "https://www.linkedin.com/in/jonas-javier-encarnacion/",
   github: "https://github.com/JonasJavier",
+  /**
+   * Perfil de Negocio de Google (verificado el 2026-10-02), por su CID: une en
+   * `sameAs` la ficha de Maps y la búsqueda con la persona del sitio.
+   */
+  googleBusiness: "https://maps.google.com/?cid=3393019496512134005",
   locality: "Santo Domingo",
   country: "DO",
   /** Para `knowsAbout` en JSON-LD: sólo lo que un caso o experimento publicado prueba. */

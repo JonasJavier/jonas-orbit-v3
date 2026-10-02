@@ -98,7 +98,7 @@ export function StructuredData({
         addressLocality: SITE_PROFILE.locality,
         addressCountry: SITE_PROFILE.country,
       },
-      sameAs: [SITE_PROFILE.github, SITE_PROFILE.linkedin],
+      sameAs: [SITE_PROFILE.github, SITE_PROFILE.linkedin, SITE_PROFILE.googleBusiness],
       // Lo que el propio sitio demuestra con casos y experimentos publicados.
       knowsAbout: SITE_PROFILE.knowsAbout[locale],
     },

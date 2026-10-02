@@ -81,6 +81,41 @@ empresa**.
   de OMSTA) con el enlace de reseñas que te da el perfil. Nunca reseñas de
   amigos que no fueron clientes: Google las borra y penaliza.
 
+### Estado (2026-10-02) — verificado y configurado
+
+- **Categorías:** `Diseñador web` (principal; «Diseñador de sitios web» en la
+  ficha) + `Compañía de software`. Ninguna otra describe el trabajo: no se
+  añaden por relleno.
+- **Descripción** (742/750): la del sitio, con Santo Domingo, los cuatro tipos
+  de proyecto, los cuatro casos publicados y el proceso. Sin URL ni teléfono
+  (Google los rechaza en la descripción).
+- **Contacto:** sitio → `/es/contacto/servicios`, chat → WhatsApp, LinkedIn en
+  redes. **Horario:** L–V 8:00–17:00 (antes «24 horas», que resta
+  credibilidad). **Atributos:** citas en línea · se requiere cita.
+- **Servicios** (sin precio, cada uno con descripción ≤300): Diseño de páginas
+  web · Tiendas en línea · Aplicaciones web a medida · Diseño UX/UI · Sitios
+  web 3D interactivos · Desarrollo de apps para dispositivos móviles ·
+  Desarrollo de software.
+- **Fotos:** logotipo = retrato formal de fondo gris recortado en cuadrado
+  (`Desktop/profile/Jonas profile.jpg`); portada = el banner cósmico; seis de
+  trabajo (OMSTA web y app, Delicaté, Network, Wikiverse, Gargantúa). Izak's
+  Photos fuera: es ficticio y en el perfil parecería un cliente.
+- **Novedades:** servicios (mosaico de cuatro casos → Servicios) y la guía
+  freelance (→ la entrada). Sin «Reservar»: el sitio no tiene agenda; si algún
+  día hay Cal.com o Calendly, va en «Reservas».
+- **Enlace de reseñas:** <https://g.page/r/CXWblE1BbRYvEAE/review>. CID
+  `3393019496512134005`, en `SITE_PROFILE.googleBusiness` → `Person.sameAs`.
+
+**Trampas del editor (Claude in Chrome):** el panel de la búsqueda es un iframe
+del mismo origen (`/local/business/<id>/…`): ábrelo como página propia y
+recarga por URL, porque su navegación interna se cuelga. Los combobox sólo
+sugieren con teclas una a una (`key`), no con `type`. Un `textarea` admite
+valor por script (el contador lo confirma); el campo URL del botón NO: necesita
+clic real y teclado. Tras abrir un desplegable queda un menú invisible encima
+que se come los clics por `ref` (así salió una novedad con «Reservar»):
+publica con `click()` por script. Los clics por coordenadas van en el marco de
+la última captura ÷ 1,306.
+
 ## 2. dev.to (copia del artículo con canonical)
 
 **Hecho (2026-10-02):** perfil <https://dev.to/jonasjavier> completado (retrato,
