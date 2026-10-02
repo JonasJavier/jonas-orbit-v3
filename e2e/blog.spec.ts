@@ -18,7 +18,7 @@ test.describe("blog", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Lo que aprendo construyendo.");
     await expect(page.locator(".voyage-blog-link")).toHaveAttribute("aria-current", "page");
     const posts = page.locator(".blog-card h3 a");
-    await expect(posts).toHaveCount(4);
+    await expect(posts).toHaveCount(6);
     for (const href of await posts.evaluateAll((links) => links.map((link) => link.getAttribute("href")))) {
       expect(href).toMatch(/^\/es\/blog\/[a-z0-9-]+$/);
     }

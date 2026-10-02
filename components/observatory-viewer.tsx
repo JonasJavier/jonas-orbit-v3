@@ -54,6 +54,7 @@ const COPY = defineCopy({
     specimen: (position: number, total: number) => `Espécimen ${position} de ${total}`,
     next: "Muestra siguiente:",
     exit: "Salir del Observatorio",
+    read: "Cómo está hecho",
     data: "Datos",
     object: "Objeto",
     observation: "Observación",
@@ -89,6 +90,7 @@ const COPY = defineCopy({
     specimen: (position: number, total: number) => `Specimen ${position} of ${total}`,
     next: "Next specimen:",
     exit: "Leave the Observatory",
+    read: "How it’s built",
     data: "Data",
     object: "Object",
     observation: "Observation",
@@ -431,6 +433,7 @@ export function ObservatoryViewer({
   descriptor,
   rail,
   indexHref,
+  articleHref = null,
   record,
   children,
 }: {
@@ -463,6 +466,8 @@ export function ObservatoryViewer({
   rail: readonly SpecimenSlot[];
   /** La vuelta al índice de Experimentos. */
   indexHref: string;
+  /** La entrada del blog que cuenta cómo está hecho este espécimen, si existe. */
+  articleHref?: string | null;
   /** `null` mientras un espécimen no tenga registro escrito. */
   record: SpecimenRecord | null;
 }) {
@@ -1547,6 +1552,14 @@ export function ObservatoryViewer({
               </span>
               <span className="observatory__ink">{t.exit}</span>
             </Link>
+            {articleHref ? (
+              <Link className="observatory__back observatory__read" href={articleHref}>
+                <span className="observatory__ink">{t.read}</span>
+                <span aria-hidden="true" className="observatory__arrow">
+                  →
+                </span>
+              </Link>
+            ) : null}
           </div>
         </div>
 

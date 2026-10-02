@@ -18,7 +18,13 @@ export const BLOG_COPY = defineCopy<{
   es: {
     name: "Blog",
     kicker: "BITÁCORA DE A BORDO",
-    topics: { webgl: "WebGL y Three.js", nextjs: "Next.js", performance: "Rendimiento y SEO" },
+    topics: {
+      webgl: "WebGL y Three.js",
+      nextjs: "Next.js",
+      performance: "Rendimiento y SEO",
+      space: "Espacio y física",
+      freelance: "Trabajo freelance",
+    },
     minutes: (n) => `${n} min de lectura`,
     date: dateFormat("es-DO"),
     read: "Leer la entrada",
@@ -26,7 +32,13 @@ export const BLOG_COPY = defineCopy<{
   en: {
     name: "Blog",
     kicker: "SHIP’S LOG",
-    topics: { webgl: "WebGL & Three.js", nextjs: "Next.js", performance: "Performance & SEO" },
+    topics: {
+      webgl: "WebGL & Three.js",
+      nextjs: "Next.js",
+      performance: "Performance & SEO",
+      space: "Space & physics",
+      freelance: "Freelance work",
+    },
     minutes: (n) => `${n} min read`,
     date: dateFormat("en-US"),
     read: "Read the post",

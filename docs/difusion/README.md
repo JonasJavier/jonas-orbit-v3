@@ -211,6 +211,8 @@ por día y, en dev.to, siempre con `canonical_url` a la versión inglesa:
 | [4D tesseract in Three.js](https://jonasjavier.dev/en/blog/4d-tesseract-in-three-js) | Foro de Three.js (Showcase), r/threejs, dev.to |
 | [Bilingual Next.js site without middleware](https://jonasjavier.dev/en/blog/bilingual-next-js-site-without-middleware) | dev.to (tags `nextjs, i18n, seo, react`), r/nextjs |
 | [3D portfolio: WebGL, SEO and performance](https://jonasjavier.dev/en/blog/3d-portfolio-webgl-seo-and-performance) | dev.to (tags `webgl, performance, seo, nextjs`), r/webdev un sábado |
+| [Interstellar's black hole explained](https://jonasjavier.dev/en/blog/interstellar-black-hole-gargantua-explained) (2026-10-02) | r/interstellar, r/space (con el simulador enlazado), dev.to (tags `science, webgl, threejs`) |
+| [Cómo elegir un desarrollador web freelance en RD](https://jonasjavier.dev/es/blog/como-elegir-un-desarrollador-web-freelance-en-republica-dominicana) (2026-10-02) | LinkedIn (tu perfil, en español), grupos de emprendedores de RD, el perfil de empresa de Google como «novedad» |
 
 Antes de publicarlas, léelas: son tus palabras las que firman. Los datos salen
 del código; la voz es tuya.

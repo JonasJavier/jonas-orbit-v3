@@ -111,6 +111,13 @@ MDX**, nunca en `worlds.data.ts`.
   como hijo de Contacto, cada uno con su caso de prueba, y «Ver servicios»
   en el hero de Contacto; difusión en `docs/difusion/`. Segundo pase
   (10-01): fondo propio con horizonte, capturas reales, proceso y preguntas.
+- **SEO — auditoría y especímenes con imagen** (10-02) registro «SEO —
+  auditoría, especímenes con imagen, retrato con nombre y dos entradas» —
+  cada espécimen tiene captura real (`lib/observatory-images.ts`,
+  `tools/prepare-specimens.mjs`) para `og:image`, JSON-LD y sitemap, y
+  enlaza a su entrada del blog; retrato `jonas-javier-encarnacion-*.webp`
+  con `ImageObject`; temas de blog `space` y `freelance`; `www` redirige en
+  cuanto Railway tenga el dominio.
 - **SEO — nombre, nicho 3D y freelance** (09-29) registro de igual nombre —
   nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
   descripciones, nunca en títulos; `seoTitle` en los seis especímenes;

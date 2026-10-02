@@ -675,6 +675,18 @@
   color: #eaf6ff;
 }
 
+/* «Cómo está hecho»: la ida al blog, bajo la salida y con la flecha hacia
+   donde va (2026-10-02). Misma pieza, mismo tamaño: no compite con la salida. */
+.observatory__read {
+  margin-top: -0.35rem;
+  opacity: 0.78;
+}
+
+.observatory__read:hover .observatory__arrow,
+.observatory__read:focus-visible .observatory__arrow {
+  transform: translateX(0.22em);
+}
+
 /*
   ── El paso entre muestras ──────────────────────────────────────────────────
 
@@ -1572,14 +1584,22 @@ html[data-motion="on"] .observatory-face__dot {
   color: rgba(146, 159, 186, 0.45);
 }
 
-.observatory-face__exit {
+.observatory-face__exit,
+.observatory-face__read {
   margin: 0.6rem 0 0;
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
-.observatory-face__exit a {
+/* La entrada del blog del espécimen, debajo de la salida: en frío y sin
+   JavaScript es el único camino al «cómo está hecho». */
+.observatory-face__read {
+  margin-top: 0.35rem;
+}
+
+.observatory-face__exit a,
+.observatory-face__read a {
   color: rgba(242, 200, 121, 0.85);
   text-decoration: none;
   border-bottom: 1px solid rgba(242, 200, 121, 0.3);
@@ -1587,7 +1607,9 @@ html[data-motion="on"] .observatory-face__dot {
 }
 
 .observatory-face__exit a:hover,
-.observatory-face__exit a:focus-visible {
+.observatory-face__exit a:focus-visible,
+.observatory-face__read a:hover,
+.observatory-face__read a:focus-visible {
   color: var(--amber);
   border-bottom-color: var(--amber);
 }

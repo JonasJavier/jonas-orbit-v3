@@ -294,3 +294,22 @@ Chromium headless por defecto no trae GPU. El script fuerza las dos cosas.
 Los shaders viven en template literals, así que un backtick en un comentario del
 GLSL cierra el literal y rompe el build con un error que señala una línea de
 prosa. Pasó tres veces en una sola sesión.
+
+## `prepare-specimens.mjs`: las imágenes de los seis especímenes
+
+Las tarjetas, la imagen del `CreativeWork` y el sitemap de imágenes de cada
+espécimen del Observatorio salen de capturas REALES, no de `shot.mjs`: el
+Chromium headless cae al nivel plano (GPU por software) y no enseña el
+espécimen. Se capturan a 1600 × 900 con un Chromium con ventana y
+`--use-gl=angle --use-angle=d3d11` contra producción, en modo OBSERVAR, con
+`jonas-orbit:reducir-efectos = "false"` y los hijos de `.observatory` que no
+son el canvas en `visibility: hidden`; se espera ~12 s a que la acumulación
+asiente. Después:
+
+```
+node tools/prepare-specimens.mjs <carpeta-con-<id>.png>
+```
+
+deja en `public/images/experimentos/observatorio/` las copias `-1600.webp`,
+`-800.webp` y `-og.jpg` que `lib/observatory-images.ts` nombra.
+

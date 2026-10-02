@@ -76,7 +76,17 @@ export function StructuredData({
       name: SITE_PROFILE.name,
       alternateName: SITE_PROFILE.alternateNames,
       description: COPY[locale].person,
-      image: absoluteUrl(SITE_PROFILE.portrait),
+      // ImageObject y no una URL suelta: Google Imágenes lee el pie y sabe de
+      // quién es el retrato cuando se busca por el nombre.
+      image: {
+        "@type": "ImageObject",
+        "@id": `${absoluteUrl("/")}#retrato`,
+        contentUrl: absoluteUrl(SITE_PROFILE.portrait),
+        url: absoluteUrl(SITE_PROFILE.portrait),
+        caption: SITE_PROFILE.portraitCaption[locale],
+        width: 960,
+        height: 1275,
+      },
       jobTitle: SITE_PROFILE.jobTitle[locale],
       nationality: { "@type": "Country", name: SITE_PROFILE.countryName[locale] },
       knowsLanguage: SITE_PROFILE.languages,

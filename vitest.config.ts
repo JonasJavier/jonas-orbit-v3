@@ -22,6 +22,9 @@ export default defineConfig({
     // uno pasó de 5 s. Un cuelgue real sigue fallando.
     testTimeout: 15_000,
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", "e2e", ".next", ".open-next", ".velite"],
+    // `**/node_modules/**` y `.claude/**`: un worktree de otra sesión bajo
+    // `.claude/worktrees/` trae su propio `node_modules` con tests ajenos, y
+    // «node_modules» a secas sólo excluye el de la raíz (2026-10-02).
+    exclude: ["**/node_modules/**", ".claude/**", "e2e", ".next", ".open-next", ".velite"],
   },
 });

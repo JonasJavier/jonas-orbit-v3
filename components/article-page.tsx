@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ComponentType } from "react";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
-import { articleImage, getArticles, type Article } from "@/lib/articles";
+import { articleCover, articleImage, getArticles, type Article } from "@/lib/articles";
 import { blogLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";
 import { articlePath, blogPath, observatoryPath, pageAlternatesMetadata, servicesPath, worldPath } from "@/lib/page-paths";
@@ -88,7 +88,7 @@ export function articleMetadata(article: Article, locale: Locale): Metadata {
       url: articlePath(article.id, locale),
       publishedTime: article.published,
       authors: [SITE_PROFILE.name],
-      images: [{ url: `${articleImage(article, article.cover)}-1600.webp`, width: 1600, height: 900, alt: prose.coverAlt }],
+      images: [{ url: `${articleImage(article, articleCover(article))}-1600.webp`, width: 1600, height: 900, alt: prose.coverAlt }],
     },
   };
 }
@@ -108,7 +108,7 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
   const path = articlePath(article.id, locale);
   const listHref = blogPath(locale);
   const specimenHref = article.specimen ? observatoryPath(article.specimen, locale) : null;
-  const cover = articleSources(articleImage(article, article.cover));
+  const cover = articleSources(articleImage(article, articleCover(article)));
   const others = getArticles(locale).filter((entry) => entry.id !== article.id).slice(0, 3);
 
   return (
@@ -155,7 +155,7 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
           <p className="post__lead">{prose.summary}</p>
           <div className="post__byline">
             <span className="blog-avatar">
-              <img src="/images/sobre-mi/F40-320.webp" width={320} height={427} alt="" decoding="async" />
+              <img src="/images/sobre-mi/jonas-javier-encarnacion-320.webp" width={320} height={427} alt="" decoding="async" />
             </span>
             <p>
               <strong>{SITE_PROFILE.name}</strong>
@@ -211,7 +211,7 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
         <footer className="post__end">
           <section className="post__author" aria-label={copy.authorKicker}>
             <span className="blog-avatar blog-avatar--large">
-              <img src="/images/sobre-mi/F40-320.webp" width={320} height={427} alt="" loading="lazy" decoding="async" />
+              <img src="/images/sobre-mi/jonas-javier-encarnacion-320.webp" width={320} height={427} alt="" loading="lazy" decoding="async" />
             </span>
             <div>
               <p className="blog-label">{copy.authorKicker}</p>
@@ -267,7 +267,7 @@ export function ArticleCard({
   return (
     <article className={featured ? "blog-card blog-card--featured" : "blog-card"}>
       <img
-        {...articleSources(articleImage(article, article.cover))}
+        {...articleSources(articleImage(article, articleCover(article)))}
         sizes={featured ? "(max-width: 60rem) calc(100vw - 2.5rem), 44rem" : "(max-width: 40rem) calc(100vw - 2.5rem), 24rem"}
         width={1600}
         height={900}

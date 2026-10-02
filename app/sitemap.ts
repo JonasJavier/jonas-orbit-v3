@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 import { DEFAULT_LOCALE, PUBLISHED_LOCALES, SITE_PROFILE, type Locale } from "@/content/site.data";
 import { ARTICLE_IDS } from "@/content/articles.data";
 import { WORLD_IDS } from "@/content/worlds.data";
-import { articleImage, getArticle } from "@/lib/articles";
+import { articleCover, articleImage, getArticle } from "@/lib/articles";
 import { screenSources } from "@/lib/engineering-table";
+import { specimenImage } from "@/lib/observatory-images";
 import { OBSERVATORY_IDS } from "@/lib/observatory-slugs";
 import { pageAlternates, type PageRef } from "@/lib/page-paths";
 import { getF1AProjects, getProject } from "@/lib/projects";
@@ -34,8 +35,11 @@ function pageImages(page: PageRef, locale: Locale): string[] | undefined {
   }
   if (page.kind === "article") {
     const article = getArticle(page.id, locale);
-    return [absoluteUrl(`${articleImage(article, article.cover)}-1600.webp`)];
+    return [absoluteUrl(`${articleImage(article, articleCover(article))}-1600.webp`)];
   }
+  // La captura real de cada espécimen: «Gargantúa 3D» o «nave Endurance» en
+  // Google Imágenes llevan a la página donde se mueven.
+  if (page.kind === "observatory") return [absoluteUrl(specimenImage(page.id, "1600"))];
   return undefined;
 }
 

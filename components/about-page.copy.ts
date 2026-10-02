@@ -24,7 +24,7 @@ export const ABOUT_COPY = defineCopy({
     heroTitle: "Mi pequeño universo.",
     heroNote: ["Misma persona,", "distintos cielos."],
     constellation: "Explora las seis constelaciones",
-    portraitAlt: "Jonás sonriendo, con abrigo y luces al fondo",
+    portraitAlt: "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI, sonriendo con abrigo y luces al fondo",
     place: "BONAO · REPÚBLICA DOMINICANA",
     nodes: {
       roots: { title: "Mis raíces", lead: "Donde empezó todo.", alt: "Río rodeado de vegetación en Bonao" },
@@ -203,7 +203,7 @@ export const ABOUT_COPY = defineCopy({
     heroTitle: "My little universe.",
     heroNote: ["Same person,", "different skies."],
     constellation: "Explore the six constellations",
-    portraitAlt: "Jonás smiling in a coat, with lights behind him",
+    portraitAlt: "Jonás Javier Encarnación, full-stack developer and UX/UI designer, smiling in a coat with lights behind him",
     place: "BONAO · DOMINICAN REPUBLIC",
     nodes: {
       roots: { title: "My roots", lead: "Where it all began.", alt: "A river surrounded by greenery in Bonao" },

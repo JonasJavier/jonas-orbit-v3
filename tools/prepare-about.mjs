@@ -27,6 +27,9 @@ const ids = [
   "F36",
   "F45",
 ];
+// The portrait is the one photo search engines index by name: its public
+// file carries the name instead of the archive code (2026-10-02).
+const OUTPUT_IDS = { F40: "jonas-javier-encarnacion" };
 const manifest = {};
 // Withdrawn by the owner: the large team cannot remain publicly addressable.
 // Keep the private original; remove only the four generated publication copies.
@@ -62,8 +65,8 @@ for (const id of ids) {
       // Page sizes at 80 (2026-09-29, PageSpeed): at 86 a detailed photo
       // weighed ~480 KB at 960 px. The viewer's full size keeps 86.
       .webp({ quality: width >= 1600 || width === photoWidth ? 86 : 80 })
-      .toFile(path.join(output, `${id}-${width}.webp`));
-  manifest[id] = { width: photoWidth, height: photoHeight, widths };
+      .toFile(path.join(output, `${OUTPUT_IDS[id] ?? id}-${width}.webp`));
+  manifest[OUTPUT_IDS[id] ?? id] = { width: photoWidth, height: photoHeight, widths };
 }
 // The owner replaced the external river reference with their improved F23.
 const previous = JSON.parse(

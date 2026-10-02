@@ -9,7 +9,9 @@ const isDev = process.env.NODE_ENV === "development";
  * de forma permanente al origen canónico (`NEXT_PUBLIC_SITE_URL`) para que
  * enlaces viejos sigan vivos sin duplicar contenido.
  */
-const LEGACY_HOSTS = ["orbit.jonasjavier.dev"];
+// `www` incluido: quien lo teclea debe llegar al dominio canónico, no a un
+// error de conexión (Railway necesita el dominio añadido y su CNAME).
+const LEGACY_HOSTS = ["orbit.jonasjavier.dev", "www.jonasjavier.dev"];
 const CANONICAL_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(
   /\/+$/,
   "",

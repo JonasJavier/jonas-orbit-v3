@@ -19,6 +19,70 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — auditoría, especímenes con imagen, retrato con nombre y dos entradas (2026-10-02)
+
+El dueño pidió una auditoría SEO completa para competir por su nombre, sus
+servicios, «simulador de Gargantúa / agujero negro» y el nicho 3D, con sus
+retratos indexados, revisando Search Console y mejorando o ampliando el blog.
+Lo que se vio y lo que se cambió:
+
+- **Search Console (dominio `jonasjavier.dev`, añadido el 09-29).** Tres días
+  de datos: 3 impresiones, 2 clics, sitemap leído con 50 URL, 10 rutas de
+  exploración válidas, Core Web Vitals sin muestra. Inspección de URL:
+  portada, `/en/blog`, `/es/blog` y las entradas de teseracto, portafolio 3D
+  y sitio bilingüe ya indexadas; la del agujero negro (EN) «descubierta, sin
+  indexar» y `/en/contact/services` «rastreada, sin indexar»: indexación
+  pedida para las dos, para `/es/blog`, `/es/contacto/servicios` y la
+  versión ES del agujero negro. La cuota es de ~10 peticiones al día: las dos
+  entradas nuevas se piden al publicar. Se valora con consultas reales a las
+  3–4 semanas (≈ 10-27), no antes.
+- **`www.jonasjavier.dev` no respondía** (sin DNS ni certificado).
+  `LEGACY_HOSTS` ya incluye `www` → 301 al dominio canónico, pero sólo actúa
+  si la petición llega: falta en Railway añadir `www.jonasjavier.dev` como
+  dominio del servicio y el CNAME que indique. Tarea del dueño.
+- **Producción iba cuatro commits por detrás de `main`** (tarjeta corta,
+  logos de Formación): se publica con este pase.
+- **Especímenes del Observatorio con imagen propia.** Antes compartían la
+  tarjeta genérica de la portada y no tenían imagen en JSON-LD ni en el
+  sitemap. Ahora `public/images/experimentos/observatorio/<id>-{1600,800}.webp`
+  y `<id>-og.jpg` (1200 × 630), capturas reales con GPU (Chromium con ventana
+  y ANGLE/D3D11 contra producción, modo OBSERVAR, cromo oculto; el headless
+  cae al nivel plano). `lib/observatory-images.ts` da las rutas;
+  `tools/prepare-specimens.mjs` produce las copias. Van a `og:image`,
+  `CreativeWork.image` y al sitemap de imágenes: es la vía para «Gargantúa 3D»
+  o «nave Endurance» en Google Imágenes.
+- **Cada espécimen enlaza a su entrada del blog** («Cómo está hecho →», bajo
+  «Salir del Observatorio» en el cromo y bajo «Volver a Experimentos» en la
+  cara servida, `observatory-face__read`, elemento aparte para no romper el
+  selector de la prueba de la salida). El espécimen prefiere la entrada de
+  WebGL cuando hay varias con su `specimen`; el `CreativeWork` declara
+  `subjectOf` esa entrada.
+- **Retrato.** El archivo pasa de `F40-*.webp` a
+  `jonas-javier-encarnacion-*.webp` (Google lee el nombre del archivo;
+  `tools/prepare-about.mjs` mantiene el mapa `OUTPUT_IDS`), el `alt` lleva
+  nombre completo y rol en los dos idiomas, y `Person.image` es un
+  `ImageObject` con `caption` (`SITE_PROFILE.portraitCaption`). Sigue siendo
+  la única foto de «Sobre mí» en el sitemap de imágenes.
+- **Metadatos:** el índice del blog no tenía `og:image` (tarjeta por defecto
+  añadida); «Sobre mí» usa `og:type profile` con nombre y apellido.
+- **Blog: dos entradas nuevas (ES/EN, voz del dueño, sin cifras
+  inventadas).** «La física del agujero negro de Interstellar, vista en un
+  simulador» (tema nuevo `space`, carpeta de figuras compartida con la
+  primera entrada más la portada `gargantua-observatorio`, `specimen:
+  gargantua`): para quien busca «agujero negro de Interstellar» y no
+  «shader»; física verificable (Schwarzschild, sombra √27/2·rs, DNGR 2015,
+  Doppler omitido en la película, EHT 2019/2022) y la lista honesta de lo que
+  el simulador hace distinto. «Cómo elegir un desarrollador web freelance en
+  República Dominicana» (tema nuevo `freelance`, figuras de la página de
+  servicios; `cover` admite un nombre por idioma porque la captura lleva
+  texto): guía para quien contrata, con el proceso y las preguntas reales
+  de Servicios y casos publicados (OMSTA, Delicaté). Las cuatro entradas
+  anteriores se revisaron y no necesitaban cambios de redacción. El e2e del
+  blog cuenta 6. Kit de difusión §8 ampliado.
+- **Pendiente del dueño:** dominio `www` en Railway; Google Business Profile;
+  publicar el kit; Bing Webmaster Tools (importa la propiedad de Search
+  Console en un clic); revisar la voz de las dos entradas nuevas.
+
 ## Tarjeta para compartir la portada — Discord, LinkedIn, WhatsApp, X (2026-10-01)
 
 El dueño: al compartir `https://jonasjavier.dev/es` en Discord no salía la

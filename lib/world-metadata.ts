@@ -25,7 +25,10 @@ export function buildWorldMetadata(world: World, locale: Locale): Metadata {
     alternates: pageAlternatesMetadata({ kind: "world", id: world.id }, locale),
     openGraph: {
       ...siteOpenGraph(locale),
-      type: "article",
+      // «Sobre mí» es la página de la persona: Open Graph tiene un tipo para eso.
+      ...(world.id === "gargantua"
+        ? { type: "profile" as const, firstName: "Jonás Javier", lastName: "Encarnación" }
+        : { type: "article" as const }),
       title: `${world.prose.seoTitle} · Jonás Javier`,
       description: world.prose.seoDescription,
       url: path,

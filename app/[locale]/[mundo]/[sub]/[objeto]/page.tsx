@@ -6,13 +6,15 @@ import { ObservatoryViewer } from "@/components/observatory-viewer";
 import { StructuredData } from "@/components/structured-data";
 import { PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
 import { worldsData, type WorldId } from "@/content/worlds.data";
+import { getArticles } from "@/lib/articles";
 import { defineCopy } from "@/lib/i18n";
 import { instrumentsFor } from "@/lib/observatory";
 import { observatoryCatalog } from "@/lib/observatory-catalog";
+import { specimenImage } from "@/lib/observatory-images";
 import { OBSERVATORY_IDS, observatoryIdBySlug, observatorySlug } from "@/lib/observatory-slugs";
-import { observatoryPath, pageAlternatesMetadata, worldPath } from "@/lib/page-paths";
+import { articlePath, observatoryPath, pageAlternatesMetadata, worldPath } from "@/lib/page-paths";
 import { PATH_SEGMENTS } from "@/lib/path-segments";
-import { defaultOgImage, siteOpenGraph } from "@/lib/site-metadata";
+import { siteOpenGraph } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
 import { getWorld, getWorldBySlug } from "@/lib/worlds";
 
@@ -74,6 +76,8 @@ const COPY = defineCopy({
     standby: "En espera",
     unavailable: "no disponible",
     back: "Volver a Experimentos",
+    /** La entrada del blog que cuenta cómo está hecho, si la hay. */
+    read: "Cómo está hecho",
     /** Los mandos del banco, en el orden en que los presenta el instrumento. */
     instruments: {
       bloom: "Bloom",
@@ -98,6 +102,7 @@ const COPY = defineCopy({
     standby: "Standby",
     unavailable: "unavailable",
     back: "Back to Experiments",
+    read: "How it’s built",
     instruments: {
       bloom: "Bloom",
       material: "Material",
@@ -138,7 +143,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url: observatoryPath(id, locale),
-      images: [defaultOgImage(locale)],
+      // La captura real del espécimen, no la tarjeta genérica de la portada:
+      // quien comparte «mira la Endurance» tiene que ver la Endurance.
+      images: [{ url: specimenImage(id, "og"), width: 1200, height: 630, type: "image/jpeg", alt: copy.workName(world.cosmicName) }],
     },
   };
 }
@@ -197,6 +204,11 @@ export default async function ObservatoryRoute({ params }: Props) {
   ];
 
   const path = observatoryPath(id, typedLocale);
+  // La entrada del blog que explica este espécimen (`specimen` en
+  // `articles.data.ts`): el enlace de ida para quien quiere saber cómo se hizo.
+  const articles = getArticles(typedLocale).filter((entry) => entry.specimen === id);
+  const article = articles.find((entry) => entry.topic === "webgl") ?? articles[0];
+  const articleHref = article ? articlePath(article.id, typedLocale) : null;
 
   return (
     <main className="observatory-route" id="main-content">
@@ -213,12 +225,15 @@ export default async function ObservatoryRoute({ params }: Props) {
           genre: copy.genre,
           description: observatory?.seoDescription ?? copy.description(world.cosmicName),
           url: absoluteUrl(path),
+          image: absoluteUrl(specimenImage(id, "1600")),
+          ...(articleHref ? { subjectOf: { "@id": `${absoluteUrl(articleHref)}#entrada` } } : {}),
         }}
       />
       <ObservatoryViewer
         key={id}
         descriptor={descriptor}
         indexHref={indexHref}
+        articleHref={articleHref}
         name={world.cosmicName}
         rail={rail}
         record={observatory?.registro ?? null}
@@ -306,6 +321,11 @@ export default async function ObservatoryRoute({ params }: Props) {
             <p className="observatory-face__exit">
               <Link href={indexHref}>{copy.back}</Link>
             </p>
+            {articleHref ? (
+              <p className="observatory-face__read">
+                <Link href={articleHref}>{copy.read}</Link>
+              </p>
+            ) : null}
           </div>
         </div>
       </ObservatoryViewer>

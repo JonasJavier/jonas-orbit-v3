@@ -5,7 +5,7 @@ import { getArticles } from "@/lib/articles";
 import { blogLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";
 import { articlePath, blogPath, pageAlternatesMetadata, servicesPath } from "@/lib/page-paths";
-import { siteOpenGraph } from "@/lib/site-metadata";
+import { defaultOgImage, siteOpenGraph } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
 import { ArticleCard } from "./article-page";
 import { BLOG_COPY } from "./blog-copy";
@@ -54,6 +54,8 @@ export function blogMetadata(locale: Locale): Metadata {
       title: copy.seoTitle,
       description: copy.seoDescription,
       url: blogPath(locale),
+      // Sin tarjeta el índice se compartía sin vista previa.
+      images: [defaultOgImage(locale)],
     },
   };
 }

@@ -31,8 +31,17 @@ export const SITE_PROFILE = {
    * Van a `alternateName` en JSON-LD para que el buscador una las variantes.
    */
   alternateNames: ["Jonás Javier", "Jonas Javier Encarnacion", "Jonas Javier", "Jonás Encarnación"],
-  /** Retrato publicado en «Sobre mí» (F40), para `image` en JSON-LD. */
-  portrait: "/images/sobre-mi/F40-960.webp",
+  /**
+   * Retrato publicado en «Sobre mí», para `image` en JSON-LD y para Google
+   * Imágenes: el archivo lleva su nombre porque el buscador también lee el
+   * nombre del archivo (el original es la F40 del archivo privado).
+   */
+  portrait: "/images/sobre-mi/jonas-javier-encarnacion-960.webp",
+  /** Pie del retrato en JSON-LD (`ImageObject.caption`): quién es y qué hace. */
+  portraitCaption: {
+    es: "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en Santo Domingo, República Dominicana",
+    en: "Jonás Javier Encarnación, full-stack developer and UX/UI designer in Santo Domingo, Dominican Republic",
+  },
   jobTitle: {
     es: "Desarrollador full-stack y diseñador UX/UI",
     en: "Full-stack developer and UX/UI designer",

@@ -23,6 +23,11 @@ export function getArticleBySlug(slug: string, locale: Locale): Article | undefi
   return getArticles(locale).find((article) => article.prose.slug === slug);
 }
 
+/** El nombre de la portada en el idioma de la entrada. */
+export function articleCover(article: Article): string {
+  return typeof article.cover === "string" ? article.cover : article.cover[article.prose.locale as Locale];
+}
+
 /** La base de una imagen de la entrada (sin `-800.webp` / `-1600.webp`). */
 export function articleImage(article: Article, name: string): string {
   return `${article.images}/${name}`;

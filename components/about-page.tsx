@@ -127,7 +127,7 @@ export function AboutPage({ world, locale }: { world: World; locale: Locale }) {
             <div className="about-portrait">
               <div className="about-portrait-ring">
                 <div className="about-portrait-crop">
-                  <AboutImage id="F40" alt={t.portraitAlt} sizes={PORTRAIT} eager />
+                  <AboutImage id="jonas-javier-encarnacion" alt={t.portraitAlt} sizes={PORTRAIT} eager />
                 </div>
               </div>
               <h2>Jonás</h2>

@@ -6,7 +6,7 @@ import { ARTICLE_IDS } from "@/content/articles.data";
 import { PROJECT_IDS } from "@/content/projects.data";
 import { PUBLISHED_LOCALES } from "@/content/site.data";
 import { WORLD_IDS } from "@/content/worlds.data";
-import { articleImage, getArticle, getArticleBySlug, getArticles } from "./articles";
+import { articleCover, articleImage, getArticle, getArticleBySlug, getArticles } from "./articles";
 import { OBSERVATORY_IDS } from "./observatory-slugs";
 import { articlePath, blogPath, pageAlternates, servicesPath, type PageRef } from "./page-paths";
 
@@ -46,7 +46,7 @@ describe("blog", () => {
       for (const locale of PUBLISHED_LOCALES) {
         const article = getArticle(id, locale);
         const figures = [...article.prose.body.matchAll(/name:\s*"([a-z0-9-]+)"/g)].map(([, name]) => name);
-        for (const base of [article.cover, ...figures].map((name) => articleImage(article, name))) {
+        for (const base of [articleCover(article), ...figures].map((name) => articleImage(article, name))) {
           expect(publicFile(`${base}-800.webp`), `${base}-800`).toBe(true);
           expect(publicFile(`${base}-1600.webp`), `${base}-1600`).toBe(true);
         }

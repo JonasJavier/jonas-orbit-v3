@@ -1,0 +1,222 @@
+---
+id: interstellar-black-hole-physics
+slug: la-fisica-del-agujero-negro-de-interstellar
+title: La física del agujero negro de Interstellar, vista en un simulador
+summary: >-
+  Gargantúa no es un efecto: casi todo lo que se ve en pantalla lo dicta la
+  gravedad. Qué es la sombra, por qué el disco aparece por encima y por debajo,
+  qué es el anillo de fotones y qué quitó la película a propósito.
+coverAlt: >-
+  Gargantúa en el Observatorio: la sombra negra en el centro, el disco de
+  acreción cobrizo atravesándola y su cara lejana levantada por encima por la
+  lente gravitacional.
+seoTitle: "Agujero negro de Interstellar: la física de Gargantúa"
+seoDescription: >-
+  Qué es Gargantúa, el agujero negro de Interstellar: sombra, disco de acreción,
+  lente gravitacional y efecto Doppler, explicados con un simulador 3D.
+---
+
+La primera vez que vi *Interstellar* pensé que Gargantúa era un efecto visual
+muy bien hecho. Años después, al construir
+[mi propio simulador](/es/experimentos/observatorio/gargantua) para este
+sitio, entendí que es casi lo contrario: en esa imagen hay muy poco inventado.
+La sombra, el disco que la rodea por arriba y por abajo, el anillo fino de luz
+pegado al borde: todo eso sale de una sola ecuación, la que describe cómo se
+curva la luz cerca de una masa enorme.
+
+Esta entrada explica esa física sin fórmulas difíciles, con el simulador como
+pizarra. Si quieres saber cómo está programado (el shader, los pasos, el
+rendimiento), eso está en
+[Cómo hice un agujero negro en WebGL](/es/blog/como-hice-un-agujero-negro-en-webgl).
+Aquí la pregunta es otra: **¿por qué un agujero negro se ve así?**
+
+## Qué es Gargantúa
+
+Gargantúa es el agujero negro de la película *Interstellar* (2014). El físico
+Kip Thorne, que asesoró la producción y después ganó el Nobel por la detección
+de ondas gravitacionales, pidió que se calculara de verdad: el estudio de
+efectos Double Negative escribió un trazador de rayos que seguía la luz
+alrededor de un agujero negro en rotación, y el resultado se publicó en 2015
+como artículo científico en la revista *Classical and Quantum Gravity*.
+
+En la historia, Gargantúa es un agujero negro supermasivo, de unos cien
+millones de veces la masa del Sol, y gira muy rápido. Esas dos cosas no son
+decorado: la masa decide el tamaño de todo lo que se ve, y la rotación es lo
+que hace posible el planeta de Miller, donde una hora equivale a siete años en
+la Tierra. Un agujero negro que no girase no permitiría una órbita tan cerca
+del horizonte, y sin esa cercanía no habría dilatación del tiempo tan extrema.
+
+## La sombra: por qué el centro es negro
+
+Un agujero negro no es un objeto que se vea: es una región de la que la luz no
+sale. Su borde se llama **horizonte de sucesos**, y para uno que no gira su
+radio es el radio de Schwarzschild, `rs`. Para una masa como la del Sol son
+unos tres kilómetros; para Gargantúa, cientos de millones.
+
+Lo curioso es que la mancha negra que se ve en pantalla es bastante más grande
+que el horizonte. A 1,5 veces `rs` está la **esfera de fotones**: la distancia
+a la que la luz puede dar vueltas completas alrededor del agujero. Cualquier
+rayo que pase por dentro de esa esfera acaba cayendo. Visto desde lejos, eso
+produce una sombra cuyo radio aparente es `√27/2 · rs`, unas 2,6 veces el
+horizonte. En el simulador se mide: la sombra ocupa 2,6 veces lo que ocuparía
+el horizonte, y nadie la dibujó con ese tamaño. Sale sola de seguir la luz.
+
+<Figure
+  name="gargantua-sombra"
+  alt="La vista Sombra del simulador: el borde de la sombra de cerca, negro puro contra el disco brillante."
+  caption="Vista Sombra. El negro del centro no es una textura: es el conjunto de rayos que, trazados hacia atrás desde la cámara, acaban dentro del horizonte."
+/>
+
+## El disco de acreción, por encima y por debajo
+
+Lo que brilla alrededor de Gargantúa es el **disco de acreción**: gas que cae
+en espiral hacia el agujero, calentado por la fricción hasta emitir luz. Es un
+disco plano, como los anillos de Saturno. Entonces, ¿por qué se ve también por
+encima y por debajo de la sombra, como un halo?
+
+Porque la luz que sale de la parte de atrás del disco no viaja en línea recta.
+La gravedad la curva por encima del agujero y por debajo, y llega a la cámara
+desde arriba y desde abajo. El arco superior es la cara lejana del disco vista
+por encima de la sombra; el arco inferior es la misma cara vista por debajo. Es
+el fenómeno que se llama **lente gravitacional**, y es la razón por la que
+Gargantúa no parece un planeta con anillos sino algo que nadie había visto
+antes de la película.
+
+<Figure
+  name="gargantua-lente"
+  alt="La vista Lente del simulador: la sombra grande en el centro, el disco cruzándola y su imagen duplicada por encima y por debajo."
+  caption="Vista Lente. Un disco plano aparece también por encima y por debajo de la sombra: la gravedad trae la cara oculta hasta la cámara."
+/>
+
+En el simulador, el mando **Lente** apaga esa curvatura. Sin ella, el disco se
+ve como lo que es geométricamente, un anillo plano, y la imagen pierde justo lo
+que la hace reconocible.
+
+## El anillo de fotones y las imágenes secundarias
+
+Pegado al borde de la sombra hay un anillo muy fino y muy brillante. Es el
+**anillo de fotones**: luz que dio media vuelta, o una vuelta entera, alrededor
+del agujero antes de escapar hacia la cámara. Cada vuelta adicional produce
+una imagen más delgada y más cercana al borde, y en teoría hay infinitas, cada
+una más fina que la anterior.
+
+En el simulador, el mando **Secundarias** controla cuántas de esas vueltas se
+siguen. Con él apagado, el borde de la sombra se vuelve más pobre; con él
+encendido aparece el filo de luz y, debajo del disco, una segunda imagen más
+pequeña de la cara oculta. En la primera versión de mi Gargantúa ese anillo
+estaba dibujado como un círculo de un píxel; se notaba que era un círculo
+pintado y lo quité. Ahora es lo que la luz hace al apilarse.
+
+## Doppler: el lado que se acerca brilla más
+
+Aquí está la parte que la película decidió no mostrar. El gas del disco gira a
+una fracción importante de la velocidad de la luz. El lado que viene hacia ti
+emite luz más intensa y más azulada; el que se aleja, más débil y más rojiza.
+Es el **efecto Doppler relativista**, el mismo principio que cambia el tono de
+una sirena al pasar, aplicado a la luz. A eso se suma el **corrimiento al rojo
+gravitacional**: la luz que sale de cerca del agujero pierde energía al subir.
+
+Un agujero negro real se vería **asimétrico**: un lado del disco claramente
+más brillante que el otro. Thorne y el equipo de efectos lo calcularon, y
+Christopher Nolan decidió quitarlo de la película porque el público no habría
+entendido por qué el disco se veía torcido. Está documentado en el artículo de
+2015: Gargantúa en el cine es una versión simétrica y deliberadamente
+simplificada.
+
+<Figure
+  name="gargantua-doppler-on"
+  alt="Gargantúa con el efecto Doppler: el lado izquierdo del disco, que se acerca al espectador, es mucho más brillante que el derecho."
+  caption="Con Doppler. El lado que se acerca brilla algo más del doble que el que se aleja, y vira hacia el crema mientras el otro se queda cobrizo."
+/>
+
+<Figure
+  name="gargantua-doppler-off"
+  alt="El mismo fotograma sin efecto Doppler: el disco se ve casi simétrico."
+  caption="Sin Doppler. Así, más o menos, es como el cine prefirió enseñarlo."
+/>
+
+En el simulador el Doppler está encendido por defecto, porque quería ver la
+versión que la física pide. Con el mando **Doppler** se puede apagar y ver la
+versión «de película». Es el mando que más cambia la imagen de los tres.
+
+## Lo que el simulador hace distinto de la película
+
+Quiero ser preciso con lo que es y no es este Gargantúa:
+
+- **No gira.** El de la película es un agujero negro de Kerr, en rotación. El
+  mío usa la geometría de Schwarzschild, la de un agujero negro sin rotación,
+  porque trazar la rotación píxel a píxel en tiempo real en un navegador era
+  demasiado caro. Lo que sí gira es el gas del disco.
+- **El disco está más lejos.** En un agujero negro sin rotación, el gas no puede
+  orbitar de forma estable por dentro de tres veces el horizonte. En uno que
+  gira muy rápido, como Gargantúa, esa órbita mínima se acerca mucho más, y por
+  eso en la película el disco llega casi hasta la sombra. En el simulador el
+  disco empieza algo por dentro de esa órbita, en 1,58 veces el horizonte, y se
+  extiende hasta 17.
+- **El Doppler está puesto.** La película lo quitó; yo lo dejé, y se puede
+  apagar.
+- **El disco es un dibujo, no una simulación de gas.** Su textura es ruido que
+  rota a distintas velocidades según la distancia, como lo haría el gas, pero
+  nadie resuelve aquí las ecuaciones de un fluido.
+
+Lo que sí es idéntico es la parte que importa: la luz sigue, rayo a rayo, la
+ecuación de las geodésicas de un agujero negro. La sombra, los arcos, el anillo
+de fotones y la imagen secundaria no están pintados en ninguna parte.
+
+## Cómo usar el simulador
+
+Abre [Gargantúa en el Observatorio](/es/experimentos/observatorio/gargantua) y
+pasa al modo **Estudio**. Hay cuatro vistas:
+
+1. **Cinematográfica**: el encuadre de la película, con el disco de canto.
+2. **Lente**: más cerca y más alto, para ver los dos arcos y la imagen
+   secundaria.
+3. **Disco**: el disco casi de frente, donde se aprecia la rotación diferencial
+   del gas.
+4. **Sombra**: el borde de la sombra de cerca, donde se ve el anillo de
+   fotones.
+
+Y tres mandos que apagan física real: **Doppler**, **Secundarias** y
+**Lente**. Mi consejo es apagarlos de uno en uno y mirar qué parte de la imagen
+desaparece: eso es exactamente lo que cada fenómeno aporta.
+
+El simulador corre en cualquier navegador con WebGL2. Si el equipo no da para
+ello, o si prefieres no mover la gráfica, el sitio enseña una versión plana con
+el mismo contenido.
+
+## Preguntas que me hacen
+
+**¿Alguien ha visto un agujero negro de verdad?** Sí. En 2019 el Telescopio
+del Horizonte de Sucesos publicó la imagen del agujero negro del centro de la
+galaxia M87, y en 2022 la del centro de nuestra galaxia, Sagitario A*. Son
+anillos borrosos y anaranjados, muy distintos de Gargantúa, pero muestran lo
+mismo: una sombra central y luz curvada alrededor. Y sí, el lado más brillante
+del anillo de M87 es el que se acerca hacia nosotros.
+
+**¿Gargantúa existe?** No. Es un objeto de ficción con una masa y una rotación
+elegidas para que la historia funcione. Lo que sí existe es la física con la
+que se calculó.
+
+**¿Por qué en el planeta de Miller una hora son siete años?** Por la
+dilatación gravitacional del tiempo: cerca de una masa enorme el tiempo pasa
+más despacio. Para que la diferencia sea tan grande, el planeta tiene que
+orbitar muy cerca del horizonte, y eso sólo es posible si el agujero negro gira
+casi al límite. Es uno de los puntos donde la película estiró la física hasta
+donde la física permite, pero no más allá.
+
+**¿Por qué el disco de la película es tan tenue?** Un disco real alrededor de
+un agujero negro que esté tragando mucho gas brillaría con rayos X y freiría
+cualquier planeta cercano. El de la película es, a propósito, un disco frío y
+anémico, para que la tripulación pueda acercarse.
+
+## Pruébalo
+
+Abre el [simulador](/es/experimentos/observatorio/gargantua) y, antes de tocar
+nada, intenta localizar la sombra, los dos arcos y el anillo de fotones. Luego
+apaga **Lente** y mira cómo el halo desaparece y queda un anillo plano. Esa
+diferencia es la relatividad general.
+
+Si lo que te interesa es cómo está hecho por dentro,
+[aquí está el shader](/es/blog/como-hice-un-agujero-negro-en-webgl). Y si
+quieres una experiencia 3D así para tu producto o tu marca, aquí cuento
+[cómo trabajo](/es/contacto/servicios).
