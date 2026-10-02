@@ -39,9 +39,12 @@ Lo que se vio y lo que se cambió:
   lista). Se valora con consultas reales a las
   3–4 semanas (≈ 10-27), no antes.
 - **`www.jonasjavier.dev` no respondía** (sin DNS ni certificado).
-  `LEGACY_HOSTS` ya incluye `www` → 301 al dominio canónico, pero sólo actúa
-  si la petición llega: falta en Railway añadir `www.jonasjavier.dev` como
-  dominio del servicio y el CNAME que indique. Tarea del dueño.
+  `LEGACY_HOSTS` ya incluye `www` → 308 al dominio canónico, pero sólo actúa
+  si la petición llega. El dueño añadió `www` como dominio del servicio `web`
+  el mismo día; como Railway gestiona el DNS del dominio (registrado allí,
+  nameservers de name.com), creó solo el `CNAME www → jviyvyq4.up.railway.app`
+  y el `TXT _railway-verify.www`. Verificado: `https://www.jonasjavier.dev/x`
+  → 308 → `https://jonasjavier.dev/x`.
 - **Producción iba cuatro commits por detrás de `main`** (tarjeta corta,
   logos de Formación): se publica con este pase.
 - **Especímenes del Observatorio con imagen propia.** Antes compartían la
@@ -81,7 +84,7 @@ Lo que se vio y lo que se cambió:
   de Servicios y casos publicados (OMSTA, Delicaté). Las cuatro entradas
   anteriores se revisaron y no necesitaban cambios de redacción. El e2e del
   blog cuenta 6. Kit de difusión §8 ampliado.
-- **Pendiente del dueño:** dominio `www` en Railway; Google Business Profile;
+- **Pendiente del dueño:** Google Business Profile;
   publicar el kit; Bing Webmaster Tools (importa la propiedad de Search
   Console en un clic); revisar la voz de las dos entradas nuevas.
 
