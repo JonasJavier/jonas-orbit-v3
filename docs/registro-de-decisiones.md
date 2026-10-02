@@ -33,8 +33,10 @@ Lo que se vio y lo que se cambió:
   y sitio bilingüe ya indexadas; la del agujero negro (EN) «descubierta, sin
   indexar» y `/en/contact/services` «rastreada, sin indexar»: indexación
   pedida para las dos, para `/es/blog`, `/es/contacto/servicios` y la
-  versión ES del agujero negro. La cuota es de ~10 peticiones al día: las dos
-  entradas nuevas se piden al publicar. Se valora con consultas reales a las
+  versión ES del agujero negro. Tras publicar se pidió la entrada de física en
+  los dos idiomas; la guía freelance (ES y EN) queda por pedir a mano (la caja
+  de inspección dejó de aceptar texto desde la extensión; el sitemap ya las
+  lista). Se valora con consultas reales a las
   3–4 semanas (≈ 10-27), no antes.
 - **`www.jonasjavier.dev` no respondía** (sin DNS ni certificado).
   `LEGACY_HOSTS` ya incluye `www` → 301 al dominio canónico, pero sólo actúa
