@@ -105,6 +105,22 @@ editor sin error, espera unos minutos y repite.
 
 <https://discourse.threejs.org> → categoría **Showcase** → nuevo tema.
 
+**Hecho (2026-10-02):** perfil `jonas_javier` completado (retrato de fondo
+azul, nombre completo, bio en inglés con enlaces al sitio, al blog y a
+Contacto, ubicación, sitio web, cabecera y fondo de tarjeta con Gargantúa) y
+el tema enviado al Showcase con las dos imágenes y las etiquetas `shaders`,
+`glsl`, `raytracing`, `physics`, `portfolio-website`. Showcase pasa por
+moderación: el tema no se ve hasta que lo aprueban. Cambios sobre el texto de
+abajo: «my portfolio», «up to 190 steps» (es el máximo del bucle), un párrafo
+sobre la parte de three.js (cuad + `ShaderMaterial`, ocho fotogramas
+acumulados, `UnrealBloomPass` y `SavePass`), la demo en su propia línea para
+que salga como tarjeta, y los mandos nombrados en prosa. Pendiente: cuando lo
+aprueben, fijarlo como «Featured Topic» del perfil (Preferences → Profile).
+Mientras la cuenta sea nivel 0, el foro oculta bio, web y cabecera a quien no
+ha iniciado sesión: se pasa a nivel 1 leyendo de verdad (5 temas, 30
+mensajes, 10 minutos), y a partir de ahí el perfil es público. Los enlaces del
+foro llevan `nofollow ugc`: lo que dan es tráfico del nicho, no autoridad.
+
 **Título:** `Gargantua — a ray-traced black hole in a portfolio (WebGL, one draw call)`
 
 **Texto:**
