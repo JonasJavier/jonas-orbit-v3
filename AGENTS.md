@@ -111,6 +111,12 @@ MDX**, nunca en `worlds.data.ts`.
   como hijo de Contacto, cada uno con su caso de prueba, y «Ver servicios»
   en el hero de Contacto; difusión en `docs/difusion/`. Segundo pase
   (10-01): fondo propio con horizonte, capturas reales, proceso y preguntas.
+- **Presencia web** (10-02) `docs/presencia-web.md` — el repo es el centro
+  de TODA la presencia pública (sitio, Search Console, Business Profile,
+  dev.to, LinkedIn, foros): canales, cadencia (una entrada por semana, nunca
+  diaria), proceso editorial, cola de temas y la rutina semanal de Claude que
+  deja el borrador en `docs/difusion/borradores/`. Guías por canal en
+  `docs/difusion/README.md`.
 - **SEO — auditoría y especímenes con imagen** (10-02) registro «SEO —
   auditoría, especímenes con imagen, retrato con nombre y dos entradas» —
   cada espécimen tiene captura real (`lib/observatory-images.ts`,

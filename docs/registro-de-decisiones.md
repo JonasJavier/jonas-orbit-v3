@@ -19,6 +19,27 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Presencia web — el repo como proyecto entero y la rutina semanal (2026-10-02)
+
+El dueño: el sitio no es el proyecto; el proyecto es su presencia web entera
+(LinkedIn, dev.to, Business Profile, foro de Three.js…) y este repo es donde
+se gestiona. Pidió documentarlo y programar un blog semanal en dev.to como
+tarea semanal de Claude.
+
+- **`docs/presencia-web.md` manda en canales, cadencia y proceso**: tabla de
+  canales con estado y dueño, una entrada por semana (ES/EN en el sitio y
+  copia en dev.to con `canonical_url`), proceso de siete pasos, cola de
+  dieciséis temas sacados del material real del repo, y qué se mide al mes.
+  Semanal y no diaria: dev.to y Google premian la constancia; una cuenta
+  nueva publicando a diario se lee como spam y el material honesto no da
+  para tanto.
+- **Rutina «Borrador semanal del blog»** (claude.ai/code/routines): lunes
+  08:00 Santo Domingo, copia del repo en la nube, sin acceso a la máquina ni
+  a dev.to. Sólo hace el borrador (`docs/difusion/borradores/<id>/` con
+  `es.mdx`, `en.mdx`, `notas.md`) y marca la cola; commit en `main` sólo de
+  documentación. Publicar sigue siendo revisión de Jonás + gates + sesión
+  local. Si el push falla, PR desde `routine/<id>` y se fusiona a mano.
+
 ## SEO — auditoría, especímenes con imagen, retrato con nombre y dos entradas (2026-10-02)
 
 El dueño pidió una auditoría SEO completa para competir por su nombre, sus

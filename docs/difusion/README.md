@@ -1,5 +1,9 @@
 # Kit de difusión — enlaces entrantes y clientes
 
+El plan general (canales, cadencia semanal, proceso editorial y la cola de
+temas) está en [`docs/presencia-web.md`](../presencia-web.md); aquí, las
+guías paso a paso de cada canal.
+
 Todo lo que hay que publicar FUERA del sitio para que Google lo tome en serio,
 con los textos listos para pegar. Lo que está dentro del sitio ya está hecho:
 
