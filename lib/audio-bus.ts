@@ -291,6 +291,11 @@ class AudioBus {
    */
   open(level: number, seconds: number): AudioSession | null {
     if (!this.audible()) return null;
+    // Antes del primer gesto no hay nada que pueda sonar, y crear el contexto
+    // sólo para que el navegador lo rechace imprime «The AudioContext was not
+    // allowed to start» en cada página con ambiente (las cinco de mundo, QA
+    // 2026-10-02). El primer gesto avisa (`emit`) y el ambiente vuelve a pedir.
+    if (!this.gestured && !this.context) return null;
     const context = this.ensure();
     if (!context || !this.master) return null;
     // Antes del primer gesto el contexto está suspendido y lo programado se
