@@ -3,7 +3,7 @@ id: gargantua-webgl
 slug: how-i-built-a-black-hole-in-webgl
 title: How I built a black hole in WebGL
 summary: >-
-  Gargantua, the centre of this portfolio, isn't drawn: a shader follows the
+  Gargantua, the center of this portfolio, isn't drawn: a shader follows the
   light ray by ray around the black hole. The physics, the disk, the Doppler
   effect and what it took to run on any device.
 coverAlt: >-
@@ -15,7 +15,7 @@ seoDescription: >-
   shader: light paths, accretion disk, Doppler effect and performance in WebGL.
 ---
 
-Gargantua is the centre of this site: the black hole the six sections are
+Gargantua is the center of this site: the black hole the six sections are
 arranged around, inspired by the one in *Interstellar*. In the
 [Observatory](/en/experiments/observatory/gargantua) you can see it full
 screen, switch between four views and turn its effects off one by one. This
@@ -59,7 +59,7 @@ disk.
 
 <Figure
   name="gargantua-lente"
-  alt="Lens view: the large shadow in the centre, the disk crossing it and its doubled image above and below."
+  alt="Lens view: the large shadow in the center, the disk crossing it and its doubled image above and below."
   caption="Lens view. Rays that circle the hole cross the disk plane again and bring its hidden side above and below the shadow."
 />
 
@@ -142,7 +142,7 @@ float dark = 1.0 - smoothstep(uDarkGate.x, uDarkGate.y, lum);
 gl_FragColor = vec4(mix(bloomed, clean, inside * dark * uAmount), 1.0);
 ```
 
-The brightness at the centre of the shadow dropped from 106.8 to 18.2, and
+The brightness at the center of the shadow dropped from 106.8 to 18.2, and
 nothing changed outside it.
 
 <Figure

@@ -170,8 +170,8 @@ const x = p[0] * perspective, y = p[1] * perspective, z = p[2] * perspective;
 That's the whole secret of the "cube inside a cube": there aren't two cubes of
 different sizes, there are two identical cells at different distances from the
 camera in the fourth dimension. Then a fixed pose presents it diagonally in 3D
-(0.6, 0.45 and 0.28 radians), and each sample is re-centred and scaled so the
-farthest vertex always sits 1.5 units from the centre. Without that
+(0.6, 0.45 and 0.28 radians), and each sample is re-centered and scaled so the
+farthest vertex always sits 1.5 units from the center. Without that
 normalisation the shape "breathes" as it rotates, and the click area and the
 brackets that target it on the map would move with it.
 
@@ -211,7 +211,7 @@ are told apart by a uniform, `uLayer`:
 | Glass edges | Six-sided tubes, near-black body with a Fresnel rim | Opaque, writes depth |
 | Stroke light | The point and its trail | Additive, no depth test |
 | Glass sheets | Six of the 24 faces | Transparent, double-sided |
-| Occluder | A ribbon that only writes depth | No colour |
+| Occluder | A ribbon that only writes depth | No color |
 
 A few details that took more work than they look:
 
@@ -302,5 +302,5 @@ join the two cubes. If you want to know how the rest was made, the black hole
 has [its own post](/en/blog/how-i-built-a-black-hole-in-webgl).
 
 And if you're thinking about something like this for your product — a 3D
-visualisation, an interactive piece or a website people remember — here's
+visualization, an interactive piece or a website people remember — here's
 [how I work and what I do](/en/contact/services).
