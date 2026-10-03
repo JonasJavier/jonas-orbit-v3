@@ -98,6 +98,15 @@ describe("enabled-by-default, persistent soundtrack", () => {
     expect(player.getSnapshot().playback).toBe("playing");
   });
 
+  it("pageshow before any gesture keeps it armed without building an AudioContext", async () => {
+    vi.stubGlobal("navigator", { ...navigator, userActivation: { hasBeenActive: false, isActive: false } });
+    player.startDefault();
+    player.setHidden(false); // lo que hace `pageshow` justo tras `load`
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("armed");
+    expect(AudioContext).not.toHaveBeenCalled();
+  });
+
   it("keeps the default-on intent when autoplay waits for a gesture", async () => {
     vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
     player.startDefault();

@@ -124,11 +124,16 @@ export class Soundtrack {
       (`navigator.userActivation`), go straight to `armed`: the first gesture
       (`resumeWanted`) builds the graph inside the activation, as a click does.
     */
-    if (typeof navigator !== "undefined" && navigator.userActivation?.hasBeenActive === false) {
+    if (this.mustWaitForGesture()) {
       this.update({ playback: "armed" });
       return;
     }
     void this.play(false);
+  }
+
+  /** True while the browser says no gesture has happened yet and no graph exists. */
+  private mustWaitForGesture(): boolean {
+    return this.context === null && typeof navigator !== "undefined" && navigator.userActivation?.hasBeenActive === false;
   }
 
   /** Retries a browser-blocked autoplay inside the next real user gesture.
@@ -224,7 +229,16 @@ export class Soundtrack {
   setHidden(hidden: boolean) {
     this.hidden = hidden;
     if (hidden) this.suspend();
-    else if (this.wanted) void this.play();
+    else if (this.wanted) {
+      // `pageshow` lands here right after `load`; before any gesture that
+      // would build an AudioContext only to be refused (the same warning
+      // `startDefault` avoids), and in production it raced hydration.
+      if (this.mustWaitForGesture()) {
+        this.update({ playback: "armed" });
+        return;
+      }
+      void this.play();
+    }
   }
 
   private fail() {
