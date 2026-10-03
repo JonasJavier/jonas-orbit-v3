@@ -71,6 +71,10 @@ export function NavRail({
             <Link
               className="nav-rail__link"
               href={world.href}
+              // Sin precarga por viewport: en la home los seis están siempre
+              // a la vista y pedirlos al abrir competía con la escena. La
+              // precarga la gobierna el mapa (`lib/world-prefetch.ts`).
+              prefetch={false}
               data-active={itemState !== "idle" ? "true" : undefined}
               data-rail-world={world.id}
               data-target-state={itemState}

@@ -21,6 +21,7 @@ import {
   type WorldDestination,
   type WorldNavigationState,
 } from "@/lib/world-navigation";
+import { useWorldsPrefetch } from "@/lib/world-prefetch";
 import type { WorldNavItem } from "@/lib/worlds";
 import { FlatWorldBody } from "./flat-world-body";
 import { LanguageSwitch } from "./language-switch";
@@ -96,6 +97,9 @@ export function SystemMap({
   const copy = COPY[useLocale()];
   const mapRef = useRef<HTMLElement>(null);
   const navigateToWorld = useWorldNavigation();
+  /* Los seis destinos se precargan cuando la escena ya dibuja —o al apuntar
+     uno—, no al abrir la home: ver `lib/world-prefetch.ts`. */
+  const prefetchWorld = useWorldsPrefetch(worlds);
   const [pointerTarget, setPointerTarget] = useState<WorldId | null>(null);
   const [focusTarget, setFocusTarget] = useState<WorldId | null>(null);
   const [lockedTarget, setLockedTarget] = useState<WorldId | null>(null);
@@ -216,9 +220,15 @@ export function SystemMap({
     if (sounded.current === id) sounded.current = null;
   }
 
+  function hrefOf(id: WorldId): string | undefined {
+    return worlds.find((world) => world.id === id)?.href;
+  }
+
   function acquire(id: WorldId) {
     setPointerTarget(id);
     ping(id);
+    const href = hrefOf(id);
+    if (href) prefetchWorld(href);
     if (exploreHint) explored();
   }
 
@@ -230,6 +240,8 @@ export function SystemMap({
   function focusOn(id: WorldId) {
     setFocusTarget(id);
     ping(id);
+    const href = hrefOf(id);
+    if (href) prefetchWorld(href);
     if (exploreHint) explored();
   }
 
@@ -359,6 +371,7 @@ export function SystemMap({
                   aria-hidden="true"
                   className="system-map__hit-target"
                   href={world.href}
+                  prefetch={false}
                   tabIndex={-1}
                   data-hit-shape={hitbox.shape}
                   data-hitbox-proxy={world.id}
