@@ -30,6 +30,14 @@ texto de cada canal y las guías paso a paso siguen en
 
 ## 2. Cadencia y calendario semanal
 
+> **Sustituido el 2026-10-03 por [`difusion/rutina-semanal.md`](difusion/rutina-semanal.md):**
+> Claude prepara y publica (con el «sí» de Jonás en cada pieza) desde tareas
+> programadas en su PC — lunes 9:00 preparación, martes 13:00 LinkedIn 1 +
+> blog + dev.to, jueves 9:00 LinkedIn 2 + Business Profile, viernes 9:00
+> foro de Three.js (semanal, Resources), día 27 revisión. La rutina en la
+> nube del §4 quedó desactivada. Lo de abajo queda como historia y para las
+> reglas que la nueva rutina reutiliza.
+
 | Día | Qué | Hora (Santo Domingo) | Quién |
 | --- | --- | --- | --- |
 | Lunes | La rutina deja el borrador de la entrada (§4). Revisión de comentarios de dev.to. | 08:00 | Claude → Jonás |
