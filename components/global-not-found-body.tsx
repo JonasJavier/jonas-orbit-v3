@@ -4,7 +4,6 @@ import { IntentLink as Link } from "@/components/intent-link";
 import { useEffect, useSyncExternalStore } from "react";
 import { defineCopy } from "@/lib/i18n";
 import { BlogSky } from "./blog-sky";
-import "./blog.css";
 
 const COPY = defineCopy({
   es: {

@@ -757,12 +757,12 @@ html[data-starfield="ready"] .space-backdrop__stars {
   flex-direction: column;
   padding: var(--page-gutter);
   overflow: hidden;
-  background:
-    radial-gradient(circle at 72% 50%, rgba(127,229,255,.1), transparent 26rem),
-    var(--space-void);
+  /* Sólo el resplandor: el fondo opaco lo pone el cielo del blog (`BlogSky`,
+     fijo y con z-index -1 en el contexto raíz), que un fondo opaco aquí tapaba. */
+  background: radial-gradient(circle at 72% 50%, rgba(127,229,255,.1), transparent 26rem);
 }
 
-.not-found > *:not(.not-found__orbit) {
+.not-found > *:not(.not-found__orbit):not(.blog-sky) {
   position: relative;
   z-index: 1;
   max-width: 52rem;
@@ -1030,6 +1030,9 @@ html[data-starfield="ready"] .space-backdrop__stars {
 .transmission-page,
 .privacy-page {
   position: relative;
+  /* El cielo del blog (`BlogSky`, z-index -1) queda dentro de este contexto:
+     por encima del telón del layout y por debajo del texto, como en el blog. */
+  isolation: isolate;
   width: min(100%, var(--content-max));
   min-height: calc(100svh - 7rem);
   margin-inline: auto;
@@ -4354,4 +4357,88 @@ html[data-voyage="arrive"] :is(main, .site-header, .site-footer) {
 
 html[data-voyage="arrive"][data-voyage-mode="short"] :is(main, .site-header, .site-footer) {
   animation-duration: 0.22s;
+}
+
+/*
+  El cielo del blog (`BlogSky`): lo usan el índice y las entradas del blog, la
+  nota de privacidad y la 404. Vive aquí y no en `blog.css` porque la 404 de
+  cada idioma (`app/[locale]/not-found.tsx`) forma parte del árbol de TODAS las
+  rutas: una hoja importada allí se precarga en cada página y Chrome avisa de
+  un preload sin usar en cada carga (QA 2026-10-02). En la hoja global no hay
+  nada que precargar.
+*/
+/* ── El cielo ───────────────────────────────────────────────────────────── */
+
+.blog-sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 50% -12%, #0e1832 0%, transparent 62%),
+    linear-gradient(180deg, #050915 0%, #03050c 100%);
+}
+
+.blog-sky > * {
+  position: absolute;
+}
+
+/* Nebulosas lejanas: tres manchas de color muy veladas, nunca un velo. */
+.blog-sky__nebula {
+  inset: -12%;
+  background:
+    radial-gradient(34% 26% at 80% 16%, rgb(104 82 210 / 20%), transparent 72%),
+    radial-gradient(30% 24% at 10% 58%, rgb(38 122 176 / 15%), transparent 72%),
+    radial-gradient(26% 20% at 70% 92%, rgb(206 138 74 / 8%), transparent 72%);
+  filter: blur(24px);
+}
+
+/* El campo estelar de Edmunds (`tools/prepare-edmunds-sky.mjs`) a dos escalas:
+   la lejana no llega a repetirse en ningún ancho habitual. */
+.blog-sky__stars {
+  inset: -40px;
+  background: url("/brand/edmunds-night-stars.svg") center / 1200px 750px repeat;
+  /* Más tenue donde se lee: las estrellas con púas no deben caer sobre una línea. */
+  mask-image: linear-gradient(90deg, #000 0%, rgb(0 0 0 / 38%) 30%, rgb(0 0 0 / 38%) 84%, #000 100%);
+}
+
+.blog-sky__stars--far {
+  background-size: 1900px 1188px;
+  background-position: 37% 61%;
+  opacity: 0.4;
+}
+
+.blog-sky__stars--near {
+  opacity: 0.75;
+}
+
+/* Una órbita, la firma del sitio, entrando por arriba a la derecha. */
+.blog-sky__orbit {
+  top: -16vh;
+  right: -22vw;
+  width: max(62rem, 78vw);
+  height: auto;
+  stroke: rgb(150 196 255 / 12%);
+  stroke-width: 1.1;
+}
+
+.blog-sky__orbit ellipse {
+  vector-effect: non-scaling-stroke;
+}
+
+.blog-sky__orbit circle {
+  fill: #d6ebff;
+  stroke: none;
+  filter: drop-shadow(0 0 6px #8fd3ff);
+}
+
+html[data-motion="on"] .blog-sky__stars--near {
+  animation: blog-sky-drift 180s linear infinite alternate !important;
+}
+
+@keyframes blog-sky-drift {
+  to {
+    transform: translate3d(-36px, 18px, 0);
+  }
 }

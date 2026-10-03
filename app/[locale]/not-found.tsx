@@ -4,7 +4,6 @@ import { locale as rootLocale } from "next/root-params";
 import { DEFAULT_LOCALE, isPublishedLocale } from "@/content/site.data";
 import { defineCopy } from "@/lib/i18n";
 import { BlogSky } from "@/components/blog-sky";
-import "@/components/blog.css";
 
 const COPY = defineCopy({
   es: {
