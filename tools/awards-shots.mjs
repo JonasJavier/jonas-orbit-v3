@@ -20,9 +20,20 @@
  *     hace un gesto antes, que es lo que la retira en una visita real) y sin
  *     el estado `armed` del audio.
  *
- * Trampas de medición que respeta (AGENTS.md): `jonas-orbit:reducir-efectos =
- * "false"` en localStorage, reduced-motion emulado en `no-preference` y rAF
- * vivo (la ventana está visible).
+ * Trampas de medición que respeta (AGENTS.md): reduced-motion emulado en
+ * `no-preference` y rAF vivo (la ventana está visible). No escribe
+ * `jonas-orbit:reducir-efectos = "false"`: un visitante no la tiene y con el
+ * reduced-motion emulado no hace falta.
+ *
+ * Lo que descubrió este script (QA 2026-10-02): con el encendido por defecto
+ * (`useForcedEffects` verdadero desde 09-22) el gate resuelve SIEMPRE a
+ * `orbit` —DPR tope 1,0 y 190 pasos— y `deep` no se alcanza en ningún
+ * escritorio. A DPR 2 el canvas se escala ×2 y los planetas salen con el
+ * borde en escalera; es lo mismo que ve una pantalla Retina. Por eso, además
+ * de las maestras a DPR 2 (HUD y texto nítidos), toma el escritorio a DPR 1
+ * —la resolución nativa del canvas, sin escalado— y de ésas salen los
+ * recortes de cada formulario (`awards-crops.mjs`). Apunta el nivel y el DPR
+ * de render de cada captura.
  *
  * Uso:
  *   node tools/awards-shots.mjs <carpeta-de-salida> [base] [--solo=home,projects]
@@ -43,12 +54,13 @@ const base = (positional[1] ?? "https://jonasjavier.dev").replace(/\/$/, "");
 const only = [...flags].find((f) => f.startsWith("--solo="))?.slice(7).split(",");
 mkdirSync(outDir, { recursive: true });
 
-/** Qué se captura. `settle` son los segundos de animación tras la escena viva. */
+/** Qué se captura. `settle` son los segundos de animación tras la señal de `wait` (o tras `load`). */
 const SHOTS = [
-  { id: "home", path: "/en", settle: 8, scene: true },
+  { id: "home", path: "/en", settle: 8, wait: "scene" },
   { id: "projects", path: "/en/projects", settle: 4 },
   { id: "project-omsta", path: "/en/projects/omsta", settle: 3 },
-  { id: "observatory-gargantua", path: "/en/experiments/observatory/gargantua", settle: 8, scene: true },
+  // El Observatorio libera la escena persistente y monta la suya: su señal es `data-state="nominal"`.
+  { id: "observatory-gargantua", path: "/en/experiments/observatory/gargantua", settle: 8, wait: "observatory" },
   { id: "contact", path: "/en/contact", settle: 5 },
   { id: "about", path: "/en/about", settle: 3 },
   { id: "education", path: "/en/education", settle: 5 },
@@ -58,6 +70,10 @@ const SHOTS = [
 const DESKTOP = [
   { width: 1440, height: 900, dpr: 2 },
   { width: 1920, height: 1080, dpr: 2 },
+  // A DPR 1: la resolución nativa del canvas. 1920 × 1200 da el 4:3 de
+  // Awwwards (1600 × 1200) recortando sólo los lados.
+  { width: 1920, height: 1200, dpr: 1 },
+  { width: 1920, height: 1080, dpr: 1 },
 ];
 const PHONE = { width: 390, height: 844, dpr: 3 };
 const PHONE_SHOTS = ["home", "projects", "contact", "observatory-gargantua"];
@@ -74,7 +90,6 @@ async function capture(shot, viewport, phone) {
     locale: "en-US",
   });
   await context.addInitScript(() => {
-    localStorage.setItem("jonas-orbit:reducir-efectos", "false");
     // La indicación «Toca para explorar» del teléfono ya se vio en otra visita.
     localStorage.setItem("jonas-orbit:explorar-visto", "1");
   });
@@ -95,18 +110,31 @@ async function capture(shot, viewport, phone) {
   await page.keyboard.press("Shift");
   await page.mouse.move(viewport.width - 1, viewport.height - 1);
 
-  if (shot.scene) {
+  if (shot.wait === "scene") {
     await page.waitForFunction(() => document.documentElement.dataset.sceneLive === "true", null, { timeout: 60000 });
+  } else if (shot.wait === "observatory") {
+    await page.waitForSelector('[data-state="nominal"]', { timeout: 60000 });
   }
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(async () => {
-    await Promise.all([...document.images].filter((img) => !img.complete || img.naturalWidth === 0).map((img) => img.decode().catch(() => {})));
+    // Sólo las imágenes del primer cuadro: `decode()` de una imagen perezosa
+    // fuera de pantalla no resuelve nunca (se vio en Proyectos). Y con tope,
+    // por si una tarda: la captura no puede colgarse por una vista previa.
+    const inView = [...document.images].filter((img) => {
+      const r = img.getBoundingClientRect();
+      return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && (!img.complete || img.naturalWidth === 0);
+    });
+    await Promise.all(inView.map((img) => Promise.race([img.decode().catch(() => {}), new Promise((done) => setTimeout(done, 2500))])));
   });
   await page.waitForTimeout(shot.settle * 1000);
 
+  const level = await page.evaluate(() => ({
+    scene: document.documentElement.dataset.scene ?? null,
+    renderDpr: document.querySelector("canvas[data-render-dpr]")?.getAttribute("data-render-dpr") ?? null,
+  }));
   const name = `${shot.id}-${viewport.width * viewport.dpr}x${viewport.height * viewport.dpr}${phone ? "-phone" : ""}.png`;
   await page.screenshot({ path: resolve(outDir, name), timeout: 60000 });
-  console.log(`${name}  (${renderer})`);
+  console.log(`${name}  nivel=${level.scene} dpr-render=${level.renderDpr}  (${renderer})`);
   await context.close();
 }
 

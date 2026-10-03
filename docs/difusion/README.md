@@ -276,18 +276,23 @@ Datos comunes para los formularios:
   formulario. Se rehacen con `node tools/awards-shots.mjs <carpeta>`,
   `node tools/awards-video.mjs <carpeta>` y `node tools/awards-crops.mjs
   <carpeta>` (ver `tools/README.md`). El juego:
-  - Maestras PNG a DPR 2: home (encuadre del hero), Proyectos (la mesa),
-    OMSTA (un caso), Observatorio de Gargantúa, Contacto (agujero de
-    gusano), Sobre mí, Formación (océano de Miller), Creatividad y
-    Experimentos, cada una a 2880 × 1800 y 3840 × 2160.
+  - Maestras PNG: home (encuadre del hero), Proyectos (la mesa), OMSTA (un
+    caso), Observatorio de Gargantúa, Contacto (agujero de gusano), Sobre
+    mí, Formación (océano de Miller), Creatividad y Experimentos, cada una a
+    DPR 2 (2880 × 1800 y 3840 × 2160) y a DPR 1 (1920 × 1200 y
+    1920 × 1080). Los recortes salen de las de DPR 1: la escena se dibuja a
+    1 px por punto (nivel `orbit`) y a DPR 2 va escalada (informe, #20).
   - Teléfono a DPR 3 (1170 × 2532): home, Proyectos, Contacto y el
     Observatorio de Gargantúa.
   - Recortes por formulario: `awwwards-NN-<ruta>-1600x1200.png` (imagen
     principal 4:3), `cssda-NN-<ruta>-1068x646.jpg` (≤ 150 KB) y
     `fwa-NN-<ruta>-1920x1080.jpg`; comprueba en el formulario de The FWA el
     tamaño que pide antes de subir.
-  - Vídeo `video-home-voyage-projects-1920x1080-60fps.mp4`: home → travesía
-    → Proyectos → vuelta, 20-40 s.
+  - Vídeo `video-home-voyage-projects-1920x1080-60fps.webm`: home →
+    travesía → Proyectos → vuelta, 28,6 s a 60 fps constantes (VP8; el
+    ffmpeg de Playwright no escribe MP4: Vimeo/YouTube lo aceptan tal cual).
+    Grabado en una GPU integrada a ~30 fotogramas únicos por segundo; para
+    60 reales, regrabar en una máquina con GPU dedicada.
   Lo que un jurado ve en los primeros segundos está medido en
   `docs/reviews/qa-premios-2026-10.md` (atlas plano a 0,7 s, escena a 2 s en
   fibra).

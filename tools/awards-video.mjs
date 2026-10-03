@@ -3,38 +3,55 @@
  * desde producción, con GPU real y ventana visible, a 1920×1080.
  *
  * Graba con `Page.startScreencast` de CDP (fotogramas JPEG con su marca de
- * tiempo real) y monta el vídeo con el ffmpeg que trae Playwright, a 60 fps
- * constantes: cada fotograma dura lo que duró en pantalla, así que un tirón
- * del navegador se ve como tirón y no se disimula. El script imprime la tasa
- * de fotogramas REAL que consiguió el screencast; si baja de ~50 fps en la
- * travesía, el vídeo no sirve de portada y hay que repetirlo con la máquina
- * libre.
+ * tiempo real) y monta el vídeo con el ffmpeg que trae Playwright a 60 fps
+ * constantes: cada ranura de 1/60 s lleva el último fotograma que estaba en
+ * pantalla, así que un tirón del navegador se ve como tirón y no se
+ * disimula. El script imprime la tasa de fotogramas REAL que consiguió el
+ * screencast (en una integrada AMD salió ~31 fps: la escena va a ~36); si el
+ * formulario exige 60 fps de verdad hay que grabarlo en una máquina con GPU
+ * dedicada.
+ *
+ * El ffmpeg de Playwright sólo trae el códec VP8 y el demuxer `image2pipe`
+ * (ni libx264 ni `concat`): la salida es WebM. Vimeo y YouTube lo aceptan tal
+ * cual; para un MP4 hace falta un ffmpeg completo (`ffmpeg -i video.webm
+ * -c:v libx264 -crf 17 video.mp4`).
  *
  * Uso:
- *   node tools/awards-video.mjs <carpeta-de-salida> [base]
+ *   node tools/awards-video.mjs <carpeta-de-salida> [base] [--solo-montaje]
  *
- * Respeta las trampas de medición de AGENTS.md igual que `awards-shots.mjs`.
+ * `--solo-montaje` no graba: monta los fotogramas que quedaron en `_frames/`
+ * de una grabación anterior.
+ *
+ * Respeta las trampas de medición de AGENTS.md igual que `awards-shots.mjs`
+ * (y, como él, NO escribe `reducir-efectos`).
  */
 import { chromium } from "@playwright/test";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
-const [outArg = "../jonas-orbit-premios/capturas", base = "https://jonasjavier.dev"] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const montajeSolo = args.includes("--solo-montaje");
+const [outArg = "../jonas-orbit-premios/capturas", base = "https://jonasjavier.dev"] = args.filter((a) => !a.startsWith("--"));
 const outDir = resolve(outArg);
 const framesDir = resolve(outDir, "_frames");
-rmSync(framesDir, { recursive: true, force: true });
-mkdirSync(framesDir, { recursive: true });
+const framesList = resolve(framesDir, "frames.json");
+if (!montajeSolo) {
+  rmSync(framesDir, { recursive: true, force: true });
+  mkdirSync(framesDir, { recursive: true });
+}
 
 const FFMPEG = resolve(homedir(), "AppData/Local/ms-playwright/ffmpeg-1011/ffmpeg-win64.exe");
 const WIDTH = 1920;
 const HEIGHT = 1080;
 
+async function record() {
 const browser = await chromium.launch({ headless: false, args: ["--ignore-gpu-blocklist", "--enable-gpu-rasterization", "--hide-scrollbars", `--window-size=${WIDTH},${HEIGHT + 120}`] });
 const context = await browser.newContext({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: 1, reducedMotion: "no-preference", locale: "en-US" });
+// Sin `reducir-efectos = "false"`: esa clave fuerza el nivel `orbit` (ver
+// `awards-shots.mjs`); con reduced-motion en `no-preference` no hace falta.
 await context.addInitScript(() => {
-  localStorage.setItem("jonas-orbit:reducir-efectos", "false");
   localStorage.setItem("jonas-orbit:explorar-visto", "1");
 });
 const page = await context.newPage();
@@ -90,22 +107,37 @@ await page.waitForTimeout(6000);
 await cdp.send("Page.stopScreencast");
 await page.waitForTimeout(500);
 await browser.close();
+writeFileSync(framesList, JSON.stringify(frames));
+return frames;
+}
 
 // ── Montaje ──────────────────────────────────────────────────────────────
+const frames = montajeSolo && existsSync(framesList) ? JSON.parse(readFileSync(framesList, "utf8")) : await record();
 if (frames.length < 10) throw new Error("Screencast sin fotogramas");
 const duration = frames.at(-1).t - frames[0].t;
 const fps = frames.length / duration;
 console.log(`fotogramas: ${frames.length} en ${duration.toFixed(1)} s → ${fps.toFixed(1)} fps reales`);
-const list = frames
-  .map((frame, i) => {
-    const next = frames[i + 1];
-    const dur = next ? Math.max(next.t - frame.t, 1 / 120) : 1 / 60;
-    return `file '${frame.file.replace(/\\/g, "/")}'\nduration ${dur.toFixed(5)}`;
-  })
-  .join("\n");
-const listFile = resolve(framesDir, "frames.txt");
-writeFileSync(listFile, `${list}\nfile '${frames.at(-1).file.replace(/\\/g, "/")}'\n`);
-const output = resolve(outDir, `video-home-voyage-projects-${WIDTH}x${HEIGHT}-60fps.mp4`);
-execFileSync(FFMPEG, ["-y", "-f", "concat", "-safe", "0", "-i", listFile, "-vf", `scale=${WIDTH}:${HEIGHT},format=yuv420p`, "-r", "60", "-fps_mode", "cfr", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-movflags", "+faststart", output], { stdio: "inherit" });
-console.log(output);
+
+// Ranuras de 1/60 s: cada una lleva el último fotograma que estaba en pantalla.
+const FPS = 60;
+const slots = [];
+let cursor = 0;
+for (let t = frames[0].t; t <= frames.at(-1).t; t += 1 / FPS) {
+  while (cursor + 1 < frames.length && frames[cursor + 1].t <= t) cursor += 1;
+  slots.push(frames[cursor].file);
+}
+const output = resolve(outDir, `video-home-voyage-projects-${WIDTH}x${HEIGHT}-60fps.webm`);
+// El ffmpeg de Playwright tampoco trae el protocolo `pipe`: los JPEG de cada
+// ranura van pegados uno tras otro en un archivo y `image2pipe` los lee de ahí.
+const stream = resolve(framesDir, "slots.mjpeg");
+const cache = new Map();
+const chunks = [];
+for (const file of slots) {
+  if (!cache.has(file)) cache.set(file, readFileSync(file));
+  chunks.push(cache.get(file));
+}
+writeFileSync(stream, Buffer.concat(chunks));
+const ffmpeg = spawn(FFMPEG, ["-y", "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", stream, "-vf", `scale=${WIDTH}:${HEIGHT}`, "-pix_fmt", "yuv420p", "-c:v", "libvpx", "-b:v", "14M", "-maxrate", "20M", "-bufsize", "30M", "-deadline", "good", "-cpu-used", "1", "-auto-alt-ref", "1", "-lag-in-frames", "16", output], { stdio: ["ignore", "inherit", "inherit"] });
+await new Promise((done, fail) => ffmpeg.on("close", (code) => (code === 0 ? done() : fail(new Error(`ffmpeg salió con ${code}`)))));
+console.log(`${output}  (${slots.length} ranuras a ${FPS} fps, ${(slots.length / FPS).toFixed(1)} s)`);
 rmSync(framesDir, { recursive: true, force: true });

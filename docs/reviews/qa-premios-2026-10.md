@@ -138,7 +138,9 @@ lo ve en una página interior o en consola; **B** detalle.
 | 1 | A | La home pedía en los primeros 3 s 1,3 MB de OTRAS páginas (RSC de los seis mundos, fotos de Sobre mí, sala, ventanal, cuatro CSS) por el prefetch de `<Link>` en el raíl, antes que el chunk de three.js; ~10 avisos de consola por ruta en todo el sitio. | Arreglado: `lib/world-prefetch.ts`, `IntentLink`, `DestinationsPrefetch` (registro). |
 | 2 | A | `/en/privacy` y `/es/privacidad` con el sistema entero animado detrás de un titular de tres líneas y 24 avisos de WebGL por carga. | Arreglado: página de lectura cubierta con el cielo del blog. |
 | 3 | M | «TESSERACTO» en páginas inglesas (Experimentos, raíl, HUD, Observatorio, pie). | Arreglado: «Tesseract» en inglés. |
-| 4 | M | «The AudioContext was not allowed to start» en cada carga. | Arreglado: la banda sonora se arma sin contexto hasta el primer gesto. |
+| 4 | M | «The AudioContext was not allowed to start» en cada carga: la banda sonora creaba su contexto al entrar y, en las cinco páginas de mundo, el bus de efectos creaba el suyo para el ambiente de la página. | Arreglado: la banda sonora se arma sin contexto y el bus no lo construye hasta el primer gesto (comprobado en producción con GPU real: consola limpia en las 15 rutas clave salvo Contacto). |
+| 4c | M | En producción el aviso volvía de forma intermitente en las páginas de mundo: `pageshow` llama a `setHidden(false)` justo tras `load` y eso arrancaba la banda sonora (creando el contexto) si la hidratación había llegado antes que `load`; en local el orden era el contrario y no se veía. | Arreglado: la misma guarda de gesto en `setHidden`; comprobado en producción tres veces seguidas. |
+| 4b | B | En Contacto, el widget de Turnstile (iframe de Cloudflare) escribe en consola sus propios avisos (`%c%d`, `powerPreference`, «No available adapters», un 401 de su sonda Private Access Token y una resolución DNS fallida de `brunhild.challenges.cloudflare.com`). | Descartado: es código de Cloudflare dentro de su iframe, no del sitio; el formulario funciona (e2e A25/A26). |
 | 5 | M | axe `label-content-name-mismatch` en 56 rutas: el `aria-label` del resumen de AUDIO, del interruptor de MOVIMIENTO, de la marca de la cabecera y del pie no contenía el texto pintado. | Arreglado: nombre por contenido oculto, sin `aria-label`. |
 | 6 | M | `og:image` de las entradas del blog en WebP: LinkedIn no pinta la tarjeta. | Arreglado: `-og.jpg` por portada (`tools/prepare-article-og.mjs`). |
 | 7 | M | Señal «Dive in / Descender» de Formación tapada por la bandeja de AUDIO y su rótulo (1440×900 y teléfono). | Arreglado: a la izquierda. |
@@ -153,6 +155,7 @@ lo ve en una página interior o en consola; **B** detalle.
 | 16 | M | Primer intento del #2 (hoja del cielo importada por la 404 de cada idioma): la 404 forma parte del árbol de TODAS las rutas y Chrome precargaba esa hoja en cada página con un aviso por carga. | Arreglado: el cielo vive en `globals.css`. |
 | 17 | B | En 4G lenta, antes de hidratar, el HUD dice «SYSTEM STANDBY» y la bandeja de AUDIO pinta OFF; al hidratar pasan a NOMINAL / ON. | Descartado: es el estado servido y dura lo que tarda el JS (en fibra, <1 s); cambiar el estado servido invertiría el parpadeo para quien apagó el audio. |
 | 18 | B | WebKit pierde parte de la perspectiva de la mesa de Proyectos (el cristal se ve menos en trapecio). | Observado, sin cambio: lectura intacta; la suite e2e corre en WebKit sin GPU y no lo reproduce igual que Safari con GPU. |
+| 20 | M | **El nivel `deep` no se alcanza en ningún escritorio.** Desde que el encendido es por defecto (`useForcedEffects` verdadero, 09-22), `evaluateCapabilities` devuelve `orbit` para todo `forced` que no sea un equipo débil, y la rama `desktopClass → deep` (DPR 1,35, 340 pasos; §5 del pivote) es código muerto en la práctica. En una pantalla Retina el canvas de `orbit` (DPR tope 1,0) se escala ×2: los bordes de los planetas y de la Endurance salen en escalera (visto en las maestras a DPR 2). | Propuesto, no cambiado: medido con GPU real (AMD integrada, 1440×900) `orbit` da 36 fps; `deep` costaría ~3,3× y no hay degradación en caliente (`system-scene.ts` no baja de nivel sin recrear la escena). Activarlo sin un vigilante de fotogramas hundiría a las integradas. Camino razonable: extender el gobernador de resolución (hoy sólo táctil) al escritorio para que suba el DPR mientras sostenga el ritmo. |
 | 19 | B | Nombre accesible del botón de idioma, del raíl y de la bandeja: coherentes; orden de tabulación de la home: salto, idioma, seis destinos, MOVIMIENTO, AUDIO. | Comprobado, sin hallazgo. |
 
 ## 4. Decisiones que cambian
@@ -167,19 +170,53 @@ lectura y pulido», 2026-10-02) y su línea en `AGENTS.md`:
 3. «Tesseract» en inglés.
 4. La banda sonora se arma sin `AudioContext`.
 
+## 4 bis. Capturas y vídeo entregados
+
+En `../jonas-orbit-premios/2026-10/` (fuera del repo), con `LEEME.md`: 40
+maestras PNG desde producción con GPU real (nueve rutas × cuatro tomas de
+escritorio: DPR 2 a 2880 × 1800 y 3840 × 2160, DPR 1 a 1920 × 1200 y
+1920 × 1080; cuatro de teléfono a 1170 × 2532), 26 recortes por formulario
+(nueve `awwwards-NN-*-1600x1200.png`, nueve `cssda-NN-*-1068x646.jpg` de 45
+a 104 KB, nueve `fwa-NN-*-1920x1080.jpg` y cuatro `awwwards-mobile-*`) y el
+vídeo `video-home-voyage-projects-1920x1080-60fps.webm` (28,6 s). Dos
+limitaciones honestas: la GPU integrada de esta máquina mueve la escena a
+~36 fps, así que el vídeo lleva ~30 fotogramas únicos por segundo montados
+a 60 constantes; y el ffmpeg disponible sólo escribe VP8/WebM (Vimeo y
+YouTube lo aceptan). Herramientas: `tools/awards-shots.mjs`,
+`awards-video.mjs`, `awards-crops.mjs`.
+
 ## 5. Lo que queda para Jonás
 
 - Decidir sobre #12 (grafía única de la marca), #13 (títulos de cine en
-  inglés) y #14 (fuente autoalojada).
+  inglés), #14 (fuente autoalojada) y #20 (el nivel `deep` nunca se alcanza:
+  gobernador de resolución en escritorio).
+- Si quiere el vídeo con 60 fotogramas únicos por segundo: regrabarlo en
+  una máquina con GPU dedicada con `node tools/awards-video.mjs`.
 - Enviar los formularios y pagar (Awwwards 65 USD, CSS Design Awards
   50 USD; The FWA cobra por envío: comprobar la tarifa en el formulario).
 - El formulario de The FWA no se pudo leer desde aquí (la página de envío
   carga vacía sin sesión): comprobar en el propio formulario los tamaños de
   imagen que pide antes de recortar.
 
+### Producción (`https://jonasjavier.dev`, publicado en `4bb48bc`)
+
+- Códigos: `/` → 307 a `/en`; `www` y `orbit` → 308 al canónico; 404 reales
+  con estado 404; `/api/health` 200; sitemap, robots, manifiesto, CV en PDF
+  y tarjetas JPG servidos. HTML y JS con gzip; CSP, HSTS, `nosniff`,
+  `X-Frame-Options`, COOP y Permissions-Policy como en `next.config.ts`;
+  chunks inmutables un año, `public/` un día con revalidación.
+- Consola con GPU real y caché fría en las 15 rutas clave: limpia en todas
+  salvo Contacto (los avisos del iframe de Turnstile, #4b) y el 404 pedido a
+  propósito. Ninguna violación de CSP, ninguna petición fallida propia.
+- Hizo falta un segundo y un tercer pase: el bus de efectos y la ruta
+  `pageshow` de la banda sonora seguían creando un `AudioContext` en
+  producción (#4, #4c); en local no se veía por el orden en que llegaban
+  `load` y la hidratación.
+
 ### Gates y suites
 
-- `npm run check` (lint, typecheck, knip, 621 tests, build): verde.
+- `npm run check` (lint, typecheck, knip, 621 tests, build): verde en los
+  cuatro ciclos de publicación.
 - `npm run test:e2e` (Chromium + móvil): 370 de 372. Los dos fallos eran
   `miller.spec` (vista previa de un certificado con `naturalWidth 0`): el
   optimizador servía un WebP corrupto desde `.next/cache/images`, dañado al
