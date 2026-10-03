@@ -21,7 +21,7 @@ import {
   type WorldDestination,
   type WorldNavigationState,
 } from "@/lib/world-navigation";
-import { useWorldsPrefetch } from "@/lib/world-prefetch";
+import { usePrefetchOnIntent } from "@/lib/world-prefetch";
 import type { WorldNavItem } from "@/lib/worlds";
 import { FlatWorldBody } from "./flat-world-body";
 import { LanguageSwitch } from "./language-switch";
@@ -97,9 +97,9 @@ export function SystemMap({
   const copy = COPY[useLocale()];
   const mapRef = useRef<HTMLElement>(null);
   const navigateToWorld = useWorldNavigation();
-  /* Los seis destinos se precargan cuando la escena ya dibuja —o al apuntar
-     uno—, no al abrir la home: ver `lib/world-prefetch.ts`. */
-  const prefetchWorld = useWorldsPrefetch(worlds);
+  /* El destino apuntado o enfocado se precarga al momento; los seis, cuando
+     la escena ya dibuja (desde el layout): ver `lib/world-prefetch.ts`. */
+  const prefetchWorld = usePrefetchOnIntent();
   const [pointerTarget, setPointerTarget] = useState<WorldId | null>(null);
   const [focusTarget, setFocusTarget] = useState<WorldId | null>(null);
   const [lockedTarget, setLockedTarget] = useState<WorldId | null>(null);
