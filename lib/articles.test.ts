@@ -50,6 +50,9 @@ describe("blog", () => {
           expect(publicFile(`${base}-800.webp`), `${base}-800`).toBe(true);
           expect(publicFile(`${base}-1600.webp`), `${base}-1600`).toBe(true);
         }
+        // La tarjeta al compartir es JPG (LinkedIn no pinta WebP): `tools/prepare-article-og.mjs`.
+        const cover = articleImage(article, articleCover(article));
+        expect(publicFile(`${cover}-og.jpg`), `${cover}-og`).toBe(true);
       }
     }
   });

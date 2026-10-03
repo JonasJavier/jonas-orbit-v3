@@ -88,7 +88,9 @@ export function articleMetadata(article: Article, locale: Locale): Metadata {
       url: articlePath(article.id, locale),
       publishedTime: article.published,
       authors: [SITE_PROFILE.name],
-      images: [{ url: `${articleImage(article, articleCover(article))}-1600.webp`, width: 1600, height: 900, alt: prose.coverAlt }],
+      // JPG y no el WebP de 1600: LinkedIn no pinta tarjetas WebP
+      // (`tools/prepare-article-og.mjs`). El WebP sigue en el sitemap de imágenes.
+      images: [{ url: `${articleImage(article, articleCover(article))}-og.jpg`, width: 1200, height: 630, type: "image/jpeg", alt: prose.coverAlt }],
     },
   };
 }

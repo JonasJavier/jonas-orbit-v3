@@ -34,6 +34,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `disk-cohesion.mjs` | si el disco se lee como una masa: familia de tono, estratos, energía fina y coherencia por región |
 | `disk-silhouette.mjs` | perfil de luz columna a columna: si el brazo termina en punta o se disuelve |
 | `shot-diff.mjs` | diferencia entre dos capturas, con su suelo de ruido, para probar que un refactor no cambió la imagen |
+| `prepare-article-og.mjs` | la tarjeta JPG (1200 × 630) de la portada de cada entrada del blog, leída de `content/articles.data.ts`; LinkedIn no pinta WebP |
 | `glsl-check.mjs` | falla si hay backticks dentro de los shaders |
 | `graph-check.mjs` | no es de la escena: comprueba que el grafo de codebase-memory no tenga fantasmas ni ruido (`npm run graph:check`; ver `docs/ai/codebase-memory.md`) |
 
