@@ -35,6 +35,9 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `disk-silhouette.mjs` | perfil de luz columna a columna: si el brazo termina en punta o se disuelve |
 | `shot-diff.mjs` | diferencia entre dos capturas, con su suelo de ruido, para probar que un refactor no cambió la imagen |
 | `prepare-article-og.mjs` | la tarjeta JPG (1200 × 630) de la portada de cada entrada del blog, leída de `content/articles.data.ts`; LinkedIn no pinta WebP |
+| `awards-shots.mjs` | capturas de PORTADA para los premios desde producción: ventana con GPU real (se niega con SwiftShader), DPR 2 en escritorio y 3 en teléfono, escena calentada, sin burbuja de audio; salida FUERA del repo |
+| `awards-video.mjs` | vídeo home → travesía → Proyectos → vuelta a 1920 × 1080, screencast de CDP con tiempos reales montado a 60 fps con el ffmpeg de Playwright; imprime la tasa real conseguida |
+| `awards-crops.mjs` | de las maestras de `awards-shots.mjs`, los tamaños de cada formulario: Awwwards 1600 × 1200 PNG, CSS Design Awards 1068 × 646 JPG ≤ 150 KB, 16:9 a 1920 × 1080 para The FWA |
 | `glsl-check.mjs` | falla si hay backticks dentro de los shaders |
 | `graph-check.mjs` | no es de la escena: comprueba que el grafo de codebase-memory no tenga fantasmas ni ruido (`npm run graph:check`; ver `docs/ai/codebase-memory.md`) |
 
@@ -283,6 +286,18 @@ que la propia escena escribe en cada fotograma, así que lo que imprime es
 exactamente lo que dibuja el navegador. Una copia de la trigonometría de
 `system-scene.ts` se desincronizaría el día que alguien tocara la pose y a partir
 de ahí mentiría en silencio.
+
+## Lighthouse local, sin Chrome instalado
+
+`npx lighthouse` no encuentra navegador en este equipo: hay que darle el
+Chromium de Playwright con `CHROME_PATH` (por ejemplo
+`%LOCALAPPDATA%\ms-playwright\chromium-<build>\chrome-win64\chrome.exe`) y
+pasarle `--chrome-flags="--headless=new --use-angle=swiftshader
+--enable-unsafe-swiftshader"` si la ruta lleva escena. Dos cosas que el QA de
+premios (2026-10-02) aprendió a golpes: con la ruta del repo (lleva un
+espacio) los argumentos van entre comillas, y SwiftShader compila los shaders
+en la CPU, así que el TBT de una ruta con escena sale inflado: vale para A/B
+entre dos builds, no como cifra absoluta. Medianas de tres pasadas como mínimo.
 
 ## Por qué hace falta `shot.mjs` y no vale abrir la página
 

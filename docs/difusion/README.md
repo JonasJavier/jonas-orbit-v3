@@ -270,8 +270,27 @@ Datos comunes para los formularios:
   > without WebGL the same content and routes render as a flat 2D atlas, and the
   > site is fully bilingual (English/Spanish).
 
-- **Capturas:** haz capturas de escritorio de la home, Proyectos, el
-  Observatorio de Gargantúa y Contacto al tamaño que pida cada formulario.
+- **Capturas y vídeo (QA de premios, 2026-10-02):** hechas desde producción
+  con GPU real, en inglés, y guardadas FUERA del repo en
+  `../jonas-orbit-premios/2026-10/` con un `LEEME.md` que dice qué va en cada
+  formulario. Se rehacen con `node tools/awards-shots.mjs <carpeta>`,
+  `node tools/awards-video.mjs <carpeta>` y `node tools/awards-crops.mjs
+  <carpeta>` (ver `tools/README.md`). El juego:
+  - Maestras PNG a DPR 2: home (encuadre del hero), Proyectos (la mesa),
+    OMSTA (un caso), Observatorio de Gargantúa, Contacto (agujero de
+    gusano), Sobre mí, Formación (océano de Miller), Creatividad y
+    Experimentos, cada una a 2880 × 1800 y 3840 × 2160.
+  - Teléfono a DPR 3 (1170 × 2532): home, Proyectos, Contacto y el
+    Observatorio de Gargantúa.
+  - Recortes por formulario: `awwwards-NN-<ruta>-1600x1200.png` (imagen
+    principal 4:3), `cssda-NN-<ruta>-1068x646.jpg` (≤ 150 KB) y
+    `fwa-NN-<ruta>-1920x1080.jpg`; comprueba en el formulario de The FWA el
+    tamaño que pide antes de subir.
+  - Vídeo `video-home-voyage-projects-1920x1080-60fps.mp4`: home → travesía
+    → Proyectos → vuelta, 20-40 s.
+  Lo que un jurado ve en los primeros segundos está medido en
+  `docs/reviews/qa-premios-2026-10.md` (atlas plano a 0,7 s, escena a 2 s en
+  fibra).
 
 ## 7. Seguimiento (en 3–4 semanas)
 
