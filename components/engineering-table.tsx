@@ -804,11 +804,13 @@ export function EngineeringTable({
           ref={toggleRef}
           aria-controls="table-dock-list"
           aria-expanded={listOpen}
-          aria-label={t.changeProject(current.name, currentIndex + 1, projects.length)}
           className="table-dock__toggle"
           onClick={() => setListOpen((open) => !open)}
           type="button"
         >
+          {/* Nombre por contenido, no por `aria-label`: axe (WCAG 2.5.3) exigía
+              que el «01 / 05» pintado estuviera en el nombre. */}
+          <span className="visually-hidden">{t.changeProject(current.name, currentIndex + 1, projects.length)}</span>
           <span aria-hidden="true">
             {pad(currentIndex + 1)} <span className="table-dock__toggle-of">/ {pad(projects.length)}</span>
           </span>
