@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { LocaleProvider } from "@/components/locale-provider";
 import { MotionToggle } from "@/components/motion-toggle";
 import { GargantuaSystem } from "@/components/scene/gargantua-system";
@@ -29,6 +29,16 @@ const COPY = defineCopy({
     skip: "Skip to content",
   },
 });
+
+/**
+ * El color de la interfaz del navegador (barra de Android, pestañas de Safari)
+ * y el esquema oscuro: sin esto, el marco del móvil quedaba blanco alrededor
+ * de un sitio que es todo espacio.
+ */
+export const viewport: Viewport = {
+  themeColor: "#03050a",
+  colorScheme: "dark",
+};
 
 export async function generateMetadata({
   params,
