@@ -19,6 +19,61 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## QA para premios — precarga diferida, páginas de lectura y pulido (2026-10-02)
+
+El dueño pidió dejar el sitio impecable para Awwwards, CSS Design Awards y The
+FWA: QA completo como jurado, arreglar, publicar y preparar capturas. El
+informe con la línea base, cada hallazgo y su estado está en
+`docs/reviews/qa-premios-2026-10.md`; aquí sólo las decisiones que cambian
+reglas vigentes.
+
+- **Los seis destinos ya no se precargan al abrir la página.** El §7 del
+  pivote («la ruta se prefetchea antes de empezar») sigue en pie, pero cambia
+  el CUÁNDO. `<Link>` precargaba cada ruta al entrar en el viewport, y los
+  seis destinos están siempre a la vista (raíl de la home, cabecera de las
+  demás páginas). Medido el 2026-10-02 sobre `next start` en la home: a los
+  2,1 s de abrirla el navegador pedía el RSC de los seis mundos (565 KB) y,
+  con él, lo que esas páginas declaran con `preload` —el cielo y las ocho
+  fotos de Sobre mí, la sala de Proyectos, el ventanal de Experimentos— más
+  cuatro hojas de estilo ajenas: 1,3 MB de otras páginas pedidos ANTES que el
+  chunk de three.js (872 KB) que dibuja la escena. Y en consola, «preloaded
+  but not used» en cada ruta: 1 830 avisos en 174 cargas. Ahora
+  `lib/world-prefetch.ts` manda: el destino apuntado o enfocado se precarga
+  al momento (`IntentLink`, `nav-rail`, el mapa), y los seis a la vez cuando
+  la escena ya dibuja (`data-scene-live`) o seis segundos después del ocio
+  posterior a la carga (fuera de la home la escena está cubierta y no
+  publica nunca). El plazo es largo a propósito: Chrome avisa de los preload
+  sin usar unos segundos después de `load`, y una precarga dentro de esa
+  ventana sigue ensuciando la consola aunque ya no compita con nada. El
+  footer ya no precargaba (decisión de 09-23); ahora ningún enlace a un
+  mundo lo hace por estar a la vista. Cifras A/B de Lighthouse en el informe.
+- **La nota de privacidad es una página de lectura, como el blog.** Caía en
+  la pose de la home (`cameraPoseForRoute(null)`): el sistema entero,
+  animado y a plena opacidad, detrás de un titular de tres líneas, y 24
+  avisos `GL_INVALID_FRAMEBUFFER_OPERATION` por carga. Ahora `isPrivacyPath`
+  la cubre como al blog y lleva el mismo cielo opaco (`BlogSky`). La 404 —que
+  se sirve sin layout y sin escena— lleva ese cielo también: era la única
+  página sobre un fondo liso. `cameraPoseForRoute(null)` sigue siendo la
+  home para cualquier otra ruta sin mundo.
+- **El Tesseracto se llama «Tesseract» en inglés.** `cosmicName` era la misma
+  cadena en los dos idiomas y «TESSERACTO» en una página inglesa se leía como
+  errata. Se localiza en `lib/worlds.ts` igual que su slug del Observatorio;
+  los demás nombres son propios y no cambian. Las entradas del blog en inglés
+  pasan a ortografía americana (center, color, visualization, recognize),
+  que es la de la interfaz.
+- **La banda sonora se arma sin crear un `AudioContext`.** Crearlo al entrar
+  sólo para que el navegador lo rechazara imprimía «The AudioContext was not
+  allowed to start» en cada carga (168 avisos en 174). Si
+  `navigator.userActivation.hasBeenActive` es `false`, el reproductor pasa
+  a `armed` sin tocar Web Audio y el primer gesto construye el grafo dentro
+  de la activación. Mismo estado visible; una línea menos en consola.
+- **Detalles de premio:** manifiesto web (`app/manifest.ts`) y `theme-color`
+  oscuro (el marco del móvil quedaba blanco alrededor de un sitio que es todo
+  espacio); la señal «Descender / Dive in» de Miller pasa a la izquierda
+  porque a la derecha la tapaba la bandeja de MOVIMIENTO/AUDIO y su rótulo;
+  `og:image` de las entradas del blog en JPG (`prepare-article-og.mjs`)
+  porque LinkedIn no pinta tarjetas WebP.
+
 ## Presencia web — el repo como proyecto entero y la rutina semanal (2026-10-02)
 
 El dueño: el sitio no es el proyecto; el proyecto es su presencia web entera

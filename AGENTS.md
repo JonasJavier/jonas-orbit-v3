@@ -83,6 +83,14 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Transversales (mandan sobre todo lo anterior en su ámbito)
 
+- **QA para premios** (10-02) registro «QA para premios — precarga diferida,
+  páginas de lectura y pulido» — los seis destinos NO se precargan por estar
+  a la vista: el apuntado al momento (`IntentLink`) y los seis cuando la
+  escena dibuja o 6 s tras el ocio (`lib/world-prefetch.ts`); privacidad y
+  404 son páginas de lectura con el cielo del blog y la escena dormida;
+  «Tesseract» en inglés; la banda sonora se arma sin `AudioContext`; informe
+  en `docs/reviews/qa-premios-2026-10.md`.
+
 - **Identidad pública y CV** (10-01) registro de igual nombre — LinkedIn
   `https://www.linkedin.com/in/jonas-javier-encarnacion/`, GitHub
   `https://github.com/JonasJavier`; Multimedia ITLA: ocho meses sin titulación;
