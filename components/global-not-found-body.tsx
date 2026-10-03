@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
 import { defineCopy } from "@/lib/i18n";
+import { BlogSky } from "./blog-sky";
+import "./blog.css";
 
 const COPY = defineCopy({
   es: {
@@ -47,6 +49,9 @@ export function GlobalNotFoundBody() {
 
   return (
     <main className="not-found" id="main-content">
+      {/* El mismo cielo del blog: la 404 se sirve sin layout y sin escena, y
+          sin él era la única página del sitio sobre un fondo liso. */}
+      <BlogSky />
       <div className="not-found__orbit" aria-hidden="true">
         <span />
       </div>

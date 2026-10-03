@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findWorldRoute, isBlogPath, type WorldRoute } from "./world-route";
+import { findWorldRoute, isBlogPath, isPrivacyPath, type WorldRoute } from "./world-route";
 
 const routes: WorldRoute[] = [
   { href: "/es/sobre-mi", id: "gargantua", accent: "#ffb45c" },
@@ -49,5 +49,18 @@ describe("isBlogPath (la escena duerme bajo el cielo del blog)", () => {
     expect(isBlogPath("/es")).toBe(false);
     expect(isBlogPath("/es/experimentos")).toBe(false);
     expect(isBlogPath("/es/experimentos/blog")).toBe(false);
+  });
+});
+
+describe("isPrivacyPath (la nota legal se lee con la escena dormida)", () => {
+  it("casa la nota en los dos idiomas", () => {
+    expect(isPrivacyPath("/es/privacidad")).toBe(true);
+    expect(isPrivacyPath("/en/privacy")).toBe(true);
+  });
+
+  it("no casa la home ni un mundo", () => {
+    expect(isPrivacyPath("/en")).toBe(false);
+    expect(isPrivacyPath("/en/contact")).toBe(false);
+    expect(isPrivacyPath("/en/contact/privacy")).toBe(false);
   });
 });

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { locale as rootLocale } from "next/root-params";
 import { DEFAULT_LOCALE, isPublishedLocale } from "@/content/site.data";
 import { defineCopy } from "@/lib/i18n";
+import { BlogSky } from "@/components/blog-sky";
+import "@/components/blog.css";
 
 const COPY = defineCopy({
   es: {
@@ -38,6 +40,7 @@ export default async function NotFound() {
   const copy = COPY[locale];
   return (
     <main className="not-found" id="main-content">
+      <BlogSky />
       <div className="not-found__orbit" aria-hidden="true">
         <span />
       </div>

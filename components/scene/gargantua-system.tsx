@@ -13,6 +13,7 @@ import {
   findWorldRoute,
   isBlogPath,
   isObservatoryPath,
+  isPrivacyPath,
   type WorldRoute,
 } from "@/lib/world-route";
 import {
@@ -135,7 +136,8 @@ export function GargantuaSystem({
   const worldRoute = findWorldRoute(pathname, routes);
   const worldId = worldRoute?.id ?? null;
   const worldIdRef = useRef<WorldId | null>(worldId);
-  const covered = isCoveredRoute(worldRoute) || isBlogPath(pathname);
+  const covered =
+    isCoveredRoute(worldRoute) || isBlogPath(pathname) || isPrivacyPath(pathname);
   const coveredRef = useRef(covered);
 
   /**

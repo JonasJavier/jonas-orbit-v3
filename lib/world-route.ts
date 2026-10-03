@@ -84,3 +84,15 @@ const BLOG_SEGMENTS: readonly string[] = Object.values(PATH_SEGMENTS.blog);
 export function isBlogPath(pathname: string): boolean {
   return BLOG_SEGMENTS.includes(pathname.split("/")[2] ?? "");
 }
+
+const PRIVACY_SEGMENTS: readonly string[] = Object.values(PATH_SEGMENTS.privacy);
+
+/**
+ * La nota de privacidad (`/es/privacidad`, `/en/privacy`) es una página para
+ * leer, como el blog: lleva el mismo cielo opaco y la escena duerme debajo.
+ * Antes caía en la pose de la home y el sistema entero —animado y a plena
+ * opacidad— quedaba detrás de un titular de tres líneas.
+ */
+export function isPrivacyPath(pathname: string): boolean {
+  return PRIVACY_SEGMENTS.includes(pathname.split("/")[2] ?? "");
+}

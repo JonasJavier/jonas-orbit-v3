@@ -5,6 +5,7 @@ import { privacyLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";
 import { pageAlternatesMetadata, privacyPath, worldPath } from "@/lib/page-paths";
 import { defaultOgImage, siteOpenGraph } from "@/lib/site-metadata";
+import { BlogSky } from "./blog-sky";
 import { SiteShell } from "./site-shell";
 
 const COPY = defineCopy({
@@ -90,6 +91,9 @@ export function PrivacyPage({ locale }: { locale: Locale }) {
       mainClassName="privacy-page"
       footerLabel={privacyLabel(locale)}
     >
+      {/* Página para leer: el mismo cielo opaco del blog, con la escena
+          persistente dormida debajo (`isPrivacyPath`). */}
+      <BlogSky />
       <p className="section-kicker">{copy.kicker}</p>
       <h1>{copy.heading}</h1>
       <p className="privacy-page__lead">{copy.lead}</p>
