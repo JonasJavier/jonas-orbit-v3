@@ -24,6 +24,16 @@ export interface World extends WorldStructuralData {
 export const RESERVED_SEGMENTS: readonly string[] = ["privacidad", "privacy"];
 
 /**
+ * Los nombres de los cuerpos son propios y no se traducen (Gargantúa, Miller,
+ * Endurance, Edmunds, Ranger). El Tesseracto es la excepción, igual que en su
+ * slug del Observatorio (`observatory-slugs.ts`): en inglés es «Tesseract», y
+ * «Tesseracto» en una página inglesa se leía como una errata.
+ */
+const LOCALIZED_BODY_NAMES: Partial<Record<WorldId, Record<Locale, string>>> = {
+  tesseract: { es: "Tesseracto", en: "Tesseract" },
+};
+
+/**
  * Compone los datos estructurales (neutrales) con la prosa localizada.
  * La unión usa WorldId canónico — nunca el slug de URL, que puede cambiar
  * o localizarse sin romper la relación con la escena.
@@ -37,7 +47,13 @@ export function getWorld(id: WorldId, locale: Locale): World {
     // llegar aquí significa pedir un idioma no publicado.
     throw new Error(`No hay prosa para el mundo "${id}" en "${locale}".`);
   }
-  return { id, ...worldsData[id], prose };
+  const data = worldsData[id];
+  return {
+    id,
+    ...data,
+    cosmicName: LOCALIZED_BODY_NAMES[id]?.[locale] ?? data.cosmicName,
+    prose,
+  };
 }
 
 /** Los 6 mundos de un idioma, en orden narrativo. */

@@ -11,6 +11,17 @@ import {
   getWorlds,
 } from "./worlds";
 
+describe("nombre del cuerpo por idioma", () => {
+  it("el Tesseracto es «Tesseract» en inglés y los demás nombres no cambian", () => {
+    expect(getWorld("tesseract", "es").cosmicName).toBe("Tesseracto");
+    expect(getWorld("tesseract", "en").cosmicName).toBe("Tesseract");
+    expect(getWorldNavItems("en").find((world) => world.id === "tesseract")?.cosmicName).toBe("Tesseract");
+    for (const id of WORLD_IDS.filter((candidate) => candidate !== "tesseract")) {
+      expect(getWorld(id, "en").cosmicName).toBe(getWorld(id, "es").cosmicName);
+    }
+  });
+});
+
 describe("getWorld / getWorlds (composición id + locale)", () => {
   it("compone estructura y prosa para cada mundo de cada idioma publicado", () => {
     // Itera PUBLISHED_LOCALES: en F1A cubre solo es; al publicar en (F2A) la
