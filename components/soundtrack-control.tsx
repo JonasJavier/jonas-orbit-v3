@@ -163,8 +163,10 @@ export function SoundtrackControl() {
           event.currentTarget.querySelector("summary")?.focus();
         }
       }}>
-        <summary aria-label="Audio" title={waiting ? copy.waitingTitle : tray === "on" ? copy.onTitle : tray === "muted" ? copy.mutedTitle : copy.offTitle}>
+        <summary title={waiting ? copy.waitingTitle : tray === "on" ? copy.onTitle : tray === "muted" ? copy.mutedTitle : copy.offTitle}>
           <Speaker state={tray} />
+          {/* Nombre por contenido, no por `aria-label` (WCAG 2.5.3, ver motion-toggle). */}
+          <span className="visually-hidden">Audio</span>
           <span className="tray-state" aria-hidden="true">{tray === "muted" ? "Mute" : tray}</span>
         </summary>
         <div className="soundtrack__panel">

@@ -191,8 +191,11 @@ export function SiteHeader({
         <Link
           className="brand-lockup"
           href={`/${locale}`}
-          aria-label={copy.home}
         >
+          {/* El nombre va en el contenido: con `aria-label` axe comparaba
+              «Jonás Orbit» con el «JONÁS RBIT» pintado (la O es un SVG) y lo
+              marcaba como «label in name» (WCAG 2.5.3). */}
+          <span className="visually-hidden">{copy.home}</span>
           <strong className="voyage-wordmark" aria-hidden="true">
             <span>JONÁS</span>
             <span className="voyage-wordmark__orbit">

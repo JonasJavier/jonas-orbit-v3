@@ -36,7 +36,8 @@ describe("Footer · cierre del viaje", () => {
     ]);
     expect(within(nav).getByRole("link", { name: /Formación/ })).toHaveAttribute("aria-current", "location");
     expect(within(root).getByRole("link", { name: "Hablemos de tu proyecto" })).toHaveAttribute("href", "/es/contacto");
-    expect(within(root).getByRole("link", { name: "Mapa estelar, volver al sistema" })).toHaveAttribute("href", "/es");
+    // El nombre sale del contenido pintado («Mapa estelar» + «Volver al sistema»), sin `aria-label`.
+    expect(within(root).getByRole("link", { name: /Mapa estelar/ })).toHaveAttribute("href", "/es");
     expect(within(root).getByRole("link", { name: "Email" })).toHaveAttribute("href", `mailto:${SITE_PROFILE.email}`);
     expect(within(root).getByRole("link", { name: "Volver arriba" })).toHaveAttribute("href", "#main-content");
     expect(within(root).getByRole("link", { name: "Privacidad" })).toHaveAttribute("href", "/es/privacidad");

@@ -25,7 +25,6 @@ const COPY = defineCopy({
     pitch: "Diseño y desarrollo para llevarla más lejos.",
     writeMe: "Escríbeme directamente",
     talk: "Hablemos de tu proyecto",
-    portalLabel: "Mapa estelar, volver al sistema",
     map: "Mapa estelar",
     backToSystem: "Volver al sistema",
     navLabel: "Destinos del pie",
@@ -47,7 +46,6 @@ const COPY = defineCopy({
     pitch: "Design and engineering to take it further.",
     writeMe: "Email me directly",
     talk: "Let's talk about your project",
-    portalLabel: "Star map, back to the system",
     map: "Star map",
     backToSystem: "Back to the system",
     navLabel: "Footer destinations",
@@ -94,7 +92,8 @@ export function SiteFooter({ locale, activeWorldId, label }: {
             )}
           </div>
 
-          <Link className="site-footer__portal" href={`/${locale}`} prefetch={false} aria-label={copy.portalLabel}>
+          {/* Sin `aria-label`: «Mapa estelar · Volver al sistema» ya es el nombre (WCAG 2.5.3). */}
+          <Link className="site-footer__portal" href={`/${locale}`} prefetch={false}>
             <svg className="site-footer__orrery" viewBox="0 0 360 360" fill="none" aria-hidden="true">
               <circle className="site-footer__orbit-outer" cx="180" cy="180" r="164" />
               <circle cx="180" cy="180" r="140" strokeDasharray="1 9" />
@@ -130,9 +129,11 @@ export function SiteFooter({ locale, activeWorldId, label }: {
 
         <div className="site-footer__identity">
           <div>
-            <Link className="site-footer__brand" href={`/${locale}`} prefetch={false} aria-label={copy.brandLabel}>
-              <span>JONÁS</span>
-              <span className="site-footer__wordmark-orbit"><svg viewBox="0 0 26 28" fill="none" aria-hidden="true"><circle cx="13" cy="14" r="9.5" /><path d="M2.5 26 23.5 2" /></svg>RBIT</span>
+            <Link className="site-footer__brand" href={`/${locale}`} prefetch={false}>
+              {/* Nombre por contenido, no por `aria-label` (WCAG 2.5.3, ver site-header). */}
+              <span className="visually-hidden">{copy.brandLabel}</span>
+              <span aria-hidden="true">JONÁS</span>
+              <span className="site-footer__wordmark-orbit" aria-hidden="true"><svg viewBox="0 0 26 28" fill="none" aria-hidden="true"><circle cx="13" cy="14" r="9.5" /><path d="M2.5 26 23.5 2" /></svg>RBIT</span>
             </Link>
             <p>{SITE_PROFILE.jobTitle[locale]}</p>
           </div>

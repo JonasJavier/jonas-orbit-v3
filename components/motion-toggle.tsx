@@ -52,7 +52,6 @@ export function MotionToggle() {
       className="motion-toggle"
       type="button"
       aria-pressed={enabled}
-      aria-label={enabled ? copy.turnOff : copy.turnOn}
       title={enabled ? copy.onTitle : copy.offTitle}
       data-state={enabled ? "on" : "off"}
       onClick={() => setMotionEnabled(!enabled)}
@@ -67,6 +66,10 @@ export function MotionToggle() {
         <circle className="motion-toggle__core" cx="12" cy="12" r="2.6" />
         {enabled ? null : <path className="tray-slash" d="M3.5 20.5 20.5 3.5" />}
       </svg>
+      {/* El nombre va en el contenido y no en `aria-label`: con un `aria-label`
+          que no contenía el «On/Off» pintado, axe lo marcaba como «label in
+          name» (WCAG 2.5.3) aunque ese texto fuese aria-hidden. */}
+      <span className="visually-hidden">{enabled ? copy.turnOff : copy.turnOn}</span>
       <span className="tray-state" aria-hidden="true">{enabled ? "On" : "Off"}</span>
     </button>
   );

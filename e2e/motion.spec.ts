@@ -110,7 +110,7 @@ test("movimiento: el icono es alcanzable con teclado en móvil y no tapa la band
   const box = await toggle.boundingBox();
   expect(box!.width).toBeGreaterThanOrEqual(44);
   expect(box!.height).toBeGreaterThanOrEqual(44);
-  const audio = await page.locator('summary[aria-label="Audio"]').boundingBox();
+  const audio = await page.locator(".soundtrack summary").boundingBox();
   expect(box!.x + box!.width).toBeLessThanOrEqual(audio!.x + 1);
   await toggle.focus();
   await page.keyboard.press("Enter");

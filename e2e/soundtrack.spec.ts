@@ -17,7 +17,7 @@ test("audio starts by default and survives route navigation with the same media"
   });
   await page.goto("/es?no3d=1");
   const control = page.getByRole("complementary", { name: "Banda sonora" });
-  const audioButton = control.locator('summary[aria-label="Audio"]');
+  const audioButton = control.locator("summary");
   await expect(audioButton).toBeVisible();
   // ON from the first paint, even while the browser holds audible autoplay
   // back; the first gesture (here a key) is what lets it sound.
@@ -43,7 +43,7 @@ test("audio starts by default and survives route navigation with the same media"
 
 test("volume controls support keyboard, mute and Escape", async ({ page }) => {
   await page.goto("/es?no3d=1");
-  const settings = page.locator('summary[aria-label="Audio"]');
+  const settings = page.locator(".soundtrack summary");
   await settings.focus();
   await page.keyboard.press("Enter");
   const volume = page.getByRole("slider", { name: "Volumen" });
@@ -68,7 +68,7 @@ test("volume controls support keyboard, mute and Escape", async ({ page }) => {
 test("audio failure is recoverable and leaves navigation usable", async ({ page }) => {
   await page.route("**/audio/**", (route) => route.abort());
   await page.goto("/es?no3d=1");
-  await page.locator('summary[aria-label="Audio"]').click();
+  await page.locator(".soundtrack summary").click();
   await expect(page.getByRole("button", { name: "Reintentar música" })).toBeVisible();
   await expect(page.locator('.soundtrack > [role="status"]')).toContainText("No se pudo reproducir");
   await page.unroute("**/audio/**");
@@ -83,7 +83,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }
   test(`audio controls remain reachable at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/es?no3d=1");
-    const audioButton = page.locator('summary[aria-label="Audio"]');
+    const audioButton = page.locator(".soundtrack summary");
     for (const control of [audioButton]) {
       const box = await control.boundingBox();
       expect(box).not.toBeNull();
@@ -114,7 +114,7 @@ test("the tray reads ON / OFF / MUTE at rest, without relying on animation", asy
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es?no3d=0");
   const audio = page.locator(".soundtrack");
-  const audioButton = page.locator('summary[aria-label="Audio"]');
+  const audioButton = page.locator(".soundtrack summary");
   const motion = page.locator(".motion-toggle");
   // Both are on by default.
   await expect(audio).toHaveAttribute("data-state", "on");
