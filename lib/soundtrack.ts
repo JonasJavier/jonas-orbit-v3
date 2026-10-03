@@ -117,6 +117,17 @@ export class Soundtrack {
       this.update({ playback: "paused" });
       return;
     }
+    /*
+      Before any gesture the browser will not let audio start, and building an
+      AudioContext just to be refused prints «The AudioContext was not allowed
+      to start» on every page load. When the browser can say so
+      (`navigator.userActivation`), go straight to `armed`: the first gesture
+      (`resumeWanted`) builds the graph inside the activation, as a click does.
+    */
+    if (typeof navigator !== "undefined" && navigator.userActivation?.hasBeenActive === false) {
+      this.update({ playback: "armed" });
+      return;
+    }
     void this.play(false);
   }
 

@@ -83,6 +83,21 @@ describe("enabled-by-default, persistent soundtrack", () => {
     expect(AudioContext).not.toHaveBeenCalled();
   });
 
+  it("before any gesture it arms itself without building an AudioContext (no console warning)", async () => {
+    vi.stubGlobal("navigator", { ...navigator, userActivation: { hasBeenActive: false, isActive: false } });
+    player.startDefault();
+    await Promise.resolve(); await Promise.resolve();
+    expect(player.getSnapshot().playback).toBe("armed");
+    expect(AudioContext).not.toHaveBeenCalled();
+    expect(Audio).not.toHaveBeenCalled();
+    // The first real gesture builds the graph inside the activation and plays.
+    vi.stubGlobal("navigator", { ...navigator, userActivation: { hasBeenActive: true, isActive: true } });
+    player.resumeWanted();
+    await Promise.resolve(); await Promise.resolve();
+    expect(AudioContext).toHaveBeenCalledTimes(1);
+    expect(player.getSnapshot().playback).toBe("playing");
+  });
+
   it("keeps the default-on intent when autoplay waits for a gesture", async () => {
     vi.mocked(media.play).mockRejectedValueOnce(new DOMException("Blocked", "NotAllowedError"));
     player.startDefault();
