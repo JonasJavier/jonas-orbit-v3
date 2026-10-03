@@ -5,10 +5,14 @@ import type { ComponentProps } from "react";
 import { usePrefetchOnIntent } from "@/lib/world-prefetch";
 
 /**
- * Un `<Link>` que no precarga por estar a la vista, sino al apuntarlo o
- * enfocarlo. Es la misma mejora progresiva —el `<a href>` navega igual sin
- * JavaScript— con la precarga puesta donde hay intención. La precarga de
- * fondo de los seis destinos la hace el layout (`lib/world-prefetch.ts`).
+ * EL `<Link>` del sitio: no precarga por estar a la vista, sino al apuntarlo,
+ * enfocarlo o tocarlo. Todo `import Link from "next/link"` del repo pasa por
+ * aquí (`import { IntentLink as Link }`); el porqué está en
+ * `lib/world-prefetch.ts`. Es la misma mejora progresiva: el `<a href>` navega
+ * igual sin JavaScript.
+ *
+ * `pointerenter` dispara también en táctil (al apoyar el dedo), así que un
+ * toque precarga antes del `click` que arranca la travesía.
  */
 export function IntentLink({ href, onPointerEnter, onFocus, ...rest }: ComponentProps<typeof Link>) {
   const prefetch = usePrefetchOnIntent();

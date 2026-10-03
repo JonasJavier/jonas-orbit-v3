@@ -1,7 +1,7 @@
 /* Las capturas son peldaños WebP ya preparados (tools/prepare-projects.mjs),
    como en la mesa: el optimizador de Next no elige entre archivos que existen. */
 /* eslint-disable @next/next/no-img-element */
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { CSSProperties, ReactNode } from "react";
 import { preload } from "react-dom";
 import type { Locale } from "@/content/site.data";

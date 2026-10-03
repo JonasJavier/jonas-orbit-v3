@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { Locale } from "@/content/site.data";
 import { defineCopy } from "@/lib/i18n";
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { CSSProperties } from "react";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
@@ -88,12 +88,12 @@ export function SiteFooter({ locale, activeWorldId, label }: {
             {activeWorldId === "ranger" ? (
               <a className="site-footer__cta" href={`mailto:${SITE_PROFILE.email}`}>{copy.writeMe} <Arrow /></a>
             ) : (
-              <Link className="site-footer__cta" href={contact.href} prefetch={false}>{copy.talk} <Arrow /></Link>
+              <Link className="site-footer__cta" href={contact.href}>{copy.talk} <Arrow /></Link>
             )}
           </div>
 
           {/* Sin `aria-label`: «Mapa estelar · Volver al sistema» ya es el nombre (WCAG 2.5.3). */}
-          <Link className="site-footer__portal" href={`/${locale}`} prefetch={false}>
+          <Link className="site-footer__portal" href={`/${locale}`}>
             <svg className="site-footer__orrery" viewBox="0 0 360 360" fill="none" aria-hidden="true">
               <circle className="site-footer__orbit-outer" cx="180" cy="180" r="164" />
               <circle cx="180" cy="180" r="140" strokeDasharray="1 9" />
@@ -116,7 +116,7 @@ export function SiteFooter({ locale, activeWorldId, label }: {
             <ol>
               {worlds.map((world) => (
                 <li key={world.id} style={{ "--destination-accent": world.accent } as CSSProperties}>
-                  <Link href={world.href} prefetch={false} aria-current={activeWorldId === world.id ? "location" : undefined}>
+                  <Link href={world.href} aria-current={activeWorldId === world.id ? "location" : undefined}>
                     <span className="site-footer__number" aria-hidden="true"><i />{String(world.order).padStart(2, "0")}</span>
                     <span className="site-footer__destination">{world.shortLabel}<small>{world.cosmicName}</small></span>
                     <span className="site-footer__destination-arrow" aria-hidden="true">↗</span>
@@ -129,7 +129,7 @@ export function SiteFooter({ locale, activeWorldId, label }: {
 
         <div className="site-footer__identity">
           <div>
-            <Link className="site-footer__brand" href={`/${locale}`} prefetch={false}>
+            <Link className="site-footer__brand" href={`/${locale}`}>
               {/* Nombre por contenido, no por `aria-label` (WCAG 2.5.3, ver site-header). */}
               <span className="visually-hidden">{copy.brandLabel}</span>
               <span aria-hidden="true">JONÁS</span>
@@ -149,9 +149,9 @@ export function SiteFooter({ locale, activeWorldId, label }: {
           <small>© {new Date().getFullYear()} Jonás Javier</small>
           <span className="site-footer__position">{label}</span>
           <nav className="site-footer__extras" aria-label={copy.extras}>
-            <Link href={blogPath(locale)} prefetch={false}>Blog</Link>
-            <Link href={servicesPath(locale)} prefetch={false}>{copy.services}</Link>
-            <Link href={privacyPath(locale)} prefetch={false}>{copy.privacy}</Link>
+            <Link href={blogPath(locale)}>Blog</Link>
+            <Link href={servicesPath(locale)}>{copy.services}</Link>
+            <Link href={privacyPath(locale)}>{copy.privacy}</Link>
           </nav>
         </div>
       </div>

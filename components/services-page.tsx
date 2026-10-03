@@ -2,7 +2,7 @@
    (`tools/prepare-projects.mjs`): se sirven tal cual, como en Proyectos. */
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { ProjectId } from "@/content/projects.data";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { screenSources } from "@/lib/engineering-table";

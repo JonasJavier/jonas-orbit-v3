@@ -12,8 +12,8 @@ import { IntentLink } from "./intent-link";
  *
  * Las rutas se precargan —§7 del pivote: la travesía es sensación de viaje y
  * no una espera disfrazada— pero no al abrir la página: `IntentLink` precarga
- * el destino apuntado y el layout precarga los seis cuando el cable queda
- * libre (`lib/world-prefetch.ts`, 2026-10-02).
+ * el destino al apuntarlo, enfocarlo o tocarlo (`lib/world-prefetch.ts`,
+ * 2026-10-02).
  */
 export function MissionNavigation({
   worlds,

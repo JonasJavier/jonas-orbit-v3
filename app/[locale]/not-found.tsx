@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { Metadata } from "next";
 import { locale as rootLocale } from "next/root-params";
 import { DEFAULT_LOCALE, isPublishedLocale } from "@/content/site.data";

@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { playSfx } from "@/lib/sfx";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";

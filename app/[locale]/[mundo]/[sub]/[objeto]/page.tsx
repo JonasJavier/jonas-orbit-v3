@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { notFound } from "next/navigation";
 import { FlatWorldBody } from "@/components/flat-world-body";
 import { ObservatoryViewer } from "@/components/observatory-viewer";

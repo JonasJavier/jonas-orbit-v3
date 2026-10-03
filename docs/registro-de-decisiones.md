@@ -37,16 +37,19 @@ reglas vigentes.
   fotos de Sobre mí, la sala de Proyectos, el ventanal de Experimentos— más
   cuatro hojas de estilo ajenas: 1,3 MB de otras páginas pedidos ANTES que el
   chunk de three.js (872 KB) que dibuja la escena. Y en consola, «preloaded
-  but not used» en cada ruta: 1 830 avisos en 174 cargas. Ahora
-  `lib/world-prefetch.ts` manda: el destino apuntado o enfocado se precarga
-  al momento (`IntentLink`, `nav-rail`, el mapa), y los seis a la vez cuando
-  la escena ya dibuja (`data-scene-live`) o seis segundos después del ocio
-  posterior a la carga (fuera de la home la escena está cubierta y no
-  publica nunca). El plazo es largo a propósito: Chrome avisa de los preload
-  sin usar unos segundos después de `load`, y una precarga dentro de esa
-  ventana sigue ensuciando la consola aunque ya no compita con nada. El
-  footer ya no precargaba (decisión de 09-23); ahora ningún enlace a un
-  mundo lo hace por estar a la vista. Cifras A/B de Lighthouse en el informe.
+  but not used» en cada ruta: 1 830 avisos en 174 cargas. Primer intento:
+  precargar los seis en segundo plano cuando la escena ya dibujara o seis
+  segundos después del ocio. No sirvió para la consola: React aplica los
+  `preload` del RSC en cuanto lo recibe y Chrome avisa de cada preload que no
+  se usa, se pida cuando se pida (medido: 14 avisos en la home y 19 en
+  Formación con la precarga diferida). Así que **todo `<Link>` del sitio pasa
+  por `IntentLink`** (`import { IntentLink as Link }`): precarga sólo al
+  apuntar, enfocar o tocar, que es cuando precede a una navegación real y los
+  preload se consumen; `pointerenter` dispara también en táctil, antes del
+  `click`. El §7 del pivote sigue —la ruta se pide antes de pulsar— y la
+  travesía (2,6 s) tapa lo que falte. El footer ya no precargaba (decisión
+  de 09-23); ahora ningún enlace lo hace por estar a la vista. Cifras A/B de
+  Lighthouse en el informe.
 - **La nota de privacidad es una página de lectura, como el blog.** Caía en
   la pose de la home (`cameraPoseForRoute(null)`): el sistema entero,
   animado y a plena opacidad, detrás de un titular de tres líneas, y 24

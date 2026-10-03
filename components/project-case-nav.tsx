@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { CaseHeading } from "@/lib/case-outline";
 

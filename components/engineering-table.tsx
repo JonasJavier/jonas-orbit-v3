@@ -4,7 +4,7 @@
    cual con `srcset`: el optimizador de Next no sabe elegir entre archivos que
    ya existen a cada ancho. */
 /* eslint-disable @next/next/no-img-element */
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import {
   useCallback,
   useEffect,

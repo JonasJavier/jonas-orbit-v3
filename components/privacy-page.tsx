@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { privacyLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";

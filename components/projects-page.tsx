@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { Locale } from "@/content/site.data";
 import { tableProject } from "@/lib/engineering-table";
 import { WORLD_COPY } from "@/lib/world-copy";

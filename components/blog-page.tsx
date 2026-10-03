@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { Locale } from "@/content/site.data";
 import { getArticles } from "@/lib/articles";
 import { blogLabel } from "@/lib/footer-labels";

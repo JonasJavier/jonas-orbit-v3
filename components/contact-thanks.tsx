@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { defineCopy } from "@/lib/i18n";
 import { homePath, worldPath } from "@/lib/page-paths";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import {
   useEffect,
   useRef,
@@ -97,8 +97,8 @@ export function SystemMap({
   const copy = COPY[useLocale()];
   const mapRef = useRef<HTMLElement>(null);
   const navigateToWorld = useWorldNavigation();
-  /* El destino apuntado o enfocado se precarga al momento; los seis, cuando
-     la escena ya dibuja (desde el layout): ver `lib/world-prefetch.ts`. */
+  /* El destino apuntado o enfocado se precarga al momento, y sólo entonces:
+     ver `lib/world-prefetch.ts`. */
   const prefetchWorld = usePrefetchOnIntent();
   const [pointerTarget, setPointerTarget] = useState<WorldId | null>(null);
   const [focusTarget, setFocusTarget] = useState<WorldId | null>(null);
@@ -371,7 +371,7 @@ export function SystemMap({
                   aria-hidden="true"
                   className="system-map__hit-target"
                   href={world.href}
-                  prefetch={false}
+                 
                   tabIndex={-1}
                   data-hit-shape={hitbox.shape}
                   data-hitbox-proxy={world.id}

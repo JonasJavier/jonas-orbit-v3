@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { defineCopy } from "@/lib/i18n";

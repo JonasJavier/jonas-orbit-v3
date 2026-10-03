@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { useLocale } from "@/components/locale-provider";
 import { defineCopy } from "@/lib/i18n";
 

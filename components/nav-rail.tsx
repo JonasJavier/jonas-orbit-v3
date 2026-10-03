@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { WorldId } from "@/content/worlds.data";
 import type { WorldNavItem } from "@/lib/worlds";
@@ -72,9 +72,9 @@ export function NavRail({
               className="nav-rail__link"
               href={world.href}
               // Sin precarga por viewport: en la home los seis están siempre
-              // a la vista y pedirlos al abrir competía con la escena. La
-              // precarga la gobierna el mapa (`lib/world-prefetch.ts`).
-              prefetch={false}
+              // a la vista y pedirlos al abrir competía con la escena. El
+              // mapa precarga el apuntado (`lib/world-prefetch.ts`).
+             
               data-active={itemState !== "idle" ? "true" : undefined}
               data-rail-world={world.id}
               data-target-state={itemState}

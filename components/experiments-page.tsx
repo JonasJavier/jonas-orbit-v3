@@ -1,7 +1,7 @@
 /* Copias responsivas preparadas por tools/prepare-experiments.mjs: la sala es
    un archivo fijo servido tal cual, sin pasar por el optimizador. */
 /* eslint-disable @next/next/no-img-element */
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { Locale } from "@/content/site.data";
 import { getArticles } from "@/lib/articles";
 import { defineCopy } from "@/lib/i18n";

@@ -1,5 +1,5 @@
 /* The photographs are responsive files prepared by tools/prepare-about.mjs. */
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { preload } from "react-dom";
 import type { Locale } from "@/content/site.data";
 import { homePath, worldPath } from "@/lib/page-paths";

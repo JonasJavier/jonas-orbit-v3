@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { DestinationsPrefetch } from "@/components/destinations-prefetch";
 import { LocaleProvider } from "@/components/locale-provider";
 import { MotionToggle } from "@/components/motion-toggle";
 import { GargantuaSystem } from "@/components/scene/gargantua-system";
@@ -155,9 +154,6 @@ export default async function LocaleLayout({
               la home ES el Sistema Gargantúa. */}
           <SiteBackdrop routes={routes} fallbackAccent={worldsData.gargantua.accent} />
           {published ? <GargantuaSystem bodies={bodies} routes={routes} /> : null}
-          {/* Los seis destinos se precargan cuando el cable queda libre, no al
-              abrir la página (`lib/world-prefetch.ts`). */}
-          {published ? <DestinationsPrefetch routes={routes} /> : null}
           {children}
           {/* La luz del cruce de la travesía: persiste como el canvas y avisa de
               la llegada al cambiar el pathname. */}

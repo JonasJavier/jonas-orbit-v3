@@ -8,7 +8,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateCapabilities } from "@/components/scene/capability";
 import { worldsData } from "@/content/worlds.data";

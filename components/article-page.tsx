@@ -2,7 +2,7 @@
    pasar por el optimizador, como la sala de Experimentos. */
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
-import Link from "next/link";
+import { IntentLink as Link } from "@/components/intent-link";
 import type { ComponentType } from "react";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { articleCover, articleImage, getArticles, type Article } from "@/lib/articles";
