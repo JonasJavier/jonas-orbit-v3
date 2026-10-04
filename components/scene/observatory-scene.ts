@@ -518,7 +518,22 @@ export function createObservatoryScene(
   const bench = readVisualBench();
   sky.setLayers(bench.atmosphere);
 
-  const composer = new EffectComposer(renderer);
+  /*
+    MSAA 4x, igual que en el System Map (2026-10-04). `antialias: true` en el
+    canvas nunca llegó a actuar —todo pasa por los targets del composer— y el
+    Observatorio es donde los especímenes se miran a seiscientos píxeles: las
+    aristas en escalera se notaban aquí más que en ningún otro sitio. Sólo
+    con GPU real y WebGL2; el perfil por software queda exactamente igual.
+  */
+  const composer = new EffectComposer(
+    renderer,
+    renderer.capabilities.isWebGL2 && renderScale === 1
+      ? new THREE.WebGLRenderTarget(1, 1, {
+          type: THREE.HalfFloatType,
+          samples: 4,
+        })
+      : undefined,
+  );
   composer.addPass(new RenderPass(scene, camera));
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(1, 1),

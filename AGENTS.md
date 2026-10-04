@@ -261,6 +261,11 @@ MDX**, nunca en `worlds.data.ts`.
   disco, microrrelieve de casco, Edmunds sin moteado de derivadas. La
   jerarquía de valor medida no se mueve; los cuerpos se juzgan con GPU real
   (`awards-shots.mjs`), nunca con `shot.mjs`.
+- **Render de cine** (10-04) registro «Render de cine — MSAA, resolución de
+  escritorio y reflejo del disco» — MSAA 4x en los composers (mapa y
+  Observatorio, sólo GPU real), el governor de resolución prueba también en
+  escritorio, reflexión de entorno analítica en los metales. ACES ya estaba
+  activo (0.95) en las tres superficies: no proponer «añadirlo».
 - **Gargantúa** `docs/design/hero-gargantua-direction.md` — §14 undecies (el
   bloom no enciende la sombra), §14 duodecies (pase final), §14 terdecies
   (cohesión del disco), §14 quaterdecies (gramática común, macro-densidad,

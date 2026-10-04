@@ -311,15 +311,18 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   // Media resolución en un rasterizador por software: ver `SOFTWARE_RENDER_SCALE`.
   const renderScale = isSoftwareRenderer(rendererName(gl)) ? SOFTWARE_RENDER_SCALE : 1;
   /*
-    En táctil el nivel `orbit` no se queda clavado en 1 píxel por punto: prueba
-    escalones más finos mientras el teléfono vaya holgado (ver
-    `resolution-governor.ts`). Ni en `deep`, que ya tiene su densidad, ni en
-    un rasterizador por software, que va a media resolución a propósito.
+    El nivel `orbit` no se queda clavado en 1 píxel por punto: prueba escalones
+    más finos mientras la GPU vaya holgada (ver `resolution-governor.ts`).
+    Nació para el táctil (2026-09-29) y desde el pase de render de cine
+    (2026-10-04) prueba también en escritorio: un monitor escalado a 1,25-2 de
+    densidad dibujaba la escena a 1,0 y el navegador la estiraba — la misma
+    blandura que motivó el governor en el teléfono. En un monitor de densidad
+    1,0 el governor no tiene escalones que probar y no hace nada. Ni en
+    `deep`, que ya tiene su densidad, ni en un rasterizador por software, que
+    va a media resolución a propósito.
   */
   const governor =
-    tier === "orbit" &&
-    renderScale === 1 &&
-    window.matchMedia("(pointer: coarse)").matches
+    tier === "orbit" && renderScale === 1
       ? createResolutionGovernor(window.devicePixelRatio || 1)
       : null;
 
@@ -413,10 +416,28 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
   }
 
   // === Post-proceso ========================================================
-  const fallbackTarget = canFloat
-    ? undefined
+  /*
+    MSAA 4x EN LA CADENA DE POST (2026-10-04). El renderer va con
+    `antialias: false` porque todo pasa por render targets, así que el flag
+    del canvas nunca suavizó nada: cada arista de las naves salía en
+    escalera de píxel entero, la señal de render barato más visible del
+    cuadro. En WebGL2 los targets del composer admiten multimuestreo y Three
+    los resuelve solo al leerlos; el raymarch es un quad y no lo nota, pero
+    el pase de los cuerpos —el único que dibuja geometría— sale con las
+    aristas resueltas de verdad. Sólo con GPU real: el perfil por software ya
+    va a media resolución a propósito y SwiftShader (CI/e2e) no paga el
+    sobrecoste, así que sus medidas no cambian.
+  */
+  const msaaSamples = canFloat && renderScale === 1 ? 4 : 0;
+  const composerTarget = canFloat
+    ? msaaSamples > 0
+      ? new THREE.WebGLRenderTarget(1, 1, {
+          type: THREE.HalfFloatType,
+          samples: msaaSamples,
+        })
+      : undefined
     : new THREE.WebGLRenderTarget(1, 1, { type: THREE.UnsignedByteType });
-  const composer = new EffectComposer(renderer, fallbackTarget);
+  const composer = new EffectComposer(renderer, composerTarget);
   composer.addPass(new RenderPass(canAccumulate ? displayScene : marchScene, quadCamera));
 
   // Los cuerpos entran en la MISMA cadena, encima del raymarch y antes del
@@ -1786,7 +1807,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       displayMaterial.dispose();
       historyRead.dispose();
       historyWrite.dispose();
-      fallbackTarget?.dispose();
+      composerTarget?.dispose();
       savePass?.dispose();
       shadowGuardPass?.dispose();
       voyagePass.dispose();

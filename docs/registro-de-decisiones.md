@@ -19,6 +19,52 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Render de cine — MSAA, resolución de escritorio y reflejo del disco (2026-10-04)
+
+Segunda ronda del pase de realismo, pedida por el dueño tras ver la primera
+(«que realmente sea mucho más realista y más de película»). Tres mecanismos
+nuevos y un hallazgo que evita trabajo futuro:
+
+- **MSAA 4x en la cadena de post** (`system-scene.ts` y
+  `observatory-scene.ts`). El renderer va con `antialias: false` y el flag del
+  canvas nunca suavizó nada porque todo pasa por render targets; en WebGL2 los
+  targets del composer admiten `samples: 4` y Three los resuelve al leerlos.
+  Es EL salto de calidad percibida: las aristas de las naves dejan de ser
+  escaleras de píxel entero, en el hero y sobre todo en el Observatorio a
+  600 px. Sólo con GPU real (`renderScale === 1`): SwiftShader (CI, e2e,
+  `shot.mjs`) no paga el sobrecoste y sus medidas no cambian. El quad del
+  raymarch no lo nota; quien gana es el pase de los cuerpos, el único que
+  dibuja geometría.
+- **El governor de resolución prueba también en escritorio.** Se quita la
+  condición `pointer: coarse` (quedan `orbit` y GPU real): un monitor escalado
+  a 1,25-2 de densidad dibujaba a 1,0 y el navegador estiraba — la misma
+  blandura que motivó el governor táctil. En un monitor de densidad 1,0 no hay
+  escalones que probar y no hace nada. Medido en el equipo del dueño (AMD
+  iGPU, ventana a densidad 2): prueba y se queda en 1,0 — no hay holgura, y
+  ése es el diseño («sostenga su propio mejor ritmo»); el teléfono emulado
+  sube a 1,25. En escritorios con margen subirá hasta 1,5.
+- **Reflexión de entorno analítica en los metales** (kinds 4/5/7 de
+  `BODY_FRAGMENT`). Sin cubemap ni textura: el entorno del sistema es
+  describible — anillo ámbar enorme alrededor del origen, ceñido al plano
+  orbital (normal +Y del mundo, ver `orbitalPosition`), negro en lo demás. El
+  rayo reflejado del ojo contra la dirección a Gargantúa, lóbulo ancho + núcleo
+  caliente, aplastado en vertical. A diferencia del filete y la lámina no
+  depende de `day`: la chapa nocturna también refleja el disco, que es el
+  plano clásico de la Endurance a contraluz. Pesos: 0.95 casco
+  Endurance/Ranger, 0.55 metal oscuro; pasa por `materialOcclusion`, NO por
+  `shipEdge` (el grafito satinado también refleja). Medido: medias +3-4 %,
+  p95 Ranger 142→157 (los brillos nuevos), sombras y jerarquía §2 intactas.
+- **ACES ya estaba.** El tone mapping fílmico se recomendó como cuarto punto y
+  resultó estar activo desde siempre: `ACESFilmicToneMapping` a
+  `BASE_EXPOSURE` 0.95 en las tres superficies (mapa, Observatorio,
+  laboratorio), modulado por pose. Que nadie vuelva a proponer «añadir ACES»:
+  lo que se calibró encima ya lo asume.
+
+El coste del MSAA es memoria de GPU (targets multimuestreados a media
+precisión) y un resolve por pase; el raymarch sigue mandando en el coste del
+fotograma. `composerTarget` sustituye a `fallbackTarget` y se desecha en el
+teardown igual.
+
 ## Cuerpos del System Map — pase de realismo sin mover la jerarquía (2026-10-04)
 
 El dueño pidió más realismo en los cuerpos, por este orden: Ranger y Endurance

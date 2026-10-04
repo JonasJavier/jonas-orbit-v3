@@ -2236,6 +2236,32 @@ const BODY_FRAGMENT = /* glsl */ `
       float coldRim = pow(1.0 - max(dot(normal, view), 0.0), 2.6)
                     * (1.0 - smoothstep(-0.55, 0.25, ndl));
 
+      /*
+        REFLEXIÓN DE ENTORNO ANALÍTICA (2026-10-04), y es lo que en el cine
+        hace que un casco se vea metido en su mundo: la chapa REFLEJA el
+        disco, no sólo recibe su luz. No hay cubemap ni textura nueva — el
+        entorno de este sistema es describible en tres líneas: un anillo
+        ámbar enorme alrededor del origen, ceñido al plano orbital (la
+        normal del plano es +Y del mundo, ver orbitalPosition), y campo
+        estelar negro en todo lo demás. El rayo reflejado del ojo se compara
+        con la dirección a Gargantúa: un lóbulo ancho (el disco subtiende
+        mucho ángulo) más un núcleo caliente, aplastados en vertical porque
+        el disco vive pegado a su plano. A diferencia del filete y la
+        lámina —que dependen de day—, esto también enciende la chapa del
+        lado nocturno cuando su normal refleja el disco hacia la cámara,
+        que es exactamente el plano clásico de la Endurance a contraluz.
+      */
+      vec3 reflDir = reflect(-view, normal);
+      float reflAlign = max(dot(reflDir, toLight), 0.0);
+      float envBand = mix(1.0, 0.24, smoothstep(0.12, 0.70, abs(reflDir.y)));
+      float envSheet = (pow(reflAlign, 2.5) * 0.38 + pow(reflAlign, 14.0) * 0.85)
+                     * envBand;
+      vec3 envTint = mix(key, vec3(1.0, 0.92, 0.80), pow(reflAlign, 10.0) * 0.6);
+      /* El peso lo pone la rugosidad real del material (gloss sale de la
+         textura de casco) y un término de incidencia con suelo alto: el
+         metal refleja también de frente, no sólo en el canto. */
+      float envWeight = gloss * (0.45 + 0.55 * fresnel);
+
       if (uKind == 4) {
         /*
           Que los volúmenes los dibuje GARGANTÚA, no un rebote plano.
@@ -2271,6 +2297,11 @@ const BODY_FRAGMENT = /* glsl */ `
         /* Y el filete estrecho sube de 0.12 a 0.22: sobre el marfil de los
            módulos principales es el único highlight duro de la nave. */
         color += key * pow(specBase, 22.0) * gloss * day * 0.22 * materialOcclusion * shipEdge;
+        /* El reflejo del disco pasa por la oclusión —un receso entre rieles
+           no ve el entorno— pero NO por shipEdge: el grafito satinado
+           también refleja, y que lo haga es lo que lo separa de pintura
+           negra mate. Su gloss bajo ya lo mantiene en su sitio. */
+        color += envTint * envSheet * envWeight * materialOcclusion * 0.95;
         /* Relleno frío del lado contrario. Sube de 0.16 a 0.30 y se enfría: es
            lo que impide que bajar el suelo nocturno devuelva un recorte negro,
            y a diferencia del suelo SÍ tiene dirección. */
@@ -2288,6 +2319,9 @@ const BODY_FRAGMENT = /* glsl */ `
           entienda que es metal y no pintura.
         */
         color += mix(key, vec3(0.78, 0.82, 0.9), 0.18) * sheen * 0.28;
+        /* El reflejo del disco: pleno en la chapa pulida de la Ranger, a
+           media voz en el metal oscuro de quillas, campanas y trusses. */
+        color += envTint * envSheet * envWeight * (uKind == 5 ? 0.95 : 0.55);
         /* Contraluz del campo estelar en el canto opuesto. Baja de 0.34 a 0.2
            porque ahora hay un contraluz común para todos los cuerpos: sumados
            daban un borde azul que se comía la silueta. */
