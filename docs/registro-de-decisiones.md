@@ -19,6 +19,49 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Rediseño de Ranger, Endurance y Miller — casco loftado, ventanas y nubes cizalladas (2026-10-04)
+
+Tercera ronda del día, pedida por el dueño con mandato explícito de REDISEÑO
+(«casi no se nota el cambio… necesito un rediseño y que se vea mucho más
+realista», Ranger/Endurance/Miller). Esta entrada SUSTITUYE, en lo que toca, a
+tres decisiones anteriores: la proa facetada y la chapa crema de la Ranger
+(fase 1 · pase 3, 09-05), el marfil 0.76 de la manta principal de la Endurance
+(segunda ronda 09-05) y la forma de las nubes de Miller (§9 quinquies, 09-06;
+su paleta de aguas y su camino de luz SIGUEN vigentes).
+
+- **Ranger: casco loftado continuo** (`loftedFuselage` en `bodies.ts`). El
+  fuselaje deja de ser caja redondeada + cono + tapa y pasa a UNA superficie
+  de nueve estaciones con normales suaves: cuerpo sustentador más ancho
+  (0.52 contra 0.37) y más plano (0.17 contra 0.28), vientre más plano que el
+  lomo, boat-tail. Envergadura, eslora y balizas no se mueven: ni el radio
+  publicado ni la escala aparente cambian. Góndolas semienterradas en el
+  flanco (z 0.26 — a 0.27 la vista PROPULSIÓN rozaba el cuadro del móvil).
+  La chapa pasa de crema (0.34-0.96) a METAL CAÑÓN (0.148-0.56), más pulida
+  (filete 92, gloss hasta 0.98): a 153° un casco claro se lava; el oscuro
+  vive de filos ámbar, barrido especular y reflejo del disco. La envoltura
+  baja a 0.58 y su curva de modulación se recalibra para la chapa oscura.
+  Medido: media clavada (29 → 29.5), p95 142 → 178, sombra profunda 71 → 77 % —
+  el mismo peso en el cuadro con mucho más contraste interno.
+- **Endurance: blanca y habitada.** La manta principal sube a blanco de
+  verdad (0.88) y la estándar medio punto; el grafito no se mueve, así que el
+  contraste entre familias crece un escalón. Y VENTANAS encendidas: tres por
+  módulo habitado (24 en total; las bodegas no llevan), máscara 5 del draw de
+  luces (`ENDURANCE_LIGHT_FRAGMENT`), cálidas, FIJAS y tenues (1.35 contra
+  1.65-1.7 de las balizas): luz de interior, no señal. Es la señal más barata
+  de nave habitada. Media 20.5 → 21.5; sigue dominando la jerarquía.
+- **Miller: nubes cizalladas, no manchas.** Mismo sitio de fbm (el
+  presupuesto de 12 no se toca): el DOMINIO se comprime un 72 % a lo largo
+  del eje del mar, así que los sistemas salen ~3,5 veces más largos en la
+  dirección de la corriente, con la deriva compensada para conservar los
+  4,7 px/s. Puerta más abierta (0.47-0.80), nube más blanca (0.86-0.93 a
+  0.34) y núcleos convectivos casi blancos gateados sobre el mismo campo.
+  El abismo baja medio escalón: océano hondo + bajío turquesa + nube blanca,
+  tres valores francos. Medido: media 93 → 100, croma 0.457 → 0.363 (menos
+  bola de cian, más fotografía), p05 intacto.
+
+Bloom-off en pie para los tres. Las capturas del antes/después, con GPU real,
+en la conversación del 10-04; `shot.mjs` sigue sin valer para juzgar esto.
+
 ## SEO — frases del nicho 3D: hub de Experimentos y cola del blog (2026-10-04)
 
 El dueño pidió competir con más frases del nicho («modelos 3D de

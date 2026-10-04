@@ -80,6 +80,13 @@ export const ENDURANCE_LIGHT_FRAGMENT = /* glsl */ `
       light = mix(vec3(1.0), vec3(0.72, 0.85, 1.0), tail) * 2.1;
       alpha = uIgnition[jet] * pow(1.0 - tail, 2.6)
         * (0.3 + 0.7 * smoothstep(0.03, 0.65, incidence)) * 0.65;
+    } else if (vSurfaceMask > 4.5) {
+      /* Ventanas de cabina (rediseño 2026-10-04): cálidas, fijas y tenues.
+         Es la señal más barata de que la estación está HABITADA — en el
+         plano clásico de la Endurance lo que la hace nave y no maqueta son
+         sus ventanas encendidas. No laten (una cabina no parpadea) y van
+         muy por debajo de las balizas: luz de interior, no señal. */
+      light = vec3(1.0, 0.80, 0.55) * 1.35;
     } else if (vSurfaceMask > 1.5) {
       int beacon = int(vSurfaceMask - 2.0 + 0.1);
       light = (beacon == 1 ? cool : warm) * 1.7 * uNavPulse[beacon];

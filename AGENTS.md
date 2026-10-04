@@ -272,6 +272,12 @@ MDX**, nunca en `worlds.data.ts`.
   Observatorio, sólo GPU real), el governor de resolución prueba también en
   escritorio, reflexión de entorno analítica en los metales. ACES ya estaba
   activo (0.95) en las tres superficies: no proponer «añadirlo».
+- **Rediseño Ranger/Endurance/Miller** (10-04) registro «Rediseño de Ranger,
+  Endurance y Miller — casco loftado, ventanas y nubes cizalladas» — manda
+  sobre la proa facetada y la chapa crema de la Ranger, el marfil de la manta
+  principal y la forma de las nubes de Miller: casco loftado y metal cañón,
+  Endurance blanca con 24 ventanas encendidas (máscara 5 de su draw de
+  luces), nubes de Miller cizalladas por el eje del mar con núcleos blancos.
 - **Gargantúa** `docs/design/hero-gargantua-direction.md` — §14 undecies (el
   bloom no enciende la sombra), §14 duodecies (pase final), §14 terdecies
   (cohesión del disco), §14 quaterdecies (gramática común, macro-densidad,
