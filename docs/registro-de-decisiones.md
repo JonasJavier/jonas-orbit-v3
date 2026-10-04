@@ -19,6 +19,40 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — frases del nicho 3D: hub de Experimentos y cola del blog (2026-10-04)
+
+El dueño pidió competir con más frases del nicho («modelos 3D de
+Interstellar», «Gargantúa», «planetas 3D»…). Lo que se cambió y lo que se
+decidió no tocar:
+
+- **Experimentos es el hub del nicho.** Su título pasa de «Experimentos 3D —
+  WebGL, Three.js y shaders» a «Experimentos 3D — Gargantúa, planetas y naves
+  en WebGL» (EN igual): los cuerpos al título, la técnica (Three.js, shaders)
+  a la descripción, que ahora abre con «Modelos 3D interactivos…». Es la
+  página de colección para «planetas 3D», «naves 3D» y «Gargantúa» a secas;
+  cada espécimen sigue siendo quien gana su búsqueda larga.
+- **El simulador dice «3D» y «Three.js».** La descripción del espécimen
+  Gargantúa pasa a «Simulador 3D del agujero negro Gargantúa… en WebGL con
+  Three.js» (pierde «cuatro vistas», que nadie busca). Los otros cinco ya
+  nombraban cuerpo + 3D + WebGL/Three.js y no se tocan.
+- **«Modelos 3D de Interstellar» se gana desde el blog, no desde un título de
+  página.** Sigue vigente «Interstellar en descripciones, nunca en títulos»
+  para las páginas del sitio; las entradas del blog sí pueden llevarlo
+  (precedente: «Agujero negro de Interstellar: la física de Gargantúa»,
+  10-02). Nueva entrada-hub como #1 de la cola (`interstellar-3d-models`,
+  `docs/presencia-web.md` §5): un recorrido por los seis especímenes con
+  enlace a cada uno.
+- **Lo que se decidió NO hacer:** `<meta keywords>` (los buscadores la
+  ignoran); tocar título o descripción de la portada (manda «SEO — nombre,
+  nicho 3D y freelance»: nombre y oficio primero); `keywords` en el JSON-LD
+  de los especímenes (no mueve ranking y añade esquema); repetir las mismas
+  frases en los seis especímenes (se canibalizarían con el hub).
+- Lo que de verdad mueve estas frases a medio plazo ya está en marcha:
+  entradas del blog por espécimen (cola §5), imágenes propias en Google
+  Imágenes (10-02) y enlaces entrantes (rutina del foro de Three.js, dev.to).
+  Se valora con las consultas reales de Search Console ≈10-27, como manda la
+  auditoría del 10-02.
+
 ## Render de cine — MSAA, resolución de escritorio y reflejo del disco (2026-10-04)
 
 Segunda ronda del pase de realismo, pedida por el dueño tras ver la primera

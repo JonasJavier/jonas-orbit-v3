@@ -125,6 +125,12 @@ MDX**, nunca en `worlds.data.ts`.
   diaria), proceso editorial, cola de temas y la rutina semanal de Claude que
   deja el borrador en `docs/difusion/borradores/`. Guías por canal en
   `docs/difusion/README.md`.
+- **SEO — frases del nicho 3D** (10-04) registro «SEO — frases del nicho 3D:
+  hub de Experimentos y cola del blog» — Experimentos es el hub del nicho
+  («Gargantúa, planetas y naves en WebGL» en el título; Three.js y shaders en
+  la descripción); el simulador dice «3D» y «Three.js»; «modelos 3D de
+  Interstellar» se gana con la entrada-hub #1 de la cola del blog, nunca en
+  títulos de páginas del sitio.
 - **SEO — auditoría y especímenes con imagen** (10-02) registro «SEO —
   auditoría, especímenes con imagen, retrato con nombre y dos entradas» —
   cada espécimen tiene captura real (`lib/observatory-images.ts`,
