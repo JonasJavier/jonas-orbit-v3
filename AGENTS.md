@@ -255,6 +255,12 @@ MDX**, nunca en `worlds.data.ts`.
 
 ### Cuerpos y escena del System Map
 
+- **Realismo de los cuerpos** (10-04) registro «Cuerpos del System Map — pase
+  de realismo sin mover la jerarquía» — antialias analítico del limbo de los
+  planetas, envoltura de las naves modulada por la chapa y por el reflejo del
+  disco, microrrelieve de casco, Edmunds sin moteado de derivadas. La
+  jerarquía de valor medida no se mueve; los cuerpos se juzgan con GPU real
+  (`awards-shots.mjs`), nunca con `shot.mjs`.
 - **Gargantúa** `docs/design/hero-gargantua-direction.md` — §14 undecies (el
   bloom no enciende la sombra), §14 duodecies (pase final), §14 terdecies
   (cohesión del disco), §14 quaterdecies (gramática común, macro-densidad,

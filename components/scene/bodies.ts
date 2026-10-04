@@ -1077,9 +1077,18 @@ const BODY_FRAGMENT = /* glsl */ `
         pide la revisión —más estructura grande, menos ruido pequeño— aplicado
         al término que decide qué se ve como bulto.
       */
+      /*
+        Y terrain baja de 0.15 a 0.05 en ESTE campo (2026-10-04). Las
+        derivadas de pantalla se evalúan por cuadrete de 2×2 píxeles, y la
+        cuarta octava de terrain (longitud de onda ~1.5 px a tamaño de hero)
+        derivada así no es orografía: es un moteado cuadriculado que cubría
+        el hemisferio diurno de parches de píxel — la firma digital que
+        quedaba. Su papel de textura en el albedo no se toca; sólo deja de
+        mandar sobre el relieve, que es de las macroformas.
+      */
       float geologicalHeight = highland * 0.22 - lowland * 0.24
                              + upland * 0.10 + provinces * 0.40
-                             + terrain * 0.15 + mesa * 0.12;
+                             + terrain * 0.05 + mesa * 0.12;
       vec3 dpdx = dFdx(vLocal);
       vec3 dpdy = dFdy(vLocal);
       vec3 acrossY = cross(dpdy, up);
@@ -1243,6 +1252,15 @@ const BODY_FRAGMENT = /* glsl */ `
       float panel = surface.r;
       float seam = surface.b;
       float roughness = surface.a;
+      /*
+        MICRORRELIEVE DE MANTA. El canal de rugosidad ya trae acolchado y
+        grano; inclinar el término lambert con él (±4 %) es lo que separa una
+        manta térmica tensada a mano de una cara de poliedro con color. Se
+        resta la media del canal (0.72) para no correr el terminador. Entra
+        por reliefOffset, igual que la orografía de los planetas, así que
+        perturba el amanecer Y la cara iluminada sin ningún término nuevo.
+      */
+      reliefOffset = (roughness - 0.72) * 0.18;
       albedo = mix(vec3(0.15, 0.17, 0.19), vec3(0.48, 0.50, 0.51), panel);
       albedo = mix(albedo, vec3(0.10, 0.12, 0.14), seam * 0.42);
       gloss = mix(0.34, 0.18, roughness);
@@ -1316,6 +1334,11 @@ const BODY_FRAGMENT = /* glsl */ `
       float warmFoil = surface.g;
       float seam = surface.b;
       float microRoughness = surface.a;
+      /* El mismo microrrelieve que la Endurance, con el canal de chapa: el
+         grano y los regueros inclinan el lambert ±3.5 %. En una nave casi a
+         contraluz se nota donde más falta hacía — la franja del terminador
+         deja de ser un corte recto entre cara clara y cara oscura. */
+      reliefOffset = (microRoughness - 0.50) * 0.14;
       /*
         FASE 1 · PASE 3 (2026-09-05). La chapa arrancaba en 0.425 y terminaba en
         0.90: un recorrido de medio punto sobre un valor ya alto, que en pantalla
@@ -1655,8 +1678,10 @@ const BODY_FRAGMENT = /* glsl */ `
       diffuse = day * limb * (0.07 + 0.93 * pow(max(shadedNdl, 0.0), 1.35));
     }
     /* Chapa facetada: Lambert conserva diferencias entre caras iluminadas;
-       el terminador de los planetas las igualaba a partir de n·l = 0.34. */
-    if (uKind == 4) diffuse = day * (0.12 + 0.88 * max(ndl, 0.0));
+       el terminador de los planetas las igualaba a partir de n·l = 0.34.
+       Sobre shadedNdl y no ndl: el microrrelieve de la manta entra también
+       en la cara a plena luz, que es donde una cara de caja se leía plana. */
+    if (uKind == 4) diffuse = day * (0.12 + 0.88 * max(shadedNdl, 0.0));
 
     /* Los mundos pierden más fill en su hemisferio nocturno. El terminador
        gana una línea de penumbra cálida: la dirección hacia Gargantúa se
@@ -2287,17 +2312,43 @@ const BODY_FRAGMENT = /* glsl */ `
       Es la lectura de cine para un objeto delante de una fuente enorme.
     */
     if (uKind == 5) {
+      /*
+        LA ENVOLTURA LEE LA CHAPA (2026-10-04). Los tres términos de filo se
+        sumaban planos sobre la superficie, y como a 153° son casi toda la luz
+        de la nave, encima de ellos no se veía ni junta ni panel: una lámina
+        de plástico con forma de lanzadera. Ahora los tres se modulan por la
+        luminancia del albedo, que ya trae paneles, juntas, remaches y
+        regueros: la misma envoltura, repartida como la repartiría una chapa
+        despiezada — la junta corta el filo, el panel claro lo recoge. Con la
+        chapa típica en ~0.6 de luminancia el factor ronda 1, así que la
+        energía total apenas se mueve; lo que cambia es que ahora tiene
+        ESTRUCTURA.
+      */
+      float hullLuma = dot(albedo, vec3(0.2126, 0.7152, 0.0722));
+      float hullMod = clamp(pow(hullLuma, 1.5) * 2.0, 0.22, 1.18);
+      /*
+        Y EL FILO RESPONDE COMO ESPEJO (2026-10-04). Un canto metálico delante
+        de una fuente extensa no se enciende por igual a lo largo de toda la
+        silueta: destella donde la normal refleja el disco hacia la cámara y
+        se apaga donde no. El término es la alineación del rayo reflejado con
+        Gargantúa — la definición de espejo—, y reparte el mismo filo entre
+        tramos que flamean y tramos que caen, que es la mitad de la diferencia
+        entre una maqueta con rim light y chapa de verdad.
+      */
+      float mirror = pow(max(dot(reflect(-view, normal), toLight), 0.0), 4.0);
       float wrap = smoothstep(-0.62, 0.3, ndl);
-      color += key * fresnel * wrap * 0.70;
+      color += key * fresnel * wrap * 0.70 * hullMod * mix(0.55, 1.50, mirror);
       /* Y la línea ámbar sube de 0.30 a 0.44: con 153° entre luz y cámara, ESTE
          es el término que dibuja el borde de ataque, la cabina y las góndolas.
          Lo que hacía gris a esta nave no era su chapa —forzada a blanco puro se
          veía igual de apagada— sino que su filo no llegaba a encenderse. */
-      color += vec3(1.0, 0.72, 0.42) * pow(fresnel, 1.5) * wrap * 0.58;
+      color += vec3(1.0, 0.72, 0.42) * pow(fresnel, 1.5) * wrap * 0.58 * hullMod
+             * mix(0.75, 1.30, mirror);
       /* Y una segunda línea, más estrecha y más roja, pegada al canto. Es la
          que integra la nave con Gargantúa: sin ella el acero devolvía un filo
          crema genérico que podría venir de cualquier parte. */
-      color += vec3(1.0, 0.58, 0.26) * pow(fresnel, 3.2) * wrap * 0.52;
+      color += vec3(1.0, 0.58, 0.26) * pow(fresnel, 3.2) * wrap * 0.52 * hullMod
+             * mix(0.75, 1.30, mirror);
       /*
         RELLENO CON DIRECCIÓN, que no es lo mismo que ambiente.
 
@@ -2340,9 +2391,24 @@ const BODY_FRAGMENT = /* glsl */ `
       ve el disco, y sin ese factor el filo dibujaba también los huecos.
     */
     if (uKind == 4) {
+      /* La misma lección que la Ranger (2026-10-04): a 117° el filo ES la
+         iluminación, y un filo plano encima de la manta borraba sus costuras
+         y sus paños. La luminancia del albedo lo reparte — el factor usa una
+         ganancia mayor que en la Ranger porque las familias de la Endurance
+         viven más abajo en valor, y shipEdge ya separa familias enteras:
+         esto añade el despiece DENTRO de cada familia. */
+      float hullLuma = dot(albedo, vec3(0.2126, 0.7152, 0.0722));
+      float hullMod = clamp(hullLuma * 2.3, 0.34, 1.14);
+      /* El mismo espejo que la Ranger, más suave: a 117° el filo es la
+         iluminación principal y no puede caer tanto en los tramos que no
+         reflejan, pero tampoco puede ser una cinta pareja alrededor de cada
+         módulo — doce módulos con el mismo filo son doce piezas de maqueta. */
+      float mirror = pow(max(dot(reflect(-view, normal), toLight), 0.0), 4.0);
       float wrap = smoothstep(-0.40, 0.36, ndl);
-      color += key * fresnel * wrap * 0.38 * materialOcclusion * shipEdge;
-      color += vec3(1.0, 0.74, 0.44) * pow(fresnel, 1.6) * wrap * 0.42 * materialOcclusion * shipEdge;
+      color += key * fresnel * wrap * 0.38 * materialOcclusion * shipEdge * hullMod
+             * mix(0.62, 1.38, mirror);
+      color += vec3(1.0, 0.74, 0.44) * pow(fresnel, 1.6) * wrap * 0.42 * materialOcclusion * shipEdge * hullMod
+             * mix(0.62, 1.38, mirror);
     }
 
     /* Borde encendido por el disco, para todo lo demás: es lo que separa al
@@ -2489,6 +2555,22 @@ const BODY_FRAGMENT = /* glsl */ `
     color *= 1.0 + uFocus * focusGain * (0.55 + 0.45 * fresnel);
     color += key * warmRim * uFocus * focusEdge;
     color += focusColor * uFocus * focusTint * (0.032 + fresnel * 0.44);
+
+    /*
+      ANTIALIAS ANALÍTICO DEL LIMBO, sólo para los dos planetas.
+
+      El renderer corre sin MSAA y el canto de una esfera de 50-60 px sale en
+      escalera de píxel entero: la señal de render barato más visible del
+      cuadro. n·v cae a cero exactamente en el limbo y su derivada de pantalla
+      crece ahí, así que fundir el alfa sobre un ancho proporcional a
+      fwidth(n·v) da un borde de uno o dos píxeles a cualquier resolución —
+      el mismo truco que ya suaviza las cintas de órbita, aplicado al cuerpo.
+      Las naves no lo necesitan: su silueta facetada es parte del material.
+    */
+    if (uKind == 0 || uKind == 1) {
+      float limbNdv = max(dot(normal, view), 0.0);
+      outputAlpha = smoothstep(0.0, max(fwidth(limbNdv) * 1.8, 0.012), limbNdv);
+    }
 
     gl_FragColor = vec4(color, outputAlpha);
   }
@@ -2655,8 +2737,12 @@ function createHullSurfaceTexture(kind: HullSurface): THREE.DataTexture {
         blanketed
           ? // Manta clara y CASI uniforme: ±0.05 entre paneles vecinos, no ±0.2.
             0.84 + (broad - 0.5) * 0.055 + (grain - 0.5) * 0.025 - seam * 0.24
-          : 0.6 +
-            (broad - 0.5) * 0.13 +
+          : // El recorrido entre paneles vecinos sube de ±0.065 a ±0.085
+            // (2026-10-04): con la envoltura ya leyendo la chapa, es el canal
+            // que decide cuánta zona tiene el fuselaje, y a ±0.065 dos paneles
+            // contiguos seguían devolviendo casi lo mismo bajo el filo.
+            0.6 +
+            (broad - 0.5) * 0.17 +
             (grain - 0.5) * 0.05 +
             streak * 0.055 -
             seam * 0.34 -
@@ -2998,13 +3084,26 @@ const WORLD_SEGMENTS = 40;
 const WORLD_RINGS = 26;
 
 function simpleWorld(input: SceneBodyInput, kind: number): BodyModel {
-  const material = bodyMaterial(input, kind);
+  /*
+    Transparente SÓLO por el limbo. El renderer va sin antialias (el
+    post-proceso lo anula), así que el borde de una esfera de 50-60 px salía
+    en escalera de píxel duro — la firma más barata que puede tener un
+    planeta. El fragment funde el alfa en el último par de píxeles del canto
+    (ver el bloque de antialias del limbo en BODY_FRAGMENT); el resto del
+    disco queda en alfa 1 y el coste de batches no cambia: FrontSide no paga
+    doble pase. depthWrite se conserva y la esfera se adelanta a las cintas
+    de órbita (renderOrder −2 contra −1): la cinta que pasa por detrás pierde
+    contra su profundidad y la que pasa por delante se funde encima, que es
+    exactamente el orden que tenían cuando el material era opaco.
+  */
+  const material = bodyMaterial(input, kind, { transparent: true });
   const root = new THREE.Object3D();
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(1, WORLD_SEGMENTS, WORLD_RINGS),
     material,
   );
   sphere.name = `${input.id}-surface`;
+  sphere.renderOrder = -2;
   root.add(sphere);
   return { root, materials: [material] };
 }

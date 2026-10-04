@@ -19,6 +19,52 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Cuerpos del System Map — pase de realismo sin mover la jerarquía (2026-10-04)
+
+El dueño pidió más realismo en los cuerpos, por este orden: Ranger y Endurance
+(las peores para él), luego Miller y Edmunds, Tesseracto opcional. El pase
+cambia MECANISMOS de sombreado, no la jerarquía de valor aprobada: medido con
+`body-metrics.mjs` sobre la misma ventana antes/después, media, p05/p50/p95 y
+croma de los cuatro cuerpos quedan clavados al decimal. Bloom-off en pie.
+Presupuestos intactos: cero sitios de FBM nuevos, cero draws (FrontSide
+transparente no paga doble pase), cero vértices.
+
+- **Antialias analítico del limbo de los planetas.** El renderer va sin MSAA y
+  el canto de una esfera de 50-60 px salía en escalera de píxel entero — la
+  señal de render barato más visible del cuadro con GPU real. Miller y Edmunds
+  pasan a `transparent: true` (FrontSide, depthWrite intacto) y el fragment
+  funde el alfa en el último par de píxeles con `smoothstep` sobre
+  `fwidth(n·v)`. La esfera se adelanta a las cintas de órbita (`renderOrder`
+  −2 contra −1): la cinta de detrás pierde contra su profundidad y la de
+  delante se funde encima — el mismo orden que con material opaco.
+- **La envoltura de las naves lee la chapa.** Los términos de filo/envoltura
+  de Ranger (153°) y Endurance (117°) se sumaban planos sobre la superficie, y
+  como ahí son casi toda la luz de la nave, encima de ellos no se veía ni
+  junta ni panel: plástico con forma de nave. Ahora se modulan por la
+  luminancia del albedo (que ya trae paneles, juntas, remaches y regueros),
+  con el factor centrado en ~1 para no mover la energía.
+- **El filo responde como espejo.** Un canto metálico ante una fuente extensa
+  no se enciende parejo a lo largo de la silueta: destella donde
+  `reflect(−view, n)` apunta a Gargantúa y cae donde no (`mix(0.55, 1.5)` en
+  la Ranger, `mix(0.62, 1.38)` en la Endurance, exponente 4).
+- **Microrrelieve de casco.** El canal de rugosidad de la textura (acolchado,
+  grano, regueros) entra por `reliefOffset` (±4 %), restada la media del canal
+  para no correr el terminador; el difuso de la Endurance pasa a `shadedNdl`
+  para que la cara a plena luz también lo reciba. La chapa de la Ranger sube
+  el recorrido entre paneles vecinos de ±0.065 a ±0.085.
+- **Edmunds deja de motearse por píxel.** En el campo que se deriva con
+  `dFdx/dFdy` (derivadas por cuadrete de 2×2), `terrain` baja de 0.15 a 0.05:
+  su cuarta octava (~1.5 px de longitud de onda) derivada así no era
+  orografía sino un moteado cuadriculado sobre el hemisferio diurno. Su papel
+  de textura en el albedo no se toca.
+- **Tesseracto sin tocar**: base canónica en freeze, y sus aristas finas no
+  admiten el fundido de limbo (son tubos, no una silueta cerrada).
+
+Trampa que costó el diagnóstico: `shot.mjs` (SwiftShader) pinta los cuerpos
+con píxel gordo y NO sirve para juzgar este pase; el antes/después se miró con
+`awards-shots.mjs` (GPU real, DPR 1) y recortes de `crop.mjs`. SwiftShader
+sigue valiendo para las MÉTRICAS de distribución, que es para lo que se usó.
+
 ## QA para premios — precarga diferida, páginas de lectura y pulido (2026-10-02)
 
 El dueño pidió dejar el sitio impecable para Awwwards, CSS Design Awards y The
