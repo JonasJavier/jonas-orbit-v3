@@ -1,0 +1,215 @@
+---
+id: interstellar-3d-models
+slug: interstellar-3d-models-in-the-browser
+title: "The Interstellar 3D models in my portfolio: Gargantua, planets and ships"
+summary: >-
+  Six Interstellar-inspired bodies running in the browser with WebGL: a black
+  hole, two planets, two ships and a tesseract. One light for all of them, and
+  the decision that made each one work.
+coverAlt: >-
+  The home page system: Gargantua in the center with its accretion disk, the
+  Endurance on the right, the Ranger and the planets Miller and Edmunds around it.
+seoTitle: "Interstellar 3D Models in WebGL: Gargantua, Planets, Ships"
+seoDescription: >-
+  Six interactive 3D models inspired by Interstellar: Gargantua, Miller,
+  Edmunds, the Endurance, the Ranger and a tesseract, in WebGL with Three.js.
+---
+
+The home page of this site is a still system around a black hole. Gargantua
+sits in the center with five bodies around it: the Endurance, the Ranger,
+Miller's planet, Edmunds' planet and a tesseract. All six are inspired by
+*Interstellar*, and you can look at each one up close in the
+[Observatory](/en/experiments), full screen and in 3D.
+
+They aren't downloaded models or videos. Everything is computed in the
+browser with WebGL, Three.js and custom shaders. This post is the tour: what
+the six share, the one decision that made each of them work, and what's still
+open.
+
+<Figure
+  name="modelos-3d-portada"
+  alt="The full system on the home page: Gargantua in the center, the Endurance on the right and the other bodies around the disk."
+  caption="The six bodies on the home page. None of them orbit: the system is still on purpose."
+/>
+
+## One light for six bodies
+
+There isn't a single `THREE.Light` in the scene. The only light source is
+Gargantua's accretion disk, at the origin, and every other body is lit from
+there. The values live in one fragment shader shared by every body in the
+system:
+
+- **Key:** the amber of the disk, `vec3(1.0, 0.78, 0.52)`. The side facing it.
+- **Fill:** a very low blue. It's the sky, not a second lamp.
+- **Cold rim:** closes the silhouette against the black.
+- **Terminator:** a `smoothstep` over `n·l` plus relief. The lit crescent.
+
+That gives you consistency for free. If the Endurance is to the right of the
+black hole, its left side is the one that glows. Nobody has to remember to
+place it.
+
+One rule applies to all six: the **bloom-off test**. I switch off bloom and
+emissives, and every body still has to read. Silhouette, volume, material and
+hierarchy. If a body loses its identity when the glow goes away, it isn't
+finished.
+
+## Gargantua: four views instead of an orbit
+
+[Gargantua](/en/experiments/observatory/gargantua) isn't drawn. A shader
+follows light ray by ray around the black hole: 190 steps per pixel on the
+normal tier and 340 on the deep one. How it's built has
+[its own post](/en/blog/how-i-built-a-black-hole-in-webgl), and the physics
+behind it has [another](/en/blog/interstellar-black-hole-gargantua-explained).
+
+What matters here is an Observatory decision. You can rotate the other five
+bodies freely with the mouse. Not Gargantua. It has four fixed views:
+**Cinematic, Lens, Disk and Shadow**. Each one studies one thing: the
+composition, the photon ring, the Doppler asymmetry and the edge of the black.
+
+Why no free orbit? The final quality is paid for by accumulating the image
+over eight sample positions, and dragging throws that accumulation away. Then
+there's the bigger reason: with a free orbit, someone would end up looking at
+the black hole from an angle nobody framed. The camera never goes below 9° of
+elevation, because below that you're chasing a frame from the film at the
+expense of your own composition.
+
+## The Endurance: twelve modules in four draw calls
+
+The [Endurance](/en/experiments/observatory/endurance) had to have weight. It
+had to read as engineering, not as a pretty silhouette against the light.
+
+The first problem was scale. At system size the details vanish, and the ship
+flattened into a bright smudge. Adding parts didn't fix it. The cavities did:
+dark gaps between modules and light breaking across the facets.
+
+It's twelve modules in four groups. Arms, thermal panels and nozzles are
+merged into **four draw calls**. The engine plume lives inside the emissive
+material and costs zero extra calls. The maneuvering thrusters moved from the
+barrel to the rim of the ring, because on the barrel they didn't read.
+
+The latest pass made it properly white and gave it **24 lit windows**: three
+per inhabited module, none on the cargo bays. Warm, fixed and dim, lower than
+the beacons. Interior light, not a signal. It's the cheapest hint that someone
+lives inside.
+
+## The Ranger: a hull in one piece
+
+The [Ranger](/en/experiments/observatory/ranger) just changed shape. Its
+fuselage used to be a rounded box plus a cone plus a cap. Now it's **one
+lofted surface** of nine stations with smooth normals: wider, flatter, with a
+belly flatter than its back.
+
+The plating went from cream to gunmetal. The reason is the light: the Ranger
+gets Gargantua almost from behind, at 153°. A light hull washes out from that
+angle. A dark one lives on amber edges, a specular sweep and the reflection of
+the disk.
+
+That reflection doesn't use a cubemap. This system's environment can be
+written as a formula: a huge amber ring around the origin, hugging the orbital
+plane, and black everywhere else. The shader reflects the view ray against
+that direction and that's it. No textures.
+
+<Figure
+  name="modelos-3d-naves"
+  alt="The Endurance and the Ranger in the Observatory: the white ring with its lit windows and the Ranger's dark hull with amber edges."
+  caption="Both ships after the latest pass: a white, inhabited Endurance and a gunmetal Ranger."
+/>
+
+## Miller: an ocean is a behavior
+
+[Miller's planet](/en/experiments/observatory/miller) went through four
+revisions that made it darker each time. Every step had a correct argument.
+The result didn't: on screen it was a blue rock.
+
+What I was missing is that **"ocean" isn't an exposure level, it's a
+behavior**. A path of light that moves, glints, clouds drifting at a different
+speed from the water. All of that reads just as well on a bright planet.
+
+The swell is three wave scales with analytic gradients (the derivative of a
+sine is a cosine, so it costs no extra sample), each moving at a different
+speed. And here's the trap. I raised the speeds and saw nothing. I was looking
+at the wrong number: the speed that matters is **pixels per second**. Miller
+spins on its axis at 0.05 rad/s, which is 2.35 px/s at its equator. The waves
+moved between 0.5 and 2.5 px/s. They were as slow as the surface carrying
+them, or slower, so they looked painted on.
+
+The rule I kept: on a spinning body, an animated field doesn't exist until its
+speed is several times the spin. Here, four to six times.
+
+## Edmunds: geology, not texture
+
+[Edmunds' planet](/en/experiments/observatory/edmunds) had the opposite
+problem: too much texture. Lots of blotches of the same size, all equally
+important. It looked like a decal on a sphere.
+
+The cause was specific. The four mineral provinces were decided by very
+narrow `smoothstep` gates, 0.05 to 0.065 wide, over a four-octave fbm noise.
+The fine octaves added about ±0.15 of ripple: three times the width of the
+gate. The fine noise was drawing the edge of each province, not the large
+shape.
+
+The fix was to change the field that decides the geography. It's now three
+low-frequency directional waves: smooth by construction, so a wide gate gives
+a large mass. The fbm stayed, but only to perturb the border. And color and
+shading now come from the same terrain. Before there were two: one painted
+and one lit.
+
+<Figure
+  name="modelos-3d-planetas"
+  alt="Miller and Edmunds in the Observatory: the turquoise ocean with stretched clouds and the dry rock with its mineral provinces."
+  caption="The two planets: water that moves, and rock with three or four large features instead of a hundred blotches."
+/>
+
+## The tesseract: hierarchy, not exposure
+
+The [tesseract](/en/experiments/observatory/tesseract) is the only one that
+isn't an object from the film as such. It's a four-dimensional hypercube:
+sixteen vertices rotating across four planes and projected in perspective. A
+light runs along its 32 edges in an Eulerian circuit. Four draw calls and one
+shared material.
+
+The first version was mathematically correct and impossible to read: 32 glass
+edges the eye couldn't sort into depth. More exposure didn't help. The
+opposite did: each vertex publishes its depth in the fourth dimension, and the
+far cell gets thinner and dimmer. The step-by-step is in
+[its own post](/en/blog/4d-tesseract-in-three-js).
+
+## The Observatory: looking and measuring are two things
+
+All six live in the same instrument. At first it had everything switched on at
+once and felt heavy. Looking at a specimen and measuring it are two different
+activities, so they became two modes: **Observe**, the resting state (the
+body, its name and nothing else), and **Study**, which opens the console.
+
+In Study there are three gestures, and each one changes exactly one thing:
+
+- **Drag** moves the camera. It changes the face you see and the light angle.
+- **Light** moves the body around the origin. Same face, different light.
+- **Figure** spins the body on its own axis. Different face, same light.
+
+The third one came last, and it's the one that answers the useful question:
+what's on the other half of this planet? When you drag, the other half always
+arrives lit differently, and you can't tell geography from lighting.
+
+## What isn't solved
+
+Gargantua's free orbit is still out. Nobody has shown that the image survives
+the manipulation, or that every reachable angle keeps the composition. Maybe
+one day. Not today.
+
+And quality depends on the machine. With a real GPU there's 4x MSAA across the
+whole chain; with software rendering (a machine without graphics
+acceleration) there isn't, and the ships' edges come out as stairs. That's why
+I only judge the bodies on a real GPU: a software capture can't tell you
+whether a pass worked.
+
+## Try it
+
+All six are in [Experiments](/en/experiments). Open one, switch to Study and
+try Figure on Edmunds or the Shadow view on Gargantua. If you want to know how
+all of this coexists with SEO and a slow phone, that's in
+[this post](/en/blog/3d-portfolio-webgl-seo-and-performance).
+
+And if you're thinking about something like this for your product — a 3D
+visualization, an interactive piece or a website people remember — here's
+[how I work and what I do](/en/contact/services).

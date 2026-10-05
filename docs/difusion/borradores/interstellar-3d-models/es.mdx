@@ -1,0 +1,217 @@
+---
+id: interstellar-3d-models
+slug: modelos-3d-de-interstellar-en-el-navegador
+title: "Los modelos 3D de Interstellar de mi portafolio: Gargantúa, planetas y naves"
+summary: >-
+  Seis cuerpos inspirados en Interstellar que corren en el navegador con
+  WebGL: un agujero negro, dos planetas, dos naves y un teseracto. Una sola
+  luz para todos y la decisión que hizo funcionar cada uno.
+coverAlt: >-
+  El sistema de la portada: Gargantúa en el centro con su disco de acreción, la
+  Endurance a la derecha, la Ranger y los planetas Miller y Edmunds alrededor.
+seoTitle: "Modelos 3D de Interstellar en WebGL: Gargantúa y naves"
+seoDescription: >-
+  Seis modelos 3D interactivos inspirados en Interstellar: Gargantúa, Miller,
+  Edmunds, la Endurance, la Ranger y un teseracto, en WebGL con Three.js.
+---
+
+La portada de este sitio es un sistema quieto alrededor de un agujero negro.
+Gargantúa en el centro y cinco cuerpos alrededor: la Endurance, la Ranger, los
+planetas de Miller y de Edmunds y un teseracto. Los seis están inspirados en
+*Interstellar* y los seis se pueden mirar de cerca en el
+[Observatorio](/es/experimentos), a pantalla completa y en 3D.
+
+No son modelos descargados ni vídeos. Todo se calcula en el navegador con
+WebGL y Three.js, con shaders propios. Esta entrada es el recorrido: qué
+tienen en común, qué decisión hizo funcionar a cada uno y qué sigue abierto.
+
+<Figure
+  name="modelos-3d-portada"
+  alt="El sistema completo en la portada: Gargantúa en el centro, la Endurance a la derecha y el resto de cuerpos alrededor del disco."
+  caption="Los seis cuerpos en la portada. Ninguno orbita: el sistema está quieto a propósito."
+/>
+
+## Una sola luz para seis cuerpos
+
+En la escena no hay ni una `THREE.Light`. La única fuente es el disco de
+acreción de Gargantúa, en el origen, y todo lo demás se ilumina desde ahí.
+Los valores viven en un solo fragment shader que comparten todos los cuerpos
+del sistema:
+
+- **Clave:** el ámbar del disco, `vec3(1.0, 0.78, 0.52)`. Es la cara encarada.
+- **Relleno:** un azul muy bajo. Es el cielo, no una segunda lámpara.
+- **Contraluz frío:** cierra la silueta contra el negro.
+- **Terminador:** un `smoothstep` sobre `n·l` más el relieve. Es la media luna
+  encendida.
+
+Esto da coherencia gratis. Si la Endurance está a la derecha del agujero,
+su lado izquierdo es el que brilla. Nadie tiene que acordarse de colocarlo.
+
+Y hay una regla que se aplica a los seis: el **bloom-off test**. Apago el
+bloom y los emisivos, y cada cuerpo tiene que seguir leyéndose. Silueta,
+volumen, material y jerarquía. Si un cuerpo pierde su identidad cuando
+desaparece el brillo, no está terminado.
+
+## Gargantúa: cuatro vistas en vez de una órbita
+
+[Gargantúa](/es/experimentos/observatorio/gargantua) no está dibujado. Un
+shader sigue la luz rayo a rayo alrededor del agujero: 190 pasos por píxel en
+el modo normal y 340 en el profundo. Cómo se hizo está contado en
+[su propia entrada](/es/blog/como-hice-un-agujero-negro-en-webgl), y la física
+que hay detrás, en [otra](/es/blog/la-fisica-del-agujero-negro-de-interstellar).
+
+Lo que aquí importa es una decisión del Observatorio. Los otros cinco cuerpos
+se pueden girar libremente con el ratón. Gargantúa no. Tiene cuatro vistas
+fijas: **Cinematográfica, Lente, Disco y Sombra**. Cada una estudia una cosa:
+la composición, el anillo de fotones, la asimetría Doppler y el borde del negro.
+
+¿Por qué no órbita libre? El acabado se paga acumulando la imagen sobre ocho
+posiciones de muestreo. Al arrastrar, esa acumulación se pierde. Y hay algo
+que pesa más: con una órbita libre alguien acabaría mirando el agujero desde
+un ángulo que nadie encuadró. Por debajo de 9° de elevación ya no se baja,
+porque ahí se persigue un fotograma de la película a costa de la composición
+propia.
+
+## La Endurance: doce módulos en cuatro llamadas de dibujo
+
+La [Endurance](/es/experimentos/observatorio/endurance) tenía que tener peso.
+Que se leyera como ingeniería y no como una silueta bonita a contraluz.
+
+El primer problema fue la escala. A tamaño de sistema los detalles
+desaparecen y la nave se aplanaba en una mancha brillante. Lo que la salvó no
+fue añadir piezas, sino las cavidades: huecos oscuros entre módulos y luz que
+se rompe en las facetas.
+
+Son doce módulos en cuatro grupos. Brazos, paneles térmicos y toberas se
+funden en **cuatro llamadas de dibujo**. La pluma de los motores vive dentro
+del material emisivo y no cuesta ni una llamada más. Los propulsores de
+maniobra se movieron del barril al borde del aro, porque en el barril no se
+leían.
+
+El último pase la hizo blanca de verdad y le puso **24 ventanas encendidas**:
+tres por módulo habitado, ninguna en las bodegas. Cálidas, fijas y tenues, más
+bajas que las balizas. Luz de interior, no señal. Es la pista más barata de que
+dentro hay alguien.
+
+## La Ranger: un casco de una sola pieza
+
+La [Ranger](/es/experimentos/observatorio/ranger) acaba de cambiar de forma.
+Su fuselaje era una caja redondeada con un cono y una tapa. Ahora es
+**una sola superficie loftada** de nueve secciones con normales suaves: más
+ancha, más plana, con el vientre más plano que el lomo.
+
+La chapa pasó de crema a metal cañón. La razón es la luz: la Ranger recibe a
+Gargantúa casi por detrás, a 153°. Un casco claro desde ese ángulo se lava. Uno
+oscuro vive de los filos ámbar, del barrido especular y del reflejo del disco.
+
+Ese reflejo no usa un cubemap. El entorno de este sistema se puede describir
+con una fórmula: un anillo ámbar enorme alrededor del origen, pegado al plano
+de las órbitas, y negro en lo demás. El shader refleja el rayo de la cámara
+contra esa dirección y ya está. Sin texturas.
+
+<Figure
+  name="modelos-3d-naves"
+  alt="La Endurance y la Ranger en el Observatorio: el aro blanco con sus ventanas encendidas y el casco oscuro de la Ranger con los filos ámbar."
+  caption="Las dos naves después del último pase: la Endurance blanca y habitada, la Ranger en metal cañón."
+/>
+
+## Miller: un océano es un comportamiento
+
+El [planeta de Miller](/es/experimentos/observatorio/miller) pasó por cuatro
+revisiones que lo hicieron cada vez más oscuro. Cada paso tenía un argumento
+correcto. El resultado no: en pantalla era una piedra azul.
+
+Lo que faltaba entender es que **«océano» no es un nivel de exposición, es un
+comportamiento**. Un camino de luz que se desplaza, destellos, nubes que van a
+otra velocidad que el agua. Eso se lee igual de bien sobre un planeta
+brillante.
+
+El oleaje son tres escalas de ondas con gradiente analítico (la derivada de
+un seno es un coseno: no cuesta una muestra más), cada una a una velocidad
+distinta. Y aquí apareció la trampa. Subí las velocidades y no se veía nada.
+Estaba mirando el número equivocado: la velocidad que importa es en
+**píxeles por segundo**. Miller gira sobre su eje a 0,05 rad/s, que en su
+ecuador son 2,35 px/s. Las olas iban entre 0,5 y 2,5 px/s. Se movían igual o
+más despacio que la superficie que las lleva, así que parecían pintadas.
+
+La regla que quedó: sobre un cuerpo que gira, un campo animado no existe hasta
+que su velocidad es varias veces la del giro. Aquí, entre cuatro y seis.
+
+## Edmunds: geología, no textura
+
+El [planeta de Edmunds](/es/experimentos/observatorio/edmunds) tenía el
+problema contrario: demasiada textura. Muchas manchas del mismo tamaño, todas
+igual de importantes. Parecía una calcomanía sobre una esfera.
+
+La causa era concreta. Las cuatro provincias minerales se decidían con
+`smoothstep` muy estrechos, de 0,05 a 0,065, sobre un ruido fbm de cuatro
+octavas. Las octavas finas sumaban unos ±0,15 de rizado: el triple del ancho
+de la puerta. El contorno de cada provincia no lo dibujaba la forma grande, lo
+dibujaba el ruido fino.
+
+La solución fue cambiar el campo que decide la geografía. Ahora son tres ondas
+direccionales de baja frecuencia: lisas por construcción, así que una puerta
+ancha da una masa grande. El fbm se quedó, pero sólo para perturbar la
+frontera. Y el color y el sombreado salen del mismo terreno. Antes había dos:
+uno pintado y otro iluminado.
+
+<Figure
+  name="modelos-3d-planetas"
+  alt="Miller y Edmunds en el Observatorio: el océano turquesa con nubes alargadas y la roca seca con sus provincias minerales."
+  caption="Los dos planetas: agua que se mueve y roca con tres o cuatro accidentes grandes en vez de cien manchas."
+/>
+
+## El teseracto: jerarquía, no exposición
+
+El [teseracto](/es/experimentos/observatorio/tesseracto) es el único que no
+es un objeto de la película tal cual. Es un hipercubo de cuatro dimensiones:
+dieciséis vértices que giran en cuatro planos y se proyectan en perspectiva.
+Una luz recorre sus 32 aristas en un circuito euleriano. Cuatro llamadas de
+dibujo y un material compartido.
+
+La primera versión era matemáticamente correcta e imposible de leer: 32
+aristas de cristal que el ojo no sabía ordenar en profundidad. Subir la
+exposición no ayudó. Lo que funcionó fue lo contrario: cada vértice publica su
+profundidad en la cuarta dimensión, y la celda lejana se hace más fina y más
+tenue. El paso a paso está en
+[su entrada](/es/blog/teseracto-4d-en-three-js).
+
+## El Observatorio: mirar y medir son dos cosas
+
+Los seis se ven en el mismo instrumento. Al principio tenía todo encendido a
+la vez y se sentía pesado. Mirar un espécimen y medirlo son dos actividades
+distintas, así que se separaron en dos modos: **Observar**, que es el reposo
+(el cuerpo, su nombre y nada más), y **Estudio**, que abre la consola.
+
+En Estudio hay tres gestos, y cada uno cambia una sola cosa:
+
+- **Arrastrar** mueve la cámara. Cambia la cara que ves y el ángulo de la luz.
+- **Luz** mueve el cuerpo alrededor del origen. Misma cara, otra luz.
+- **Figura** gira el cuerpo sobre su eje. Otra cara, misma luz.
+
+El tercero llegó el último y es el que contesta la pregunta útil: ¿qué hay en
+la otra mitad de este planeta? Con el arrastre la otra mitad llega siempre
+iluminada de otra manera, y no sabes si estás viendo geografía o luz.
+
+## Lo que no está resuelto
+
+La órbita libre de Gargantúa sigue fuera. No está demostrado que la imagen
+aguante la manipulación ni que todos los ángulos conserven la composición.
+Puede que algún día entre. Hoy no.
+
+Y la calidad depende de la máquina. Con GPU real hay antialias MSAA 4x en
+toda la cadena; con render por software (un equipo sin aceleración gráfica) no, y
+las aristas de las naves salen en escalera. Por eso los
+cuerpos los juzgo sólo con GPU real: una captura por software no sirve para
+decidir si un pase funcionó.
+
+## Pruébalo
+
+Los seis están en [Experimentos](/es/experimentos). Entra en uno, pasa a
+Estudio y prueba Figura sobre Edmunds o la vista Sombra sobre Gargantúa. Si te
+interesa cómo convive todo esto con el SEO y un teléfono lento, está en
+[esta entrada](/es/blog/portafolio-3d-webgl-seo-y-rendimiento).
+
+Y si estás pensando en algo así para tu producto —una visualización 3D, una
+pieza interactiva o un sitio que la gente recuerde—, aquí está
+[cómo trabajo y qué hago](/es/contacto/servicios).
