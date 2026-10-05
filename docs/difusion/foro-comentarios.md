@@ -10,6 +10,9 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
 | 2026-10-04 | g.a.d. ring — a round brilliant ray-traced against its own facet planes | <https://discourse.threejs.org/t/94906/2> |
 | 2026-10-04 | Tesseract, an interactive audiovisual piece | <https://discourse.threejs.org/t/94996/2> |
 | 2026-10-04 | Drift - A journey from Earth to the edge of the Milky Way | <https://discourse.threejs.org/t/94916/2> |
+| 2026-10-05 | g.a.d. ring (respuesta a Paladei: reinicio del historial) | <https://discourse.threejs.org/t/94906/4> |
+| 2026-10-05 | [FREE] The Milky Way as we know it - 3D view in browser | <https://discourse.threejs.org/t/95025/2> |
+| 2026-10-05 | AZIMERIS — an astronomical instrument built with Three.js | <https://discourse.threejs.org/t/94980/2> |
 
 ## Temas apuntados para otro día
 
