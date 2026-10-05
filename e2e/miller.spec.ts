@@ -54,7 +54,7 @@ test("Miller: filtros, teclado, documentos y destinos", async ({ page, request }
   await page.keyboard.press("Enter");
   await expect(code).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("4 documentos", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Ver certificado: CS50x/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Ver certificado: CS50X/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Ver certificado: UX Designer/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Todo", exact: true }).click();
   await expect(page.getByRole("link", { name: /Ver certificado:/ })).toHaveCount(6);

@@ -71,7 +71,7 @@ describe("Miller · formación documentada", () => {
     }
     expect(issuerLogo("Conquer Languages")).toBeUndefined();
     const { container } = render(<MillerCertificates certificates={certificates} />);
-    const cs50 = screen.getByRole("link", { name: /CS50x/ });
+    const cs50 = screen.getByRole("link", { name: /CS50X/ });
     expect(cs50.querySelector(".miller-issuer-logo img")).toHaveAttribute("src", "/education/logos/harvard.webp");
     expect(container.querySelectorAll(".miller-issuer-logo").length).toBe(certificates.length);
   });
@@ -97,7 +97,7 @@ describe("Miller · formación documentada", () => {
     fireEvent.click(screen.getByRole("button", { name: "Diseño y UX" }));
     expect(screen.getByText("6 documentos")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ver certificado: UX Designer/ })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Ver certificado: CS50x/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Ver certificado: CS50X/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Código" }));
     expect(screen.getByText("4 documentos")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Todo" }));
