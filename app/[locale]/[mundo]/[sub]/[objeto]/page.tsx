@@ -303,8 +303,14 @@ export default async function ObservatoryRoute({ params }: Props) {
               </span>
               {copy.standby}
             </p>
+            {/*
+              Nunca `world.prose.summary`: ése es el significado del MUNDO
+              (Contacto, Proyectos…), no del cuerpo. Ranger decía «hablemos»
+              en su propia ficha. Sin `summary` propio, la descripción del
+              espécimen, que ya es la que lee el buscador.
+            */}
             <p className="observatory-route__summary">
-              {observatory?.summary ?? world.prose.summary}
+              {observatory?.summary ?? observatory?.seoDescription ?? copy.description(world.cosmicName)}
             </p>
 
             <ul className="observatory-face__bank">
