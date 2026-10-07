@@ -5,3 +5,4 @@ Cada lunes la rutina «Borrador semanal del blog» deja aquí `<id>/es.mdx`, `<i
 ## Registro
 
 - 2026-10-05 · lunes (`semanal-lunes-preparacion`) · Borrador de `interstellar-3d-models` (ES/EN + notas; faltan tres figuras con GPU real), post del foro del viernes 9 (`foro-2026-10-09.md`), imágenes de los posts #1 y #2 de LinkedIn comprobadas (el #1 sigue programado para el mar 6), respuestas propuestas en `respuestas-2026-10-05.md` (dev.to: Vlad Zoff; foro: Paladei y _postminimal). Nada publicado; pendiente la revisión de Jonás.
+- 2026-10-07 · LinkedIn (a petición de Jonás) · #1 confirmado publicado el mar 6. #2 «La idempotencia va antes que la validación» programado para el jue 8 oct a las 9:00 tras su «sí» (texto del calendario, 2 imágenes: `w16-pago-protegido`, `m06-registrar-cobro`); enlaces 200. Blog y dev.to del martes no se tocaron en esta sesión.
