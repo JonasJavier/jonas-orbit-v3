@@ -41,6 +41,26 @@ test.describe("blog", () => {
     expect(jsonLd.join("\n")).toContain('"BlogPosting"');
   });
 
+  test("los simuladores se ven: puerta en el índice y botón en la entrada con espécimen", async ({ page }) => {
+    await page.goto("/es/blog");
+    const gate = page.locator(".blog-gate");
+    await expect(gate.getByRole("link", { name: /Entrar a los simuladores/ })).toHaveAttribute("href", "/es/experimentos");
+    await expect(gate.getByRole("navigation").getByRole("link")).toHaveCount(6);
+
+    await page.goto("/es/blog/teseracto-4d-en-three-js");
+    const enter = page.locator(".post__hero").getByRole("link", { name: /Entrar al simulador/ });
+    await expect(enter).toBeVisible();
+    const href = await enter.getAttribute("href");
+    expect(href).toMatch(/^\/es\/experimentos\/observatorio\//);
+    await expect(page.locator(".post__cover a")).toHaveAttribute("href", href!);
+    await expect(page.locator(".post__gate").getByRole("link")).toHaveAttribute("href", href!);
+
+    // Sin espécimen, el cierre lleva al Observatorio entero.
+    await page.goto("/es/blog/sitio-bilingue-en-next-js-sin-middleware");
+    await expect(page.locator(".post__enter")).toHaveCount(0);
+    await expect(page.locator(".post__gate").getByRole("link")).toHaveAttribute("href", "/es/experimentos");
+  });
+
   test("la dirección vieja de la primera entrada redirige al blog", async ({ request }) => {
     for (const [from, to] of [
       ["/es/experimentos/como-hice-un-agujero-negro-en-webgl", "/es/blog/como-hice-un-agujero-negro-en-webgl"],

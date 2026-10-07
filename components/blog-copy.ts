@@ -14,6 +14,8 @@ export const BLOG_COPY = defineCopy<{
   minutes: (n: number) => string;
   date: (iso: string) => string;
   read: string;
+  live: string;
+  simulator: string;
 }>({
   es: {
     name: "Blog",
@@ -28,6 +30,8 @@ export const BLOG_COPY = defineCopy<{
     minutes: (n) => `${n} min de lectura`,
     date: dateFormat("es-DO"),
     read: "Leer la entrada",
+    live: "Simulador 3D · en vivo",
+    simulator: "Con simulador 3D",
   },
   en: {
     name: "Blog",
@@ -42,5 +46,7 @@ export const BLOG_COPY = defineCopy<{
     minutes: (n) => `${n} min read`,
     date: dateFormat("en-US"),
     read: "Read the post",
+    live: "3D simulator · live",
+    simulator: "With a 3D simulator",
   },
 });

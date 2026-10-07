@@ -115,6 +115,9 @@ MDX**, nunca en `worlds.data.ts`.
   `/en/blog`, fuera de los seis mundos (enlace con las herramientas de la
   cabecera y en el pie); fondo propio (`blog-sky.tsx`) con la escena dormida;
   entradas largas en Velite `articleProse` con índice y minutos calculados.
+  Simuladores a la vista (10-05, registro «Blog — los simuladores a la
+  vista»): puerta al Observatorio en el índice; en la entrada, botón, portada
+  ▶, tarjeta lateral fija y cierre; `.blog-button--live` es sólo para eso.
 - **Servicios** (09-30) registro «Servicios y notas de taller» — servicios
   como hijo de Contacto, cada uno con su caso de prueba, y «Ver servicios»
   en el hero de Contacto; difusión en `docs/difusion/`. Segundo pase

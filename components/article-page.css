@@ -115,6 +115,10 @@
   margin: 0;
 }
 
+.post__enter {
+  margin-top: 2rem;
+}
+
 .post__byline strong {
   color: var(--blog-ink);
   font-size: 0.92rem;
@@ -130,6 +134,79 @@
 .post__cover {
   width: min(100%, var(--post-width));
   margin: clamp(2.5rem, 5vw, 3.5rem) auto 0;
+}
+
+/* Con espécimen la portada es una captura del simulador y su puerta: un botón
+   de reproducir en el centro, como un vídeo que se puede abrir. */
+.post__cover--live a {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--blog-radius);
+}
+
+.post__cover--live a:focus-visible {
+  outline: 2px solid var(--blog-warm);
+  outline-offset: 4px;
+}
+
+.post__cover--live img {
+  transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.4s;
+}
+
+.post__cover--live a:hover img {
+  filter: brightness(1.08);
+  transform: scale(1.015);
+}
+
+.post__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-bottom: clamp(1.4rem, 4vw, 2.6rem);
+  border-radius: var(--blog-radius);
+  background: linear-gradient(180deg, transparent 50%, rgb(3 5 12 / 70%) 100%);
+}
+
+.post__play-button {
+  display: grid;
+  place-items: center;
+  width: clamp(3.6rem, 7vw, 5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #ffe2a8, #e9a24f);
+  box-shadow:
+    0 0 0 8px rgb(242 200 121 / 18%),
+    0 16px 50px -6px rgb(242 176 90 / 70%);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.post__play-button svg {
+  width: 42%;
+  margin-left: 8%;
+  fill: #1b1206;
+}
+
+.post__cover--live a:hover .post__play-button {
+  box-shadow:
+    0 0 0 12px rgb(242 200 121 / 22%),
+    0 20px 60px -6px rgb(242 176 90 / 85%);
+  transform: scale(1.06);
+}
+
+.post__play-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #fff6e4;
+  font: 600 0.74rem/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 80%);
 }
 
 .post__cover img,
@@ -183,35 +260,83 @@
   color: var(--blog-ink);
 }
 
+/* El simulador, siempre a la vista mientras se lee: va primero en la columna fija. */
 .post__live {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 1rem 2.2rem 1.05rem 1.05rem;
-  border: 1px solid color-mix(in srgb, var(--blog-warm) 34%, transparent);
-  border-radius: 10px;
-  background: rgb(242 200 121 / 5%);
+  flex: none;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--blog-warm) 40%, transparent);
+  border-radius: 12px;
+  background: rgb(242 200 121 / 6%);
+  box-shadow: 0 18px 50px -30px rgb(242 176 90 / 60%);
   color: var(--blog-soft);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.5;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
 }
 
 .post__live:hover {
   border-color: var(--blog-warm);
-  background: rgb(242 200 121 / 9%);
+  background: rgb(242 200 121 / 10%);
+  transform: translateY(-2px);
 }
 
-.post__live .blog-label {
-  color: var(--blog-warm);
+.post__live:focus-visible {
+  outline: 2px solid var(--blog-warm);
+  outline-offset: 3px;
 }
 
-.post__live-arrow {
+.post__live-media {
+  position: relative;
+  display: block;
+}
+
+.post__live-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #000;
+}
+
+.post__live-media .blog-live-badge {
   position: absolute;
-  top: 0.85rem;
-  right: 1rem;
-  color: var(--blog-warm);
+  bottom: 0.55rem;
+  left: 0.55rem;
+  padding: 0.32rem 0.55rem;
+  font-size: 0.56rem;
+}
+
+.post__live-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 0.95rem 0.95rem;
+}
+
+.post__live-name {
+  color: var(--blog-ink);
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.post__live-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  margin-top: 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(100deg, #ffe2a8 0%, var(--blog-warm) 45%, #e9a24f 100%);
+  color: #1b1206;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 /* ── El cuerpo ──────────────────────────────────────────────────────────── */
@@ -379,6 +504,66 @@
   margin: clamp(3.5rem, 7vw, 5rem) auto 0;
 }
 
+/* El cierre: lo leído, ahora en vivo. La captura del espécimen de fondo y el
+   texto a la izquierda, donde la imagen ya se apaga. */
+.post__gate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(20rem, 38vw, 26rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--blog-warm) 35%, transparent);
+  border-radius: calc(var(--blog-radius) + 4px);
+  background: #000;
+  box-shadow: 0 40px 100px -50px rgb(242 176 90 / 55%);
+}
+
+/* La captura ocupa los dos tercios de la derecha y se funde hacia el texto:
+   el disco no cae nunca detrás de una línea. */
+.post__gate img {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 68%;
+  height: 100%;
+  object-fit: cover;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
+}
+
+.post__gate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 90% at 0% 50%, rgb(242 200 121 / 8%), transparent 70%);
+}
+
+.post__gate-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  max-width: 30rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.post__gate h2 {
+  margin: 0;
+  color: var(--blog-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+  font-weight: 640;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.post__gate-text > p:not(.blog-live-badge) {
+  margin: 0 0 0.4rem;
+  color: var(--blog-soft);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
 .post__author {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -452,6 +637,12 @@
     margin-bottom: 2.5rem;
   }
 
+  /* En una columna la tarjeta deja de acompañar la lectura y quedaría pegada
+     a la portada, que ya es la puerta: sobra. */
+  .post__live {
+    display: none;
+  }
+
   .post__toc {
     padding: 1.1rem 1.2rem 0.6rem;
     border: 1px solid var(--blog-line);
@@ -495,6 +686,32 @@
   .post__author {
     grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
+  }
+
+  /* En el teléfono la imagen va arriba y el texto debajo, sin velo encima. */
+  .post__gate {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .post__gate img {
+    position: static;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+  }
+
+  .post__gate::before {
+    display: none;
+  }
+
+  .post__gate-text {
+    max-width: none;
+  }
+
+  .post__enter {
+    white-space: normal;
   }
 
   .post__author .blog-avatar--large {

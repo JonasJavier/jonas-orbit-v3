@@ -19,6 +19,37 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Blog — los simuladores a la vista (2026-10-05)
+
+Pedido del dueño: mejorar el diseño del blog y que el botón del simulador
+«esté bien visible» e «invite a entrar»; el fondo (`blog-sky.tsx`) le gusta y
+no se toca. Antes, «Abrir el simulador» era una caja ámbar al pie de la
+columna lateral, bajo el índice, y en el índice del blog no había simuladores.
+
+- **Un solo botón lleno en todo el blog:** `.blog-button--live` (píldora
+  ámbar con brillo, texto oscuro) es siempre «entrar a un simulador». El punto
+  rojo `.blog-live-dot` late sólo con `html[data-motion="on"]`; quieto dice lo
+  mismo.
+- **Índice:** la puerta al Observatorio (`.blog-gate`) ocupa el hueco a la
+  derecha del título: captura real de Gargantúa (`specimenImage`), «Simulador
+  3D · en vivo», botón a `/es/experimentos` (el hub del nicho 3D) y los seis
+  especímenes montados como enlaces directos (`observatoryCatalog`, sólo los
+  que tienen `href`). Las tarjetas con `specimen` llevan el sello «Con
+  simulador 3D» y todas cierran con «Leer la entrada →». La rejilla ya no deja
+  huecos: con 3n+2 tarjetas las dos primeras van a medias (rejilla de 6
+  columnas y `:has()`).
+- **Entrada con espécimen:** botón «Entrar al simulador de {nombre}» bajo el
+  autor; la portada (que es una captura del simulador) se vuelve su puerta con
+  un botón ▶; la tarjeta lateral sube ENCIMA del índice, fija, con la captura
+  del espécimen; y al final un cierre grande «Ahora míralo en vivo» con la
+  captura a la derecha, fundida hacia el texto para que el disco no caiga
+  detrás de una línea.
+- **Entrada sin espécimen:** el mismo cierre, hacia el Observatorio entero.
+- **Teléfono:** la tarjeta lateral se oculta en una columna (quedaba pegada a
+  la portada, que ya es la puerta: tres botones seguidos); el cierre pone la
+  imagen arriba y el texto debajo.
+- e2e: `blog.spec.ts` comprueba los destinos de los cuatro accesos.
+
 ## Rediseño de Ranger, Endurance y Miller — casco loftado, ventanas y nubes cizalladas (2026-10-04)
 
 Tercera ronda del día, pedida por el dueño con mandato explícito de REDISEÑO
