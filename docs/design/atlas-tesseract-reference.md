@@ -381,7 +381,7 @@ wireframe simple. Tres cosas, en `tesseract-model.ts` y un pase nuevo:
 Verificación: recortes A/B con GPU real a 1440×900 y en el teléfono; un
 tinte rojo temporal del anillo confirmó el centrado y el alcance del pase
 antes de dejarlo en su intensidad final. Registro: «Home — guía de entrada,
-HUD legible, Endurance definida, horizonte y pliegue del Tesseracto».
+HUD legible, horizonte y pliegue del Tesseracto».
 
 ## Verificación
 

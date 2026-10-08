@@ -15,8 +15,6 @@ const COPY = defineCopy({
   es: {
     region: "Guía de navegación",
     title: "Explora mi universo",
-    body:
-      "Cada destino es una parte de mi trabajo: proyectos, formación, experimentos y creatividad.",
     cuePointer: "Apunta a un destino para comenzar",
     cueTouch: "Toca un destino para comenzar",
     dismiss: "Entendido",
@@ -24,8 +22,6 @@ const COPY = defineCopy({
   en: {
     region: "Navigation guide",
     title: "Explore my universe",
-    body:
-      "Each destination is a part of my work: projects, education, experiments and creativity.",
     cuePointer: "Point at a destination to begin",
     cueTouch: "Tap a destination to begin",
     dismiss: "Got it",
@@ -93,8 +89,9 @@ export function SystemGuide({
       <p className="system-guide__eyebrow" aria-hidden="true">
         Navigation system <i>{"//"}</i> 001
       </p>
+      {/* Dos líneas y nada más: el dueño pidió «simplificar mucho más»
+          (2026-10-07). Lo que son los destinos ya lo dicen sus nombres. */}
       <p className="system-guide__title">{copy.title}</p>
-      <p className="system-guide__body">{copy.body}</p>
       <p className="system-guide__cue">
         <span className="system-guide__cue-pointer">{copy.cuePointer}</span>
         <span className="system-guide__cue-touch">{copy.cueTouch}</span>

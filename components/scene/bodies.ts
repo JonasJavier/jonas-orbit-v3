@@ -1791,11 +1791,7 @@ const BODY_FRAGMENT = /* glsl */ `
        bruscamente—. Sale gratis en legibilidad porque lo que cuenta la roca
        está en el hemisferio diurno y en la franja del terminador, no aquí. */
     if (uKind == 1) nightFloor = 0.20;
-    /* La Endurance sube de 0.26 a 0.34 (2026-10-07): el relleno del cielo en
-       su cara noche era tan bajo que los módulos traseros se fundían con el
-       fondo. Sigue siendo la nave más oscura del sistema por el lado que no ve
-       el disco; sólo deja de ser un recorte. */
-    if (uKind == 4) nightFloor = 0.34;
+    if (uKind == 4) nightFloor = 0.26;
     if (uKind == 5) nightFloor = 0.44;
     if (uKind == 7) nightFloor = 0.4;
     float nightFill = mix(nightFloor, 1.0, day);
@@ -2325,27 +2321,14 @@ const BODY_FRAGMENT = /* glsl */ `
            casco que ya vive casi entero de su filo: ámbar hacia Gargantúa, azul
            acero en la espalda. Es poco, pero es lo único que traía color a las
            caras que no alcanzan ni el filo ni la lámina. */
-        /*
-          LUZ LATERAL DEL DISCO (2026-10-07). Las caras que no miran al disco
-          ni a la cámara se perdían en el negro del fondo: los módulos de la
-          mitad trasera del anillo eran siluetas sin canto. Este rebote sube
-          al doble —0.026 → 0.052 hacia Gargantúa, 0.005 → 0.011 en la
-          espalda— y su rampa se abre (−0.7..0.2 → −0.85..0.3) para que el
-          lado del disco se lea también en las caras rasantes. Sigue siendo
-          una fracción de la clave: no aclara la nave, la DEFINE contra el
-          fondo y la ata a la fuente de luz que tiene al lado.
-        */
+        /* Se probó una luz lateral del disco (2026-10-07: rebote al triple y
+           un filo envolvente sin albedo) y el dueño la rechazó: la nave dejaba
+           de sentirse integrada. Estos valores son los del pase 10-04. */
         color += albedo * mix(
-          vec3(0.016, 0.020, 0.032),
-          vec3(0.085, 0.060, 0.034),
-          smoothstep(-0.85, 0.3, ndl)
+          vec3(0.005, 0.006, 0.009),
+          vec3(0.026, 0.019, 0.011),
+          smoothstep(-0.7, 0.2, ndl)
         ) * materialOcclusion;
-        /* Y un filo lateral que NO pasa por el albedo: en los módulos oscuros
-           el rebote de arriba se multiplica por un gris bajo y desaparece. Esta
-           luz ancha —del lado del disco, envolvente, con suelo en el canto—
-           es la que recorta la silueta de la mitad trasera contra el negro. */
-        color += key * smoothstep(-0.9, 0.45, ndl) * (0.028 + 0.040 * fresnel)
-               * materialOcclusion;
         /*
           LÁMINA ANCHA, y es la pieza que faltaba.
 

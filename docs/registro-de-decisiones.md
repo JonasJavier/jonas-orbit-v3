@@ -19,7 +19,7 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
-## Home — guía de entrada, HUD legible, Endurance definida, horizonte y pliegue del Tesseracto (2026-10-07)
+## Home — guía de entrada, HUD legible, horizonte y pliegue del Tesseracto (2026-10-07)
 
 Pedido del dueño a partir de una crítica externa de la portada: «cambiar y
 mejorar todo esto», llevarlo «al siguiente nivel» y que en el móvil funcione
@@ -30,8 +30,9 @@ en 1440×900 y 390×844 con un script de Playwright con ventana, como
 - **Guía de entrada «NAVIGATION SYSTEM // 001»** (`components/system-guide.tsx`
   + `.css`). El riesgo que señalaba la crítica era real: se puede admirar la
   escena diez segundos sin descubrir que es un portafolio. La guía dice
-  «Explora mi universo / Cada destino es una parte de mi trabajo… / Apunta
-  (Toca) a un destino para comenzar» y un botón «Entendido». Aparece 1,1 s
+  sólo «Explora mi universo / Apunta (Toca) a un destino para comenzar» y un
+  botón «Entendido» (tenía una frase sobre los destinos; el dueño la quitó:
+  «el texto también es mucho, simplifícalo mucho más»). Aparece 1,1 s
   después de montar (sólo con JavaScript: en el HTML servido no hay nada que
   explorar salvo el raíl), vive en el flanco izquierdo entre Miller y Edmunds
   —frente al NAV TARGET— y **se retira con el primer destino apuntado o
@@ -54,14 +55,12 @@ en 1440×900 y 390×844 con un script de Playwright con ventana, como
   del 48 % al 66 %. **El raíl se despega del borde**: `bottom` 1,35 → 2,3 rem
   y el texto alineado a 3,4 rem con la franja superior; las lecturas de abajo
   a la derecha suben igual. El móvil no cambia de tamaños.
-- **Endurance separada del fondo** (`bodies.ts`, `uKind == 4`). Los módulos
-  de la mitad trasera se fundían con el negro. Tres cosas: el rebote dirigido
-  sube (0,026 → 0,085 hacia el disco, 0,005 → 0,016 en la espalda, rampa
-  −0,85..0,3); un **filo lateral del disco que no pasa por el albedo**
-  (`key · smoothstep(−0,9, 0,45, ndl) · (0,028 + 0,040·fresnel)`), que es el
-  que recorta la silueta de los módulos oscuros; y el suelo nocturno 0,26 →
-  0,34. Sigue siendo la nave más oscura por el lado que no ve el disco; deja
-  de ser un recorte. La jerarquía de valor del pase 10-04 no se mueve.
+- **Endurance: RECHAZADO y revertido el mismo día.** Se probó separarla del
+  fondo con un rebote dirigido al triple, un filo lateral del disco sin
+  albedo y el suelo nocturno 0,26 → 0,34. El dueño: «no se siente integrada
+  ahora con la iluminación, estaba mejor antes». La nave queda exactamente
+  como en el pase 10-04; si alguna vez se retoma, el camino no es más luz
+  lateral.
 - **Horizonte de Gargantúa** (`gargantua-shaders.ts`). La rampa de los rayos
   condenados vuelve del 13 % al 20 % exterior de b crítico (0,87 → 0,80): la
   transición sombra–disco gana degradado donde las imágenes de orden superior

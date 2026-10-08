@@ -65,15 +65,6 @@
   text-shadow: 0 0 1.6rem rgba(127, 229, 255, 0.16);
 }
 
-.system-guide__body {
-  margin: 0;
-  max-width: 19rem;
-  color: var(--hud-secondary, #cbd8f0);
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
-  line-height: 1.55;
-  text-shadow: 0 0 0.9rem rgba(4, 6, 13, 0.9);
-}
 
 .system-guide__cue {
   display: flex;
@@ -190,11 +181,6 @@ html:not([data-motion="off"]) .system-guide__cue::before {
     font-size: 1.15rem;
   }
 
-  .system-guide__body {
-    max-width: 19.5rem;
-    font-size: 0.68rem;
-    line-height: 1.45;
-  }
 
   .system-guide__cue {
     margin-top: 0.15rem;
@@ -219,9 +205,6 @@ html:not([data-motion="off"]) .system-guide__cue::before {
   .system-guide {
     gap: 0.25rem;
     padding: 0.6rem 0.9rem 0.45rem;
-  }
-  .system-guide__body {
-    display: none;
   }
   .system-guide__title {
     font-size: 1.05rem;

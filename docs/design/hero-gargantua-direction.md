@@ -234,8 +234,8 @@ En reposo el bloque de la derecha ya no dice `SYSTEM MAP / SELECT TARGET`
 —jerga que no explicaba qué hacer— sino `SYSTEM MAP / Elige un destino / y
 explora mi trabajo` (traducido). Y en el flanco izquierdo, frente a él, vive
 la **guía de entrada** `NAVIGATION SYSTEM // 001`: eyebrow en inglés de
-instrumento, título «Explora mi universo», una frase sobre lo que son los
-destinos, la instrucción del medio (apuntar / tocar) y un botón «Entendido».
+instrumento, título «Explora mi universo», la instrucción del medio (apuntar /
+tocar) y un botón «Entendido»; nada más, por decisión del dueño.
 Aparece al montar, una vez por sesión, y se retira con el primer destino
 apuntado o enfocado: conserva la inmersión sin sacrificar la orientación. No
 es un bloque personal ni un título gigante; es tipografía de HUD. Tamaños del
