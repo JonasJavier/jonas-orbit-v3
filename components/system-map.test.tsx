@@ -522,6 +522,13 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     vi.useFakeTimers();
     sessionStorage.removeItem("jonas-orbit:guia-vista");
     const first = render(<SystemMap worlds={worlds} languages={languages} />);
+    // Montada pero invisible durante 1,1 s: apuntar un destino en ese tramo
+    // no la retira (el puntero que ya cruzaba la pantalla no la ha leído).
+    expect(screen.queryByRole("complementary")).toBeNull();
+    fireEvent.focus(first.container.querySelector('[data-rail-world="miller"]')!);
+    act(() => {
+      vi.advanceTimersByTime(1200);
+    });
     const guide = screen.getByRole("complementary", { name: "Guía de navegación" });
     expect(guide).toHaveAttribute("data-state", "visible");
     expect(guide).toHaveTextContent(/Explora mi universo/);
@@ -548,6 +555,9 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     vi.useFakeTimers();
     sessionStorage.removeItem("jonas-orbit:guia-vista");
     render(<SystemMap worlds={worlds} languages={languages} />);
+    act(() => {
+      vi.advanceTimersByTime(1200);
+    });
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.getByRole("complementary", { name: "Guía de navegación" })).toHaveAttribute(
       "data-state",

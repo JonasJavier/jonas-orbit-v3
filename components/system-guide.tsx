@@ -32,7 +32,8 @@ const COPY = defineCopy({
   },
 });
 
-export type SystemGuideState = "visible" | "leaving" | "gone";
+/** `pending`: montada pero todavía no se ve, así que nada puede retirarla. */
+export type SystemGuideState = "pending" | "visible" | "leaving" | "gone";
 
 /**
  * La guía de entrada del System Map (2026-10-07).
@@ -53,6 +54,13 @@ export type SystemGuideState = "visible" | "leaving" | "gone";
  * mira sin moverse, es exactamente cuando la guía hace falta. Se muestra una
  * vez por sesión (`sessionStorage`): volver a la portada desde un mundo ya es
  * explorar, y repetirla sería un cartel.
+ *
+ * Y no puede retirarse antes de haberse visto. Durante el primer segundo la
+ * portada es el atlas plano y el puntero que ya se movía por la pantalla entra
+ * en el blanco de Gargantúa —que cubre media escena— sin que nadie apunte a
+ * nada: en una captura la guía salió retirada antes de aparecer. Por eso
+ * arranca `pending`, invisible e inmune, y sólo pasa a `visible` 1,1 s
+ * después; desde entonces el primer destino apuntado la retira.
  *
  * ── Qué no es ───────────────────────────────────────────────────────────────
  *
@@ -78,7 +86,7 @@ export function SystemGuide({
     return () => window.removeEventListener("keydown", onKey);
   }, [state, onDismiss]);
 
-  if (state === "gone") return null;
+  if (state === "gone" || state === "pending") return null;
 
   return (
     <aside className="system-guide" data-state={state} aria-label={copy.region}>

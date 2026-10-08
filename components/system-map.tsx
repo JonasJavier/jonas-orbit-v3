@@ -44,6 +44,8 @@ const EXPLORE_HINT_KEY = "jonas-orbit:explorar-visto";
 const GUIDE_KEY = "jonas-orbit:guia-vista";
 /** Lo que dura el fundido de salida de la guía antes de desmontarla (ms). */
 const GUIDE_LEAVE_MS = 450;
+/** Cuánto espera la guía, montada pero invisible, antes de verse y poder retirarse (ms). */
+const GUIDE_DELAY_MS = 1100;
 
 interface InteractionVolume {
   /** Radio de respaldo para el mapa plano, antes de recibir `--map-radius`. */
@@ -157,7 +159,10 @@ export function SystemMap({
     Arranca `gone` y la enciende el cliente, como «toca para explorar»: en el
     HTML servido no hay nada que explorar salvo el raíl, y una guía que
     apareciera antes de que la escena exista hablaría de un lugar que todavía
-    no está. Se retira con el PRIMER destino apuntado o enfocado —cuerpo o
+    no está. Pasa por `pending` —montada, invisible e inmune— durante 1,1 s,
+    porque el puntero que ya cruzaba la pantalla entraba en el blanco de
+    Gargantúa antes de que nadie viera nada (ver `system-guide.tsx`). Desde
+    `visible`, se retira con el PRIMER destino apuntado o enfocado —cuerpo o
     raíl, es el mismo acto— y no vuelve en esta sesión.
   */
   const [guide, setGuide] = useState<SystemGuideState>("gone");
@@ -168,13 +173,16 @@ export function SystemMap({
       } catch {
         // Sin almacenamiento, la guía sale en cada carga de la portada.
       }
-      setGuide("visible");
+      setGuide("pending");
     };
     read();
   }, []);
   useEffect(() => {
-    if (guide !== "leaving") return;
-    const handle = window.setTimeout(() => setGuide("gone"), GUIDE_LEAVE_MS);
+    if (guide !== "pending" && guide !== "leaving") return;
+    const handle = window.setTimeout(
+      () => setGuide(guide === "pending" ? "visible" : "gone"),
+      guide === "pending" ? GUIDE_DELAY_MS : GUIDE_LEAVE_MS,
+    );
     return () => window.clearTimeout(handle);
   }, [guide]);
 

@@ -36,12 +36,16 @@ en 1440×900 y 390×844 con un script de Playwright con ventana, como
   explorar salvo el raíl), vive en el flanco izquierdo entre Miller y Edmunds
   —frente al NAV TARGET— y **se retira con el primer destino apuntado o
   enfocado** (cuerpo o raíl), con `Escape` o con el botón; no se va sola por
-  tiempo. Una vez por sesión (`sessionStorage`, clave
+  tiempo. Durante ese 1,1 s está `pending`: montada, invisible e inmune —en
+  una captura el puntero que ya cruzaba la pantalla entró en el blanco de
+  Gargantúa (842×213 px a 1280 de ancho) sobre el atlas plano y la retiró
+  antes de verse—. Una vez por sesión (`sessionStorage`, clave
   `jonas-orbit:guia-vista`). `aside` no modal; deja pasar el puntero (sólo el
   botón lo recoge). Cabecera en inglés de instrumento, el resto traducido con
   `defineCopy`. **Teléfono:** tarjeta centrada sobre el raíl con velo y
-  `backdrop-filter`, 44 px en el botón; «Toca para explorar» espera a que la
-  guía se retire. Apaisado bajo: sin cuerpo de texto.
+  44 px en el botón y sin `backdrop-filter` (en un Chromium con GPU a DPR 2 el
+  desenfoque se compuso encima del propio texto); «Toca para explorar» espera
+  a que la guía se retire. Apaisado bajo: sin cuerpo de texto.
 - **HUD legible.** La lectura en reposo deja de ser `SELECT TARGET` (jerga)
   y pasa a «Elige un destino / y explora mi trabajo» (EN: «Choose a
   destination / and explore my work»), traducida. Tamaños de escritorio:
