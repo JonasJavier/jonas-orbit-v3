@@ -13,6 +13,9 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
 | 2026-10-05 | g.a.d. ring (respuesta a Paladei: reinicio del historial) | <https://discourse.threejs.org/t/94906/4> |
 | 2026-10-05 | [FREE] The Milky Way as we know it - 3D view in browser | <https://discourse.threejs.org/t/95025/2> |
 | 2026-10-05 | AZIMERIS — an astronomical instrument built with Three.js | <https://discourse.threejs.org/t/94980/2> |
+| 2026-10-07 | Understanding wide gamut, hdr, what is currently achievable in threejs | <https://discourse.threejs.org/t/95073/2> |
+| 2026-10-07 | Banyan, a procedural tree grown from a 32-bit seed in one HTML file | <https://discourse.threejs.org/t/95092/2> |
+| 2026-10-07 | Expanding my Three.js Solar System into a full Universe Explorer | <https://discourse.threejs.org/t/95032/2> |
 
 ## Temas apuntados para otro día
 
@@ -20,3 +23,5 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
   que el sonido sintetizado orgánico es difícil; enlaza con la travesía.
 - [Does three.js need a "lite" rewrite?](https://discourse.threejs.org/t/94985):
   peso del build; enlaza con la auditoría WP6 del presupuesto de JS.
+- [3D Anatomy Atlas](https://discourse.threejs.org/t/95045): sus tests corren
+  en Chromium con render por software; enlaza con la suite e2e en SwiftShader.
