@@ -112,9 +112,20 @@ const FRAGMENT = /* glsl */ `
         que tiene que verse cambiar es el PLANO, y un plano sin frente ni
         fondo no cambia, parpadea.
       */
-      vec3 colour = spectral * (0.055 + fresnel * 0.17) + vec3(1.0, 0.78, 0.48) * reflection * 0.13;
+      /*
+        MATERIAL TRANSLÚCIDO (2026-10-07). Las seis membranas existían pero
+        no se veían: un 1,3 % de alfa es ruido de cuantización. Suben a un
+        cristal que se lee —4 % de cuerpo, 11 % en el canto— y ganan una
+        IRIDISCENCIA lenta: el tono recorre cian → violeta → cian en función
+        del ángulo de vista y del tiempo, como una lámina delgada. Sigue
+        siendo a contraluz y sigue sin rellenar las veinticuatro caras.
+      */
+      float film = 0.5 + 0.5 * sin(facing * 6.0 + vUv.x * 2.4 + uTime * 0.21);
+      vec3 sheen = mix(cyan, violet, film);
+      vec3 colour = mix(spectral, sheen, 0.55) * (0.16 + fresnel * 0.34)
+        + vec3(1.0, 0.78, 0.48) * reflection * 0.13;
       float presence = 0.32 + 0.68 * hierarchy;
-      gl_FragColor = vec4(colour * presence, (0.013 + fresnel * 0.058) * presence + uFocus * 0.018);
+      gl_FragColor = vec4(colour * presence, (0.075 + fresnel * 0.16) * presence + uFocus * 0.018);
     } else if (uLayer > 0.5) {
       /*
         Un circuito euleriano continuo: la punta escribe, la estela se apaga.
@@ -188,8 +199,15 @@ const FRAGMENT = /* glsl */ `
       float core = pow(facing, 7.0);
       float since = mod(mod(uTime * (32.0 / 18.0), 32.0) - vUv.y + 32.0, 32.0);
       float energy = pow(1.0 - smoothstep(0.0, 9.0, since), 2.0);
-      vec3 colour = spectral * (0.020 + fresnel * 0.052)
-        + vec3(0.82, 0.94, 1.0) * core * (0.040 + 0.036 * vCell)
+      /*
+        BORDES LUMINOSOS MUY FINOS (2026-10-07): el núcleo blanco sube
+        (0.040 → 0.075 de base, 0.036 → 0.060 con la celda) y el cuerpo
+        translúcido gana un 60 %. La arista sigue midiendo lo mismo —ni un
+        píxel más— pero deja de ser un trazo gris: es una varilla con luz
+        dentro. La jerarquía por celda se conserva entera.
+      */
+      vec3 colour = spectral * (0.032 + fresnel * 0.084)
+        + vec3(0.82, 0.94, 1.0) * core * (0.075 + 0.060 * vCell)
         + vec3(0.65, 0.77, 0.85) * key * uLightIntensity * 0.058
         + vec3(1.0, 0.84, 0.61) * reflection * 0.46;
       /*

@@ -54,6 +54,7 @@ import {
   type SceneBodyInput,
 } from "./bodies";
 import { createResolutionGovernor } from "./resolution-governor";
+import { createTesseractLens } from "./tesseract-lens";
 import { createVoyagePass } from "./voyage-pass";
 
 /**
@@ -439,6 +440,13 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
     : new THREE.WebGLRenderTarget(1, 1, { type: THREE.UnsignedByteType });
   const composer = new EffectComposer(renderer, composerTarget);
   composer.addPass(new RenderPass(canAccumulate ? displayScene : marchScene, quadCamera));
+
+  // El espacio se pliega alrededor del Tesseracto: entre el cielo y los
+  // cuerpos, para que lo doblado sea lo que tiene detrás y él salga nítido
+  // encima. Ver `tesseract-lens.ts`. Mismo gate que el bloom.
+  const { pass: tesseractLens, uniforms: tesseractLensUniforms } =
+    createTesseractLens();
+  if (canFloat) composer.addPass(tesseractLens);
 
   // Los cuerpos entran en la MISMA cadena, encima del raymarch y antes del
   // bloom: así el glow envuelve también a los planetas y no se ven pegados.
@@ -1584,6 +1592,20 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       voyagePass.enabled = false;
     }
 
+    const tesseract = projected.find((entry) => entry.id === "tesseract");
+    if (canFloat && tesseract && tesseract.visible) {
+      tesseractLensUniforms.uCentre.value.set(
+        tesseract.x / cssWidth,
+        1 - tesseract.y / cssHeight,
+      );
+      tesseractLensUniforms.uRadius.value = tesseract.radius / cssHeight;
+      tesseractLensUniforms.uAspect.value = cssWidth / cssHeight;
+      tesseractLensUniforms.uTime.value = clock;
+      tesseractLens.enabled = true;
+    } else {
+      tesseractLens.enabled = false;
+    }
+
     try {
       if (canAccumulate) {
         const [jx, jy] = JITTER[accumulated % JITTER.length];
@@ -1811,6 +1833,7 @@ export function createSystemScene(options: SceneOptions): SceneHandle {
       savePass?.dispose();
       shadowGuardPass?.dispose();
       voyagePass.dispose();
+      tesseractLens.dispose();
       bloomPass.dispose();
       composer.dispose();
       renderer.dispose();

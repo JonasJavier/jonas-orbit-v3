@@ -355,6 +355,34 @@ criterio de rechazo explícito («si parece After Effects, se elimina»), y ese
 criterio sólo se puede aplicar mirándola en movimiento, no leyendo un diff.
 Entra cuando haya con qué compararla.
 
+### V5 — cristal que se ve y espacio que se pliega (2026-10-07)
+
+Sobre la base canónica de V3/V4, sin tocar la matemática del 4-cubo, el ritmo,
+la escala ni la posición. Lo que la crítica externa señalaba era cierto a
+tamaño de hero: al lado de cuerpos con volumen, el Tesseracto se leía como un
+wireframe simple. Tres cosas, en `tesseract-model.ts` y un pase nuevo:
+
+1. **Membranas que se ven.** Del 1,3 % de alfa (ruido de cuantización) al
+   7,5 % de cuerpo y 16 % en el canto, con **iridiscencia** lenta —cian a
+   violeta en función del ángulo de vista y del tiempo, como una lámina
+   delgada—. Siguen a contraluz y siguen siendo seis caras, no veinticuatro.
+2. **Bordes luminosos muy finos.** El núcleo blanco sube (0,040 → 0,075 de
+   base, 0,036 → 0,060 con la celda) y el cuerpo translúcido un 60 %. Ni un
+   píxel más de calibre: la varilla tiene luz dentro, no es más gorda.
+3. **Pliegue del espacio** (`components/scene/tesseract-lens.ts`). Un pase
+   de pantalla entre el raymarch y los cuerpos desplaza el cielo en un anillo
+   de 2,2 radios alrededor del Tesseracto proyectado —campana con el pico a
+   medio radio, 1,5 % del alto como máximo, cuatro lóbulos que giran cada
+   ~36 s, separación cromática mínima— y añade un campo cian/violeta apenas
+   visible con los mismos lóbulos. El Tesseracto se dibuja encima y sale
+   nítido sobre un fondo doblado. Mismo gate que el bloom; apagado fuera del
+   cuadro.
+
+Verificación: recortes A/B con GPU real a 1440×900 y en el teléfono; un
+tinte rojo temporal del anillo confirmó el centrado y el alcance del pase
+antes de dejarlo en su intensidad final. Registro: «Home — guía de entrada,
+HUD legible, Endurance definida, horizonte y pliegue del Tesseracto».
+
 ## Verificación
 
 - Suite existente: rutas, estado de foco/hover, accesibilidad, geometría,

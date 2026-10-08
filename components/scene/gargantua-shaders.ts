@@ -2097,7 +2097,16 @@ void main() {
   */
   float impact = sqrt(h2);
   float bCrit = 2.598076 * uRs;
-  float doomed = 1.0 - smoothstep(bCrit * 0.87, bCrit * 0.99, impact);
+  /*
+    La rampa en b vuelve a abrirse del 13 % al 20 % exterior del radio
+    (2026-10-07): con el 13 % la transición entre la sombra y el disco se
+    leía como un recorte —uniforme por dentro y con el borde inferior duro
+    contra la banda que cruza por delante—. Un 20 % deja que las imágenes
+    de orden superior que recogen los rayos casi críticos se desvanezcan en
+    vez de cortarse: más riqueza en la transición, no más brillo. El centro
+    de la sombra sigue a cero.
+  */
+  float doomed = 1.0 - smoothstep(bCrit * 0.80, bCrit * 0.99, impact);
 
   vec3 color = vec3(0.0);
   float transmit = 1.0;
