@@ -39,10 +39,16 @@ describe("travesía · línea de tiempo", () => {
     expect(voyageTimeline("full")).toBe(VOYAGE_FULL);
   });
 
-  it("la espera al router está acotada en los dos modos", () => {
-    // G10: si la página nueva no llega, la luz se retira igual.
-    expect(VOYAGE_FULL.arriveCap).toBeLessThanOrEqual(1.5);
-    expect(VOYAGE_SHORT.arriveCap).toBeLessThanOrEqual(1.5);
+  it("la espera al router se ve pronto y está acotada en los dos modos", () => {
+    // Con la red lenta la luz se apaga en la espera en vez de retirarse
+    // sobre la página vieja (2026-10-07)…
+    expect(VOYAGE_FULL.waitAfter).toBeLessThanOrEqual(0.6);
+    expect(VOYAGE_SHORT.waitAfter).toBeLessThanOrEqual(0.6);
+    // …y G10 sigue: si la página nueva no llega, el velo se retira igual.
+    for (const timeline of [VOYAGE_FULL, VOYAGE_SHORT]) {
+      expect(timeline.arriveCap).toBeGreaterThan(timeline.waitAfter);
+      expect(timeline.arriveCap).toBeLessThanOrEqual(15);
+    }
   });
 });
 

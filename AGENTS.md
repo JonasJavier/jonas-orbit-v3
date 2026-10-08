@@ -165,6 +165,12 @@ MDX**, nunca en `worlds.data.ts`.
   (`lib/audio-samples.ts`); el resto, recetas de `lib/sfx.ts`. Licencia de los
   dos archivos: el dueño confirmó derechos de publicación (09-27).
   §2 «Compatibilidad» (09-27): rampas portables y autoplay `armed` hasta el gesto.
+- **Navegación con red lenta** (10-07) registro de igual nombre — la ruta se
+  precarga al despegar; si la página tarda, la travesía se queda en la ESPERA
+  (velo oscuro + línea de progreso, `data-voyage="wait"`, tope 12 s) en vez
+  de retirarse sobre la página vieja; precarga por intención con 160 ms de
+  permanencia; `IntentLink` enciende la línea con `useLinkStatus`; los
+  shaders de página compilan en paralelo (`lib/webgl-program.ts`).
 - **Travesía — sonido, pestillo y alabeo** (09-22)
   `docs/design/travesia-espaciotemporal.md` §«Segundo pase» — sonido sintetizado
   (`lib/voyage-audio.ts`), latido de exposición y 3,4° de alabeo.

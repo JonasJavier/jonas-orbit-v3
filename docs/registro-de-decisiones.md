@@ -19,6 +19,58 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Navegación con red lenta — la travesía espera a la página, y nada se congela (2026-10-07) — manda sobre el «tope de llegada de 1,4 s» de la Travesía
+
+Queja del dueño: con el internet lento, al entrar a un planeta «hace la
+animación pero no entra y vuelve a la escena», y en la navbar a veces el
+cambio de página «se queda frisado». Medido con `tools/nav-latency.mjs`
+(nuevo) sobre `next start`, Chromium con GPU real y «Slow 4G» de DevTools
+(563 ms, 1,6 Mbit/s) aplicado tras la carga:
+
+- **La causa del «vuelve a la escena».** Tras pedir la ruta, la luz del cruce
+  se retiraba a los 1,4 s llegara o no la página. Con un toque directo (sin
+  hover que precargue) la luz se retiraba sobre la home en 5 de 6 mundos en
+  3D y en 6 de 6 en 2D, y la página aparecía de golpe 0,6–3,8 s después.
+  Además, en 3D la ruta no se pedía hasta el pico (2,05 s): la red estaba
+  parada todo el despegue.
+- **Arreglo.** (1) `useWorldNavigation` llama a `router.prefetch` al
+  DESPEGAR. (2) Nueva fase `wait` en `voyage-controller.ts`: si a
+  `waitAfter` (0,5 s completa / 0,4 s reducida) de pedir la ruta la página no
+  ha llegado, la luz se apaga en un velo oscuro con el acento del destino
+  (`filter: brightness(.3)`) y una línea de progreso fina arriba
+  (`.route-progress` en `VoyageLayer`); cualquier tecla, clic o gesto lo
+  retira, y `arriveCap` sube de 1,4 a 12 s como tope duro. La llegada tras
+  una espera sale del velo, no de la luz blanca (`data-voyage-waited`).
+  Resultado con la misma red: la luz se retira sobre la página NUEVA en
+  12 de 12 viajes. Con red buena la espera no llega a verse.
+- **Precarga por intención = quedarse.** El cursor que cruza Gargantúa (el
+  centro) camino de otro planeta precargaba Sobre mí con sus `preload` (~390
+  KB de cielo y fotos) y le quitaba red al destino pulsado (Contacto llegaba
+  2,9 s después de retirarse la luz). `usePrefetchOnIntent` espera 160 ms y
+  sólo precarga si el enlace sigue apuntado o enfocado. El clic no depende
+  de esto.
+- **Navbar.** Las rutas entre mundos casi no piden JS (el chunk de `[mundo]`
+  ya trae los seis), así que llegan en ~0,7–1 s con «Slow 4G»; lo que faltaba
+  era respuesta: `IntentLink` monta `RoutePending` (`useLinkStatus`), que
+  publica `data-route-pending` en `<html>` y enciende la misma línea de
+  progreso, con 250 ms de retraso para que una navegación rápida no la
+  encienda.
+- **El «frisado».** La Ranger y el océano de Miller compilaban su shader de
+  forma síncrona en el commit de la página nueva (`getShaderParameter` /
+  `getProgramParameter` justo tras compilar): ~380 ms de hilo bloqueado al
+  llegar a Contacto. `lib/webgl-program.ts` compila sin leer el estado y
+  espera `COMPLETION_STATUS_KHR` (`KHR_parallel_shader_compile`) fotograma a
+  fotograma; el lienzo queda `visibility: hidden` hasta su primer fotograma
+  (`data-drawn`), así que se ve la foto o la vista fija y no un negro. Tarea
+  más larga al llegar a Contacto: 378 → 80–250 ms.
+
+Queda, sin tocar a propósito: la escena del mapa se construye también en las
+rutas cubiertas tras `after-load-idle` (100–300 ms de tarea con GPU real,
+más en un móvil) para que la vuelta a la home sea inmediata —es la decisión
+de «Rendimiento móvil»—; y el primer viaje desde la home baja el chunk
+cliente de los seis mundos (~50 KB comprimidos) sólo al navegar, porque la
+precarga del RSC no lo pide. Las dos son candidatas si el dueño lo quiere.
+
 ## Home — guía de entrada, HUD legible, horizonte y pliegue del Tesseracto (2026-10-07)
 
 Pedido del dueño a partir de una crítica externa de la portada: «cambiar y

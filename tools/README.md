@@ -299,6 +299,19 @@ espacio) los argumentos van entre comillas, y SwiftShader compila los shaders
 en la CPU, así que el TBT de una ruta con escena sale inflado: vale para A/B
 entre dos builds, no como cifra absoluta. Medianas de tres pasadas como mínimo.
 
+## `nav-latency.mjs`: cuánto tarda en llegar un mundo con la red lenta
+
+Abre la home (o una página con cabecera) en un Chromium con GPU real, aplica
+por CDP una red de DevTools (`--red=lenta` es «Slow 4G»: 563 ms, 1,6 Mbit/s)
+DESPUÉS de la carga —se mide el viaje, no la primera visita—, apunta al
+destino o lo toca sin apuntar (`--sin-apuntar`, como un dedo) y anota en el
+reloj de la página cada fase de `data-voyage`, el cambio de URL, los bytes
+pedidos y la tarea larga más larga. La columna que delata el fallo de
+2026-10-07 es `rutaEnLuzFuera`: si es `/es`, la luz se retiró sobre la página
+vieja. Contexto nuevo por viaje (caché vacía), contra `next start` en :3300.
+Desde Git Bash, las rutas que se pasen como argumento necesitan
+`MSYS_NO_PATHCONV=1`.
+
 ## Por qué hace falta `shot.mjs` y no vale abrir la página
 
 La mayoría de equipos de desarrollo reportan `prefers-reduced-motion`, así que

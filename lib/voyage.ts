@@ -55,9 +55,18 @@ export interface VoyageTimeline {
   /** Duración de la llegada: la luz se retira y la página nueva emerge. */
   arrive: number;
   /**
+   * Cuánto después de pedir la ruta, si la página nueva no ha llegado, la luz
+   * se apaga en la ESPERA: un velo oscuro con una línea de progreso. Con la
+   * ruta precargada la llegada cae antes y la espera no se ve nunca.
+   */
+  waitAfter: number;
+  /**
    * Tope de espera al router después de pedirle la ruta. Si la página nueva
    * no ha llegado en este tiempo, la luz se retira igual: nunca se atrapa al
-   * visitante detrás de un fundido.
+   * visitante detrás de un fundido (y durante la espera cualquier tecla, clic
+   * o gesto la retira antes). Hasta 2026-10-07 era 1,4 s: con la red lenta la
+   * luz se retiraba con la home todavía en pantalla y la página aparecía de
+   * golpe segundos después —«hace la animación y vuelve a la escena»—.
    */
   arriveCap: number;
 }
@@ -78,7 +87,8 @@ export const VOYAGE_FULL: VoyageTimeline = {
   push: 2.05,
   flashLead: 0.2,
   arrive: 0.55,
-  arriveCap: 1.4,
+  waitAfter: 0.5,
+  arriveCap: 12,
 };
 
 /**
@@ -95,7 +105,8 @@ export const VOYAGE_SHORT: VoyageTimeline = {
   push: 0.3,
   flashLead: 0.14,
   arrive: 0.22,
-  arriveCap: 1.4,
+  waitAfter: 0.4,
+  arriveCap: 12,
 };
 
 export function voyageTimeline(mode: VoyageMode): VoyageTimeline {

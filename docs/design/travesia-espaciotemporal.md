@@ -88,9 +88,14 @@ temporizadores.
   captura cortan la travesía: luz y ruta en el acto, `data-voyage-skipped`.
   El clic que la arrancó no se lee a sí mismo: su `pointerdown` ya pasó y con
   teclado el `click` sintético se despacha después del `keydown`.
-- **Tope duro de llegada.** Tras pedir la ruta se espera al pathname como
-  mucho 1,4 s; después la luz se retira igual. Nunca se atrapa al visitante
-  detrás de un fundido.
+- **Tope duro de llegada, y la espera se ve (2026-10-07).** Tras pedir la
+  ruta se espera al pathname. Si a `waitAfter` (0,5 s / 0,4 s) no ha llegado,
+  la luz se apaga en la espera (`data-voyage="wait"`): velo oscuro con el
+  acento del destino y una línea de progreso arriba; cualquier tecla, clic o
+  gesto lo retira, y como mucho dura `arriveCap` (12 s). Hasta esa fecha el
+  tope era 1,4 s y, con la red lenta, la luz se retiraba sobre la página
+  vieja. La ruta se precarga al despegar. Nunca se atrapa al visitante
+  detrás de un fundido. Ver el registro, «Navegación con red lenta».
 - **La cámara no tiene controlador (§3).** La travesía es una transición
   guionada SOBRE la pose de la ruta: nadie escribe en `pose`. `setPose`
   termina cualquier travesía, y el paralaje queda congelado mientras dura.

@@ -134,6 +134,38 @@ describe("travesía · controlador", () => {
     expect(readVoyageState().status).toBe("idle");
   });
 
+  it("si la página tarda, la luz se apaga en la espera en vez de retirarse", () => {
+    startVoyage({ id: "ranger", href: "/es/contacto", mode: "full", navigate });
+    vi.advanceTimersByTime(ms(VOYAGE_FULL.push) + 1);
+    expect(root().dataset.voyage).toBe("flash");
+
+    vi.advanceTimersByTime(ms(VOYAGE_FULL.waitAfter));
+    expect(root().dataset.voyage).toBe("wait");
+    expect(root().dataset.voyageWaited).toBe("true");
+    expect(readVoyageDeparture()).toBeNull();
+
+    // La página llega: emerge desde el velo, y <html> queda limpio.
+    markVoyageArrived();
+    expect(root().dataset.voyage).toBe("arrive");
+    expect(root().dataset.voyageWaited).toBe("true");
+    vi.advanceTimersByTime(ms(VOYAGE_FULL.arrive) + 100);
+    expect(readVoyageState().status).toBe("idle");
+    expect(root().dataset.voyageWaited).toBeUndefined();
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it("durante la espera, cualquier tecla o clic retira el velo sin volver a navegar", () => {
+    startVoyage({ id: "edmunds", href: "/es/creatividad", mode: "short", navigate });
+    vi.advanceTimersByTime(ms(VOYAGE_SHORT.push + VOYAGE_SHORT.waitAfter) + 1);
+    expect(root().dataset.voyage).toBe("wait");
+
+    window.dispatchEvent(new Event("pointerdown"));
+    expect(root().dataset.voyage).toBe("arrive");
+    expect(navigate).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(ms(VOYAGE_SHORT.arrive) + 100);
+    expect(readVoyageState().status).toBe("idle");
+  });
+
   it("un cambio de ruta ajeno durante el despegue termina la travesía sin navegar", () => {
     startVoyage({ id: "miller", href: "/es/formacion", mode: "full", navigate });
     vi.advanceTimersByTime(300);

@@ -94,12 +94,21 @@ export function useWorldNavigation() {
         pasará a `document.getElementById(id)?.scrollIntoView(...)` y el store
         de progreso hará el resto. La firma se queda como está a propósito.
       */
-      startVoyage({
+      const started = startVoyage({
         id: destination.id,
         href: destination.href,
         mode: voyageModeFor(document.documentElement),
         navigate: (href) => router.push(href),
       });
+      /*
+        La ruta se pide YA, no en el pico. Sin esto, un toque (táctil: no hay
+        hover que precargue) o un clic sin apuntar antes dejaba la red parada
+        los 2 s del despegue y la petición empezaba en el `push`. Medido
+        2026-10-07 con «Slow 4G» (563 ms, 1,6 Mbit/s): la página llegaba
+        0,6–1,7 s DESPUÉS de retirarse la luz en cinco de los seis mundos. Si
+        el apuntar ya la precargó, el router la tiene y esto no pide nada.
+      */
+      if (started) router.prefetch(destination.href);
     },
     [router],
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { compileShader, whenLinked } from "@/lib/webgl-program";
 import { releaseWhenDetached } from "@/lib/webgl-release";
 import { useMounted, useRangerCockpit } from "./ranger-cockpit";
 
@@ -219,18 +220,6 @@ void main() {
   outColor = vec4(col, 1.0);
 }`;
 
-function compile(gl: WebGL2RenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
 /**
  * Where the throat sits, in height units from the centre. Apaisado, a la
  * derecha, para que la copia del HUD quede sobre la pared oscura; vertical,
@@ -316,8 +305,8 @@ export function RangerViewport() {
       return;
     }
     const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: "low-power" });
-    const vertex = gl && compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
-    const fragment = gl && compile(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    const vertex = gl && compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+    const fragment = gl && compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
     const program = gl?.createProgram();
     if (!gl || !vertex || !fragment || !program) {
       markUnsupported();
@@ -326,122 +315,133 @@ export function RangerViewport() {
     gl.attachShader(program, vertex);
     gl.attachShader(program, fragment);
     gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      gl.deleteProgram(program);
-      gl.deleteShader(vertex);
-      gl.deleteShader(fragment);
-      markUnsupported();
-      return;
-    }
-    gl.useProgram(program);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const position = gl.getAttribLocation(program, "aPosition");
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    const uniform = (name: string) => gl.getUniformLocation(program, name);
-    const uniforms = {
-      res: uniform("uRes"),
-      time: uniform("uTime"),
-      look: uniform("uLook"),
-      dist: uniform("uDist"),
-      speed: uniform("uSpeed"),
-      vp: uniform("uVp"),
-      bend: uniform("uBend"),
-      twist: uniform("uTwist"),
-      throat: uniform("uThroat"),
-    };
 
-    let frame = 0;
-    let visible = false;
-    let lost = false;
-    let previous = 0;
-    // The context only exists once motion is on: the engines spool up from rest.
-    let time = 0;
-    let dist = 0;
-    let speed = 0;
-    let lookX = 0;
-    let lookY = 0;
+    /** El bucle del ventanal, con el programa ya enlazado. Devuelve su limpieza. */
+    function start(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement, surface: HTMLDivElement, program: WebGLProgram) {
+      gl.useProgram(program);
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const position = gl.getAttribLocation(program, "aPosition");
+      gl.enableVertexAttribArray(position);
+      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+      const uniform = (name: string) => gl.getUniformLocation(program, name);
+      const uniforms = {
+        res: uniform("uRes"),
+        time: uniform("uTime"),
+        look: uniform("uLook"),
+        dist: uniform("uDist"),
+        speed: uniform("uSpeed"),
+        vp: uniform("uVp"),
+        bend: uniform("uBend"),
+        twist: uniform("uTwist"),
+        throat: uniform("uThroat"),
+      };
 
-    function render() {
-      if (!gl || !canvas) return;
-      const aspect = canvas.width / Math.max(canvas.height, 1);
-      const throat = throatFor(aspect);
-      const tunnel = tunnelAt(time);
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(uniforms.res, canvas.width, canvas.height);
-      gl.uniform1f(uniforms.time, time);
-      gl.uniform2f(uniforms.look, lookX, -lookY);
-      gl.uniform1f(uniforms.dist, dist);
-      gl.uniform1f(uniforms.speed, speed * speed * (3 - 2 * speed));
-      gl.uniform2f(uniforms.vp, throat.x, throat.y);
-      gl.uniform2f(uniforms.bend, tunnel.bendX, tunnel.bendY);
-      gl.uniform1f(uniforms.twist, tunnel.twist);
-      gl.uniform1f(uniforms.throat, throat.radius * tunnel.breath);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+      let frame = 0;
+      let visible = false;
+      let lost = false;
+      let previous = 0;
+      // The context only exists once motion is on: the engines spool up from rest.
+      let time = 0;
+      let dist = 0;
+      let speed = 0;
+      let lookX = 0;
+      let lookY = 0;
 
-    function draw(timestamp: number) {
-      if (lost) return;
-      frame = requestAnimationFrame(draw);
-      if (timestamp - previous < 1000 / 30) return;
-      const dt = Math.min((timestamp - previous) / 1000, 0.05);
-      previous = timestamp;
-      time += dt;
-      // Engines: from rest to cruise in 2.8 s after the first start. Resuming
-      // picks up from the frozen speed, so the view never jumps.
-      speed = Math.min(1, speed + dt / 2.8);
-      const eased = speed * speed * (3 - 2 * speed);
-      dist = (dist + dt * 1.7 * eased) % PERIOD;
-      lookX += (look.current.x - lookX) * 0.08;
-      lookY += (look.current.y - lookY) * 0.08;
-      render();
-    }
-
-    function sync() {
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      if (visible && !document.hidden && !lost && runningRef.current) {
-        previous = performance.now();
-        frame = requestAnimationFrame(draw);
+      function render() {
+        if (!gl || !canvas) return;
+        const aspect = canvas.width / Math.max(canvas.height, 1);
+        const throat = throatFor(aspect);
+        const tunnel = tunnelAt(time);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.uniform2f(uniforms.res, canvas.width, canvas.height);
+        gl.uniform1f(uniforms.time, time);
+        gl.uniform2f(uniforms.look, lookX, -lookY);
+        gl.uniform1f(uniforms.dist, dist);
+        gl.uniform1f(uniforms.speed, speed * speed * (3 - 2 * speed));
+        gl.uniform2f(uniforms.vp, throat.x, throat.y);
+        gl.uniform2f(uniforms.bend, tunnel.bendX, tunnel.bendY);
+        gl.uniform1f(uniforms.twist, tunnel.twist);
+        gl.uniform1f(uniforms.throat, throat.radius * tunnel.breath);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        if (!canvas.dataset.drawn) canvas.dataset.drawn = "true";
       }
-    }
-    syncRef.current = sync;
 
-    const onLost = (event: Event) => {
-      event.preventDefault();
-      lost = true;
-      sync();
-      markUnsupported();
-    };
-    const resize = new ResizeObserver(() => {
-      const bounds = surface.getBoundingClientRect();
-      if (!bounds.width) return;
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-      const width = Math.min(2048, Math.round(bounds.width * ratio));
-      const height = Math.round((bounds.height * width) / bounds.width);
-      if (canvas.width !== width) canvas.width = width;
-      if (canvas.height !== height) canvas.height = height;
-      // Resizing clears the canvas: a frozen view redraws its frame once.
-      if (!frame && !lost) render();
+      function draw(timestamp: number) {
+        if (lost) return;
+        frame = requestAnimationFrame(draw);
+        if (timestamp - previous < 1000 / 30) return;
+        const dt = Math.min((timestamp - previous) / 1000, 0.05);
+        previous = timestamp;
+        time += dt;
+        // Engines: from rest to cruise in 2.8 s after the first start. Resuming
+        // picks up from the frozen speed, so the view never jumps.
+        speed = Math.min(1, speed + dt / 2.8);
+        const eased = speed * speed * (3 - 2 * speed);
+        dist = (dist + dt * 1.7 * eased) % PERIOD;
+        lookX += (look.current.x - lookX) * 0.08;
+        lookY += (look.current.y - lookY) * 0.08;
+        render();
+      }
+
+      function sync() {
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+        if (visible && !document.hidden && !lost && runningRef.current) {
+          previous = performance.now();
+          frame = requestAnimationFrame(draw);
+        }
+      }
+      syncRef.current = sync;
+
+      const onLost = (event: Event) => {
+        event.preventDefault();
+        lost = true;
+        sync();
+        markUnsupported();
+      };
+      const resize = new ResizeObserver(() => {
+        const bounds = surface.getBoundingClientRect();
+        if (!bounds.width) return;
+        const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+        const width = Math.min(2048, Math.round(bounds.width * ratio));
+        const height = Math.round((bounds.height * width) / bounds.width);
+        if (canvas.width !== width) canvas.width = width;
+        if (canvas.height !== height) canvas.height = height;
+        // Resizing clears the canvas: a frozen view redraws its frame once.
+        if (!frame && !lost) render();
+      });
+      const observer = new IntersectionObserver(([entry]) => {
+        visible = entry.isIntersecting;
+        sync();
+      });
+      resize.observe(surface);
+      observer.observe(surface);
+      canvas.addEventListener("webglcontextlost", onLost);
+      document.addEventListener("visibilitychange", sync);
+      return () => {
+        cancelAnimationFrame(frame);
+        syncRef.current = () => {};
+        resize.disconnect();
+        observer.disconnect();
+        canvas.removeEventListener("webglcontextlost", onLost);
+        document.removeEventListener("visibilitychange", sync);
+        gl.deleteBuffer(buffer);
+      };
+    }
+
+    let teardown = () => {};
+    const cancelLink = whenLinked(gl, program, (linked) => {
+      if (!linked) {
+        markUnsupported();
+        return;
+      }
+      teardown = start(gl, canvas, surface, program);
     });
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      sync();
-    });
-    resize.observe(surface);
-    observer.observe(surface);
-    canvas.addEventListener("webglcontextlost", onLost);
-    document.addEventListener("visibilitychange", sync);
     return () => {
-      cancelAnimationFrame(frame);
-      syncRef.current = () => {};
-      resize.disconnect();
-      observer.disconnect();
-      canvas.removeEventListener("webglcontextlost", onLost);
-      document.removeEventListener("visibilitychange", sync);
-      gl.deleteBuffer(buffer);
+      cancelLink();
+      teardown();
       gl.deleteProgram(program);
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);

@@ -7,7 +7,7 @@ import { cancelVoyage, markVoyageArrived } from "@/lib/voyage-controller";
 /**
  * La luz del cruce, y el aviso de llegada.
  *
- * Vive en el layout, como el canvas: sobrevive a la navegación. Es un solo
+ * Vive en el layout, como el canvas: sobrevive a la navegación. Es un
  * `<div>` fijo, sin puntero y sin texto, que el CSS enciende en el pico de la
  * travesía (`html[data-voyage="flash"]`) y retira al llegar
  * (`html[data-voyage="arrive"]`). Cubre el instante exacto del cambio de
@@ -30,5 +30,13 @@ export function VoyageLayer() {
 
   useEffect(() => () => cancelVoyage(), []);
 
-  return <div className="voyage-flash" aria-hidden="true" />;
+  // La línea de progreso: la enciende la espera de la travesía
+  // (`data-voyage="wait"`) y cualquier enlace cuya página aún no ha llegado
+  // (`data-route-pending`, desde `IntentLink`).
+  return (
+    <>
+      <div className="voyage-flash" aria-hidden="true" />
+      <div className="route-progress" aria-hidden="true" />
+    </>
+  );
 }

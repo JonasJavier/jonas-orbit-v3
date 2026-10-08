@@ -53,6 +53,9 @@ body:has(.ranger-route) .scene-toggle { display: none; }
 .ranger-view__tunnel path[data-tone="near"] { stroke: #ffc58e; }
 .ranger-view__ring { stroke: #eaf8ff; stroke-width: 2.6; filter: drop-shadow(0 0 5px #9fdcff) drop-shadow(0 0 18px #6d8dff); }
 .ranger-view > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* El shader compila en paralelo (ranger-viewport.tsx): hasta su primer
+   fotograma el lienzo sería negro sobre la vista fija; se enseña al pintar. */
+.ranger-view > canvas:not([data-drawn]) { visibility: hidden; }
 .ranger-view__shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 56% 64% at 20% 52%, #04060dd0, #04060d70 55%, transparent 82%), linear-gradient(90deg, #04060d8c, transparent 46%), linear-gradient(0deg, #04060d 0, #04060d00 15%), linear-gradient(180deg, #04060db0 0, transparent 20%); }
 
 /* Visor: four reticle corners at the edge of the glass and the reflections of

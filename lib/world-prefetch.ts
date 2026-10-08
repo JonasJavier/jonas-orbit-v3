@@ -24,8 +24,36 @@ import { useCallback } from "react";
  * cuando precede a una navegación real y los preload sí se consumen. Sigue
  * cumpliendo el §7 del pivote: la ruta se pide antes de pulsar, y la travesía
  * (2,6 s) tapa lo que falte.
+ *
+ * ── Intención es QUEDARSE, no pasar por encima ─────────────────────────────
+ *
+ * El cursor que cruza la home de camino a otro planeta pasa casi siempre por
+ * Gargantúa, que ocupa el centro. Precargar al primer `pointerenter` pedía
+ * Sobre mí con sus `preload` —el cielo y siete fotos, ~390 KB— y, con la red
+ * lenta, esa descarga le quitaba ancho de banda a la página que sí se había
+ * pulsado (medido 2026-10-07 con «Slow 4G»: Contacto llegaba 2,9 s después
+ * de retirarse la luz, detrás de las fotos de Sobre mí). Así que la precarga
+ * espera `INTENT_DWELL_MS` y sólo se pide si el enlace SIGUE apuntado o
+ * enfocado. El clic no depende de esto: la travesía precarga al despegar
+ * (`world-navigation.ts`) y un `<Link>` pide su ruta al pulsarlo.
  */
+const INTENT_DWELL_MS = 160;
+
+function stillIntended(href: string): boolean {
+  for (const link of document.querySelectorAll("a:hover, a:focus")) {
+    if (link.getAttribute("href") === href) return true;
+  }
+  return false;
+}
+
 export function usePrefetchOnIntent() {
   const router = useRouter();
-  return useCallback((href: string) => router.prefetch(href), [router]);
+  return useCallback(
+    (href: string) => {
+      window.setTimeout(() => {
+        if (stillIntended(href)) router.prefetch(href);
+      }, INTENT_DWELL_MS);
+    },
+    [router],
+  );
 }

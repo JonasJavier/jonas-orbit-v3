@@ -17,14 +17,17 @@ import { voyageTimeline, voyageTintFor, type VoyageMode } from "./voyage";
  *    la navegación se completa igual (G10).
  * 2. **Cualquier tecla, clic o gesto corta la travesía** (G9): se enciende la
  *    luz del cruce y se pide la ruta en ese mismo instante.
- * 3. **La llegada tiene tope.** Después de pedir la ruta se espera a que la
- *    página nueva aparezca —lo avisa la capa del layout al cambiar el
- *    pathname— pero como mucho `arriveCap`; pasado eso la luz se retira igual.
- *    Nunca se atrapa al visitante detrás de un fundido.
+ * 3. **La llegada tiene tope, y la espera se ve.** Después de pedir la ruta se
+ *    espera a que la página nueva aparezca —lo avisa la capa del layout al
+ *    cambiar el pathname—. Si tarda más de `waitAfter`, la luz se apaga en la
+ *    ESPERA (`data-voyage="wait"`: velo oscuro y una línea de progreso), que
+ *    cualquier tecla, clic o gesto retira; como mucho dura `arriveCap`.
+ *    Nunca se atrapa al visitante detrás de un fundido, pero tampoco se le
+ *    devuelve a la página vieja mientras la nueva sigue llegando.
  *
  * ── Qué publica ─────────────────────────────────────────────────────────────
  *
- * En `<html>`: `data-voyage` (`depart` · `flash` · `arrive`), `data-voyage-mode`
+ * En `<html>`: `data-voyage` (`depart` · `flash` · `wait` · `arrive`), `data-voyage-mode`
  * (`full` · `short`), `data-voyage-world`, `data-voyage-skipped` y las
  * variables `--voyage-x` / `--voyage-y` (dónde estaba el destino en pantalla,
  * en %) y `--voyage-tint` (su acento). El CSS hace el resto: retira la
@@ -37,7 +40,7 @@ import { voyageTimeline, voyageTintFor, type VoyageMode } from "./voyage";
  * del layout, que son tres árboles distintos.
  */
 
-type VoyageStatus = "idle" | "depart" | "flash" | "pushed" | "arrive";
+type VoyageStatus = "idle" | "depart" | "flash" | "pushed" | "wait" | "arrive";
 
 export interface VoyageDeparture {
   id: WorldId;
@@ -52,9 +55,11 @@ export interface VoyageState {
   departure: VoyageDeparture | null;
   /** El visitante cortó la travesía con una tecla, un clic o un gesto. */
   skipped: boolean;
+  /** Pasó por la espera: la llegada sale del velo oscuro, no de la luz. */
+  waited: boolean;
 }
 
-const IDLE: VoyageState = { status: "idle", departure: null, skipped: false };
+const IDLE: VoyageState = { status: "idle", departure: null, skipped: false, waited: false };
 
 const SKIP_EVENTS = ["keydown", "pointerdown", "wheel", "touchstart"] as const;
 
@@ -84,13 +89,14 @@ function releaseSkip() {
 
 function applyDom() {
   const root = document.documentElement;
-  const { status, departure, skipped } = state;
+  const { status, departure, skipped, waited } = state;
 
   if (status === "idle" || departure === null) {
     delete root.dataset.voyage;
     delete root.dataset.voyageMode;
     delete root.dataset.voyageWorld;
     delete root.dataset.voyageSkipped;
+    delete root.dataset.voyageWaited;
     root.style.removeProperty("--voyage-x");
     root.style.removeProperty("--voyage-y");
     root.style.removeProperty("--voyage-tint");
@@ -104,6 +110,8 @@ function applyDom() {
   root.dataset.voyageWorld = departure.id;
   if (skipped) root.dataset.voyageSkipped = "true";
   else delete root.dataset.voyageSkipped;
+  if (waited) root.dataset.voyageWaited = "true";
+  else delete root.dataset.voyageWaited;
 }
 
 function publish(next: VoyageState) {
@@ -132,7 +140,7 @@ function measureOrigin(id: WorldId): { x: number; y: number } {
 
 function push() {
   const { departure, status } = state;
-  if (!departure || status === "pushed" || status === "arrive") return;
+  if (!departure || status === "pushed" || status === "wait" || status === "arrive") return;
   clearTimers();
   releaseSkip();
   publish({ ...state, status: "pushed" });
@@ -141,8 +149,23 @@ function push() {
   // sonó con el fogonazo y aquí no hace nada.
   voyageAudio.cross();
   navigate?.(departure.href);
+  const timeline = voyageTimeline(departure.mode);
+  later(timeline.waitAfter, wait);
   // Tope duro de la llegada. Si el router tarda más, la luz se retira igual.
-  later(voyageTimeline(departure.mode).arriveCap, arrive);
+  later(timeline.arriveCap, arrive);
+}
+
+/**
+ * La página nueva no ha llegado todavía (red lenta, ruta sin precargar): la
+ * luz se apaga en un velo con una línea de progreso, en vez de retirarse y
+ * enseñar otra vez la página que se deja. Desde aquí cualquier tecla, clic o
+ * gesto la retira —el router sigue con su petición y cambiará de página en
+ * cuanto la tenga—.
+ */
+function wait() {
+  if (state.status !== "pushed") return;
+  publish({ ...state, status: "wait", waited: true });
+  attachSkip();
 }
 
 function arrive() {
@@ -156,8 +179,15 @@ function arrive() {
   later(voyageTimeline(departure.mode).arrive + 0.08, () => publish(IDLE));
 }
 
-/** Cualquier tecla, clic o gesto: se cruza ya. */
+/**
+ * Cualquier tecla, clic o gesto: durante el despegue se cruza ya; durante la
+ * espera se retira el velo.
+ */
 function skip() {
+  if (state.status === "wait") {
+    arrive();
+    return;
+  }
   if (state.status !== "depart" && state.status !== "flash") return;
   publish({ ...state, skipped: true });
   push();
@@ -209,7 +239,7 @@ export function startVoyage(input: StartVoyageInput): boolean {
   root.style.setProperty("--voyage-y", `${origin.y.toFixed(2)}%`);
   root.style.setProperty("--voyage-tint", voyageTintFor(input.id).hex);
 
-  publish({ status: "depart", departure, skipped: false });
+  publish({ status: "depart", departure, skipped: false, waited: false });
   // El sonido se arranca DENTRO del gesto que activó el destino: es lo que
   // permite al navegador dejar sonar el audio sin pedir nada más.
   voyageAudio.depart(departure.id, departure.mode);

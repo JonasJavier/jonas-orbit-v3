@@ -4343,6 +4343,77 @@ html[data-voyage="arrive"][data-voyage-mode="short"] .voyage-flash {
   transition-duration: 0.22s;
 }
 
+/* ── La espera: la página nueva todavía no ha llegado ────────────────────
+   Con la red lenta la luz no se retira sobre la página que se deja: se apaga
+   en un velo oscuro con el acento del destino, y la línea de progreso de
+   arriba dice que el viaje sigue. Cualquier tecla o clic la retira. */
+html[data-voyage="wait"] .voyage-flash,
+html[data-voyage-waited] .voyage-flash {
+  filter: brightness(0.3) saturate(1.15);
+}
+
+html[data-voyage="wait"] .voyage-flash {
+  opacity: 1;
+  transition:
+    opacity 0.2s ease,
+    filter 0.9s cubic-bezier(0.2, 0.6, 0.3, 1);
+}
+
+/* ── La línea de progreso ─────────────────────────────────────────────────
+   Una sola, en el borde superior, para la espera de la travesía y para
+   cualquier enlace cuya página tarda (`data-route-pending`). Aparece con
+   retraso: una navegación rápida no la llega a encender. Con reduced-motion
+   la animación se aplasta y queda el tramo quieto, que sigue diciendo
+   «cargando». */
+.route-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  /* Por encima de la cabecera pegada (100) y de los interruptores (110);
+     por debajo del enlace de salto (200). */
+  z-index: 150;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.route-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 34%;
+  width: 32%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--voyage-tint, #7fe5ff) 30%,
+    #ffffff 50%,
+    var(--voyage-tint, #7fe5ff) 70%,
+    transparent
+  );
+  box-shadow: 0 0 10px var(--voyage-tint, #7fe5ff);
+}
+
+html[data-voyage="wait"] .route-progress,
+html[data-route-pending]:not([data-voyage]) .route-progress {
+  opacity: 1;
+  transition-delay: 0.25s;
+}
+
+html[data-voyage="wait"] .route-progress::before,
+html[data-route-pending]:not([data-voyage]) .route-progress::before {
+  animation: route-progress 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes route-progress {
+  from {
+    transform: translateX(-210%);
+  }
+  to {
+    transform: translateX(210%);
+  }
+}
+
 /* ── La página nueva emerge al otro lado ──────────────────────────────────
    Sólo opacidad, a propósito: un transform o un filter en <main> convertiría
    a ese elemento en bloque contenedor de todo lo `position: fixed` que hay
