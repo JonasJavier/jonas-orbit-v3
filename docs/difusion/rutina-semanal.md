@@ -27,11 +27,16 @@ si el PC está apagado, la tarea corre al volver a abrir la app.
 | Lunes | 09:00 | `semanal-lunes-preparacion` | Nada público. Borrador de la entrada del blog (ES + EN), borrador del post del foro, repaso de comentarios en todos los canales. Jonás revisa y aprueba. |
 | Martes | 13:00 | `semanal-martes-linkedin-blog` | **Post 1 de LinkedIn** + **entrada del blog** en el sitio (ES + EN) + **copia en dev.to**. |
 | Jueves | 09:00 | `semanal-jueves-linkedin-gbp` | **Post 2 de LinkedIn** + **novedad en Google Business Profile**. |
+| Jueves | 14:00 | `semanal-jueves-devto` | **Post nativo de dev.to** (el segundo de la semana, §5.2). |
 | Viernes | 09:00 | `semanal-viernes-foro` | **Post semanal del foro de Three.js**. |
+| Todos los días | 10:30 | `diario-foro-comentarios` | Lectura del foro de Three.js y hasta 3 comentarios técnicos. |
+| Todos los días | 16:00 | `diario-devto-comentarios` | Lectura de dev.to (8–12 posts), reacciones y 2–3 comentarios (§5.3). |
 | Día 27 | 09:00 | `mensual-27-revision` | Informe: Search Console, dev.to, LinkedIn, foro; reordenar las colas. |
 
 Dos posts de LinkedIn por semana, ni uno más. Una entrada de blog por semana.
-Un post del foro por semana.
+Un post del foro por semana. **Dos posts de dev.to por semana** (pedido de
+Jonás, 2026-10-07): el martes la copia de la entrada del blog (o, si esa
+semana no hay entrada, un nativo de §5.2) y el jueves un nativo de §5.2.
 
 ## 3. Regla de confirmación (todas las tareas que publican)
 
@@ -105,6 +110,66 @@ lunes.
 - Lectura de fuentes con poco contexto: `docs/registro-de-decisiones.md` por
   entrada (`grep -n '^## '`), documentos largos por sección, código grande
   por función (grafo de codebase-memory, `AGENTS.md`).
+
+### 5.2 dev.to — post nativo (jueves, y martes si no hay entrada)
+
+Escrito para dev.to, no copiado del blog: un problema técnico concreto del
+sitio, contado con el código real. Archivo en
+`docs/difusion/devto/<id>.md`, mismo front matter que las copias
+(`title`, `published: true`, `description`, `tags` — 4 como máximo, en
+minúsculas —, `cover_image` con URL absoluta de `public/images/` que responda
+200, `series: Building Jonás Orbit, a 3D portfolio`) y **sin**
+`canonical_url` (el original es éste).
+
+- 700–1300 palabras, inglés, primera persona, frases cortas. Estructura:
+  el problema con su síntoma → por qué la solución obvia no sirve → lo que
+  hice → el código (copiado del repo y recortado, nunca reescrito de
+  memoria) → una trampa o un error propio → lo que no está resuelto → una
+  pregunta abierta.
+- Cifras y afirmaciones sólo del repo (código, tests, registro de
+  decisiones, `content/`). Un enlace al sitio o a la entrada larga, al final.
+- Última línea en cursiva: quién es Jonás y «I wrote this post with help
+  from an AI assistant; the code, the bug and the decisions are from my
+  project.» (las pautas de DEV piden declarar la ayuda de IA).
+- No repetir un tema ya publicado en dev.to (`https://dev.to/api/articles?username=jonasjavier`).
+  Publicar en <https://dev.to/new> tras el «sí» (§3); una publicación cada
+  5 minutos como máximo.
+
+| # | Tema | Fuente | Estado |
+| --- | --- | --- | --- |
+| 1 | A pixel-ratio governor for Three.js that doesn't trust 60 fps | `components/scene/resolution-governor.ts` + test, registro «Resolución adaptable…» | borrador (2026-10-07, `devto/resolution-governor.md`) |
+| 2 | Synthesizing a spaceship's sound with Web Audio, no audio files | `lib/voyage-audio.ts`, `docs/design/travesia-espaciotemporal.md` §«Segundo pase» | pendiente |
+| 3 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx`, `hero-gargantua-direction.md` §14 undecies | pendiente |
+| 4 | Never two WebGL contexts drawing: putting a background scene to sleep | registro «Rendimiento móvil…», `lib/after-load-idle.ts` | pendiente |
+| 5 | Prefetch on intent, not on sight: a `<Link>` wrapper for Next.js | `lib/world-prefetch.ts`, registro «QA para premios…» | pendiente |
+| 6 | Miller's ocean: WebGL2 water that never blocks the page | `docs/design/miller-formacion.md` §«Océano en WebGL2…» | pendiente |
+| 7 | A soundtrack without an `AudioContext` until the first gesture | `lib/audio-bus.ts`, `docs/design/sonido-del-sitio.md` §2 | pendiente |
+| 8 | Twelve modules, three silhouettes: designing a spaceship for a 3D map | `docs/design/endurance-jerarquia.md` §«Cuarto pase» | pendiente |
+| 9 | Justified mosaic rows for a photo gallery in 60 lines | `lib/mosaic-rows.ts` | pendiente |
+
+Cuando queden tres «pendiente», añadir más con el mismo criterio (código
+propio, un problema, una lección).
+
+### 5.3 dev.to — lectura, reacciones y comentarios (todos los días)
+
+- Primero las notificaciones de <https://dev.to/notifications>: cada
+  comentario en un post de Jonás se responde (cuenta entre los 2–3 del día).
+- Leer de verdad 8–12 posts recientes de `#threejs`, `#webgl`,
+  `#javascript`, `#nextjs`, `#webdev`, `#performance`, `#showdev`,
+  `#creativecoding` (abrirlos en la pestaña y bajar hasta el final).
+- Reacciones (❤️ o 🦄) sólo a posts leídos enteros y que lo valgan: 3–6 al
+  día, nunca en bloque. Seguir a un autor sólo si se le comentó y publica
+  sobre el nicho.
+- 2–3 comentarios al día, 40–120 palabras, inglés, primera persona: un
+  detalle del post que demuestre la lectura, algo propio (un dato, una
+  trampa, una alternativa) comprobado en el repo, y si encaja una pregunta.
+  Sin «Great post!», sin emojis de relleno, sin enlaces al sitio, nada de
+  servicios. Si preguntan por IA, la verdad. Prioridad: posts con 0–3
+  comentarios de menos de 3 días; nunca dos comentarios al mismo post el
+  mismo día salvo para responder.
+- Todo (comentarios y reacciones) se enseña en una lista y sale tras el
+  «sí» (§3), con al menos 15 minutos entre comentarios. Registro en
+  `docs/difusion/devto-comentarios.md`.
 
 ## 6. Foro de Three.js (viernes)
 
