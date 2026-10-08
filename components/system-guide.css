@@ -1,0 +1,226 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   NAVIGATION SYSTEM // 001 — la guía de entrada del System Map (2026-10-07)
+   ──────────────────────────────────────────────────────────────────────────
+   Tipografía, una regla de 1 px y espacio: ni panel ni tarjeta, como el resto
+   del cristal. Vive en el flanco izquierdo, frente al NAV TARGET de la derecha,
+   entre Miller y Edmunds. Deja pasar el puntero a la escena; sólo el botón lo
+   recoge. Ver docs/registro-de-decisiones.md «Home — guía de entrada…».
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.system-guide {
+  position: fixed;
+  top: 37%;
+  left: 3.4rem;
+  z-index: 8;
+  display: grid;
+  gap: 0.55rem;
+  width: min(21rem, 34vw);
+  padding-left: 1.1rem;
+  border-left: 1px solid color-mix(in srgb, var(--cyan, #7fe5ff) 46%, transparent);
+  color: var(--hud-secondary, #cbd8f0);
+  font-family: var(--font-mono);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-0.5rem, 0, 0);
+  transition:
+    opacity 420ms var(--ease-orbit, ease),
+    transform 520ms var(--ease-orbit, ease);
+}
+
+.system-guide[data-state="visible"] {
+  opacity: 1;
+  transform: none;
+  transition-delay: 1.1s;
+}
+
+.system-guide[data-state="leaving"] {
+  opacity: 0;
+  transform: translate3d(0, -0.35rem, 0);
+  transition-duration: 380ms, 420ms;
+}
+
+.system-guide__eyebrow {
+  margin: 0;
+  color: var(--cyan, #7fe5ff);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.system-guide__eyebrow i {
+  color: color-mix(in srgb, var(--hud-tertiary, #93a4c4) 62%, transparent);
+  font-style: normal;
+}
+
+.system-guide__title {
+  margin: 0.1rem 0 0;
+  color: var(--hud-primary, #f3f7ff);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 1.9vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+  text-shadow: 0 0 1.6rem rgba(127, 229, 255, 0.16);
+}
+
+.system-guide__body {
+  margin: 0;
+  max-width: 19rem;
+  color: var(--hud-secondary, #cbd8f0);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  line-height: 1.55;
+  text-shadow: 0 0 0.9rem rgba(4, 6, 13, 0.9);
+}
+
+.system-guide__cue {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.25rem 0 0;
+  color: var(--cyan, #7fe5ff);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.system-guide__cue::before {
+  content: "";
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: var(--cyan, #7fe5ff);
+  box-shadow: 0 0 0.6rem color-mix(in srgb, var(--cyan, #7fe5ff) 70%, transparent);
+}
+
+html:not([data-motion="off"]) .system-guide__cue::before {
+  animation: system-guide-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes system-guide-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Con ratón se apunta; con el dedo se toca. Las dos frases van en el HTML y el
+   medio elige, igual que la burbuja de la banda sonora. */
+.system-guide__cue-touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .system-guide__cue-pointer {
+    display: none;
+  }
+  .system-guide__cue-touch {
+    display: inline;
+  }
+}
+
+.system-guide__dismiss {
+  justify-self: start;
+  min-height: 32px;
+  margin-top: 0.35rem;
+  padding: 0.3rem 0;
+  border: 0;
+  background: none;
+  color: color-mix(in srgb, var(--hud-tertiary, #93a4c4) 86%, transparent);
+  font-family: inherit;
+  font-size: 0.56rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: inset 0 -1px 0 0 color-mix(in srgb, var(--hud-tertiary, #93a4c4) 40%, transparent);
+  transition:
+    color 200ms var(--ease-orbit, ease),
+    box-shadow 200ms var(--ease-orbit, ease);
+}
+
+.system-guide__dismiss:hover,
+.system-guide__dismiss:focus-visible {
+  color: var(--hud-primary, #f3f7ff);
+  box-shadow: inset 0 -1px 0 0 var(--cyan, #7fe5ff);
+  outline: none;
+}
+
+/* ── Teléfono: sobre el raíl, centrada, con un velo para leerse sobre la Ranger.
+   Mientras está a la vista, «Toca para explorar» espera su turno. ──────────── */
+@media (max-width: 60rem) {
+  .system-guide {
+    top: auto;
+    right: var(--home-gutter-end, 1rem);
+    bottom: calc(
+      var(--home-rail-bottom, 1rem) + var(--home-rail-height, 88px) + 0.9rem
+    );
+    left: var(--home-gutter, 1rem);
+    justify-items: center;
+    gap: 0.3rem;
+    width: auto;
+    padding: 0.8rem 1rem 0.35rem;
+    border: 1px solid rgb(127 229 255 / 18%);
+    border-radius: 14px;
+    background: rgb(3 8 14 / 72%);
+    text-align: center;
+    transform: translate3d(0, 0.5rem, 0);
+    backdrop-filter: blur(12px);
+  }
+
+  .system-guide[data-state="leaving"] {
+    transform: translate3d(0, 0.35rem, 0);
+  }
+
+  .system-guide__eyebrow {
+    font-size: 0.52rem;
+  }
+
+  .system-guide__title {
+    font-size: 1.15rem;
+  }
+
+  .system-guide__body {
+    max-width: 19.5rem;
+    font-size: 0.68rem;
+    line-height: 1.45;
+  }
+
+  .system-guide__cue {
+    margin-top: 0.15rem;
+    font-size: 0.54rem;
+  }
+
+  .system-guide__dismiss {
+    justify-self: center;
+    min-height: 44px;
+    margin-top: -0.2rem;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.56rem;
+  }
+
+  body:has(.system-guide[data-state="visible"]) .system-map__explore {
+    display: none;
+  }
+}
+
+/* Apaisado bajo: sin cuerpo, sólo el gesto. */
+@media (max-width: 60rem) and (max-height: 30rem) {
+  .system-guide {
+    gap: 0.25rem;
+    padding: 0.6rem 0.9rem 0.45rem;
+  }
+  .system-guide__body {
+    display: none;
+  }
+  .system-guide__title {
+    font-size: 1.05rem;
+  }
+}

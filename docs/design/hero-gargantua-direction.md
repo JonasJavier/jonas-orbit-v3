@@ -227,6 +227,21 @@ teléfono (2026-10-01) queda sólo el rol, en una línea a la izquierda bajo la
 marca. Detalle y medidas: registro de
 decisiones, «Home — placa del operador bajo JONAS ORBIT».
 
+### 7 quater. Guía de entrada y lectura en reposo (2026-10-07)
+
+Sustituye a §8 sólo en el estado idle del TARGET y añade un elemento al HUD.
+En reposo el bloque de la derecha ya no dice `SYSTEM MAP / SELECT TARGET`
+—jerga que no explicaba qué hacer— sino `SYSTEM MAP / Elige un destino / y
+explora mi trabajo` (traducido). Y en el flanco izquierdo, frente a él, vive
+la **guía de entrada** `NAVIGATION SYSTEM // 001`: eyebrow en inglés de
+instrumento, título «Explora mi universo», una frase sobre lo que son los
+destinos, la instrucción del medio (apuntar / tocar) y un botón «Entendido».
+Aparece al montar, una vez por sesión, y se retira con el primer destino
+apuntado o enfocado: conserva la inmersión sin sacrificar la orientación. No
+es un bloque personal ni un título gigante; es tipografía de HUD. Tamaños del
+cristal en escritorio un escalón arriba y raíl despegado del canto. Detalle:
+registro «Home — guía de entrada, HUD legible…».
+
 ## 8. TARGET, brackets y trayectorias
 
 TARGET se compone con texto, regla, micro marcadores y espacio negativo; nunca

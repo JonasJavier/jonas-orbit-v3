@@ -183,6 +183,14 @@ MDX**, nunca en `worlds.data.ts`.
   `docs/design/endurance-navigation-interface.md` §14 — `MAP_HOVER_MODE`
   (`sencillo`); el modo `instrumento` se conserva, no se borra. §12 y §13:
   marco del overlay (`fixed`) y condiciones del puntero.
+- **Guía de entrada y HUD legible** (10-07) registro «Home — guía de
+  entrada, HUD legible, Endurance definida, horizonte y pliegue del
+  Tesseracto» — `NAVIGATION SYSTEM // 001` (`system-guide.tsx`) sale una vez
+  por sesión y se retira con el primer destino apuntado; en reposo el HUD dice
+  «Elige un destino» (traducido), tamaños de escritorio arriba y raíl
+  despegado del borde. Misma entrada: Endurance con filo lateral del disco,
+  rampa de la sombra al 20 % y el Tesseracto con membranas iridiscentes y el
+  pase `tesseract-lens.ts` que pliega el cielo a su alrededor.
 - **Placa del operador** (09-30) registro «Home — placa del operador…» y
   `hero-gargantua-direction.md` §7 ter — bajo `JONAS ORBIT`, nombre corto y
   rol (ES/EN) en tipografía de HUD; en el teléfono (10-01) sólo el rol, en una

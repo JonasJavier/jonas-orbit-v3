@@ -19,6 +19,71 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Home — guía de entrada, HUD legible, Endurance definida, horizonte y pliegue del Tesseracto (2026-10-07)
+
+Pedido del dueño a partir de una crítica externa de la portada: «cambiar y
+mejorar todo esto», llevarlo «al siguiente nivel» y que en el móvil funcione
+bien. Cuatro frentes, todos juzgados con GPU real (recortes A/B por cuerpo
+en 1440×900 y 390×844 con un script de Playwright con ventana, como
+`awards-shots.mjs`; nunca con `shot.mjs`).
+
+- **Guía de entrada «NAVIGATION SYSTEM // 001»** (`components/system-guide.tsx`
+  + `.css`). El riesgo que señalaba la crítica era real: se puede admirar la
+  escena diez segundos sin descubrir que es un portafolio. La guía dice
+  «Explora mi universo / Cada destino es una parte de mi trabajo… / Apunta
+  (Toca) a un destino para comenzar» y un botón «Entendido». Aparece 1,1 s
+  después de montar (sólo con JavaScript: en el HTML servido no hay nada que
+  explorar salvo el raíl), vive en el flanco izquierdo entre Miller y Edmunds
+  —frente al NAV TARGET— y **se retira con el primer destino apuntado o
+  enfocado** (cuerpo o raíl), con `Escape` o con el botón; no se va sola por
+  tiempo. Una vez por sesión (`sessionStorage`, clave
+  `jonas-orbit:guia-vista`). `aside` no modal; deja pasar el puntero (sólo el
+  botón lo recoge). Cabecera en inglés de instrumento, el resto traducido con
+  `defineCopy`. **Teléfono:** tarjeta centrada sobre el raíl con velo y
+  `backdrop-filter`, 44 px en el botón; «Toca para explorar» espera a que la
+  guía se retire. Apaisado bajo: sin cuerpo de texto.
+- **HUD legible.** La lectura en reposo deja de ser `SELECT TARGET` (jerga)
+  y pasa a «Elige un destino / y explora mi trabajo» (EN: «Choose a
+  destination / and explore my work»), traducida. Tamaños de escritorio:
+  franja 0,58 → 0,64 rem; `JONAS ORBIT` 0,74 → 0,84; placa 0,56 → 0,62;
+  instrucción 0,76 → 0,88; raíl 0,61 → 0,70 (función 0,43 → 0,50) y su color
+  del 48 % al 66 %. **El raíl se despega del borde**: `bottom` 1,35 → 2,3 rem
+  y el texto alineado a 3,4 rem con la franja superior; las lecturas de abajo
+  a la derecha suben igual. El móvil no cambia de tamaños.
+- **Endurance separada del fondo** (`bodies.ts`, `uKind == 4`). Los módulos
+  de la mitad trasera se fundían con el negro. Tres cosas: el rebote dirigido
+  sube (0,026 → 0,085 hacia el disco, 0,005 → 0,016 en la espalda, rampa
+  −0,85..0,3); un **filo lateral del disco que no pasa por el albedo**
+  (`key · smoothstep(−0,9, 0,45, ndl) · (0,028 + 0,040·fresnel)`), que es el
+  que recorta la silueta de los módulos oscuros; y el suelo nocturno 0,26 →
+  0,34. Sigue siendo la nave más oscura por el lado que no ve el disco; deja
+  de ser un recorte. La jerarquía de valor del pase 10-04 no se mueve.
+- **Horizonte de Gargantúa** (`gargantua-shaders.ts`). La rampa de los rayos
+  condenados vuelve del 13 % al 20 % exterior de b crítico (0,87 → 0,80): la
+  transición sombra–disco gana degradado donde las imágenes de orden superior
+  se desvanecen en vez de cortarse. Sin término analítico de anillo de fotones
+  (sigue prohibido: registro «Pase visual final»), sin más bloom, centro de la
+  sombra a cero.
+- **Tesseracto: cristal que se ve y espacio que se pliega.** (1) Membranas
+  del 1,3 % al 7,5 % de alfa (16 % en el canto) con **iridiscencia** lenta
+  cian→violeta por ángulo y tiempo (`tesseract-model.ts`); núcleo blanco de las
+  aristas 0,040 → 0,075 y cuerpo +60 % sin engordar ni un píxel. (2) **Pase
+  nuevo `tesseract-lens.ts`** entre el raymarch y los cuerpos: desplaza el
+  cielo en un anillo de 2,2 radios alrededor del Tesseracto proyectado (campana
+  con pico a medio radio, 1,5 % del alto como máximo, cuatro lóbulos que giran
+  cada ~36 s, separación cromática mínima) y añade un campo cian/violeta
+  apenas visible con los mismos lóbulos (`uField` 0,045, lineal, antes del
+  bloom) — sin él, sobre un cielo vacío la distorsión no tiene qué mover. Los
+  cuerpos se dibujan encima: el Tesseracto sale nítido sobre un fondo doblado.
+  Mismo gate que el bloom (`canFloat`); apagado si no está en el cuadro; un
+  blit de coste. La matemática del 4-cubo, el ritmo, la escala y la posición
+  no se tocan (V4 sigue siendo la base).
+- **Verificado:** unitarios de `system-map` y `system-hud` (copy nuevo),
+  `npm run check` completo, capturas A/B con GPU real (escritorio y teléfono,
+  ES) y la guía probada en el navegador: aparece, se retira al apuntar el
+  raíl, móvil con tarjeta compacta. E2E de la home: ver el commit.
+- Valoración visual del dueño pendiente en los cuatro frentes.
+
 ## Blog — los simuladores a la vista (2026-10-05)
 
 Pedido del dueño: mejorar el diseño del blog y que el botón del simulador

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
@@ -48,7 +48,8 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     const target = container.querySelector(".hud__target");
     expect(target).toHaveAttribute("data-target-state", "idle");
     expect(target).toHaveTextContent(/System map/i);
-    expect(target).toHaveTextContent(/Select target/i);
+    // La lectura en reposo es una instrucción traducida, no «Select target».
+    expect(target).toHaveTextContent(/Elige un destino/i);
     expect(container).not.toHaveTextContent(/Jonás Javier Encarnación/i);
     expect(container).not.toHaveTextContent(/ingeniería y diseño orbitan juntos/i);
   });
@@ -509,5 +510,53 @@ describe("SystemMap — el contrato entre el HTML y la escena", () => {
     const again = render(<SystemMap worlds={worlds} languages={languages} />);
     expect(again.container.querySelector(".system-map__explore")).toBeNull();
     localStorage.removeItem("jonas-orbit:explorar-visto");
+  });
+
+  it("la guía de entrada sale una vez por sesión y se retira al apuntar un destino", () => {
+    /*
+      NAVIGATION SYSTEM // 001 (2026-10-07): quien entra tiene que saber que
+      esto es un portafolio y qué hacer con él sin un título gigante. La guía
+      es `aside` no modal, traducida, con su botón; se va con el primer
+      destino apuntado o enfocado y no vuelve en la misma sesión.
+    */
+    vi.useFakeTimers();
+    sessionStorage.removeItem("jonas-orbit:guia-vista");
+    const first = render(<SystemMap worlds={worlds} languages={languages} />);
+    const guide = screen.getByRole("complementary", { name: "Guía de navegación" });
+    expect(guide).toHaveAttribute("data-state", "visible");
+    expect(guide).toHaveTextContent(/Explora mi universo/);
+    expect(guide).toHaveTextContent(/Toca un destino para comenzar/);
+    expect(within(guide).getByRole("button", { name: "Entendido" })).toBeInTheDocument();
+    // No es un enlace: el raíl sigue siendo el índice de seis destinos.
+    expect(within(guide).queryByRole("link")).toBeNull();
+
+    fireEvent.focus(first.container.querySelector('[data-rail-world="endurance"]')!);
+    expect(guide).toHaveAttribute("data-state", "leaving");
+    expect(sessionStorage.getItem("jonas-orbit:guia-vista")).toBe("1");
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(screen.queryByRole("complementary", { name: "Guía de navegación" })).toBeNull();
+    first.unmount();
+
+    const again = render(<SystemMap worlds={worlds} languages={languages} />);
+    expect(again.container.querySelector(".system-guide")).toBeNull();
+    sessionStorage.removeItem("jonas-orbit:guia-vista");
+  });
+
+  it("la guía se retira con Escape y con su botón", () => {
+    vi.useFakeTimers();
+    sessionStorage.removeItem("jonas-orbit:guia-vista");
+    render(<SystemMap worlds={worlds} languages={languages} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByRole("complementary", { name: "Guía de navegación" })).toHaveAttribute(
+      "data-state",
+      "leaving",
+    );
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(screen.queryByRole("complementary")).toBeNull();
+    sessionStorage.removeItem("jonas-orbit:guia-vista");
   });
 });

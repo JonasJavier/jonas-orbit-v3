@@ -27,6 +27,7 @@ import { FlatWorldBody } from "./flat-world-body";
 import { LanguageSwitch } from "./language-switch";
 import { useLocale } from "./locale-provider";
 import { NavRail } from "./nav-rail";
+import { SystemGuide, type SystemGuideState } from "./system-guide";
 import { SystemHud } from "./system-hud";
 import "./system-map-atlas.css";
 
@@ -39,6 +40,10 @@ const COPY = defineCopy({
 
 /** Quien ya tocó un destino no vuelve a ver «toca para explorar». */
 const EXPLORE_HINT_KEY = "jonas-orbit:explorar-visto";
+/** La guía de entrada sale una vez por sesión: volver desde un mundo ya es explorar. */
+const GUIDE_KEY = "jonas-orbit:guia-vista";
+/** Lo que dura el fundido de salida de la guía antes de desmontarla (ms). */
+const GUIDE_LEAVE_MS = 450;
 
 interface InteractionVolume {
   /** Radio de respaldo para el mapa plano, antes de recibir `--map-radius`. */
@@ -147,6 +152,42 @@ export function SystemMap({
   }
 
   /*
+    NAVIGATION SYSTEM // 001 — la guía de entrada (ver `system-guide.tsx`).
+
+    Arranca `gone` y la enciende el cliente, como «toca para explorar»: en el
+    HTML servido no hay nada que explorar salvo el raíl, y una guía que
+    apareciera antes de que la escena exista hablaría de un lugar que todavía
+    no está. Se retira con el PRIMER destino apuntado o enfocado —cuerpo o
+    raíl, es el mismo acto— y no vuelve en esta sesión.
+  */
+  const [guide, setGuide] = useState<SystemGuideState>("gone");
+  useEffect(() => {
+    const read = () => {
+      try {
+        if (sessionStorage.getItem(GUIDE_KEY) === "1") return;
+      } catch {
+        // Sin almacenamiento, la guía sale en cada carga de la portada.
+      }
+      setGuide("visible");
+    };
+    read();
+  }, []);
+  useEffect(() => {
+    if (guide !== "leaving") return;
+    const handle = window.setTimeout(() => setGuide("gone"), GUIDE_LEAVE_MS);
+    return () => window.clearTimeout(handle);
+  }, [guide]);
+
+  function guided() {
+    setGuide((current) => (current === "visible" ? "leaving" : current));
+    try {
+      sessionStorage.setItem(GUIDE_KEY, "1");
+    } catch {
+      // Sin almacenamiento, la guía sólo se retira en esta carga.
+    }
+  }
+
+  /*
     LA MISMA SEÑAL, DOS LECTURAS. Ver `lib/map-hover.ts`.
 
     Apuntar y enfocar se recogen igual en los dos modos —es el mismo evento del
@@ -230,6 +271,7 @@ export function SystemMap({
     const href = hrefOf(id);
     if (href) prefetchWorld(href);
     if (exploreHint) explored();
+    if (guide === "visible") guided();
   }
 
   function release(id: WorldId) {
@@ -243,6 +285,7 @@ export function SystemMap({
     const href = hrefOf(id);
     if (href) prefetchWorld(href);
     if (exploreHint) explored();
+    if (guide === "visible") guided();
   }
 
   function blurFrom(id: WorldId) {
@@ -271,6 +314,8 @@ export function SystemMap({
       />
 
       <LanguageSwitch className="language-switch--home" languages={languages} />
+
+      <SystemGuide state={guide} onDismiss={guided} />
 
       <nav
         className="system-map"

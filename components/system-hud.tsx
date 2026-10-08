@@ -11,8 +11,16 @@ import { useLocale } from "./locale-provider";
 // resto del HUD habla en inglés de instrumento; esto es identidad y se traduce.
 // Las dos disciplinas van por separado porque en el teléfono se apilan.
 const COPY = defineCopy({
-  es: { role: ["Full-stack", "Diseño de producto"] as readonly [string, string] },
-  en: { role: ["Full-stack", "Product design"] },
+  es: {
+    role: ["Full-stack", "Diseño de producto"] as readonly [string, string],
+    idleName: "Elige un destino",
+    idleRole: "y explora mi trabajo",
+  },
+  en: {
+    role: ["Full-stack", "Product design"],
+    idleName: "Choose a destination",
+    idleRole: "and explore my work",
+  },
 });
 
 /** Instrumentación mínima y honesta del puesto de navegación. */
@@ -108,11 +116,15 @@ export function SystemHud({
           </>
         ) : (
           <>
+            {/* En reposo la lectura es una INSTRUCCIÓN y se traduce: «SELECT
+                TARGET» era jerga de instrumento que no decía al visitante qué
+                hacer ni para qué (crítica externa, 2026-10-07). */}
             <span className="hud__target-eyebrow">System map</span>
             <span className="hud__target-rule" />
             <span className="hud__target-name hud__target-name--idle">
-              Select target
+              {copy.idleName}
             </span>
+            <span className="hud__target-role">{copy.idleRole}</span>
           </>
         )}
       </div>
