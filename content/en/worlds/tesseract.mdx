@@ -31,6 +31,10 @@ observatory:
   pair: "GLASS / FOURTH DIMENSION"
   seoTitle: "Tesseract — Interactive 4D Hypercube in WebGL"
   seoDescription: "A tesseract, the four-dimensional hypercube inspired by Interstellar: sixteen vertices rotating through the fourth dimension, as glass in real time with WebGL."
+  notes:
+    - "Sixteen vertices numbered 0 to 15: each of their four bits says which side they sit on in X, Y, Z and W, and two vertices share an edge when they differ in a single bit. That gives 32 edges, 24 faces and 8 cells."
+    - "It rotates in the XW, YW and ZW planes, the ones that mix our space with the fourth dimension, and is projected to 3D with perspective from W: depth in W shares thickness and light between the near cell and the far one."
+    - "Four Three.js meshes share a single GLSL shader: six-sided glass tubes with a Fresnel glow, the light tip and its trail in additive blending, six glass panes and an occluder that only writes depth."
   registro:
     intencion: >-
       To find out whether a four-dimensional shape could read as an object

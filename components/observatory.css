@@ -1551,6 +1551,82 @@ html[data-motion="on"] .observatory-face__dot {
 }
 
 /*
+  La ficha plegada: un rótulo de instrumento cerrado, y dentro las notas de
+  construcción y el registro en la letra de lectura del resumen. Cerrada no
+  añade más que una línea a la cara; abierta, `.observatory__served` ya
+  desplaza en vertical.
+*/
+.observatory-face__notes summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.62);
+}
+
+.observatory-face__notes summary::-webkit-details-marker {
+  display: none;
+}
+
+.observatory-face__notes summary::before {
+  content: "+";
+  color: rgba(242, 200, 121, 0.7);
+}
+
+.observatory-face__notes[open] summary::before {
+  content: "−";
+}
+
+.observatory-face__notes summary:hover,
+.observatory-face__notes summary:focus-visible {
+  color: var(--ink);
+}
+
+.observatory-face__notes ul,
+.observatory-face__notes dl {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: rgba(201, 210, 229, 0.74);
+}
+
+.observatory-face__notes li {
+  padding-left: 0.9rem;
+  border-left: 1px solid rgba(242, 200, 121, 0.3);
+}
+
+.observatory-face__notes h2 {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(242, 200, 121, 0.62);
+}
+
+.observatory-face__notes dt {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(201, 210, 229, 0.45);
+}
+
+.observatory-face__notes dd {
+  margin: 0.15rem 0 0;
+}
+
+/*
   El banco en frío: los mandos que TENDRÁ esta muestra, dichos antes de que
   existan. Salen de `preset.instruments`, así que no se promete ninguno que
   luego no aparezca.

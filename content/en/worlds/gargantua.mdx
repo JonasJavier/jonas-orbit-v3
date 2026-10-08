@@ -43,6 +43,10 @@ observatory:
   pair: "LENS / DISK"
   seoTitle: "Gargantua 3D — Interactive Black Hole Simulator"
   seoDescription: "A 3D black hole simulator of Gargantua, inspired by Interstellar: accretion disk, gravitational lensing and Doppler effect in WebGL with Three.js."
+  notes:
+    - "It is not a mesh: it is a geodesic raymarch on a full-screen quad. Each pixel follows a ray of light that bends around the horizon until it falls in or escapes, with 190 steps per pixel at the normal level and 340 at the deep one."
+    - "The accretion disk is noise rotating at Keplerian speed. Relativistic Doppler beaming, added to gravitational redshift, makes the approaching side shine more than twice as bright as the receding one."
+    - "The image accumulates across frames with two ping-pong render targets and a Halton sequence, so it sharpens while the view holds still. The Doppler, Secondary images and Lens controls switch off real branches of the shader."
   summary: >-
     An interactive interpretation of a rotating black hole. Switch between four
     views to explore gravitational lensing, the accretion disk and the Doppler effect.

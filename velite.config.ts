@@ -87,6 +87,14 @@ const worldProse = defineCollection({
           seoTitle: s.string().max(55).optional(),
           seoDescription: s.string().min(110).max(160).optional(),
           /*
+            Notas de construcción: cómo está hecho el cuerpo, en hechos que se
+            pueden rastrear hasta el código o el documento de diseño. No es el
+            registro —ése cuenta el proceso con la voz de Jonás— sino la ficha
+            técnica que la cara servida enseña plegada, y la que lee quien llega
+            sin WebGL o desde un buscador.
+          */
+          notes: s.array(s.string().max(320)).min(2).max(4).optional(),
+          /*
             El registro recoge el proceso escrito, no los metadatos de búsqueda.
             Si falta, el instrumento `REGISTRO` simplemente no aparece.
             Inventar una intención violaría la regla 8.

@@ -337,4 +337,8 @@ observatory:
   pair: "WATER / LIGHT"
   seoTitle: "Miller's Planet in 3D — Interactive WebGL Ocean"
   seoDescription: "Miller's planet, inspired by Interstellar, in interactive 3D: a shoreless ocean with waves and light in real time, made with custom WebGL shaders."
+  notes:
+    - "A sphere with its own WebGL shader: swell, light path and glints are computed every frame, and the surface keeps moving even when the camera is still."
+    - "The reflection is measured against the specular direction and boosted with Fresnel: like a real mirror, the sea returns more light the more grazing the view. The Mirror view puts the light almost head-on to study it."
+    - "The clouds are a layer of fbm noise compressed along the axis of the sea, with near-white convective cores, and they drift at a different speed from the water. That offset is what reads as an ocean rather than a gas giant."
 ---

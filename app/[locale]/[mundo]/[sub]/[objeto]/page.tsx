@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IntentLink as Link } from "@/components/intent-link";
 import { notFound } from "next/navigation";
 import { FlatWorldBody } from "@/components/flat-world-body";
+import { OBSERVATORY_LABELS } from "@/components/observatory-labels";
 import { ObservatoryViewer } from "@/components/observatory-viewer";
 import { StructuredData } from "@/components/structured-data";
 import { PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
@@ -78,6 +79,8 @@ const COPY = defineCopy({
     back: "Volver a Experimentos",
     /** La entrada del blog que cuenta cómo está hecho, si la hay. */
     read: "Cómo está hecho",
+    notes: "Notas de construcción",
+    record: "Registro",
     /** Los mandos del banco, en el orden en que los presenta el instrumento. */
     instruments: {
       bloom: "Bloom",
@@ -103,6 +106,8 @@ const COPY = defineCopy({
     unavailable: "unavailable",
     back: "Back to Experiments",
     read: "How it’s built",
+    notes: "Build notes",
+    record: "Log",
     instruments: {
       bloom: "Bloom",
       material: "Material",
@@ -183,6 +188,8 @@ export default async function ObservatoryRoute({ params }: Props) {
   const entry = catalog.find((slot) => slot.id === id)!;
   const observatory = world.prose.observatory;
   const descriptor = observatory?.descriptor ?? world.prose.eyebrow;
+  const notes = observatory?.notes;
+  const registro = observatory?.registro;
 
   /*
     Los mandos que TENDRÁ esta muestra, dichos en frío.
@@ -312,6 +319,39 @@ export default async function ObservatoryRoute({ params }: Props) {
             <p className="observatory-route__summary">
               {observatory?.summary ?? observatory?.seoDescription ?? copy.description(world.cosmicName)}
             </p>
+
+            {/*
+              LA FICHA, plegada. Cómo está hecho el cuerpo y, donde Jonás lo
+              escribió, su registro. Es la página de quien llega sin WebGL o
+              desde un buscador: sin ella la cara servida eran setenta palabras.
+              Plegada porque el instrumento pide silencio a la vista; el texto
+              está en el HTML igual, abierto o cerrado.
+            */}
+            {notes || registro ? (
+              <details className="observatory-face__notes">
+                <summary>{copy.notes}</summary>
+                {notes ? (
+                  <ul>
+                    {notes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {registro ? (
+                  <>
+                    <h2>{copy.record}</h2>
+                    <dl>
+                      {OBSERVATORY_LABELS[typedLocale].registro.map(([key, label]) => (
+                        <div key={key}>
+                          <dt>{label}</dt>
+                          <dd>{registro[key]}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </>
+                ) : null}
+              </details>
+            ) : null}
 
             <ul className="observatory-face__bank">
               {bank.map((label) => (

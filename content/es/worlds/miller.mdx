@@ -337,4 +337,8 @@ observatory:
   pair: "AGUA / LUZ"
   seoTitle: "Planeta Miller en 3D — Océano interactivo en WebGL"
   seoDescription: "El planeta de Miller, inspirado en Interstellar, en 3D interactivo: un océano sin costa con oleaje y luz en tiempo real, hecho con shaders propios en WebGL."
+  notes:
+    - "Una esfera con un shader propio en WebGL: el oleaje, el camino de luz y los destellos se calculan a cada fotograma, y la superficie se mueve aunque la cámara esté quieta."
+    - "El reflejo se mide contra la dirección especular y se refuerza con Fresnel: como un espejo de verdad, el mar devuelve más luz cuanto más rasante se le mira. La vista Espejo deja la luz casi frontal para estudiarlo."
+    - "Las nubes son una capa de ruido fbm comprimida a lo largo del eje del mar, con núcleos convectivos casi blancos, y derivan a otra velocidad que el agua. Ese desfase es lo que la lee como océano y no como gigante gaseoso."
 ---

@@ -882,4 +882,8 @@ observatory:
   pair: "ROCK / SLOPE"
   seoTitle: "Edmunds' Planet in 3D — Interactive WebGL Geology"
   seoDescription: "Edmunds' planet, inspired by Interstellar, in interactive 3D: dry rock, mineral provinces and relief rendered in real time with Three.js and WebGL."
+  notes:
+    - "The geography does not come from a texture: three low-frequency directional waves build the tectonics and decide the large mineral provinces, and fbm noise only perturbs their borders so they do not look stamped."
+    - "The mountain region is defined by slope, not height, and the small detail sits inside the masses rather than on top of everything: that is why grazing light reveals relief instead of blotches."
+    - "The rock has no specular highlight: across the whole light sweep, from 30° to 150°, not one pixel reaches white. The Grazing view sets the light at 82° to read the slope."
 ---

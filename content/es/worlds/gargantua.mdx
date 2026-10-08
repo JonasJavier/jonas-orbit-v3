@@ -42,6 +42,10 @@ observatory:
   pair: "LENTE / DISCO"
   seoTitle: "Gargantúa 3D — Simulador interactivo de agujero negro"
   seoDescription: "Simulador 3D del agujero negro Gargantúa, inspirado en Interstellar: disco de acreción, lente gravitacional y efecto Doppler en WebGL con Three.js."
+  notes:
+    - "No es una malla: es un raymarch de geodésicas sobre un cuad a pantalla completa. Cada píxel sigue un rayo de luz que se curva alrededor del horizonte hasta caer en él o escapar, con 190 pasos por píxel en el nivel normal y 340 en el profundo."
+    - "El disco de acreción es ruido que gira con velocidad kepleriana. El efecto Doppler relativista, sumado al corrimiento al rojo gravitacional, hace que el lado que se acerca brille más del doble que el que se aleja."
+    - "La imagen se acumula entre fotogramas con dos render targets en ping-pong y una secuencia de Halton, así que se afina mientras la vista está quieta. Los mandos Doppler, Secundarias y Lente apagan ramas reales del shader."
   summary: >-
     Una interpretación interactiva de un agujero negro en rotación. Cambia entre
     cuatro vistas y observa la lente gravitacional, el disco de acreción y el

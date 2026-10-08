@@ -288,6 +288,15 @@ test("O8 · sin JavaScript la ruta conserva nombre, ficha y vuelta al índice", 
   ).toHaveAttribute("href", "/es/experimentos");
   await expect(page.locator("canvas")).toHaveCount(0);
 
+  /*
+    La ficha plegada es HTML servido: se abre sin JavaScript y trae las notas
+    de construcción y, aquí, el registro que el Tesseracto ya tiene escrito.
+  */
+  const notes = page.locator(".observatory-face__notes");
+  await notes.getByText("Notas de construcción").click();
+  expect(await notes.locator("li").count()).toBeGreaterThanOrEqual(2);
+  await expect(notes.getByRole("heading", { name: "Registro" })).toBeVisible();
+
   await context.close();
 });
 

@@ -883,4 +883,8 @@ observatory:
   pair: "ROCA / PENDIENTE"
   seoTitle: "Planeta Edmunds en 3D — Geología interactiva en WebGL"
   seoDescription: "El planeta de Edmunds, inspirado en Interstellar, en 3D interactivo: roca seca, provincias minerales y relieve renderizados en tiempo real con WebGL."
+  notes:
+    - "La geografía no viene de una textura: tres ondas direccionales de baja frecuencia construyen la tectónica y deciden las grandes provincias minerales, y el ruido fbm sólo perturba sus fronteras para que no parezcan estampadas."
+    - "La región montañosa se define por pendiente y no por altura, y el detalle pequeño va dentro de las masas, no encima de todas: por eso la luz rasante revela relieve y no manchas."
+    - "La roca no tiene brillo especular: en todo el barrido de luz, de 30° a 150°, ningún píxel llega a blanco. La vista Rasante pone la luz a 82° para leer la pendiente."
 ---

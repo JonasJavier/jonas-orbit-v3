@@ -3458,3 +3458,25 @@ las filas. Pendiente de decidir: pellizco para acercar en móvil.
 Validación: lint, tipos, Knip, unitarias; e2e `experimentos`, `soundtrack` y
 `observatorio` en Chromium escritorio y móvil (26 + 38) sobre un build de
 producción aislado.
+
+## La ficha plegada — notas de construcción en la cara servida (2026-10-07)
+
+Search Console marcó las páginas de los especímenes como «Descubierta:
+actualmente sin indexar», y la cara servida sólo traía ~70 palabras: el riesgo
+siguiente era «Rastreada: actualmente sin indexar» por contenido escaso.
+
+1. **El resumen es del espécimen, nunca del mundo.** Sin `summary` propio la
+   cara caía a `world.prose.summary`, que es el significado de la SECCIÓN: la
+   Ranger decía «hablemos». Ahora cae a `seoDescription`.
+2. **`observatory.notes`** (2-4 frases, ES/EN, en los seis MDX): cómo está
+   hecho el cuerpo, sólo con hechos rastreables al código, a este documento o
+   a las entradas del blog. No es el registro —ése es la voz de Jonás y sigue
+   sin escribirse donde falta—; donde existe (Endurance, Tesseracto) la ficha
+   lo enseña también.
+3. **Plegada** (`<details>` «Notas de construcción» / «Build notes»): cerrada
+   es una línea más en la cara, coherente con el pase de silencio; abierta,
+   `.observatory__served` ya desplaza. Es HTML servido: se abre sin
+   JavaScript (O8 lo comprueba) y el buscador la lee abierta o cerrada.
+
+La cara pasa de ~70 a 190-360 palabras según el espécimen. Las notas son un
+borrador para que Jonás las revise.
