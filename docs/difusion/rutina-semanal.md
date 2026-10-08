@@ -138,7 +138,7 @@ minúsculas —, `cover_image` con URL absoluta de `public/images/` que responda
 | # | Tema | Fuente | Estado |
 | --- | --- | --- | --- |
 | 1 | A pixel-ratio governor for Three.js that doesn't trust 60 fps | `components/scene/resolution-governor.ts` + test, registro «Resolución adaptable…» | publicado (2026-10-07, <https://dev.to/jonasjavier/a-pixel-ratio-governor-for-threejs-that-doesnt-trust-60-fps-4380>) |
-| 2 | Synthesizing a spaceship's sound with Web Audio, no audio files | `lib/voyage-audio.ts`, `docs/design/travesia-espaciotemporal.md` §«Segundo pase» | pendiente |
+| 2 | Synthesizing a spaceship's sound with Web Audio, no audio files | `lib/voyage-audio.ts`, `docs/design/travesia-espaciotemporal.md` §«Segundo pase» | borrador (2026-10-08, `docs/difusion/devto/voyage-audio.md`) |
 | 3 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx`, `hero-gargantua-direction.md` §14 undecies | pendiente |
 | 4 | Never two WebGL contexts drawing: putting a background scene to sleep | registro «Rendimiento móvil…», `lib/after-load-idle.ts` | pendiente |
 | 5 | Prefetch on intent, not on sight: a `<Link>` wrapper for Next.js | `lib/world-prefetch.ts`, registro «QA para premios…» | pendiente |
