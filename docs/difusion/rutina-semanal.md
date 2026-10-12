@@ -194,7 +194,7 @@ propio, un problema, una lección).
 | # | Tema | Página / fuente | Estado |
 | --- | --- | --- | --- |
 | 0 | Gargantua — ray-traced black hole (Showcase) | `/en/experiments/observatory/gargantua` | publicado (2026-10-03, t/94960) |
-| 1 | Miller's ocean: WebGL2 water that never blocks the page | entrada `miller-ocean-webgl2` de la cola del blog | pendiente |
+| 1 | Miller's ocean: WebGL2 water that never blocks the page | entrada `miller-ocean-webgl2` de la cola del blog | borrador (2026-10-12, `borradores/foro-2026-10-16.md`) |
 | 2 | A 4D tesseract from four bits (XOR edges) | `/en/blog/4d-tesseract-in-three-js` | pendiente |
 | 3 | The wormhole voyage: one shader, 2.6 s and synthesized sound | `docs/design/travesia-espaciotemporal.md`, `lib/voyage-audio.ts` | pendiente |
 | 4 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx` §«The shadow the bloom was lighting up» | pendiente |

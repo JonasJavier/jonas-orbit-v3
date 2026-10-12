@@ -1,0 +1,227 @@
+---
+id: miller-ocean-webgl2
+slug: miller-ocean-webgl2-water-shader
+title: "Miller's ocean: WebGL2 water that never blocks the page"
+summary: >-
+  The header of my Education page is a still image of a sea. A WebGL2 shader
+  refracts it with a perspective wave field, and every part of it is built so
+  the water never steals a frame from the page.
+coverAlt: >-
+  The Education page header: a slate-blue ocean with no shore, long swells
+  rolling toward the camera, a giant wave on the right horizon and a crescent
+  planet in the sky.
+seoTitle: "Animated water from one image: a WebGL2 ocean shader"
+seoDescription: >-
+  How I animated the ocean of Miller's planet, inspired by Interstellar, with a
+  WebGL2 shader: perspective waves, refraction and light, without blocking the page.
+---
+
+My [Education](/en/education) page is Miller's planet: an ocean with no
+shore. At the top there's a large image of that sea, and the sea moves.
+Swells roll toward you, the light on the right catches the faces turned to
+it, and the sky stays still.
+
+It isn't a video. It's the same image, refracted every frame by a WebGL2
+fragment shader. This post is how it works and, more than that, how I made
+the water cost the page nothing: not the first paint, not the arrival from
+another page, not the battery while you're not looking at it.
+
+## The first version was jelly
+
+The first version used a 2D canvas. It sliced the water into 3 px rows and
+shifted each row along a sine wave. On paper, waves. On screen, no.
+
+My verdict was short: the motion just didn't look right. It took me a while
+to see why. It wasn't speed or amplitude. Each row's phase depended **only
+on depth**. A whole horizontal band moved as one block, side to side and up
+and down, and the image wobbled like jelly. The field didn't vary across
+the screen and had no perspective. No amount of tuning was going to fix
+that: the model was wrong.
+
+## One triangle and one image
+
+The current version has its own WebGL2 context, one texture (the image) and
+a single triangle that covers the screen. No Three.js here: a full-screen
+pass doesn't need it.
+
+```glsl
+void main() {
+  vec2 uv = uOffset + vUv * uCover;
+  float d = (uv.y - HORIZON) / (1.0 - HORIZON);
+  if (d <= 0.0) { outColor = texture(uPhoto, uv); return; }
+  // …
+}
+```
+
+`HORIZON` is `0.24`: the image's horizon sits at 24% of its height. `d` is
+depth below that line. If a pixel is in the sky (`d <= 0`), the shader
+returns the texture untouched and stops. The sky is never modified.
+
+`uCover` and `uOffset` reproduce the `<img>`'s `object-fit: cover`. The
+shader computes its own crop from `naturalWidth`, so the water lands exactly
+where the still image was.
+
+## A sea in perspective
+
+To stop the jelly, each pixel has to know where it sits on an actual sea
+plane, not just how far down the screen it is. So the shader rebuilds a
+perspective plane:
+
+```glsl
+float z = 1.0 / (0.9 * d + 0.1);
+vec2 w = vec2((uv.x - 0.5) * z * 1.6, z) * 23.0;
+```
+
+`z` grows toward the horizon. Near the camera one unit of sea covers many
+pixels; far away, very few. On that plane I add three wave trains rolling
+toward the camera, one head-on and two oblique, plus a noise ripple dragged
+in the same direction.
+
+```glsl
+// Tren sinusoidal con derivadas analíticas: (altura, dh/dx, dh/dy).
+// La velocidad decrece con la raíz del número de onda, como en aguas profundas.
+vec3 wave(vec2 w, vec2 dir, float k, float amp, float t, float phase) {
+  float p = k * (dot(dir, w) - SPEED * inversesqrt(k) * t) + phase;
+  return vec3(amp * sin(p), amp * k * cos(p) * dir);
+}
+```
+
+(The comments are in Spanish because the repo is.) Two things matter here.
+Speed scales with `1/√k`, the deep-water dispersion relation: short waves
+travel slower than long ones. And the function returns the height **and its
+slope** together, as analytic derivatives. No neighbour samples needed to
+know which way the water tilts.
+
+Because the plane is in perspective, distant crests come out small and slow
+and near ones big and fast. That is exactly what the 2D version lacked.
+
+## Refract, don't draw
+
+The shader doesn't paint waves. It moves the image that's already there.
+
+```glsl
+// Refracción: la pendiente desvía la muestra; la altura la levanta.
+vec2 shift = f.yz * 0.0017 * reach + vec2(0.0, f.x * 0.005 * reach);
+vec3 color = texture(uPhoto, uv + shift).rgb;
+```
+
+Each pixel samples the texture slightly offset by the water's slope at that
+point, the way light bends through a tilted surface. Height lifts it a bit
+more. You keep every detail of the image —the foam, the silver highlights—
+and it starts to breathe.
+
+Two terms control the reach. `smoothstep(0.0, 0.16, d)` fades the offset
+out near the horizon, so there's no seam where water meets sky. And
+`pow(d, 1.5)` makes the effect grow toward the foreground.
+
+Light goes on top. The sun is low on the right. Faces of the water turned
+toward it gain a little brightness, faces turned away lose some. Crests get
+Blinn highlights, plus brief sparkles that only show up where the image
+already has foam: a dark patch stays dark.
+
+## Tuned in pixels per second
+
+Water shaders are easy to tune by eye and just as easy to ruin. So I pinned
+speed to something measurable: the main train moves about 70 px/s near the
+bottom edge, with 600 px of water, and slows with perspective toward the
+horizon.
+
+Then I measured it with Playwright at 1440 px wide: three screenshots 0.5 s
+apart. Between frames, 12–13% of the water pixels change, with a mean
+difference of 5.5 levels. The sky sits at 0.005 —practically nothing,
+which is the point. A strip of six frames 0.2 s apart shows crests moving
+down and to the left with a steady pace and no banding.
+
+## Keeping the water off the main thread
+
+This is the part that took the most work, and the part nobody sees.
+
+**The image comes first.** It's in the server-rendered HTML and it's the
+page's LCP. It's preloaded from the `<head>`, one version per screen size:
+a phone only shows a centre strip of the landscape, so it gets that strip
+pre-cropped, 53 KB instead of 195. The shader computes the same crop on
+either one.
+
+**The water waits for idle.** Creating the WebGL context and compiling the
+shaders takes about 200 ms on a GPU-less Chrome. It used to happen as soon
+as the image loaded, in the middle of hydration. Now it waits for
+`lib/after-load-idle.ts`: the page has loaded and the browser is idle
+(`requestIdleCallback`, with a 2 s cap). Until then you see the same still
+image with the same crop, so nothing jumps.
+
+**Shader compilation doesn't freeze the arrival.** Compiled the usual way
+—`compileShader`, then immediately read `COMPILE_STATUS`— the driver
+finishes the work right there, inside the commit that paints the new page.
+I measured it on the other piece that uses the same pattern, the cockpit on
+my Contact page: a ~380 ms task right at the page change. Now the status
+isn't read until the program is ready:
+
+```ts
+const parallel = gl.getExtension("KHR_parallel_shader_compile") as ParallelShaderCompile | null;
+let frame = 0;
+const poll = () => {
+  if (parallel && !gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) {
+    frame = requestAnimationFrame(poll);
+    return;
+  }
+  frame = 0;
+  done(Boolean(gl.getProgramParameter(program, gl.LINK_STATUS)));
+};
+```
+
+With `KHR_parallel_shader_compile` the driver compiles on another thread
+and I poll once per frame. Without the extension, the read still moves to
+the next frame, out of the commit. On Contact the longest task went from
+378 ms to 80–250.
+
+**It only draws when you can see it.** The loop runs at 30 fps, not 60: the
+sea is slow and you can't tell the difference. An `IntersectionObserver`
+stops it when the header scrolls away, and `visibilitychange` stops it in a
+background tab. The canvas matches its box at DPR ≤ 1.5 and never goes past
+2048 px wide.
+
+**Never two contexts drawing.** Behind every page of the site lives the 3D
+map scene. On Education that scene sleeps, covered by the page, so the
+water is the only thing drawing.
+
+## When it can't move
+
+The sea follows the site's single motion switch, in the tray at the bottom
+right. It has no button of its own. Turn motion off and the canvas is
+removed, leaving the still image. When it goes, the WebGL context is
+released: browsers allow only a few per tab, and a still image has no
+business holding one.
+
+No WebGL2, or a lost context, ends the same way: the image stays still and
+there's no control on screen. A "pause" button on an image that can't move
+would be a lie.
+
+Without JavaScript, the page is the image, the text and the documents. All
+the content is in the HTML.
+
+And it's tested. The end-to-end test for Miller counts `drawArrays` calls on
+the water canvas over several frames: that it draws, that it stops with
+motion off, off screen and in a background tab.
+
+## What isn't solved
+
+The waves know nothing about the image. The shader's swells travel over the
+swells already in the picture without following them. At reading distance
+it works; stare at one specific crest and you'll see the water move while
+the crest doesn't.
+
+And the page doesn't load faster because of this. The water stopped
+competing with hydration, but the Education LCP didn't move in that
+measurement (3.65 ↔ 3.83 s). What went down was main-thread blocking. The
+LCP is still the image, and the work there is about bytes, not shaders.
+
+## Try it
+
+The sea is on the [Education](/en/education) page. Turn motion off with the
+switch in the tray and you'll see the still image everything comes from.
+The whole planet, a different ocean with its own shader, is in the
+[Observatory](/en/experiments/observatory/miller).
+
+If you want something like this in your product —a header that moves
+without hurting load times, or a WebGL piece that holds up on a phone—,
+here's [how I work and what I do](/en/contact/services).

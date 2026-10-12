@@ -1,0 +1,231 @@
+---
+id: miller-ocean-webgl2
+slug: oceano-de-miller-agua-en-webgl2
+title: "El océano de Miller: agua en WebGL2 que se mueve sin parar la página"
+summary: >-
+  La cabecera de Formación es una imagen quieta de un mar. Un shader de WebGL2
+  la refracta con un oleaje en perspectiva, y todo está pensado para que el agua
+  no le robe ni un fotograma a la página.
+coverAlt: >-
+  La cabecera de Formación: un océano gris azulado sin costa, oleaje largo hacia
+  la cámara, una ola gigante en el horizonte de la derecha y un planeta en
+  creciente en el cielo.
+seoTitle: "Agua en WebGL2 sobre una imagen: el océano de Miller"
+seoDescription: >-
+  Cómo animé el mar del planeta de Miller, inspirado en Interstellar, con un
+  shader de WebGL2: oleaje en perspectiva, refracción y luz, sin bloquear la página.
+---
+
+La página de [Formación](/es/formacion) es el planeta de Miller: un océano
+sin costa. Arriba hay una imagen grande de ese mar, y el mar se mueve. Las
+crestas vienen hacia ti, la luz de la derecha brilla en las caras que la
+miran y el cielo se queda quieto.
+
+No es un vídeo. Es la misma imagen, refractada a cada fotograma por un shader
+de WebGL2. Esta entrada cuenta cómo funciona y, sobre todo, cómo hice para
+que el agua no le cueste nada a la página: ni al primer pintado, ni a la
+llegada desde otra página, ni a la batería cuando no la estás mirando.
+
+## La primera versión era gelatina
+
+La primera versión usaba un canvas 2D. Partía la zona del agua en filas de
+3 px y desplazaba cada fila con una onda. Sobre el papel, oleaje. En la
+pantalla, no.
+
+Mi veredicto fue corto: «no se ve bien el movimiento». Tardé en ver por qué.
+No era la velocidad ni la amplitud. La fase de cada fila dependía **sólo de
+la profundidad**. Toda una banda horizontal se movía como un bloque, de lado
+a lado y arriba y abajo, y la imagen temblaba como gelatina. El campo no
+variaba en horizontal ni tenía perspectiva. Ningún ajuste de números lo iba a
+arreglar: el modelo estaba mal.
+
+## Un triángulo y una imagen
+
+La versión actual tiene su propio contexto WebGL2, una textura (la imagen) y
+un solo triángulo que cubre toda la pantalla. Nada de Three.js aquí: para un
+pase de pantalla completa no hace falta.
+
+```glsl
+void main() {
+  vec2 uv = uOffset + vUv * uCover;
+  float d = (uv.y - HORIZON) / (1.0 - HORIZON);
+  if (d <= 0.0) { outColor = texture(uPhoto, uv); return; }
+  // …
+}
+```
+
+`HORIZON` vale `0.24`: el horizonte de la imagen está al 24 % de su altura.
+`d` es la profundidad bajo ese horizonte. Si un píxel está en el cielo
+(`d <= 0`), el shader devuelve la textura tal cual y termina. El cielo no se
+toca nunca.
+
+`uCover` y `uOffset` reproducen el `object-fit: cover` del `<img>`. El
+shader calcula su propio encuadre con `naturalWidth`, así que el agua cae
+exactamente donde estaba la imagen quieta.
+
+## Un mar en perspectiva
+
+Para que el agua no sea gelatina, cada píxel tiene que saber dónde está
+sobre un mar de verdad, no sólo a qué altura de la pantalla. Así que el
+shader reconstruye un plano en perspectiva:
+
+```glsl
+float z = 1.0 / (0.9 * d + 0.1);
+vec2 w = vec2((uv.x - 0.5) * z * 1.6, z) * 23.0;
+```
+
+`z` crece hacia el horizonte. Cerca de la cámara una unidad de mar ocupa
+muchos píxeles; lejos, muy pocos. Sobre ese plano sumo tres trenes de ondas
+que vienen hacia la cámara, uno de frente y dos oblicuos, más un rizo de
+ruido arrastrado en la misma dirección.
+
+```glsl
+// Tren sinusoidal con derivadas analíticas: (altura, dh/dx, dh/dy).
+// La velocidad decrece con la raíz del número de onda, como en aguas profundas.
+vec3 wave(vec2 w, vec2 dir, float k, float amp, float t, float phase) {
+  float p = k * (dot(dir, w) - SPEED * inversesqrt(k) * t) + phase;
+  return vec3(amp * sin(p), amp * k * cos(p) * dir);
+}
+```
+
+Dos detalles importan. La velocidad va con `1/√k`, como en aguas profundas:
+las ondas cortas van más despacio que las largas. Y la función devuelve la
+altura **y su pendiente** a la vez, calculadas a mano. No hace falta tomar
+muestras vecinas para saber hacia dónde se inclina el agua.
+
+Como el plano está en perspectiva, las crestas lejanas salen pequeñas y
+lentas, y las cercanas grandes y rápidas. Eso es lo que la versión 2D no
+tenía.
+
+## Refractar, no dibujar
+
+El shader no pinta olas. Mueve la imagen que ya existe.
+
+```glsl
+// Refracción: la pendiente desvía la muestra; la altura la levanta.
+vec2 shift = f.yz * 0.0017 * reach + vec2(0.0, f.x * 0.005 * reach);
+vec3 color = texture(uPhoto, uv + shift).rgb;
+```
+
+Cada píxel lee la textura un poco desplazado según la pendiente del agua en
+ese punto, como lo haría la luz al cruzar una superficie inclinada. La
+altura lo levanta un poco más. El resultado conserva todo el detalle de la
+imagen —la espuma, los reflejos plateados— y lo pone a respirar.
+
+Hay dos controles de alcance. `smoothstep(0.0, 0.16, d)` apaga el
+desplazamiento cerca del horizonte, para que no aparezca una costura donde
+el agua toca el cielo. Y `pow(d, 1.5)` hace que el efecto crezca hacia el
+primer plano.
+
+Encima va la luz. El sol está bajo, a la derecha. Las caras del agua que lo
+miran ganan un poco de brillo y las opuestas lo pierden. Sobre las crestas
+hay destellos Blinn, y unas chispas breves que sólo aparecen donde la imagen
+ya tiene espuma: si una zona era oscura, sigue oscura.
+
+## Calibrado en píxeles por segundo
+
+Un shader de agua se ajusta fácil a ojo y se estropea igual de fácil. Así
+que fijé la velocidad en algo que se puede medir: el tren principal avanza
+unos 70 px/s junto al borde inferior, con 600 px de agua, y se frena en
+perspectiva hacia el horizonte.
+
+Luego lo medí con Playwright a 1440 px de ancho: tres capturas separadas
+0,5 s. Entre fotogramas cambia el 12–13 % de los píxeles del agua, con una
+diferencia media de 5,5 niveles. El cielo queda en 0,005: prácticamente
+nada, que es lo que tiene que pasar. Una tira de seis fotogramas a 0,2 s
+enseña las crestas viajando hacia abajo y a la izquierda, con marcha
+coherente y sin bandas.
+
+## Que el agua no pare la página
+
+Esta es la parte que más trabajo me llevó, y la que menos se ve.
+
+**La imagen es lo primero.** Está en el HTML servido y es el LCP de la
+página. Se precarga desde el `<head>`, con una versión por pantalla: el
+teléfono sólo ve una franja central del paisaje, así que recibe esa franja
+recortada, 53 KB en vez de 195. El shader calcula el mismo encuadre sobre
+cualquiera de las dos.
+
+**El agua espera a que la página esté ociosa.** Crear el contexto WebGL y
+compilar los shaders cuesta unos 200 ms en un Chrome sin GPU. Antes eso
+pasaba al cargar la imagen, en plena hidratación. Ahora espera a
+`lib/after-load-idle.ts`: la página cargó y el navegador está ocioso
+(`requestIdleCallback`, con un tope de 2 s). Mientras tanto se ve la misma
+imagen quieta, con el mismo encuadre, así que no hay salto.
+
+**El shader no congela la llegada.** Compilado de la forma de siempre
+—`compileShader` y en seguida preguntar `COMPILE_STATUS`— el driver termina
+el trabajo en ese mismo instante, dentro del commit que pinta la página
+nueva. Lo medí en la otra pieza que usa el mismo patrón, la cabina de
+Contacto: una tarea de ~380 ms justo al cambiar de página. Ahora el estado
+no se lee hasta que el programa está listo:
+
+```ts
+const parallel = gl.getExtension("KHR_parallel_shader_compile") as ParallelShaderCompile | null;
+let frame = 0;
+const poll = () => {
+  if (parallel && !gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) {
+    frame = requestAnimationFrame(poll);
+    return;
+  }
+  frame = 0;
+  done(Boolean(gl.getProgramParameter(program, gl.LINK_STATUS)));
+};
+```
+
+Con `KHR_parallel_shader_compile` el driver compila en otro hilo y yo
+pregunto fotograma a fotograma. Sin la extensión, la lectura al menos se
+aplaza al fotograma siguiente, fuera del commit. En Contacto la tarea más
+larga bajó de 378 ms a 80–250.
+
+**Sólo dibuja cuando se ve.** El bucle va a 30 fps, no a 60: el mar es
+lento y la diferencia no se nota. Un `IntersectionObserver` lo para cuando
+la cabecera sale de la pantalla y `visibilitychange` lo para en otra
+pestaña. El canvas va a la resolución de la caja con DPR ≤ 1,5 y nunca más
+de 2048 px de ancho.
+
+**Nunca dos contextos dibujando.** Detrás de cada página del sitio vive la
+escena 3D del mapa. En Formación esa escena se queda dormida, cubierta por
+la página, así que sólo dibuja el agua.
+
+## Cuando no se puede mover
+
+El mar sigue el único interruptor de movimiento del sitio, el de la bandeja
+de abajo a la derecha. No tiene botón propio. Si lo apagas, el canvas se
+retira y queda la imagen quieta. Al retirarlo, el contexto WebGL se suelta:
+el navegador concede pocos por pestaña y uno quieto no tiene por qué ocupar
+uno.
+
+Si el equipo no tiene WebGL2, o el contexto se pierde, pasa lo mismo: la
+imagen se queda quieta y no hay ningún control a la vista. Un botón de
+«pausar» sobre una imagen que no puede moverse sería una mentira.
+
+Sin JavaScript, la página es la imagen, el texto y los documentos. Todo el
+contenido está en el HTML.
+
+Y está probado. El test end-to-end de Miller cuenta las llamadas a
+`drawArrays` del canvas del agua a lo largo de varios fotogramas: si dibuja,
+si se para al apagar el movimiento, fuera de pantalla y en segundo plano.
+
+## Lo que no está resuelto
+
+El oleaje no sabe nada de la imagen. Las olas del shader viajan por encima
+de las olas que ya están en la imagen, sin seguirlas. A la distancia normal
+de lectura funciona; si te quedas mirando una cresta concreta, ves que el
+agua se mueve y la cresta no.
+
+Y la página no carga más rápido por esto. El agua dejó de competir con la
+hidratación, pero el LCP de Formación no se movió en esa medición
+(3,65 ↔ 3,83 s). Lo que bajó fue el bloqueo del hilo principal. El LCP
+sigue siendo la imagen, y ahí el trabajo es de peso, no de shader.
+
+## Pruébalo
+
+El mar está en [Formación](/es/formacion). Si apagas el movimiento con el
+interruptor de la bandeja, ves la imagen quieta de la que sale todo. El
+planeta entero, otro océano con su propio shader, está en el
+[Observatorio](/es/experimentos/observatorio/miller).
+
+Si quieres algo así en tu producto —una cabecera que se mueve sin castigar
+la carga, o una pieza en WebGL que funcione en un teléfono—, aquí está
+[cómo trabajo y qué hago](/es/contacto/servicios).
