@@ -34,7 +34,7 @@ const COPY = defineCopy({
     gateKicker: "Observatorio",
     gateTitle: "Entra a los simuladores",
     gateLead: (n: number) =>
-      `${n} simuladores 3D —Gargantúa, planetas y naves de Interstellar— corriendo en tu navegador, en tiempo real.`,
+      `${n} simuladores 3D —Gargantúa, planetas y naves de Interestelar— corriendo en tu navegador, en tiempo real.`,
     gateCta: "Entrar a los simuladores",
     gatePick: "O elige uno",
   },

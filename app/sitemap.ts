@@ -35,6 +35,11 @@ function pageImages(page: PageRef, locale: Locale): string[] | undefined {
   }
   if (page.kind === "article") {
     const article = getArticle(page.id, locale);
+    // Una entrada de fondos de pantalla ES su galería: cada fondo a tamaño
+    // completo, que es lo que Google Imágenes quiere enseñar.
+    if (article.wallpapers) {
+      return article.wallpapers.map(({ name }) => absoluteUrl(`${articleImage(article, name)}.jpg`));
+    }
     return [absoluteUrl(`${articleImage(article, articleCover(article))}-1600.webp`)];
   }
   // La captura real de cada espécimen: «Gargantúa 3D» o «nave Endurance» en

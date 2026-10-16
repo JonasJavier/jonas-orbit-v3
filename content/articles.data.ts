@@ -14,6 +14,7 @@ export const ARTICLE_IDS = [
   "nextjs-bilingual",
   "interstellar-black-hole-physics",
   "hire-freelance-developer-dr",
+  "gargantua-wallpapers",
 ] as const;
 
 export type ArticleId = (typeof ARTICLE_IDS)[number];
@@ -35,6 +36,14 @@ export interface ArticleStructuralData {
   cover: string | Record<Locale, string>;
   /** El espécimen del Observatorio del que habla, si habla de uno. */
   specimen?: WorldId;
+  /**
+   * Fondos de pantalla descargables dentro de `images`, en el orden de la
+   * entrada. Cada uno se sirve como figura (`-800`/`-1600.webp` el de
+   * escritorio, `-400`/`-800.webp` el del teléfono) y como descarga a
+   * resolución completa (`<nombre>.jpg`: 3840 × 2160 o 1440 × 3120). Van al
+   * sitemap de imágenes y al JSON-LD con su licencia.
+   */
+  wallpapers?: readonly { name: string; shape: "desktop" | "phone" }[];
 }
 
 export const articlesData: Record<ArticleId, ArticleStructuralData> = {
@@ -79,5 +88,25 @@ export const articlesData: Record<ArticleId, ArticleStructuralData> = {
     topic: "freelance",
     images: "/images/articulos/freelance",
     cover: { es: "servicios-portada", en: "servicios-portada-en" },
+  },
+  // Google Imágenes: Gargantúa en 4K y en vertical, capturas nativas del
+  // simulador con GPU real (`tools/wallpaper-shots.mjs`). El nombre de cada
+  // archivo es parte del SEO; la entrada es la página de esas imágenes.
+  "gargantua-wallpapers": {
+    published: "2026-10-16",
+    topic: "space",
+    images: "/images/articulos/fondos-gargantua",
+    cover: "gargantua-interstellar-wallpaper-4k-cinematic",
+    specimen: "gargantua",
+    wallpapers: [
+      { name: "gargantua-interstellar-wallpaper-4k-cinematic", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-film", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-lens", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-disk", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-shadow", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-phone-cinematic", shape: "phone" },
+      { name: "gargantua-interstellar-wallpaper-phone-lens", shape: "phone" },
+      { name: "gargantua-interstellar-wallpaper-phone-shadow", shape: "phone" },
+    ],
   },
 };

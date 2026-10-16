@@ -45,10 +45,22 @@ describe("blog", () => {
     for (const id of ARTICLE_IDS) {
       for (const locale of PUBLISHED_LOCALES) {
         const article = getArticle(id, locale);
-        const figures = [...article.prose.body.matchAll(/name:\s*"([a-z0-9-]+)"/g)].map(([, name]) => name);
+        const wallpapers = article.wallpapers ?? [];
+        const figures = [...article.prose.body.matchAll(/name:\s*"([a-z0-9-]+)"/g)]
+          .map(([, name]) => name)
+          .filter((name) => !wallpapers.some((wallpaper) => wallpaper.name === name));
         for (const base of [articleCover(article), ...figures].map((name) => articleImage(article, name))) {
           expect(publicFile(`${base}-800.webp`), `${base}-800`).toBe(true);
           expect(publicFile(`${base}-1600.webp`), `${base}-1600`).toBe(true);
+        }
+        // Los fondos: sus figuras (16:9 a 800/1600, verticales a 400/800) y la descarga JPG.
+        for (const { name, shape } of wallpapers) {
+          const base = articleImage(article, name);
+          for (const width of shape === "desktop" ? [800, 1600] : [400, 800]) {
+            expect(publicFile(`${base}-${width}.webp`), `${base}-${width}`).toBe(true);
+          }
+          expect(publicFile(`${base}.jpg`), `${base}.jpg`).toBe(true);
+          expect(article.prose.body.includes(`"${name}"`), `${id}/${locale} usa ${name}`).toBe(true);
         }
         // La tarjeta al compartir es JPG (LinkedIn no pinta WebP): `tools/prepare-article-og.mjs`.
         const cover = articleImage(article, articleCover(article));

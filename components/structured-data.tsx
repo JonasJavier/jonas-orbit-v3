@@ -15,7 +15,7 @@ const COPY = defineCopy({
     person:
       "Desarrollador full-stack y diseñador UX/UI dominicano: aplicaciones web y móviles con Django y React, y experiencias 3D interactivas con Three.js y WebGL.",
     website:
-      "Portafolio 3D interactivo de Jonás Javier Encarnación, inspirado en Interstellar: proyectos full-stack, formación, fotografía y experimentos en WebGL.",
+      "Portafolio 3D interactivo de Jonás Javier Encarnación, inspirado en Interestelar: proyectos full-stack, formación, fotografía y experimentos en WebGL.",
   },
   en: {
     person:

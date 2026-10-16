@@ -342,3 +342,24 @@ node tools/prepare-specimens.mjs <carpeta-con-<id>.png>
 deja en `public/images/experimentos/observatorio/` las copias `-1600.webp`,
 `-800.webp` y `-og.jpg` que `lib/observatory-images.ts` nombra.
 
+
+## `wallpaper-shots.mjs` + `prepare-wallpapers.mjs`: los fondos de Gargantúa
+
+Los fondos de la entrada `gargantua-wallpapers` son capturas NATIVAS del
+Observatorio, no escaladas. La trampa: con el encendido por defecto el gate
+resuelve a `orbit` y el canvas se queda a DPR 1 aunque el contexto pida
+`deviceScaleFactor: 2`; 1920 × 1080 a DPR 2 da una captura de 3840 × 2160
+con un canvas de 1920 × 1080 estirado. Por eso la ventana ES el 4K
+(3840 × 2160 a DPR 1; el teléfono, 1440 × 3120), y el registro imprime
+`canvas=` de cada captura para comprobarlo. GPU real (Chromium con ventana,
+ANGLE/D3D11); se niega a capturar con SwiftShader.
+
+```
+node tools/wallpaper-shots.mjs ../jonas-orbit-fondos
+node tools/prepare-wallpapers.mjs ../jonas-orbit-fondos
+```
+
+Las capturas van FUERA del repo; `prepare-wallpapers.mjs` deja en
+`public/images/articulos/fondos-gargantua/` las figuras WebP, los JPG de
+descarga con XMP (autor, derechos, URL de la licencia) y el `-og.jpg` de la
+portada. Los nombres los declara `wallpapers` en `content/articles.data.ts`.

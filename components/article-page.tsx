@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import { IntentLink as Link } from "@/components/intent-link";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import type { WorldId } from "@/content/worlds.data";
 import { articleCover, articleImage, getArticles, type Article } from "@/lib/articles";
@@ -33,7 +33,7 @@ const COPY = defineCopy({
     endLead:
       "Todo lo que acabas de leer corre en tu navegador, en tiempo real. Entra al Observatorio y míralo a pantalla completa, en modo Observar o Estudio.",
     gateTitle: "Entra a los simuladores",
-    gateLead: "Gargantúa, planetas y naves de Interstellar en 3D, corriendo en tu navegador, en tiempo real. Están en el Observatorio.",
+    gateLead: "Gargantúa, planetas y naves de Interestelar en 3D, corriendo en tu navegador, en tiempo real. Están en el Observatorio.",
     gateCta: "Entrar a los simuladores",
     authorKicker: "Quién escribe",
     authorBio:
@@ -42,6 +42,9 @@ const COPY = defineCopy({
     contact: "Escribirme",
     more: "Sigue leyendo",
     back: "Todas las entradas",
+    download: { desktop: "Descargar en 4K", phone: "Descargar" },
+    size: { desktop: "3840 × 2160 · JPG", phone: "1440 × 3120 · JPG" },
+    fullSize: (alt: string) => `Ver a tamaño completo: ${alt}`,
   },
   en: {
     crumbs: "Post breadcrumb",
@@ -62,6 +65,9 @@ const COPY = defineCopy({
     contact: "Write to me",
     more: "Keep reading",
     back: "All posts",
+    download: { desktop: "Download in 4K", phone: "Download" },
+    size: { desktop: "3840 × 2160 · JPG", phone: "1440 × 3120 · JPG" },
+    fullSize: (alt: string) => `View full size: ${alt}`,
   },
 });
 
@@ -77,6 +83,64 @@ const specimenSources = (id: WorldId) => ({
   srcSet: `${specimenImage(id, "800")} 800w, ${specimenImage(id, "1600")} 1600w`,
   thumb: specimenImage(id, "800"),
 });
+
+/** Las medidas de cada forma de fondo: la figura y la descarga a resolución completa. */
+const WALLPAPER_SHAPES = {
+  desktop: { small: 800, large: 1600, ratio: 9 / 16, full: [3840, 2160] },
+  phone: { small: 400, large: 800, ratio: 3120 / 1440, full: [1440, 3120] },
+} as const;
+
+function wallpaperShape(article: Article, name: string) {
+  const entry = article.wallpapers?.find((wallpaper) => wallpaper.name === name);
+  // El MDX nombra un fondo que `articles.data.ts` no declara: que el build lo diga.
+  if (!entry) throw new Error(`El fondo «${name}» no está en los \`wallpapers\` de «${article.id}».`);
+  return entry.shape;
+}
+
+/**
+ * Un fondo de pantalla del cuerpo MDX (`<Wallpaper name="…" alt="…" caption="…" />`).
+ *
+ * La imagen enlaza al JPG a resolución completa y el botón lo descarga: para
+ * Google Imágenes la figura y el archivo grande son la misma imagen, y la
+ * página es la suya. Los del teléfono van dentro de `<WallpaperRow>`.
+ */
+function wallpaperFor(article: Article, locale: Locale) {
+  const copy = COPY[locale];
+  return function Wallpaper({ name, alt, caption }: { name: string; alt: string; caption: string }) {
+    const shape = wallpaperShape(article, name);
+    const size = WALLPAPER_SHAPES[shape];
+    const base = articleImage(article, name);
+    const full = `${base}.jpg`;
+    return (
+      <figure className={`post__figure post__wallpaper post__wallpaper--${shape}`}>
+        <a href={full} aria-label={copy.fullSize(alt)}>
+          <img
+            src={`${base}-${size.large}.webp`}
+            srcSet={`${base}-${size.small}.webp ${size.small}w, ${base}-${size.large}.webp ${size.large}w`}
+            sizes={shape === "desktop" ? "(max-width: 52rem) calc(100vw - 2.5rem), 46rem" : "(max-width: 40rem) 45vw, 15rem"}
+            width={size.large}
+            height={Math.round(size.large * size.ratio)}
+            alt={alt}
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+        <figcaption>{caption}</figcaption>
+        <p className="post__download">
+          <a className="blog-button" href={full} download>
+            {copy.download[shape]} <span aria-hidden="true">↓</span>
+          </a>
+          <span>{copy.size[shape]}</span>
+        </p>
+      </figure>
+    );
+  };
+}
+
+/** Los fondos verticales, uno junto a otro. */
+function WallpaperRow({ children }: { children: ReactNode }) {
+  return <div className="post__wallpapers">{children}</div>;
+}
 
 /** Las figuras del cuerpo MDX (`<Figure name="…" alt="…" caption="…" />`) buscan en la carpeta de su entrada. */
 function figureFor(article: Article) {
@@ -96,6 +160,35 @@ function figureFor(article: Article) {
       </figure>
     );
   };
+}
+
+/**
+ * Los fondos como `ImageObject` con su licencia: autor, crédito, aviso y la
+ * sección «Licencia» de la propia entrada. Es lo que Google Imágenes lee para
+ * la etiqueta «Con licencia»; los JPG llevan lo mismo en XMP
+ * (`tools/prepare-wallpapers.mjs`).
+ */
+function wallpaperImages(article: Article, path: string) {
+  const person = { "@type": "Person", "@id": `${absoluteUrl("/")}#jonas`, name: SITE_PROFILE.name };
+  const licence = `${absoluteUrl(path)}#${article.prose.locale === "es" ? "licencia" : "license"}`;
+  return (article.wallpapers ?? []).map(({ name, shape }) => {
+    const base = articleImage(article, name);
+    const [width, height] = WALLPAPER_SHAPES[shape].full;
+    return {
+      "@type": "ImageObject",
+      contentUrl: absoluteUrl(`${base}.jpg`),
+      thumbnailUrl: absoluteUrl(`${base}-${WALLPAPER_SHAPES[shape].large}.webp`),
+      width,
+      height,
+      encodingFormat: "image/jpeg",
+      creator: person,
+      creditText: "Jonás Javier",
+      copyrightHolder: person,
+      copyrightNotice: `© 2026 ${SITE_PROFILE.name}`,
+      license: licence,
+      acquireLicensePage: licence,
+    };
+  });
 }
 
 export function articleMetadata(article: Article, locale: Locale): Metadata {
@@ -175,7 +268,7 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
           description: prose.seoDescription,
           url: absoluteUrl(path),
           mainEntityOfPage: absoluteUrl(path),
-          image: absoluteUrl(cover.src),
+          image: article.wallpapers ? wallpaperImages(article, path) : absoluteUrl(cover.src),
           datePublished: article.published,
           articleSection: blog.topics[article.topic],
           timeRequired: `PT${prose.readingMinutes}M`,
@@ -290,7 +383,14 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
           </aside>
 
           <div className="post__body">
-            <MDXContent code={prose.body} components={{ Figure: figureFor(article) as ComponentType }} />
+            <MDXContent
+              code={prose.body}
+              components={{
+                Figure: figureFor(article) as ComponentType,
+                Wallpaper: wallpaperFor(article, locale) as ComponentType,
+                WallpaperRow: WallpaperRow as ComponentType,
+              }}
+            />
           </div>
         </div>
 

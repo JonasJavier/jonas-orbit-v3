@@ -19,6 +19,67 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — Interestelar en los títulos y Gargantúa en Google Imágenes (2026-10-16) — sustituye a «Interstellar en descripciones, nunca en títulos»
+
+El dueño: quiere competir por «Interestelar», «agujero negro Interestelar»,
+«Gargantúa Interestelar» y parecidas aunque el público sea el de la película
+(«no me importa»), y sobre todo en Google Imágenes con Gargantúa. Lo que se
+cambió y por qué:
+
+- **«Interestelar» en español, «Interstellar» en inglés.** En Latinoamérica la
+  película se llama *Interestelar* (en España, *Interstellar*), y así la
+  escribe el dueño. Los títulos ES llevan «Interestelar»; las descripciones ES
+  de Gargantúa y del hub conservan «Interstellar» donde ya estaba: las dos
+  grafías quedan en la página. Portada, layout, JSON-LD del sitio y los textos
+  del blog en español pasan a «inspirado en Interestelar».
+- **Títulos.** Los seis especímenes: «Gargantúa de Interestelar — agujero
+  negro en 3D», «La Endurance de Interestelar en 3D…», «La Ranger…»,
+  «Planeta Miller/Edmunds de Interestelar…», «Tesseracto de Interestelar…»
+  (EN: «Interstellar's Gargantua — 3D Black Hole Simulator», etc.).
+  Experimentos, el hub: «Modelos 3D de Interestelar: Gargantúa, naves,
+  planetas» / «Interstellar 3D Models — Gargantua, Planets and Ships». La
+  entrada de física: «Agujero negro de Interestelar: la física de Gargantúa»
+  (H1 y cuerpo con las dos grafías; el slug no cambia). Cada página tiene su
+  frase sin repetirla: el hub dice «modelos 3D», el espécimen «agujero negro
+  en 3D», la física «la física de», los fondos «fondos 4K».
+- **La portada y las páginas de los mundos NO cambian de título.** Nombre y
+  oficio siguen primero (manda «SEO — nombre, nicho 3D y freelance»): la
+  búsqueda por su nombre es la del empleo, y la de la película se gana desde
+  las páginas que sí son de la película.
+- **Nueva entrada `gargantua-wallpapers`** («Fondos de pantalla de Gargantúa
+  en 4K: el agujero negro de Interestelar» / «Gargantua wallpapers in 4K…»):
+  la página de las imágenes para Google Imágenes. Cinco fondos 4K (las cuatro
+  vistas del simulador más la cinematográfica sin Doppler, «como en la
+  película») y tres verticales 1440 × 3120 para el teléfono. Capturas
+  NATIVAS: con el encendido por defecto el gate resuelve a `orbit` y el canvas
+  se queda a DPR 1 aunque el contexto pida 2 (medido: 1920 × 1080 a DPR 2 daba
+  un canvas de 1920 × 1080 estirado), así que `tools/wallpaper-shots.mjs`
+  abre la ventana a 3840 × 2160 a DPR 1 con GPU real, oculta todo menos el
+  canvas y espera 14 s de acumulación; `tools/prepare-wallpapers.mjs` saca las
+  figuras WebP y los JPG de descarga (3,3 MB los ocho juegos).
+- **Para Google Imágenes:** nombres de archivo
+  `gargantua-interstellar-wallpaper-{4k,phone}-<vista>`; cada figura enlaza a
+  su JPG grande y tiene botón de descarga (`<Wallpaper>` y `<WallpaperRow>` en
+  el MDX, declarados en `wallpapers` de `articles.data.ts`); el sitemap de
+  imágenes de la entrada lista los ocho JPG; el `BlogPosting` lleva un
+  `ImageObject` por fondo con `creator`, `creditText`, `copyrightNotice`,
+  `license` y `acquireLicensePage` (la sección «Licencia», `#licencia` /
+  `#license`), y los JPG llevan lo mismo en XMP (autor, crédito, derechos,
+  `WebStatement`): es lo que Google lee para la etiqueta «Con licencia».
+- **Licencia elegida por Claude, a confirmar por el dueño:** gratis como fondo
+  de pantalla en los propios dispositivos; ni venderlos ni republicarlos como
+  propios; para otros usos, escribirle. Con el aviso de que *Interestelar* y
+  su Gargantúa son de sus creadores y esto es un homenaje sin relación con la
+  película. Cambiarla es tocar la sección «Licencia» de las dos entradas y el
+  `COPYRIGHT` de `prepare-wallpapers.mjs` (y regenerar los JPG).
+- **Lo que mueve esto de verdad, fuera del código:** que los fondos circulen
+  con enlace a la página (Reddit r/wallpaper y r/Interstellar, Pinterest,
+  dev.to, el foro de Three.js), que Search Console indexe la entrada y sus
+  imágenes, y medir con las consultas reales (revisión ≈10-27). Google
+  Imágenes tarda semanas en enseñar imágenes nuevas.
+
+---
+
 ## Navegación con red lenta — la travesía espera a la página, y nada se congela (2026-10-07) — manda sobre el «tope de llegada de 1,4 s» de la Travesía
 
 Queja del dueño: con el internet lento, al entrar a un planeta «hace la
