@@ -14,7 +14,7 @@ describe("MDXContent", () => {
     expect(
       screen.getByRole("heading", {
         level: 2,
-        name: "15. Siguiente paso",
+        name: "16. Siguiente paso",
       }),
     ).toBeInTheDocument();
   });

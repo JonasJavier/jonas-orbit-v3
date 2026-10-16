@@ -41,6 +41,8 @@ stack:
     items: [Google Places API, Google Maps JavaScript API, IPinfo, SMTP email]
   - group: Infrastructure
     items: [Railway, Railpack, Gunicorn 23, Private S3 storage]
+  - group: Landing page
+    items: [Astro]
   - group: Mobile build
     items: [EAS Build, Expo Dev Client, Metro]
   - group: Quality and CI
@@ -52,12 +54,47 @@ highlights:
   - A native mobile app and its REST API, built in 16 days on the same backend
   - An end-to-end typed OpenAPI contract, with CI that fails if the app and the API drift apart
   - 3,164 automated pytest tests against PostgreSQL, with continuous integration on GitHub Actions
+  - A public landing page at omsta.app, built with Astro, that shows the system and opens a demo with test accounts
 featuredImage:
-  src: /media/projects/omsta/w02-dashboard.png
-  alt: OMSTA dashboard with the month's bookings, amount collected, commission, balance due and operational alerts, on synthetic data
-  caption: The agency's month at a glance, with alerts that lead to action.
-  module: Dashboard and bookings
+  src: /media/projects/omsta/l01-landing-inicio.png
+  alt: The omsta.app home page with the headline “Your whole agency. One place.” in Spanish, quote and demo buttons, and a view of the system with a hotel booking
+  caption: The omsta.app landing page, with the real system in view from the first screen.
+  module: Landing page
 gallery:
+  - src: /media/projects/omsta/l04-landing-plataforma.png
+    alt: The “One platform. Your whole operation.” section with three cards for the booking, the money and the documents
+    caption: Three cards sum up the product, each with its own piece of interface.
+    module: Landing page
+  - src: /media/projects/omsta/l02-landing-movil.png
+    alt: The omsta.app home page on a phone with the headline, the quote button and the system preview
+    caption: The same home page, designed for the phone.
+    frame: mobile
+    module: Landing page
+  - src: /media/projects/omsta/l03-landing-app-movil.png
+    alt: The “Your agency, in your pocket” section with the OMSTA mobile app on a phone and its four main screens
+    caption: The mobile app, presented inside the landing page.
+    module: Landing page
+  - src: /media/projects/omsta/l05-landing-recorrido.png
+    alt: The “One booking. Everything connected.” section following booking 1042 through four stages, from sale to accounting
+    caption: A sample booking walks through the system's four stages.
+    module: Landing page
+  - src: /media/projects/omsta/l06-landing-documentos.png
+    alt: A fan of a booking's documents with the payment receipt in front, and its description
+    caption: Every document of the booking, with its moment and its preview.
+    module: Landing page
+  - src: /media/projects/omsta/l07-landing-dgii.png
+    alt: The DGII section with the 607 sales report for the period on sample data
+    caption: The 607 tax report, explained with sample data.
+    module: Landing page
+  - src: /media/projects/omsta/l08-landing-movil-app.png
+    alt: The mobile app section on a phone with the OMSTA home screen
+    caption: The app section, on the phone.
+    frame: mobile
+    module: Landing page
+  - src: /media/projects/omsta/w02-dashboard.png
+    alt: OMSTA dashboard with the month's bookings, amount collected, commission, balance due and operational alerts, on synthetic data
+    caption: The agency's month at a glance, with alerts that lead to action.
+    module: Dashboard and bookings
   - src: /media/projects/omsta/w04-reserva-hotel-resumen.png
     alt: Hotel booking record with 70% collected, a status ladder and the outstanding balance
     caption: A booking shows how much was sold, how much was collected and what's left.
@@ -541,6 +578,9 @@ architecture:
     - [github-ci, worker-q2]
     - [eas-build, app-movil]
 links:
+  - label: Visit omsta.app
+    href: https://omsta.app/
+    kind: demo
   - label: Let's talk about your system
     href: /en/contact
     kind: contact
@@ -694,7 +734,8 @@ isn't edited; it's corrected through a guided flow or refunded. And below
 Every screenshot comes from an isolated database, seeded with synthetic data by
 the same services the system uses: invented names, example emails and fictional
 tax documents. None of them show data from the agency or its clients. Screens
-that showed a bug or weren't finished were left out.
+that showed a bug or weren't finished were left out. The landing page screenshots come from
+omsta.app as published, also with fictional data.
 
 ## 13. What I learned
 
@@ -712,7 +753,17 @@ phone, with push notifications and the app store releases still ahead. Current
 work focuses on a phased accounting audit and on paying down technical debt
 without interrupting operations.
 
-## 15. Next step
+## 15. The landing page
+
+OMSTA now has a public face: [omsta.app](https://omsta.app/), a landing page
+built with Astro that presents the system to other travel agencies in the
+Dominican Republic. Instead of describing the product with icons, it shows its
+real pieces with fictional data: a window into the system you can click
+through, the mobile app, a booking that moves through sale, payment, documents
+and accounting, and the DGII 607 tax report. Anyone who wants to try it for
+real opens the separate demo, with test accounts ready to sign in.
+
+## 16. Next step
 
 The repository is private because it's a client's system. If you need a
 platform that connects operations, money and accounting with real

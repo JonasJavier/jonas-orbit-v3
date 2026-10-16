@@ -1484,6 +1484,96 @@
     ],
     "luma": 0.96
   },
+  "/media/projects/omsta/l01-landing-inicio.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.37
+  },
+  "/media/projects/omsta/l02-landing-movil.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.27
+  },
+  "/media/projects/omsta/l03-landing-app-movil.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/omsta/l04-landing-plataforma.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/omsta/l05-landing-recorrido.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.2
+  },
+  "/media/projects/omsta/l06-landing-documentos.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.13
+  },
+  "/media/projects/omsta/l07-landing-dgii.png": {
+    "width": 1920,
+    "height": 1200,
+    "steps": [
+      480,
+      720,
+      960,
+      1440,
+      1920
+    ],
+    "luma": 0.16
+  },
+  "/media/projects/omsta/l08-landing-movil-app.png": {
+    "width": 780,
+    "height": 1688,
+    "steps": [
+      390,
+      780
+    ],
+    "luma": 0.44
+  },
   "/media/projects/omsta/m02-inicio.png": {
     "width": 1080,
     "height": 2400,

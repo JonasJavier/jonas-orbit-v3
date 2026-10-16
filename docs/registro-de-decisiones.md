@@ -19,6 +19,30 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Proyectos — OMSTA se presenta con su landing (2026-10-16)
+
+Petición del dueño: OMSTA tiene landing pública en `https://omsta.app/`
+(Astro, datos ficticios, demo aparte en `demo.omsta.app`) y «se ve más
+bonita» que el sistema, así que es ella la que sale en la mesa.
+
+- **Destacada y puestos de Producto:** `featuredImage` es
+  `l01-landing-inicio`; el teléfono, `l02-landing-movil`; la derecha,
+  `l04-landing-plataforma` (`tableScreens` toma el primer teléfono y la
+  primera de escritorio de la galería). La tarjeta para compartir pasa a
+  `l01-landing-inicio-og.jpg`.
+- **El sistema no se va:** el carrete de Diseño sigue en las pantallas del
+  ERP (`designDecisions` no cambia) y `w02-dashboard` pasa a encabezar el
+  módulo «Panel y reservas» de la galería.
+- **Módulo «Landing page»** con ocho capturas (`l01`–`l08`; 1920 × 1200 y
+  390 × 844 @2x) sacadas de omsta.app tal como se publica, sin el botón
+  flotante de WhatsApp ni el brillo del cursor. Los PNG maestros, en
+  `assets/media/projects/omsta/` (fuera del repo), como el resto.
+- **Contenido:** enlace `kind: demo` «Visitar omsta.app» (el botón de
+  producto vivo de mesa y caso), grupo de stack «Landing page: Astro», un
+  logro y el apartado «15. La landing» en ES/EN. La landing dice «iOS y
+  Android»; el caso mantiene «configurada para iOS, probada en Android»
+  hasta que exista build de iOS.
+
 ## SEO — Interestelar en los títulos y Gargantúa en Google Imágenes (2026-10-16) — sustituye a «Interstellar en descripciones, nunca en títulos»
 
 El dueño: quiere competir por «Interestelar», «agujero negro Interestelar»,

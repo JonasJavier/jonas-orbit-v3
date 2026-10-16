@@ -267,7 +267,9 @@ MDX**, nunca en `worlds.data.ts`.
   holograma con perspectiva por pantalla y `z-index`, cristal en trapecio);
   el caso compacto (carrusel de decisiones, lectura plegada con `CaseFold`).
   Segundo pase: el proyecto primero —muelle plegado en `‹ 01 / 05 ›`, sólo
-  la decisión en Diseño, salidas pequeñas al final—.
+  la decisión en Diseño, salidas pequeñas al final—. **OMSTA** (10-16)
+  registro «Proyectos — OMSTA se presenta con su landing»: destacada y
+  puestos de Producto son capturas de omsta.app; Diseño sigue en el ERP.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

@@ -495,11 +495,11 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     // previas de WhatsApp y compañía no se generan con imágenes tan pesadas.
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      /\/media\/projects\/omsta\/w02-dashboard-og\.jpg$/,
+      /\/media\/projects\/omsta\/l01-landing-inicio-og\.jpg$/,
     );
     await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "Jonás Javier");
-    const card = await page.request.get("/media/projects/omsta/w02-dashboard-og.jpg");
+    const card = await page.request.get("/media/projects/omsta/l01-landing-inicio-og.jpg");
     expect(card.status()).toBe(200);
     expect((await card.body()).byteLength).toBeLessThan(300_000);
 
