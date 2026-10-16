@@ -135,7 +135,7 @@ MDX**, nunca en `worlds.data.ts`.
   título; «Interestelar» en ES, «Interstellar» en EN; portada y mundos siguen
   con nombre y oficio. Entrada `gargantua-wallpapers`: fondos 4K y de teléfono
   nativos (`tools/wallpaper-shots.mjs`), descarga JPG con XMP e `ImageObject`
-  con licencia (uso personal; a confirmar por el dueño).
+  con licencia (uso personal como fondo; confirmada por el dueño).
 - **SEO — frases del nicho 3D** (10-04) registro «SEO — frases del nicho 3D:
   hub de Experimentos y cola del blog» — el simulador dice «3D» y «Three.js»;
   Three.js y shaders en la descripción del hub. Su regla de títulos la

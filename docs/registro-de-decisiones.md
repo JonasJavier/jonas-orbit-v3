@@ -66,7 +66,7 @@ cambió y por qué:
   `license` y `acquireLicensePage` (la sección «Licencia», `#licencia` /
   `#license`), y los JPG llevan lo mismo en XMP (autor, crédito, derechos,
   `WebStatement`): es lo que Google lee para la etiqueta «Con licencia».
-- **Licencia elegida por Claude, a confirmar por el dueño:** gratis como fondo
+- **Licencia (propuesta por Claude, confirmada por el dueño el 10-16):** gratis como fondo
   de pantalla en los propios dispositivos; ni venderlos ni republicarlos como
   propios; para otros usos, escribirle. Con el aviso de que *Interestelar* y
   su Gargantúa son de sus creadores y esto es un homenaje sin relación con la
