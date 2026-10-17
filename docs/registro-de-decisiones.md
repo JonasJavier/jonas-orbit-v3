@@ -19,6 +19,45 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — la página del simulador de Gargantúa y el retrato formal (2026-10-17)
+
+Petición del dueño: que `/en/experiments/observatory/gargantua` compita por
+«Gargantua», «Interstellar» y parecidas, y que su retrato formal (F24, fondo
+azul, traje) compita también en Google Imágenes. Lo que había en el HTML
+servido: `<h1>` «Gargantúa» a secas, ~180 palabras, NINGÚN `<img>` (sólo
+el og:image) y un único enlace interno a una entrada.
+
+- **`<h1>` con la frase de búsqueda.** Campo nuevo `observatory.headline`
+  (opcional, ≤60): «El agujero negro de Interestelar, en 3D» /
+  «Interstellar’s black hole, in 3D» va dentro del `<h1>`, bajo el nombre y
+  con la letra del descriptor, al que sustituye en la cara servida. El
+  instrumento encendido no cambia. Sólo Gargantúa lo lleva por ahora.
+- **La captura como `<img>`.** Dentro de «Notas de construcción», la
+  captura real del espécimen (`-800`/`-1600.webp`, alt = `seoTitle`), en
+  los seis especímenes: sin ella Google Imágenes no tenía ninguna imagen que
+  atribuir a la página.
+- **Todas las entradas del espécimen enlazadas** desde la cara servida, con
+  su frase: «Cómo está hecho», «La física de Gargantúa», «Fondos 4K de
+  Gargantúa». El HUD del instrumento sigue con un solo enlace.
+- **JSON-LD:** el `CreativeWork` lleva `isBasedOn` → `Movie`
+  *Interstellar* (Wikidata Q13417189) y la imagen como `ImageObject` con
+  autor, crédito y copyright. Sin `license`: la licencia confirmada es la
+  de los fondos, no la de las capturas.
+- **Retrato formal (F24).** `jonas-javier-encarnacion-full-stack-developer-
+  {320,576}.webp` (576 × 771 es el original de WhatsApp: no se amplía), en
+  `tools/prepare-about.mjs`. Es la foto de autor de las catorce entradas del
+  blog (cabecera y tarjeta final, ésta con alt con nombre), la segunda
+  `image` de la `Person` en el JSON-LD de todo el sitio
+  (`#retrato-formal`) y entra en el sitemap de imágenes de cada entrada.
+  «Sobre mí» sigue con la F40.
+- **Lo que NO se hizo:** no se tocaron títulos (los de 10-16 siguen), ni
+  `FAQPage` (Google ya no lo enseña a sitios así), ni texto de relleno: la
+  página no va a ganarle «Gargantua» a la Wikipedia; compite en las colas
+  largas («Gargantua 3D», «Interstellar black hole simulator», «agujero negro
+  Interestelar 3D») y en Imágenes.
+
+---
+
 ## Proyectos — OMSTA se presenta con su landing (2026-10-16)
 
 Petición del dueño: OMSTA tiene landing pública en `https://omsta.app/`

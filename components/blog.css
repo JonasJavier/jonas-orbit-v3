@@ -147,7 +147,7 @@ html[data-motion="on"] .blog-live-dot {
   background: rgb(255 255 255 / 4%);
 }
 
-/* El retrato de «Sobre mí» recortado a la cara (jonas-javier-encarnacion, la F40: la cara en ~54 % / 33 %). */
+/* El retrato formal de autor recortado a la cara (jonas-javier-encarnacion-full-stack-developer, la F24: la cara en ~50 % / 40 %). */
 .blog-avatar {
   display: block;
   flex: none;
@@ -163,8 +163,8 @@ html[data-motion="on"] .blog-live-dot {
   display: block;
   width: 100%;
   height: auto;
-  transform: scale(2.3);
-  transform-origin: 54% 31%;
+  transform: scale(1.25);
+  transform-origin: 50% 51%;
 }
 
 .blog-avatar--large {
@@ -173,7 +173,7 @@ html[data-motion="on"] .blog-live-dot {
 }
 
 .blog-avatar--large img {
-  transform: scale(1.75);
+  transform: scale(1.15);
 }
 
 /* ── Tarjetas ───────────────────────────────────────────────────────────── */

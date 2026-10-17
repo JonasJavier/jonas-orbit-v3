@@ -36,6 +36,7 @@ const COPY = defineCopy({
     gateLead: "Gargantúa, planetas y naves de Interestelar en 3D, corriendo en tu navegador, en tiempo real. Están en el Observatorio.",
     gateCta: "Entrar a los simuladores",
     authorKicker: "Quién escribe",
+    headshotAlt: "Retrato de Jonás Javier Encarnación, desarrollador full-stack",
     authorBio:
       "Desarrollador full-stack y diseñador UX/UI en Santo Domingo. Construyo aplicaciones web y móviles a medida, y de vez en cuando un agujero negro.",
     services: "Ver servicios",
@@ -59,6 +60,7 @@ const COPY = defineCopy({
     gateLead: "Gargantua, planets and ships from Interstellar in 3D, running in your browser, in real time. They live in the Observatory.",
     gateCta: "Enter the simulators",
     authorKicker: "Who writes this",
+    headshotAlt: "Portrait of Jonás Javier Encarnación, full-stack developer",
     authorBio:
       "Full-stack developer and UX/UI designer in Santo Domingo. I build custom web and mobile apps, and now and then a black hole.",
     services: "See services",
@@ -290,7 +292,7 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
           <p className="post__lead">{prose.summary}</p>
           <div className="post__byline">
             <span className="blog-avatar">
-              <img src="/images/sobre-mi/jonas-javier-encarnacion-320.webp" width={320} height={427} alt="" decoding="async" />
+              <img src={SITE_PROFILE.headshot.small} width={320} height={428} alt="" decoding="async" />
             </span>
             <p>
               <strong>{SITE_PROFILE.name}</strong>
@@ -421,7 +423,16 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
 
           <section className="post__author" aria-label={copy.authorKicker}>
             <span className="blog-avatar blog-avatar--large">
-              <img src="/images/sobre-mi/jonas-javier-encarnacion-320.webp" width={320} height={427} alt="" loading="lazy" decoding="async" />
+              <img
+                src={SITE_PROFILE.headshot.small}
+                srcSet={`${SITE_PROFILE.headshot.small} 320w, ${SITE_PROFILE.headshot.src} 576w`}
+                sizes="104px"
+                width={320}
+                height={428}
+                alt={copy.headshotAlt}
+                loading="lazy"
+                decoding="async"
+              />
             </span>
             <div>
               <p className="blog-label">{copy.authorKicker}</p>

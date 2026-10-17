@@ -136,6 +136,11 @@ MDX**, nunca en `worlds.data.ts`.
   con nombre y oficio. Entrada `gargantua-wallpapers`: fondos 4K y de teléfono
   nativos (`tools/wallpaper-shots.mjs`), descarga JPG con XMP e `ImageObject`
   con licencia (uso personal como fondo; confirmada por el dueño).
+- **SEO — simulador de Gargantúa y retrato formal** (10-17) registro de
+  igual nombre — `observatory.headline` dentro del `<h1>`, captura real
+  como `<img>` y todas las entradas del espécimen enlazadas; `isBasedOn`
+  la película; el retrato formal (F24) es la foto de autor del blog y la
+  segunda `image` de la `Person`.
 - **SEO — frases del nicho 3D** (10-04) registro «SEO — frases del nicho 3D:
   hub de Experimentos y cola del blog» — el simulador dice «3D» y «Three.js»;
   Three.js y shaders en la descripción del hub. Su regla de títulos la

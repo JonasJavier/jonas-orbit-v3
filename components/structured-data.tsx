@@ -78,15 +78,27 @@ export function StructuredData({
       description: COPY[locale].person,
       // ImageObject y no una URL suelta: Google Imágenes lee el pie y sabe de
       // quién es el retrato cuando se busca por el nombre.
-      image: {
-        "@type": "ImageObject",
-        "@id": `${absoluteUrl("/")}#retrato`,
-        contentUrl: absoluteUrl(SITE_PROFILE.portrait),
-        url: absoluteUrl(SITE_PROFILE.portrait),
-        caption: SITE_PROFILE.portraitCaption[locale],
-        width: 960,
-        height: 1275,
-      },
+      // Dos retratos: el de «Sobre mí» y el formal de autor del blog.
+      image: [
+        {
+          "@type": "ImageObject",
+          "@id": `${absoluteUrl("/")}#retrato`,
+          contentUrl: absoluteUrl(SITE_PROFILE.portrait),
+          url: absoluteUrl(SITE_PROFILE.portrait),
+          caption: SITE_PROFILE.portraitCaption[locale],
+          width: 960,
+          height: 1275,
+        },
+        {
+          "@type": "ImageObject",
+          "@id": `${absoluteUrl("/")}#retrato-formal`,
+          contentUrl: absoluteUrl(SITE_PROFILE.headshot.src),
+          url: absoluteUrl(SITE_PROFILE.headshot.src),
+          caption: SITE_PROFILE.portraitCaption[locale],
+          width: SITE_PROFILE.headshot.width,
+          height: SITE_PROFILE.headshot.height,
+        },
+      ],
       jobTitle: SITE_PROFILE.jobTitle[locale],
       nationality: { "@type": "Country", name: SITE_PROFILE.countryName[locale] },
       knowsLanguage: SITE_PROFILE.languages,

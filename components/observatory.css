@@ -1462,6 +1462,26 @@ a.observatory__slot:focus-visible .observatory__slot-index {
   color: rgba(201, 210, 229, 0.72);
 }
 
+/* La frase de búsqueda dentro del `<h1>`: en su línea y con la letra del
+   descriptor, no con la del nombre. */
+.observatory-route__headline {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-body);
+  text-transform: none;
+}
+
+.observatory-face__capture {
+  margin: 0.2rem 0 0.9rem;
+}
+
+.observatory-face__capture img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(201, 210, 229, 0.16);
+}
+
 .observatory-face__pair {
   margin: 0.15rem 0 0;
   font-size: 0.64rem;

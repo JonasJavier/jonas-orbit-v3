@@ -37,6 +37,18 @@ export const SITE_PROFILE = {
    * nombre del archivo (el original es la F40 del archivo privado).
    */
   portrait: "/images/sobre-mi/jonas-javier-encarnacion-960.webp",
+  /**
+   * Retrato formal (F24, 2026-10-17): la foto de autor de cada entrada del
+   * blog y la segunda `image` de la persona en JSON-LD. Catorce páginas la
+   * enseñan junto al nombre, que es lo que Google Imágenes empareja con la
+   * búsqueda por nombre. 576 × 771 es el original: no se amplía.
+   */
+  headshot: {
+    src: "/images/sobre-mi/jonas-javier-encarnacion-full-stack-developer-576.webp",
+    small: "/images/sobre-mi/jonas-javier-encarnacion-full-stack-developer-320.webp",
+    width: 576,
+    height: 771,
+  },
   /** Pie del retrato en JSON-LD (`ImageObject.caption`): quién es y qué hace. */
   portraitCaption: {
     es: "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en Santo Domingo, República Dominicana",
