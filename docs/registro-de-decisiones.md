@@ -19,6 +19,37 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Tarjeta para compartir — el render real de Gargantúa (2026-10-17) — sustituye a la imagen de «Tarjeta para compartir la portada» (10-01)
+
+El dueño, al ver sus enlaces en Discord: la tarjeta dibujada (un disco
+negro plano con una raya ámbar) no enseñaba el trabajo 3D. Se le
+prepararon dos versiones con el render real —A, texto a la izquierda y la
+sombra a la derecha; B, póster con el render a sangre y el nombre abajo—,
+comparadas al tamaño de una vista previa de Discord (~430 px). **Eligió la
+B** y pidió que fuera la vista previa general del sitio.
+
+- **Imagen.** El fondo `gargantua-interstellar-wallpaper-4k-lens.jpg`
+  (capturado con GPU real por `wallpaper-shots.mjs`), con la sombra arriba
+  y a la izquierda del centro; arriba `JONÁS ORBIT` y `jonasjavier.dev`;
+  abajo «JONÁS JAVIER», «Full-Stack Developer» en ámbar y, a la derecha,
+  «Django · React · TypeScript» y «3D en tiempo real con Three.js» /
+  «Real-time 3D with Three.js». Las dos frases de la tarjeta anterior
+  («Software real…») salen: en miniatura no se leían junto a la foto.
+- **JPG horneado, no `ImageResponse` en caliente.** `ImageResponse` sólo
+  produce PNG, y con la foto pesa ~700 KB: más que los 300 KB que el test
+  fija para que WhatsApp y compañía generen la vista previa.
+  `tools/prepare-share-card.mjs` compone con `next/og` y comprime con
+  `sharp` a `public/brand/tarjeta-compartir-{es,en}.jpg` (~65 KB);
+  `app/[locale]/opengraph-image.tsx` sigue existiendo y devuelve el archivo
+  del idioma (`Response`, `image/jpeg`), así que toda página que heredaba
+  la tarjeta la recibe nueva sin tocarla. Para cambiar el diseño: editar el
+  script, regenerarlo y subir `DEFAULT_OG_VERSION`.
+- **`?v=3`.** Discord guarda la vista previa por URL de imagen; los
+  mensajes ya enviados conservan la tarjeta vieja.
+- Siguen vigentes del 10-01: `og:title` corto, `og:site_name` «Jonás
+  Javier» y el test que pide la tarjeta como Discordbot (ahora JPG de
+  1200 × 630, leído del marcador SOF, < 300 KB).
+
 ## SEO — la página del simulador de Gargantúa y el retrato formal (2026-10-17)
 
 Petición del dueño: que `/en/experiments/observatory/gargantua` compita por

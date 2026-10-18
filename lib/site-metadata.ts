@@ -24,16 +24,17 @@ export function siteOpenGraph(locale: Locale) {
 }
 
 const DEFAULT_OG_ALT: Record<Locale, string> = {
-  es: "Tarjeta de Jonás Javier, Full-Stack Developer: «Software real. Sistemas que llegan a producción.» Django, React y TypeScript junto a Gargantúa sobre un cielo oscuro.",
-  en: "Card for Jonás Javier, Full-Stack Developer: “Real software. Systems that reach production.” Django, React and TypeScript beside Gargantua on a dark sky.",
+  es: "Tarjeta de Jonás Javier, Full-Stack Developer: Gargantúa, el agujero negro de Interestelar, renderizado en 3D con su disco de acreción. Django, React, TypeScript y 3D en tiempo real con Three.js.",
+  en: "Card for Jonás Javier, Full-Stack Developer: Gargantua, the black hole from Interstellar, rendered in 3D with its accretion disk. Django, React, TypeScript and real-time 3D with Three.js.",
 };
 
 /**
  * Versión de la tarjeta. Discord, LinkedIn y Facebook guardan la imagen por
- * URL; al cambiar el diseño de `opengraph-image.tsx` se sube este número para
- * que la pidan de nuevo. La ruta ignora el parámetro: sigue siendo estática.
+ * URL; al cambiar la tarjeta (`tools/prepare-share-card.mjs`) se sube este
+ * número para que la pidan de nuevo. La ruta ignora el parámetro: sigue
+ * siendo estática.
  */
-const DEFAULT_OG_VERSION = 2;
+const DEFAULT_OG_VERSION = 3;
 
 /**
  * Tarjeta por defecto (`app/[locale]/opengraph-image.tsx`) para las páginas que
@@ -44,7 +45,7 @@ export function defaultOgImage(locale: Locale) {
     url: `/${locale}/opengraph-image?v=${DEFAULT_OG_VERSION}`,
     width: 1200,
     height: 630,
-    type: "image/png",
+    type: "image/jpeg",
     alt: DEFAULT_OG_ALT[locale],
   };
 }

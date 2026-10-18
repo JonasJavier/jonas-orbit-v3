@@ -159,6 +159,9 @@ MDX**, nunca en `worlds.data.ts`.
 - **Tarjeta para compartir** (10-01) registro de igual nombre — portada con
   `og:title` corto («Jonás Javier — Full-Stack Developer») distinto del
   `<title>` SEO; `og:site_name` «Jonás Javier»; imagen versionada `?v=N`.
+  Imagen (10-17, registro «Tarjeta para compartir — el render real de
+  Gargantúa»): póster con el render real, JPG horneado por
+  `tools/prepare-share-card.mjs` y servido por `opengraph-image.tsx`.
 - **Repositorio público, SEO y arranque** (09-28) — licencia de sólo lectura
   (`LICENSE`); fuentes (`Fotos/`, `Disenos/`, `portfolio-content/`,
   `assets/`) fuera del repo y del historial, archivadas en el privado
