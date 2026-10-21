@@ -156,6 +156,10 @@ MDX**, nunca en `worlds.data.ts`.
   nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
   descripciones, nunca en títulos; `seoTitle` en los seis especímenes;
   `ProfilePage` en Sobre mí.
+- **Analítica de visitas** (10-17) registro «Analítica de visitas —
+  Cloudflare Web Analytics…» — `components/visit-analytics.tsx`: beacon
+  diferido a `useAfterLoadIdle`, sólo en el host de `SITE_URL`, sin cookies;
+  CSP abierta a `cloudflareinsights.com`; sección en la página de privacidad.
 - **Tarjeta para compartir** (10-01) registro de igual nombre — portada con
   `og:title` corto («Jonás Javier — Full-Stack Developer») distinto del
   `<title>` SEO; `og:site_name` «Jonás Javier»; imagen versionada `?v=N`.

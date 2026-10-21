@@ -19,6 +19,31 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Analítica de visitas — Cloudflare Web Analytics, diferida y sólo en el dominio (2026-10-17)
+
+El dueño preguntó cuántas visitas tiene el sitio y no había respuesta: ninguna
+analítica, Search Console sólo cuenta los clics de Google (32 en tres
+semanas) y las peticiones de Railway (~16.900 en 7 días) mezclan recursos,
+bots y precargas. Pidió elegir la mejor opción.
+
+- **Cloudflare Web Analytics**, no Plausible (de pago), Umami (alojarlo y
+  mantenerlo) ni Google Analytics (cookies → banner). Gratis, sin cookies ni
+  almacenamiento local, sin identificar por IP; ya hay cuenta de Cloudflare
+  (preview), y mide Core Web Vitals de visitas reales, que Search Console no
+  tiene con este tráfico.
+- **`components/visit-analytics.tsx`**, montado en `app/[locale]/layout.tsx`:
+  inyecta `beacon.min.js` cuando la página ya cargó y está ociosa
+  (`useAfterLoadIdle`), con `spa: true` para contar las navegaciones del
+  router. **Sólo si `location.hostname` es el de `SITE_URL`** y hay token:
+  ni `localhost`, ni el preview, ni la suite e2e mandan datos
+  (`visit-analytics.test.ts`). El token es público y vive en el componente.
+- **CSP** (`next.config.ts`): `script-src` añade
+  `https://static.cloudflareinsights.com` y `connect-src`
+  `https://cloudflareinsights.com`.
+- **Privacidad** ES/EN: sección «Estadísticas de visitas».
+- Es medición, no sniffing del auditor (regla 5): no cambia nada de lo que
+  se pinta ni depende de quién visita.
+
 ## Tarjeta para compartir — el render real de Gargantúa (2026-10-17) — sustituye a la imagen de «Tarjeta para compartir la portada» (10-01)
 
 El dueño, al ver sus enlaces en Discord: la tarjeta dibujada (un disco

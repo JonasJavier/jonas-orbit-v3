@@ -5,6 +5,7 @@ import { GargantuaSystem } from "@/components/scene/gargantua-system";
 import { SiteBackdrop } from "@/components/site-backdrop";
 import { SoundtrackControl } from "@/components/soundtrack-control";
 import { SystemTray } from "@/components/system-tray";
+import { VisitAnalytics } from "@/components/visit-analytics";
 import { VoyageLayer } from "@/components/voyage-layer";
 import { DEFAULT_LOCALE, PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
@@ -166,6 +167,7 @@ export default async function LocaleLayout({
               <SoundtrackControl />
             </SystemTray>
           ) : null}
+          <VisitAnalytics />
         </LocaleProvider>
       </body>
     </html>

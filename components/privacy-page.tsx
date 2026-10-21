@@ -28,6 +28,10 @@ const COPY = defineCopy({
         title: "Dónde permanece",
         body: "El mensaje queda en el buzón profesional el tiempo necesario para la conversación y el seguimiento legítimo de la solicitud.",
       },
+      {
+        title: "Estadísticas de visitas",
+        body: "El sitio cuenta visitas con Cloudflare Web Analytics: qué páginas se leen, desde qué país y web se llega y cuánto tarda en cargar. No usa cookies ni almacenamiento en tu navegador, no usa tu IP para identificarte ni te sigue entre sitios, y los datos son agregados.",
+      },
     ],
     controlTitle: "Tu control",
     control: "Puedes pedir acceso, corrección o eliminación escribiendo a",
@@ -53,6 +57,10 @@ const COPY = defineCopy({
       {
         title: "Where it stays",
         body: "The message stays in my work inbox for as long as the conversation and any legitimate follow-up on your request require.",
+      },
+      {
+        title: "Visit statistics",
+        body: "The site counts visits with Cloudflare Web Analytics: which pages are read, which country and website visitors come from, and how fast pages load. It uses no cookies or browser storage, doesn’t use your IP to identify you or follow you across sites, and the data is aggregated.",
       },
     ],
     controlTitle: "Your control",
