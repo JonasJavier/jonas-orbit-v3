@@ -19,6 +19,34 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Analítica — primera lectura: visitas de localhost y el salto del mapa (2026-10-27)
+
+Primera lectura de Cloudflare Web Analytics (14 días, sin bots): ~200
+visitas y ~500 páginas vistas. Las cifras llegan en múltiplos de 10: es una
+MUESTRA, no un conteo exacto. La entrada más visitada es
+`gargantua-wallpapers` (EN), y el 70 % de las visitas son de escritorio.
+
+- **20 de las 200 visitas eran de `localhost`.** Sin `NEXT_PUBLIC_SITE_URL`,
+  `SITE_URL` cae a `http://localhost:3000` y `shouldMeasureVisits` comparaba
+  host con host: cada `next start` local y la e2e mandaban el beacon. Ahora
+  hace falta un `SITE_URL` https y que no sea local
+  (`components/visit-analytics.tsx`, con su test).
+- **CLS de la portada, 0,14 → 0,0004 (medido a 2048 px).** Por encima de
+  1472 px, al encenderse la escena, `.system-map` pasa de la columna a la
+  ventana entera (absolute → fixed) y Gargantúa plana volvía a su tamaño de
+  base mientras se fundía. Lo que se hizo: el mapa pasa 120 ms oculto en ese
+  cambio, con el raíl (`fixed`) visible, y Gargantúa plana tiene la misma
+  geometría con escena y sin ella. Cloudflare lo daba en 0,139 sobre
+  `#sistema>ol.system-map__field`.
+- **Lo que no se tocó:** el LCP (p75 2,76 s). Su elemento es el cielo de
+  estrellas de la cabecera, y el 73 % es retardo de pintado. El TTFB
+  (p75 0,72 s; 0,43-0,77 s medido desde RD) viene de Railway, que sirve
+  desde `jfk1` sin CDN delante. Esa palanca es de infraestructura (proxy de
+  Cloudflare con caché) y la decide el dueño. El INP p75 está bien; el peor
+  caso (424 ms) es el clic que arranca la travesía.
+
+---
+
 ## Dependencias — segunda actualización de seguridad (2026-10-27)
 
 Dependabot tenía 11 alertas abiertas y la CI de `main` estaba roja en

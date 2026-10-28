@@ -162,6 +162,9 @@ MDX**, nunca en `worlds.data.ts`.
   Cloudflare Web Analytics…» — `components/visit-analytics.tsx`: beacon
   diferido a `useAfterLoadIdle`, sólo en el host de `SITE_URL`, sin cookies;
   CSP abierta a `cloudflareinsights.com`; sección en la página de privacidad.
+  Primera lectura (10-27, registro «Analítica — primera lectura…»): el
+  beacon ya no sale con un `SITE_URL` local; CLS del cambio de marco del
+  mapa corregido.
 - **Tarjeta para compartir** (10-01) registro de igual nombre — portada con
   `og:title` corto («Jonás Javier — Full-Stack Developer») distinto del
   `<title>` SEO; `og:site_name` «Jonás Javier»; imagen versionada `?v=N`.

@@ -75,12 +75,17 @@ html:not([data-scene-live="true"]) body:has(.system-home) .site-starfield {
   opacity: 0.58;
   mask-image: radial-gradient(circle at 46% 49%, transparent calc(min(70vw, 112vh) * 0.102), #000 calc(min(70vw, 112vh) * 0.116));
 }
+/* La geometría NO depende de la escena: al encenderse, Gargantúa plana se
+   funde en 900 ms, y si a la vez volvía a su tamaño de base saltaba delante
+   de todos (CLS 0,14 medido a 2048 px, 2026-10-27). Sólo la opacidad cambia. */
 html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__gargantua {
+  opacity: 0.96;
+}
+body:has(.system-home) .space-backdrop__gargantua {
   top: 49%;
   left: 46%;
   right: auto;
   width: min(70vw, 112vh);
-  opacity: 0.96;
   transform: translate(-50%, -50%) rotate(-10deg);
 }
 
@@ -390,8 +395,9 @@ html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__garga
   html:not([data-scene-live="true"]) .system-map [data-flat-visual="beacon"] {
     --atlas-size: clamp(72px, min(23vw, 12svh), 160px);
   }
-  /* Gargantúa plana cae en el mismo punto del escenario que la de la escena. */
-  html:not([data-scene-live="true"]) body:has(.system-home) .space-backdrop__gargantua {
+  /* Gargantúa plana cae en el mismo punto del escenario que la de la escena
+     (con o sin escena viva: ver la geometría de escritorio, arriba). */
+  body:has(.system-home) .space-backdrop__gargantua {
     top: calc(
       var(--home-stage-top) +
         (100% - var(--home-stage-top) - var(--home-stage-bottom)) * 0.46
