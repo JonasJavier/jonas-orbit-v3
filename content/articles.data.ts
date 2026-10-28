@@ -14,6 +14,7 @@ export const ARTICLE_IDS = [
   "nextjs-bilingual",
   "interstellar-black-hole-physics",
   "hire-freelance-developer-dr",
+  "gargantua-wallpapers",
 ] as const;
 
 export type ArticleId = (typeof ARTICLE_IDS)[number];
@@ -35,6 +36,15 @@ export interface ArticleStructuralData {
   cover: string | Record<Locale, string>;
   /** El espécimen del Observatorio del que habla, si habla de uno. */
   specimen?: WorldId;
+  /**
+   * Fondos de pantalla descargables dentro de `images`, en el orden de la
+   * entrada. Cada uno se sirve como figura (`-800`/`-1600.webp` el de
+   * escritorio, `-400`/`-800.webp` el del teléfono, `-600`/`-1200.webp` el
+   * cuadrado) y como descarga a resolución completa (`<nombre>.jpg`:
+   * 3840 × 2160, 1440 × 3120 o 2304 × 2304). Van al sitemap de imágenes y al
+   * JSON-LD con su licencia.
+   */
+  wallpapers?: readonly { name: string; shape: "desktop" | "phone" | "square" }[];
 }
 
 export const articlesData: Record<ArticleId, ArticleStructuralData> = {
@@ -79,5 +89,30 @@ export const articlesData: Record<ArticleId, ArticleStructuralData> = {
     topic: "freelance",
     images: "/images/articulos/freelance",
     cover: { es: "servicios-portada", en: "servicios-portada-en" },
+  },
+  // Google Imágenes: Gargantúa en 4K y en vertical, capturas nativas del
+  // simulador con GPU real (`tools/wallpaper-shots.mjs`). El nombre de cada
+  // archivo es parte del SEO; la entrada es la página de esas imágenes.
+  "gargantua-wallpapers": {
+    published: "2026-10-16",
+    topic: "space",
+    images: "/images/articulos/fondos-gargantua",
+    // Portada: el primer plano (10-27), para que la página la represente
+    // Gargantúa llenando el cuadro y no la vista abierta del simulador.
+    cover: "gargantua-interstellar-wallpaper-4k-closeup",
+    specimen: "gargantua",
+    wallpapers: [
+      { name: "gargantua-interstellar-wallpaper-4k-closeup", shape: "desktop" },
+      { name: "gargantua-interstellar-black-hole-closeup", shape: "square" },
+      { name: "gargantua-interstellar-black-hole-extreme-closeup", shape: "square" },
+      { name: "gargantua-interstellar-wallpaper-4k-cinematic", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-film", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-lens", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-disk", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-4k-shadow", shape: "desktop" },
+      { name: "gargantua-interstellar-wallpaper-phone-cinematic", shape: "phone" },
+      { name: "gargantua-interstellar-wallpaper-phone-lens", shape: "phone" },
+      { name: "gargantua-interstellar-wallpaper-phone-shadow", shape: "phone" },
+    ],
   },
 };

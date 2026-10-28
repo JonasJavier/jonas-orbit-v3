@@ -1,0 +1,399 @@
+---
+id: black-hole-threejs-tutorial
+slug: agujero-negro-en-three-js-tutorial
+title: "Agujero negro en Three.js paso a paso: un shader que puedes copiar"
+summary: >-
+  Un solo archivo HTML, Three.js y un shader de fragmentos: la luz que se curva,
+  el disco por encima y por debajo de la sombra y el lado que brilla más. Cada
+  paso explicado y el código completo al final.
+coverAlt: >-
+  El resultado del tutorial: una sombra negra con un anillo fino, el disco de
+  acreción cruzándola y su imagen curvada por encima y por debajo.
+seoTitle: "Agujero negro en Three.js: tutorial de shader paso a paso"
+seoDescription: >-
+  Tutorial para hacer un agujero negro en Three.js con un shader: rayos que se
+  curvan, disco de acreción, Doppler y estrellas. Código completo para copiar.
+---
+
+En [Cómo hice un agujero negro en WebGL](/es/blog/como-hice-un-agujero-negro-en-webgl)
+conté cómo está construido el Gargantúa de este sitio, con todo lo que hizo
+falta para que corra bien en cualquier equipo. Esta entrada es otra cosa: la
+versión mínima, en **un solo archivo HTML** que puedes copiar, abrir y
+modificar. Unas 150 líneas, Three.js y nada más.
+
+Al final tendrás esto: la sombra, el disco de acreción cruzándola, su cara de
+atrás levantada por encima por la gravedad, la imagen secundaria por debajo y
+el lado que se acerca más brillante que el que se aleja.
+
+## 1. Un lienzo a pantalla completa
+
+Todo el trabajo lo hace un shader de fragmentos, que se ejecuta una vez por
+píxel. Three.js sólo tiene que darle un rectángulo que cubra la pantalla. Para
+eso basta una cámara ortográfica y un plano de 2 × 2 cuyo vértice se escribe
+directamente en coordenadas de pantalla:
+
+```js
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+const material = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uResolution: { value: new THREE.Vector2() },
+    uCamPos: { value: new THREE.Vector3(0, 1.1, -16) },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position.xy, 0.0, 1.0);
+    }
+  `,
+  fragmentShader,
+});
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+```
+
+`uCamPos` es la posición de la cámara *dentro* del shader: 16 unidades por
+detrás del agujero y 1,1 por encima del plano del disco, casi de canto, que es
+como se ve en *Interestelar*.
+
+## 2. Un rayo por píxel
+
+El shader empieza convirtiendo el píxel en una dirección. Con la cámara
+mirando al origen, se construyen tres ejes (adelante, derecha, arriba) y se
+mezclan según la posición del píxel en la pantalla:
+
+```glsl
+vec2 uv = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+
+vec3 forward = normalize(-uCamPos);
+vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
+vec3 up = cross(right, forward);
+vec3 dir = normalize(forward * 1.4 + uv.x * right + uv.y * up);
+vec3 pos = uCamPos;
+```
+
+El `1.4` es la distancia focal: más grande, más zoom.
+
+## 3. Curvar la luz
+
+Aquí está el agujero negro. En lugar de seguir el rayo en línea recta, lo
+dejamos caer. La órbita de la luz alrededor de una masa que no gira (la
+solución de Schwarzschild) se puede escribir como una fuerza central en
+coordenadas cartesianas:
+
+`a = −1,5 · rs · h² · r / |r|⁵`
+
+donde `rs` es el radio de Schwarzschild (el horizonte) y `h = r × v`. Lo útil
+es que `h²` no cambia a lo largo del rayo: se calcula una sola vez. Uso `rs = 1`
+como unidad de todo el shader.
+
+Para avanzar uso el integrador de Verlet, que es estable con pasos grandes:
+
+```glsl
+vec3 h = cross(pos, dir);
+float h2 = dot(h, h);
+
+for (int i = 0; i < STEPS; i++) {
+  float r2 = dot(pos, pos);
+  float r = sqrt(r2);
+  if (r < RS) break; // cayó: el píxel se queda negro
+
+  float dt = clamp(0.06 * r2 / sqrt(h2 + 1e-4), 0.01, 0.8);
+
+  vec3 acc = -1.5 * RS * h2 * pos / (r2 * r2 * r);
+  vec3 nextPos = pos + dir * dt + 0.5 * acc * dt * dt;
+  float n2 = dot(nextPos, nextPos);
+  vec3 nextAcc = -1.5 * RS * h2 * nextPos / (n2 * n2 * sqrt(n2));
+  vec3 nextDir = dir + 0.5 * (acc + nextAcc) * dt;
+
+  // ... aquí va el disco (paso 4)
+
+  pos = nextPos;
+  dir = nextDir;
+}
+```
+
+El tamaño del paso, `dt`, cubre más o menos el mismo ángulo alrededor del
+agujero en cada iteración: pasos cortos cerca, donde la curva es fuerte, y
+largos lejos. Con pasos fijos, los rayos que dan varias vueltas cerca del
+horizonte se quedan sin iteraciones antes de salir.
+
+Sólo con esto ya aparecen la sombra negra y el anillo fino de su borde, el
+anillo de fotones. Nadie los dibuja: son los rayos que caen y los que casi caen.
+
+## 4. El disco
+
+El disco está en el plano `y = 0`. En cada paso miro si el rayo lo cruzó
+(si `y` cambió de signo) y, si lo hizo, calculo dónde:
+
+```glsl
+if (pos.y * nextPos.y < 0.0) {
+  vec3 hit = mix(pos, nextPos, pos.y / (pos.y - nextPos.y));
+  vec4 d = disk(hit, dir);
+  color += (1.0 - alpha) * d.rgb * d.a;
+  alpha += (1.0 - alpha) * d.a;
+}
+```
+
+Como el rayo sigue después de cruzar, puede volver a cruzar el plano por el
+otro lado del agujero. Así aparece, sin hacer nada más, la cara de atrás del
+disco por encima de la sombra y la imagen secundaria por debajo. `alpha`
+acumula la opacidad para que lo que está delante tape a lo de detrás.
+
+Dentro de `disk()`, el disco va de 3 a 10 radios. Empieza en 3 porque más
+cerca no hay órbitas estables: el gas cae. Gira como un sistema de Kepler, más
+rápido cuanto más cerca, con velocidad angular proporcional a `r^−1,5`:
+
+```glsl
+float angle = atan(p.z, p.x) + uTime * 2.0 * pow(r, -1.5);
+float streaks = 0.65 + 0.35 * sin(angle * 4.0 + log(r) * 18.0);
+```
+
+Las vetas son un seno en ángulo y en `log(r)`: con el giro diferencial se
+enrollan solas y dan la sensación de remolino.
+
+## 5. Doppler: el lado que se acerca brilla más
+
+El gas de un lado del disco viene hacia ti y el del otro se aleja. El que se
+acerca se ve más brillante. El factor es `D = 1 / (γ · (1 − v · cos θ))`, y la
+intensidad se multiplica por `D³`:
+
+```glsl
+float speed = sqrt(RS / (2.0 * (r - RS))); // velocidad orbital, en fracción de c
+float gamma = 1.0 / sqrt(1.0 - speed * speed);
+float cosTheta = dot(normalize(vec3(-p.z, 0.0, p.x)), -normalize(dir));
+float doppler = pow(1.0 / (gamma * (1.0 - speed * cosTheta)), 3.0);
+```
+
+Esta parte me falló dos veces al probarla, y te ahorro las dos:
+
+- **La velocidad.** Primero usé la de Newton, `√(rs / 2r)`. Es demasiado lenta
+  cerca del agujero, y la diferencia entre los dos lados casi no se notaba. La
+  correcta para una órbita circular, medida desde un observador quieto, es
+  `√(rs / (2(r − rs)))`: en el borde interior, la mitad de la velocidad de la
+  luz.
+- **El perfil del disco.** La opacidad empezaba en cero justo en el borde
+  interior, que es donde el gas va más rápido. El efecto existía, pero en la
+  zona que no se veía. Ahora el disco es más denso y brillante por dentro:
+
+```glsl
+float falloff = (1.0 - t) * (1.0 - t);
+vec3 color = mix(hot, cool, t) * streaks * doppler * falloff * 0.6;
+float opacity = smoothstep(0.0, 0.02, t) * (1.0 - t);
+```
+
+## 6. Estrellas y tono
+
+Si el rayo se aleja lo bastante (más de 40 radios y yendo hacia fuera), miro
+qué estrella hay en su dirección final. Como es la dirección *después* de
+curvarse, las estrellas cerca del agujero salen desplazadas y estiradas en
+arcos: es la lente gravitacional actuando también sobre el fondo.
+
+Al final, un tono sencillo para que el lado brillante no se queme y la
+corrección de gamma:
+
+```glsl
+color = 1.0 - exp(-color * 1.4);
+gl_FragColor = vec4(pow(color, vec3(1.0 / 2.2)), 1.0);
+```
+
+## Lo que le falta (a propósito)
+
+Esto es un punto de partida, no el Gargantúa del sitio. Lo que no tiene:
+
+- **Rendimiento.** 300 pasos por píxel en toda la pantalla pesan. En un
+  teléfono, baja `STEPS` o el `setPixelRatio`. En el sitio el presupuesto de
+  pasos se adapta, y los rayos que ya es seguro que caen se paran antes.
+- **Rotación del agujero.** Es Schwarzschild, no Kerr. El de la película gira;
+  trazar Kerr por píxel en tiempo real es mucho más caro.
+- **Un disco con textura de verdad**, bloom y las dos copias del disco que
+  evitan que el giro lo enrolle hasta volverlo rayas finas. Todo eso está en
+  [la entrada larga](/es/blog/como-hice-un-agujero-negro-en-webgl).
+
+Si quieres entender la física de lo que acabas de programar —por qué la sombra
+es más grande que el horizonte, qué es el anillo de fotones—, está en
+[La física del agujero negro de Interestelar](/es/blog/la-fisica-del-agujero-negro-de-interstellar).
+
+## El archivo completo
+
+Guárdalo como `agujero-negro.html` y ábrelo con un servidor local cualquiera
+(por ejemplo `npx serve` o `python -m http.server`). Los módulos de JavaScript
+no se cargan si abres el archivo con doble clic.
+
+```html
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agujero negro en Three.js</title>
+  <style>html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }</style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js" } }
+  </script>
+</head>
+<body>
+<script type="module">
+import * as THREE from "three";
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+const fragmentShader = /* glsl */ `
+  uniform float uTime;
+  uniform vec2 uResolution;
+  uniform vec3 uCamPos;
+  varying vec2 vUv;
+
+  const float RS = 1.0;        // radio de Schwarzschild: la unidad de todo
+  const float DISK_IN = 3.0;   // borde interior del disco (órbita estable más cercana)
+  const float DISK_OUT = 10.0; // borde exterior
+  const int STEPS = 300;
+
+  float hash(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+  }
+
+  // Estrellas: una celda de una rejilla por dirección; unas pocas se encienden.
+  vec3 stars(vec3 dir) {
+    vec3 p = dir * 180.0;
+    vec3 cell = floor(p);
+    float h = hash(cell);
+    float d = length(fract(p) - 0.5);
+    float star = step(0.995, h) * smoothstep(0.35, 0.0, d);
+    return vec3(star) * (0.6 + 0.4 * hash(cell + 7.0));
+  }
+
+  // Color del disco en el punto p (sobre el plano y = 0), visto desde dir.
+  vec4 disk(vec3 p, vec3 dir) {
+    float r = length(p.xz);
+    if (r < DISK_IN || r > DISK_OUT) return vec4(0.0);
+    float t = (r - DISK_IN) / (DISK_OUT - DISK_IN);
+
+    // Rotación de Kepler: el borde interior gira mucho más rápido.
+    float angle = atan(p.z, p.x) + uTime * 2.0 * pow(r, -1.5);
+    float streaks = 0.65 + 0.35 * sin(angle * 4.0 + log(r) * 18.0);
+
+    // Doppler: el lado que viene hacia la cámara brilla más.
+    float speed = sqrt(RS / (2.0 * (r - RS))); // velocidad orbital, en fracción de c
+    float gamma = 1.0 / sqrt(1.0 - speed * speed);
+    float cosTheta = dot(normalize(vec3(-p.z, 0.0, p.x)), -normalize(dir));
+    float doppler = pow(1.0 / (gamma * (1.0 - speed * cosTheta)), 3.0);
+
+    vec3 hot = vec3(1.0, 0.85, 0.6);
+    vec3 cool = vec3(0.9, 0.35, 0.08);
+    // Más brillante y más denso cerca del borde interior, donde el gas está más caliente.
+    float falloff = (1.0 - t) * (1.0 - t);
+    vec3 color = mix(hot, cool, t) * streaks * doppler * falloff * 0.6;
+    float opacity = smoothstep(0.0, 0.02, t) * (1.0 - t);
+    return vec4(color, opacity);
+  }
+
+  void main() {
+    vec2 uv = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+
+    // Cámara mirando al origen.
+    vec3 forward = normalize(-uCamPos);
+    vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
+    vec3 up = cross(right, forward);
+    vec3 dir = normalize(forward * 1.4 + uv.x * right + uv.y * up);
+    vec3 pos = uCamPos;
+
+    // h² se conserva a lo largo del rayo: se calcula una vez.
+    vec3 h = cross(pos, dir);
+    float h2 = dot(h, h);
+
+    vec3 color = vec3(0.0);
+    float alpha = 0.0;
+
+    for (int i = 0; i < STEPS; i++) {
+      float r2 = dot(pos, pos);
+      float r = sqrt(r2);
+      if (r < RS) break; // cayó: el píxel se queda negro
+
+      // Paso más corto cerca del agujero, más largo lejos.
+      float dt = clamp(0.06 * r2 / sqrt(h2 + 1e-4), 0.01, 0.8);
+
+      // Verlet: la luz cae hacia el agujero con a = -1,5·rs·h²·r / |r|⁵.
+      vec3 acc = -1.5 * RS * h2 * pos / (r2 * r2 * r);
+      vec3 nextPos = pos + dir * dt + 0.5 * acc * dt * dt;
+      float n2 = dot(nextPos, nextPos);
+      vec3 nextAcc = -1.5 * RS * h2 * nextPos / (n2 * n2 * sqrt(n2));
+      vec3 nextDir = dir + 0.5 * (acc + nextAcc) * dt;
+
+      // ¿Cruzó el plano del disco en este paso?
+      if (pos.y * nextPos.y < 0.0) {
+        vec3 hit = mix(pos, nextPos, pos.y / (pos.y - nextPos.y));
+        vec4 d = disk(hit, dir);
+        color += (1.0 - alpha) * d.rgb * d.a;
+        alpha += (1.0 - alpha) * d.a;
+      }
+
+      pos = nextPos;
+      dir = nextDir;
+
+      // Escapó: mira las estrellas en la dirección final.
+      if (r > 40.0 && dot(pos, dir) > 0.0) {
+        color += (1.0 - alpha) * stars(normalize(dir));
+        break;
+      }
+    }
+
+    color = 1.0 - exp(-color * 1.4); // tono simple para que nada sature
+    gl_FragColor = vec4(pow(color, vec3(1.0 / 2.2)), 1.0);
+  }
+`;
+
+const material = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uResolution: { value: new THREE.Vector2() },
+    uCamPos: { value: new THREE.Vector3(0, 1.1, -16) },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position.xy, 0.0, 1.0);
+    }
+  `,
+  fragmentShader,
+});
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+
+function resize() {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.getDrawingBufferSize(material.uniforms.uResolution.value);
+}
+window.addEventListener("resize", resize);
+resize();
+
+renderer.setAnimationLoop((time) => {
+  material.uniforms.uTime.value = time / 1000;
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
+```
+
+Cosas que puedes tocar primero: `uCamPos` (sube la `y` para ver el disco desde
+arriba), `DISK_IN` y `DISK_OUT`, y el `1.4` de la distancia focal.
+
+## La versión completa
+
+Si quieres ver hasta dónde se puede llevar, el
+[simulador de Gargantúa](/es/experimentos/observatorio/gargantua) del
+Observatorio parte de esta misma ecuación, y en modo Estudio puedes apagar la
+lente, el Doppler y las imágenes secundarias una por una. Y si necesitas algo
+así para tu producto o tu marca, aquí cuento
+[cómo trabajo](/es/contacto/servicios).

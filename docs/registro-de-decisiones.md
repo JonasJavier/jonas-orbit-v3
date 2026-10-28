@@ -19,6 +19,220 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — Gargantúa de cerca en Google Imágenes (2026-10-27)
+
+El dueño vio su captura de Gargantúa en Google Imágenes («gargantua
+interstellar 3d», ficha del simulador) y quiere competir también con las
+imágenes de cerca, donde el agujero llena el cuadro. La que Google tenía era
+la vista abierta (`specimenImage("gargantua")`), con el agujero pequeño en
+medio del negro; la portada de `gargantua-wallpapers` era esa misma vista.
+
+- **Más cerca sin tocar las vistas.** Las cuatro vistas son el contrato
+  (`lib/gargantua-views.ts`): no se añade una quinta ni se acerca la cámara.
+  `tools/wallpaper-shots.mjs` captura la vista LENTE a 5120 × 2880 (mismo
+  aspecto = mismo encuadre, más píxeles) y `prepare-wallpapers.mjs` RECORTA:
+  un 4K 16:9 (`-4k-closeup`, sombra ≈ 49 % del alto) y dos cuadrados de
+  2304 × 2304 (`gargantua-interstellar-black-hole-closeup` y
+  `-extreme-closeup`, éste con el anillo de fotones visible). Ningún píxel
+  ampliado. Los PNG fuente, en `../jonas-orbit-fondos/` (fuera del repo).
+- **Forma `square`** en `wallpapers` (`-600`/`-1200.webp` + JPG con XMP) y
+  `<WallpaperRow pair>`: dos por fila en escritorio, uno por fila en el
+  teléfono. Van al sitemap de imágenes y al JSON-LD con la misma licencia.
+- **La portada de la entrada pasa al primer plano** (cabecera, `og:image`,
+  tarjeta del índice) y abre una sección «Gargantúa de cerca» antes de los
+  fondos 4K. Once fondos en total.
+- **La ficha del simulador también** (mismo día, a petición del dueño): es
+  la que Google ya enseñaba, así que `gargantua-{800,1600}.webp` y
+  `gargantua-og.jpg` de `specimenImage` pasan a ser el primer plano 4K, con
+  las MISMAS URL para no perder el sitio que ya tenía en Imágenes (caché de
+  un día: se renueva sola). Arrastra la tarjeta «en vivo» de las entradas y
+  la puerta del índice del blog. Los otros cinco siguen en la vista
+  OBSERVAR. Fuente: `../jonas-orbit-fondos/gargantua.png`
+  (`tools/prepare-specimens.mjs`).
+- **Lo que NO se tocó:** la tarjeta de la portada del sitio.
+
+---
+
+## Analítica de visitas — Cloudflare Web Analytics, diferida y sólo en el dominio (2026-10-17)
+
+El dueño preguntó cuántas visitas tiene el sitio y no había respuesta: ninguna
+analítica, Search Console sólo cuenta los clics de Google (32 en tres
+semanas) y las peticiones de Railway (~16.900 en 7 días) mezclan recursos,
+bots y precargas. Pidió elegir la mejor opción.
+
+- **Cloudflare Web Analytics**, no Plausible (de pago), Umami (alojarlo y
+  mantenerlo) ni Google Analytics (cookies → banner). Gratis, sin cookies ni
+  almacenamiento local, sin identificar por IP; ya hay cuenta de Cloudflare
+  (preview), y mide Core Web Vitals de visitas reales, que Search Console no
+  tiene con este tráfico.
+- **`components/visit-analytics.tsx`**, montado en `app/[locale]/layout.tsx`:
+  inyecta `beacon.min.js` cuando la página ya cargó y está ociosa
+  (`useAfterLoadIdle`), con `spa: true` para contar las navegaciones del
+  router. **Sólo si `location.hostname` es el de `SITE_URL`** y hay token:
+  ni `localhost`, ni el preview, ni la suite e2e mandan datos
+  (`visit-analytics.test.ts`). El token es público y vive en el componente.
+- **CSP** (`next.config.ts`): `script-src` añade
+  `https://static.cloudflareinsights.com` y `connect-src`
+  `https://cloudflareinsights.com`.
+- **Privacidad** ES/EN: sección «Estadísticas de visitas».
+- Es medición, no sniffing del auditor (regla 5): no cambia nada de lo que
+  se pinta ni depende de quién visita.
+
+## Tarjeta para compartir — el render real de Gargantúa (2026-10-17) — sustituye a la imagen de «Tarjeta para compartir la portada» (10-01)
+
+El dueño, al ver sus enlaces en Discord: la tarjeta dibujada (un disco
+negro plano con una raya ámbar) no enseñaba el trabajo 3D. Se le
+prepararon dos versiones con el render real —A, texto a la izquierda y la
+sombra a la derecha; B, póster con el render a sangre y el nombre abajo—,
+comparadas al tamaño de una vista previa de Discord (~430 px). **Eligió la
+B** y pidió que fuera la vista previa general del sitio.
+
+- **Imagen.** El fondo `gargantua-interstellar-wallpaper-4k-lens.jpg`
+  (capturado con GPU real por `wallpaper-shots.mjs`), con la sombra arriba
+  y a la izquierda del centro; arriba `JONÁS ORBIT` y `jonasjavier.dev`;
+  abajo «JONÁS JAVIER», «Full-Stack Developer» en ámbar y, a la derecha,
+  «Django · React · TypeScript» y «3D en tiempo real con Three.js» /
+  «Real-time 3D with Three.js». Las dos frases de la tarjeta anterior
+  («Software real…») salen: en miniatura no se leían junto a la foto.
+- **JPG horneado, no `ImageResponse` en caliente.** `ImageResponse` sólo
+  produce PNG, y con la foto pesa ~700 KB: más que los 300 KB que el test
+  fija para que WhatsApp y compañía generen la vista previa.
+  `tools/prepare-share-card.mjs` compone con `next/og` y comprime con
+  `sharp` a `public/brand/tarjeta-compartir-{es,en}.jpg` (~65 KB);
+  `app/[locale]/opengraph-image.tsx` sigue existiendo y devuelve el archivo
+  del idioma (`Response`, `image/jpeg`), así que toda página que heredaba
+  la tarjeta la recibe nueva sin tocarla. Para cambiar el diseño: editar el
+  script, regenerarlo y subir `DEFAULT_OG_VERSION`.
+- **`?v=3`.** Discord guarda la vista previa por URL de imagen; los
+  mensajes ya enviados conservan la tarjeta vieja.
+- Siguen vigentes del 10-01: `og:title` corto, `og:site_name` «Jonás
+  Javier» y el test que pide la tarjeta como Discordbot (ahora JPG de
+  1200 × 630, leído del marcador SOF, < 300 KB).
+
+## SEO — la página del simulador de Gargantúa y el retrato formal (2026-10-17)
+
+Petición del dueño: que `/en/experiments/observatory/gargantua` compita por
+«Gargantua», «Interstellar» y parecidas, y que su retrato formal (F24, fondo
+azul, traje) compita también en Google Imágenes. Lo que había en el HTML
+servido: `<h1>` «Gargantúa» a secas, ~180 palabras, NINGÚN `<img>` (sólo
+el og:image) y un único enlace interno a una entrada.
+
+- **`<h1>` con la frase de búsqueda.** Campo nuevo `observatory.headline`
+  (opcional, ≤60): «El agujero negro de Interestelar, en 3D» /
+  «Interstellar’s black hole, in 3D» va dentro del `<h1>`, bajo el nombre y
+  con la letra del descriptor, al que sustituye en la cara servida. El
+  instrumento encendido no cambia. Sólo Gargantúa lo lleva por ahora.
+- **La captura como `<img>`.** Dentro de «Notas de construcción», la
+  captura real del espécimen (`-800`/`-1600.webp`, alt = `seoTitle`), en
+  los seis especímenes: sin ella Google Imágenes no tenía ninguna imagen que
+  atribuir a la página.
+- **Todas las entradas del espécimen enlazadas** desde la cara servida, con
+  su frase: «Cómo está hecho», «La física de Gargantúa», «Fondos 4K de
+  Gargantúa». El HUD del instrumento sigue con un solo enlace.
+- **JSON-LD:** el `CreativeWork` lleva `isBasedOn` → `Movie`
+  *Interstellar* (Wikidata Q13417189) y la imagen como `ImageObject` con
+  autor, crédito y copyright. Sin `license`: la licencia confirmada es la
+  de los fondos, no la de las capturas.
+- **Retrato formal (F24).** `jonas-javier-encarnacion-full-stack-developer-
+  {320,576}.webp` (576 × 771 es el original de WhatsApp: no se amplía), en
+  `tools/prepare-about.mjs`. Es la foto de autor de las catorce entradas del
+  blog (cabecera y tarjeta final, ésta con alt con nombre), la segunda
+  `image` de la `Person` en el JSON-LD de todo el sitio
+  (`#retrato-formal`) y entra en el sitemap de imágenes de cada entrada.
+  «Sobre mí» sigue con la F40.
+- **Lo que NO se hizo:** no se tocaron títulos (los de 10-16 siguen), ni
+  `FAQPage` (Google ya no lo enseña a sitios así), ni texto de relleno: la
+  página no va a ganarle «Gargantua» a la Wikipedia; compite en las colas
+  largas («Gargantua 3D», «Interstellar black hole simulator», «agujero negro
+  Interestelar 3D») y en Imágenes.
+
+---
+
+## Proyectos — OMSTA se presenta con su landing (2026-10-16)
+
+Petición del dueño: OMSTA tiene landing pública en `https://omsta.app/`
+(Astro, datos ficticios, demo aparte en `demo.omsta.app`) y «se ve más
+bonita» que el sistema, así que es ella la que sale en la mesa.
+
+- **Destacada y puestos de Producto:** `featuredImage` es
+  `l01-landing-inicio`; el teléfono, `l02-landing-movil`; la derecha,
+  `l04-landing-plataforma` (`tableScreens` toma el primer teléfono y la
+  primera de escritorio de la galería). La tarjeta para compartir pasa a
+  `l01-landing-inicio-og.jpg`.
+- **El sistema no se va:** el carrete de Diseño sigue en las pantallas del
+  ERP (`designDecisions` no cambia) y `w02-dashboard` pasa a encabezar el
+  módulo «Panel y reservas» de la galería.
+- **Módulo «Landing page»** con ocho capturas (`l01`–`l08`; 1920 × 1200 y
+  390 × 844 @2x) sacadas de omsta.app tal como se publica, sin el botón
+  flotante de WhatsApp ni el brillo del cursor. Los PNG maestros, en
+  `assets/media/projects/omsta/` (fuera del repo), como el resto.
+- **Contenido:** enlace `kind: demo` «Visitar omsta.app» (el botón de
+  producto vivo de mesa y caso), grupo de stack «Landing page: Astro», un
+  logro y el apartado «15. La landing» en ES/EN. La landing dice «iOS y
+  Android»; el caso mantiene «configurada para iOS, probada en Android»
+  hasta que exista build de iOS.
+
+## SEO — Interestelar en los títulos y Gargantúa en Google Imágenes (2026-10-16) — sustituye a «Interstellar en descripciones, nunca en títulos»
+
+El dueño: quiere competir por «Interestelar», «agujero negro Interestelar»,
+«Gargantúa Interestelar» y parecidas aunque el público sea el de la película
+(«no me importa»), y sobre todo en Google Imágenes con Gargantúa. Lo que se
+cambió y por qué:
+
+- **«Interestelar» en español, «Interstellar» en inglés.** En Latinoamérica la
+  película se llama *Interestelar* (en España, *Interstellar*), y así la
+  escribe el dueño. Los títulos ES llevan «Interestelar»; las descripciones ES
+  de Gargantúa y del hub conservan «Interstellar» donde ya estaba: las dos
+  grafías quedan en la página. Portada, layout, JSON-LD del sitio y los textos
+  del blog en español pasan a «inspirado en Interestelar».
+- **Títulos.** Los seis especímenes: «Gargantúa de Interestelar — agujero
+  negro en 3D», «La Endurance de Interestelar en 3D…», «La Ranger…»,
+  «Planeta Miller/Edmunds de Interestelar…», «Tesseracto de Interestelar…»
+  (EN: «Interstellar's Gargantua — 3D Black Hole Simulator», etc.).
+  Experimentos, el hub: «Modelos 3D de Interestelar: Gargantúa, naves,
+  planetas» / «Interstellar 3D Models — Gargantua, Planets and Ships». La
+  entrada de física: «Agujero negro de Interestelar: la física de Gargantúa»
+  (H1 y cuerpo con las dos grafías; el slug no cambia). Cada página tiene su
+  frase sin repetirla: el hub dice «modelos 3D», el espécimen «agujero negro
+  en 3D», la física «la física de», los fondos «fondos 4K».
+- **La portada y las páginas de los mundos NO cambian de título.** Nombre y
+  oficio siguen primero (manda «SEO — nombre, nicho 3D y freelance»): la
+  búsqueda por su nombre es la del empleo, y la de la película se gana desde
+  las páginas que sí son de la película.
+- **Nueva entrada `gargantua-wallpapers`** («Fondos de pantalla de Gargantúa
+  en 4K: el agujero negro de Interestelar» / «Gargantua wallpapers in 4K…»):
+  la página de las imágenes para Google Imágenes. Cinco fondos 4K (las cuatro
+  vistas del simulador más la cinematográfica sin Doppler, «como en la
+  película») y tres verticales 1440 × 3120 para el teléfono. Capturas
+  NATIVAS: con el encendido por defecto el gate resuelve a `orbit` y el canvas
+  se queda a DPR 1 aunque el contexto pida 2 (medido: 1920 × 1080 a DPR 2 daba
+  un canvas de 1920 × 1080 estirado), así que `tools/wallpaper-shots.mjs`
+  abre la ventana a 3840 × 2160 a DPR 1 con GPU real, oculta todo menos el
+  canvas y espera 14 s de acumulación; `tools/prepare-wallpapers.mjs` saca las
+  figuras WebP y los JPG de descarga (3,3 MB los ocho juegos).
+- **Para Google Imágenes:** nombres de archivo
+  `gargantua-interstellar-wallpaper-{4k,phone}-<vista>`; cada figura enlaza a
+  su JPG grande y tiene botón de descarga (`<Wallpaper>` y `<WallpaperRow>` en
+  el MDX, declarados en `wallpapers` de `articles.data.ts`); el sitemap de
+  imágenes de la entrada lista los ocho JPG; el `BlogPosting` lleva un
+  `ImageObject` por fondo con `creator`, `creditText`, `copyrightNotice`,
+  `license` y `acquireLicensePage` (la sección «Licencia», `#licencia` /
+  `#license`), y los JPG llevan lo mismo en XMP (autor, crédito, derechos,
+  `WebStatement`): es lo que Google lee para la etiqueta «Con licencia».
+- **Licencia (propuesta por Claude, confirmada por el dueño el 10-16):** gratis como fondo
+  de pantalla en los propios dispositivos; ni venderlos ni republicarlos como
+  propios; para otros usos, escribirle. Con el aviso de que *Interestelar* y
+  su Gargantúa son de sus creadores y esto es un homenaje sin relación con la
+  película. Cambiarla es tocar la sección «Licencia» de las dos entradas y el
+  `COPYRIGHT` de `prepare-wallpapers.mjs` (y regenerar los JPG).
+- **Lo que mueve esto de verdad, fuera del código:** que los fondos circulen
+  con enlace a la página (Reddit r/wallpaper y r/Interstellar, Pinterest,
+  dev.to, el foro de Three.js), que Search Console indexe la entrada y sus
+  imágenes, y medir con las consultas reales (revisión ≈10-27). Google
+  Imágenes tarda semanas en enseñar imágenes nuevas.
+
+---
+
 ## Navegación con red lenta — la travesía espera a la página, y nada se congela (2026-10-07) — manda sobre el «tope de llegada de 1,4 s» de la Travesía
 
 Queja del dueño: con el internet lento, al entrar a un planeta «hace la

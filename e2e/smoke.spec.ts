@@ -25,6 +25,19 @@ const WORLDS = [
 /** Las 7 rutas indexables de ES: la home más los 6 destinos. */
 const ROUTES = ["/es", ...WORLDS.map((world) => `/es/${world.slug}`)];
 
+/** Ancho y alto de un JPG, leídos del primer marcador SOF (FFC0–FFC2). */
+function jpegSize(bytes: Buffer): [number, number] | undefined {
+  let offset = 2;
+  while (offset + 9 < bytes.length && bytes[offset] === 0xff) {
+    const marker = bytes[offset + 1];
+    if (marker >= 0xc0 && marker <= 0xc2) {
+      return [bytes.readUInt16BE(offset + 7), bytes.readUInt16BE(offset + 5)];
+    }
+    offset += 2 + bytes.readUInt16BE(offset + 2);
+  }
+  return undefined;
+}
+
 function heroLink(page: Page, name: string) {
   // Los accesos de conversión siguen en el HTML como respaldo semántico, pero
   // ya no ocupan el plano visual del System Map. Se localizan en el DOM en vez
@@ -495,11 +508,11 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     // previas de WhatsApp y compañía no se generan con imágenes tan pesadas.
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      /\/media\/projects\/omsta\/w02-dashboard-og\.jpg$/,
+      /\/media\/projects\/omsta\/l01-landing-inicio-og\.jpg$/,
     );
     await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "Jonás Javier");
-    const card = await page.request.get("/media/projects/omsta/w02-dashboard-og.jpg");
+    const card = await page.request.get("/media/projects/omsta/l01-landing-inicio-og.jpg");
     expect(card.status()).toBe(200);
     expect((await card.body()).byteLength).toBeLessThan(300_000);
 
@@ -513,7 +526,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     ).toBeVisible();
   });
 
-  test("la portada se comparte con tarjeta: og:* en el HTML servido e imagen PNG", async ({
+  test("la portada se comparte con tarjeta: og:* en el HTML servido e imagen JPG", async ({
     request,
   }) => {
     // Como un crawler: sin JavaScript, con el user agent de Discord.
@@ -546,10 +559,11 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
       headers: { "user-agent": "facebookexternalhit/1.1" },
     });
     expect(card.status()).toBe(200);
-    expect(card.headers()["content-type"]).toBe("image/png");
+    expect(card.headers()["content-type"]).toBe("image/jpeg");
+    expect(meta("og:image:type")).toBe("image/jpeg");
     const bytes = await card.body();
-    // Ancho y alto del PNG (cabecera IHDR) y un peso que cualquier red aguanta.
-    expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1200, 630]);
+    // Ancho y alto del JPG (marcador SOF) y un peso que cualquier red aguanta.
+    expect(jpegSize(bytes)).toEqual([1200, 630]);
     expect(bytes.byteLength).toBeLessThan(300_000);
   });
 

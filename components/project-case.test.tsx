@@ -81,10 +81,15 @@ describe("ProjectCase — primer pantallazo", () => {
   });
 
   it("vuelve a la mesa con el proyecto elegido y ofrece código sólo si hay repositorio", () => {
-    const { unmount } = renderCase(getProject("omsta", "es"));
+    // OMSTA es de un cliente: sin repositorio publicado. Sin su landing
+    // tampoco tendría producto vivo, y la salida del primer pantallazo serían
+    // entonces sus decisiones.
+    const omsta = getProject("omsta", "es");
+    const { unmount } = renderCase({
+      ...omsta,
+      prose: { ...omsta.prose, links: omsta.prose.links?.filter((link) => link.kind !== "demo") },
+    });
     expect(screen.getByRole("link", { name: /Proyectos/ })).toHaveAttribute("href", "/es/proyectos#omsta");
-    // OMSTA es de un cliente: ni repositorio ni demo publicados. La salida
-    // del primer pantallazo son entonces sus decisiones.
     expect(screen.queryByRole("link", { name: /Ver código/ })).not.toBeInTheDocument();
     expect(document.querySelector(".case-action--site")).toBeNull();
     expect(screen.getByRole("link", { name: /Ver las decisiones/ })).toHaveAttribute("href", "#decisiones");
@@ -343,7 +348,7 @@ describe("ProjectCase — el caso", () => {
     expect(chapter).toHaveAttribute("id", "contexto");
     const index = within(longread).getByRole("navigation", { name: "Índice del caso" });
     expect(within(index).getByRole("link", { name: /Contexto/ })).toHaveAttribute("href", "#contexto");
-    expect(within(index).getAllByRole("link")).toHaveLength(15);
+    expect(within(index).getAllByRole("link")).toHaveLength(16);
     expect(within(longread).getByText(/min de lectura/)).toBeInTheDocument();
   });
 

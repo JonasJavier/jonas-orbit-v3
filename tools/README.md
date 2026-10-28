@@ -34,6 +34,7 @@ node tools/crop.mjs base base-disco 300 250 840 420 1.6
 | `disk-cohesion.mjs` | si el disco se lee como una masa: familia de tono, estratos, energía fina y coherencia por región |
 | `disk-silhouette.mjs` | perfil de luz columna a columna: si el brazo termina en punta o se disuelve |
 | `shot-diff.mjs` | diferencia entre dos capturas, con su suelo de ruido, para probar que un refactor no cambió la imagen |
+| `prepare-share-card.mjs` | la tarjeta para compartir del sitio (`og:image` por defecto): el render real de Gargantúa con el nombre, JPG 1200 × 630 por idioma en `public/brand/`; tras cambiarla, sube `DEFAULT_OG_VERSION` |
 | `prepare-article-og.mjs` | la tarjeta JPG (1200 × 630) de la portada de cada entrada del blog, leída de `content/articles.data.ts`; LinkedIn no pinta WebP |
 | `awards-shots.mjs` | capturas de PORTADA para los premios desde producción: ventana con GPU real (se niega con SwiftShader), escritorio a DPR 2 y a DPR 1 (la escena se dibuja a 1 px por punto: los recortes salen de éstas), teléfono a DPR 3, escena calentada, sin burbuja de audio; NO escribe `reducir-efectos`; salida FUERA del repo |
 | `awards-video.mjs` | vídeo home → travesía → Proyectos → vuelta a 1920 × 1080: screencast de CDP con tiempos reales montado a 60 fps constantes con el ffmpeg de Playwright (sólo VP8/WebM, sin `pipe` ni `concat`: los JPEG van pegados en un archivo); imprime la tasa real conseguida; `--solo-montaje` reutiliza `_frames/` |
@@ -342,3 +343,24 @@ node tools/prepare-specimens.mjs <carpeta-con-<id>.png>
 deja en `public/images/experimentos/observatorio/` las copias `-1600.webp`,
 `-800.webp` y `-og.jpg` que `lib/observatory-images.ts` nombra.
 
+
+## `wallpaper-shots.mjs` + `prepare-wallpapers.mjs`: los fondos de Gargantúa
+
+Los fondos de la entrada `gargantua-wallpapers` son capturas NATIVAS del
+Observatorio, no escaladas. La trampa: con el encendido por defecto el gate
+resuelve a `orbit` y el canvas se queda a DPR 1 aunque el contexto pida
+`deviceScaleFactor: 2`; 1920 × 1080 a DPR 2 da una captura de 3840 × 2160
+con un canvas de 1920 × 1080 estirado. Por eso la ventana ES el 4K
+(3840 × 2160 a DPR 1; el teléfono, 1440 × 3120), y el registro imprime
+`canvas=` de cada captura para comprobarlo. GPU real (Chromium con ventana,
+ANGLE/D3D11); se niega a capturar con SwiftShader.
+
+```
+node tools/wallpaper-shots.mjs ../jonas-orbit-fondos
+node tools/prepare-wallpapers.mjs ../jonas-orbit-fondos
+```
+
+Las capturas van FUERA del repo; `prepare-wallpapers.mjs` deja en
+`public/images/articulos/fondos-gargantua/` las figuras WebP, los JPG de
+descarga con XMP (autor, derechos, URL de la licencia) y el `-og.jpg` de la
+portada. Los nombres los declara `wallpapers` en `content/articles.data.ts`.

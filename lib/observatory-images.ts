@@ -12,6 +12,8 @@ import type { WorldId } from "@/content/worlds.data";
  * Tres copias por espécimen en `public/images/experimentos/observatorio/`:
  * `-1600.webp` y `-800.webp` (16:9) y `-og.jpg` (1200 × 630, recorte central).
  * Las produce `tools/prepare-specimens.mjs` a partir de las capturas.
+ * Gargantúa, desde el 10-27, es el primer plano de la vista LENTE y no la
+ * vista OBSERVAR: es la imagen que Google Imágenes atribuye a su ficha.
  */
 const SPECIMEN_IMAGES = "/images/experimentos/observatorio";
 

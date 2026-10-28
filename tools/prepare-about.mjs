@@ -26,10 +26,16 @@ const ids = [
   "F07",
   "F36",
   "F45",
+  "F24",
 ];
 // The portrait is the one photo search engines index by name: its public
-// file carries the name instead of the archive code (2026-10-02).
-const OUTPUT_IDS = { F40: "jonas-javier-encarnacion" };
+// file carries the name instead of the archive code (2026-10-02). The formal
+// headshot (F24, 2026-10-17) is the blog author photo, named for the same
+// search: name plus trade.
+const OUTPUT_IDS = {
+  F40: "jonas-javier-encarnacion",
+  F24: "jonas-javier-encarnacion-full-stack-developer",
+};
 const manifest = {};
 // Withdrawn by the owner: the large team cannot remain publicly addressable.
 // Keep the private original; remove only the four generated publication copies.

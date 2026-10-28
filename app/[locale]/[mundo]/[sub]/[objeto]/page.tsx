@@ -5,7 +5,7 @@ import { FlatWorldBody } from "@/components/flat-world-body";
 import { OBSERVATORY_LABELS } from "@/components/observatory-labels";
 import { ObservatoryViewer } from "@/components/observatory-viewer";
 import { StructuredData } from "@/components/structured-data";
-import { PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
+import { PUBLISHED_LOCALES, SITE_PROFILE, isPublishedLocale, type Locale } from "@/content/site.data";
 import { worldsData, type WorldId } from "@/content/worlds.data";
 import { getArticles } from "@/lib/articles";
 import { defineCopy } from "@/lib/i18n";
@@ -64,6 +64,17 @@ type Props = { params: Promise<{ locale: string; mundo: string; sub: string; obj
 /** Dos dígitos: es tipografía de instrumento, no dato. */
 const pad = (n: number) => String(n).padStart(2, "0");
 
+/**
+ * La película de la que salen los seis cuerpos, como entidad (Wikidata
+ * Q13417189). `isBasedOn` le dice al buscador de qué Gargantúa o de qué
+ * Endurance habla la página sin meter la palabra en ningún texto más.
+ */
+const INTERSTELLAR = {
+  "@type": "Movie",
+  name: "Interstellar",
+  sameAs: ["https://www.wikidata.org/wiki/Q13417189", "https://en.wikipedia.org/wiki/Interstellar_(film)"],
+};
+
 const COPY = defineCopy({
   es: {
     title: (name: string) => `${name} en 3D · Observatorio`,
@@ -79,6 +90,9 @@ const COPY = defineCopy({
     back: "Volver a Experimentos",
     /** La entrada del blog que cuenta cómo está hecho, si la hay. */
     read: "Cómo está hecho",
+    /** Las otras entradas del espécimen: la física y los fondos. */
+    physics: (name: string) => `La física de ${name}`,
+    wallpapers: (name: string) => `Fondos 4K de ${name}`,
     notes: "Notas de construcción",
     record: "Registro",
     /** Los mandos del banco, en el orden en que los presenta el instrumento. */
@@ -106,6 +120,8 @@ const COPY = defineCopy({
     unavailable: "unavailable",
     back: "Back to Experiments",
     read: "How it’s built",
+    physics: (name: string) => `The physics of ${name}`,
+    wallpapers: (name: string) => `${name} 4K wallpapers`,
     notes: "Build notes",
     record: "Log",
     instruments: {
@@ -216,6 +232,21 @@ export default async function ObservatoryRoute({ params }: Props) {
   const articles = getArticles(typedLocale).filter((entry) => entry.specimen === id);
   const article = articles.find((entry) => entry.topic === "webgl") ?? articles[0];
   const articleHref = article ? articlePath(article.id, typedLocale) : null;
+  // Todas las entradas del espécimen en la cara servida, cada una con su
+  // frase: el enlace interno es lo que reparte la autoridad entre la página
+  // del simulador, la de la física y la de los fondos (2026-10-17).
+  const readings = [...articles]
+    .sort((a, b) => Number(b.topic === "webgl") - Number(a.topic === "webgl") || Number(Boolean(a.wallpapers)) - Number(Boolean(b.wallpapers)))
+    .map((entry) => ({
+      href: articlePath(entry.id, typedLocale),
+      label:
+        entry.topic === "webgl"
+          ? copy.read
+          : entry.wallpapers
+            ? copy.wallpapers(world.cosmicName)
+            : copy.physics(world.cosmicName),
+    }));
+  const capture = observatory?.seoTitle ?? copy.workName(world.cosmicName);
 
   return (
     <main className="observatory-route" id="main-content">
@@ -232,7 +263,20 @@ export default async function ObservatoryRoute({ params }: Props) {
           genre: copy.genre,
           description: observatory?.seoDescription ?? copy.description(world.cosmicName),
           url: absoluteUrl(path),
-          image: absoluteUrl(specimenImage(id, "1600")),
+          isBasedOn: INTERSTELLAR,
+          // ImageObject y no una URL: autor y crédito son lo que Google
+          // Imágenes enseña junto a la captura.
+          image: {
+            "@type": "ImageObject",
+            contentUrl: absoluteUrl(specimenImage(id, "1600")),
+            url: absoluteUrl(specimenImage(id, "1600")),
+            width: 1600,
+            height: 900,
+            caption: capture,
+            creator: { "@id": `${absoluteUrl("/")}#jonas` },
+            creditText: "Jonás Javier",
+            copyrightNotice: `© 2026 ${SITE_PROFILE.name}`,
+          },
           ...(articleHref ? { subjectOf: { "@id": `${absoluteUrl(articleHref)}#entrada` } } : {}),
         }}
       />
@@ -273,8 +317,20 @@ export default async function ObservatoryRoute({ params }: Props) {
                 {pad(entry.index)} / {pad(catalog.length)}
               </span>
             </p>
-            <h1 className="observatory-route__title">{world.cosmicName}</h1>
-            <p className="observatory-face__descriptor">{descriptor}</p>
+            <h1 className="observatory-route__title">
+              {world.cosmicName}
+              {observatory?.headline ? (
+                <>
+                  {" "}
+                  <span className="observatory-face__descriptor observatory-route__headline">
+                    {observatory.headline}
+                  </span>
+                </>
+              ) : null}
+            </h1>
+            {observatory?.headline ? null : (
+              <p className="observatory-face__descriptor">{descriptor}</p>
+            )}
             {entry.pair ? (
               <p className="observatory-face__pair">{entry.pair}</p>
             ) : null}
@@ -330,6 +386,24 @@ export default async function ObservatoryRoute({ params }: Props) {
             {notes || registro ? (
               <details className="observatory-face__notes">
                 <summary>{copy.notes}</summary>
+                {/*
+                  La captura real del espécimen como `<img>`: sin ella la
+                  página no tenía ninguna imagen que Google Imágenes pudiera
+                  atribuirle, sólo la del og:image.
+                */}
+                <figure className="observatory-face__capture">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- estática y ya en WebP: el optimizador no añade nada */}
+                  <img
+                    src={specimenImage(id, "800")}
+                    srcSet={`${specimenImage(id, "800")} 800w, ${specimenImage(id, "1600")} 1600w`}
+                    sizes="(min-width: 36rem) 34rem, 100vw"
+                    width={1600}
+                    height={900}
+                    alt={capture}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
                 {notes ? (
                   <ul>
                     {notes.map((note) => (
@@ -367,11 +441,11 @@ export default async function ObservatoryRoute({ params }: Props) {
             <p className="observatory-face__exit">
               <Link href={indexHref}>{copy.back}</Link>
             </p>
-            {articleHref ? (
-              <p className="observatory-face__read">
-                <Link href={articleHref}>{copy.read}</Link>
+            {readings.map((reading) => (
+              <p className="observatory-face__read" key={reading.href}>
+                <Link href={reading.href}>{reading.label}</Link>
               </p>
-            ) : null}
+            ))}
           </div>
         </div>
       </ObservatoryViewer>

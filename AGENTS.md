@@ -128,12 +128,25 @@ MDX**, nunca en `worlds.data.ts`.
   diaria), proceso editorial, cola de temas y la rutina semanal de Claude que
   deja el borrador en `docs/difusion/borradores/`. Guías por canal en
   `docs/difusion/README.md`.
+- **SEO — Interestelar y Google Imágenes** (10-16) registro «SEO —
+  Interestelar en los títulos y Gargantúa en Google Imágenes» — sustituye a
+  «Interstellar nunca en títulos»: los seis especímenes, el hub de
+  Experimentos («Modelos 3D de Interestelar») y la física lo llevan en el
+  título; «Interestelar» en ES, «Interstellar» en EN; portada y mundos siguen
+  con nombre y oficio. Entrada `gargantua-wallpapers`: fondos 4K y de teléfono
+  nativos (`tools/wallpaper-shots.mjs`), descarga JPG con XMP e `ImageObject`
+  con licencia (uso personal como fondo; confirmada por el dueño).
+  Primeros planos (10-27, registro «SEO — Gargantúa de cerca…»): recortes
+  de la vista LENTE a 5K (4K + dos cuadrados), portada de la entrada.
+- **SEO — simulador de Gargantúa y retrato formal** (10-17) registro de
+  igual nombre — `observatory.headline` dentro del `<h1>`, captura real
+  como `<img>` y todas las entradas del espécimen enlazadas; `isBasedOn`
+  la película; el retrato formal (F24) es la foto de autor del blog y la
+  segunda `image` de la `Person`.
 - **SEO — frases del nicho 3D** (10-04) registro «SEO — frases del nicho 3D:
-  hub de Experimentos y cola del blog» — Experimentos es el hub del nicho
-  («Gargantúa, planetas y naves en WebGL» en el título; Three.js y shaders en
-  la descripción); el simulador dice «3D» y «Three.js»; «modelos 3D de
-  Interstellar» se gana con la entrada-hub #1 de la cola del blog, nunca en
-  títulos de páginas del sitio.
+  hub de Experimentos y cola del blog» — el simulador dice «3D» y «Three.js»;
+  Three.js y shaders en la descripción del hub. Su regla de títulos la
+  sustituye la entrada del 10-16.
 - **SEO — auditoría y especímenes con imagen** (10-02) registro «SEO —
   auditoría, especímenes con imagen, retrato con nombre y dos entradas» —
   cada espécimen tiene captura real (`lib/observatory-images.ts`,
@@ -145,9 +158,16 @@ MDX**, nunca en `worlds.data.ts`.
   nombre completo en títulos y H1, «Jonás Javier» el corto; Interstellar en
   descripciones, nunca en títulos; `seoTitle` en los seis especímenes;
   `ProfilePage` en Sobre mí.
+- **Analítica de visitas** (10-17) registro «Analítica de visitas —
+  Cloudflare Web Analytics…» — `components/visit-analytics.tsx`: beacon
+  diferido a `useAfterLoadIdle`, sólo en el host de `SITE_URL`, sin cookies;
+  CSP abierta a `cloudflareinsights.com`; sección en la página de privacidad.
 - **Tarjeta para compartir** (10-01) registro de igual nombre — portada con
   `og:title` corto («Jonás Javier — Full-Stack Developer») distinto del
   `<title>` SEO; `og:site_name` «Jonás Javier»; imagen versionada `?v=N`.
+  Imagen (10-17, registro «Tarjeta para compartir — el render real de
+  Gargantúa»): póster con el render real, JPG horneado por
+  `tools/prepare-share-card.mjs` y servido por `opengraph-image.tsx`.
 - **Repositorio público, SEO y arranque** (09-28) — licencia de sólo lectura
   (`LICENSE`); fuentes (`Fotos/`, `Disenos/`, `portfolio-content/`,
   `assets/`) fuera del repo y del historial, archivadas en el privado
@@ -261,7 +281,9 @@ MDX**, nunca en `worlds.data.ts`.
   holograma con perspectiva por pantalla y `z-index`, cristal en trapecio);
   el caso compacto (carrusel de decisiones, lectura plegada con `CaseFold`).
   Segundo pase: el proyecto primero —muelle plegado en `‹ 01 / 05 ›`, sólo
-  la decisión en Diseño, salidas pequeñas al final—.
+  la decisión en Diseño, salidas pequeñas al final—. **OMSTA** (10-16)
+  registro «Proyectos — OMSTA se presenta con su landing»: destacada y
+  puestos de Producto son capturas de omsta.app; Diseño sigue en el ERP.
 - **Creatividad / Edmunds** `docs/design/edmunds-creatividad.md` — cubierta de
   observación (09-11), sexto pase de nitidez y arrastre (09-12), mosaico en
   filas justificadas (09-22, `lib/mosaic-rows.ts`). La curación es del dueño.

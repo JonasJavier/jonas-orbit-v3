@@ -494,6 +494,60 @@
   line-height: 1.55;
 }
 
+/* Los fondos de pantalla: la figura enlaza al JPG grande y debajo, la descarga. */
+.post__wallpaper > a {
+  display: block;
+}
+
+.post__download {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  margin: 0.9rem 0 0;
+}
+
+.post__download span:last-child {
+  color: var(--blog-muted);
+  font: 500 0.7rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.post__wallpapers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.post__wallpapers--pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.post__wallpapers .post__figure {
+  margin: 0;
+}
+
+.post__wallpapers .post__download {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.post__download .blog-button {
+  text-decoration: none;
+}
+
+@media (max-width: 40rem) {
+  .post__wallpapers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Los primeros planos son lo que viene a buscar la página: enteros, uno por fila. */
+  .post__wallpapers--pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ── El final ───────────────────────────────────────────────────────────── */
 
 .post__end {

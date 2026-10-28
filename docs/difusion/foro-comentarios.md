@@ -16,6 +16,9 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
 | 2026-10-07 | Understanding wide gamut, hdr, what is currently achievable in threejs | <https://discourse.threejs.org/t/95073/2> |
 | 2026-10-07 | Banyan, a procedural tree grown from a 32-bit seed in one HTML file | <https://discourse.threejs.org/t/95092/2> |
 | 2026-10-07 | Expanding my Three.js Solar System into a full Universe Explorer | <https://discourse.threejs.org/t/95032/2> |
+| 2026-10-17 | Low-end mobile devices (4GB RAM) rendering mesh/car models with flat/pointy shading | <https://discourse.threejs.org/t/95240/2> |
+| 2026-10-17 | Concordia: a 21 km rotating space city you can walk in the browser | <https://discourse.threejs.org/t/95434/2> |
+| 2026-10-17 | HEX TIDE Lite — Interactive fluid simulation in Three.js | <https://discourse.threejs.org/t/95358/2> |
 
 ## Temas apuntados para otro día
 

@@ -13,7 +13,7 @@ const COPY = defineCopy({
   es: {
     title: "Jonás Javier Encarnación — Desarrollador full-stack · Portafolio 3D",
     description:
-      "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana. Un portafolio 3D interactivo inspirado en Interstellar.",
+      "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana. Un portafolio 3D interactivo inspirado en Interestelar.",
     shareTitle: "Jonás Javier — Full-Stack Developer",
     shareDescription:
       "Desarrollador Full-Stack especializado en aplicaciones web, sistemas empresariales y experiencias digitales con Django, React y TypeScript.",

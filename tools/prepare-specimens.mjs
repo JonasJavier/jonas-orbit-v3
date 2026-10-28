@@ -12,6 +12,12 @@
  * (1200 × 630, la tarjeta al compartir la URL del espécimen). Las rutas las
  * conoce `lib/observatory-images.ts`.
  *
+ * Gargantúa es la excepción (2026-10-27): su `gargantua.png` es el PRIMER
+ * PLANO, no la vista OBSERVAR — el recorte 4K de `closeup-5k.png` que también
+ * publica `prepare-wallpapers.mjs` (`CROPS.closeup`), guardado en
+ * `../jonas-orbit-fondos/gargantua.png`. Es la imagen que Google Imágenes
+ * atribuye a la ficha del simulador, y de cerca compite con las de su consulta.
+ *
  *   node tools/prepare-specimens.mjs <carpeta-con-png>
  */
 import { mkdir } from "node:fs/promises";

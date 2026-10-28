@@ -74,6 +74,13 @@ const worldProse = defineCollection({
           /** Una línea bajo el nombre. Dos o tres palabras, no una frase. */
           descriptor: s.string().max(40),
           /**
+           * La frase de búsqueda del espécimen, dentro del `<h1>` bajo el
+           * nombre (2026-10-17): «Gargantúa» a secas no le dice a quien busca
+           * la película qué es. Donde existe, sustituye al descriptor en la
+           * cara servida; el instrumento encendido sigue con el descriptor.
+           */
+          headline: s.string().max(60).optional(),
+          /**
            * El par instrumental del §14.1: `CRISTAL / CUARTA DIMENSIÓN`.
            *
            * Habla del objeto COMO OBJETO, nunca de la sección del sitio. Es

@@ -20,19 +20,23 @@ const CANONICAL_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(
 /**
  * Content-Security-Policy sin nonces: todas las rutas se prerenderizan, y un
  * nonce obligaría a renderizarlas en cada petición. `'unsafe-inline'` cubre el
- * arranque en línea de Next y los `style=""` del marcado; el único origen
- * externo es Turnstile, que el formulario de contacto carga bajo demanda.
+ * arranque en línea de Next y los `style=""` del marcado. Orígenes externos:
+ * Turnstile, que el formulario de contacto carga bajo demanda, y Cloudflare
+ * Web Analytics (`components/visit-analytics.tsx`): el script de
+ * `static.cloudflareinsights.com` y el envío a `cloudflareinsights.com`.
  * El resto —imágenes, audio, `/api/contact`— es del propio sitio.
  */
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+const ANALYTICS_SCRIPT_ORIGIN = "https://static.cloudflareinsights.com";
+const ANALYTICS_REPORT_ORIGIN = "https://cloudflareinsights.com";
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${TURNSTILE_ORIGIN}`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${TURNSTILE_ORIGIN} ${ANALYTICS_SCRIPT_ORIGIN}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "media-src 'self' blob:",
-  `connect-src 'self' ${TURNSTILE_ORIGIN}`,
+  `connect-src 'self' ${TURNSTILE_ORIGIN} ${ANALYTICS_REPORT_ORIGIN}`,
   `frame-src ${TURNSTILE_ORIGIN}`,
   "worker-src 'self' blob:",
   "object-src 'none'",

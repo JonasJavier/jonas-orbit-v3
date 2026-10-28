@@ -5,6 +5,7 @@ import { GargantuaSystem } from "@/components/scene/gargantua-system";
 import { SiteBackdrop } from "@/components/site-backdrop";
 import { SoundtrackControl } from "@/components/soundtrack-control";
 import { SystemTray } from "@/components/system-tray";
+import { VisitAnalytics } from "@/components/visit-analytics";
 import { VoyageLayer } from "@/components/voyage-layer";
 import { DEFAULT_LOCALE, PUBLISHED_LOCALES, isPublishedLocale, type Locale } from "@/content/site.data";
 import { worldsData } from "@/content/worlds.data";
@@ -19,7 +20,7 @@ const COPY = defineCopy({
   es: {
     title: "Jonás Javier Encarnación — Desarrollador full-stack · Portafolio 3D",
     description:
-      "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana. Un portafolio 3D interactivo inspirado en Interstellar.",
+      "Jonás Javier Encarnación, desarrollador full-stack y diseñador UX/UI en República Dominicana. Un portafolio 3D interactivo inspirado en Interestelar.",
     skip: "Saltar al contenido",
   },
   en: {
@@ -166,6 +167,7 @@ export default async function LocaleLayout({
               <SoundtrackControl />
             </SystemTray>
           ) : null}
+          <VisitAnalytics />
         </LocaleProvider>
       </body>
     </html>

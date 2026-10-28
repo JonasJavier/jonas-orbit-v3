@@ -18,7 +18,7 @@ test.describe("blog", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Lo que aprendo construyendo.");
     await expect(page.locator(".voyage-blog-link")).toHaveAttribute("aria-current", "page");
     const posts = page.locator(".blog-card h3 a");
-    await expect(posts).toHaveCount(6);
+    await expect(posts).toHaveCount(7);
     for (const href of await posts.evaluateAll((links) => links.map((link) => link.getAttribute("href")))) {
       expect(href).toMatch(/^\/es\/blog\/[a-z0-9-]+$/);
     }
@@ -79,6 +79,20 @@ test.describe("blog", () => {
     if (await persistent.count()) {
       await expect(persistent).toHaveAttribute("data-covered", "true", { timeout: 30000 });
     }
+  });
+
+  test("los fondos de Gargantúa se descargan a tamaño completo y declaran su licencia", async ({ page, request }) => {
+    await page.goto("/en/blog/gargantua-wallpapers-4k-interstellar-black-hole");
+    const downloads = page.locator(".post__download a");
+    await expect(downloads).toHaveCount(8);
+    const hrefs = await downloads.evaluateAll((links) => links.map((link) => link.getAttribute("href")!));
+    for (const href of hrefs) expect(href).toMatch(/^\/images\/articulos\/fondos-gargantua\/gargantua-interstellar-wallpaper-[a-z0-9-]+\.jpg$/);
+    const file = await request.get(hrefs[0]);
+    expect(file.headers()["content-type"]).toBe("image/jpeg");
+    await expect(page.locator("h2#license")).toHaveCount(1);
+    const jsonLd = (await page.locator('script[type="application/ld+json"]').allTextContents()).join("\n");
+    expect(jsonLd).toContain('"acquireLicensePage"');
+    expect(jsonLd).toContain("#license");
   });
 
   test("Contacto ofrece los servicios desde el hero", async ({ page }) => {
