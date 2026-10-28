@@ -1,0 +1,141 @@
+---
+id: what-is-a-tesseract
+slug: what-is-a-tesseract
+title: "What is a tesseract? The four-dimensional cube, explained and drawn by hand"
+summary: >-
+  A tesseract is to a cube what a cube is to a square. Why it looks like a cube
+  inside a cube, how many vertices it has, how to draw it on paper and what it
+  has to do with Interstellar.
+coverAlt: >-
+  The Observatory's tesseract: a glass cube inside another, joined at the
+  corners by eight edges of light.
+seoTitle: "What Is a Tesseract? The 4D Cube (and Interstellar's)"
+seoDescription: >-
+  What a tesseract, or hypercube, is: how many vertices and edges it has, why
+  it looks like a cube inside a cube, how to draw one and Interstellar's.
+---
+
+There's a [tesseract](/en/experiments/observatory/tesseract) spinning in this
+site's Observatory, and the question I get most isn't how it's coded but
+something earlier: **what is a tesseract?** This post explains it without
+formulas, ends with a drawing you can make on paper and, at the end, clears up
+what it has to do with the one in *Interstellar*.
+
+## The ladder of dimensions
+
+The easiest way to reach a tesseract is to climb one step at a time.
+
+- A **point** has no dimensions.
+- Drag the point in a straight line and you get a **segment**: one dimension.
+- Drag the segment sideways, at a right angle, and you get a **square**: two
+  dimensions.
+- Drag the square upward, at a right angle to both sides it already has, and
+  you get a **cube**: three dimensions.
+- Drag the cube in a direction at a right angle to all three of our space and
+  you get a **tesseract**: four dimensions.
+
+The last step is the one we can't picture, because there's no fourth direction
+to point at. But you can reason about it exactly like the earlier ones, and
+that's enough to count it.
+
+## How many vertices, edges and faces it has
+
+Every time you drag a shape, its vertices double (the ones at the start and the
+ones at the end) and each original vertex leaves a trail, which is a new edge.
+
+| Shape | Dimensions | Vertices | Edges | Square faces | Cubes |
+| --- | --- | --- | --- | --- | --- |
+| Segment | 1 | 2 | 1 | — | — |
+| Square | 2 | 4 | 4 | 1 | — |
+| Cube | 3 | 8 | 12 | 6 | 1 |
+| Tesseract | 4 | **16** | **32** | **24** | **8** |
+
+So a tesseract has 16 vertices, 32 edges, 24 square faces and 8 cubic cells.
+Four edges meet at every vertex, one per dimension, just as three meet at every
+corner of a cube.
+
+## Why it looks like a cube inside a cube
+
+When you draw a cube on paper, you aren't drawing the cube: you're drawing its
+two-dimensional shadow. The back face comes out smaller than the front one,
+even though on the real cube they're the same size. That's perspective.
+
+A tesseract does the same thing one step up. What we see on a screen, or in the
+Observatory, is its three-dimensional shadow: two cubes, one inside the other,
+with their eight corners joined. **The small cube isn't smaller**: it's the one
+farther away in the fourth direction, like the back face of the drawn cube. The
+six pieces joining them, which look like truncated pyramids, are also perfect
+cubes seen in perspective.
+
+That's why, when a tesseract rotates in four dimensions, it seems to turn
+itself inside out like a sock: the inner cube grows, comes out and becomes the
+outer one. Nothing is deforming. What changes is which of its cubes is closest
+to us in the direction we can't see.
+
+## Flatland: how you'd see a tesseract passing by
+
+In 1884 Edwin Abbott published *Flatland*, a novel about beings who live on a
+plane. If a cube passed through their world, they wouldn't see a cube: they'd
+see a square appear out of nowhere, stay for a while and vanish, because they
+only perceive the cube's slice through their plane.
+
+If a tesseract passed through our space, the same would happen to us: we'd see
+a cube appear out of nowhere, stay and vanish. That analogy, thinking about how
+a lower-dimensional being would see our world, is the most useful tool for
+thinking in four.
+
+## How to draw a tesseract by hand
+
+You need paper and a ruler. There are two ways; this is the easier one.
+
+1. **Draw a cube.** A square, an identical one shifted diagonally, and join
+   the four corners. That's 8 vertices and 12 edges.
+2. **Draw a second identical cube**, shifted in another direction (say, to the
+   right and a bit down). Don't let it overlap the first one completely.
+3. **Join each vertex of the first cube to the matching vertex of the
+   second.** That's 8 more lines.
+4. **Count:** 12 + 12 + 8 = 32 edges and 16 vertices. If you get those
+   numbers, it's a tesseract.
+
+The second way is the cube inside the cube: draw a large cube, a smaller one
+inside it, and join its eight corners to the large one's. That's the
+perspective view I explained above, the same one the Observatory shows. Both
+drawings are the same object seen from different places.
+
+If you want to see how it's done in code, with the tesseract actually rotating
+in four dimensions, I walk through it in
+[How I drew a 4D tesseract in Three.js](/en/blog/4d-tesseract-in-three-js).
+
+## Where the name comes from
+
+The word was coined by the British mathematician Charles Howard Hinton in 1888,
+in his book *A New Era of Thought*. It comes from Greek: "four rays", for the
+four edges leaving each vertex. It's also called a **hypercube**, though that
+word is more general: a hypercube can have any number of dimensions, and the
+tesseract is the four-dimensional one.
+
+If you've ever seen Salvador Dalí's *Corpus Hypercubus* (1954), the cross in
+the painting is an unfolded tesseract: its eight cubes laid out in our space,
+just as a flattened cardboard box is the flat pattern of a cube.
+
+## And Interstellar's tesseract?
+
+In *Interstellar*, after falling into Gargantua, Cooper ends up inside a
+structure the film calls the tesseract: his daughter Murph's bedroom repeated
+in every direction, each copy at a different moment. There, time becomes a
+place you can move through, and Cooper reaches Murph by nudging things in the
+past with gravity.
+
+It isn't a geometric hypercube like the one in this post: it's an image
+inspired by it, to stand for more dimensions than we can see. Kip Thorne, the
+physicist who advised the film, explains the idea in his book *The Science of
+Interstellar*. It keeps the essential part of the real tesseract: what we see
+is always the shadow of something with more dimensions.
+
+## Watch it rotate
+
+In the [Observatory](/en/experiments/observatory/tesseract) you can orbit the
+tesseract while it rotates in four dimensions and, in Study mode, point at an
+edge to see which axis it runs along. Watch for the moment the inner cube comes
+out and becomes the outer one: that's the rotation in the dimension we can't
+see.

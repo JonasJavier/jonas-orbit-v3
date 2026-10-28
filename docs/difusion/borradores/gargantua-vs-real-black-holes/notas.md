@@ -38,8 +38,8 @@ entrada técnica, como hace la de física) y `cover` a elegir.
 | Cifra / afirmación | Fuente | Verificar |
 | --- | --- | --- |
 | Gargantúa ~1e8 masas solares, giro casi máximo, horizonte ≈ órbita de la Tierra | Thorne, *The Science of Interstellar* (2014); ya dicho en la entrada de física | — |
-| La masa se eligió para que las mareas no rompan el planeta de Miller | Thorne, *The Science of Interstellar*, capítulo de Miller | Jonás: confirmar con el libro |
-| La película usó un giro menor que el de la historia (a = 0,6 M) porque con el máximo la sombra se aplana | James, von Tunzelmann, Franklin, Thorne, *Classical and Quantum Gravity* 32 (2015) 065001 | **Sí**, confirmar la cifra y el motivo antes de publicar; si no se confirma, quitar el párrafo |
+| La masa se eligió para que las mareas no rompan el planeta de Miller | Thorne, *The Science of Interstellar*, cap. 17 (extracto en space.com: «al menos 100 millones de veces la masa del Sol») | Verificado 2026-10-27 |
+| La película usó a/M = 0,6 frente al casi 1 de la historia: sombra aplanada por la izquierda, imágenes múltiples del disco junto a ese borde y disco descentrado, «demasiado confuso para el gran público» (Nolan y Franklin) | James, von Tunzelmann, Franklin, Thorne, *Classical and Quantum Gravity* 32 (2015) 065001, §4 y fig. 15 (arXiv:1502.03808) | Verificado 2026-10-27 en el texto del artículo |
 | Sagitario A* ≈ 4,3e6 masas solares, ≈ 8,28 kpc ≈ 27 000 años luz | GRAVITY Collaboration, *A&A* 657 (2022) L12 (4,297e6, R0 = 8277 pc) | — |
 | M87* ≈ 6,5e9 masas solares, ≈ 16,8 Mpc ≈ 55 millones de años luz | EHT Collaboration, *ApJL* 875 (2019) L6 | — |
 | Imagen de M87*: 10-abr-2019; de Sagitario A*: 12-may-2022 | Notas de prensa del EHT | — |

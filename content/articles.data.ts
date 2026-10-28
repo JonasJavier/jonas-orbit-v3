@@ -15,6 +15,9 @@ export const ARTICLE_IDS = [
   "interstellar-black-hole-physics",
   "hire-freelance-developer-dr",
   "gargantua-wallpapers",
+  "gargantua-vs-real-black-holes",
+  "what-is-a-tesseract",
+  "black-hole-threejs-tutorial",
 ] as const;
 
 export type ArticleId = (typeof ARTICLE_IDS)[number];
@@ -114,5 +117,31 @@ export const articlesData: Record<ArticleId, ArticleStructuralData> = {
       { name: "gargantua-interstellar-wallpaper-phone-lens", shape: "phone" },
       { name: "gargantua-interstellar-wallpaper-phone-shadow", shape: "phone" },
     ],
+  },
+  // Las tres de 10-27 contestan búsquedas que Search Console ya traía
+  // (`docs/difusion/borradores/<id>/notas.md`). Gargantúa frente a los dos
+  // agujeros negros fotografiados: portada en la vista Disco, entero.
+  "gargantua-vs-real-black-holes": {
+    published: "2026-10-27",
+    topic: "space",
+    images: "/images/articulos/agujero-negro",
+    cover: "gargantua-agujero-negro-comparacion",
+    specimen: "gargantua",
+  },
+  // La divulgativa del teseracto; la de código es `tesseract-4d`.
+  "what-is-a-tesseract": {
+    published: "2026-10-27",
+    topic: "space",
+    images: "/images/articulos/teseracto",
+    cover: "que-es-un-teseracto-hipercubo-4d",
+    specimen: "tesseract",
+  },
+  // El tutorial mínimo para copiar; la portada es la captura de su propio código.
+  "black-hole-threejs-tutorial": {
+    published: "2026-10-27",
+    topic: "webgl",
+    images: "/images/articulos/agujero-negro-tutorial",
+    cover: "agujero-negro-three-js-tutorial",
+    specimen: "gargantua",
   },
 };
