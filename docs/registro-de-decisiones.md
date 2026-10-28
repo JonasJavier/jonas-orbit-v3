@@ -41,11 +41,15 @@ medio del negro; la portada de `gargantua-wallpapers` era esa misma vista.
 - **La portada de la entrada pasa al primer plano** (cabecera, `og:image`,
   tarjeta del índice) y abre una sección «Gargantúa de cerca» antes de los
   fondos 4K. Once fondos en total.
-- **Lo que NO se tocó:** la imagen del espécimen (las seis siguen siendo la
-  vista OBSERVAR por defecto) ni la tarjeta de la portada del sitio. Si las
-  consultas muestran que la ficha del simulador es la que gana en Imágenes,
-  la palanca siguiente es darle a Gargantúa el primer plano como captura de
-  espécimen.
+- **La ficha del simulador también** (mismo día, a petición del dueño): es
+  la que Google ya enseñaba, así que `gargantua-{800,1600}.webp` y
+  `gargantua-og.jpg` de `specimenImage` pasan a ser el primer plano 4K, con
+  las MISMAS URL para no perder el sitio que ya tenía en Imágenes (caché de
+  un día: se renueva sola). Arrastra la tarjeta «en vivo» de las entradas y
+  la puerta del índice del blog. Los otros cinco siguen en la vista
+  OBSERVAR. Fuente: `../jonas-orbit-fondos/gargantua.png`
+  (`tools/prepare-specimens.mjs`).
+- **Lo que NO se tocó:** la tarjeta de la portada del sitio.
 
 ---
 
