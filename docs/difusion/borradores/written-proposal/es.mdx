@@ -1,0 +1,196 @@
+---
+id: written-proposal
+slug: que-debe-decir-una-propuesta-de-proyecto-web
+title: Qué tiene que decir una propuesta por escrito antes de empezar un proyecto
+summary: >-
+  El problema en una frase, qué se construye, qué no entra, entregas que puedes
+  abrir, qué necesito de ti y qué pasa cuando algo cambia. Lo que pongo por
+  escrito antes de escribir código, y por qué.
+coverAlt: >-
+  La sección «Cómo trabajo» de la página de servicios, con el segundo paso,
+  propuesta: alcance, plazos y presupuesto por escrito antes de empezar.
+seoTitle: "Qué debe decir una propuesta de proyecto web"
+seoDescription: >-
+  Qué tiene que llevar una propuesta por escrito antes de empezar una web o una
+  app: problema, alcance, lo que no entra, entregas, pagos y lo que cambia.
+---
+
+En [la guía para contratar a un desarrollador freelance](/es/blog/como-elegir-un-desarrollador-web-freelance-en-republica-dominicana)
+dije que lo primero que hay que exigir es una propuesta por escrito. Dejé una
+lista corta de lo que tenía que llevar. Esta nota es esa lista, abierta por
+dentro: qué escribo en cada parte, con ejemplos de mis propios casos, y qué
+pasa cuando una parte falta.
+
+Sirve si vas a contratarme a mí y sirve igual si vas a contratar a otra
+persona. Una propuesta buena no depende de quién la escriba.
+
+## Una propuesta es la primera entrega
+
+En mi forma de trabajar hay cuatro pasos: conversación, propuesta,
+construcción y lanzamiento. La propuesta va segunda a propósito. Primero
+entiendo el problema, quién lo va a usar y qué significa que salga bien.
+Después lo escribo, y lo escribo antes de empezar nada.
+
+No la trato como un trámite. Es lo primero que entrego, y se puede revisar
+como se revisa una pantalla: si al leerla no reconoces tu negocio, algo
+entendí mal, y es el momento más barato para corregirlo. Corregir un párrafo
+cuesta un correo. Corregir una pantalla ya programada cuesta días.
+
+<Figure
+  name="servicios-proceso"
+  alt="La sección «Cómo trabajo» de la página de servicios, con los cuatro pasos: conversación, propuesta, construcción y lanzamiento."
+  caption="La propuesta es el segundo paso: alcance, plazos y presupuesto por escrito antes de empezar."
+/>
+
+## El problema, en una frase
+
+La primera parte no habla de tecnología. Dice qué problema resuelve el
+proyecto, en una o dos frases que tú firmarías.
+
+En [OMSTA](/es/proyectos/omsta), el sistema de una agencia de viajes, el
+problema era que la venta, el dinero y la contabilidad vivían separados: el
+mismo dato se tecleaba varias veces y los saldos no cuadraban. El objetivo
+cabía en una línea: que una venta se capture una sola vez y que de ahí salgan
+el cobro, la factura, los asientos y los reportes sin volver a escribir nada.
+
+Esa frase sirve de árbitro durante todo el proyecto. Cuando aparece una idea
+nueva, la pregunta es si acerca a ese objetivo o no. Si la propuesta no tiene
+esa frase, cada idea nueva parece igual de urgente.
+
+## Qué se construye
+
+La segunda parte es el alcance: qué va a existir cuando terminemos. Lo escribo
+en el idioma del negocio, no en el mío. No «un CRUD de reservas con API REST»,
+sino «el asesor crea una reserva, registra el cobro y contabilidad lo verifica
+y lo cierra».
+
+Para eso me ayuda escribirlo por personas y por tareas:
+
+- **Quién entra** al sistema y con qué rol. En OMSTA hay cinco roles base y
+  cada uno ve cosas distintas.
+- **Qué hace cada uno**, como verbos: crear, cobrar, verificar, exportar.
+- **Dónde lo hace**: en la web, en el teléfono o en los dos.
+- **Qué se lleva el usuario final**: un pedido, una factura, un mensaje.
+
+Las tecnologías van al final y en pocas líneas. Importan para quien mantenga
+el sistema mañana, pero no deciden si el proyecto resuelve tu problema. Si una
+propuesta dedica más espacio al stack que a lo que vas a poder hacer con él,
+está escrita para impresionar, no para acordar.
+
+## Qué no entra
+
+Esta parte evita la mayoría de las discusiones, y es la que más se olvida.
+Todo lo que no está escrito como «no entra» alguien lo va a dar por supuesto.
+
+En [Delicaté](/es/proyectos/delicate-4-0), una tienda de jabones artesanales,
+lo que no entraba era la mitad del diseño. No hay pagos en línea, ni cuentas
+de usuario, ni panel de pedidos: el pedido se arma en la tienda y se termina
+por WhatsApp, porque así vende el negocio. Por eso el total del carrito dice
+«estimado». Comprar no pide ninguna cuenta. Nada de eso es un descuido: está
+escrito, y el caso publicado lo dice en una sección propia, «Lo que no tiene».
+
+En OMSTA pasa lo mismo con la parte fiscal. El sistema prepara, valida y
+descarga los formatos para la DGII. La presentación la hace una persona. Si eso
+no está escrito, alguien espera que el sistema «declare los impuestos» y se
+lleva una sorpresa el día que toca.
+
+Escribir lo que no entra no es negarse a hacerlo. Es dejarlo a la vista para
+decidirlo con calma, quizá en una segunda fase.
+
+## Entregas que puedes abrir
+
+Un plazo de «tres meses» no te dice nada hasta el último día. Prefiero dividir
+el proyecto en entregas, y que cada una sea algo que puedas abrir y probar en
+un enlace real, desde tu ordenador o tu teléfono.
+
+La propuesta dice, para cada entrega:
+
+- **Qué vas a poder hacer** al abrirla. No «avance del 40 %», sino «puedes
+  crear una reserva y verla en la lista».
+- **Para cuándo**, en semanas o con fecha.
+- **Qué depende de ti** para que llegue a tiempo.
+
+El orden también se decide aquí. En OMSTA lo construí por capas: primero
+reservas y clientes, después lo que mueve dinero, luego la contabilidad y al
+final los reportes fiscales. Cada capa se apoya en la anterior, y cada una se
+puede usar antes de que exista la siguiente.
+
+## Presupuesto: depende del alcance
+
+Ésta es la pregunta que todo el mundo hace primero, y la respuesta honesta es
+siempre la misma: depende del alcance. No es una evasiva. Es la razón de que la
+propuesta exista. Hasta que el alcance no está escrito, cualquier cifra es una
+adivinanza, y una adivinanza baja hoy se convierte en una discusión mañana.
+
+Lo que sí tiene que decir la propuesta sobre el dinero:
+
+- **El total** para el alcance escrito, no para una idea general.
+- **Cómo se divide**: qué pagas y cuándo.
+- **A qué entrega va atado cada pago.** Si cada pago corresponde a algo que
+  puedes abrir y probar, sabes qué estás pagando.
+- **Qué no incluye el precio**: dominio, alojamiento, servicios de terceros.
+
+Si alguien te da un precio cerrado en el primer mensaje, sin preguntarte casi
+nada, no te está dando un precio. Te está pidiendo que confíes.
+
+## Lo que necesito de ti
+
+Ningún proyecto depende sólo del desarrollador. La propuesta tiene que decir
+qué pongo yo y qué pones tú, y para cuándo: textos, fotos, accesos, cuentas y
+decisiones.
+
+Dos ejemplos de mis casos. La app móvil de OMSTA ya está configurada para iOS,
+pero la versión para iPhone espera a la cuenta de Apple Developer del negocio.
+No es algo que yo pueda abrir por ellos. Y en Delicaté, antes de anunciar la
+tienda quedan validaciones que dependen del negocio: las políticas de entrega
+y de privacidad y un pedido completo probado en Android y en iPhone.
+
+Ninguna de las dos cosas es un retraso escondido. Están escritas, con su
+dueño. Cuando una dependencia está en la propuesta, un plazo que se mueve tiene
+una causa que los dos podemos ver. Cuando no está, un plazo que se mueve
+parece culpa de alguien.
+
+## De quién es cada cosa y qué pasa después
+
+La propuesta deja escrito de quién es cada cosa al terminar: el dominio a tu
+nombre, el alojamiento en cuentas tuyas o con acceso de dueño, el código tuyo
+cuando está pagado, y una lista de accesos para que otra persona pueda seguir
+el trabajo si hace falta. Lo conté con más detalle en
+[la guía para contratar](/es/blog/como-elegir-un-desarrollador-web-freelance-en-republica-dominicana).
+
+También dice qué pasa después del lanzamiento. Yo me ocupo de la publicación y
+del dominio, y acompaño después de la entrega. Lo que tiene que quedar por
+escrito es el detalle: qué pasa con un error en las primeras semanas y cómo se
+tratan los cambios pequeños más adelante.
+
+## Cuando algo cambia
+
+Algo va a cambiar. Al ver la primera entrega en el teléfono, casi siempre
+aparece una idea mejor que la que estaba en el papel. Eso es bueno: para eso
+se publica cada avance en un enlace real.
+
+Lo que no puede pasar es que el cambio se acuerde en un mensaje de voz y nadie
+lo escriba. Mi regla es sencilla: un cambio se escribe igual que se escribió
+la propuesta. Qué se añade, qué se quita para hacerle sitio o qué se aplaza, y
+cómo afecta a las entregas y al presupuesto. Si cambia una línea del alcance,
+cambian las líneas que dependen de ella.
+
+Una nota honesta. No tengo un modelo de propuesta publicado que puedas
+descargar, y no voy a enseñar las de mis clientes: llevan su presupuesto y sus
+datos. Lo que puedo enseñar es el resultado, los casos publicados, donde se ve
+qué se construyó y qué quedó fuera. Si quieres ver cómo sería la tuya, la
+forma más corta es pedirla.
+
+## Pruébalo
+
+Antes de contratar a nadie, toma la última propuesta que te enviaron, o la
+idea que tienes en la cabeza, y busca estas partes: el problema en una frase,
+qué se construye, qué no entra, entregas que puedes abrir, el dinero atado a
+esas entregas, qué necesitan de ti y qué pasa cuando algo cambia. Lo que falte
+es lo que vas a discutir más adelante.
+
+Si quieres que la propuesta la escriba yo, en
+[la página de servicios](/es/contacto/servicios) está cómo trabajo y en
+[Contacto](/es/contacto) está el formulario. Después de la primera
+conversación te la envío por escrito, antes de empezar nada. Y si quieres ver
+cómo se ve un alcance cumplido, abre [los proyectos](/es/proyectos).

@@ -1,0 +1,198 @@
+---
+id: written-proposal
+slug: what-a-web-project-proposal-should-include
+title: What a written proposal should say before a project starts
+summary: >-
+  The problem in one sentence, what gets built, what's out of scope, milestones
+  you can open, what I need from you and how changes work. What I put in
+  writing before I write any code, and why.
+coverAlt: >-
+  The “How I work” section of the services page, with step two, proposal:
+  scope, timeline and budget in writing before we start.
+seoTitle: "What a Web Project Proposal Should Include"
+seoDescription: >-
+  What a written proposal should cover before a website or app project starts:
+  the problem, scope, what's excluded, milestones, payments and change requests.
+---
+
+In my [guide to hiring a freelance developer](/en/blog/how-to-hire-a-freelance-web-developer-dominican-republic)
+I said the first thing to insist on is a written proposal, and I gave a short
+list of what it should contain. This post opens that list up: what I actually
+write in each part, with examples from my own projects, and what goes wrong
+when a part is missing.
+
+It works if you're hiring me. It works just as well if you're hiring someone
+else. A good proposal doesn't depend on who writes it.
+
+## The proposal is the first deliverable
+
+The way I work has four steps: conversation, proposal, build and launch. The
+proposal comes second on purpose. First I learn the problem, who will use the
+product and what success looks like. Then I write it down, before anything
+starts.
+
+I don't treat it as paperwork. It's the first thing I deliver, and you can
+review it the way you'd review a screen: if you read it and don't recognize
+your business, I got something wrong, and this is the cheapest moment to fix
+it. Fixing a paragraph costs an email. Fixing a screen that's already built
+costs days.
+
+<Figure
+  name="servicios-proceso"
+  alt="The “How I work” section of the services page, with its four steps: conversation, proposal, build and launch."
+  caption="The proposal is step two: scope, timeline and budget in writing before we start."
+/>
+
+## The problem, in one sentence
+
+The first section isn't about technology. It states the problem the project
+solves, in one or two sentences you'd sign off on.
+
+On [OMSTA](/en/projects/omsta), the system behind a travel agency, the problem
+was that sales, money and accounting lived in separate places: the same data
+got typed in several times and the balances didn't add up. The goal fit on one
+line: capture a sale once, and get the payment, the invoice, the journal
+entries and the reports out of it without retyping anything.
+
+That sentence is the referee for the whole project. When a new idea shows up,
+the question is whether it moves you toward that goal. Without it, every new
+idea feels equally urgent.
+
+## What gets built
+
+The second section is the scope: what will exist when we're done. I write it
+in the language of your business, not mine. Not "a bookings CRUD with a REST
+API," but "an agent creates a booking, records the payment, and accounting
+verifies and closes it."
+
+What helps me is writing it by people and by tasks:
+
+- **Who logs in**, and with which role. OMSTA has five base roles, and each
+  one sees different things.
+- **What each of them does**, as verbs: create, collect, verify, export.
+- **Where they do it**: on the web, on a phone, or both.
+- **What the end customer walks away with**: an order, an invoice, a message.
+
+The tech stack goes at the end, in a few lines. It matters to whoever
+maintains the system later, but it doesn't decide whether the project solves
+your problem. If a proposal spends more space on the stack than on what you'll
+be able to do with it, it was written to impress you, not to reach an
+agreement.
+
+## What's out of scope
+
+This section prevents most arguments, and it's the one people skip. Anything
+that isn't written down as out of scope, somebody will assume is included.
+
+On [Delicaté](/en/projects/delicate-4-0), an online store for handmade soaps,
+what was out of scope was half the design. There are no online payments, no
+customer accounts and no order dashboard: you build your order on the site and
+finish it on WhatsApp, because that's how the business sells. That's why the
+cart total says "estimated." Buying requires zero accounts. None of that is an
+oversight. It's written down, and the published case study has a section of
+its own for it: "What it doesn't have."
+
+OMSTA has the same kind of line on taxes. The system prepares, validates and
+downloads the reports for the DGII, the Dominican tax authority. A person
+files them. If that isn't in writing, someone expects the system to "do the
+taxes" and gets a surprise on filing day.
+
+Writing down what's excluded isn't refusing to build it. It puts it in plain
+sight so you can decide on it calmly, maybe as a second phase.
+
+## Milestones you can open
+
+A "three months" timeline tells you nothing until the last day. I'd rather
+split the project into milestones, each one something you can open and try on
+a real link, from your laptop or your phone.
+
+For each milestone, the proposal says:
+
+- **What you'll be able to do** when you open it. Not "40% done," but "you can
+  create a booking and see it in the list."
+- **When**, in weeks or with a date.
+- **What it depends on from your side** to land on time.
+
+The order gets decided here too. I built OMSTA in layers: bookings and clients
+first, then everything that moves money, then the accounting, and the tax
+reports last. Each layer rests on the one before it, and each one is usable
+before the next one exists.
+
+## Budget: it depends on the scope
+
+This is the question everyone asks first, and the honest answer is always the
+same: it depends on the scope. That's not a dodge. It's the reason the
+proposal exists. Until the scope is written down, any number is a guess, and a
+low guess today turns into an argument tomorrow.
+
+What the proposal does need to say about money:
+
+- **The total** for the written scope, not for a rough idea.
+- **How it's split**: what you pay, and when.
+- **Which milestone each payment is tied to.** If every payment matches
+  something you can open and test, you know what you're paying for.
+- **What the price doesn't cover**: domain, hosting, third-party services.
+
+If someone quotes you a fixed price in their first message, having barely
+asked you anything, that isn't a price. It's a request for trust.
+
+## What I need from you
+
+No project depends only on the developer. The proposal should spell out what I
+bring, what you bring, and by when: copy, photos, logins, accounts and
+decisions.
+
+Two examples from my own work. The OMSTA mobile app is already set up for iOS,
+but the iPhone version is waiting on the business's Apple Developer account.
+That's not something I can open on their behalf. And before Delicaté is
+announced, there are checks that depend on the business: the delivery and
+privacy policies, and a full order tested on Android and on iPhone.
+
+Neither one is a hidden delay. Both are written down, each with an owner. When
+a dependency is in the proposal, a slipping date has a cause we can both see.
+When it isn't, a slipping date looks like somebody's fault.
+
+## Who owns what, and what happens after launch
+
+The proposal states who owns each piece when we're done: the domain in your
+name, hosting in your accounts or with owner access, the code yours once it's
+paid for, and a list of credentials so someone else can pick up the work if
+it ever comes to that. I went through this in more detail in the
+[hiring guide](/en/blog/how-to-hire-a-freelance-web-developer-dominican-republic).
+
+It also says what happens after launch. I take care of the release and the
+domain, and I stick around after delivery. What needs to be in writing is the
+detail: what happens with a bug in the first few weeks, and how small changes
+are handled later on.
+
+## When something changes
+
+Something will change. When you see the first milestone on your phone, a
+better idea than the one on paper almost always shows up. That's good: it's
+the whole point of putting every step on a real link.
+
+What can't happen is a change agreed on in a voice note that nobody writes
+down. My rule is simple: a change gets written the same way the proposal was.
+What's added, what's removed to make room or pushed back, and how it affects
+the milestones and the budget. If one line of the scope changes, the lines
+that depend on it change too.
+
+An honest note. I don't have a proposal template published for you to
+download, and I won't show my clients' proposals: they carry their budgets and
+their data. What I can show is the result, the published case studies, where
+you can see what was built and what was left out. If you want to see what
+yours would look like, the shortest path is to ask for one.
+
+## Try it
+
+Before you hire anyone, take the last proposal someone sent you, or the idea
+in your head, and look for these parts: the problem in one sentence, what gets
+built, what's out of scope, milestones you can open, money tied to those
+milestones, what they need from you, and how changes work. Whatever is missing
+is what you'll end up arguing about later.
+
+If you'd like me to write that proposal, my [services page](/en/contact/services)
+explains how I work, and the form is on the [Contact](/en/contact) page. After
+our first conversation I send it to you in writing, before anything starts. And
+if you want to see what a delivered scope looks like, open
+[the projects](/en/projects).
