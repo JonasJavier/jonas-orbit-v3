@@ -84,9 +84,12 @@ test.describe("blog", () => {
   test("los fondos de Gargantúa se descargan a tamaño completo y declaran su licencia", async ({ page, request }) => {
     await page.goto("/en/blog/gargantua-wallpapers-4k-interstellar-black-hole");
     const downloads = page.locator(".post__download a");
-    await expect(downloads).toHaveCount(8);
+    // Ocho fondos y los tres primeros planos (10-27): el 4K y los dos cuadrados `black-hole-*`.
+    await expect(downloads).toHaveCount(11);
     const hrefs = await downloads.evaluateAll((links) => links.map((link) => link.getAttribute("href")!));
-    for (const href of hrefs) expect(href).toMatch(/^\/images\/articulos\/fondos-gargantua\/gargantua-interstellar-wallpaper-[a-z0-9-]+\.jpg$/);
+    for (const href of hrefs) {
+      expect(href).toMatch(/^\/images\/articulos\/fondos-gargantua\/gargantua-interstellar-(wallpaper|black-hole)-[a-z0-9-]+\.jpg$/);
+    }
     const file = await request.get(hrefs[0]);
     expect(file.headers()["content-type"]).toBe("image/jpeg");
     await expect(page.locator("h2#license")).toHaveCount(1);
