@@ -9,6 +9,7 @@ Salidas de las revisiones del proyecto (plan y código).
 | 2026-08-31 | Hero / System Map · quality + life pass | [`hero-quality-pass-2026-08-31.md`](hero-quality-pass-2026-08-31.md) |
 | 2026-09-27 | Preparación del repositorio, seguridad de dependencias y compatibilidad | [`repository-readiness-2026-09-27.md`](repository-readiness-2026-09-27.md) |
 | 2026-09-28 | Versión de producción: cabeceras, límite de tasa, metadatos y Railway | [`production-release-2026-09-28.md`](production-release-2026-09-28.md) |
+| 2026-10-27 | Seguridad de dependencias: 11 alertas de Dependabot y los avisos de `npm audit` | [`dependencias-2026-10-27.md`](dependencias-2026-10-27.md) |
 
 > Nota: el plan cita `docs/reviews/eng-review-test-plan-2026-07-21.md` como
 > fuente; ese archivo no existe en el repo. La matriz de tests vive en el

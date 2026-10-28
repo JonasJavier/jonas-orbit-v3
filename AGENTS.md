@@ -175,7 +175,10 @@ MDX**, nunca en `worlds.data.ts`.
   `seoTitle`/`seoDescription` por mundo; shaders con `compileAsync`.
 - **Dependencias — seguridad** (09-27)
   `docs/reviews/repository-readiness-2026-09-27.md` — versiones parcheadas,
-  auditorías y evidencia de la actualización dedicada.
+  auditorías y evidencia de la actualización dedicada. Segundo pase (10-27,
+  `docs/reviews/dependencias-2026-10-27.md`): Next 16.4.3 por las RCE
+  críticas, override `sharp` 0.35.5 y uno acotado `@node-minify/core` →
+  `glob` 10.5.0.
 - **Calidad del repositorio y publicación** (09-27)
   `docs/repository-quality.md` y `docs/production-readiness.md` — higiene,
   evidencia reproducible, contrato de entorno y gates de producción.

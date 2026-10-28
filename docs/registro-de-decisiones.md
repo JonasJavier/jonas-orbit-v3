@@ -19,6 +19,20 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## Dependencias — segunda actualización de seguridad (2026-10-27)
+
+Dependabot tenía 11 alertas abiertas y la CI de `main` estaba roja en
+«Auditar dependencias». `npm audit` veía además dos RCE críticas de Next.js
+(10-22). Una sí tocaba producción: `/_next/image` usa sharp/librsvg en el
+Linux de Railway. La línea 16.3 no recibe ese parche, así que Next sube a 16.4
+(16.4.3, que sólo añade backports sobre 16.4.1). Con él suben zod 4.6.7,
+OpenNext 1.20.13, Vitest 4.1.12 y Wrangler 4.153.0. El override de sharp pasa
+a 0.35.5 y se mantiene, porque Velite pide ^0.34.5. Se añade un override
+acotado `@node-minify/core` → `glob` 10.5.0, porque OpenNext fija exacto el
+10.3.3 vulnerable. PostCSS no cambia: Next sigue fijando 8.5.23. `npm audit`
+queda a cero. Alerta por alerta, impacto real en producción y evidencia:
+`docs/reviews/dependencias-2026-10-27.md`.
+
 ## SEO — Gargantúa de cerca en Google Imágenes (2026-10-27)
 
 El dueño vio su captura de Gargantúa en Google Imágenes («gargantua

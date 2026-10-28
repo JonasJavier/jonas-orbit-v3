@@ -65,6 +65,11 @@ vulnerable; es el arreglo que propone `npm audit`. Versión fijada, sin
 Los overrides de PostCSS y Sharp no se revisan aquí: dependen de Next, que no
 cambia.
 
+**2026-10-27 — Next.js 16.4.3, segunda actualización dedicada.** Las 11
+alertas de Dependabot y los avisos de `npm audit`, entre ellos dos RCE
+críticas de Next.js, se cierran una por una en
+[`dependencias-2026-10-27.md`](dependencias-2026-10-27.md).
+
 ## Hallazgos de compatibilidad
 
 - Firefox informa `cancelAndHoldAtTime is not a function` en la banda sonora.

@@ -42,14 +42,14 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
-    "next": "16.3.6",
+    "next": "16.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "0.185.1",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "1.20.6",
+    "@opennextjs/cloudflare": "1.20.13",
     "@playwright/test": "1.61.1",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/jest-dom": "7.0.0",
@@ -60,14 +60,14 @@
     "@types/three": "0.185.4",
     "@vitejs/plugin-react": "6.0.4",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.4.3",
     "jsdom": "29.1.1",
     "knip": "6.29.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "velite": "0.4.0",
-    "vitest": "4.1.11",
-    "wrangler": "4.143.1"
+    "vitest": "4.1.12",
+    "wrangler": "4.153.0"
   },
   "engines": {
     "node": ">=24"
@@ -81,6 +81,9 @@
   },
   "overrides": {
     "postcss": "8.5.28",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5",
+    "@node-minify/core": {
+      "glob": "10.5.0"
+    }
   }
 }
