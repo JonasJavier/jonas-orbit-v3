@@ -19,6 +19,9 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
 | 2026-10-17 | Low-end mobile devices (4GB RAM) rendering mesh/car models with flat/pointy shading | <https://discourse.threejs.org/t/95240/2> |
 | 2026-10-17 | Concordia: a 21 km rotating space city you can walk in the browser | <https://discourse.threejs.org/t/95434/2> |
 | 2026-10-17 | HEX TIDE Lite — Interactive fluid simulation in Three.js | <https://discourse.threejs.org/t/95358/2> |
+| 2026-10-27 | HEX TIDE Lite (respuesta a gamaccho: subpasos y tiempo transcurrido) | <https://discourse.threejs.org/t/95358/4> |
+| 2026-10-27 | RIRRI'S: a rainy-night convenience store as a portfolio | <https://discourse.threejs.org/t/95930/4> |
+| 2026-10-27 | MRTNode doesn't exist in target module Error | <https://discourse.threejs.org/t/95934/2> |
 
 ## Temas apuntados para otro día
 
