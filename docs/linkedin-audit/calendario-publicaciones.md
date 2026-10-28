@@ -18,7 +18,7 @@ Español, martes y jueves a las 9:00 (hora de RD), seis semanas. Aprobado por Jo
 | 11 | mar 10 nov | Cómo elegir un desarrollador freelance en RD | servicios · proceso |
 | 12 | jue 12 nov | Un teseracto 4D a partir de cuatro bits | portada · instantes |
 
-**Estado (7 oct):** #0 publicado (2 oct) · #1 publicado (mar 6 oct, 9:00) · #2 programado para el jue 8 oct, 9:00 (creado de cero el 7 oct con 2 imágenes: pago protegido y registrar pago en la app; el borrador viejo del 2 oct sigue en LinkedIn sin usar) · #3–#12 pendientes. El 2 oct LinkedIn cortó a la tercera: «You've reached today's posting limit. Verify now…» (cuenta sin verificar). Programar también cuenta para el límite diario.
+**Estado (27 oct):** #0 publicado (2 oct) · #1 publicado (mar 6 oct, 9:00) · #2 publicado (jue 8 oct, 9:00, programado el 7 oct; el borrador viejo del 2 oct sigue en LinkedIn sin usar) · #3 publicado (mar 27 oct, ~22:10, con las 3 imágenes: portada, carrito, ficha; <https://www.linkedin.com/feed/update/urn:li:activity:7521030394125852672/>) · #4–#12 pendientes (el calendario va dos semanas por detrás de sus fechas: se publican en orden, no por fecha). El 2 oct LinkedIn cortó a la tercera: «You've reached today's posting limit. Verify now…» (cuenta sin verificar). Programar también cuenta para el límite diario.
 
 Las imágenes se generan desde `public/` (capturas de los casos y del blog) convertidas a JPG.
 

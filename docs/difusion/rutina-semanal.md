@@ -138,7 +138,7 @@ minúsculas —, `cover_image` con URL absoluta de `public/images/` que responda
 | # | Tema | Fuente | Estado |
 | --- | --- | --- | --- |
 | 1 | A pixel-ratio governor for Three.js that doesn't trust 60 fps | `components/scene/resolution-governor.ts` + test, registro «Resolución adaptable…» | publicado (2026-10-07, <https://dev.to/jonasjavier/a-pixel-ratio-governor-for-threejs-that-doesnt-trust-60-fps-4380>) |
-| 2 | Synthesizing a spaceship's sound with Web Audio, no audio files | `lib/voyage-audio.ts`, `docs/design/travesia-espaciotemporal.md` §«Segundo pase» | borrador (2026-10-08, `docs/difusion/devto/voyage-audio.md`) |
+| 2 | Synthesizing a spaceship's sound with Web Audio, no audio files | `lib/voyage-audio.ts`, `docs/design/travesia-espaciotemporal.md` §«Segundo pase» | publicado (2026-10-27, <https://dev.to/jonasjavier/synthesizing-a-spaceships-sound-with-web-audio-no-audio-files-4b3p>) |
 | 3 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx`, `hero-gargantua-direction.md` §14 undecies | pendiente |
 | 4 | Never two WebGL contexts drawing: putting a background scene to sleep | registro «Rendimiento móvil…», `lib/after-load-idle.ts` | pendiente |
 | 5 | Prefetch on intent, not on sight: a `<Link>` wrapper for Next.js | `lib/world-prefetch.ts`, registro «QA para premios…» | pendiente |
@@ -191,14 +191,19 @@ propio, un problema, una lección).
 
 ### 6.1 Cola del foro
 
+Se lee de arriba abajo; el `#` es un identificador. Reorden del 2026-10-27
+(revisión mensual, aprobado por Jonás; porqué en
+`informes/2026-10.md` §8): teseracto, resolución adaptable (dos temas del
+foro lo preguntaron en octubre), bloom y después Miller.
+
 | # | Tema | Página / fuente | Estado |
 | --- | --- | --- | --- |
 | 0 | Gargantua — ray-traced black hole (Showcase) | `/en/experiments/observatory/gargantua` | publicado (2026-10-03, t/94960) |
-| 1 | Miller's ocean: WebGL2 water that never blocks the page | entrada `miller-ocean-webgl2` de la cola del blog | borrador (2026-10-12, `borradores/foro-2026-10-16.md`) |
 | 2 | A 4D tesseract from four bits (XOR edges) | `/en/blog/4d-tesseract-in-three-js` | pendiente |
-| 3 | The wormhole voyage: one shader, 2.6 s and synthesized sound | `docs/design/travesia-espaciotemporal.md`, `lib/voyage-audio.ts` | pendiente |
-| 4 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx` §«The shadow the bloom was lighting up» | pendiente |
 | 5 | Adaptive resolution on phones: step up only what the device sustains | `lib/resolution-governor.ts`, registro «Resolución adaptable…» | pendiente |
+| 4 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx` §«The shadow the bloom was lighting up» | pendiente |
+| 1 | Miller's ocean: WebGL2 water that never blocks the page | entrada `miller-ocean-webgl2` de la cola del blog | borrador (2026-10-12, `borradores/foro-2026-10-16.md`) |
+| 3 | The wormhole voyage: one shader, 2.6 s and synthesized sound | `docs/design/travesia-espaciotemporal.md`, `lib/voyage-audio.ts` | pendiente |
 | 6 | Endurance: twelve modules, three silhouettes | `docs/design/endurance-jerarquia.md` §«Cuarto pase» | pendiente |
 | 7 | A 3D portfolio Google can read (no-JS fallback, flat 2D) | `/en/blog/3d-portfolio-webgl-seo-and-performance` | pendiente |
 | 8 | Edmunds: geology, not texture | `docs/design/world-visual-language.md` §9 sexies | pendiente |
