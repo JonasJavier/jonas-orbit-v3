@@ -119,8 +119,17 @@ en el título; Jonás lo fusiona y borra la rama (regla «todo en `main`»).
 Orden pensado para alternar públicos: 3D, freelance, ciencia, ingeniería del
 sitio. `estado`: pendiente → borrador (fecha) → publicado (fecha, enlaces).
 
+**2026-10-23 — tres temas que pide Search Console** (28 días hasta el
+21-oct). Van delante de la cola porque ya hay búsquedas reales esperándolos
+(§3.1: «salvo que una búsqueda real pida otro»); el porqué y las consultas,
+en el `notas.md` de cada borrador. Se publican de uno en uno, a ritmo
+semanal, igual que el resto.
+
 | # | id | Título de trabajo | Tema | Fuentes en el repo | Estado |
 | --- | --- | --- | --- | --- | --- |
+| A | `gargantua-vs-real-black-holes` | Gargantúa contra Sagitario A* y M87*: el agujero negro de Interestelar frente a los reales | space (espécimen `gargantua`) | Entrada de física (no repetir su FAQ, enlazarla); EHT 2019/2022, GRAVITY 2022, Thorne, James et al. 2015 | borrador (2026-10-23) |
+| B | `what-is-a-tesseract` | Qué es un teseracto: el cubo de cuatro dimensiones, explicado y dibujado a mano | space (espécimen `tesseract`) | `content/*/articles/tesseract-4d.mdx` (la técnica; esta es divulgativa), Hinton 1888, Abbott 1884 | borrador (2026-10-23) |
+| C | `black-hole-threejs-tutorial` | Agujero negro en Three.js paso a paso: un shader que puedes copiar | webgl (espécimen `gargantua`) | `content/*/articles/gargantua-webgl.mdx`; código probado en el borrador (`agujero-negro.html`) | borrador (2026-10-23) |
 | 1 | `interstellar-3d-models` | Los modelos 3D de Interstellar de mi portafolio: Gargantúa, planetas y naves en el navegador | webgl (los seis especímenes) | Las seis páginas del Observatorio, `docs/design/world-visual-language.md`, `docs/design/hero-gargantua-direction.md`, registro «SEO — frases del nicho 3D…» (era la entrada-hub de «modelos 3D de Interstellar»; desde 10-16 esa frase es el título del hub de Experimentos, así que la entrada debe apuntar a otra para no canibalizarlo, p. ej. «los modelos de la película en el navegador») | borrador (2026-10-05) |
 | 2 | `miller-ocean-webgl2` | El océano de Miller: agua en WebGL2 que se mueve sin parar la página | webgl (espécimen `miller`) | `docs/design/miller-formacion.md` §«Océano en WebGL2…», `docs/design/world-visual-language.md` §9 quinquies, `components/miller-ocean.tsx`, registro «Rendimiento móvil» (el agua espera a `after-load-idle`) | borrador (2026-10-12) |
 | 3 | `written-proposal` | Qué tiene que decir una propuesta por escrito antes de empezar un proyecto | freelance | `components/services-page.tsx` (proceso y preguntas), `content/*/articles/hire-freelance-developer-dr.mdx`, registro «Servicios y notas de taller» | pendiente |
