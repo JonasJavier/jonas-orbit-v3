@@ -53,10 +53,11 @@ describe("blog", () => {
           expect(publicFile(`${base}-800.webp`), `${base}-800`).toBe(true);
           expect(publicFile(`${base}-1600.webp`), `${base}-1600`).toBe(true);
         }
-        // Los fondos: sus figuras (16:9 a 800/1600, verticales a 400/800) y la descarga JPG.
+        // Los fondos: sus figuras (16:9 a 800/1600, verticales a 400/800, cuadrados a 600/1200) y la descarga JPG.
+        const widths = { desktop: [800, 1600], phone: [400, 800], square: [600, 1200] };
         for (const { name, shape } of wallpapers) {
           const base = articleImage(article, name);
-          for (const width of shape === "desktop" ? [800, 1600] : [400, 800]) {
+          for (const width of widths[shape]) {
             expect(publicFile(`${base}-${width}.webp`), `${base}-${width}`).toBe(true);
           }
           expect(publicFile(`${base}.jpg`), `${base}.jpg`).toBe(true);

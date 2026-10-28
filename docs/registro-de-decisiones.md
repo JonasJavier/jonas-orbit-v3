@@ -19,6 +19,36 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — Gargantúa de cerca en Google Imágenes (2026-10-27)
+
+El dueño vio su captura de Gargantúa en Google Imágenes («gargantua
+interstellar 3d», ficha del simulador) y quiere competir también con las
+imágenes de cerca, donde el agujero llena el cuadro. La que Google tenía era
+la vista abierta (`specimenImage("gargantua")`), con el agujero pequeño en
+medio del negro; la portada de `gargantua-wallpapers` era esa misma vista.
+
+- **Más cerca sin tocar las vistas.** Las cuatro vistas son el contrato
+  (`lib/gargantua-views.ts`): no se añade una quinta ni se acerca la cámara.
+  `tools/wallpaper-shots.mjs` captura la vista LENTE a 5120 × 2880 (mismo
+  aspecto = mismo encuadre, más píxeles) y `prepare-wallpapers.mjs` RECORTA:
+  un 4K 16:9 (`-4k-closeup`, sombra ≈ 49 % del alto) y dos cuadrados de
+  2304 × 2304 (`gargantua-interstellar-black-hole-closeup` y
+  `-extreme-closeup`, éste con el anillo de fotones visible). Ningún píxel
+  ampliado. Los PNG fuente, en `../jonas-orbit-fondos/` (fuera del repo).
+- **Forma `square`** en `wallpapers` (`-600`/`-1200.webp` + JPG con XMP) y
+  `<WallpaperRow pair>`: dos por fila en escritorio, uno por fila en el
+  teléfono. Van al sitemap de imágenes y al JSON-LD con la misma licencia.
+- **La portada de la entrada pasa al primer plano** (cabecera, `og:image`,
+  tarjeta del índice) y abre una sección «Gargantúa de cerca» antes de los
+  fondos 4K. Once fondos en total.
+- **Lo que NO se tocó:** la imagen del espécimen (las seis siguen siendo la
+  vista OBSERVAR por defecto) ni la tarjeta de la portada del sitio. Si las
+  consultas muestran que la ficha del simulador es la que gana en Imágenes,
+  la palanca siguiente es darle a Gargantúa el primer plano como captura de
+  espécimen.
+
+---
+
 ## Analítica de visitas — Cloudflare Web Analytics, diferida y sólo en el dominio (2026-10-17)
 
 El dueño preguntó cuántas visitas tiene el sitio y no había respuesta: ninguna

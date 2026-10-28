@@ -136,6 +136,8 @@ MDX**, nunca en `worlds.data.ts`.
   con nombre y oficio. Entrada `gargantua-wallpapers`: fondos 4K y de teléfono
   nativos (`tools/wallpaper-shots.mjs`), descarga JPG con XMP e `ImageObject`
   con licencia (uso personal como fondo; confirmada por el dueño).
+  Primeros planos (10-27, registro «SEO — Gargantúa de cerca…»): recortes
+  de la vista LENTE a 5K (4K + dos cuadrados), portada de la entrada.
 - **SEO — simulador de Gargantúa y retrato formal** (10-17) registro de
   igual nombre — `observatory.headline` dentro del `<h1>`, captura real
   como `<img>` y todas las entradas del espécimen enlazadas; `isBasedOn`

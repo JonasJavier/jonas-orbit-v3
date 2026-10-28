@@ -21,7 +21,13 @@
  * vuelve a OBSERVAR, se oculta todo lo que no es el canvas y se espera a que
  * la acumulación asiente: cambiar de vista la tira entera.
  *
- *   node tools/wallpaper-shots.mjs <carpeta-fuera-del-repo> [base]
+ * Los primeros planos (2026-10-27) son la vista LENTE capturada a 5120 × 2880
+ * —el mismo encuadre, porque el aspecto no cambia, con más píxeles—, de la que
+ * `prepare-wallpapers.mjs` recorta los cuadrados: Gargantúa llenando el cuadro
+ * sin ampliar un solo píxel. Acercar la cámara no vale: las cuatro vistas son
+ * el contrato (`lib/gargantua-views.ts`), y recortar no lo toca.
+ *
+ *   node tools/wallpaper-shots.mjs <carpeta-fuera-del-repo> [base] [vistas,separadas,por,comas]
  *
  * Después: `node tools/prepare-wallpapers.mjs <esa carpeta>`.
  */
@@ -33,6 +39,7 @@ const outDir = resolve(process.argv[2] ?? "../jonas-orbit-fondos");
 const base = (process.argv[3] ?? "https://jonasjavier.dev").replace(/\/$/, "");
 mkdirSync(outDir, { recursive: true });
 
+const only = process.argv[4]?.split(",");
 const URL = `${base}/es/experimentos/observatorio/gargantua`;
 const SETTLE_MS = 14_000;
 
@@ -43,9 +50,11 @@ const SHOTS = [
   { id: "lens", vista: "lente", doppler: true, phone: true },
   { id: "disk", vista: "disco", doppler: true, phone: false },
   { id: "shadow", vista: "sombra", doppler: true, phone: true },
+  { id: "closeup", vista: "lente", doppler: true, phone: false, viewport: "closeup" },
 ];
 const DESKTOP = { width: 3840, height: 2160, dpr: 1, suffix: "4k" };
 const PHONE = { width: 1440, height: 3120, dpr: 1, suffix: "phone" };
+const CLOSEUP = { width: 5120, height: 2880, dpr: 1, suffix: "5k" };
 
 const sinTildes = (s) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -117,7 +126,8 @@ async function capture(shot, viewport) {
 }
 
 for (const shot of SHOTS) {
-  await capture(shot, DESKTOP);
+  if (only && !only.includes(shot.id)) continue;
+  await capture(shot, shot.viewport === "closeup" ? CLOSEUP : DESKTOP);
   if (shot.phone) await capture(shot, PHONE);
 }
 await browser.close();

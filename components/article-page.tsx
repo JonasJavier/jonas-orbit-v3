@@ -43,8 +43,8 @@ const COPY = defineCopy({
     contact: "Escribirme",
     more: "Sigue leyendo",
     back: "Todas las entradas",
-    download: { desktop: "Descargar en 4K", phone: "Descargar" },
-    size: { desktop: "3840 × 2160 · JPG", phone: "1440 × 3120 · JPG" },
+    download: { desktop: "Descargar en 4K", phone: "Descargar", square: "Descargar" },
+    size: { desktop: "3840 × 2160 · JPG", phone: "1440 × 3120 · JPG", square: "2304 × 2304 · JPG" },
     fullSize: (alt: string) => `Ver a tamaño completo: ${alt}`,
   },
   en: {
@@ -67,8 +67,8 @@ const COPY = defineCopy({
     contact: "Write to me",
     more: "Keep reading",
     back: "All posts",
-    download: { desktop: "Download in 4K", phone: "Download" },
-    size: { desktop: "3840 × 2160 · JPG", phone: "1440 × 3120 · JPG" },
+    download: { desktop: "Download in 4K", phone: "Download", square: "Download" },
+    size: { desktop: "3840 × 2160 · JPG", phone: "1440 × 3120 · JPG", square: "2304 × 2304 · JPG" },
     fullSize: (alt: string) => `View full size: ${alt}`,
   },
 });
@@ -90,6 +90,14 @@ const specimenSources = (id: WorldId) => ({
 const WALLPAPER_SHAPES = {
   desktop: { small: 800, large: 1600, ratio: 9 / 16, full: [3840, 2160] },
   phone: { small: 400, large: 800, ratio: 3120 / 1440, full: [1440, 3120] },
+  square: { small: 600, large: 1200, ratio: 1, full: [2304, 2304] },
+} as const;
+
+/** El ancho al que se pinta cada forma: entera en la columna, de tres en fila o de dos en fila. */
+const WALLPAPER_SIZES = {
+  desktop: "(max-width: 52rem) calc(100vw - 2.5rem), 46rem",
+  phone: "(max-width: 40rem) 45vw, 15rem",
+  square: "(max-width: 40rem) calc(100vw - 2.5rem), (max-width: 52rem) calc(50vw - 2rem), 23rem",
 } as const;
 
 function wallpaperShape(article: Article, name: string) {
@@ -119,7 +127,7 @@ function wallpaperFor(article: Article, locale: Locale) {
           <img
             src={`${base}-${size.large}.webp`}
             srcSet={`${base}-${size.small}.webp ${size.small}w, ${base}-${size.large}.webp ${size.large}w`}
-            sizes={shape === "desktop" ? "(max-width: 52rem) calc(100vw - 2.5rem), 46rem" : "(max-width: 40rem) 45vw, 15rem"}
+            sizes={WALLPAPER_SIZES[shape]}
             width={size.large}
             height={Math.round(size.large * size.ratio)}
             alt={alt}
@@ -139,9 +147,9 @@ function wallpaperFor(article: Article, locale: Locale) {
   };
 }
 
-/** Los fondos verticales, uno junto a otro. */
-function WallpaperRow({ children }: { children: ReactNode }) {
-  return <div className="post__wallpapers">{children}</div>;
+/** Los fondos verticales (de tres) o los cuadrados (de dos), uno junto a otro. */
+function WallpaperRow({ children, pair }: { children: ReactNode; pair?: boolean }) {
+  return <div className={pair ? "post__wallpapers post__wallpapers--pair" : "post__wallpapers"}>{children}</div>;
 }
 
 /** Las figuras del cuerpo MDX (`<Figure name="…" alt="…" caption="…" />`) buscan en la carpeta de su entrada. */

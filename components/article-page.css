@@ -520,6 +520,10 @@
   margin-top: 2rem;
 }
 
+.post__wallpapers--pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .post__wallpapers .post__figure {
   margin: 0;
 }
@@ -536,6 +540,11 @@
 @media (max-width: 40rem) {
   .post__wallpapers {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Los primeros planos son lo que viene a buscar la página: enteros, uno por fila. */
+  .post__wallpapers--pair {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

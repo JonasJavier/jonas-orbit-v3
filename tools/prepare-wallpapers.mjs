@@ -11,7 +11,13 @@
  *               `<base>.jpg` (3840 × 2160, la descarga)
  *   teléfono    `<base>-400.webp` y `<base>-800.webp` (las figuras, vertical)
  *               `<base>.jpg` (1440 × 3120, la descarga)
- *   portada     `<base>-og.jpg` (1200 × 630) de la cinematográfica
+ *   cuadrado    `<base>-600.webp` y `<base>-1200.webp`, `<base>.jpg` (2304 × 2304)
+ *   portada     `<base>-og.jpg` (1200 × 630) del primer plano
+ *
+ * Los primeros planos (2026-10-27) salen de `closeup-5k.png`, la vista LENTE a
+ * 5120 × 2880: el 4K y los dos cuadrados son RECORTES de esa captura, nunca
+ * ampliaciones, así que cada píxel publicado es un píxel que el simulador
+ * dibujó.
  *
  * El nombre del archivo es parte del SEO de imágenes (Google lo lee): lleva
  * «gargantua», «interstellar», «wallpaper» y el formato. Los JPG de descarga
@@ -59,8 +65,18 @@ const xmp = (title) => `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 </x:xmpmeta>
 <?xpacket end="w"?>`;
 
+/** Recortes de `closeup-5k.png`: centrados en el agujero, que no cae en el centro del cuadro. */
+const CROPS = {
+  closeup: { left: 640, top: 360, width: 3840, height: 2160 },
+  "closeup-square": { left: 1120, top: 0, width: 2880, height: 2880 },
+  "closeup-extreme": { left: 1408, top: 288, width: 2304, height: 2304 },
+};
+const load = (view, suffix) =>
+  CROPS[view] ? sharp(path.join(input, "closeup-5k.png")).extract(CROPS[view]) : sharp(path.join(input, `${view}-${suffix}.png`));
+
 /** Vista capturada → nombre publicado y título del XMP. */
 const DESKTOP = [
+  ["closeup", "gargantua-interstellar-wallpaper-4k-closeup", "Gargantua up close, Interstellar's black hole — 4K wallpaper"],
   ["cinematic", "gargantua-interstellar-wallpaper-4k-cinematic", "Gargantua, Interstellar's black hole — 4K wallpaper"],
   ["film", "gargantua-interstellar-wallpaper-4k-film", "Gargantua without Doppler, as in the film — 4K wallpaper"],
   ["lens", "gargantua-interstellar-wallpaper-4k-lens", "Gargantua's gravitational lens — 4K wallpaper"],
@@ -72,12 +88,15 @@ const PHONE = [
   ["lens", "gargantua-interstellar-wallpaper-phone-lens", "Gargantua's gravitational lens — phone wallpaper"],
   ["shadow", "gargantua-interstellar-wallpaper-phone-shadow", "Gargantua's shadow — phone wallpaper"],
 ];
+const SQUARE = [
+  ["closeup-square", "gargantua-interstellar-black-hole-closeup", "Gargantua, Interstellar's black hole, up close"],
+  ["closeup-extreme", "gargantua-interstellar-black-hole-extreme-closeup", "Gargantua's shadow and photon ring, extreme close-up"],
+];
 
 for (const [view, base, title] of DESKTOP) {
-  const source = path.join(input, `${view}-4k.png`);
-  await sharp(source).resize({ width: 1600, height: 900 }).webp({ quality: 84 }).toFile(path.join(output, `${base}-1600.webp`));
-  await sharp(source).resize({ width: 800, height: 450 }).webp({ quality: 82 }).toFile(path.join(output, `${base}-800.webp`));
-  await sharp(source).jpeg({ quality: 90, mozjpeg: true }).withXmp(xmp(title)).toFile(path.join(output, `${base}.jpg`));
+  await load(view, "4k").resize({ width: 1600, height: 900 }).webp({ quality: 84 }).toFile(path.join(output, `${base}-1600.webp`));
+  await load(view, "4k").resize({ width: 800, height: 450 }).webp({ quality: 82 }).toFile(path.join(output, `${base}-800.webp`));
+  await load(view, "4k").jpeg({ quality: 90, mozjpeg: true }).withXmp(xmp(title)).toFile(path.join(output, `${base}.jpg`));
   console.log(base);
 }
 for (const [view, base, title] of PHONE) {
@@ -87,9 +106,15 @@ for (const [view, base, title] of PHONE) {
   await sharp(source).jpeg({ quality: 90, mozjpeg: true }).withXmp(xmp(title)).toFile(path.join(output, `${base}.jpg`));
   console.log(base);
 }
+for (const [view, base, title] of SQUARE) {
+  await load(view).resize({ width: 1200, height: 1200 }).webp({ quality: 84 }).toFile(path.join(output, `${base}-1200.webp`));
+  await load(view).resize({ width: 600, height: 600 }).webp({ quality: 82 }).toFile(path.join(output, `${base}-600.webp`));
+  await load(view).resize({ width: 2304, height: 2304 }).jpeg({ quality: 90, mozjpeg: true }).withXmp(xmp(title)).toFile(path.join(output, `${base}.jpg`));
+  console.log(base);
+}
 // La tarjeta al compartir la entrada (`articleMetadata` pide `<portada>-og.jpg`).
 const cover = DESKTOP[0][1];
-await sharp(path.join(input, "cinematic-4k.png"))
+await load(DESKTOP[0][0], "4k")
   .resize({ width: 1200, height: 630, fit: "cover", position: "centre" })
   .jpeg({ quality: 86, mozjpeg: true })
   .toFile(path.join(output, `${cover}-og.jpg`));
