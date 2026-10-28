@@ -14,6 +14,15 @@ Sirve para no comentar dos veces el mismo post.
 | 2026-10-17 | Respuesta (Vlad Zoff) | [A bilingual Next.js site without middleware](https://dev.to/jonasjavier/a-bilingual-nextjs-site-without-middleware-5fp8) | https://dev.to/jonasjavier/comment/3i537 |
 | 2026-10-17 | Comentario | [Hand-rolling PDFs, taming window.print()…](https://dev.to/coloryla/hand-rolling-pdfs-taming-windowprint-and-finding-out-what-googlebot-actually-fetched-notes-p0d) | https://dev.to/jonasjavier/comment/3i558 |
 | 2026-10-17 | Reacción ❤️ | [Hand-rolling PDFs, taming window.print()…](https://dev.to/coloryla/hand-rolling-pdfs-taming-windowprint-and-finding-out-what-googlebot-actually-fetched-notes-p0d) | — |
+| 2026-10-27 | Comentario | [A shared-element page transition in the Next.js App Router](https://dev.to/tanveer_cs/a-shared-element-page-transition-in-the-nextjs-app-router-2hbi) | https://dev.to/jonasjavier/comment/3j7h7 |
+| 2026-10-27 | Reacción ❤️ | [A shared-element page transition in the Next.js App Router](https://dev.to/tanveer_cs/a-shared-element-page-transition-in-the-nextjs-app-router-2hbi) | — |
+| 2026-10-27 | Reacción ❤️ | [Halftone type in WebGL, one draw call per headline](https://dev.to/tanveer_cs/halftone-type-in-webgl-one-draw-call-per-headline-1gjl) | — |
+| 2026-10-27 | Reacción ❤️ | [High Roughness, Sharp Highlights: Auditing a glTF Material in Three.js](https://dev.to/lilsnake/high-roughness-sharp-highlights-auditing-a-gltf-material-in-threejs-4i1i) | — |
+| 2026-10-27 | Comentario | [Google saw 1 word on my Next.js homepage…](https://dev.to/101stand/google-saw-1-word-on-my-nextjs-homepage-a-suspense-boundary-was-hiding-everything-else-4ohe) | https://dev.to/jonasjavier/comment/3j7hi |
+| 2026-10-27 | Reacción ❤️ | [Google saw 1 word on my Next.js homepage…](https://dev.to/101stand/google-saw-1-word-on-my-nextjs-homepage-a-suspense-boundary-was-hiding-everything-else-4ohe) | — |
+| 2026-10-27 | Comentario | [How I turned my logo into 3D glass that breaks apart as you scroll](https://dev.to/hasanalpgungor/how-i-turned-my-logo-into-3d-glass-that-breaks-apart-as-you-scroll-569l) | https://dev.to/jonasjavier/comment/3j7hk |
+| 2026-10-27 | Reacción ❤️ | [How I turned my logo into 3D glass that breaks apart as you scroll](https://dev.to/hasanalpgungor/how-i-turned-my-logo-into-3d-glass-that-breaks-apart-as-you-scroll-569l) | — |
+| 2026-10-27 | Reacción 🦄 | [Animating 10,000+ live aircraft at 60 fps…](https://dev.to/juanesroig/animating-10000-live-aircraft-at-60-fps-moving-dead-reckoning-to-the-gpu-59k6) | — |
 
 ## Pendiente (aprobado el 2026-10-08, sin publicar)
 
