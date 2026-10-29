@@ -23,6 +23,13 @@ Sirve para no comentar dos veces el mismo post.
 | 2026-10-27 | Comentario | [How I turned my logo into 3D glass that breaks apart as you scroll](https://dev.to/hasanalpgungor/how-i-turned-my-logo-into-3d-glass-that-breaks-apart-as-you-scroll-569l) | https://dev.to/jonasjavier/comment/3j7hk |
 | 2026-10-27 | Reacción ❤️ | [How I turned my logo into 3D glass that breaks apart as you scroll](https://dev.to/hasanalpgungor/how-i-turned-my-logo-into-3d-glass-that-breaks-apart-as-you-scroll-569l) | — |
 | 2026-10-27 | Reacción 🦄 | [Animating 10,000+ live aircraft at 60 fps…](https://dev.to/juanesroig/animating-10000-live-aircraft-at-60-fps-moving-dead-reckoning-to-the-gpu-59k6) | — |
+| 2026-10-28 | Comentario | [Three.js Post-Processing: 192 Desktop Trials…](https://dev.to/alicia_lu/threejs-post-processing-192-desktop-trials-beyond-the-fps-counter-4jcl) | https://dev.to/jonasjavier/comment/3japc |
+| 2026-10-28 | Reacción ❤️ | [Three.js Post-Processing: 192 Desktop Trials…](https://dev.to/alicia_lu/threejs-post-processing-192-desktop-trials-beyond-the-fps-counter-4jcl) | — |
+| 2026-10-28 | Comentario | [Next.js 16, one year on…](https://dev.to/kunjhirapara/nextjs-16-one-year-on-what-broke-when-i-upgraded-a-real-site-428a) | https://dev.to/jonasjavier/comment/3japh |
+| 2026-10-28 | Reacción ❤️ | [Next.js 16, one year on…](https://dev.to/kunjhirapara/nextjs-16-one-year-on-what-broke-when-i-upgraded-a-real-site-428a) | — |
+| 2026-10-28 | Comentario | [Every page on our site has a twitter:image…](https://dev.to/daniel_pertu/every-page-on-our-site-has-a-twitterimage-seven-of-them-have-an-ogimage-ha6) | https://dev.to/jonasjavier/comment/3japk |
+| 2026-10-28 | Reacción ❤️ | [Every page on our site has a twitter:image…](https://dev.to/daniel_pertu/every-page-on-our-site-has-a-twitterimage-seven-of-them-have-an-ogimage-ha6) | — |
+| 2026-10-28 | Reacción ❤️ | [I generate a week of social posts from the real sky…](https://dev.to/paivelmoxia/i-generate-a-week-of-social-posts-from-the-real-sky-in-the-browser-3cao) | — |
 
 ## Pendiente (aprobado el 2026-10-08, sin publicar)
 
