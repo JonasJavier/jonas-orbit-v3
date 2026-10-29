@@ -95,6 +95,42 @@ function missionNav(page: Page) {
   return page.getByRole("navigation", { name: "Navegación de mundos" });
 }
 
+/**
+ * Que Tab llegue a los enlaces también en el WebKit que no los recorre.
+ *
+ * WebKit sigue la preferencia de Safari «Tab resalta cada elemento»: apagada,
+ * Tab sólo para en botones y campos y salta todo `<a href>`. El port de Linux
+ * (CI) la trae encendida; el de Windows, apagada, sin tecla que la invierta
+ * (Opción+Tab sólo existe en el de Mac) y Playwright no la expone. No es un
+ * fallo del sitio: raíl y cabecera son enlaces corrientes y cualquier sitio
+ * fallaría igual. Si el primer Tab no cae en «Saltar al contenido» —el primer
+ * enfocable de toda página—, se simula la preferencia encendida: `tabindex="0"`
+ * en los enlaces sin uno propio, que da el mismo orden que Chromium y no tapa
+ * un `tabindex="-1"` del sitio (las dianas del mapa).
+ */
+async function tabToLinks(page: Page, browserName: string) {
+  if (browserName !== "webkit") return;
+  await page.keyboard.press("Tab");
+  const reachesLinks = await page.evaluate(() =>
+    document.activeElement?.classList.contains("skip-link"),
+  );
+  if (reachesLinks) return;
+  await page.addInitScript(() => {
+    const mark = () => {
+      for (const link of document.querySelectorAll("a[href]:not([tabindex])")) {
+        link.setAttribute("tabindex", "0");
+      }
+    };
+    new MutationObserver(mark).observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["href", "tabindex"],
+    });
+  });
+  await page.reload();
+}
+
 test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
   test("A19 · / redirige al idioma por defecto (/en) con un único salto correcto", async ({
     page,
@@ -424,6 +460,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
 
   test("A29 · se recorren las 7 rutas y se escribe en el formulario solo con teclado", async ({
     page,
+    browserName,
   }) => {
     // Siete rutas con hasta treinta Tab + evaluate cada una: en escritorio
     // ronda los 25 s a solas y comparte la CPU con los workers que dibujan
@@ -432,6 +469,7 @@ test.describe("smoke — el Sistema Gargantúa y sus 7 rutas", () => {
     // la carga de la máquina.
     test.slow();
     await page.goto("/es");
+    await tabToLinks(page, browserName);
 
     for (const world of WORLDS) {
       // Primer salto desde el mapa de la home; a partir de ahí, la cabecera de
