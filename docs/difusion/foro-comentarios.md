@@ -22,6 +22,9 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
 | 2026-10-27 | HEX TIDE Lite (respuesta a gamaccho: subpasos y tiempo transcurrido) | <https://discourse.threejs.org/t/95358/4> |
 | 2026-10-27 | RIRRI'S: a rainy-night convenience store as a portfolio | <https://discourse.threejs.org/t/95930/4> |
 | 2026-10-27 | MRTNode doesn't exist in target module Error | <https://discourse.threejs.org/t/95934/2> |
+| 2026-10-28 | RIRRI'S (respuesta a scenariofour: COMPLETION_STATUS_KHR fuera del renderer) | <https://discourse.threejs.org/t/95930/6> |
+| 2026-10-28 | Open GPU Benchmarker: a browser GPU benchmark | <https://discourse.threejs.org/t/95919/2> |
+| 2026-10-28 | A firework-powered logo: interactive particles, bloom, and audio | <https://discourse.threejs.org/t/95869/2> |
 
 ## Temas apuntados para otro día
 
