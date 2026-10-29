@@ -25,6 +25,8 @@ sin enlaces al sitio y sin servicios. Sirve para no repetir tema.
 | 2026-10-28 | RIRRI'S (respuesta a scenariofour: COMPLETION_STATUS_KHR fuera del renderer) | <https://discourse.threejs.org/t/95930/6> |
 | 2026-10-28 | Open GPU Benchmarker: a browser GPU benchmark | <https://discourse.threejs.org/t/95919/2> |
 | 2026-10-28 | A firework-powered logo: interactive particles, bloom, and audio | <https://discourse.threejs.org/t/95869/2> |
+| 2026-10-29 | NINE LOOPS: SUBWAY – an Exit 8-style anomaly loop game in three.js | <https://discourse.threejs.org/t/95932/2> |
+| 2026-10-29 | CubeTexture 360 panaroma, hdri from hand drawn or blender model | <https://discourse.threejs.org/t/96083/2> |
 
 ## Temas apuntados para otro día
 
