@@ -5,9 +5,9 @@ title: Network 3.0
 eyebrow: Red social full-stack
 summary: >-
   Una API REST en Django y una aplicación en React y TypeScript: feed por
-  cursor, reposts y citas, hashtags, menciones y notificaciones, desplegadas en
-  Railway con demo pública.
-statusLabel: Desplegado en Railway · demo pública
+  cursor, reposts y citas, hashtags, menciones y notificaciones, con 132
+  pruebas automatizadas.
+statusLabel: Repositorio público · GPL-3.0
 role: Único desarrollador; diseño de producto, API, frontend, pruebas y despliegue
 problem: >-
   En una red social todo está conectado: un like cambia un contador, un perfil,
@@ -44,7 +44,7 @@ stack:
   - group: Herramientas
     items: [Make, EditorConfig, Keep a Changelog]
 highlights:
-  - Desplegado en Railway con demo pública; la web y la API corren como servicios separados sobre PostgreSQL y Redis
+  - La web y la API, dos servicios separados sobre PostgreSQL y Redis, se desplegaron en Railway
   - Reescritura completa del proyecto 4 de CS50W, de un monolito con plantillas a una API REST versionada y una aplicación en React
   - Feed paginado por cursor, con contadores resueltos por subconsultas y no por JOIN múltiples
   - JWT con rotación de refresh y lista negra; cambiar la contraseña cierra las demás sesiones
@@ -154,7 +154,7 @@ gallery:
     module: Búsqueda y marcadores
   - src: /media/projects/network/76-login-demo-accounts-desktop.png
     alt: "Pantalla de acceso con panel de marca y el recuadro de cuentas demo con su contraseña"
-    caption: "La demo pública ofrece cuentas de prueba de un clic."
+    caption: "El acceso ofrece cuentas de prueba de un clic."
     module: Acceso y cuenta
   - src: /media/projects/network/02-login-error-desktop.png
     alt: "Formulario de acceso con el aviso de credenciales inválidas"
@@ -585,14 +585,11 @@ architecture:
     - [api, openapi]
     - [api, sentry]
 links:
-  - label: Probar la demo
-    href: https://web-production-9475c.up.railway.app
-    kind: demo
   - label: Ver repositorio
     href: https://github.com/JonasJavier/cs50w-network
     kind: repository
 seoTitle: Network 3.0 — Red social con Django REST y React
-seoDescription: Caso de Network 3.0, red social full-stack con API REST en Django y React con TypeScript, feed por cursor, JWT con rotación, 132 pruebas y demo pública.
+seoDescription: Caso de Network 3.0, red social full-stack con API REST en Django y React con TypeScript, feed por cursor, JWT con rotación y 132 pruebas automatizadas.
 ---
 
 ## 1. Contexto
@@ -606,8 +603,8 @@ un monolito de curso.
 Network 3.0 es una reescritura completa, no un retoque. Borré el monolito y en
 su lugar hay dos servicios independientes que sólo comparten un contrato HTTP:
 una API REST en Django y una aplicación de una sola página en React y
-TypeScript. La versión actual, la 3.1.0, está desplegada en Railway con una
-demo pública. Fueron un par de semanas de trabajo, en solitario.
+TypeScript. La versión actual es la 3.1.0. Fueron un par de semanas de
+trabajo, en solitario.
 
 ## 2. Problema
 
@@ -747,19 +744,15 @@ sin conexión.
 Las capturas salen de una instancia local sembrada con un elenco inventado
 —diez personas con avatares de iniciales generados por código— e imágenes
 abstractas generadas con Pillow. Los nombres y las cifras que aparecen, como
-likes o seguidores, no son métricas de nada. La demo pública usa otras cuentas
-de ejemplo, así que los nombres no coinciden. Las pantallas con algún defecto
+likes o seguidores, no son métricas de nada. Las pantallas con algún defecto
 visible se dejaron fuera.
 
-## 14. Probar la demo
+## 14. El código
 
-La demo está en
-[web-production-9475c.up.railway.app](https://web-production-9475c.up.railway.app).
-Entra con `ada`, `grace`, `linus`, `margaret`, `alan`, `katherine`, `tim` o
-`hedy`; la contraseña de todas es `network123`. La pantalla de acceso ofrece
-cuatro de ellas con un clic, y también puedes crear tu propia cuenta. La
-documentación de la API está en
-[Swagger](https://api-production-53d41.up.railway.app/api/docs/).
+La demo pública ya no está en línea. El código completo —la API, la
+aplicación y sus 132 pruebas— está en el
+[repositorio público](https://github.com/JonasJavier/cs50w-network), y el
+esquema OpenAPI se genera desde ese mismo código.
 
 ## 15. Aprendizajes
 
@@ -770,8 +763,8 @@ sólo fallan de verdad en producción.
 
 ## 16. Estado actual
 
-Terminado y en funcionamiento en la versión 3.1.0: desplegado de forma
-permanente en Railway sobre PostgreSQL y Redis, con el repositorio público bajo
-licencia GPL-3.0, la integración continua en verde y 132 pruebas automatizadas
-—98 de backend y 34 de frontend— que pasan. No tiene usuarios reales, así que no
+Terminado en la versión 3.1.0. Estuvo desplegado en Railway sobre PostgreSQL
+y Redis; la demo pública ya está retirada, y el repositorio sigue público bajo
+licencia GPL-3.0, con la integración continua en verde y 132 pruebas
+automatizadas —98 de backend y 34 de frontend— que pasan. No tiene usuarios reales, así que no
 publico cifras de uso: es un proyecto para demostrar cómo construyo.

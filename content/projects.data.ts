@@ -77,10 +77,11 @@ export const projectsData = {
   network: {
     order: 4,
     phase: "f1a",
-    // Caso completo y desplegado desde el kit de 2026-09-26
-    // (`portfolio-content/network-2026/`): web y API en Railway, demo pública.
+    // Caso completo desde el kit de 2026-09-26
+    // (`portfolio-content/network-2026/`). La demo en Railway (web y API) se
+    // retiró a finales de octubre de 2026: terminado, ya no en línea.
     kind: "case-study",
-    status: "production",
+    status: "ready-for-production",
   },
   delicate: {
     order: 5,

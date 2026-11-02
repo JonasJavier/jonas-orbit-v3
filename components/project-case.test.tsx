@@ -104,9 +104,9 @@ describe("ProjectCase — primer pantallazo", () => {
 
     // Con demo publicada, la salida principal es el producto vivo, con el
     // rótulo del propio enlace (el mismo que en la mesa).
-    const network = getProject("network", "es");
-    renderCase(network);
-    const demo = network.prose.links?.find((link) => link.kind === "demo");
+    const delicate = getProject("delicate", "es");
+    renderCase(delicate);
+    const demo = delicate.prose.links?.find((link) => link.kind === "demo");
     const site = document.querySelector(".case-hero__actions .case-action--site") as HTMLElement;
     expect(site).toHaveTextContent(demo?.label ?? "sin demo");
     expect(site).toHaveAttribute("href", demo?.href);
