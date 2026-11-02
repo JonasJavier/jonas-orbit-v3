@@ -3,7 +3,8 @@ import { defineCopy } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/site-url";
 
 type Crumb = { path: string; name: string };
-type ServiceNode = { id: string; name: string; description: string };
+/** Un servicio; su `@id` y su URL son los de la página que lo explica. */
+type ServiceNode = { path: string; name: string; description: string };
 
 /**
  * Qué es el sitio y quién es su autor, dicho a un buscador. Lo mismo que la
@@ -57,7 +58,7 @@ export function StructuredData({
    * zona, la ciudad desde la que trabaja: sin precios ni valoraciones, que
    * aquí no se publican.
    */
-  services?: { path: string; items: readonly ServiceNode[] };
+  services?: readonly ServiceNode[];
   /**
    * El nodo de la obra que la página presenta. Se completa aquí con `author`
    * para que apunte a la misma Person del grafo.
@@ -152,15 +153,15 @@ export function StructuredData({
   }
 
   if (services) {
-    const page = absoluteUrl(services.path);
-    for (const service of services.items) {
+    for (const service of services) {
+      const page = absoluteUrl(service.path);
       graph.push({
         "@type": "Service",
-        "@id": `${page}#${service.id}`,
+        "@id": `${page}#servicio`,
         name: service.name,
         serviceType: service.name,
         description: service.description,
-        url: `${page}#${service.id}`,
+        url: page,
         provider: { "@id": person },
         areaServed: [
           { "@type": "City", name: SITE_PROFILE.locality },

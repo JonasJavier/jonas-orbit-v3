@@ -6,7 +6,7 @@ import type { Locale } from "@/content/site.data";
 import { getArticles } from "@/lib/articles";
 import { defineCopy } from "@/lib/i18n";
 import { observatoryCatalog } from "@/lib/observatory-catalog";
-import { articlePath, blogPath } from "@/lib/page-paths";
+import { articlePath, blogPath, servicePath } from "@/lib/page-paths";
 import { WORLD_COPY } from "@/lib/world-copy";
 import { getWorldNeighbours, getWorldPath, type World } from "@/lib/worlds";
 import { ExperimentsIndex } from "./experiments-index";
@@ -86,8 +86,8 @@ function ExperimentsHall() {
 }
 
 const COPY = defineCopy({
-  es: { edge: "Algunas cosas merecen una mirada más larga", state: "Observatorio experimental", mounted: "montados", notes: "Del blog", blog: "Todas las entradas del blog" },
-  en: { edge: "Some things deserve a longer look", state: "Experimental observatory", mounted: "mounted", notes: "From the blog", blog: "Every post on the blog" },
+  es: { edge: "Algunas cosas merecen una mirada más larga", state: "Observatorio experimental", mounted: "montados", notes: "Del blog", blog: "Todas las entradas del blog", hire: "Desarrollo 3D para tu proyecto" },
+  en: { edge: "Some things deserve a longer look", state: "Experimental observatory", mounted: "mounted", notes: "From the blog", blog: "Every post on the blog", hire: "3D development for your project" },
 });
 
 export function ExperimentsPage({
@@ -191,6 +191,12 @@ export function ExperimentsPage({
             <li>
               <Link className="experiments-page__blog" href={blogPath(locale)}>
                 {copy.blog} <span aria-hidden="true">→</span>
+              </Link>
+            </li>
+            {/* Y quien quiere algo así para su proyecto: el servicio de 3D. */}
+            <li>
+              <Link className="experiments-page__blog" href={servicePath("3d", locale)}>
+                {copy.hire} <span aria-hidden="true">→</span>
               </Link>
             </li>
           </ul>

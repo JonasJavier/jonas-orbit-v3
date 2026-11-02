@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FlatWorldBody } from "@/components/flat-world-body";
 import { OBSERVATORY_LABELS } from "@/components/observatory-labels";
 import { ObservatoryViewer } from "@/components/observatory-viewer";
+import { ServiceDetailPage, serviceMetadata } from "@/components/service-detail-page";
 import { StructuredData } from "@/components/structured-data";
 import { PUBLISHED_LOCALES, SITE_PROFILE, isPublishedLocale, type Locale } from "@/content/site.data";
 import { worldsData, type WorldId } from "@/content/worlds.data";
@@ -15,6 +16,7 @@ import { specimenImage } from "@/lib/observatory-images";
 import { OBSERVATORY_IDS, observatoryIdBySlug, observatorySlug } from "@/lib/observatory-slugs";
 import { articlePath, observatoryPath, pageAlternatesMetadata, worldPath } from "@/lib/page-paths";
 import { PATH_SEGMENTS } from "@/lib/path-segments";
+import { SERVICE_IDS, serviceIdBySlug, serviceSlug, type ServiceId } from "@/lib/service-slugs";
 import { siteOpenGraph } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
 import { getWorld, getWorldBySlug } from "@/lib/worlds";
@@ -48,15 +50,23 @@ import { getWorld, getWorldBySlug } from "@/lib/worlds";
 
 export const dynamicParams = false;
 
+// Comparte carpeta con los servicios de página propia
+// (`/es/contacto/servicios/software-a-medida`): el mismo nivel, otro padre.
 export function generateStaticParams() {
-  return PUBLISHED_LOCALES.flatMap((locale) =>
-    OBSERVATORY_IDS.map((id) => ({
+  return PUBLISHED_LOCALES.flatMap((locale) => [
+    ...OBSERVATORY_IDS.map((id) => ({
       locale,
       mundo: getWorld("tesseract", locale).prose.slug,
       sub: PATH_SEGMENTS.observatory[locale],
       objeto: observatorySlug(id, locale),
     })),
-  );
+    ...SERVICE_IDS.map((id) => ({
+      locale,
+      mundo: getWorld("ranger", locale).prose.slug,
+      sub: PATH_SEGMENTS.services[locale],
+      objeto: serviceSlug(id, locale),
+    })),
+  ]);
 }
 
 type Props = { params: Promise<{ locale: string; mundo: string; sub: string; objeto: string }> };
@@ -143,9 +153,18 @@ function resolveSpecimen(locale: Locale, mundo: string, sub: string, objeto: str
   return observatoryIdBySlug(objeto, locale);
 }
 
+/** El servicio detrás de la URL, si la URL cuelga de Servicios. */
+function resolveService(locale: Locale, mundo: string, sub: string, objeto: string): ServiceId | undefined {
+  if (getWorldBySlug(mundo, locale)?.id !== "ranger") return undefined;
+  if (sub !== PATH_SEGMENTS.services[locale]) return undefined;
+  return serviceIdBySlug(objeto, locale);
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, mundo, sub, objeto } = await params;
   if (!isPublishedLocale(locale)) return {};
+  const service = resolveService(locale, mundo, sub, objeto);
+  if (service) return serviceMetadata(service, locale);
   const id = resolveSpecimen(locale, mundo, sub, objeto);
   if (!id) return {};
   const copy = COPY[locale];
@@ -174,6 +193,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ObservatoryRoute({ params }: Props) {
   const { locale, mundo, sub, objeto } = await params;
   if (!isPublishedLocale(locale)) notFound();
+
+  const service = resolveService(locale, mundo, sub, objeto);
+  if (service) return <ServiceDetailPage id={service} locale={locale} />;
 
   const id = resolveSpecimen(locale, mundo, sub, objeto);
   if (!id) notFound();

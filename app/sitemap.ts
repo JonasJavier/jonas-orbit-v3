@@ -8,6 +8,7 @@ import { specimenImage } from "@/lib/observatory-images";
 import { OBSERVATORY_IDS } from "@/lib/observatory-slugs";
 import { pageAlternates, type PageRef } from "@/lib/page-paths";
 import { getF1AProjects, getProject } from "@/lib/projects";
+import { SERVICE_IDS } from "@/lib/service-slugs";
 import { projectOgImagePath } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
 import { getWorld } from "@/lib/worlds";
@@ -74,6 +75,9 @@ const PAGES: readonly { page: PageRef; priority: number; changeFrequency: "weekl
   // La página de quien busca contratar: a la altura de los mundos, que es
   // donde compite («desarrollador web freelance Santo Domingo»).
   { page: { kind: "services" }, priority: 0.9, changeFrequency: "monthly" },
+  // Y cada servicio con página propia, a la misma altura: cada una es la
+  // página de aterrizaje de su búsqueda («Three.js developer for hire»).
+  ...SERVICE_IDS.map((id) => ({ page: { kind: "service", id } as const, priority: 0.9, changeFrequency: "monthly" as const })),
   // El blog y sus entradas: el texto que el buscador puede leer sobre el canvas.
   { page: { kind: "blog" }, priority: 0.8, changeFrequency: "weekly" },
   ...ARTICLE_IDS.map((id) => ({ page: { kind: "article", id } as const, priority: 0.8, changeFrequency: "monthly" as const })),

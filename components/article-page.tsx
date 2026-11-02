@@ -10,7 +10,7 @@ import { articleCover, articleImage, getArticles, type Article } from "@/lib/art
 import { blogLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";
 import { specimenImage } from "@/lib/observatory-images";
-import { articlePath, blogPath, observatoryPath, pageAlternatesMetadata, servicesPath, worldPath } from "@/lib/page-paths";
+import { articlePath, blogPath, observatoryPath, pageAlternatesMetadata, servicePath, servicesPath, worldPath } from "@/lib/page-paths";
 import { siteOpenGraph } from "@/lib/site-metadata";
 import { absoluteUrl } from "@/lib/site-url";
 import { getWorld } from "@/lib/worlds";
@@ -40,6 +40,7 @@ const COPY = defineCopy({
     authorBio:
       "Desarrollador full-stack y diseñador UX/UI en Santo Domingo. Construyo aplicaciones web y móviles a medida, y de vez en cuando un agujero negro.",
     services: "Ver servicios",
+    service3d: "Desarrollo 3D a medida",
     contact: "Escribirme",
     more: "Sigue leyendo",
     back: "Todas las entradas",
@@ -64,6 +65,7 @@ const COPY = defineCopy({
     authorBio:
       "Full-stack developer and UX/UI designer in Santo Domingo. I build custom web and mobile apps, and now and then a black hole.",
     services: "See services",
+    service3d: "Hire me for 3D work",
     contact: "Write to me",
     more: "Keep reading",
     back: "All posts",
@@ -452,6 +454,13 @@ export function ArticlePage({ article, locale }: { article: Article; locale: Loc
                 <Link className="blog-button" href={servicesPath(locale)}>
                   {copy.services} <span aria-hidden="true">→</span>
                 </Link>
+                {/* Quien lee sobre WebGL o sobre Gargantúa es quien podría
+                    encargar algo en 3D: la página de ese servicio, a un paso. */}
+                {article.topic === "webgl" || article.topic === "space" ? (
+                  <Link className="blog-button blog-button--ghost" href={servicePath("3d", locale)}>
+                    {copy.service3d}
+                  </Link>
+                ) : null}
                 <Link className="blog-button blog-button--ghost" href={worldPath("ranger", locale)}>
                   {copy.contact}
                 </Link>

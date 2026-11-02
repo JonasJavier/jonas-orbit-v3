@@ -292,6 +292,10 @@
   gap: 1.4rem;
 }
 
+.svc-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .svc-card {
   display: flex;
   flex-direction: column;
@@ -500,6 +504,120 @@
   margin: 0;
   color: var(--svc-soft);
   font-size: 0.98rem;
+}
+
+/* El título de la tarjeta lleva a la página del servicio o del caso. */
+.svc-card h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.svc-card h3 a:hover {
+  color: #fff;
+}
+
+.svc-card__more {
+  align-self: flex-start;
+  margin-top: 1rem;
+  color: var(--svc-cyan);
+  font: 600 0.72rem/1.4 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.svc-card__more:hover {
+  color: #fff;
+}
+
+/* Sin fila de pruebas debajo (página de un servicio): el enlace baja solo. */
+.svc-card__description + .svc-card__more {
+  margin-top: auto;
+}
+
+/* ── Página de un servicio ──────────────────────────────────────────────── */
+
+/* Lo que se construye: cuatro paneles de cristal, dos por fila. */
+.svc-builds {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.svc-builds li {
+  padding: clamp(1.3rem, 2.4vw, 1.8rem);
+  border: 1px solid var(--svc-line);
+  border-radius: var(--svc-radius);
+  background: var(--svc-panel);
+  box-shadow: inset 0 1px rgb(255 255 255 / 5%);
+}
+
+.svc-builds h3,
+.svc-points h3 {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 1.8vw, 1.4rem);
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.svc-builds p,
+.svc-points p {
+  margin: 0.6rem 0 0;
+  color: var(--svc-soft);
+  font-size: 0.97rem;
+  line-height: 1.6;
+}
+
+/* Cómo se hace: tres columnas sobre una línea, sin cajas. */
+.svc-points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.4rem 2.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.svc-points li {
+  padding-top: 1.2rem;
+  border-top: 1px solid rgb(127 229 255 / 30%);
+}
+
+.svc-points h3 {
+  margin-top: 0;
+}
+
+/* Los otros servicios: una fila de enlaces antes del cierre. */
+.svc-others ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.svc-others a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border: 1px solid var(--svc-line);
+  border-radius: 999px;
+  background: rgb(10 13 26 / 55%);
+  color: var(--svc-ink);
+  font-size: 0.92rem;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.svc-others a:hover {
+  border-color: var(--svc-cyan);
+  background: rgb(127 229 255 / 8%);
 }
 
 /* ── Proceso ────────────────────────────────────────────────────────────── */
@@ -723,6 +841,14 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
+
+  .svc-points {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .svc-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Teléfono: adaptar, no comprimir. Lo mismo en menos alto: la ficha en una
@@ -925,7 +1051,21 @@
 
 /* Las tarjetas a una columna sólo en el teléfono: en una tableta caben dos. */
 @media (max-width: 40rem) {
-  .svc-grid {
+  .svc-grid,
+  .svc-builds {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .svc-builds {
+    gap: 0.8rem;
+  }
+
+  .svc-builds li {
+    padding: 1.1rem 1.15rem 1.2rem;
+  }
+
+  .svc-builds p,
+  .svc-points p {
+    font-size: 0.93rem;
   }
 }

@@ -8,7 +8,8 @@ import { PUBLISHED_LOCALES } from "@/content/site.data";
 import { WORLD_IDS } from "@/content/worlds.data";
 import { articleCover, articleImage, getArticle, getArticleBySlug, getArticles } from "./articles";
 import { OBSERVATORY_IDS } from "./observatory-slugs";
-import { articlePath, blogPath, pageAlternates, servicesPath, type PageRef } from "./page-paths";
+import { articlePath, blogPath, pageAlternates, servicePath, servicesPath, type PageRef } from "./page-paths";
+import { SERVICE_IDS } from "./service-slugs";
 
 const publicFile = (src: string) => existsSync(join(process.cwd(), "public", src));
 
@@ -23,6 +24,7 @@ const KNOWN_PATHS = new Set(
       ...PROJECT_IDS.map((id) => ({ kind: "project", id }) as const),
       ...OBSERVATORY_IDS.map((id) => ({ kind: "observatory", id }) as const),
       ...ARTICLE_IDS.map((id) => ({ kind: "article", id }) as const),
+      ...SERVICE_IDS.map((id) => ({ kind: "service", id }) as const),
     ] satisfies PageRef[]
   ).flatMap((page) => Object.values(pageAlternates(page))),
 );
@@ -107,6 +109,7 @@ describe("sitemap", () => {
     const urls = sitemap().map((entry) => new URL(entry.url).pathname);
     for (const locale of PUBLISHED_LOCALES) {
       expect(urls).toContain(servicesPath(locale));
+      for (const id of SERVICE_IDS) expect(urls).toContain(servicePath(id, locale));
       expect(urls).toContain(blogPath(locale));
       for (const id of ARTICLE_IDS) expect(urls).toContain(articlePath(id, locale));
     }

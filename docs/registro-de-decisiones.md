@@ -19,6 +19,63 @@ label="Section", file_pattern="docs/registro*")` la encuentra por tema.
 
 ---
 
+## SEO — una página por servicio, local en español e internacional en inglés (2026-11-01)
+
+Pedido del dueño: aparecer en más búsquedas de desarrollador freelance en
+República Dominicana **y a nivel internacional**, con páginas en inglés
+pensadas para búsquedas en inglés, una página para empresas (full-stack,
+backend) y otra «exclusiva para el 3D, en web y en móvil»; seguir
+iterando con los datos.
+
+- **Lo que dijo Search Console** (3 meses, 2026-11-01): 43 clics / 1,51 mil
+  impresiones / pos 11,8. RD da 15 de los 43 clics (86 impr, CTR 17 %, pos
+  4,5). `/es/contacto/servicios` tiene 36 impr en pos 5,5, pero **todas sus
+  consultas están anonimizadas** (bajo volumen): la frase «desarrollador
+  freelance … República Dominicana» no sale en las 134 consultas visibles.
+  Conclusión: no hay datos de frase que optimizar; la palanca es tener una
+  página que NOMBRE cada búsqueda. El resto del tráfico es el nicho de
+  Gargantúa (física ES/EN 966 impr, CTR 0,4 %).
+- **Cuatro páginas nuevas**, hijas de Servicios
+  (`/es/contacto/servicios/<slug>`, `lib/service-slugs.ts`, ruta en
+  `app/[locale]/[mundo]/[sub]/[objeto]` junto al Observatorio,
+  `components/service-detail-page.tsx`, texto en
+  `components/service-detail.copy.ts`): `software-a-medida` /
+  `custom-software`, `paginas-web` / `websites`, `apps-moviles` /
+  `mobile-apps`, `desarrollo-3d` / `3d-development`. Cada una: hero con la
+  búsqueda en el `<h1>`, qué se construye, pruebas con captura real (casos
+  de Proyectos; en 3D los seis especímenes), cómo se hace, preguntas,
+  enlaces a los otros servicios y el cierre de siempre. Mismo cielo y
+  mismas piezas que Servicios (`services-page.css`).
+- **Español = local, inglés = internacional.** Los títulos ES llevan
+  «República Dominicana» («Desarrollo de software a medida en República
+  Dominicana», «Diseño de páginas web en…», «Desarrollo de apps móviles
+  en…»); el 3D no, porque es un nicho global. Los EN apuntan a contratar en
+  remoto («Three.js Developer for Hire — 3D Websites and WebGL», «Custom
+  Software Development — Django & React Developer», «React Native & Expo App
+  Developer», «Freelance Web Developer for Websites and Online Stores») y
+  la ficha dice UTC−4, el horario de la costa este de EE. UU. El título EN
+  de Servicios pasa a «Freelance Full-Stack Developer for Hire»; el ES
+  («… en Santo Domingo») no se toca: ya posiciona.
+- **Servicios** sigue siendo el centro: cada tarjeta enlaza a su página
+  (título y «Ver el servicio»), y la cuarta pasa de «Diseño UX/UI y webs
+  3D» a «Webs y apps 3D», sólo 3D. JSON-LD: el `Service` vive en su página
+  (`@id` = URL de la página + `#servicio`) y Servicios lo referencia.
+- **Enlace interno hacia el 3D**: las entradas del blog de los temas
+  `webgl` y `space` (el tráfico de Gargantúa) suman «Desarrollo 3D a
+  medida» en «Quién escribe»; Experimentos, una línea al pie de «Del blog».
+- **Sitemap**: las ocho URL, prioridad 0,9 como Servicios.
+- **Honestidad**: todo sale de casos publicados o de este sitio. Lo único
+  que se ofrece sin un caso publicado que lo pruebe es **3D dentro de una
+  app nativa** (React Native/Expo) y trabajar con modelos glTF: el dueño
+  lo pidió como servicio; si no lo quiere ofrecer, se quita de
+  `service-detail.copy.ts` (3D: `builds[3]` y dos preguntas).
+- **Siguiente iteración:** pedir indexación de las ocho URL; a las 3–4
+  semanas, en Search Console, filtrar por cada página (`page=*<slug>`) y
+  mirar posición e impresiones; si una frase aparece en 8–30, llevarla al
+  título o a una pregunta. Candidatas: entrada «Cuánto cuesta una página
+  web en República Dominicana» con rangos reales del dueño (no se publica
+  sin ellos) y una página de UX/UI si el diseño se busca aparte.
+
 ## Analítica — primera lectura: visitas de localhost y el salto del mapa (2026-10-27)
 
 Primera lectura de Cloudflare Web Analytics (14 días, sin bots): ~200

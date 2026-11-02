@@ -5,6 +5,7 @@ import type { ProjectId } from "@/content/projects.data";
 import type { WorldId } from "@/content/worlds.data";
 import { observatorySlug } from "./observatory-slugs";
 import { PATH_SEGMENTS } from "./path-segments";
+import { serviceSlug, type ServiceId } from "./service-slugs";
 import { getArticle } from "./articles";
 import { getProject } from "./projects";
 import { getWorld, getWorldPath } from "./worlds";
@@ -26,6 +27,7 @@ export type PageRef =
   | { kind: "project"; id: ProjectId }
   | { kind: "thanks" }
   | { kind: "services" }
+  | { kind: "service"; id: ServiceId }
   | { kind: "observatory"; id: WorldId }
   | { kind: "blog" }
   | { kind: "article"; id: ArticleId }
@@ -50,6 +52,11 @@ export function thanksPath(locale: Locale): string {
 /** Los servicios cuelgan de Contacto: quien busca contratar llega donde está el formulario. */
 export function servicesPath(locale: Locale): string {
   return `${worldPath("ranger", locale)}/${PATH_SEGMENTS.services[locale]}`;
+}
+
+/** Un servicio con página propia, hijo de Servicios. */
+export function servicePath(id: ServiceId, locale: Locale): string {
+  return `${servicesPath(locale)}/${serviceSlug(id, locale)}`;
 }
 
 export function observatoryPath(id: WorldId, locale: Locale): string {
@@ -84,6 +91,8 @@ function pagePath(page: PageRef, locale: Locale): string {
       return thanksPath(locale);
     case "services":
       return servicesPath(locale);
+    case "service":
+      return servicePath(page.id, locale);
     case "observatory":
       return observatoryPath(page.id, locale);
     case "blog":

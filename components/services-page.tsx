@@ -8,7 +8,8 @@ import { SITE_PROFILE, type Locale } from "@/content/site.data";
 import { screenSources } from "@/lib/engineering-table";
 import { servicesLabel } from "@/lib/footer-labels";
 import { defineCopy } from "@/lib/i18n";
-import { blogPath, pageAlternatesMetadata, projectPath, servicesPath, worldPath } from "@/lib/page-paths";
+import { blogPath, pageAlternatesMetadata, projectPath, servicePath, servicesPath, worldPath } from "@/lib/page-paths";
+import type { ServiceId } from "@/lib/service-slugs";
 import { getF1AProjects } from "@/lib/projects";
 import { defaultOgImage, siteOpenGraph } from "@/lib/site-metadata";
 import { getWorld } from "@/lib/worlds";
@@ -16,32 +17,35 @@ import { SiteShell } from "./site-shell";
 import { StructuredData } from "./structured-data";
 import "./services-page.css";
 
-type ServiceId = "web" | "commerce" | "mobile" | "design-3d";
-
 /** Cómo se enseña cada servicio: una captura real de un caso publicado. */
-type Visual =
+export type Visual =
   | { kind: "browser"; src: string }
   | { kind: "phones"; srcs: readonly [string, string] }
-  | { kind: "scene"; src: string };
+  | { kind: "scene"; small: string; large: string };
 
 /**
  * Cada servicio con su prueba: sólo casos publicados en Proyectos (y, para el
  * 3D, los Experimentos). Nada de precios, clientes ni cifras que el sitio no
- * pueda enseñar. La imagen de cada tarjeta es una captura de esos casos.
+ * pueda enseñar. La imagen de cada tarjeta es una captura de esos casos, y el
+ * título lleva a la página propia del servicio (`service-detail-page.tsx`).
  */
 const SERVICES: readonly { id: ServiceId; proof: readonly ProjectId[]; experiments?: true; visual: Visual }[] = [
-  { id: "web", proof: ["omsta", "network", "wikiverse"], visual: { kind: "browser", src: "/media/projects/omsta/w02-dashboard.png" } },
-  { id: "commerce", proof: ["delicate", "izaks-photos"], visual: { kind: "browser", src: "/media/projects/delicate/01-home-desktop.png" } },
+  { id: "software", proof: ["omsta", "network", "wikiverse"], visual: { kind: "browser", src: "/media/projects/omsta/w02-dashboard.png" } },
+  { id: "web", proof: ["delicate", "izaks-photos"], visual: { kind: "browser", src: "/media/projects/delicate/01-home-desktop.png" } },
   {
     id: "mobile",
     proof: ["omsta"],
     visual: { kind: "phones", srcs: ["/media/projects/omsta/m02-inicio.png", "/media/projects/omsta/m03-reservas.png"] },
   },
   {
-    id: "design-3d",
-    proof: ["delicate"],
+    id: "3d",
+    proof: [],
     experiments: true,
-    visual: { kind: "scene", src: "/images/articulos/agujero-negro/gargantua-cinematografica" },
+    visual: {
+      kind: "scene",
+      small: "/images/articulos/agujero-negro/gargantua-cinematografica-800.webp",
+      large: "/images/articulos/agujero-negro/gargantua-cinematografica-1600.webp",
+    },
   },
 ];
 
@@ -74,15 +78,16 @@ const COPY = defineCopy({
     projectCount: (n: number) => `${n} casos completos, con su diseño y su ingeniería.`,
     proof: "Hecho en",
     experiments: "Experimentos 3D",
+    more: "Ver el servicio",
     services: {
-      web: {
-        name: "Aplicaciones web a medida",
+      software: {
+        name: "Software a medida",
         description: "Sistemas con Django y React para operar tu negocio: ERP, paneles internos y plataformas con usuarios y roles.",
         includes: ["Usuarios, roles y permisos", "Paneles, reportes y flujos de trabajo", "API REST e integraciones"],
         alt: "Panel principal de OMSTA, el ERP de una agencia de viajes",
       },
-      commerce: {
-        name: "Tiendas y webs de negocio",
+      web: {
+        name: "Páginas web y tiendas online",
         description: "Tiendas en línea y sitios con un catálogo que tú mismo administras, rápidos y preparados para buscadores.",
         includes: ["Catálogo que administras tú", "Diseño pensado para el móvil", "SEO técnico y carga rápida"],
         alt: "Portada de la tienda en línea de Delicaté",
@@ -93,10 +98,10 @@ const COPY = defineCopy({
         includes: ["iOS y Android con una sola base de código", "Conectada a la API de tu web", "Cada pantalla diseñada para el pulgar"],
         alt: "Dos pantallas de la app móvil de OMSTA: inicio y reservas",
       },
-      "design-3d": {
-        name: "Diseño UX/UI y webs 3D",
-        description: "Interfaces pensadas antes de programarse y experiencias 3D interactivas con Three.js y WebGL, como este sitio.",
-        includes: ["Interfaces y prototipos antes del código", "Sistemas de diseño y componentes", "Escenas 3D con Three.js y WebGL"],
+      "3d": {
+        name: "Webs y apps 3D",
+        description: "Experiencias 3D interactivas con Three.js y WebGL, en la web y en el teléfono, como este sitio.",
+        includes: ["Sitios y portadas 3D en tiempo real", "Shaders y efectos a medida", "Rendimiento medido en teléfonos reales"],
         alt: "Gargantúa, el agujero negro trazado en tiempo real en este sitio",
       },
     } satisfies Record<ServiceId, { name: string; description: string; includes: string[]; alt: string }>,
@@ -138,9 +143,9 @@ const COPY = defineCopy({
     blog: "¿Quieres ver cómo trabajo por dentro? Lee el blog",
   },
   en: {
-    seoTitle: "Freelance Web Developer in Santo Domingo — Services",
+    seoTitle: "Freelance Full-Stack Developer for Hire — Services",
     seoDescription:
-      "Jonás Javier Encarnación, freelance full-stack developer: custom web apps, online stores, mobile apps and 3D websites. Remote, or in person in Santo Domingo.",
+      "Hire Jonás Javier Encarnación, freelance full-stack developer: custom software, websites, mobile apps and 3D. Remote worldwide, on hours that overlap the US.",
     breadcrumb: "Services",
     kicker: "SERVICES · FREELANCE",
     heading: "Custom web and mobile development.",
@@ -162,15 +167,16 @@ const COPY = defineCopy({
     projectCount: (n: number) => `${n} full case studies, design and engineering included.`,
     proof: "Built in",
     experiments: "3D Experiments",
+    more: "See the service",
     services: {
-      web: {
-        name: "Custom web applications",
+      software: {
+        name: "Custom software",
         description: "Django and React systems to run your business: ERPs, internal dashboards and platforms with users and roles.",
         includes: ["Users, roles and permissions", "Dashboards, reports and workflows", "REST APIs and integrations"],
         alt: "The main dashboard of OMSTA, a travel agency ERP",
       },
-      commerce: {
-        name: "Online stores and business sites",
+      web: {
+        name: "Websites and online stores",
         description: "Online stores and sites with a catalog you manage yourself, fast and ready for search engines.",
         includes: ["A catalog you manage yourself", "Designed for phones first", "Technical SEO and fast loading"],
         alt: "The home page of the Delicaté online store",
@@ -181,10 +187,10 @@ const COPY = defineCopy({
         includes: ["iOS and Android from one codebase", "Connected to your website’s API", "Every screen designed for the thumb"],
         alt: "Two screens of the OMSTA mobile app: home and bookings",
       },
-      "design-3d": {
-        name: "UX/UI design and 3D websites",
-        description: "Interfaces designed before they’re coded, and interactive 3D experiences with Three.js and WebGL, like this site.",
-        includes: ["Interfaces and prototypes before code", "Design systems and components", "3D scenes with Three.js and WebGL"],
+      "3d": {
+        name: "3D websites and apps",
+        description: "Interactive 3D experiences with Three.js and WebGL, on the web and on phones, like this site.",
+        includes: ["Real-time 3D sites and landing pages", "Custom shaders and effects", "Performance measured on real phones"],
         alt: "Gargantua, the black hole ray-traced in real time on this site",
       },
     },
@@ -249,13 +255,13 @@ export function servicesMetadata(locale: Locale): Metadata {
 }
 
 /** La imagen de una tarjeta: un navegador, dos teléfonos o la escena 3D. */
-function ServiceVisual({ visual, alt }: { visual: Visual; alt: string }) {
+export function ServiceVisual({ visual, alt }: { visual: Visual; alt: string }) {
   if (visual.kind === "scene") {
     return (
       <div className="svc-visual svc-visual--scene">
         <img
-          src={`${visual.src}-800.webp`}
-          srcSet={`${visual.src}-800.webp 800w, ${visual.src}-1600.webp 1600w`}
+          src={visual.small}
+          srcSet={`${visual.small} 800w, ${visual.large} 1600w`}
           sizes="(max-width: 56rem) calc(100vw - 2.5rem), 36rem"
           width={1600}
           height={900}
@@ -334,10 +340,11 @@ export function ServicesPage({ locale }: { locale: Locale }) {
           { path: contactHref, name: getWorld("ranger", locale).prose.title },
           { path, name: copy.breadcrumb },
         ]}
-        services={{
-          path,
-          items: SERVICES.map(({ id }) => ({ id, name: copy.services[id].name, description: copy.services[id].description })),
-        }}
+        services={SERVICES.map(({ id }) => ({
+          path: servicePath(id, locale),
+          name: copy.services[id].name,
+          description: copy.services[id].description,
+        }))}
       />
 
       <div className="services-sky" aria-hidden="true">
@@ -400,7 +407,9 @@ export function ServicesPage({ locale }: { locale: Locale }) {
                     <p className="svc-card__index" aria-hidden="true">
                       {pad(index + 1)}
                     </p>
-                    <h3>{service.name}</h3>
+                    <h3>
+                      <Link href={servicePath(id, locale)}>{service.name}</Link>
+                    </h3>
                     <p className="svc-card__description">{service.description}</p>
                     <p className="svc-label svc-label--muted">{copy.includes}</p>
                     <ul className="svc-card__includes">
@@ -420,6 +429,9 @@ export function ServicesPage({ locale }: { locale: Locale }) {
                       })}
                       {experiments ? <Link href={worldPath("tesseract", locale)}>{copy.experiments}</Link> : null}
                     </p>
+                    <Link className="svc-card__more" href={servicePath(id, locale)}>
+                      {copy.more} <span aria-hidden="true">→</span>
+                    </Link>
                   </div>
                 </article>
               );

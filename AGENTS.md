@@ -122,6 +122,10 @@ MDX**, nunca en `worlds.data.ts`.
   como hijo de Contacto, cada uno con su caso de prueba, y «Ver servicios»
   en el hero de Contacto; difusión en `docs/difusion/`. Segundo pase
   (10-01): fondo propio con horizonte, capturas reales, proceso y preguntas.
+  Una página por servicio (11-01, registro «SEO — una página por
+  servicio…»): software a medida, páginas web, apps móviles y 3D bajo
+  `/es/contacto/servicios/<slug>` (`lib/service-slugs.ts`); español con
+  «República Dominicana», inglés para contratar en remoto.
 - **Presencia web** (10-02) `docs/presencia-web.md` — el repo es el centro
   de TODA la presencia pública (sitio, Search Console, Business Profile,
   dev.to, LinkedIn, foros): canales, cadencia (una entrada por semana, nunca
