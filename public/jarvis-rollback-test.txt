@@ -1,0 +1,1 @@
+Archivo temporal de la prueba de rollback de Jarvis (Fase 6c). Se elimina en el siguiente encargo.
