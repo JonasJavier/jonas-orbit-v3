@@ -30,6 +30,15 @@ Sirve para no comentar dos veces el mismo post.
 | 2026-10-28 | Comentario | [Every page on our site has a twitter:image…](https://dev.to/daniel_pertu/every-page-on-our-site-has-a-twitterimage-seven-of-them-have-an-ogimage-ha6) | https://dev.to/jonasjavier/comment/3japk |
 | 2026-10-28 | Reacción ❤️ | [Every page on our site has a twitter:image…](https://dev.to/daniel_pertu/every-page-on-our-site-has-a-twitterimage-seven-of-them-have-an-ogimage-ha6) | — |
 | 2026-10-28 | Reacción ❤️ | [I generate a week of social posts from the real sky…](https://dev.to/paivelmoxia/i-generate-a-week-of-social-posts-from-the-real-sky-in-the-browser-3cao) | — |
+| 2026-11-04 | Comentario | [Building a 3D yoga anatomy viewer… 222 poses](https://dev.to/yogaway/building-a-3d-yoga-anatomy-viewer-for-the-web-with-222-poses-and-no-giant-animation-download-1opa) | https://dev.to/jonasjavier/comment/3k2la |
+| 2026-11-04 | Reacción ❤️ | [Building a 3D yoga anatomy viewer… 222 poses](https://dev.to/yogaway/building-a-3d-yoga-anatomy-viewer-for-the-web-with-222-poses-and-no-giant-animation-download-1opa) | — |
+| 2026-11-04 | Reacción ❤️ | [Tiny image placeholders with sharp](https://dev.to/dev-sahadat/tiny-image-placeholders-with-sharp-bytes-for-8-to-32-px-lqips-3de7) | — |
+| 2026-11-04 | Reacción 🦄 | [Procedural Three.js Assets vs GLB: 148 Local Navigations](https://dev.to/alicia_lu/procedural-threejs-assets-vs-glb-148-local-navigations-measured-oe8) | — |
+| 2026-11-04 | Comentario | [The back button costs nothing on 70 of our pages…](https://dev.to/daniel_pertu/the-back-button-costs-nothing-on-70-of-our-pages-and-a-server-render-on-the-two-that-take-money-dm) | https://dev.to/jonasjavier/comment/3k2m6 |
+| 2026-11-04 | Reacción ❤️ | [The back button costs nothing on 70 of our pages…](https://dev.to/daniel_pertu/the-back-button-costs-nothing-on-70-of-our-pages-and-a-server-render-on-the-two-that-take-money-dm) | — |
+| 2026-11-04 | Comentario | [A free pet memorial page with a small three.js garden…](https://dev.to/bridgelightpet/i-built-a-free-pet-memorial-page-with-a-small-threejs-garden-that-stays-smooth-on-phones-4j9b) | https://dev.to/jonasjavier/comment/3k2m9 |
+| 2026-11-04 | Reacción ❤️ | [A free pet memorial page with a small three.js garden…](https://dev.to/bridgelightpet/i-built-a-free-pet-memorial-page-with-a-small-threejs-garden-that-stays-smooth-on-phones-4j9b) | — |
+| 2026-11-04 | Reacción ❤️ | [Locus Earth: an open-source 3D globe…](https://dev.to/zhunemo/locus-earth-building-an-open-source-3d-globe-that-runs-directly-in-your-browser-2d70) | — |
 
 ## Pendiente (aprobado el 2026-10-08, sin publicar)
 
