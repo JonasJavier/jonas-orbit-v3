@@ -143,7 +143,7 @@ minúsculas —, `cover_image` con URL absoluta de `public/images/` que responda
 | 4 | Never two WebGL contexts drawing: putting a background scene to sleep | registro «Rendimiento móvil…», `lib/after-load-idle.ts` | retirado (2026-10-29): ya salió como sección de «A 3D portfolio Google can read and a phone can run» |
 | 5 | Prefetch on intent, not on sight: a `<Link>` wrapper for Next.js | `lib/world-prefetch.ts`, registro «QA para premios…» | publicado (2026-10-29, <https://dev.to/jonasjavier/prefetch-on-intent-not-on-sight-a-wrapper-for-nextjs-3kb6>) |
 | 6 | Miller's ocean: WebGL2 water that never blocks the page | `docs/design/miller-formacion.md` §«Océano en WebGL2…» | pendiente |
-| 7 | A soundtrack without an `AudioContext` until the first gesture | `lib/soundtrack.ts` + test, `docs/design/sonido-del-sitio.md` §2, registro «QA para premios…» | borrador (2026-11-04, `devto/soundtrack-armed.md`) |
+| 7 | A soundtrack without an `AudioContext` until the first gesture | `lib/soundtrack.ts` + test, `docs/design/sonido-del-sitio.md` §2, registro «QA para premios…» | publicado (2026-11-04, <https://dev.to/jonasjavier/a-soundtrack-thats-on-by-default-without-an-audiocontext-until-the-first-gesture-36j8>) |
 | 8 | Twelve modules, three silhouettes: designing a spaceship for a 3D map | `docs/design/endurance-jerarquia.md` §«Cuarto pase» | pendiente |
 | 9 | Justified mosaic rows for a photo gallery in 60 lines | `lib/mosaic-rows.ts` | pendiente |
 
@@ -199,8 +199,8 @@ foro lo preguntaron en octubre), bloom y después Miller.
 | # | Tema | Página / fuente | Estado |
 | --- | --- | --- | --- |
 | 0 | Gargantua — ray-traced black hole (Showcase) | `/en/experiments/observatory/gargantua` | publicado (2026-10-03, t/94960) |
-| 2 | A 4D tesseract from four bits (XOR edges) | `/en/blog/4d-tesseract-in-three-js` | pendiente |
-| 5 | Adaptive resolution on phones: step up only what the device sustains | `lib/resolution-governor.ts`, registro «Resolución adaptable…» | pendiente |
+| 2 | A 4D tesseract from four bits (XOR edges) | `/en/blog/4d-tesseract-in-three-js` | publicado (2026-10-31, t/96183) |
+| 5 | Adaptive resolution on phones: step up only what the device sustains | `lib/resolution-governor.ts`, registro «Resolución adaptable…» | borrador (2026-11-04, `borradores/foro-2026-11-06.md`) |
 | 4 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx` §«The shadow the bloom was lighting up» | pendiente |
 | 1 | Miller's ocean: WebGL2 water that never blocks the page | entrada `miller-ocean-webgl2` de la cola del blog | borrador (2026-10-12, `borradores/foro-2026-10-16.md`) |
 | 3 | The wormhole voyage: one shader, 2.6 s and synthesized sound | `docs/design/travesia-espaciotemporal.md`, `lib/voyage-audio.ts` | pendiente |
