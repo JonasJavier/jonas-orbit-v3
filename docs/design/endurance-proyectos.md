@@ -1106,6 +1106,29 @@ historial (el kit lo marca como inferencia): conviene que lo diga él. Si
 Network sigue después de 3.1.0, falta el «siguiente paso»; hoy el caso lo
 presenta como terminado en esa versión, sin prometer continuidad.
 
+### 19.4 Demo retirada (2026-11-02)
+
+Lo anterior es lo que se decidió el 2026-09-26 y se deja como estaba. La web
+y la API ya no existen en Railway (las dos respondían «Application not
+found»): el botón de la demo llevaba a un 404 y la comprobación de enlaces
+dejaba la CI en rojo. El commit `ca859ac` lo recoge así:
+
+- **Enlace**: fuera `Probar la demo` / `Try the demo`; el caso sólo enlaza al
+  repositorio público `cs50w-network`.
+- **Estado**: `projects.data.ts` pasa de `status: production` a
+  `ready-for-production`, y `statusLabel` dice «Repositorio público · GPL-3.0»
+  / «Public repository · GPL-3.0».
+- **Textos del caso (ES y EN)**: el resumen, el primer punto destacado, el pie
+  de la captura 76, la `seoDescription` y las secciones 1, 13 y 16 dejan de
+  hablar de demo pública y despliegue permanente; la 14 pasa de «Probar la
+  demo» a «El código», sin las cuentas ni la contraseña de la demo ni el
+  enlace a Swagger.
+- **Pruebas**: la prueba del botón con demo usa ahora Delicaté.
+
+Pendiente: los CV en PDF de `public/cv/` todavía dicen «Demo en vivo» /
+«Live demo» (§19.1). Hay que regenerarlos fuera del repositorio y sustituir
+los archivos.
+
 ## 20. Delicaté rehecho: en producción con su dominio (2026-09-26)
 
 Aplica el método de §18 y §19 a Delicaté desde
