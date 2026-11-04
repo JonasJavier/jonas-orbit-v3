@@ -143,7 +143,7 @@ minúsculas —, `cover_image` con URL absoluta de `public/images/` que responda
 | 4 | Never two WebGL contexts drawing: putting a background scene to sleep | registro «Rendimiento móvil…», `lib/after-load-idle.ts` | retirado (2026-10-29): ya salió como sección de «A 3D portfolio Google can read and a phone can run» |
 | 5 | Prefetch on intent, not on sight: a `<Link>` wrapper for Next.js | `lib/world-prefetch.ts`, registro «QA para premios…» | publicado (2026-10-29, <https://dev.to/jonasjavier/prefetch-on-intent-not-on-sight-a-wrapper-for-nextjs-3kb6>) |
 | 6 | Miller's ocean: WebGL2 water that never blocks the page | `docs/design/miller-formacion.md` §«Océano en WebGL2…» | pendiente |
-| 7 | A soundtrack without an `AudioContext` until the first gesture | `lib/audio-bus.ts`, `docs/design/sonido-del-sitio.md` §2 | pendiente |
+| 7 | A soundtrack without an `AudioContext` until the first gesture | `lib/soundtrack.ts` + test, `docs/design/sonido-del-sitio.md` §2, registro «QA para premios…» | borrador (2026-11-04, `devto/soundtrack-armed.md`) |
 | 8 | Twelve modules, three silhouettes: designing a spaceship for a 3D map | `docs/design/endurance-jerarquia.md` §«Cuarto pase» | pendiente |
 | 9 | Justified mosaic rows for a photo gallery in 60 lines | `lib/mosaic-rows.ts` | pendiente |
 
