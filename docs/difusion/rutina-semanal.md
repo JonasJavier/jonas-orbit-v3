@@ -200,7 +200,7 @@ foro lo preguntaron en octubre), bloom y después Miller.
 | --- | --- | --- | --- |
 | 0 | Gargantua — ray-traced black hole (Showcase) | `/en/experiments/observatory/gargantua` | publicado (2026-10-03, t/94960) |
 | 2 | A 4D tesseract from four bits (XOR edges) | `/en/blog/4d-tesseract-in-three-js` | publicado (2026-10-31, t/96183) |
-| 5 | Adaptive resolution on phones: step up only what the device sustains | `lib/resolution-governor.ts`, registro «Resolución adaptable…» | borrador (2026-11-04, `borradores/foro-2026-11-06.md`) |
+| 5 | Adaptive resolution on phones: step up only what the device sustains | `lib/resolution-governor.ts`, registro «Resolución adaptable…» | publicado (2026-11-06, t/96534) |
 | 4 | Keeping bloom out of a black hole's shadow (SavePass + mask) | `content/en/articles/gargantua-webgl.mdx` §«The shadow the bloom was lighting up» | pendiente |
 | 1 | Miller's ocean: WebGL2 water that never blocks the page | entrada `miller-ocean-webgl2` de la cola del blog | borrador (2026-10-12, `borradores/foro-2026-10-16.md`) |
 | 3 | The wormhole voyage: one shader, 2.6 s and synthesized sound | `docs/design/travesia-espaciotemporal.md`, `lib/voyage-audio.ts` | pendiente |
